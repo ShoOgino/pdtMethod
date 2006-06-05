@@ -1,0 +1,28 @@
+    public Expression[] getLocalVariables(int depth) {
+        String value = getVariableValue(localsVariablePath, depth);
+        ExpressionValue variableValue = ExpressionsValueDeserializer.deserializer(null, value);
+
+        Expression[] localVariables = variableValue.getChildren();
+        if (localVariables == null) {
+            localVariables = EMPTY_VARIABLE_ARRAY;
+        }
+
+        // search for globals variable
+        for (int i = 0; i < localVariables.length; i++) {
+            String s = localVariables[i].getFullName();
+            if (s.equals("$GLOBALS")) {
+
+                // remove globals from array
+                Expression[] newLocals = new Expression[localVariables.length - 1];
+                System.arraycopy(localVariables, 0, newLocals, 0, i);
+                System.arraycopy(localVariables, i + 1, newLocals, i, localVariables.length - i - 1);
+                localVariables = newLocals;
+                break;
+            }
+        }
+
+        hashResultDepthOne.put("LOCLAS", localVariables);
+
+        return localVariables;
+    }
+

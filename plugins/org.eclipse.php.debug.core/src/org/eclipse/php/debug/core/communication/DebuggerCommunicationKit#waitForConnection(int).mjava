@@ -1,0 +1,26 @@
+	/**
+	 * This method Waits for the peer to connect which means that the current thread
+	 * waits for the connection and only then initializes the input manager and the
+	 * input message handler threads.
+	 *
+	 * @param port the port integer which the socket waits on.
+	 */
+	public void waitForConnection(int port) {
+		try {
+			cleanSocket();
+			this.checkServerSocket(port);
+			Socket communicationSocket = serverSocket.accept();
+			communicationSocket.setTcpNoDelay(true);
+			DataInputStream in = new DataInputStream(communicationSocket.getInputStream());
+			DataOutputStream out = new DataOutputStream(communicationSocket.getOutputStream());
+			restartInputMessageHandler(out);
+			restartInputManager(in);
+			DebuggerCommunicationKit.this.in = in;
+			DebuggerCommunicationKit.this.out = out;
+			DebuggerCommunicationKit.this.communicationSocket = communicationSocket;
+			isInitialized = true;
+		} catch (Exception exc) {
+			PHPDebugPlugin.log(exc);
+		}
+	}
+

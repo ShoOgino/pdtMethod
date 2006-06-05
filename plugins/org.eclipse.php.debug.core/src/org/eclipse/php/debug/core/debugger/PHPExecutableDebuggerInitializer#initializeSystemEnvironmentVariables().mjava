@@ -1,0 +1,40 @@
+	private void initializeSystemEnvironmentVariables() throws IOException {
+		ArrayList list = new ArrayList();
+		Process p;
+		Runtime r = Runtime.getRuntime();
+		String OS = System.getProperty("os.name").toLowerCase();
+		if (OS.indexOf("windows") > -1) {
+			if (OS.indexOf("windows 9") > -1) {
+				p = r.exec("command.com /c set");
+			} else {
+				p = r.exec("cmd.exe /c set");
+			}
+		} else if (OS.indexOf("linux") > -1) {
+			p = r.exec("env");
+		} else if (OS.indexOf("unix") > -1) {
+			p = r.exec("/bin/env");
+		} else if (OS.indexOf("sunos") > -1) {
+			p = r.exec("/bin/env");
+		} else if (OS.indexOf("mac") > -1) {
+			try {
+				p = r.exec("env");
+			} catch (IOException e) {
+				p = r.exec("setenv");
+			}
+		} else if (OS.indexOf("freebsd") > -1) {
+			p = r.exec("set");
+		} else {
+			System.out.println("OS not known: " + OS);
+			systemEnvironmentVariables = new String[0];
+			return;
+		}
+		BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+		String line;
+		while ((line = br.readLine()) != null) {
+			list.add(line);
+		}
+		br.close();
+		systemEnvironmentVariables = new String[list.size()];
+		list.toArray(systemEnvironmentVariables);
+	}
+

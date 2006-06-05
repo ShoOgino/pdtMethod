@@ -1,0 +1,97 @@
+		public void run() {
+
+			while (isAlive) {
+
+				while (!inWork && isAlive) {
+					try {
+						synchronized (WAIT) {
+							synchronized (READY_FOR_RESTART_LOCK) {
+								READY_FOR_RESTART_LOCK.notify(); // release one thread.
+							}
+							WAIT.wait();
+						}
+
+					} catch (InterruptedException e) {
+					}
+				}
+
+				if (!isAlive)
+					break;
+
+				try {
+
+					Object newInputMessage = inputMessageQueue.queueOut();
+
+					//System.out.println("InputMessageHandler handle: " + newInputMessage);
+
+					// do not stop untill the message is processed.
+					synchronized (this) {
+						try {
+							if (newInputMessage instanceof IDebugNotificationMessage) {
+								//System.out.println("Processing notification:"+ newInputMessage);
+								getCommunicationClient().handleNotification(newInputMessage);
+							} else if (newInputMessage instanceof IDebugRequestMessage) {
+
+								int reqId = ((IDebugRequestMessage) newInputMessage).getID();
+								IDebugMessageHandler requestHandler = DebugMessagesRegistry.getHandler((IDebugRequestMessage) newInputMessage);
+
+								if (requestHandler instanceof IDebugRequestHandler) {
+									requestHandler.handle((IDebugRequestMessage) newInputMessage);
+									IDebugResponseMessage response = ((IDebugRequestHandler) requestHandler).getResponseMessage();
+
+									//Log.writeLog("Client Sending response: " +response);
+									//ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
+									//DataOutputStream outArray = new DataOutputStream (byteArray );
+									byteArray.reset();
+									response.serialize(outArray);
+									if (isDebugMode) {
+										System.out.println("sending message size=" + byteArray.size());
+									}
+									synchronized (out) {
+										out.writeInt(byteArray.size());
+										byteArray.writeTo(out);
+										out.flush();
+									}
+								} else {
+									// error, we could not find the relevant request message handler for the recieved message.
+								}
+							} else if (newInputMessage instanceof IDebugResponseMessage) {
+								IDebugResponseMessage r = (IDebugResponseMessage) newInputMessage;
+								//                                Object requestId = new Integer(r.getID()); // take the req id from the response.
+								int requestId = r.getID(); // take the req id from the response.
+								IDebugRequestMessage req = (IDebugRequestMessage) requestsTable.remove(requestId); // find the request.
+								ResponseHandler handler = (ResponseHandler) responseHandlers.remove(new Integer(requestId)); // find the handler.
+								handler.handleResponse(req, r);
+							} else if (newInputMessage == STOP_MSG) {
+								synchronized (STOP_MSG) {
+									inWork = false;
+									STOP_MSG.notifyAll();
+									if (shouldExit) {
+										isAlive = false;
+										inputMessageQueue.releaseReaders(); // why do we need this??
+										//notifyAll();
+									}
+								}
+							} else if (newInputMessage == CONNECTION_CLOSED_MSG) {
+								handleConnectionClosed();
+								//inWork = false;
+							}
+							//else if (newInputMessage == MULTIPLE_BINDINGS_MSG){
+							//    handleMultipleBindingsMessage();
+							//}
+							//else if (newInputMessage == PEER_RESPONSE_TIMEOUT_MSG){
+							//    handlePeerResponseTimeoutMessage();
+							//}
+
+						} catch (Exception exc) { // error processing the current message.
+							PHPDebugPlugin.log(exc);
+						}
+					}
+
+				} catch (Exception exc) {
+					//inWork = false;
+					PHPDebugPlugin.log(exc);
+				}
+			}
+		}
+

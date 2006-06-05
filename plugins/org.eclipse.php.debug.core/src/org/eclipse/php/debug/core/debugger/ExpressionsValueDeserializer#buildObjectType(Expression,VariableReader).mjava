@@ -1,0 +1,32 @@
+    private static ExpressionValue buildObjectType(Expression expression, VariableReader reader) {
+        String objectName = reader.readString();
+        int objectLength = reader.readInt();
+
+        if (reader.isLastEnd()) {
+            objectLength = 0;
+        }
+
+        Expression[] expressionNodes = new Expression[objectLength];
+
+        for (int i = 0; i < objectLength; i++) {
+            char type = reader.readType();
+            //System.out.println("type " + type);
+            String name;
+            if (type == 'i') {
+                name = Integer.toString(reader.readInt());
+            } else {
+                name = reader.readString();
+            }
+
+            if (expression == null) {
+                expressionNodes[i] = createDefaultVariable(name);
+            } else {
+                expressionNodes[i] = expression.createChildExpression(name, "->" + name);
+            }
+            expressionNodes[i].setValue(build(expression, reader));
+        }
+        String valueAsString = "Object of: " + objectName;
+
+        return new ExpressionValue(ExpressionValue.OBJECT_TYPE, objectName, valueAsString, expressionNodes);
+    }
+

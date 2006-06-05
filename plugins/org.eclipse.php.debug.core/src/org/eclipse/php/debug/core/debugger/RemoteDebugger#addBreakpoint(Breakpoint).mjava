@@ -1,0 +1,24 @@
+	/**
+	 * Ssynchronic addBreakpoint Returns true if successed adding the
+	 * Breakpoint.
+	 */
+	public void addBreakpoint(Breakpoint breakpoint) {
+		if (!this.isActive()) {
+			return;
+		}
+		try {
+			AddBreakpointRequest request = new AddBreakpointRequest();
+			Breakpoint tmpBreakpoint = (Breakpoint) breakpoint.clone();
+			String fileName = convertToSystemIndependentFileName(tmpBreakpoint.getFileName());
+			tmpBreakpoint.setFileName(fileName);
+			request.setBreakpoint(tmpBreakpoint);
+			AddBreakpointResponse response = (AddBreakpointResponse) kit.sendRequest(request);
+			if (response != null && response.getStatus() == 0) {
+				// Log.writeLog("addBreakpoint");
+				breakpoint.setID(response.getBreakpointID());
+			}
+		} catch (Exception exc) {
+			exc.printStackTrace();
+		}
+	}
+

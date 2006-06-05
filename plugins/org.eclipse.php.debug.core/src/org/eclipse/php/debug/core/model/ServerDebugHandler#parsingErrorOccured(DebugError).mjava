@@ -1,0 +1,22 @@
+	public void parsingErrorOccured(DebugError debugError) {
+		super.parsingErrorOccured(debugError);
+		int length;
+		if (!fDebugTarget.isPHPCGI()) {
+			length = fDebugTarget.getHTDocs().length() + fDebugTarget.getContextRoot().length();
+		} else {
+			length = fDebugTarget.getWorkspacePath().length() + fDebugTarget.getProjectName().length();
+		}
+		String sName = debugError.getFileName();
+		String rName = sName.substring(length);
+		String dFileName = RemoteDebugger.convertToSystemIndependentFileName(rName);
+		debugError.setFileName(dFileName);
+
+		fDebugTarget.getDebugErrors().add(debugError);
+
+		Object[] listeners = fDebugTarget.getConsoleEventListeners().toArray();
+		for (int i = 0; i < listeners.length; i++) {
+			((IPHPConsoleEventListener) listeners[i]).handleEvent(debugError);
+		}
+
+	}
+

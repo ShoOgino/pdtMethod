@@ -1,0 +1,29 @@
+	/**
+	 * Return best matching debug parameters initializer according the the debug mode (run,debug,profile)
+	 * The returned IDebugParametersInitializer is always a new instance.
+	 * 
+	 * @param mode
+	 * @return A new instance of a best match IDebugParametersInitializer
+	 */
+	public static IDebugParametersInitializer getBestMatchDebugParametersInitializer(String mode) {
+		try {
+			DebugParametersInitializerFactory defaultParametersInitializerFactory = null;
+			Dictionary factories =  getInstance().getInitializersFactories(mode);
+			Enumeration e = factories.elements();
+			while (e.hasMoreElements()) {
+				DebugParametersInitializerFactory initializerFactory = (DebugParametersInitializerFactory)e.nextElement();
+				if (PHPDebugPlugin.getID().equals(initializerFactory.element.getNamespace())) {
+					defaultParametersInitializerFactory = initializerFactory;
+				} else {
+					return initializerFactory.createParametersInitializer();
+				}
+			}
+			if (defaultParametersInitializerFactory != null) {
+				return defaultParametersInitializerFactory.createParametersInitializer();
+			}
+		} catch (Exception e) {
+			PHPDebugPlugin.log(e);
+		}
+		return getCurrentDebugParametersInitializer();
+	}
+

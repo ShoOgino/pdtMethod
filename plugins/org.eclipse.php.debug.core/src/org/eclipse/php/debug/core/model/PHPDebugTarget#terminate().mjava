@@ -1,0 +1,22 @@
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.eclipse.debug.core.model.ITerminate#terminate()
+     */
+    public void terminate() throws DebugException {
+        StartLock startLock = getStartLock();
+        // Don't synchronize on lock, debugger may be hung. Just terminate. 
+        if (!startLock.isStarted()) {
+            terminated();
+            return;
+        }
+        fTermainateCalled = true;
+        ((PHPThread) getThreads()[0]).setStepping(false);
+        fTerminated = true;
+        fSuspended = false;
+        fLastcmd = "terminate";
+        Logger.debugMSG("PHPDebugTarget: Calling closeDebugSession()");
+        debugger.closeDebugSession();
+
+    }
+

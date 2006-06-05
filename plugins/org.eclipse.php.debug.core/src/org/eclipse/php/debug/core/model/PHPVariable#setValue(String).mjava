@@ -1,0 +1,23 @@
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.eclipse.debug.core.model.IValueModification#setValue(java.lang.String)
+     */
+    public void setValue(String expression) throws DebugException {
+        PHPDebugTarget debugTarget = (PHPDebugTarget) getDebugTarget();
+        ExpressionsManager expressionManager = debugTarget.getExpressionManager();
+        Expression changeVar = variable;
+        if (global) {
+            String exp = "$GLOBALS[\"" + variable.getFullName().substring(1) + "\"]";
+            changeVar = new DefaultExpression(exp);
+        }
+        boolean status = expressionManager.assignValue(changeVar, expression, 1);
+        if (!status) {
+            Logger.debugMSG("PHPValue: Problem changing variable value");
+        }
+        expressionManager.update(changeVar, 1);
+        pValue.updateValue(changeVar.getValue());
+        fireChangeEvent(DebugEvent.CONTENT);
+
+    }
+

@@ -1,0 +1,86 @@
+		public void handleResponse(Object request, Object response) {
+			boolean success = response != null && ((IDebugResponseMessage) response).getStatus() == 0;
+
+			if (request instanceof AddBreakpointRequest) {
+				AddBreakpointRequest addBreakpointRequest = (AddBreakpointRequest) request;
+				Breakpoint bp = addBreakpointRequest.getBreakpoint();
+				String fileName = convertToSystemDependentFileName(bp.getFileName());
+				int lineNumber = bp.getLineNumber();
+				int id = -1;
+				if (response != null) {
+					id = ((AddBreakpointResponse) response).getBreakpointID();
+				}
+				((BreakpointAddedResponseHandler) responseHandler).breakpointAdded(fileName, lineNumber, id, success);
+
+			} else if (request instanceof CancelBreakpointRequest) {
+				((BreakpointRemovedResponseHandler) responseHandler).breakpointRemoved(((CancelBreakpointRequest) request).getBreakpointID(), success);
+
+			} else if (request instanceof CancelAllBreakpointsRequest) {
+				((AllBreakpointRemovedResponseHandler) responseHandler).allBreakpointRemoved(success);
+
+			} else if (request instanceof StartRequest) {
+				((StartResponseHandler) responseHandler).started(success);
+
+			} else if (request instanceof EvalRequest) {
+				((EvalResponseHandler) responseHandler).evaled(((EvalRequest) request).getCommand(), (success) ? ((EvalResponse) response).getResult() : null, success);
+
+			} else if (request instanceof StepIntoRequest) {
+				((StepIntoResponseHandler) responseHandler).stepInto(success);
+
+			} else if (request instanceof StepOverRequest) {
+				((StepOverResponseHandler) responseHandler).stepOver(success);
+
+			} else if (request instanceof StepOutRequest) {
+				((StepOutResponseHandler) responseHandler).stepOut(success);
+
+			} else if (request instanceof GoRequest) {
+				((GoResponseHandler) responseHandler).go(success);
+
+			} else if (request instanceof PauseDebuggerRequest) {
+				((PauseResponseHandler) responseHandler).pause(success);
+
+			} else if (request instanceof AssignValueRequest) {
+				AssignValueRequest assignValueRequest = (AssignValueRequest) request;
+				String var = assignValueRequest.getVar();
+				String value = assignValueRequest.getValue();
+				int depth = assignValueRequest.getDepth();
+				String[] path = assignValueRequest.getPath();
+				((AssignValueResponseHandler) responseHandler).valueAssigned(var, value, depth, path, success);
+
+			} else if (request instanceof GetVariableValueRequest) {
+				GetVariableValueRequest getVariableValueRequest = (GetVariableValueRequest) request;
+				String value = getVariableValueRequest.getVar();
+				int depth = getVariableValueRequest.getDepth();
+				String[] path = getVariableValueRequest.getPath();
+
+				String result = null;
+				if (response != null) {
+					result = ((GetVariableValueResponse) response).getVarResult();
+				}
+				((VariableValueResponseHandler) responseHandler).variableValue(value, depth, path, result, success);
+
+			} else if (request instanceof GetCallStackRequest) {
+				PHPstack remoteStack = null;
+				if (response != null) {
+					remoteStack = ((GetCallStackResponse) response).getPHPstack();
+				}
+				convertToSystem(remoteStack);
+				((GetCallStackResponseHandler) responseHandler).callStack(remoteStack, success);
+
+			} else if (request instanceof GetStackVariableValueRequest) {
+				GetStackVariableValueRequest getStackVariableValueRequest = (GetStackVariableValueRequest) request;
+
+				int stackDepth = getStackVariableValueRequest.getLayerDepth();
+				String value = getStackVariableValueRequest.getVar();
+				int depth = getStackVariableValueRequest.getDepth();
+				String[] path = getStackVariableValueRequest.getPath();
+
+				String result = null;
+				if (response != null) {
+					result = ((GetStackVariableValueResponse) response).getVarResult();
+				}
+				((GetStackVariableValueResponseHandler) responseHandler).stackVariableValue(stackDepth, value, depth, path, result, success);
+			}
+
+		}
+

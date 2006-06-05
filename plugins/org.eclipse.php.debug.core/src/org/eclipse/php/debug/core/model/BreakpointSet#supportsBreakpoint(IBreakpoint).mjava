@@ -1,0 +1,54 @@
+    public boolean supportsBreakpoint(IBreakpoint breakpoint){
+        
+        // If no project, assume everything in the workspace
+        if (fProject == null) return true;
+        
+        PHPLineBreakpoint bp = (PHPLineBreakpoint) breakpoint;
+        IMarker marker = bp.getMarker();
+        IResource resource = null;
+        if (breakpoint instanceof PHPRunToLineBreakpoint) {
+            return true;
+        } else {
+            resource = marker.getResource();
+        }
+        
+        if (!fIsPHPCGI) {
+            if (resource instanceof IWorkspaceRoot) {
+                String includeType = marker.getAttribute(IPHPConstants.Include_Storage_type, "");
+                String id = marker.getAttribute(StructuredResourceMarkerAnnotationModel.SECONDARY_ID_KEY, "");
+                String filename = marker.getAttribute(IPHPConstants.Include_Storage, "");
+                String base = id.substring(0,(id.length()-(filename.length()+1)));
+                if (includeType.equals(IPHPConstants.Include_Storage_zip)) {
+                    Object [] zips = fZips.toArray();
+                    for (int i=0; i < zips.length; i++){
+                        if (base.equals((String)zips[i]))return true;
+                    }
+                   return false;
+                } else if (includeType.equals(IPHPConstants.Include_Storage_LFile)) {                    
+                    Object [] dirs = fDirectories.toArray();
+                    for (int i=0; i < dirs.length; i++){
+                        if (base.equals((String)dirs[i]))return true;
+                    }
+                    return false;
+                }
+                return true;
+            } else {
+                IProject project = resource.getProject();
+                if (fProject.equals(project))return true;
+                return fProjects.contains(project);
+            }
+        } else {
+            if (resource instanceof IWorkspaceRoot){
+                return false;
+            } else { 
+                IProject project = resource.getProject();
+                if (fProject.equals(project)) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        }
+        
+    }
+

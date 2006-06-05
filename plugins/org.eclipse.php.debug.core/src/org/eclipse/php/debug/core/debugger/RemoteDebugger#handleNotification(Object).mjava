@@ -1,0 +1,52 @@
+	public void handleNotification(Object msg) {
+		if (msg instanceof OutputNotification) {
+			String output = ((OutputNotification) msg).getOutput();
+			debugHandler.newOutput(output);
+		} else if (msg instanceof ReadyNotification) {
+			ReadyNotification readyNotification = (ReadyNotification) msg;
+			String currentFile = readyNotification.getFileName();
+			int currentLine = readyNotification.getLineNumber();
+			debugHandler.ready(convertToSystemDependentFileName(currentFile), currentLine);
+		} else if (msg instanceof DebugSessionStartedNotification) {
+			DebugSessionStartedNotification debugSessionStartedNotification = (DebugSessionStartedNotification) msg;
+
+			int serverProtocol = debugSessionStartedNotification.getServerProtocolID();
+			if (serverProtocol != PROTOCOL_ID) {
+				debugHandler.wrongDebugServer();
+				this.finish();
+				return;
+			}
+
+			String fileName = debugSessionStartedNotification.getFileName();
+			String uri = debugSessionStartedNotification.getUri();
+			String query = debugSessionStartedNotification.getQuery();
+			String options = debugSessionStartedNotification.getOptions();
+			debugHandler.sessionStarted(fileName, uri, query, options);
+		} else if (msg instanceof HeaderOutputNotification) {
+			debugHandler.newHeaderOutput(((HeaderOutputNotification) msg).getOutput());
+		} else if (msg instanceof ParsingErrorNotification) {
+			ParsingErrorNotification parseError = (ParsingErrorNotification) msg;
+			String errorText = parseError.getErrorText();
+			String fileName = convertToSystemDependentFileName(parseError.getFileName());
+			int lineNumber = parseError.getLineNumber();
+			int errorLevel = parseError.getErrorLevel();
+
+			DebugError debugError = new DebugError(errorLevel, fileName, lineNumber, errorText);
+			debugHandler.parsingErrorOccured(debugError);
+		} else if (msg instanceof DebuggerErrorNotification) {
+			DebuggerErrorNotification parseError = (DebuggerErrorNotification) msg;
+			int errorLevel = parseError.getErrorLevel();
+			DebugError debugError = new DebugError();
+			String errorText = parseError.getErrorText();
+			if (errorText != null && !errorText.equals("")) {
+				debugError.setErrorText(errorText);
+			}
+
+			debugError.setCode(errorLevel);
+			debugHandler.debuggerErrorOccured(debugError);
+		} else if (msg instanceof DebugScriptEndedNotification) {
+			debugHandler.handleScriptEnded(); // 2 options: close message or
+			// start profile
+		}
+	}
+
