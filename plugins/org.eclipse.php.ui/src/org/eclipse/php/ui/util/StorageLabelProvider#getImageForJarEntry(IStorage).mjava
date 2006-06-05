@@ -1,0 +1,46 @@
+	/*
+	 * Gets and caches an image for a JarEntryFile.
+	 * The image for a JarEntryFile is retrieved from the EditorRegistry.
+	 */
+	private Image getImageForJarEntry(IStorage element) {
+		if (fJarImageMap == null)
+			return getDefaultImage();
+
+		if (element == null || element.getName() == null)
+			return getDefaultImage();
+
+		// Try to find icon for full name
+		String name = element.getName();
+		Image image = (Image) fJarImageMap.get(name);
+		if (image != null)
+			return image;
+		IFileEditorMapping[] mappings = fEditorRegistry.getFileEditorMappings();
+		int i = 0;
+		while (i < mappings.length) {
+			if (mappings[i].getLabel().equals(name))
+				break;
+			i++;
+		}
+		String key = name;
+		if (i == mappings.length) {
+			// Try to find icon for extension
+			IPath path = element.getFullPath();
+			if (path == null)
+				return getDefaultImage();
+			key = path.getFileExtension();
+			if (key == null)
+				return getDefaultImage();
+			image = (Image) fJarImageMap.get(key);
+			if (image != null)
+				return image;
+		}
+
+		// Get the image from the editor registry
+		ImageDescriptor desc = fEditorRegistry.getImageDescriptor(name);
+		image = desc.createImage();
+
+		fJarImageMap.put(key, image);
+
+		return image;
+	}
+

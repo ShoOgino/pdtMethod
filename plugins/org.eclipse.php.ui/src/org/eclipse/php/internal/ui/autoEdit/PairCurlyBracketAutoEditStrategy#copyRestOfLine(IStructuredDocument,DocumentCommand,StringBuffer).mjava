@@ -1,0 +1,51 @@
+	/**
+	 * Copies the rest of the line (after the { ) into the buffer in order put the text inside the curly brackets
+	 * @return The number of charecters the caret should be advenced at   
+	 */
+	private int copyRestOfLine(IStructuredDocument document, DocumentCommand command, StringBuffer buffer) throws BadLocationException {
+
+		int offset = command.offset;
+		IRegion lineInfo = document.getLineInformationOfOffset(offset);
+		int endOffset = lineInfo.getOffset() + lineInfo.getLength();
+		int whiteSpacesAdded = 0;
+		String lineEnd = document.get(offset, endOffset - offset);
+
+		//if there are spaces between the '{' and the text in the line 
+		//(or the end of line)then need to override them
+
+		for (int i = 0; i < lineEnd.length(); i++) {
+			char c = lineEnd.charAt(i);
+			if (c == '\n' || c == '\r' || !Character.isWhitespace(c)) {
+				command.length += i;
+				break;
+			}
+		}
+
+		String trimmedLineEnd = lineEnd.trim();
+		if (trimmedLineEnd.length() > 0 && trimmedLineEnd.charAt(0) == '}') {
+			//if there is a } then there is a problem with curlyCloseInsertionStrategy calc
+			// and we need to add manualy another indentation.
+			int indentationSize = FormatPreferencesSupport.getInstance().getIndentationSize(document);
+			char indentationChar = FormatPreferencesSupport.getInstance().getIndentationChar(document);
+			for (int i = 0; i < indentationSize; i++) {
+				buffer.append(indentationChar);
+				whiteSpacesAdded++;
+			}
+			buffer.append(document.getLineDelimiter());
+			String blanks = FormatterUtils.getLineBlanks(document, lineInfo);
+			buffer.append(blanks);
+		}
+
+		//copping the rest of the line after the { 
+		offset += command.length;
+		char nextChar = document.getChar(offset);
+		while (nextChar != '\n' && nextChar != '\r') {
+			buffer.append(nextChar);
+			command.length++;
+			offset++;
+			nextChar = document.getChar(offset);
+		}
+
+		return whiteSpacesAdded;
+	}
+

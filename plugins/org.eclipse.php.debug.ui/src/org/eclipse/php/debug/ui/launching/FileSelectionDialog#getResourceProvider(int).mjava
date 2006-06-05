@@ -1,0 +1,48 @@
+	/**
+	 * Returns a content provider for <code>IResource</code> s that returns
+	 * only children of the given resource type.
+	 */
+	private ITreeContentProvider getResourceProvider(final int resourceType) {
+		return new WorkbenchContentProvider() {
+			public Object[] getChildren(Object o) {
+				if (o instanceof IContainer) {
+					IResource[] members = null;
+					try {
+						members = ((IContainer) o).members();
+						List accessibleMembers = new ArrayList(members.length);
+						for (int i = 0; i < members.length; i++) {
+							IResource resource = members[i];
+							if (resource.isAccessible()) {
+								accessibleMembers.add(resource);
+							}
+						}
+						members =
+							(IResource[]) accessibleMembers.toArray(
+								new IResource[accessibleMembers.size()]);
+					} catch (CoreException e) {
+						//just return an empty set of children
+						return new Object[0];
+					}
+
+					//filter out the desired resource types
+					ArrayList results = new ArrayList();
+					for (int i = 0; i < members.length; i++) {
+						//And the test bits with the resource types to see if
+						// they are what we want
+						if ((members[i].getType() & resourceType) > 0) {
+							if (members[i].getType() == IResource.FILE
+								&& fPattern != null
+								&& !fPattern.matcher(members[i].getName()).find()) {
+								continue;
+							}
+							results.add(members[i]);
+						}
+					}
+					return results.toArray();
+				}
+				
+				return new Object[0];
+			}
+		};
+	}
+

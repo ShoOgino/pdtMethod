@@ -1,0 +1,36 @@
+		public IStatus run(IProgressMonitor monitor) {
+		
+            try {
+                IWatchExpressionResult watchResult = new IWatchExpressionResult() {
+                    public IValue getValue() {
+                        Expression value = getExpression(debugTarget, fExpressionText);
+                        IValue iValue = new PHPValue(debugTarget, value);
+                        return iValue;
+                    }
+
+                    public boolean hasErrors() {
+                        return false;
+                    }
+
+                    public String[] getErrorMessages() {
+                        return null;
+                    }
+
+                    public String getExpressionText() {
+                        return fExpressionText;
+                    }
+
+                    public DebugException getException() {
+                        return null;
+                    }
+                };
+                fListener.watchEvaluationFinished(watchResult);
+            } catch (Exception e) {
+                Logger.logException(e);
+                fListener.watchEvaluationFinished(null);
+                // TODo fix
+            }
+            DebugPlugin.getDefault().fireDebugEventSet(new DebugEvent[] { new DebugEvent(PHPWatchExpressionDelegate.this, DebugEvent.SUSPEND, DebugEvent.EVALUATION_IMPLICIT) });
+            return Status.OK_STATUS;
+        }
+

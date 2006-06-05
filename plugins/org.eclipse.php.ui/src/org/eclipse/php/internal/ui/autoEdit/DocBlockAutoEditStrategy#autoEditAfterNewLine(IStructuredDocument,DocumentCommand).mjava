@@ -1,0 +1,49 @@
+	private void autoEditAfterNewLine(IStructuredDocument document, DocumentCommand command) {
+		try {
+			//the basic assumption is that we are allready in phpDoc state.
+			IRegion lineInfo = document.getLineInformationOfOffset(command.offset);
+			int startOffset = lineInfo.getOffset();
+
+			String line = document.get(startOffset, lineInfo.getLength());
+			String blanks = getBlanks(line);
+
+			String trimedLine = line.trim();
+			boolean isFirstLine = false;
+			boolean isDocBlock = true;
+			// if this is the first line of the docBlock
+			if (trimedLine.startsWith("/**")) {
+				isFirstLine = true;
+			} else if (trimedLine.startsWith("/*")) {
+				isFirstLine = true;
+				isDocBlock = false;
+			}
+			if (isFirstLine) {
+				blanks += ' ';
+				command.text += blanks;
+				int startIndex = line.indexOf("/*");
+				final String partitionType = FormatterUtils.getPartitionType(document, startOffset + startIndex - 1);
+				if (partitionType == PHPPartitionTypes.PHP_DEFAULT || partitionType == PHPPartitionTypes.PHP_DOC || partitionType == PHPPartitionTypes.PHP_MULTI_LINE_COMMENT) {
+					int placeCaretAt = handleDocBlockStart(document, command, blanks, isDocBlock);
+					if (placeCaretAt != -1) {
+						document.replace(command.offset, command.length, command.text);
+						command.offset = placeCaretAt;
+						command.length = 0;
+						command.text = "";
+						document.getUndoManager().disableUndoManagement();
+						document.replace(command.offset, command.length, command.text);
+						document.getUndoManager().enableUndoManagement();
+					}
+				}
+				return;
+			}
+			boolean lastLint = document.get(startOffset, command.offset - startOffset).endsWith("*/");
+			if (!lastLint)	{ // only if the line starts with * then we add * to the new line
+				if (trimedLine.length() > 0 && trimedLine.charAt(0) == '*') {
+					command.text = command.text + blanks + lineStart;
+				}
+			}
+		} catch (BadLocationException e) {
+			Logger.logException(e);
+		}
+	}
+

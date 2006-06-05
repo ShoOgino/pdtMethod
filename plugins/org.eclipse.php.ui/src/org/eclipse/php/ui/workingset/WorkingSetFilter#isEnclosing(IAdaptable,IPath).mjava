@@ -1,0 +1,31 @@
+	private boolean isEnclosing(IAdaptable element, IPath path) {
+		if (path == null)
+			return false;
+
+		IPath elementPath = null;
+
+		IResource elementResource = (IResource) element.getAdapter(IResource.class);
+		if (elementResource != null)
+			elementPath = elementResource.getFullPath();
+
+		if (elementPath == null) {
+			PHPCodeData phpElement = (PHPCodeData) element.getAdapter(PHPCodeData.class);
+			if (phpElement != null)
+				elementPath = PHPModelUtil.getResource(phpElement).getLocation();
+		}
+
+		if (elementPath == null && element instanceof IStorage)
+			elementPath = ((IStorage) element).getFullPath();
+
+		if (elementPath == null)
+			return false;
+
+		if (elementPath.isPrefixOf(path))
+			return true;
+
+		if (path.isPrefixOf(elementPath))
+			return true;
+
+		return false;
+	}
+

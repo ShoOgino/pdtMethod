@@ -1,0 +1,32 @@
+	/*
+	 * @see org.eclipse.jdt.internal.ui.actions.AddBlockCommentAction#runInternal(org.eclipse.jface.text.ITextSelection, org.eclipse.jface.text.IDocumentExtension3, org.eclipse.jdt.internal.ui.actions.AddBlockCommentAction.Edit.EditFactory)
+	 */
+	protected void runInternal(ITextSelection selection, IDocumentExtension3 docExtension, Edit.EditFactory factory) throws BadPartitioningException, BadLocationException {
+		List edits = new LinkedList();
+		int offset = selection.getOffset();
+		int endOffset = offset + selection.getLength();
+
+		do {
+			ITypedRegion partition = docExtension.getPartition(fDocumentPartitioning, offset, false);
+			if (partition.getType() == PHPPartitionTypes.PHP_MULTI_LINE_COMMENT) {
+				IStructuredDocument sDocument = (IStructuredDocument) docExtension;
+				IStructuredDocumentRegion sdRegion = sDocument.getRegionAtCharacterOffset(offset);
+				ITextRegion startRegion = PHPTextSequenceUtilities.getMultilineCommentStartRegion(sdRegion, offset);
+				ITextRegion endRegion = PHPTextSequenceUtilities.getMultilineCommentEndRegion(sdRegion, offset);
+				if (startRegion != null && endRegion != null) {
+					int startCommentOffset = sdRegion.getStartOffset(startRegion);
+					int endCommentOffset = sdRegion.getStartOffset(endRegion);
+					edits.add(factory.createEdit(startCommentOffset, startRegion.getLength(), "")); //$NON-NLS-1$
+					edits.add(factory.createEdit(endCommentOffset, getCommentEnd().length(), "")); //$NON-NLS-1$
+					offset = endCommentOffset + endRegion.getLength();
+				} else {
+					break; // comment is not opened or not closed
+				}
+			} else {
+				offset = partition.getOffset() + partition.getLength();
+			}
+		} while (offset < endOffset);
+
+		executeEdits(edits);
+	}
+

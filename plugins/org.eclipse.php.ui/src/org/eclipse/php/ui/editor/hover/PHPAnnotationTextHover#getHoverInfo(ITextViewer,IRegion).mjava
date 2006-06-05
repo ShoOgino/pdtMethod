@@ -1,0 +1,20 @@
+	public String getHoverInfo(ITextViewer textViewer, IRegion hoverRegion) {
+		IDocument document = textViewer.getDocument();
+		if (document instanceof IStructuredDocument) {
+			try {
+				IStructuredDocument sDoc = (IStructuredDocument) document;
+				IStructuredDocumentRegion sdRegion = sDoc.getRegionAtCharacterOffset(hoverRegion.getOffset());
+				ITextRegion textRegion = sdRegion.getRegionAtCharacterOffset(hoverRegion.getOffset());
+				if (textRegion.getTextEnd() >= hoverRegion.getOffset()) {
+					CodeData codeData = CodeDataResolver.getCodeData(textViewer, textRegion.getTextEnd());
+					if (codeData != null) {
+						return PHPElementLabels.getElementLabel(codeData, LABEL_FLAGS);
+					}
+				}
+			} catch (BadLocationException e) {
+				Logger.logException(e);
+			}
+		}
+		return null;
+	}
+

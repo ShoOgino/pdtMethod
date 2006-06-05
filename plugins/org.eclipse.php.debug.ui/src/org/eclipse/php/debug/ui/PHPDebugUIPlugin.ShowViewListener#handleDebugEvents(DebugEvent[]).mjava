@@ -1,0 +1,46 @@
+        public void handleDebugEvents(DebugEvent[] events) {
+            if (events != null) {
+                int size = events.length;
+                for (int i = 0; i < size; i++) {
+                    DebugEvent event = (DebugEvent)events[i];
+                    int kind = event.getKind();
+                    if (event.getKind() == DebugEvent.CREATE) {
+                        Object obj = events[i].getSource();
+                    
+                        if(!(obj instanceof PHPDebugTarget))
+                            continue;
+                        if (PHPDebugPlugin.getOpenDebugViewsOption()){
+                            Job job = new org.eclipse.ui.progress.UIJob("debug output") {
+                                public IStatus runInUIThread(IProgressMonitor monitor) {
+                                    showView(PHPDebugPerspectiveFactory.ID_PHPBrowserOutput);
+                                    showView(PHPDebugPerspectiveFactory.ID_PHPDebugOutput);
+                                    showView(IConsoleConstants.ID_CONSOLE_VIEW);           
+                                    return Status.OK_STATUS;
+                                }
+                            };
+                            job.schedule();  
+                        }
+                    }
+                    if (event.getKind() == DebugEvent.MODEL_SPECIFIC){
+                        Object obj = events[i].getSource();
+                        
+                        if(!(obj instanceof PHPDebugTarget))
+                            continue;
+                        final Object data = events[i].getData();
+                        if (data instanceof IStatus){
+                            Job job = new org.eclipse.ui.progress.UIJob("debug output") {
+                                public IStatus runInUIThread(IProgressMonitor monitor) {
+                                       IStatus status = (IStatus)data;
+                                       Shell shell = getActiveWorkbenchShell();
+                                       ErrorDialog.openError(shell, null, null, status);
+                                       return Status.OK_STATUS;
+                                }
+                            };
+                            job.schedule();
+                        }
+                        
+                    }
+                }
+            }
+        }
+

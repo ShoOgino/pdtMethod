@@ -1,0 +1,51 @@
+	/**
+	 * Returns the composite containing the buttons. When called the first time, the control
+	 * will be created.
+	 * @param parent The parent composite when called the first time, or <code>null</code>
+	 * after.
+	 */
+	public Composite getButtonBox(Composite parent) {
+		if (fButtonsControl == null) {
+			assertCompositeNotNull(parent);
+
+			SelectionListener listener = new SelectionListener() {
+				public void widgetDefaultSelected(SelectionEvent e) {
+					doButtonSelected(e);
+				}
+
+				public void widgetSelected(SelectionEvent e) {
+					doButtonSelected(e);
+				}
+			};
+
+			Composite contents = new Composite(parent, SWT.NONE);
+			contents.setFont(parent.getFont());
+
+			GridLayout layout = new GridLayout();
+			layout.marginWidth = 0;
+			layout.marginHeight = 0;
+			contents.setLayout(layout);
+
+			if (fButtonLabels != null) {
+				fButtonControls = new Button[fButtonLabels.length];
+				for (int i = 0; i < fButtonLabels.length; i++) {
+					String currLabel = fButtonLabels[i];
+					if (currLabel != null) {
+						fButtonControls[i] = createButton(contents, currLabel, listener);
+						fButtonControls[i].setEnabled(isEnabled() && fButtonsEnabled[i]);
+					} else {
+						fButtonControls[i] = null;
+						createSeparator(contents);
+					}
+				}
+			}
+
+			fLastSeparator = createSeparator(contents);
+
+			updateButtonState();
+			fButtonsControl = contents;
+		}
+
+		return fButtonsControl;
+	}
+

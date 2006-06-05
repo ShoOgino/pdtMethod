@@ -1,0 +1,72 @@
+	public boolean performOk() {
+		ArrayList removedVariables = new ArrayList();
+		ArrayList changedVariables = new ArrayList();
+		removedVariables.addAll(Arrays.asList(PHPProjectOptions.getIncludePathVariableNames()));
+
+		// remove all unchanged
+		List changedElements = fVariablesList.getElements();
+		for (int i = changedElements.size() - 1; i >= 0; i--) {
+			IPVariableElement curr = (IPVariableElement) changedElements.get(i);
+			if (curr.isReserved()) {
+				changedElements.remove(curr);
+			} else {
+				IPath path = curr.getPath();
+				IPath prevPath = PHPProjectOptions.getIncludePathVariable(curr.getName());
+				if (prevPath != null && prevPath.equals(path)) {
+					changedElements.remove(curr);
+				} else {
+					changedVariables.add(curr.getName());
+				}
+			}
+			removedVariables.remove(curr.getName());
+		}
+		int steps = changedElements.size() + removedVariables.size();
+		if (steps > 0) {
+
+			boolean needsBuild = false;
+			if (fAskToBuild && doesChangeRequireFullBuild(removedVariables, changedVariables)) {
+				String title = PHPUIMessages.VariableBlock_needsbuild_title;
+				String message = PHPUIMessages.VariableBlock_needsbuild_message;
+
+				MessageDialog buildDialog = new MessageDialog(getShell(), title, null, message, MessageDialog.QUESTION, new String[] { IDialogConstants.YES_LABEL, IDialogConstants.NO_LABEL, IDialogConstants.CANCEL_LABEL }, 2);
+				int res = buildDialog.open();
+				if (res != 0 && res != 1) {
+					return false;
+				}
+				needsBuild = (res == 0);
+			}
+
+			final VariableBlockRunnable runnable = new VariableBlockRunnable(removedVariables, changedElements, needsBuild);
+			Job buildJob = new Job(PHPUIMessages.VariableBlock_job_description) {
+				protected IStatus run(IProgressMonitor monitor) {
+					try {
+						runnable.setVariables(monitor);
+					} catch (CoreException e) {
+						return e.getStatus();
+					} catch (OperationCanceledException e) {
+						return Status.CANCEL_STATUS;
+					} finally {
+						monitor.done();
+					}
+					return Status.OK_STATUS;
+				}
+			};
+
+			buildJob.setRule(ResourcesPlugin.getWorkspace().getRuleFactory().buildRule());
+			buildJob.setUser(true);
+			buildJob.schedule();
+			return true;
+		}
+		//			ProgressMonitorDialog dialog= new ProgressMonitorDialog(getShell());
+		//			try {
+		//				dialog.run(true, true, runnable);
+		//			} catch (InvocationTargetException e) {
+		//				ExceptionHandler.handle(e, getShell(), PHPUIMessages.getString("VariableBlock.operation_errror.title"), PHPUIMessages.getString("VariableBlock.operation_errror.message")); //$NON-NLS-1$ //$NON-NLS-2$
+		//				return false;
+		//			} catch (InterruptedException e) {
+		//				return false;
+		//			}
+		//		}
+		return true;
+	}
+

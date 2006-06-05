@@ -1,0 +1,54 @@
+	private boolean processResourceDelta(IResourceDelta delta, Object parent) {
+		int status = delta.getKind();
+		int flags = delta.getFlags();
+
+		IResource resource = delta.getResource();
+		// filter out changes affecting the output folder
+		if (resource == null)
+			return false;
+
+		// this could be optimized by handling all the added children in the parent
+		if ((status & IResourceDelta.REMOVED) != 0) {
+			if (parent instanceof IFolder) {
+				// refresh one level above to deal with empty folder filtering properly
+				postRefresh(internalGetParent(parent));
+				return true;
+			} else {
+				Object removeItem=resource;
+				if (resource instanceof IFile)
+				{
+					PHPFileData fileData=PHPModelUtil.getPHPFile((IFile)resource);
+					if (fileData!=null)
+						removeItem=fileData;
+				}
+ 			
+				postRemove(removeItem);
+			}
+		}
+		if ((status & IResourceDelta.ADDED) != 0) {
+			if (parent instanceof IFolder) {
+				// refresh one level above to deal with empty folder filtering properly
+				postRefresh(internalGetParent(parent));
+				return true;
+			} else {
+				Object addItem=resource;
+				// if adding file, convert to php element
+				if (resource instanceof IFile)
+				{
+//					=PHPModelUtil.getPHPFile((IFile)resource);
+					PHPFileData fileData=PHPWorkspaceModelManager.getInstance().getModelForFile((IFile)resource,true);
+					if (fileData!=null)
+						addItem=fileData;
+				}
+				postAdd(parent, addItem);
+			}
+		}
+		// open/close state change of a project
+		if ((flags & IResourceDelta.OPEN) != 0) {
+			postProjectStateChanged(internalGetParent(parent));
+			return true;
+		}
+		processResourceDeltas(delta.getAffectedChildren(), resource);
+		return false;
+	}
+

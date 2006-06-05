@@ -1,0 +1,55 @@
+	public void run() {
+		if (!isEnabled())
+			return;
+			
+		ITextEditor editor= getTextEditor();
+		if (editor == null || !ensureEditable(editor))
+			return;
+			
+		ITextSelection selection= getCurrentSelection();
+		if (!isValidSelection(selection))
+			return;
+		
+		if (!validateEditorInputState())
+			return;
+		
+		IDocumentProvider docProvider= editor.getDocumentProvider();
+		IEditorInput input= editor.getEditorInput();
+		if (docProvider == null || input == null)
+			return;
+			
+		IDocument document= docProvider.getDocument(input);
+		if (document == null)
+			return;
+			
+		IDocumentExtension3 docExtension;
+		if (document instanceof IDocumentExtension3)
+			docExtension= (IDocumentExtension3) document;
+		else
+			return;
+		
+		IRewriteTarget target= (IRewriteTarget)editor.getAdapter(IRewriteTarget.class);
+		if (target != null) {
+			target.beginCompoundChange();
+		}
+		
+		Edit.EditFactory factory= new Edit.EditFactory(document);
+		
+		try {
+			runInternal(selection, docExtension, factory);
+	
+		} catch (BadLocationException e) {
+			// can happen on concurrent modification, deletion etc. of the document 
+			// -> don't complain, just bail out
+		} catch (BadPartitioningException e) {
+			// should not happen
+			Assert.isTrue(false, "bad partitioning");  //$NON-NLS-1$
+		} finally {
+			factory.release();
+			
+			if (target != null) {
+				target.endCompoundChange();
+			}
+		}
+	}
+

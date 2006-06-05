@@ -1,0 +1,40 @@
+	public NewVariableEntryDialog(Shell parent) {
+		super(parent);
+		setTitle(PHPUIMessages.NewVariableEntryDialog_title);
+
+		int shellStyle = getShellStyle();
+		setShellStyle(shellStyle | SWT.MAX | SWT.RESIZE);
+		updateStatus(new StatusInfo(IStatus.ERROR, "")); //$NON-NLS-1$
+
+		String[] buttonLabels = new String[] { PHPUIMessages.NewVariableEntryDialog_vars_extend, };
+
+		VariablesAdapter adapter = new VariablesAdapter();
+
+		IPVariableElementLabelProvider labelProvider = new IPVariableElementLabelProvider(false);
+
+		fVariablesList = new ListDialogField(adapter, buttonLabels, labelProvider);
+		fVariablesList.setDialogFieldListener(adapter);
+		fVariablesList.setLabelText(PHPUIMessages.NewVariableEntryDialog_vars_label);
+
+		fVariablesList.enableButton(IDX_EXTEND, false);
+
+		fVariablesList.setViewerSorter(new ViewerSorter() {
+			public int compare(Viewer viewer, Object e1, Object e2) {
+				if (e1 instanceof IPVariableElement && e2 instanceof IPVariableElement) {
+					return ((IPVariableElement) e1).getName().compareTo(((IPVariableElement) e2).getName());
+				}
+				return super.compare(viewer, e1, e2);
+			}
+		});
+
+		fConfigButton = new SelectionButtonDialogField(SWT.PUSH);
+		fConfigButton.setLabelText(PHPUIMessages.NewVariableEntryDialog_configbutton_label);
+		fConfigButton.setDialogFieldListener(adapter);
+
+		initializeElements();
+
+		fCanExtend = false;
+		fIsValidSelection = false;
+		fResultPaths = null;
+	}
+

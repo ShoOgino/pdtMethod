@@ -1,0 +1,31 @@
+	/**
+	 * Locate a configuration to relaunch for the given type.  If one cannot be found, create one.
+	 * 
+	 * @return a re-useable config or <code>null</code> if none
+	 */
+	static protected ILaunchConfiguration findLaunchConfiguration(String phpProject, String phpPathString, String phpExeName, String mode, ILaunchConfigurationType configType) {
+		ILaunchConfiguration config = null;
+
+		try {
+			ILaunchConfiguration[] configs = DebugPlugin.getDefault().getLaunchManager().getLaunchConfigurations(configType);
+
+			int numConfigs = configs == null ? 0 : configs.length;
+			for (int i = 0; i < numConfigs; i++) {
+				String projectName = configs[i].getAttribute(PHPCoreConstants.ATTR_WORKING_DIRECTORY, (String) null);
+				String fileName = configs[i].getAttribute(PHPCoreConstants.ATTR_FILE, (String) null);
+				String exeName = configs[i].getAttribute(PHPCoreConstants.ATTR_LOCATION, (String) null);
+
+				if (phpPathString.equals(fileName) && phpProject.equals(projectName) && exeName.equals(phpExeName)) {
+					config = configs[i].getWorkingCopy();
+					break;
+				}
+			}
+
+			if (config == null)
+				config = createConfiguration(phpProject, phpPathString, phpExeName,configType);
+		} catch (CoreException ce) {
+			ce.printStackTrace();
+		}
+		return config;
+	}
+

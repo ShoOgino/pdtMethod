@@ -1,0 +1,32 @@
+	/*
+	 * Handle a situation where a file DocBlock is requested and there is an undocumented
+	 * class, function or define at the beginning of the document. 
+	 * In this case we auto-document the undocumented element to comply the DocBlock rules.
+	 *  
+	 * @param data	A PHPFileData that need to be documented
+	 * @param document The IStructuredDocument that we are working on
+	 */
+	private void handleFileDocBlock(PHPFileData data, IStructuredDocument document) {
+		IStructuredDocumentRegion sdRegion = document.getFirstStructuredDocumentRegion();
+		while (sdRegion != null && sdRegion.getType() != PHPRegionTypes.PHP_CONTENT) {
+			sdRegion = sdRegion.getNext();
+		}
+		if (sdRegion == null) {
+			return;
+		}
+		ITextRegion textRegion = sdRegion.getFirstRegion();
+		int regionEnd = textRegion.getEnd();
+		textRegion = sdRegion.getRegionAtCharacterOffset(sdRegion.getStartOffset() + regionEnd + 1);
+		if (textRegion == null) {
+			return;
+		}
+		if (textRegion.getType() == PHPRegionTypes.PHP_CLASS) {
+			// add a class doc at textRegion.getStart() + sdRegion.getStartOffset()
+			addClassBlock(document, data, textRegion.getStart() + sdRegion.getStartOffset());
+		} else if (textRegion.getType() == PHPRegionTypes.PHP_FUNCTION){
+			addFunctionBlock(document, data, textRegion.getStart() + sdRegion.getStartOffset());
+		} else if (textRegion.getType() == PHPRegionTypes.PHP_STRING && sdRegion.getFullText(textRegion).trim().equalsIgnoreCase("define")) { //$NON-NLS-1$
+			addConstantBlock(document, data, textRegion.getStart() + sdRegion.getStartOffset());
+		}
+	}
+

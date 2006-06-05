@@ -1,0 +1,53 @@
+	private boolean performNewSearch() {
+		SearchPatternData data = getPatternData();
+
+		// Setup search scope
+		IPHPSearchScope scope = null;
+		String scopeDescription = ""; //$NON-NLS-1$
+
+		PHPSearchScopeFactory factory = PHPSearchScopeFactory.getInstance();
+
+		int searchScope = getContainer().getSelectedScope();
+		switch (searchScope) {
+			case ISearchPageContainer.WORKSPACE_SCOPE:
+				scopeDescription = SearchMessages.WorkspaceScope;
+				scope = factory.createWorkspaceSearchScope(getSearchFor());
+				break;
+			case ISearchPageContainer.SELECTION_SCOPE:
+				scopeDescription = SearchMessages.SelectionScope;
+				scope = factory.createSelectedPHPSearchScope(getSearchFor(), getContainer().getSelection());
+				break;
+			case ISearchPageContainer.SELECTED_PROJECTS_SCOPE:
+				scope = factory.createSelectedPHPProjectSearchScope(getSearchFor(), getContainer().getSelection());
+				IProject[] projects = PHPSearchScopeFactory.getInstance().getProjects(scope);
+				if (projects.length >= 1) {
+					if (projects.length == 1)
+						scopeDescription = Messages.format(SearchMessages.EnclosingProjectScope, projects[0].getName());
+					else
+						scopeDescription = Messages.format(SearchMessages.EnclosingProjectsScope, projects[0].getName());
+				} else
+					scopeDescription = Messages.format(SearchMessages.EnclosingProjectScope, ""); //$NON-NLS-1$
+				break;
+			case ISearchPageContainer.WORKING_SET_SCOPE:
+				IWorkingSet[] workingSets = getContainer().getSelectedWorkingSets();
+				// should not happen - just to be sure
+				if (workingSets == null || workingSets.length < 1) {
+					return false;
+				}
+				scopeDescription = Messages.format(SearchMessages.WorkingSetScope, SearchUtil.toString(workingSets));
+				scope = factory.createWorkingSetSearchScope(getSearchFor(), getContainer().getSelectedWorkingSets());
+//				SearchUtil.updateLRUWorkingSets(getContainer().getSelectedWorkingSets());
+
+		}
+
+		QuerySpecification querySpec = null;
+		querySpec = new PatternQuerySpecification(data.getPattern(), data.getSearchFor(), data.isCaseSensitive(), scope, scopeDescription);
+		data.setPHPElement(null);
+		PHPSearchQuery textSearchJob = new PHPSearchQuery(querySpec);
+		NewSearchUI.activateSearchResultView();
+		NewSearchUI.runQueryInBackground(textSearchJob);
+		return true;
+
+		//		return false;
+	}
+

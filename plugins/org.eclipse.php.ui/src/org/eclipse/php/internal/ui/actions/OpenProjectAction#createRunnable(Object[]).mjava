@@ -1,0 +1,22 @@
+	private IWorkspaceRunnable createRunnable(final Object[] projects) {
+		return new IWorkspaceRunnable() {
+			public void run(IProgressMonitor monitor) throws CoreException {
+				monitor.beginTask("", projects.length); //$NON-NLS-1$
+				MultiStatus errorStatus = null;
+				for (int i = 0; i < projects.length; i++) {
+					IProject project = (IProject) projects[i];
+					try {
+						project.open(new SubProgressMonitor(monitor, 1));
+					} catch (CoreException e) {
+						if (errorStatus == null)
+							errorStatus = new MultiStatus(PHPUiPlugin.ID, IStatus.ERROR, ActionMessages.OpenProjectAction_error_message, e);
+						errorStatus.merge(e.getStatus());
+					}
+				}
+				monitor.done();
+				if (errorStatus != null)
+					throw new CoreException(errorStatus);
+			}
+		};
+	}
+

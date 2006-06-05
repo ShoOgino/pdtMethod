@@ -1,0 +1,24 @@
+	public void run(IStructuredSelection selection) {
+
+		try {
+			TransferData[] availableTypes = fClipboard.getAvailableTypes();
+			List elements = selection.toList();
+			IResource[] resources = ActionUtils.getResources(elements, true);
+			Object[] phpElements = ActionUtils.getPHPElements(elements, true);
+			Paster[] pasters = createEnabledPasters(availableTypes);
+			for (int i = 0; i < pasters.length; i++) {
+				if (pasters[i].canPasteOn(phpElements, resources)) {
+					pasters[i].paste(phpElements, resources, availableTypes);
+					return;// one is enough
+				}
+			}
+			MessageDialog.openError(PHPUiPlugin.getActiveWorkbenchShell(), ActionMessages.RefactoringAction_refactoring, ActionMessages.RefactoringAction_disabled);
+		} catch (CoreException e) {
+			PHPUiPlugin.log(e);
+		} catch (InvocationTargetException e) {
+			PHPUiPlugin.log(e);
+		} catch (InterruptedException e) {
+			// OK
+		}
+	}
+

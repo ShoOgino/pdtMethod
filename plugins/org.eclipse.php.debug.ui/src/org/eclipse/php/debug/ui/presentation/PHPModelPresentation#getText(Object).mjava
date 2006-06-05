@@ -1,0 +1,32 @@
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.eclipse.jface.viewers.ILabelProvider#getText(java.lang.Object)
+     */
+    public String getText(Object element) {
+        if (element instanceof PHPDebugTarget) {
+            return getTargetText((PHPDebugTarget) element);
+        } else if (element instanceof PHPThread) {
+            return getThreadText((PHPThread) element);
+        } else if (element instanceof PHPStackFrame) {
+            return getStackFrameText((PHPStackFrame) element);
+        } else if (element instanceof PHPLineBreakpoint) {
+            PHPLineBreakpoint breakpoint = (PHPLineBreakpoint)element;
+            IMarker marker = breakpoint.getMarker();
+            IResource resource = marker.getResource();
+            if (resource instanceof IFile){
+                return null;
+            } else if (resource instanceof IWorkspaceRoot){              
+                try {
+                    String filename = (String)marker.getAttribute(IPHPConstants.Include_Storage);
+                    Integer lineNumber = (Integer)marker.getAttribute(IMarker.LINE_NUMBER);
+                    return filename + " [" + lineNumber.toString() + "]";
+                } catch (CoreException e) {
+                    Logger.logException("Unexpected error in PHPModelPresentation", e);
+                }
+            }
+        }
+        return null;
+
+    }
+

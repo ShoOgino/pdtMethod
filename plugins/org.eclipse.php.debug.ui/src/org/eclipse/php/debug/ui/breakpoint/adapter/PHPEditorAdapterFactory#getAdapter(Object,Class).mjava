@@ -1,0 +1,28 @@
+	/* (non-Javadoc)
+	 * @see org.eclipse.core.runtime.IAdapterFactory#getAdapter(java.lang.Object, java.lang.Class)
+	 */
+	public Object getAdapter(Object adaptableObject, Class adapterType) {
+		try {
+			ITextEditor editorPart = (ITextEditor) adaptableObject;
+			IResource resource = (IResource) editorPart.getEditorInput().getAdapter(IResource.class);
+			if (resource != null) {
+				if (resource.getType() == IResource.FILE) {
+					IContentTypeManager contentTypeManager = Platform.getContentTypeManager();
+					IContentType fileContentType = ((IFile) resource).getContentDescription().getContentType();
+
+					IContentType PHPContentType = contentTypeManager.getContentType(ContentTypeIdForPHP.ContentTypeID_PHP);
+					if (PHPContentType != null) {
+						if (fileContentType.isKindOf(PHPContentType)) {
+							if (adapterType.equals(IRunToLineTarget.class)) {
+								return new PHPRunToLineAdapter();
+							}
+						}
+					}
+				}
+			}
+		} catch (CoreException e1) {
+			Logger.logException("PHPEditorAdapterFactory unexpected error" , e1);
+		}
+		return null;
+	}
+

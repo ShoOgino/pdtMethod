@@ -1,0 +1,18 @@
+	private boolean doesChangeRequireFullBuild(List removed, List changed) {
+		IProject[] projects = PHPWorkspaceModelManager.getInstance().listProjects();
+		for (int i = 0; i < projects.length; i++) {
+			PHPProjectOptions options = PHPProjectOptions.forProject(projects[i]);
+			IIncludePathEntry[] entries = options.readRawIncludePath();
+			for (int k = 0; k < entries.length; k++) {
+				IIncludePathEntry curr = entries[k];
+				if (curr.getEntryKind() == IIncludePathEntry.IPE_VARIABLE) {
+					String var = curr.getPath().segment(0);
+					if (removed.contains(var) || changed.contains(var)) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+

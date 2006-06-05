@@ -1,0 +1,20 @@
+	/*
+	 * @see IResourceChangeListener#resourceChanged
+	 */
+	public void resourceChanged(IResourceChangeEvent event) {
+		HashSet changedElements = new HashSet();
+
+		try {
+			IResourceDelta delta = event.getDelta();
+			if (delta != null)
+				delta.accept(new ProjectErrorVisitor(changedElements));
+		} catch (CoreException e) {
+			PHPUiPlugin.log(e.getStatus());
+		}
+
+		if (!changedElements.isEmpty()) {
+			IResource[] changes = (IResource[]) changedElements.toArray(new IResource[changedElements.size()]);
+			fireChanges(changes, true);
+		}
+	}
+

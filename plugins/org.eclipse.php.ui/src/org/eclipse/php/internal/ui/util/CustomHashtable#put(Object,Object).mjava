@@ -1,0 +1,38 @@
+	/**
+	 * Associate the specified value with the specified key in this Hashtable.
+	 * If the key already exists, the old value is replaced. The key and value
+	 * cannot be null.
+	 *
+	 * @param		key	the key to add
+	 * @param		value	the value to add
+	 * @return		the old value associated with the specified key, null if the key did
+	 *				not exist
+	 */
+	public Object put(Object key, Object value) {
+		if (key != null && value != null) {
+			int index = (hashCode(key) & 0x7FFFFFFF) % elementData.length;
+			HashMapEntry entry = elementData[index];
+			while (entry != null && !keyEquals(key, entry.key))
+				entry = entry.next;
+			if (entry == null) {
+				if (++elementCount > threshold) {
+					rehash();
+					index = (hashCode(key) & 0x7FFFFFFF) % elementData.length;
+				}
+				if (index < firstSlot)
+					firstSlot = index;
+				if (index > lastSlot)
+					lastSlot = index;
+				entry = new HashMapEntry(key, value);
+				entry.next = elementData[index];
+				elementData[index] = entry;
+				return null;
+			}
+			Object result = entry.value;
+			entry.key = key;
+			entry.value = value;
+			return result;
+		} else
+			throw new NullPointerException();
+	}
+

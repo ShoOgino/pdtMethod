@@ -1,0 +1,49 @@
+	public Object getAdapter(Class required) {
+		Object adapter = super.getAdapter(required);
+
+		// add selection listener to outline page
+		// so that if outline selects codedata, editor selects correct item
+		if (adapter instanceof ConfigurableContentOutlinePage && IContentOutlinePage.class.equals(required)) {
+			ConfigurableContentOutlinePage outlinePage = (ConfigurableContentOutlinePage) adapter;
+			outlinePage.addSelectionChangedListener(new ISelectionChangedListener() {
+
+				boolean selecting = false;
+
+				public void selectionChanged(SelectionChangedEvent event) {
+					/*
+					 * The isFiringSelection check only works if a
+					 * selection listener
+					 */
+					if (event.getSelection().isEmpty() || selecting)
+						return;
+
+					if (getSourceViewer() != null && getSourceViewer().getTextWidget() != null && !getSourceViewer().getTextWidget().isDisposed() && !getSourceViewer().getTextWidget().isFocusControl()) {
+						if (event.getSelection() instanceof IStructuredSelection) {
+							ISelection current = getSelectionProvider().getSelection();
+							if (current instanceof IStructuredSelection) {
+								Object[] currentSelection = ((IStructuredSelection) current).toArray();
+								Object[] newSelection = ((IStructuredSelection) event.getSelection()).toArray();
+								if (!Arrays.equals(currentSelection, newSelection)) {
+									if (newSelection.length > 0) {
+										/*
+										 * No ordering is guaranteed for
+										 * multiple selection
+										 */
+										Object o = newSelection[0];
+										selecting = true;
+										if (o instanceof PHPCodeData) {
+											setSelection((PHPCodeData) o, true);
+										}
+										selecting = false;
+									}
+								}
+							}
+						}
+					}
+				}
+
+			});
+		}
+		return adapter;
+	}
+

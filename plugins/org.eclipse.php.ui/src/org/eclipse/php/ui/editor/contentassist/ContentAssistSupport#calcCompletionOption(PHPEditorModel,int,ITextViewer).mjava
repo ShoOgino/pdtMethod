@@ -1,0 +1,99 @@
+	protected void calcCompletionOption(PHPEditorModel editorModel, int offset, ITextViewer viewer) throws BadLocationException {
+		PHPFileData fileData = editorModel.getFileData();
+		if (fileData == null) {
+			return;
+		}
+		String fileName = fileData.getName();
+		boolean explicit = true;
+		int selectionLength = ((TextSelection) viewer.getSelectionProvider().getSelection()).getLength();
+
+		PHPProjectModel projectModel = editorModel.getProjectModel();
+
+		IStructuredDocumentRegion sdRegion = ContentAssistUtils.getStructuredDocumentRegion((StructuredTextViewer) viewer, offset);
+		ITextRegion textRegion = sdRegion.getRegionAtCharacterOffset(offset);
+		// find the start String for completion
+		int startOffset = sdRegion.getStartOffset(textRegion);
+
+		//should not take into account the found region
+		//find the previous region and update the start offset
+		if (startOffset == offset) {
+			textRegion = sdRegion.getRegionAtCharacterOffset(offset - 1);
+			if (textRegion == null) {
+				return;
+			}
+			startOffset = sdRegion.getStartOffset(textRegion);
+		}
+
+		TextSequence statmentText = PHPTextSequenceUtilities.getStatment(offset, sdRegion, true);
+		String type = textRegion.getType();
+		if (isInArrayOptionQuotes(projectModel, fileName, type, offset, selectionLength, statmentText)) {
+			// the current position is inside quotes as a parameter for an array.
+			return;
+		}
+
+		if (isPHPSingleQuote(sdRegion, textRegion) || (!type.equals(PHPRegionTypes.PHP_HEREDOC_TAG) && PhpLexer.isPHPCommentState(type))) {
+			// we dont have code completion inside single quotes.
+			return;
+		}
+
+		if (isInFunctionDeclaretion(projectModel, fileName, statmentText, offset, selectionLength, explicit)) {
+			// the current position is inside function declaretion.
+			return;
+		}
+
+		if (isInClassDeclaretion(projectModel, statmentText, offset, selectionLength, explicit)) {
+			// the current position is inside class declaretion.
+			return;
+		}
+
+		if (isInCatchStatment(projectModel, statmentText, offset, selectionLength, explicit)) {
+			// the current position is inside catch statment.
+			return;
+		}
+
+		int totalLength = statmentText.length();
+
+		int endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statmentText, totalLength); // read whitespace
+		int startPosition = PHPTextSequenceUtilities.readIdentifiarStartIndex(statmentText, endPosition, true);
+		String lastWord = statmentText.subSequence(startPosition, endPosition).toString();
+		boolean haveSpacesAtEnd = totalLength != endPosition;
+
+		if (haveSpacesAtEnd && isNewOrInstanceofStatment(projectModel, lastWord, "", offset, selectionLength, explicit, type)) {
+			// the current position is inside new or instanceof statment.
+			return;
+		}
+
+		int line = sdRegion.getParentDocument().getLineOfOffset(offset);
+		if (isClassFunctionCompletion(projectModel, fileName, statmentText, offset, line, selectionLength, lastWord, startPosition, haveSpacesAtEnd, explicit)) {
+			// the current position is in class function.
+			return;
+		}
+
+		endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statmentText, startPosition); // read whitespace
+		startPosition = PHPTextSequenceUtilities.readIdentifiarStartIndex(statmentText, endPosition, true);
+		String firstWord = statmentText.subSequence(startPosition, endPosition).toString();
+
+		if (!haveSpacesAtEnd && isNewOrInstanceofStatment(projectModel, firstWord, lastWord, offset, selectionLength, explicit, type)) {
+			// the current position is inside new or instanceof statment.
+			return;
+		}
+
+		if (haveSpacesAtEnd && isFunctionCall(projectModel, lastWord)) {
+			// the current position is between the end of a function call and open bracket.
+			return;
+		}
+
+		if (isInArrayOption(projectModel, fileName, haveSpacesAtEnd, firstWord, lastWord, startPosition, offset, selectionLength, statmentText)) {
+			// the current position is after '[' sign show special completion.
+			return;
+		}
+
+		if (haveSpacesAtEnd) {
+			getRegularCompletion(viewer, projectModel, fileName, "", offset, selectionLength, explicit, sdRegion, textRegion);
+		} else {
+			getRegularCompletion(viewer, projectModel, fileName, lastWord, offset, selectionLength, explicit, sdRegion, textRegion);
+		}
+
+		return;
+	}
+

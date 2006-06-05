@@ -1,0 +1,40 @@
+	/**
+	 * Ensures that both text fields are set.
+	 */
+	private void dialogChanged() {
+		String container = getContainerName();
+		String fileName = getFileName();
+
+		if (container.length() == 0) {
+			updateStatus("Folder must be specified");
+			return;
+		}
+		IResource resource = null;
+
+		IContainer containerFolder = getContainer(container);
+		if (containerFolder==null || !containerFolder.exists()) {
+			updateStatus("Selected folder does not exist");
+			return;
+		}
+		if (!containerFolder.getProject().isOpen()) {
+			updateStatus("Selected folder is in closed project");
+			return;
+		}
+		if (fileName != null && !fileName.equals("") && containerFolder.getFile(new Path(fileName)).exists()) {
+			updateStatus("Specified file already exists");
+			return;
+		}
+		
+		if (fileName.length() == 0) {
+			updateStatus("File name must be specified");
+			return;
+		}
+		IContentType contentType = Platform.getContentTypeManager().getContentType(ContentTypeIdForPHP.ContentTypeID_PHP);
+		if (!contentType.isAssociatedWith(fileName)) {
+			updateStatus("File extension must be \"php\"");
+			return;
+		}
+
+		updateStatus(null);
+	}
+

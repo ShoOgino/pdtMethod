@@ -1,0 +1,27 @@
+    /**
+     * @see IActionDelegate#run(IAction)
+     */
+    public void run(IAction action) {
+        IStructuredSelection selection = getCurrentSelection();
+        if (selection == null) {
+            return;
+        }
+        Iterator itr = selection.iterator();
+        if (!itr.hasNext()) {
+            return;
+        }
+
+        while (itr.hasNext()) {
+            IBreakpoint breakpoint = (IBreakpoint) itr.next();
+            if (breakpoint instanceof PHPConditionalBreakpoint) {
+                String condition = "";
+                try {
+                    ConditionDialog((PHPConditionalBreakpoint) breakpoint, condition);
+                } catch (CoreException ce) {
+                    // ConditionDialog doesn't throw CoreException. Just Log
+                    Logger.logException("PHP: Exception setting condition in breakpoint" , ce );
+                }
+            }
+        }
+    }
+

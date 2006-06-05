@@ -1,0 +1,28 @@
+	private void initializeWithViewDefaults() {
+		// get default values for view
+		IPreferenceStore store = PreferenceConstants.getPreferenceStore();
+
+		// see bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=22533
+		if (!store.contains(getPreferenceKey("TAG_DUMMY_TO_TEST_EXISTENCE")))//$NON-NLS-1$
+			return;
+
+		fUserDefinedPatternsEnabled = store.getBoolean(getPreferenceKey(TAG_USER_DEFINED_PATTERNS_ENABLED));
+		setUserDefinedPatterns(CustomFiltersDialog.convertFromString(store.getString(getPreferenceKey(TAG_USER_DEFINED_PATTERNS)), SEPARATOR));
+
+		Iterator iter = fEnabledFilterIds.keySet().iterator();
+		while (iter.hasNext()) {
+			String id = (String) iter.next();
+			Boolean isEnabled = new Boolean(store.getBoolean(id));
+			fEnabledFilterIds.put(id, isEnabled);
+		}
+
+		fLRUFilterIdsStack.clear();
+		String lruFilterIds = store.getString(TAG_LRU_FILTERS);
+		StringTokenizer tokenizer = new StringTokenizer(lruFilterIds, SEPARATOR);
+		while (tokenizer.hasMoreTokens()) {
+			String id = tokenizer.nextToken();
+			if (fFilterDescriptorMap.containsKey(id) && !fLRUFilterIdsStack.contains(id))
+				fLRUFilterIdsStack.push(id);
+		}
+	}
+

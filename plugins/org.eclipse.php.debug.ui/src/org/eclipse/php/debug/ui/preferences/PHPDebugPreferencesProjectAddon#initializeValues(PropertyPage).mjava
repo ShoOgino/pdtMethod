@@ -1,0 +1,23 @@
+	public void initializeValues(PropertyPage propertyPage) {
+		this.propertyPage = propertyPage;
+		Preferences prefs = PHPProjectPreferences.getModelPreferences();
+		IScopeContext[] preferenceScopes = createPreferenceScopes(propertyPage);
+		fStopAtFirstLine.setSelection(prefs.getBoolean(PHPDebugCorePreferenceNames.STOP_AT_FIRST_LINE));
+		fDebugTextBox.setText(Integer.toString(prefs.getInt(PHPDebugCorePreferenceNames.DEBUG_PORT)));
+		fDefaultURLTextBox.setText(prefs.getString(PHPDebugCorePreferenceNames.DEDAULT_URL));
+
+		if (preferenceScopes[0] instanceof ProjectScope) {
+			IEclipsePreferences node = preferenceScopes[0].getNode(getPreferenceNodeQualifier());
+			if (node != null && getProject(propertyPage) != null) {
+				Integer port = new Integer(node.getInt(PHPDebugCorePreferenceNames.DEBUG_PORT, 0));
+				boolean stop = node.getBoolean(PHPDebugCorePreferenceNames.STOP_AT_FIRST_LINE, false);
+				String defaultURL = node.get(PHPDebugCorePreferenceNames.DEDAULT_URL, "http://localhost");
+				if (port.intValue() != 0) {
+					fDebugTextBox.setText(port.toString());
+					fStopAtFirstLine.setSelection(stop);
+					fDefaultURLTextBox.setText(defaultURL);
+				}
+			}
+		}
+	}
+

@@ -1,0 +1,26 @@
+		public ISelection getSelection() {
+			IContentProvider cp = getContentProvider();
+			if (!(cp instanceof IMultiElementTreeContentProvider)) {
+				return super.getSelection();
+			}
+			Control control = getControl();
+			if (control == null || control.isDisposed()) {
+				return StructuredSelection.EMPTY;
+			}
+			Tree tree = getTree();
+			TreeItem[] selection = tree.getSelection();
+			List result = new ArrayList(selection.length);
+			List treePaths = new ArrayList();
+			for (int i = 0; i < selection.length; i++) {
+				TreeItem item = selection[i];
+				Object element = getElement(item);
+				if (element == null)
+					continue;
+				if (!result.contains(element)) {
+					result.add(element);
+				}
+				treePaths.add(createTreePath(item));
+			}
+			return new MultiElementSelection(this, result, (TreePath[]) treePaths.toArray(new TreePath[treePaths.size()]));
+		}
+

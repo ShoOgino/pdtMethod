@@ -1,0 +1,37 @@
+	private boolean isClassFunctionCompletion(PHPProjectModel projectModel, String fileName, TextSequence statmentText, int offset, int line, int selectionLength, String functionName, int startFunctionPosition, boolean haveSpacesAtEnd, boolean explicit) {
+		startFunctionPosition = PHPTextSequenceUtilities.readBackwardSpaces(statmentText, startFunctionPosition);
+		if (startFunctionPosition <= 2) {
+			return false;
+		}
+		boolean isClassTriger = false;
+		String triggerText = statmentText.subSequence(startFunctionPosition - 2, startFunctionPosition).toString();
+		if (triggerText.equals(OBJECT_FUNCTIONS_TRIGGER)) {
+		} else if (triggerText.equals(CLASS_FUNCTIONS_TRIGGER)) {
+			isClassTriger = true;
+		} else {
+			return false;
+		}
+
+		String className = getClassName(projectModel, fileName, statmentText, startFunctionPosition, offset, line);
+
+		if (className == null) {
+			className = "";
+		}
+
+		if (haveSpacesAtEnd && functionName.length() > 0) {
+			// check if current position is between the end of a function call and open bracket.
+			return isClassFunctionCall(projectModel, fileName, className, functionName);
+		}
+
+		if (isClassTriger) {
+			showClassStaticCall(projectModel, fileName, offset, className, functionName, selectionLength, explicit);
+		} else {
+			String parent = statmentText.toString().substring(0, statmentText.toString().lastIndexOf(OBJECT_FUNCTIONS_TRIGGER)).trim();
+			boolean isInstanceOf = !parent.equals("$this");
+			//boolean addVariableDollar = parent.endsWith("()");
+			boolean addVariableDollar = false;
+			showClassCall(projectModel, fileName, offset, className, functionName, selectionLength, isInstanceOf, addVariableDollar, explicit);
+		}
+		return true;
+	}
+

@@ -1,0 +1,67 @@
+	public Control createControl(Composite parent) {
+		fSWTWidget = parent;
+
+		PixelConverter converter = new PixelConverter(parent);
+
+		Composite composite = new Composite(parent, SWT.NONE);
+		composite.setFont(parent.getFont());
+
+		GridLayout layout = new GridLayout();
+		layout.marginWidth = 0;
+		layout.marginHeight = 0;
+		layout.numColumns = 1;
+		composite.setLayout(layout);
+
+		TabFolder folder = new TabFolder(composite, SWT.NONE);
+		folder.setLayoutData(new GridData(GridData.FILL_BOTH));
+		folder.setFont(composite.getFont());
+
+		TabItem item;
+
+		IWorkbench workbench = PHPUiPlugin.getDefault().getWorkbench();
+		Image projectImage = workbench.getSharedImages().getImage(IDE.SharedImages.IMG_OBJ_PROJECT);
+
+		fProjectsPage = new ProjectsWorkbookPage(fIncludePathList, fPageContainer);
+		item = new TabItem(folder, SWT.NONE);
+		item.setText(PHPUIMessages.IncludePathsBlock_tab_projects);
+		item.setImage(projectImage);
+		item.setData(fProjectsPage);
+		item.setControl(fProjectsPage.getControl(folder));
+
+		fLibrariesPage = new LibrariesWorkbookPage(fIncludePathList, fPageContainer);
+		item = new TabItem(folder, SWT.NONE);
+		item.setText(PHPUIMessages.IncludePathsBlock_tab_libraries);
+		item.setImage(PHPPluginImages.get(PHPPluginImages.IMG_OBJS_LIBRARY));
+		item.setData(fLibrariesPage);
+		item.setControl(fLibrariesPage.getControl(folder));
+
+		// a non shared image
+		Image cpoImage = PHPPluginImages.DESC_TOOL_INCLUDEPATH_ORDER.createImage();
+		composite.addDisposeListener(new ImageDisposer(cpoImage));
+
+		IncludePathOrderingWorkbookPage ordpage = new IncludePathOrderingWorkbookPage(fIncludePathList);
+		item = new TabItem(folder, SWT.NONE);
+		item.setText(PHPUIMessages.IncludePathsBlock_tab_order);
+		item.setImage(cpoImage);
+		item.setData(ordpage);
+		item.setControl(ordpage.getControl(folder));
+
+		if (fCurrProject != null) {
+			fLibrariesPage.init(fCurrProject);
+			fProjectsPage.init(fCurrProject);
+		}
+
+		folder.setSelection(fPageIndex);
+		fCurrPage = (IncludePathBasePage) folder.getItem(fPageIndex).getData();
+		folder.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				tabChanged(e.item);
+			}
+		});
+		fTabFolder = folder;
+
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(composite, IPHPHelpContextIds.INCLUDE_PATH_BLOCK);
+		Dialog.applyDialogFont(composite);
+		return composite;
+	}
+

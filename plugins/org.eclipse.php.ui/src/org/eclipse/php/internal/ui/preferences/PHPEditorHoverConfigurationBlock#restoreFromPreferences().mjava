@@ -1,0 +1,54 @@
+	private void restoreFromPreferences() {
+
+		fShowHoverAffordanceCheckbox.setSelection(fStore.getBoolean(PreferenceConstants.EDITOR_SHOW_TEXT_HOVER_AFFORDANCE));
+
+		String compiledTextHoverModifiers = fStore.getString(PreferenceConstants.EDITOR_TEXT_HOVER_MODIFIERS);
+
+		StringTokenizer tokenizer = new StringTokenizer(compiledTextHoverModifiers, PHPEditorTextHoverDescriptor.VALUE_SEPARATOR);
+		HashMap idToModifier = new HashMap(tokenizer.countTokens() / 2);
+
+		while (tokenizer.hasMoreTokens()) {
+			String id = tokenizer.nextToken();
+			if (tokenizer.hasMoreTokens())
+				idToModifier.put(id, tokenizer.nextToken());
+		}
+
+		String compiledTextHoverModifierMasks = PHPUiPlugin.getDefault().getPreferenceStore().getString(PreferenceConstants.EDITOR_TEXT_HOVER_MODIFIER_MASKS);
+
+		tokenizer = new StringTokenizer(compiledTextHoverModifierMasks, PHPEditorTextHoverDescriptor.VALUE_SEPARATOR);
+		HashMap idToModifierMask = new HashMap(tokenizer.countTokens() / 2);
+
+		while (tokenizer.hasMoreTokens()) {
+			String id = tokenizer.nextToken();
+			if (tokenizer.hasMoreTokens())
+				idToModifierMask.put(id, tokenizer.nextToken());
+		}
+
+		for (int i = 0; i < fHoverConfigs.length; i++) {
+			String modifierString = (String) idToModifier.get(getContributedHovers()[i].getId());
+			boolean enabled = true;
+			if (modifierString == null)
+				modifierString = PHPEditorTextHoverDescriptor.DISABLED_TAG;
+
+			if (modifierString.startsWith(PHPEditorTextHoverDescriptor.DISABLED_TAG)) {
+				enabled = false;
+				modifierString = modifierString.substring(1);
+			}
+
+			if (modifierString.equals(PHPEditorTextHoverDescriptor.NO_MODIFIER))
+				modifierString = ""; //$NON-NLS-1$
+
+			fHoverConfigs[i].fModifierString = modifierString;
+			fHoverConfigs[i].fIsEnabled = enabled;
+			fHoverConfigs[i].fStateMask = PHPEditorTextHoverDescriptor.computeStateMask(modifierString);
+
+			if (fHoverConfigs[i].fStateMask == -1) {
+				try {
+					fHoverConfigs[i].fStateMask = Integer.parseInt((String) idToModifierMask.get(getContributedHovers()[i].getId()));
+				} catch (NumberFormatException ex) {
+					fHoverConfigs[i].fStateMask = -1;
+				}
+			}
+		}
+	}
+

@@ -1,0 +1,25 @@
+	private void postRunnable(final Runnable r) {
+		Control ctrl = fViewer.getControl();
+		final Runnable trackedRunnable = new Runnable() {
+			public void run() {
+				try {
+					r.run();
+				} finally {
+					removePendingChange();
+				}
+			}
+		};
+		if (ctrl != null && !ctrl.isDisposed()) {
+			addPendingChange();
+			try {
+				ctrl.getDisplay().asyncExec(trackedRunnable);
+			} catch (RuntimeException e) {
+				removePendingChange();
+				throw e;
+			} catch (Error e) {
+				removePendingChange();
+				throw e;
+			}
+		}
+	}
+

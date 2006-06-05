@@ -1,0 +1,38 @@
+	protected String getNamedStyleAtOffset(int offset) {
+		// ensure the offset is clean
+		if (offset >= fInput.length()) {
+			return getNamedStyleAtOffset(fInput.length() - 1);
+		} else if (offset < 0) {
+			return getNamedStyleAtOffset(0);
+		}
+		// find the ITextRegion at this offset
+		if (fNodes == null) {
+			return null;
+		}
+		IStructuredDocumentRegion aNode = fNodes;
+		while (aNode != null && !aNode.containsOffset(offset)) {
+			aNode = aNode.getNext();
+		}
+		if (aNode != null) {
+			// find the ITextRegion's Context at this offset
+			ITextRegion interest = aNode.getRegionAtCharacterOffset(offset);
+			if (interest == null) {
+				return null;
+			}
+			if (offset > aNode.getTextEndOffset(interest)) {
+				return null;
+			}
+			String regionContext = interest.getType();
+			if (regionContext == null) {
+				return null;
+			}
+			// find the named style (internal/selectable name) for that
+			// context
+			String namedStyle = (String) getContextStyleMap().get(regionContext);
+			if (namedStyle != null) {
+				return namedStyle;
+			}
+		}
+		return null;
+	}
+

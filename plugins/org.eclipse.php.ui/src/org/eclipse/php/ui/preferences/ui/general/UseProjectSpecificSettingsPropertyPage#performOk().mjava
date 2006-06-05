@@ -1,0 +1,19 @@
+	public boolean performOk() {
+		boolean ok = super.performOk();
+		if (getProject() != null) {
+			if (isElementSettingsEnabled()) {
+				new ProjectScope(getProject()).getNode(getPreferenceNodeQualifier()).putBoolean(getProjectSettingsKey(), fEnableProjectSettings.getSelection());
+			}
+			else {
+				new ProjectScope(getProject()).getNode(getPreferenceNodeQualifier()).remove(getProjectSettingsKey());
+			}
+			try {
+				new ProjectScope(getProject()).getNode(getPreferenceNodeQualifier()).flush();
+			} catch (BackingStoreException e) {
+				Logger.logException("problem saving preference settings to scope " + new ProjectScope(getProject()).getName(), e); //$NON-NLS-1$
+				ok = false;
+			}
+		}
+		return ok;
+	}
+

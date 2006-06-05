@@ -1,0 +1,63 @@
+	private PHPCodeData getClosestCodeDataFromClass(IStructuredDocument document, PHPClassData classData, int offset) {
+		PHPCodeData closestCodeData = null;
+		int closestCodeDataOffset = document.getLength();
+
+		PHPFunctionData functions[] = classData.getFunctions();
+
+		for (int i = 0; i < functions.length; i++) {
+			PHPFunctionData functionData = functions[i];
+			int startOffset = functionData.getUserData().getStartPosition();
+			if (startOffset < offset) {
+				int endOffset = functionData.getUserData().getEndPosition();
+				if (endOffset > offset) {
+					return null;
+				}
+			} else {
+				if (startOffset < closestCodeDataOffset) {
+					closestCodeDataOffset = startOffset;
+					closestCodeData = functionData;
+				}
+			}
+		}
+		PHPClassConstData constants[] = classData.getConsts();
+
+		for (int i = 0; i < constants.length; i++) {
+			PHPClassConstData constant = constants[i];
+			int startOffset = constant.getUserData().getStartPosition();
+			if (startOffset < offset) {
+				int endOffset = constant.getUserData().getEndPosition();
+				if (endOffset > offset) {
+					return null;
+				}
+			} else {
+				if (startOffset < closestCodeDataOffset) {
+					closestCodeDataOffset = startOffset;
+					closestCodeData = constant;
+				}
+			}
+		}
+
+		PHPClassVarData vars[] = classData.getVars();
+
+		for (int i = 0; i < vars.length; i++) {
+			PHPClassVarData var = vars[i];
+			int startOffset = var.getUserData().getStartPosition();
+			if (startOffset < offset) {
+				int endOffset = var.getUserData().getEndPosition();
+				if (endOffset > offset) {
+					return null;
+				}
+			} else {
+				if (startOffset < closestCodeDataOffset) {
+					closestCodeDataOffset = startOffset;
+					closestCodeData = var;
+				}
+			}
+		}
+
+		if (closestCodeData != null && isNoCodeBetween(document, offset, closestCodeDataOffset)) {
+			return closestCodeData;
+		}
+		return null;
+	}
+

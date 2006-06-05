@@ -1,0 +1,27 @@
+	private void restoreState(IMemento memento) {
+		String configured = memento.getString(TAG_CONFIGURED);
+		if (configured != null)
+			fConfigured = Boolean.valueOf(configured).booleanValue();
+		fLocalWorkingSetManager = PlatformUI.getWorkbench().createLocalWorkingSetManager();
+		addListenersToWorkingSetManagers();
+		fLocalWorkingSetManager.restoreState(memento.getChild(TAG_LOCAL_WORKING_SET_MANAGER));
+		IWorkingSet history = getHistoryWorkingSet();
+		if (history != null) {
+			fLocalWorkingSetManager.removeWorkingSet(history);
+		}
+		IMemento[] actives = memento.getChildren(TAG_ACTIVE_WORKING_SET);
+		fActiveWorkingSets = new ArrayList(actives.length);
+		for (int i = 0; i < actives.length; i++) {
+			String name = actives[i].getString(TAG_WORKING_SET_NAME);
+			if (name != null) {
+				IWorkingSet ws = fLocalWorkingSetManager.getWorkingSet(name);
+				if (ws == null) {
+					ws = PlatformUI.getWorkbench().getWorkingSetManager().getWorkingSet(name);
+				}
+				if (ws != null) {
+					fActiveWorkingSets.add(ws);
+				}
+			}
+		}
+	}
+

@@ -1,0 +1,30 @@
+	/* (non-Javadoc)
+	 * @see IDialogPage#createControl(Composite)
+	 */
+	public void createControl(Composite parent) {
+		fListViewer = new ListViewer(parent, SWT.SINGLE | SWT.BORDER);
+		fListViewer.setLabelProvider(new IncludePathContainerLabelProvider());
+		fListViewer.setContentProvider(new ListContentProvider());
+		fListViewer.setSorter(new IncludePathContainerSorter());
+		fListViewer.setInput(Arrays.asList(fContainers));
+		fListViewer.addSelectionChangedListener(new ISelectionChangedListener() {
+			public void selectionChanged(SelectionChangedEvent event) {
+				validatePage();
+			}
+		});
+		fListViewer.addDoubleClickListener(new IDoubleClickListener() {
+			public void doubleClick(DoubleClickEvent event) {
+				doDoubleClick();
+			}
+		});
+
+		int selectionIndex = fDialogSettings.getInt(DIALOGSTORE_CONTAINER_IDX);
+		if (selectionIndex >= fContainers.length) {
+			selectionIndex = 0;
+		}
+		fListViewer.getList().select(selectionIndex);
+		validatePage();
+		setControl(fListViewer.getList());
+		Dialog.applyDialogFont(fListViewer.getList());
+	}
+

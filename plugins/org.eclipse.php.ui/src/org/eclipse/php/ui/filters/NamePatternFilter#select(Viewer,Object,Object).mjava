@@ -1,0 +1,29 @@
+	/* (non-Javadoc)
+	 * Method declared on ViewerFilter.
+	 */
+	public boolean select(Viewer viewer, Object parentElement, Object element) {
+		String matchName = null;
+		if (element instanceof PHPCodeData) {
+			matchName = ((PHPCodeData) element).getName();
+		} else if (element instanceof IAdaptable) {
+			IAdaptable adaptable = (IAdaptable) element;
+			PHPCodeData phpElement = (PHPCodeData) adaptable.getAdapter(PHPCodeData.class);
+			if (phpElement != null)
+				matchName = phpElement.getName();
+			else {
+				IResource resource = (IResource) adaptable.getAdapter(IResource.class);
+				if (resource != null)
+					matchName = resource.getName();
+			}
+		}
+		if (matchName != null) {
+			StringMatcher[] testMatchers = getMatchers();
+			for (int i = 0; i < testMatchers.length; i++) {
+				if (testMatchers[i].match(matchName))
+					return false;
+			}
+			return true;
+		}
+		return true;
+	}
+

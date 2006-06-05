@@ -1,0 +1,27 @@
+	public int isMatchingCharNeeded(IStructuredDocument document, int offset, char quoteChar) {
+		try {
+			String postCharState = FormatterUtils.getPartitionType(document, offset);
+			if (!(postCharState == PHPPartitionTypes.PHP_DEFAULT || postCharState == PHPRegionTypes.PHP_OPENTAG || postCharState == PHPRegionTypes.PHP_CLOSETAG)) {
+				if (isSpecialOpenCurlyInQuotes(document, offset)) {
+					postCharState = FormatterUtils.getPartitionType(document, offset + 1);
+				}
+			}
+
+			if (postCharState != PHPPartitionTypes.PHP_DEFAULT && postCharState != PHPRegionTypes.PHP_OPENTAG && postCharState != PHPRegionTypes.PHP_CLOSETAG) {
+				return SEARCH_NOT_VALID;
+			}
+			if (FormatterUtils.getPartitionType(document, document.getLength() - 1) == PHPPartitionTypes.PHP_QUOTED_STRING) {
+				IStructuredDocumentRegion sdRegion = document.getLastStructuredDocumentRegion();
+				ITextRegion tRegion = sdRegion.getLastRegion();
+				char lastChar = document.getChar(sdRegion.getStartOffset() + tRegion.getTextEnd() - 1);
+				if (lastChar != quoteChar) {
+					return MATCHING_BRACKET_NOT_NEEDED;
+				}
+			}
+
+		} catch (BadLocationException e) {
+			Logger.logException(e);
+		}
+		return MATCHING_BRACKET_NEEDED;
+	}
+

@@ -1,0 +1,28 @@
+	/**
+	 * =====================================================================================================================
+	 * Four methods below are just copied from AbstractLineStyleProvider, because StyleRange has a bug in the constructor:
+	 * 
+	 * UNDERLINE flag is not set according to the style !!!!
+	 * 
+	 * =====================================================================================================================
+	 */
+	/**
+	 * this version does "trim" regions to match request
+	 */
+	protected StyleRange createStyleRange(ITextRegionCollection flatNode, ITextRegion region, TextAttribute attr, int startOffset, int length) {
+		int start = flatNode.getStartOffset(region);
+		if (start < startOffset)
+			start = startOffset;
+		int maxOffset = startOffset + length;
+		int end = flatNode.getEndOffset(region); // use get length directly
+		// instead of end-start?
+		if (end > maxOffset)
+			end = maxOffset;
+		StyleRange result = new StyleRange(start, end - start, attr.getForeground(), attr.getBackground(), attr.getStyle());
+		if ((attr.getStyle() & TextAttribute.UNDERLINE) != 0) {
+			result.underline = true;
+			result.fontStyle &= ~TextAttribute.UNDERLINE;
+		}
+		return result;
+	}
+

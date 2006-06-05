@@ -1,0 +1,19 @@
+	private void showClassCall(PHPProjectModel projectModel, String fileName, int offset, String className, String startWith, int selectionLength, boolean isInstanceOf, boolean addVariableDollar, boolean explicit) {
+		CodeData[] functions = null;
+		if (explicit || autoShowFunctionsKeywordsConstants) {
+			functions = projectModel.getClassFunctions(fileName, className, "");
+		}
+		CodeData[] classVariables = null;
+		if (explicit || autoShowVariables) {
+			classVariables = ModelSupport.getFilteredCodeData(projectModel.getClassVariables(fileName, className, ""), ModelSupport.NOT_STATIC_VARIABLES_FILTER);
+		}
+		CodeData[] result = ModelSupport.getFilteredCodeData(ModelSupport.merge(functions, classVariables), getAccessLevelFilter(projectModel, fileName, className, offset, isInstanceOf));
+		
+		if (addVariableDollar) {
+			completionProposalGroup = classVariableCallCompletionProposalGroup;
+		} else {
+			completionProposalGroup = phpCompletionProposalGroup;
+		}
+		completionProposalGroup.setData(offset, result, startWith, selectionLength);
+	}
+

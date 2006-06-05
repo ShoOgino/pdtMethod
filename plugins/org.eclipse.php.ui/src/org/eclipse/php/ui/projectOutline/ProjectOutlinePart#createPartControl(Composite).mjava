@@ -1,0 +1,43 @@
+	public void createPartControl(Composite parent) {
+		fViewer = createViewer(parent);
+		fViewer.setUseHashlookup(true);
+		setProviders();
+
+		setUpPopupMenu();
+		actionGroup = new ProjectOutlineViewGroup(this);
+
+		fViewer.addPostSelectionChangedListener(fPostSelectionListener);
+		addMouseTrackListener();
+		fViewer.addOpenListener(new IOpenListener() {
+			public void open(OpenEvent event) {
+				fLastOpenSelection = event.getSelection();
+				openEditorAction.run((IStructuredSelection) fLastOpenSelection);
+			}
+		});
+		getSite().getPage().addPartListener(fPartListener);
+
+		IStatusLineManager slManager = getViewSite().getActionBars().getStatusLineManager();
+		fViewer.addSelectionChangedListener(new StatusBarUpdater(slManager));
+
+		updateTitle();
+
+		IEditorPart editorPart = getViewSite().getPage().getActiveEditor();
+		updateInputForCurrentEditor(editorPart);
+
+		openEditorAction = new OpenAction(this.getSite());
+		fillActionBars();
+
+		if (isLinkingEnabled()) {
+			IEditorPart editor = getViewSite().getPage().getActiveEditor();
+			if (editor != null) {
+				editorActivated(editor);
+			}
+		}
+		fViewer.refresh();
+
+		getSite().getPage().addPostSelectionListener(fSelectionListener);
+		
+		 PHPWorkspaceModelManager.getInstance().addModelListener(fContentProvider);
+
+	}
+

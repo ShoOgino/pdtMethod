@@ -1,0 +1,46 @@
+	public static int getPrivousTriggerIndex(TextSequence textSequence, int startPosition) {
+		int rv = startPosition;
+		int bracketsNum = 0;
+		for (; rv > 0; rv--) {
+			char currChar = textSequence.charAt(rv - 1);
+			if (!Character.isLetterOrDigit(currChar) && currChar != '_' && !(Character.isWhitespace(currChar) && currChar != '\n')) {
+				switch (currChar) {
+					case '(':
+					case '[':
+					case '{':
+						bracketsNum--;
+						if (bracketsNum < 0) {
+							return -1;
+						}
+						break;
+					case ')':
+					case ']':
+					case '}':
+						bracketsNum++;
+						break;
+					case ':':
+						if (bracketsNum == 0 && rv >= 2) {
+							if (textSequence.charAt(rv - 2) == ':') {
+								return rv - 2;
+							}
+						}
+						break;
+					case '>':
+						if (bracketsNum == 0 && rv >= 2) {
+							if (textSequence.charAt(rv - 2) == '-') {
+								return rv - 2;
+							}
+						}
+						break;
+					case '\n':
+						return -1;
+					default:
+						if (bracketsNum == 0) {
+							return -1;
+						}
+				}
+			}
+		}
+		return -1;
+	}
+

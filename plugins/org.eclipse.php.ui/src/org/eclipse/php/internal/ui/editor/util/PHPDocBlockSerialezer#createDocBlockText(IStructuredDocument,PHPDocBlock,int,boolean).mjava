@@ -1,0 +1,46 @@
+	public String createDocBlockText(IStructuredDocument document, PHPDocBlock docBlock, int position, boolean addNewLine) {
+		if (!lineDelimiter.equals(document.getLineDelimiter())) {
+			lineDelimiter = document.getLineDelimiter();
+			pattern = Pattern.compile(lineDelimiter);
+
+		}
+		String whiteSpaces = getPreInertionPointWhiteSpaces(document, position);
+		String tagsText = createTagsText(docBlock, whiteSpaces);
+
+		StringBuffer rv = new StringBuffer();
+		if (docBlock.getType() == PHPDocBlock.FILE_DOCBLOCK) {
+			rv.append(lineDelimiter);
+			rv.append(whiteSpaces);
+		}
+		rv.append(DOCBLOCK_START); //$NON-NLS-1$
+		rv.append(lineDelimiter);
+		if (!docBlock.getShortDescription().equals("")) { //$NON-NLS-1$
+			rv.append(whiteSpaces);
+			rv.append(CENTERED_ASTERISK);//$NON-NLS-1$
+			rv.append(docBlock.getShortDescription());
+			rv.append(lineDelimiter);
+			rv.append(whiteSpaces);
+			rv.append(RIGHT_ASTERISK); 
+			rv.append(lineDelimiter);
+		}
+		String longDesc = docBlock.getLongDescription().replaceAll(pattern.pattern(), lineDelimiter + whiteSpaces + CENTERED_ASTERISK);
+		if (!longDesc.equals("")) { //$NON-NLS-1$
+			rv.append(whiteSpaces);
+			rv.append(CENTERED_ASTERISK);
+			rv.append(longDesc);
+			rv.append(lineDelimiter);
+			rv.append(whiteSpaces);
+			rv.append(RIGHT_ASTERISK); 
+			rv.append(lineDelimiter);
+		}
+		rv.append(tagsText);
+		rv.append(whiteSpaces);
+		rv.append(DOCBLOCK_END);
+		if(addNewLine){
+			rv.append(lineDelimiter);
+			rv.append(whiteSpaces);
+		}
+
+		return rv.toString();
+	}
+

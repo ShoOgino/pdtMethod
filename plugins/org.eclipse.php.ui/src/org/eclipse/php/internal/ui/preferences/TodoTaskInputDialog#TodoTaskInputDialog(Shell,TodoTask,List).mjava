@@ -1,0 +1,43 @@
+	public TodoTaskInputDialog(Shell parent, TodoTask task, List existingEntries) {
+		super(parent);
+
+		fExistingNames = new ArrayList(existingEntries.size());
+		for (int i = 0; i < existingEntries.size(); i++) {
+			TodoTask curr = (TodoTask) existingEntries.get(i);
+			if (!curr.equals(task)) {
+				fExistingNames.add(curr.name);
+			}
+		}
+
+		if (task == null) {
+			setTitle(PHPUIMessages.TodoTaskInputDialog_new_title);
+		} else {
+			setTitle(PHPUIMessages.TodoTaskInputDialog_edit_title);
+		}
+
+		CompilerTodoTaskInputAdapter adapter = new CompilerTodoTaskInputAdapter();
+
+		fNameDialogField = new StringDialogField();
+		fNameDialogField.setLabelText(PHPUIMessages.TodoTaskInputDialog_name_label);
+		fNameDialogField.setDialogFieldListener(adapter);
+
+		fNameDialogField.setText((task != null) ? task.name : ""); //$NON-NLS-1$
+
+		String[] items = new String[] { PHPUIMessages.TodoTaskInputDialog_priority_high, PHPUIMessages.TodoTaskInputDialog_priority_normal, PHPUIMessages.TodoTaskInputDialog_priority_low };
+
+		fPriorityDialogField = new ComboDialogField(SWT.READ_ONLY);
+		fPriorityDialogField.setLabelText(PHPUIMessages.TodoTaskInputDialog_priority_label);
+		fPriorityDialogField.setItems(items);
+		if (task != null) {
+			if (PHPCoreConstants.TASK_PRIORITY_HIGH.equals(task.priority)) {
+				fPriorityDialogField.selectItem(0);
+			} else if (PHPCoreConstants.TASK_PRIORITY_NORMAL.equals(task.priority)) {
+				fPriorityDialogField.selectItem(1);
+			} else {
+				fPriorityDialogField.selectItem(2);
+			}
+		} else {
+			fPriorityDialogField.selectItem(1);
+		}
+	}
+

@@ -1,0 +1,87 @@
+	/**
+	 * Perform the search and add any matches to the PHPSearchResult.
+	 * 
+	 * @param stringPattern
+	 * @param scope
+	 * @param textResult
+	 * @param mainSearchPM
+	 */
+	public void search(String stringPattern, IPHPSearchScope scope, PHPSearchResult textResult, boolean caseSensitive, IProgressMonitor monitor) {
+		// First, add the results from the fully searched projects.
+		IProject[] projectsInScope = scope.getFullScopeProjects();
+		if (monitor != null && monitor.isCanceled())
+			throw new OperationCanceledException();
+		if (monitor != null) {
+			monitor.beginTask(SearchMessages.PHPEngine_searching, IProgressMonitor.UNKNOWN);
+		}
+		for (int i = 0; i < projectsInScope.length; i++) {
+			if (monitor != null && monitor.isCanceled())
+				throw new OperationCanceledException();
+			PHPProjectModel projectModel = PHPWorkspaceModelManager.getInstance().getModelForProject(projectsInScope[i]);
+			if (projectModel == null) {
+				// The project in scope is not a PHP project
+				return;
+			}
+			PHPUserModel userModel = projectModel.getPHPUserModel();
+			switch (scope.getSearchFor()) {
+				case IPHPSearchConstants.CLASS:
+					addResultsFor(projectsInScope[i], (PHPClassData[]) userModel.getClasses(), stringPattern, caseSensitive, scope, textResult, monitor);
+					break;
+				case IPHPSearchConstants.FUNCTION:
+					addResultsFor(projectsInScope[i], (PHPFunctionData[]) userModel.getFunctions(), stringPattern, caseSensitive, scope, textResult, monitor);
+					// Add matches from the classes functions
+					PHPClassData[] fClasses = (PHPClassData[]) userModel.getClasses();
+					for (int j = 0; j < fClasses.length; j++) {
+						addResultsFor(projectsInScope[i], fClasses[j].getFunctions(), stringPattern, caseSensitive, scope, textResult, monitor);
+					}
+					break;
+				case IPHPSearchConstants.CONSTANT:
+					addResultsFor(projectsInScope[i], (PHPConstantData[]) userModel.getConstants(), stringPattern, caseSensitive, scope, textResult, monitor);
+					break;
+				default:
+			// DO NOTHING
+			}
+
+		}
+
+		// Add the results from any other resources that are spanning to other projects
+		IProject[] partialProjects = scope.getPartialScopeProjects();
+		for (int i = 0; i < partialProjects.length; i++) {
+			if (monitor != null && monitor.isCanceled())
+				throw new OperationCanceledException();
+			PHPProjectModel projectModel = PHPWorkspaceModelManager.getInstance().getModelForProject(partialProjects[i]);
+			if (projectModel == null) {
+				return; // The project in scope is not a PHP project
+			}
+			PHPUserModel userModel = projectModel.getPHPUserModel();
+			IPath[] paths = scope.getPartialResourcesPaths(partialProjects[i]);
+			for (int j = 0; j < paths.length; j++) {
+				PHPFileData fileData = userModel.getFileData(paths[j].toString());
+				if (fileData == null) {
+					continue;
+				}
+				switch (scope.getSearchFor()) {
+					case IPHPSearchConstants.CLASS:
+						addResultsFor(partialProjects[i], fileData.getClasses(), stringPattern, caseSensitive, scope, textResult, monitor);
+						break;
+					case IPHPSearchConstants.FUNCTION:
+						addResultsFor(partialProjects[i], fileData.getFunctions(), stringPattern, caseSensitive, scope, textResult, monitor);
+						// Add matches from the classes functions
+						PHPClassData[] fClasses = fileData.getClasses();
+						for (int k = 0; k < fClasses.length; k++) {
+							addResultsFor(partialProjects[i], fClasses[k].getFunctions(), stringPattern, caseSensitive, scope, textResult, monitor);
+						}
+						break;
+					case IPHPSearchConstants.CONSTANT:
+						addResultsFor(partialProjects[i], fileData.getConstants(), stringPattern, caseSensitive, scope, textResult, monitor);
+						break;
+					default:
+				// DO NOTHING
+				}
+			}
+		}
+		if (monitor != null && !monitor.isCanceled()) {
+			monitor.done();
+		}
+	}
+

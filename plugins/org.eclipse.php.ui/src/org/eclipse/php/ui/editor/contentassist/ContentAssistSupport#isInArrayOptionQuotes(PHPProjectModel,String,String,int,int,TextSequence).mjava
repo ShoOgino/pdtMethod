@@ -1,0 +1,37 @@
+	private boolean isInArrayOptionQuotes(PHPProjectModel projectModel, String fileName, String type, int offset, int selectionLength, TextSequence text) {
+		if (!PhpLexer.isPHPQuotesState(type)) {
+			return false;
+		}
+		int length = text.length();
+		int endPosition = PHPTextSequenceUtilities.readBackwardSpaces(text, length);
+		int startPosition = PHPTextSequenceUtilities.readIdentifiarStartIndex(text, endPosition, false);
+		if (endPosition != length && startPosition != endPosition) {
+			return false;
+		}
+
+		String startWith = text.subSequence(startPosition, endPosition).toString();
+		endPosition = PHPTextSequenceUtilities.readBackwardSpaces(text, startPosition);
+		char c = text.charAt(endPosition - 1);
+		if (c != '\"' && c != '\'') {
+			return false;
+		}
+		endPosition--;
+		endPosition = PHPTextSequenceUtilities.readBackwardSpaces(text, endPosition);
+		if (endPosition == 0 || text.charAt(endPosition - 1) != '[') {
+			return false;
+		}
+		endPosition--;
+		endPosition = PHPTextSequenceUtilities.readBackwardSpaces(text, endPosition);
+		startPosition = PHPTextSequenceUtilities.readIdentifiarStartIndex(text, endPosition, true);
+		String variableName = text.subSequence(startPosition, endPosition).toString();
+
+		if (variableName.startsWith("$")) {
+			variableName = variableName.substring(1);
+		}
+		CodeData[] result = projectModel.getArrayVariables(fileName, variableName, startWith, determineObjectTypeFromOtherFile);
+
+		completionProposalGroup = arrayCompletionProposalGroup;
+		completionProposalGroup.setData(offset, result, startWith, selectionLength);
+		return true;
+	}
+

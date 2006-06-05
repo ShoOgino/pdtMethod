@@ -1,0 +1,62 @@
+	static public void searchAndLaunch(Object[] search, String mode, ILaunchConfigurationType configType) {
+		boolean launched = false;
+
+		int entries = search == null ? 0 : search.length;
+		for (int i = 0; i < entries; i++) {
+			try {
+				String phpPathString = null;
+				IProject project = null;
+				Object obj = search[i];
+
+				//TODO: if IProject, offer choices?
+				if (obj instanceof PHPCodeData)
+					obj=PHPModelUtil.getResource(obj);
+				
+				if (obj instanceof IFile) {
+					IFile file = (IFile) obj;
+					project = file.getProject();
+					String ext = file.getFileExtension();
+
+					IContentType contentType = Platform.getContentTypeManager().getContentType(ContentTypeIdForPHP.ContentTypeID_PHP);
+
+					if (contentType.isAssociatedWith(file.getName()))
+                        phpPathString = file.getFullPath().toString();
+				}
+
+				if (phpPathString == null) {
+					// Could not find target to launch
+					throw new CoreException(new Status(IStatus.ERROR, PHPDebugUIPlugin.ID, IStatus.OK, PHPDebugUIMessages.launch_failure_no_target, null));
+				}
+
+				PHPexes exes = new PHPexes();
+				exes.load(SSECorePlugin.getDefault().getPluginPreferences());
+				PHPexeItem defaultEXE=exes.getDefaultItem();
+				String phpExeName=(defaultEXE!=null)?exes.getDefaultItem().getPhpEXE().getAbsolutePath().toString():null;
+				
+				if (phpExeName==null)
+				{
+					ErrorDialog.openError(PHPDebugUIPlugin.getActiveWorkbenchShell(), PHPDebugUIMessages.launch_noexe_msg_title, PHPDebugUIMessages.launch_noexe_msg_text, 
+						new Status(Status.ERROR,PHPDebugUIPlugin.ID,0,"",null));
+					return;
+					
+				}
+				
+				// Launch the app
+				ILaunchConfiguration config = findLaunchConfiguration(project.getName(), phpPathString, phpExeName, mode, configType);
+				if (config != null)
+					DebugUITools.launch(config, mode);
+				else
+					// Could not find launch configuration
+					throw new CoreException(new Status(IStatus.ERROR, PHPDebugUIPlugin.ID, IStatus.OK, PHPDebugUIMessages.launch_failure_no_config, null));
+
+			} catch (CoreException ce) {
+				final IStatus stat = ce.getStatus();
+				Display.getDefault().asyncExec(new Runnable() {
+					public void run() {
+						ErrorDialog.openError(PHPDebugUIPlugin.getActiveWorkbenchShell(), PHPDebugUIMessages.launch_failure_msg_title, PHPDebugUIMessages.launch_failure_msg_text, stat);
+					}
+				});
+			}
+		}
+	}
+

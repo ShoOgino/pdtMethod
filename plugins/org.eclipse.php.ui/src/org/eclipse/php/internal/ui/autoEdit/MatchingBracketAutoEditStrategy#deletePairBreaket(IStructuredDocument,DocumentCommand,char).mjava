@@ -1,0 +1,32 @@
+	private void deletePairBreaket(IStructuredDocument document, DocumentCommand command, char deletedChar) {
+		int offset = command.offset;
+		IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(offset);
+		if (sdRegion == null || sdRegion.getType() != PHPRegionTypes.PHP_CONTENT) {
+			return;
+		}
+
+		ITextRegion tRegion = sdRegion.getRegionAtCharacterOffset(offset);
+		if (tRegion == null) {
+			return;
+		}
+		String regionType = tRegion.getType();
+		if (regionType != PHPRegionTypes.PHP_TOKEN && regionType != PHPRegionTypes.PHP_SEMICOLON) {
+			return;
+		}
+
+		try {
+			char nextChar = document.getChar(offset + 1);
+			char matchingChar = getMatchingChar(deletedChar);
+			if (matchingChar == '-' || nextChar != matchingChar) {
+				return;
+			}
+
+			boolean removeBoth = (isMatchingCharNeeded(document, offset, deletedChar) == MATCHING_BRACKET_NOT_NEEDED);
+
+			if (removeBoth) {
+				command.length = 2;
+			}
+		} catch (BadLocationException e) {
+		}
+	}
+

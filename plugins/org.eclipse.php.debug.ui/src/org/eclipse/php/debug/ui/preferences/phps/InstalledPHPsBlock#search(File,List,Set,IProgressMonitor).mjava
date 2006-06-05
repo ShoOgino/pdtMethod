@@ -1,0 +1,58 @@
+	/**
+	 * Searches the specified directory recursively for installed VMs, adding each
+	 * detected VM to the <code>found</code> list. Any directories specified in
+	 * the <code>ignore</code> are not traversed.
+	 * 
+	 * @param directory
+	 * @param found
+	 * @param types
+	 * @param ignore
+	 */
+	protected void search(File directory, List found, Set ignore, IProgressMonitor monitor) {
+		if (monitor.isCanceled()) {
+			return;
+		}
+
+		String[] names = directory.list();
+		if (names == null) {
+			return;
+		}
+		List subDirs = new ArrayList();
+		for (int i = 0; i < names.length; i++) {
+			if (monitor.isCanceled()) {
+				return;
+			}
+			File file = new File(directory, names[i]);
+			PHPexeItem[] vmTypes = phpExes.getEditableItems();
+			if (file.isDirectory()) {
+				try {
+					monitor.subTask(MessageFormat.format(PHPDebugUIMessages.InstalledPHPsBlock_14, new String[] { Integer.toString(found.size()), file.getCanonicalPath() })); //$NON-NLS-1$
+				} catch (IOException e) {
+				}
+				if (!ignore.contains(file)) {
+					boolean validLocation = false;
+
+					if (monitor.isCanceled()) {
+						return;
+					}
+					File foundExe = PHPexeItem.findPHPExecutable(file);
+					if (foundExe != null) {
+						found.add(foundExe);
+						validLocation = true;
+					}
+					if (!validLocation) {
+						subDirs.add(file);
+					}
+				}
+			}
+		}
+		while (!subDirs.isEmpty()) {
+			File subDir = (File) subDirs.remove(0);
+			search(subDir, found, ignore, monitor);
+			if (monitor.isCanceled()) {
+				return;
+			}
+		}
+
+	}
+

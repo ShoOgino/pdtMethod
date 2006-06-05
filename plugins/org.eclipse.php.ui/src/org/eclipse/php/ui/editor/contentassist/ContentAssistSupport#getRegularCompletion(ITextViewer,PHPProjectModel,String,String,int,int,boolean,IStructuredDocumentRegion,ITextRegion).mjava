@@ -1,0 +1,82 @@
+	private void getRegularCompletion(ITextViewer viewer, PHPProjectModel projectModel, String fileName, String startsWith, int offset, int selectionLength, boolean explicit, IStructuredDocumentRegion sdRegion, ITextRegion tRegion) {
+		if (!explicit && startsWith.length() == 0) {
+			return;
+		}
+		String type = tRegion.getType();
+		if (startsWith.startsWith("$")) {
+			if (!explicit && !autoShowVariables) {
+				return;
+			}
+			if (PhpLexer.isPHPQuotesState(type)) {
+				IStructuredDocument doc = sdRegion.getParentDocument();
+				try {
+					char charBefore = doc.get(offset - 2, 1).charAt(0);
+					if (charBefore == '\\') {
+						return;
+					}
+				} catch (BadLocationException badLocationException) {
+					Logger.logException(badLocationException);
+				}
+			}
+			PHPCodeContext context = getContext(projectModel, fileName, offset - startsWith.length());
+
+			startsWith = startsWith.substring(1);
+			CodeData[] variables = projectModel.getVariables(fileName, context, startsWith, showVariablesFromOtherFiles);
+			completionProposalGroup = phpCompletionProposalGroup;
+			completionProposalGroup.setData(offset, variables, startsWith, selectionLength);
+			return;
+		}
+
+		if (PhpLexer.isPHPQuotesState(type) || (type.equals(PHPRegionTypes.PHP_HEREDOC_TAG) && sdRegion.getStartOffset(tRegion) + tRegion.getLength() <= offset)) {
+			completionProposalGroup = regularPHPCompletionProposalGroup;
+			completionProposalGroup.setData(offset, null, startsWith, selectionLength);
+			return;
+		}
+
+		CodeData[] functions = null;
+		CodeData[] constans = null;
+		CodeData[] keywords = null;
+
+		if (explicit || autoShowFunctionsKeywordsConstants) {
+			if (startsWith.length() == 0) {
+				functions = projectModel.getFunctions();
+			} else {
+				functions = projectModel.getFunctions(startsWith);
+			}
+
+			if (!disableConstants) {
+				if (startsWith.length() == 0) {
+					constans = projectModel.getConstants();
+				} else {
+					constans = projectModel.getConstants(startsWith, constantCaseSensitive);
+				}
+			}
+
+			keywords = projectModel.getKeywordData();
+		}
+
+		CodeData[] classes = null;
+		if (showClassNamesInGlobalList) {
+			if (explicit || autoShowClassNames) {
+				classes = projectModel.getClasses();
+			}
+		}
+
+		CodeData[] mergeData = null;
+		if (shouldAddPHPTag(sdRegion.getParentDocument(), offset, startsWith)) {
+			mergeData = phpTagDataArray;
+		}
+
+		mergeData = ModelSupport.merge(keywords, mergeData);
+		mergeData = ModelSupport.merge(classes, mergeData);
+		mergeData = ModelSupport.merge(constans, mergeData);
+		mergeData = ModelSupport.merge(functions, mergeData);
+
+		completionProposalGroup = regularPHPCompletionProposalGroup;
+		completionProposalGroup.setData(offset, mergeData, startsWith, selectionLength);
+		
+		templateProposals = getTemplates(viewer, offset);
+		
+		return;
+	}
+

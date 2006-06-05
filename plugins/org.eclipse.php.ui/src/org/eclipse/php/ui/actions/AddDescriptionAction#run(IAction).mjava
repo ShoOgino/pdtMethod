@@ -1,0 +1,31 @@
+	public void run(IAction action) {
+
+		UserData userData = phpCodeData.getUserData();
+		String fileName = userData.getFileName();
+		IFile file = PHPUiPlugin.getWorkspace().getRoot().getFile(new Path(fileName));
+		IEditorPart editorPart;
+		try {
+			editorPart = EditorUtility.openInEditor(file, true);
+		} catch (PartInitException e) {
+			Logger.logException(e);
+			return;
+		}
+		ITextEditor textEditor = (ITextEditor) editorPart;
+		IEditorInput editorInput = editorPart.getEditorInput();
+		IDocument document = textEditor.getDocumentProvider().getDocument(editorInput);
+		if (phpCodeData instanceof PHPFileData) {
+			handleFileDocBlock((PHPFileData)phpCodeData, (IStructuredDocument)document);
+		}
+		PHPDocBlock docBlock = PHPDocTool.createPhpDoc(this.phpCodeData, document);
+		int startPosition = getCodeDataOffset();
+		String dockBlockText = insertDocBlock(phpCodeData, (IStructuredDocument)document, startPosition);
+		if(dockBlockText == null) {
+			return;
+		}
+		String shortDescription = docBlock.getShortDescription();
+		int shortDescriptionInnerOffset = dockBlockText.indexOf(shortDescription);
+		int shortDescriptionStartOffset = startPosition + shortDescriptionInnerOffset;
+
+		EditorUtility.revealInEditor(textEditor, shortDescriptionStartOffset, shortDescription.length());
+	}
+

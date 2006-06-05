@@ -1,0 +1,18 @@
+		public void resourceChanged(IResourceChangeEvent event) {
+			IResourceDelta delta = event.getDelta();
+			IResourceDelta[] affectedChildren = delta.getAffectedChildren(IResourceDelta.ADDED | IResourceDelta.REMOVED, IResource.PROJECT);
+			if (affectedChildren.length > 0) {
+				updateElements(fWorkingSetModel.getActiveWorkingSets());
+			} else {
+				affectedChildren = delta.getAffectedChildren(IResourceDelta.CHANGED, IResource.PROJECT);
+				for (int i = 0; i < affectedChildren.length; i++) {
+					IResourceDelta projectDelta = affectedChildren[i];
+					if ((projectDelta.getFlags() & IResourceDelta.DESCRIPTION) != 0) {
+						updateElements(fWorkingSetModel.getActiveWorkingSets());
+						// one is enough
+						return;
+					}
+				}
+			}
+		}
+

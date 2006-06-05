@@ -1,0 +1,19 @@
+	private boolean getChanges(IScopeContext currContext, List changedSettings) {
+		boolean needsBuild = false;
+		for (int i = 0; i < fAllKeys.length; i++) {
+			Key key = fAllKeys[i];
+			String oldVal = key.getStoredValue(currContext, null);
+			String val = key.getStoredValue(currContext, fManager);
+			if (val == null) {
+				if (oldVal != null) {
+					changedSettings.add(key);
+					needsBuild |= !oldVal.equals(key.getStoredValue(fLookupOrder, true, fManager));
+				}
+			} else if (!val.equals(oldVal)) {
+				changedSettings.add(key);
+				needsBuild |= oldVal != null || !val.equals(key.getStoredValue(fLookupOrder, true, fManager));
+			}
+		}
+		return needsBuild;
+	}
+

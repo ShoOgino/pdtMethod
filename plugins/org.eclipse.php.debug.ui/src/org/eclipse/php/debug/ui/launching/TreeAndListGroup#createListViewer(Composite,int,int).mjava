@@ -1,0 +1,33 @@
+	/**
+	 *	Create this group's list viewer.
+	 */
+	protected void createListViewer(Composite parent, int width, int height) {
+		int style;
+		if (allowMultiselection) {
+			style= SWT.MULTI;
+		} else {
+			style= SWT.SINGLE;
+		}
+		listViewer = new TableViewer(parent, SWT.BORDER | style);
+		GridData data = new GridData(GridData.FILL_BOTH);
+		data.widthHint = width;
+		data.heightHint = height;
+		listViewer.getTable().setLayoutData(data);
+		listViewer.getTable().setFont(parent.getFont());
+		listViewer.setContentProvider(listContentProvider);
+		listViewer.setLabelProvider(listLabelProvider);
+		listViewer.setSorter(new ResourceSorter(ResourceSorter.NAME));
+		listViewer.addSelectionChangedListener(new ISelectionChangedListener() {
+			public void selectionChanged(SelectionChangedEvent event) {
+				notifySelectionListeners(event);
+			}
+		});
+		listViewer.addDoubleClickListener(new IDoubleClickListener() {
+			public void doubleClick(DoubleClickEvent event) {
+				if (!event.getSelection().isEmpty()) {
+					notifyDoubleClickListeners(event);
+				}
+			}
+		});
+	}
+

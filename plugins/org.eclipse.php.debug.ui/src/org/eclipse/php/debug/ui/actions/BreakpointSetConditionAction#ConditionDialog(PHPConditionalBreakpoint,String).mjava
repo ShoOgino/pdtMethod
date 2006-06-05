@@ -1,0 +1,28 @@
+    protected boolean ConditionDialog(PHPConditionalBreakpoint breakpoint, String condition) throws CoreException {
+        IInputValidator validator = new IInputValidator() {
+            public String isValid(String value) {
+                return value;
+            }
+        };
+
+        String currentCondition = breakpoint.getCondition();
+        condition = currentCondition;
+        boolean enableCondition = breakpoint.isConditionEnabled();
+        if (currentCondition.equals(""))
+            enableCondition = true;
+
+        Shell activeShell = PHPDebugUIPlugin.getActiveWorkbenchShell();
+        String title = MessageFormat.format(PHPDebugUIMessages.SetCondition_1, new Object[] {});
+        String message = MessageFormat.format(PHPDebugUIMessages.EnterCondition_1, new Object[] {});
+        SetConditionDialog dialog = new SetConditionDialog(activeShell, title, message, currentCondition, enableCondition, validator);
+        if (dialog.open() != Window.OK) {
+            return false;
+        }
+        condition = dialog.getValue();
+        enableCondition = dialog.isSetConditionEnabled();
+        if (condition.equals(""))
+            enableCondition = false;
+        breakpoint.setConditionWithEnable(enableCondition, condition);
+        return true;
+    }
+

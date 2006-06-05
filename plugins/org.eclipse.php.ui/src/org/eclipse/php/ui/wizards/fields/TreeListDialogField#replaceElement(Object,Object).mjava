@@ -1,0 +1,26 @@
+	/**
+	 * Replace an element.
+	 */
+	public void replaceElement(Object oldElement, Object newElement) throws IllegalArgumentException {
+		int idx = fElements.indexOf(oldElement);
+		if (idx != -1) {
+			fElements.set(idx, newElement);
+			if (isOkToUse(fTreeControl)) {
+				List selected = getSelectedElements();
+				if (selected.remove(oldElement)) {
+					selected.add(newElement);
+				}
+				boolean isExpanded = fTree.getExpandedState(oldElement);
+				fTree.remove(oldElement);
+				fTree.add(fParentElement, newElement);
+				if (isExpanded) {
+					fTree.expandToLevel(newElement, fTreeExpandLevel);
+				}
+				selectElements(new StructuredSelection(selected));
+			}
+			dialogFieldChanged();
+		} else {
+			throw new IllegalArgumentException();
+		}
+	}
+

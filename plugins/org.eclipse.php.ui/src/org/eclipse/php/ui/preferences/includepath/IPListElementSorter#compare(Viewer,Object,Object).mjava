@@ -1,0 +1,27 @@
+	/* (non-Javadoc)
+	 * @see org.eclipse.jface.viewers.ViewerSorter#compare(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
+	 */
+	public int compare(Viewer viewer, Object e1, Object e2) {
+
+		int cat1 = category(e1);
+		int cat2 = category(e2);
+
+		if (cat1 != cat2)
+			return cat1 - cat2;
+
+		if (cat1 == ATTRIBUTE || cat1 == CONTAINER_ENTRY) {
+			return 0; // do not sort attributes or container entries
+		}
+
+		if (viewer instanceof ContentViewer) {
+			IBaseLabelProvider prov = ((ContentViewer) viewer).getLabelProvider();
+			if (prov instanceof ILabelProvider) {
+				ILabelProvider lprov = (ILabelProvider) prov;
+				String name1 = lprov.getText(e1);
+				String name2 = lprov.getText(e2);
+				return collator.compare(name1, name2);
+			}
+		}
+		return 0;
+	}
+

@@ -1,0 +1,40 @@
+			public void apply(IDocument document) {
+				try {
+					boolean insertCompletion = PreferenceConstants.getPreferenceStore().getBoolean(PreferenceConstants.CODEASSIST_INSERT_COMPLETION);
+					if (!insertCompletion) { //need to override the text after the cursor
+						removeTrailingCharacters(document);
+					}
+					char ch = document.getChar(replacementOffset - 1);
+					if (ch == '\'' || ch == '\"') {
+						replacementOffset--;
+						replacementLength++;
+
+						int position = replacementOffset + replacementLength + selectionLength;
+						int length = document.getLength();
+
+						int spacesToRemove = 0;
+						boolean removeSpaces = false;
+						while (position < length) {
+							char ch2 = document.getChar(position);
+							if (ch2 == ch) {
+								spacesToRemove++;
+								removeSpaces = true;
+								break;
+							}
+							if (!Character.isWhitespace(ch2)) {
+								break;
+							}
+							spacesToRemove++;
+							position++;
+						}
+						if (removeSpaces) {
+							replacementLength += spacesToRemove;
+						}
+					}
+
+					document.replace(replacementOffset, replacementLength + selectionLength, getReplacementString());
+				} catch (BadLocationException e) {
+					super.apply(document);
+				}
+			}
+

@@ -1,0 +1,34 @@
+	public void runAsUserJob(String name, final Object jobFamiliy) {
+		Job buildJob = new Job(name) {
+			/* (non-Javadoc)
+			 * @see org.eclipse.core.runtime.jobs.Job#run(org.eclipse.core.runtime.IProgressMonitor)
+			 */
+			protected IStatus run(IProgressMonitor monitor) {
+				try {
+					WorkbenchRunnableAdapter.this.run(monitor);
+				} catch (InvocationTargetException e) {
+					Throwable cause = e.getCause();
+					if (cause instanceof CoreException) {
+						return ((CoreException) cause).getStatus();
+					} else {
+						return new Status(IStatus.ERROR, PHPUiPlugin.ID, 0, e.toString(), cause);
+					}
+				} catch (InterruptedException e) {
+					return Status.CANCEL_STATUS;
+				} finally {
+					monitor.done();
+				}
+				return Status.OK_STATUS;
+			}
+
+			public boolean belongsTo(Object family) {
+				return jobFamiliy == family;
+			}
+		};
+		buildJob.setRule(fRule);
+		buildJob.setUser(true);
+		buildJob.schedule();
+
+		// TODO: should block until user pressed 'to background'
+	}
+

@@ -1,0 +1,20 @@
+	private void refactorMenuShown(final IMenuManager refactorSubmenu) {
+		// we know that we have an MenuManager since we created it in
+		// addRefactorSubmenu.
+		Menu menu = ((MenuManager) refactorSubmenu).getMenu();
+		menu.addMenuListener(new MenuAdapter() {
+			public void menuHidden(MenuEvent e) {
+				refactorMenuHidden(refactorSubmenu);
+			}
+		});
+		ITextSelection textSelection = (ITextSelection) fEditor.getSelectionProvider().getSelection();
+
+		for (Iterator iter = fEditorActions.iterator(); iter.hasNext();) {
+			SelectionDispatchAction action = (SelectionDispatchAction) iter.next();
+			action.update(textSelection);
+		}
+		refactorSubmenu.removeAll();
+		if (fillRefactorMenu(refactorSubmenu) == 0)
+			refactorSubmenu.add(fNoActionAvailable);
+	}
+

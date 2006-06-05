@@ -1,0 +1,35 @@
+	private IPListElement[] openVariableSelectionDialog(IPListElement existing) {
+		List existingElements = fLibrariesList.getElements();
+		ArrayList existingPaths = new ArrayList(existingElements.size());
+		for (int i = 0; i < existingElements.size(); i++) {
+			IPListElement elem = (IPListElement) existingElements.get(i);
+			if (elem.getEntryKind() == IIncludePathEntry.IPE_VARIABLE) {
+				existingPaths.add(elem.getPath());
+			}
+		}
+		IPath[] existingPathsArray = (IPath[]) existingPaths.toArray(new IPath[existingPaths.size()]);
+
+		if (existing == null) {
+			IPath[] paths = IncludePathDialogAccess.chooseVariableEntries(getShell(), existingPathsArray);
+			if (paths != null) {
+				ArrayList result = new ArrayList();
+				for (int i = 0; i < paths.length; i++) {
+					IPListElement elem = new IPListElement(fCurrJProject, IIncludePathEntry.IPE_VARIABLE, IIncludePathEntry.K_SOURCE, paths[i], null);
+					IPath resolvedPath = PHPProjectOptions.getResolvedVariablePath(paths[i]);
+					elem.setIsMissing((resolvedPath == null) || !resolvedPath.toFile().exists());
+					if (!existingElements.contains(elem)) {
+						result.add(elem);
+					}
+				}
+				return (IPListElement[]) result.toArray(new IPListElement[result.size()]);
+			}
+		} else {
+			IPath path = IncludePathDialogAccess.configureVariableEntry(getShell(), existing.getPath(), existingPathsArray);
+			if (path != null) {
+				IPListElement elem = new IPListElement(fCurrJProject, IIncludePathEntry.IPE_VARIABLE, IIncludePathEntry.K_SOURCE, path, null);
+				return new IPListElement[] { elem };
+			}
+		}
+		return null;
+	}
+

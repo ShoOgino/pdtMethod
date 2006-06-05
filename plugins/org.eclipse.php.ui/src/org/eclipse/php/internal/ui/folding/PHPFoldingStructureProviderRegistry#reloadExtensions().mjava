@@ -1,0 +1,22 @@
+	/**
+	 * Reads all extensions.
+	 * <p>
+	 * This method can be called more than once in
+	 * order to reload from a changed extension registry.
+	 * </p>
+	 */
+	public void reloadExtensions() {
+		IExtensionRegistry registry = Platform.getExtensionRegistry();
+		Map map = new HashMap();
+
+		IConfigurationElement[] elements = registry.getConfigurationElementsFor(PHPUiPlugin.getPluginId(), EXTENSION_POINT);
+		for (int i = 0; i < elements.length; i++) {
+			PHPFoldingStructureProviderDescriptor desc = new PHPFoldingStructureProviderDescriptor(elements[i]);
+			map.put(desc.getId(), desc);
+		}
+
+		synchronized (this) {
+			fDescriptors = Collections.unmodifiableMap(map);
+		}
+	}
+

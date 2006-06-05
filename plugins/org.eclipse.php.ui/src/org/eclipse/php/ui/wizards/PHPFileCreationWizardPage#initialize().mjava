@@ -1,0 +1,43 @@
+	/**
+	 * Tests if the current workbench selection is a suitable
+	 * container to use.
+	 */
+	private void initialize() {
+		if (selection != null && selection.isEmpty() == false && selection instanceof IStructuredSelection) {
+			IStructuredSelection ssel = (IStructuredSelection) selection;
+			if (ssel.size() > 1)
+				return;
+			Object obj = ssel.getFirstElement();
+			IContainer container = null;
+			if (obj instanceof PHPCodeData)
+				obj=PHPModelUtil.getResource(obj);
+			else if (obj instanceof PHPNature) {
+				obj = ((PHPNature) obj).getProject();
+			} else if (obj instanceof PHPProjectModel) {
+				obj = PHPWorkspaceModelManager.getInstance().getProjectForModel((PHPProjectModel) obj);
+			}
+
+			
+			if (obj instanceof IResource) {
+				if (obj instanceof IContainer)
+					container = (IContainer) obj;
+				else
+					container = ((IResource) obj).getParent();
+
+			} else if (obj instanceof PHPProjectModel) {
+				container = PHPWorkspaceModelManager.getInstance().getProjectForModel((PHPProjectModel) obj);
+			}
+
+			if (container != null) {
+				containerText.setText(container.getFullPath().toString());
+//				IProject project = container.getProject();
+//				PHPProjectOptions options = PHPProjectOptions.forProject(project);
+//				if (options != null) {
+//					String defaultEncoding = (String) options.getOption(PHPCoreConstants.PHPOPTION_DEFAULT_ENCODING);
+//					encodingSettings.setIANATag(defaultEncoding);
+//				}
+			}
+		}
+		fileText.setText("newfile.php");
+	}
+

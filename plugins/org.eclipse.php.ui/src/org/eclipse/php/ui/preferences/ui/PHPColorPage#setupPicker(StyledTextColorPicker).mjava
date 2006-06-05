@@ -1,0 +1,30 @@
+	protected void setupPicker(StyledTextColorPicker picker) {
+		IModelManager mmanager = StructuredModelManager.getModelManager();
+		picker.setParser(mmanager.createStructuredDocumentFor(ContentTypeIdForPHP.ContentTypeID_PHP).getParser());
+
+		Dictionary descriptions = new Hashtable();
+		initDescriptions(descriptions);
+
+		ArrayList styleList = new ArrayList();
+		initStyleList(styleList);
+
+		PHPLineStyleProvider styleProvider = null;
+		IEditorPart editor = PHPUiPlugin.getActivePage().getActiveEditor();
+		if (editor != null && editor instanceof PHPStructuredEditor) {
+			PHPStructuredEditor phpEditor = (PHPStructuredEditor) editor;
+			SourceViewerConfiguration viewerConfig = phpEditor.getSourceViwerConfiguration();
+			if (viewerConfig != null && viewerConfig instanceof PHPStructuredTextViewerConfiguration) {
+				PHPStructuredTextViewerConfiguration phpViewerConfig = (PHPStructuredTextViewerConfiguration) viewerConfig;
+				styleProvider = (PHPLineStyleProvider) phpViewerConfig.getLineStyleProvider();
+			}
+		}
+		if (styleProvider == null) {
+			styleProvider = new PHPLineStyleProvider();
+		}
+		Dictionary contextStyleMap = new Hashtable(styleProvider.getColorTypesMap());
+
+		picker.setDescriptions(descriptions);
+		picker.setStyleList(styleList);
+		picker.setContextStyleMap(contextStyleMap);
+	}
+

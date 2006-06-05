@@ -1,0 +1,145 @@
+	/**
+	 * Creates this block's control in the given control.
+	 * 
+	 * @param ancestor containing control
+	 * @param useManageButton whether to present a single 'manage...' button to
+	 *  the user that opens the installed PHPs pref page for PHP management,
+	 *  or to provide 'add, remove, edit, and search' buttons.
+	 */
+	public void createControl(Composite ancestor) {
+
+		Composite parent = new Composite(ancestor, SWT.NULL);
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 2;
+		layout.marginHeight = 0;
+		layout.marginWidth = 0;
+		parent.setLayout(layout);
+		Font font = ancestor.getFont();
+		parent.setFont(font);
+		fControl = parent;
+
+		GridData data;
+
+		Label tableLabel = new Label(parent, SWT.NONE);
+		tableLabel.setText(PHPDebugUIMessages.InstalledPHPsBlock_15); //$NON-NLS-1$
+		data = new GridData();
+		data.horizontalSpan = 2;
+		tableLabel.setLayoutData(data);
+		tableLabel.setFont(font);
+
+		Table table = new Table(parent, SWT.CHECK | SWT.BORDER | SWT.MULTI | SWT.FULL_SELECTION);
+
+		data = new GridData(GridData.FILL_BOTH);
+		table.setLayoutData(data);
+		table.setFont(font);
+
+		table.setHeaderVisible(true);
+		table.setLinesVisible(true);
+
+		TableLayout tableLayout = new TableLayout();
+		table.setLayout(tableLayout);
+
+		TableColumn column1 = new TableColumn(table, SWT.NULL);
+		column1.setText(PHPDebugUIMessages.InstalledPHPsBlock_0); //$NON-NLS-1$
+		column1.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				sortByName();
+			}
+		});
+
+		TableColumn column2 = new TableColumn(table, SWT.NULL);
+		column2.setText(PHPDebugUIMessages.InstalledPHPsBlock_1); //$NON-NLS-1$
+		column2.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				sortByLocation();
+			}
+		});
+
+		fPHPExeList = new CheckboxTableViewer(table);
+		fPHPExeList.setLabelProvider(new VMLabelProvider());
+		fPHPExeList.setContentProvider(new PHPsContentProvider());
+		// by default, sort by name
+		sortByName();
+
+		fPHPExeList.addSelectionChangedListener(new ISelectionChangedListener() {
+			public void selectionChanged(SelectionChangedEvent evt) {
+				enableButtons();
+			}
+		});
+
+		fPHPExeList.addCheckStateListener(new ICheckStateListener() {
+			public void checkStateChanged(CheckStateChangedEvent event) {
+				if (event.getChecked()) {
+					setCheckedPHP((PHPexeItem) event.getElement());
+				} else {
+					setCheckedPHP(null);
+				}
+			}
+		});
+
+		fPHPExeList.addDoubleClickListener(new IDoubleClickListener() {
+			public void doubleClick(DoubleClickEvent e) {
+				if (!fPHPExeList.getSelection().isEmpty()) {
+					editPHPexe();
+				}
+			}
+		});
+		table.addKeyListener(new KeyAdapter() {
+			public void keyPressed(KeyEvent event) {
+				if (event.character == SWT.DEL && event.stateMask == 0) {
+					removePHPexes();
+				}
+			}
+		});
+
+		Composite buttons = new Composite(parent, SWT.NULL);
+		buttons.setLayoutData(new GridData(GridData.VERTICAL_ALIGN_BEGINNING));
+		layout = new GridLayout();
+		layout.marginHeight = 0;
+		layout.marginWidth = 0;
+		buttons.setLayout(layout);
+		buttons.setFont(font);
+
+		fAddButton = createPushButton(buttons, PHPDebugUIMessages.InstalledPHPsBlock_3); //$NON-NLS-1$
+		fAddButton.addListener(SWT.Selection, new Listener() {
+			public void handleEvent(Event evt) {
+				addPHPexe();
+			}
+		});
+
+		fEditButton = createPushButton(buttons, PHPDebugUIMessages.InstalledPHPsBlock_4); //$NON-NLS-1$
+		fEditButton.addListener(SWT.Selection, new Listener() {
+			public void handleEvent(Event evt) {
+				editPHPexe();
+			}
+		});
+
+		fRemoveButton = createPushButton(buttons, PHPDebugUIMessages.InstalledPHPsBlock_5); //$NON-NLS-1$
+		fRemoveButton.addListener(SWT.Selection, new Listener() {
+			public void handleEvent(Event evt) {
+				removePHPexes();
+			}
+		});
+
+		// copied from ListDialogField.CreateSeparator()
+		Label separator = new Label(buttons, SWT.NONE);
+		separator.setVisible(false);
+		GridData gd = new GridData();
+		gd.horizontalAlignment = GridData.FILL;
+		gd.verticalAlignment = GridData.BEGINNING;
+		gd.heightHint = 4;
+		separator.setLayoutData(gd);
+
+		fSearchButton = createPushButton(buttons, PHPDebugUIMessages.InstalledPHPsBlock_6); //$NON-NLS-1$
+		fSearchButton.addListener(SWT.Selection, new Listener() {
+			public void handleEvent(Event evt) {
+				search();
+			}
+		});
+
+		configureTableResizing(parent, buttons, table, column1, column2);
+
+		fillWithWorkspacePHPs();
+		enableButtons();
+	}
+

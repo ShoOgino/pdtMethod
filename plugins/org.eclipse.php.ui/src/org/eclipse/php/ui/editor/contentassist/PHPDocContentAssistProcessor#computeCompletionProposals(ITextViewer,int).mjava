@@ -1,0 +1,29 @@
+	public ICompletionProposal[] computeCompletionProposals(ITextViewer viewer, int offset) {
+		IModelManager modelManager = StructuredModelManager.getModelManager();
+		if (modelManager == null) {
+			return null;
+		}
+
+		IStructuredModel structuredModel = null;
+		structuredModel = modelManager.getExistingModelForRead(viewer.getDocument());
+		if (structuredModel == null) {
+			return null;
+		}
+		ICompletionProposal[] completionProposals;
+		try {
+			PHPEditorModel phpEditorModel = (PHPEditorModel) structuredModel;
+			try {
+				completionProposals = support.getCompletionOption(viewer, phpEditorModel, offset);
+			} catch (Exception e) {
+				Logger.logException(e);
+				return null;
+			}
+			if (completionProposals == null) {
+				completionProposals = new ICompletionProposal[0];
+			}
+		} finally {
+			structuredModel.releaseFromRead();
+		}
+		return completionProposals;
+	}
+

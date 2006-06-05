@@ -1,0 +1,33 @@
+	private void initSelections() {
+		ISelection sel = getContainer().getSelection();
+		SearchPatternData initData = null;
+		if (sel instanceof ITextSelection) {
+			IEditorPart activePart = getActiveEditor();
+			if (activePart instanceof PHPStructuredEditor) {
+				try {
+					// TODO - At the time this code was written, the codeResolve always return an empty result. This will probably have to be fixed.
+					PHPCodeData[] elements = SelectionConverter.codeResolve((PHPStructuredEditor) activePart);
+					if (elements != null && elements.length > 0) {
+						initData = determineInitValuesFrom(elements[0]);
+					}
+				} catch (Exception e) {
+					// ignore
+				}
+			}
+			if (initData == null) {
+				initData = trySimpleTextSelection((ITextSelection) sel);
+			}
+		}
+		if (initData == null) {
+			initData = getDefaultInitValues();
+		}
+
+		fInitialData = initData;
+		fPhpElement = initData.getPHPElement();
+		fCaseSensitive.setSelection(initData.isCaseSensitive());
+		fCaseSensitive.setEnabled(fPhpElement == null);
+
+		setSearchFor(initData.getSearchFor());
+		fPattern.setText(initData.getPattern());
+	}
+

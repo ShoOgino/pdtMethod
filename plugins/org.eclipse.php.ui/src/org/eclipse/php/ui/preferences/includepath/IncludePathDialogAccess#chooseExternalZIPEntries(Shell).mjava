@@ -1,0 +1,36 @@
+	/**
+	 * Shows the UI to select new external ZIP or ZIP archive entries.
+	 * The dialog returns the selected entry paths or <code>null</code> if the dialog has
+	 * been canceled. The dialog does not apply any changes.
+	 * 
+	 * @param shell The parent shell for the dialog.
+	 * @return Returns the new include path container entry paths or <code>null</code> if the dialog has
+	 * been canceled by the user.
+	 */
+	public static IPath[] chooseExternalZIPEntries(Shell shell) {
+		String lastUsedPath = PHPUiPlugin.getDefault().getDialogSettings().get(DIALOGSTORE_LASTEXTZIP);
+		if (lastUsedPath == null) {
+			lastUsedPath = ""; //$NON-NLS-1$
+		}
+		FileDialog dialog = new FileDialog(shell, SWT.MULTI);
+		dialog.setText(PHPUIMessages.IncludePathDialogAccess_ExtZIPArchiveDialog_new_title);
+		dialog.setFilterExtensions(ZipFileFilter.FILTER_EXTENSIONS);
+		dialog.setFilterPath(lastUsedPath);
+
+		String res = dialog.open();
+		if (res == null) {
+			return null;
+		}
+		String[] fileNames = dialog.getFileNames();
+		int nChosen = fileNames.length;
+
+		IPath filterPath = Path.fromOSString(dialog.getFilterPath());
+		IPath[] elems = new IPath[nChosen];
+		for (int i = 0; i < nChosen; i++) {
+			elems[i] = filterPath.append(fileNames[i]).makeAbsolute();
+		}
+		PHPUiPlugin.getDefault().getDialogSettings().put(DIALOGSTORE_LASTEXTZIP, dialog.getFilterPath());
+
+		return elems;
+	}
+

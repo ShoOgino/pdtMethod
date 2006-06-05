@@ -1,0 +1,34 @@
+	/* (non-Javadoc)
+	 * Method declared in SelectionDispatchAction
+	 */
+	public void run(IStructuredSelection selection) {
+		final IResource[] resources = getResources(selection);
+		IWorkspaceRunnable operation = new IWorkspaceRunnable() {
+			public void run(IProgressMonitor monitor) throws CoreException {
+				monitor.beginTask(ActionMessages.RefreshAction_progressMessage, resources.length * 2);
+				monitor.subTask(""); //$NON-NLS-1$
+				List javaElements = new ArrayList(5);
+				for (int r = 0; r < resources.length; r++) {
+					IResource resource = resources[r];
+					if (resource.getType() == IResource.PROJECT) {
+						checkLocationDeleted((IProject) resource);
+					} else if (resource.getType() == IResource.ROOT) {
+						IProject[] projects = ((IWorkspaceRoot) resource).getProjects();
+						for (int p = 0; p < projects.length; p++) {
+							checkLocationDeleted(projects[p]);
+						}
+					}
+					resource.refreshLocal(IResource.DEPTH_INFINITE, new SubProgressMonitor(monitor, 1));
+				}
+			}
+		};
+
+		try {
+			PlatformUI.getWorkbench().getProgressService().run(true, true, new WorkbenchRunnableAdapter(operation));
+		} catch (InvocationTargetException e) {
+			ExceptionHandler.handle(e, getShell(), ActionMessages.RefreshAction_error_title, ActionMessages.RefreshAction_error_message);
+		} catch (InterruptedException e) {
+			// canceled
+		}
+	}
+

@@ -1,0 +1,35 @@
+	private static IPath[] internalChooseFolderEntry(Shell shell, IPath initialSelection, IPath[] usedEntries, String title, String message) {
+		Class[] acceptedClasses = new Class[] { IProject.class, IFolder.class };
+
+		ArrayList usedContainers = new ArrayList(usedEntries.length);
+		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+		for (int i = 0; i < usedEntries.length; i++) {
+			IResource resource = root.findMember(usedEntries[i]);
+			if (resource instanceof IContainer) {
+				usedContainers.add(resource);
+			}
+		}
+
+		IResource focus = initialSelection != null ? root.findMember(initialSelection) : null;
+		Object[] used = usedContainers.toArray();
+
+		MultipleFolderSelectionDialog dialog = new MultipleFolderSelectionDialog(shell, new WorkbenchLabelProvider(), new WorkbenchContentProvider());
+		dialog.setExisting(used);
+		dialog.setTitle(title);
+		dialog.setMessage(message);
+		dialog.addFilter(new TypedViewerFilter(acceptedClasses, used));
+		dialog.setInput(root);
+		dialog.setInitialFocus(focus);
+
+		if (dialog.open() == Window.OK) {
+			Object[] elements = dialog.getResult();
+			IPath[] res = new IPath[elements.length];
+			for (int i = 0; i < res.length; i++) {
+				IResource elem = (IResource) elements[i];
+				res[i] = elem.getFullPath();
+			}
+			return res;
+		}
+		return null;
+	}
+

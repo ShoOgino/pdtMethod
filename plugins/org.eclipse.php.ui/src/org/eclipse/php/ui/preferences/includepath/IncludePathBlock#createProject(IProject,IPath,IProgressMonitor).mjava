@@ -1,0 +1,28 @@
+	public static void createProject(IProject project, IPath locationPath, IProgressMonitor monitor) throws CoreException {
+		if (monitor == null) {
+			monitor = new NullProgressMonitor();
+		}
+		monitor.beginTask(PHPUIMessages.IncludePathsBlock_operationdesc_project, 10);
+
+		// create the project
+		try {
+			if (!project.exists()) {
+				IProjectDescription desc = project.getWorkspace().newProjectDescription(project.getName());
+				if (Platform.getLocation().equals(locationPath)) {
+					locationPath = null;
+				}
+				desc.setLocation(locationPath);
+				project.create(desc, monitor);
+				monitor = null;
+			}
+			if (!project.isOpen()) {
+				project.open(monitor);
+				monitor = null;
+			}
+		} finally {
+			if (monitor != null) {
+				monitor.done();
+			}
+		}
+	}
+

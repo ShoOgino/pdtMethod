@@ -1,0 +1,20 @@
+	public ISelection getSelection(TreeViewer viewer, ISelection selection) {
+		IContentProvider contentProvider = viewer.getContentProvider();
+		if (contentProvider instanceof PHPOutlineContentProvider) {
+			PHPOutlineContentProvider phpOutline = (PHPOutlineContentProvider) contentProvider;
+			if (phpOutline.mode == PHPOutlineContentProvider.MODE_PHP) {
+				if (selection instanceof IStructuredSelection && selection instanceof TextSelection) {
+					IStructuredSelection structuredSelection = (IStructuredSelection) selection;
+					Object obj = structuredSelection.getFirstElement();
+					if (obj instanceof PHPElementImpl) {
+						PHPElementImpl phpElement = (PHPElementImpl) obj;
+						PHPCodeData codeData = phpElement.getPHPCodeData(((TextSelection) selection).getOffset());
+						if (codeData != null)
+							return new StructuredSelection(codeData);
+					}
+				}
+			}
+		}
+		return super.getSelection(viewer, selection);
+	}
+

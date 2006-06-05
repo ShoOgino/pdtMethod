@@ -1,0 +1,54 @@
+	/**
+	 * Returns an image descriptor for a php element. This is the base image, no overlays.
+	 */
+	public ImageDescriptor getBaseImageDescriptor(PHPCodeData element, int renderFlags) {
+		if (element instanceof PHPFunctionData) {
+			PHPFunctionData member = (PHPFunctionData) element;
+			return getMethodImageDescriptor(member.getModifiers());
+		} else if (element instanceof PHPClassVarData) {
+			PHPClassVarData var = (PHPClassVarData) element;
+			return getFieldImageDescriptor(var.getModifiers());
+		} else if (element instanceof PHPConstantData || element instanceof PHPClassConstData || element.equals(PHPFunctionsContentProvider.CONSTANTS_NODE_NAME)) {
+			return PHPPluginImages.DESC_CONSTANT;
+		} else if (element instanceof PHPClassData) {
+			PHPClassData type = (PHPClassData) element;
+
+			if (useLightIcons(renderFlags)) {
+				if (PHPModifier.isInterface(type.getModifiers())) {
+					return PHPPluginImages.DESC_OBJS_INTERFACE;
+				}
+				return PHPPluginImages.DESC_OBJS_CLASSALT;
+			}
+			return getTypeImageDescriptor(type.getModifiers());
+		}
+
+		else if (element instanceof PHPFileData) {
+			return PHPPluginImages.DESC_OBJS_CUNIT;
+		} else if (element instanceof PHPIncludeFileData) {
+			return PHPPluginImages.DESC_OBJS_INCLUDE;
+		}
+
+		else if (element instanceof PHPProjectModel) {
+			PHPProjectModel model = (PHPProjectModel) element;
+			IProject project = PHPWorkspaceModelManager.getInstance().getProjectForModel(model);
+			if (project.isOpen()) {
+				IWorkbenchAdapter adapter = (IWorkbenchAdapter) project.getAdapter(IWorkbenchAdapter.class);
+				if (adapter != null) {
+					ImageDescriptor result = adapter.getImageDescriptor(project);
+					if (result != null)
+						return result;
+				}
+				return DESC_OBJ_PROJECT;
+			}
+			return DESC_OBJ_PROJECT_CLOSED;
+		} else if (element instanceof IContainer) {
+			return getPHPFolderIcon(element, renderFlags);
+
+		} else if (element instanceof PHPWorkspaceModelManager)
+			return PHPPluginImages.DESC_OBJS_PHP_MODEL;
+
+		Assert.isTrue(false, "no image for this  Type: " + element); //$NON-NLS-1$
+		return null; //$NON-NLS-1$
+
+	}
+

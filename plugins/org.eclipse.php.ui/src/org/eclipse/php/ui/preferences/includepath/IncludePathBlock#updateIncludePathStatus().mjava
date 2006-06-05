@@ -1,0 +1,49 @@
+	/**
+	 * Validates the include path.
+	 */
+	public void updateIncludePathStatus() {
+		fIncludePathStatus.setOK();
+
+		List elements = fIncludePathList.getElements();
+
+		IPListElement entryMissing = null;
+		int nEntriesMissing = 0;
+		IIncludePathEntry[] entries = new IIncludePathEntry[elements.size()];
+
+		for (int i = elements.size() - 1; i >= 0; i--) {
+			IPListElement currElement = (IPListElement) elements.get(i);
+
+			/*
+			 boolean isChecked = fIncludePathList.isChecked(currElement);
+			 if (currElement.getEntryKind() == IIncludePathEntry.IPE_SOURCE) {
+			 if (!isChecked) {
+			 fIncludePathList.setCheckedWithoutUpdate(currElement, true);
+			 }
+			 } else {
+			 currElement.setExported(isChecked);
+			 }
+			 */
+
+			entries[i] = currElement.getIncludePathEntry();
+			if (currElement.isMissing()) {
+				nEntriesMissing++;
+				if (entryMissing == null) {
+					entryMissing = currElement;
+				}
+			}
+		}
+
+		if (nEntriesMissing > 0) {
+			if (nEntriesMissing == 1) {
+				fIncludePathStatus.setWarning(MessageFormat.format(PHPUIMessages.IncludePathsBlock_warning_EntryMissing, new String[] { entryMissing.getPath().toString() }));
+			} else {
+				fIncludePathStatus.setWarning(MessageFormat.format(PHPUIMessages.IncludePathsBlock_warning_EntriesMissing, new String[] { String.valueOf(nEntriesMissing) }));
+			}
+		}
+
+		/*		if (fCurrJProject.hasIncludePathCycle(entries)) {
+		 fIncludePathStatus.setWarning(PHPUIMessages.getString("IncludePathsBlock.warning.CycleInIncludePath")); //$NON-NLS-1$
+		 }
+		 */
+	}
+

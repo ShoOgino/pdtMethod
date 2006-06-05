@@ -1,0 +1,167 @@
+	/**
+	 * Creates page for hover preferences.
+	 * 
+	 * @param parent the parent composite
+	 * @return the control for the preference page
+	 */
+	public Control createControl(Composite parent) {
+
+		Composite hoverComposite = new Composite(parent, SWT.NONE);
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 2;
+		hoverComposite.setLayout(layout);
+
+		String rollOverLabel = PHPUIMessages.PHPEditorHoverConfigurationBlock_annotationRollover;
+		addCheckBox(hoverComposite, rollOverLabel, PreferenceConstants.EDITOR_ANNOTATION_ROLL_OVER, 0); //$NON-NLS-1$
+
+		// Affordance checkbox
+		fShowHoverAffordanceCheckbox = new Button(hoverComposite, SWT.CHECK);
+		fShowHoverAffordanceCheckbox.setText(PHPUIMessages.PHPEditorHoverConfigurationBlock_showAffordance);
+		GridData gd = new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING);
+		gd.horizontalIndent = 0;
+		gd.horizontalSpan = 2;
+		fShowHoverAffordanceCheckbox.setLayoutData(gd);
+
+		addFiller(hoverComposite);
+
+		Label label = new Label(hoverComposite, SWT.NONE);
+		label.setText(PHPUIMessages.PHPEditorHoverConfigurationBlock_hoverPreferences);
+		gd = new GridData(GridData.FILL_HORIZONTAL);
+		gd.horizontalAlignment = GridData.BEGINNING;
+		gd.horizontalSpan = 2;
+		label.setLayoutData(gd);
+
+		TableLayoutComposite layouter = new TableLayoutComposite(hoverComposite, SWT.NONE);
+		addColumnLayoutData(layouter);
+
+		// Hover table
+		fHoverTable = new Table(layouter, SWT.H_SCROLL | SWT.V_SCROLL | SWT.SINGLE | SWT.BORDER | SWT.FULL_SELECTION | SWT.CHECK);
+		fHoverTable.setHeaderVisible(true);
+		fHoverTable.setLinesVisible(true);
+
+		gd = new GridData(GridData.FILL_HORIZONTAL);
+		gd.heightHint = SWTUtil.getTableHeightHint(fHoverTable, 10);
+		gd.horizontalSpan = 2;
+		gd.widthHint = new PixelConverter(parent).convertWidthInCharsToPixels(30);
+		layouter.setLayoutData(gd);
+
+		fHoverTable.addSelectionListener(new SelectionListener() {
+			public void widgetSelected(SelectionEvent e) {
+				handleHoverListSelection();
+			}
+
+			public void widgetDefaultSelected(SelectionEvent e) {
+			}
+		});
+
+		TableLayout tableLayout = new TableLayout();
+		fHoverTable.setLayout(tableLayout);
+
+		fNameColumn = new TableColumn(fHoverTable, SWT.NONE);
+		fNameColumn.setText(PHPUIMessages.PHPEditorHoverConfigurationBlock_nameColumnTitle);
+		fNameColumn.setResizable(true);
+
+		fModifierColumn = new TableColumn(fHoverTable, SWT.NONE);
+		fModifierColumn.setText(PHPUIMessages.PHPEditorHoverConfigurationBlock_modifierColumnTitle);
+		fModifierColumn.setResizable(true);
+
+		fHoverTableViewer = new CheckboxTableViewer(fHoverTable);
+		fHoverTableViewer.setUseHashlookup(true);
+		fHoverTableViewer.setContentProvider(new PHPEditorTextHoverDescriptorContentProvider());
+		fHoverTableViewer.setLabelProvider(new PHPEditorTextHoverDescriptorLabelProvider());
+
+		((CheckboxTableViewer) fHoverTableViewer).addCheckStateListener(new ICheckStateListener() {
+			/*
+			 * @see org.eclipse.jface.viewers.ICheckStateListener#checkStateChanged(org.eclipse.jface.viewers.CheckStateChangedEvent)
+			 */
+			public void checkStateChanged(CheckStateChangedEvent event) {
+				String id = ((PHPEditorTextHoverDescriptor) event.getElement()).getId();
+				if (id == null)
+					return;
+				PHPEditorTextHoverDescriptor[] descriptors = getContributedHovers();
+				HoverConfig hoverConfig = null;
+				int i = 0, length = fHoverConfigs.length;
+				while (i < length) {
+					if (id.equals(descriptors[i].getId())) {
+						hoverConfig = fHoverConfigs[i];
+						hoverConfig.fIsEnabled = event.getChecked();
+						fModifierEditor.setEnabled(event.getChecked());
+						fHoverTableViewer.setSelection(new StructuredSelection(descriptors[i]));
+					}
+					i++;
+				}
+				handleHoverListSelection();
+				updateStatus(hoverConfig);
+			}
+		});
+
+		// Text field for modifier string
+		label = new Label(hoverComposite, SWT.LEFT);
+		label.setText(PHPUIMessages.PHPEditorHoverConfigurationBlock_keyModifier);
+		fModifierEditor = new Text(hoverComposite, SWT.BORDER);
+		gd = new GridData(GridData.HORIZONTAL_ALIGN_FILL);
+		fModifierEditor.setLayoutData(gd);
+
+		fModifierEditor.addKeyListener(new KeyListener() {
+			private boolean isModifierCandidate;
+
+			public void keyPressed(KeyEvent e) {
+				isModifierCandidate = e.keyCode > 0 && e.character == 0 && e.stateMask == 0;
+			}
+
+			public void keyReleased(KeyEvent e) {
+				if (isModifierCandidate && e.stateMask > 0 && e.stateMask == e.stateMask && e.character == 0) {// && e.time -time < 1000) {
+					String text = fModifierEditor.getText();
+					Point selection = fModifierEditor.getSelection();
+					int i = selection.x - 1;
+					while (i > -1 && Character.isWhitespace(text.charAt(i))) {
+						i--;
+					}
+					boolean needsPrefixDelimiter = i > -1 && !String.valueOf(text.charAt(i)).equals(DELIMITER);
+
+					i = selection.y;
+					while (i < text.length() && Character.isWhitespace(text.charAt(i))) {
+						i++;
+					}
+					boolean needsPostfixDelimiter = i < text.length() && !String.valueOf(text.charAt(i)).equals(DELIMITER);
+
+					String insertString;
+
+					if (needsPrefixDelimiter && needsPostfixDelimiter)
+						insertString = MessageFormat.format(PHPUIMessages.PHPEditorHoverConfigurationBlock_insertDelimiterAndModifierAndDelimiter, new String[] { Action.findModifierString(e.stateMask) });
+					else if (needsPrefixDelimiter)
+						insertString = MessageFormat.format(PHPUIMessages.PHPEditorHoverConfigurationBlock_insertDelimiterAndModifier, new String[] { Action.findModifierString(e.stateMask) });
+					else if (needsPostfixDelimiter)
+						insertString = MessageFormat.format(PHPUIMessages.PHPEditorHoverConfigurationBlock_insertModifierAndDelimiter, new String[] { Action.findModifierString(e.stateMask) });
+					else
+						insertString = Action.findModifierString(e.stateMask);
+
+					if (insertString != null)
+						fModifierEditor.insert(insertString);
+				}
+			}
+		});
+
+		fModifierEditor.addModifyListener(new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+				handleModifierModified();
+			}
+		});
+
+		// Description
+		Label descriptionLabel = new Label(hoverComposite, SWT.LEFT);
+		descriptionLabel.setText(PHPUIMessages.PHPEditorHoverConfigurationBlock_description);
+		gd = new GridData(GridData.VERTICAL_ALIGN_BEGINNING);
+		gd.horizontalSpan = 2;
+		descriptionLabel.setLayoutData(gd);
+		fDescription = new Text(hoverComposite, SWT.LEFT | SWT.WRAP | SWT.MULTI | SWT.READ_ONLY | SWT.BORDER);
+		gd = new GridData(GridData.FILL_BOTH);
+		gd.horizontalSpan = 2;
+		fDescription.setLayoutData(gd);
+
+		initialize();
+
+		Dialog.applyDialogFont(hoverComposite);
+		return hoverComposite;
+	}
+

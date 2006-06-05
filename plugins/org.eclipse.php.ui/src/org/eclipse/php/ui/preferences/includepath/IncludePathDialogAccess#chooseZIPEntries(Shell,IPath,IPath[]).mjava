@@ -1,0 +1,50 @@
+	/**
+	 * Shows the UI to select new ZIP or ZIP archive entries located in the workspace.
+	 * The dialog returns the selected entries or <code>null</code> if the dialog has
+	 * been canceled. The dialog does not apply any changes.
+	 * 
+	 * @param shell The parent shell for the dialog.
+	 * @param initialSelection The path of the element (container or archive) to initially select or <code>null</code> to not select an entry. 
+	 * @param usedEntries An array of paths that are already on the include path and therefore should not be
+	 * selected again.
+	 * @return Returns the new include path container entry paths or <code>null</code> if the dialog has
+	 * been canceled by the user.
+	 */
+	public static IPath[] chooseZIPEntries(Shell shell, IPath initialSelection, IPath[] usedEntries) {
+		if (usedEntries == null) {
+			throw new IllegalArgumentException();
+		}
+
+		Class[] acceptedClasses = new Class[] { IFile.class };
+		TypedElementSelectionValidator validator = new TypedElementSelectionValidator(acceptedClasses, true);
+		ArrayList usedZips = new ArrayList(usedEntries.length);
+		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+		for (int i = 0; i < usedEntries.length; i++) {
+			IResource resource = root.findMember(usedEntries[i]);
+			if (resource instanceof IFile) {
+				usedZips.add(resource);
+			}
+		}
+		IResource focus = initialSelection != null ? root.findMember(initialSelection) : null;
+
+		ElementTreeSelectionDialog dialog = new ElementTreeSelectionDialog(shell, new WorkbenchLabelProvider(), new WorkbenchContentProvider());
+		dialog.setValidator(validator);
+		dialog.setTitle(PHPUIMessages.IncludePathDialogAccess_ZIPArchiveDialog_new_title);
+		dialog.setMessage(PHPUIMessages.IncludePathDialogAccess_ZIPArchiveDialog_new_description);
+		dialog.addFilter(new ZipFileFilter(usedZips, true));
+		dialog.setInput(root);
+		dialog.setSorter(new ResourceSorter(ResourceSorter.NAME));
+		dialog.setInitialSelection(focus);
+
+		if (dialog.open() == Window.OK) {
+			Object[] elements = dialog.getResult();
+			IPath[] res = new IPath[elements.length];
+			for (int i = 0; i < res.length; i++) {
+				IResource elem = (IResource) elements[i];
+				res[i] = elem.getFullPath();
+			}
+			return res;
+		}
+		return null;
+	}
+

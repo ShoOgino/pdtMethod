@@ -1,0 +1,26 @@
+	private void editSelectedWorkingSet() {
+		IWorkingSetManager manager = PlatformUI.getWorkbench().getWorkingSetManager();
+		IWorkingSet editWorkingSet = (IWorkingSet) ((IStructuredSelection) fTableViewer.getSelection()).getFirstElement();
+		IWorkingSetEditWizard wizard = manager.createWorkingSetEditWizard(editWorkingSet);
+		WizardDialog dialog = new WizardDialog(getShell(), wizard);
+		IWorkingSet originalWorkingSet = (IWorkingSet) fEditedWorkingSets.get(editWorkingSet);
+		boolean firstEdit = originalWorkingSet == null;
+
+		// save the original working set values for restoration when selection
+		// dialog is cancelled.
+		if (firstEdit) {
+			originalWorkingSet = PlatformUI.getWorkbench().getWorkingSetManager().createWorkingSet(editWorkingSet.getName(), editWorkingSet.getElements());
+		} else {
+			fEditedWorkingSets.remove(editWorkingSet);
+		}
+		dialog.create();
+		if (dialog.open() == Window.OK) {
+			editWorkingSet = wizard.getSelection();
+			fTableViewer.update(editWorkingSet, null);
+			// make sure ok button is enabled when the selected working set
+			// is edited. Fixes bug 33386.
+			updateButtonAvailability();
+		}
+		fEditedWorkingSets.put(editWorkingSet, originalWorkingSet);
+	}
+

@@ -1,0 +1,28 @@
+	/* non Java-doc
+	 * @see DragSourceListener
+	 */
+	public void dragStart(DragSourceEvent event) {
+		fFinishListener = null;
+		boolean saveDoit = event.doit;
+		Object saveData = event.data;
+		boolean doIt = false;
+		List transfers = new ArrayList(fPossibleListeners.length);
+		fActiveListeners = new ArrayList(fPossibleListeners.length);
+
+		for (int i = 0; i < fPossibleListeners.length; i++) {
+			TransferDragSourceListener listener = fPossibleListeners[i];
+			event.doit = saveDoit;
+			listener.dragStart(event);
+			if (event.doit) {
+				transfers.add(listener.getTransfer());
+				fActiveListeners.add(listener);
+			}
+			doIt = doIt || event.doit;
+		}
+		if (doIt) {
+			((DragSource) event.widget).setTransfer((Transfer[]) transfers.toArray(new Transfer[transfers.size()]));
+		}
+		event.data = saveData;
+		event.doit = doIt;
+	}
+

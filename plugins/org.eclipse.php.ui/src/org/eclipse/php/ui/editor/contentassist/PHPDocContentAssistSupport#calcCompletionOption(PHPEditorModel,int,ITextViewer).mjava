@@ -1,0 +1,27 @@
+	protected void calcCompletionOption(PHPEditorModel editorModel, int offset, ITextViewer viewer) throws BadLocationException {
+		PHPFileData fileData = editorModel.getFileData();
+		if (fileData == null) {
+			return;
+		}
+		IStructuredDocumentRegion sdRegion = ContentAssistUtils.getStructuredDocumentRegion((StructuredTextViewer) viewer, offset);
+		int lineStartOffset = editorModel.getStructuredDocument().getLineInformationOfOffset(offset).getOffset();
+
+		TextSequence statmentText = TextSequenceUtilities.createTextSequence(sdRegion, lineStartOffset, offset - lineStartOffset);
+		int totalLength = statmentText.length();
+		int endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statmentText, totalLength); // read whitespace
+		int startPosition = PHPTextSequenceUtilities.readIdentifiarStartIndex(statmentText, endPosition, true);
+		String lastWord = statmentText.subSequence(startPosition, endPosition).toString();
+		boolean haveSpacesAtEnd = totalLength != endPosition;
+		int selectionLength = ((TextSelection) viewer.getSelectionProvider().getSelection()).getLength();
+
+		if (isInPhpDocCompletion(viewer, statmentText, offset, lastWord, selectionLength, haveSpacesAtEnd)) {
+			// the current position is php doc block.
+			return;
+		}
+		if (isVariableCompletion(editorModel, fileData, offset, lastWord, selectionLength, haveSpacesAtEnd)) {
+			// the current position is a variable in a php doc block.
+			return;
+		}
+		templateProposals = getTemplates(viewer, offset);
+	}
+

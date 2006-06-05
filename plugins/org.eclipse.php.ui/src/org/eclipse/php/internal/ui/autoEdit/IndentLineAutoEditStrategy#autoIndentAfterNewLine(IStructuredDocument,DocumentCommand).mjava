@@ -1,0 +1,60 @@
+	private void autoIndentAfterNewLine(IStructuredDocument document, DocumentCommand command) {
+		try {
+			helpBuffer.setLength(0);
+			helpBuffer.append(command.text);
+
+			int currentOffset = command.offset;
+
+			int lineNumber = document.getLineOfOffset(currentOffset);
+
+			placeMatchingBlanks(document, helpBuffer, lineNumber, command);
+
+			int futureCaretPosition = -1;
+
+			if (currentOffset > 0) {
+				IAfterNewLineAutoEditStrategy autoEditStrategy = getAfterNewLineAutoEditStrategy(document, command);
+				if (autoEditStrategy != null) {
+					futureCaretPosition = autoEditStrategy.autoEditAfterNewLine(document, command, helpBuffer);
+				}
+			}
+
+			IRegion lineInfo = document.getLineInformation(lineNumber);
+
+			int startOffset = lineInfo.getOffset();
+			int length = lineInfo.getLength();
+
+			String lineText = document.get(startOffset, length);
+
+			// find the first non blank char of the element.
+			int i;
+			for (i = 0; i < length && (lineText.charAt(i) == ' ' || lineText.charAt(i) == '\t'); i++)
+				;
+
+			// if we are in the blaks at the start of the element then select them
+			// so they will be replaced with the MatchingBlanks.
+			if (currentOffset < startOffset + i) {
+				if (command.length != 0) {
+					command.offset = Math.min(command.offset, startOffset);
+				}
+				command.length = Math.max(i, command.length);
+			}
+			command.text = helpBuffer.toString();
+
+			//if we need to put the caret at a position differnt then the end of the text
+			if (futureCaretPosition != -1) {
+				//runing the command ourselfs
+				document.replace(command.offset, command.length, command.text);
+				//consuming the command
+				command.length = 0;
+				command.text = "";
+				command.offset = futureCaretPosition;
+				//moving the caret position
+				document.getUndoManager().disableUndoManagement();
+				document.replace(command.offset, command.length, command.text);
+				document.getUndoManager().enableUndoManagement();
+			}
+		} catch (BadLocationException exp) {
+			Logger.logException(exp);
+		}
+	}
+

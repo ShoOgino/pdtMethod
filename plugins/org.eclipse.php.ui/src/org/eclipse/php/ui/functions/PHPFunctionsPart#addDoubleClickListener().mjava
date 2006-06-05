@@ -1,0 +1,32 @@
+	private void addDoubleClickListener() {
+		fViewer.addDoubleClickListener(new IDoubleClickListener() {
+			public void doubleClick(DoubleClickEvent event) {
+				IEditorPart editor = getViewSite().getPage().getActiveEditor();
+				StructuredSelection selection = (StructuredSelection) fViewer.getSelection();
+				if (editor != null && editor instanceof ITextEditor && selection != null && !selection.isEmpty()) {
+					if (selection.getFirstElement() instanceof PHPCodeData) {
+						PHPCodeData codeData = (PHPCodeData) selection.getFirstElement();
+						ITextEditor textEditor = (ITextEditor) editor;
+						int caretPosition = ((ITextSelection) textEditor.getSelectionProvider().getSelection()).getOffset();
+						IDocument document = textEditor.getDocumentProvider().getDocument(textEditor.getEditorInput());
+						try {
+							document.replace(caretPosition, 0, codeData.getName());
+						} catch (BadLocationException e) {
+							Logger.logException(e);
+						}
+						textEditor.setFocus();
+						textEditor.getSelectionProvider().setSelection(new TextSelection(document, caretPosition + codeData.getName().length(), 0));
+						// TODO: 
+						// show codeData completion/description/param list
+						//                        ContentAssistant ca = new ContentAssistant();
+						//                        ca.setContentAssistProcessor(new PHPContentAssistProcessor(), IDocument.DEFAULT_CONTENT_TYPE);
+						//                        ca.install(((PHPStructuredEditor) editor).getTextViewer());
+						//                        ca.setAutoActivationDelay(0);
+						//                        ca.showPossibleCompletions();
+
+					}
+				}
+			}
+		});
+	}
+

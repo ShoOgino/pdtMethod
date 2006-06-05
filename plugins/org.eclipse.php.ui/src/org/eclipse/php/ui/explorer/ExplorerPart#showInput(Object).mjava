@@ -1,0 +1,36 @@
+	boolean showInput(Object input) {
+		Object element= null;
+			
+		if (input instanceof IFile  ) {
+			element=  PHPWorkspaceModelManager.getInstance().getModelForFile((IFile)input,false);
+		}
+				
+		if (element == null)  
+			element= input;
+				
+		if (element != null) {
+			ISelection newSelection= new StructuredSelection(element);
+			if (fViewer.getSelection().equals(newSelection)) {
+				fViewer.reveal(element);
+			} else {
+				try {
+					fViewer.removePostSelectionChangedListener(fPostSelectionListener);						
+					fViewer.setSelection(newSelection, true);
+	
+					while (element != null && fViewer.getSelection().isEmpty()) {
+						// Try to select parent in case element is filtered
+						element= getParent(element);
+						if (element != null) {
+							newSelection= new StructuredSelection(element);
+							fViewer.setSelection(newSelection, true);
+						}
+					}
+				} finally {
+					fViewer.addPostSelectionChangedListener(fPostSelectionListener);
+				}
+			}
+			return true;
+		}
+		return false;
+	}
+

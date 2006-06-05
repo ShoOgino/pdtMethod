@@ -1,0 +1,26 @@
+	/**
+	 * Note: This method is for internal use only. Clients should not call this method.
+	 */
+	protected int computeAdornmentFlags(Object obj) {
+		try {
+			if (obj instanceof PHPProjectModel) {
+				obj = PHPWorkspaceModelManager.getInstance().getProjectForModel((PHPProjectModel) obj);
+
+			}
+			if (obj instanceof PHPCodeData) {
+				IResource resource = PHPModelUtil.getResource(obj);
+				return getErrorTicksFromMarkers(resource, IResource.DEPTH_ONE, (PHPCodeData) obj);
+
+			} else if (obj instanceof IResource) {
+				return getErrorTicksFromMarkers((IResource) obj, IResource.DEPTH_INFINITE, null);
+			}
+		} catch (CoreException e) {
+			if (e.getStatus().getCode() == IResourceStatus.MARKER_NOT_FOUND) {
+				return 0;
+			}
+
+			PHPUiPlugin.log(e);
+		}
+		return 0;
+	}
+

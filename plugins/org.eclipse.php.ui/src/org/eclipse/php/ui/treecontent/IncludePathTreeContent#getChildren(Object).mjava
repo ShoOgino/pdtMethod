@@ -1,0 +1,28 @@
+	public Object[] getChildren(Object parentElement) {
+		if (parentElement instanceof IProject) {
+			IProject project = (IProject) parentElement;
+			PHPProjectOptions options = PHPProjectOptions.forProject(project);
+			if (options != null) // only for php projects
+			{
+				Object[] ret = { getTreeNode(project) };
+				return ret;
+			}
+		} else if ((parentElement instanceof PHPTreeNode) && ID_INCLUDES_NODE.equals(((PHPTreeNode) parentElement).getId())) {
+			PHPTreeNode treeNode = (PHPTreeNode) parentElement;
+			PHPProjectModel projectModel = PHPWorkspaceModelManager.getInstance().getModelForProject((IProject) treeNode.getData(), true);//			PHPIncludePathModel model=PHPIncludePathModelManager
+			PHPIncludePathModelManager includeModelManager = (PHPIncludePathModelManager) projectModel.getModel("CompositeIncludePathModel");
+			if (includeModelManager == null) {
+				return new Object[0];
+			}
+			return includeModelManager.listModels();
+		} else if (parentElement instanceof PHPIncludePathModel) {
+			PHPIncludePathModel includePathModel = (PHPIncludePathModel) parentElement;
+			return includePathModel.getFileDatas();
+		} else if (parentElement instanceof PhpModelProxy) {
+			PhpModelProxy proxy = (PhpModelProxy) parentElement;
+			return proxy.getPHPFilesData(null);
+		}
+
+		return NO_CHILDREN;
+	}
+

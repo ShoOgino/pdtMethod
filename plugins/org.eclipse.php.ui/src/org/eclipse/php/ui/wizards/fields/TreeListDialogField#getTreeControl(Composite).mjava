@@ -1,0 +1,38 @@
+	/**
+	 * Returns the tree control. When called the first time, the control will be
+	 * created.
+	 * @param parent The parent composite when called the first time, or <code>null</code>
+	 * after.
+	 */
+	public Control getTreeControl(Composite parent) {
+		if (fTreeControl == null) {
+			assertCompositeNotNull(parent);
+
+			fTree = createTreeViewer(parent);
+
+			fTreeControl = (Tree) fTree.getControl();
+			fTreeControl.addKeyListener(new KeyAdapter() {
+				public void keyPressed(KeyEvent e) {
+					handleKeyPressed(e);
+				}
+			});
+			fTree.setContentProvider(fTreeViewerAdapter);
+			fTree.setLabelProvider(fLabelProvider);
+			fTree.addSelectionChangedListener(fTreeViewerAdapter);
+			fTree.addDoubleClickListener(fTreeViewerAdapter);
+
+			fTree.setInput(fParentElement);
+			fTree.expandToLevel(fTreeExpandLevel);
+
+			if (fViewerSorter != null) {
+				fTree.setSorter(fViewerSorter);
+			}
+
+			fTreeControl.setEnabled(isEnabled());
+			if (fSelectionWhenEnabled != null) {
+				postSetSelection(fSelectionWhenEnabled);
+			}
+		}
+		return fTreeControl;
+	}
+

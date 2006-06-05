@@ -1,0 +1,34 @@
+	public static PHPManual getManual() {
+		String storedSite = PreferenceConstants.getPreferenceStore().getString(PreferenceConstants.PHP_MANUAL_SITE);
+		if (manual == null || !fStoredSite.equals(storedSite)) {
+			manual = null;
+			fStoredSite = storedSite;
+			
+			PHPManualSiteDescriptor[] descs = PHPUiPlugin.getDefault().getPHPManualSiteDescriptors();
+			for (int i=0; i < descs.length; ++i) {
+				if (storedSite != null && storedSite.equals(descs[i].getURL())) {
+					manual = createManual(descs[i]);
+					break;
+				}
+			}
+			
+			if (manual == null) {
+				List configs = new ArrayList();
+				PHPManualConfigurationBlock.initFromPreferences(PreferenceConstants.getPreferenceStore(), configs);
+				if (configs.size() > 0) {
+					PHPManualConfig defaultConfig = PHPManualConfigurationBlock.getActiveManualSite(PreferenceConstants.getPreferenceStore(), configs);
+					if (defaultConfig != null) {
+						manual = createManual(defaultConfig);
+					} else {
+						manual = createManual((PHPManualConfig)configs.get(0));
+					}
+				}
+				else if (descs.length > 0) {
+					manual = createManual(descs[0]);
+				}
+			}
+		}
+		Assert.isNotNull(manual);
+		return manual;
+	}
+

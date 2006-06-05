@@ -1,0 +1,25 @@
+			/**
+			 * Creates a new edition on the document of this factory.
+			 * 
+			 * @param offset the offset of the edition at the point when is created.
+			 * @param length the length of the edition (not updated via the position update mechanism)
+			 * @param text the text to be replaced on the document
+			 * @return an <code>Edit</code> reflecting the edition on the document
+			 */
+			public Edit createEdit(int offset, int length, String text) throws BadLocationException {
+				
+				if (!fDocument.containsPositionCategory(fCategory)) {
+					fDocument.addPositionCategory(fCategory);
+					fUpdater= new DefaultPositionUpdater(fCategory);
+					fDocument.addPositionUpdater(fUpdater);
+				}
+				
+				Position position= new Position(offset);
+				try {
+					fDocument.addPosition(fCategory, position);
+				} catch (BadPositionCategoryException e) {
+					Assert.isTrue(false);
+				}
+				return new Edit(fDocument, length, text, position);
+			}
+

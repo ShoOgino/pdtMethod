@@ -1,0 +1,32 @@
+	public void customizeDocumentCommand(IDocument document, DocumentCommand command) {
+		if (command.text == null) {
+			return;
+		}
+		String checkWord = null;
+		String addedWord = null;
+		if (command.text.endsWith("t")) {
+			checkWord = "defaul";
+			addedWord = "default";
+		} else if (command.text.endsWith("e")) {
+			checkWord = "cas";
+			addedWord = "case";
+		} else {
+			return;
+		}
+		IStructuredDocument sDocument = (IStructuredDocument) document;
+		if (FormatterUtils.getPartitionType(sDocument, command.offset) != PHPPartitionTypes.PHP_DEFAULT) {
+			return;
+		}
+		int length = checkWord.length();
+		if (command.offset < length + 1) {
+			return;
+		}
+		try {
+			if (document.get(command.offset - length, length).equals(checkWord)) {
+				autoIdentCaseDefault(sDocument, command, addedWord);
+			}
+		} catch (BadLocationException e) {
+			Logger.logException(e);
+		}
+	}
+

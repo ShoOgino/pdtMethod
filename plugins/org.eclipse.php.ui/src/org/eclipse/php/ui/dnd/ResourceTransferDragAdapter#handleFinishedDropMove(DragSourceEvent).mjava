@@ -1,0 +1,21 @@
+	private void handleFinishedDropMove(DragSourceEvent event) {
+		MultiStatus status = new MultiStatus(PHPUiPlugin.ID, PHPUiPlugin.INTERNAL_ERROR, "Cannot delete resources", //$NON-NLS-1$
+			null);
+		List resources = convertSelection();
+		for (Iterator iter = resources.iterator(); iter.hasNext();) {
+			IResource resource = (IResource) iter.next();
+			try {
+				resource.delete(true, null);
+			} catch (CoreException e) {
+				status.add(e.getStatus());
+			}
+		}
+		if (status.getChildren().length > 0) {
+			Shell parent = SWTUtil.getShell(event.widget);
+			ErrorDialog error = new ErrorDialog(parent, "Moving Resources with Drag and Drop", //$NON-NLS-1$
+				"Cannot delete the following file(s)", //$NON-NLS-1$
+				status, IStatus.ERROR);
+			error.open();
+		}
+	}
+

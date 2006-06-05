@@ -1,0 +1,35 @@
+	/**
+	 * Returns the security filter we can use 
+	 * @param isInstanceOf - true if we are dealing with instance - not $this-> or MyClass::
+	 * @return
+	 * ModelSupport.PIRVATE_ACCESS_LEVEL_FILTER - if we can see private fields
+	 * ModelSupport.PROTECTED_ACCESS_LEVEL_FILTER - if we can see protected fields
+	 * ModelSupport.PUBLIC_ACCESS_LEVEL_FILTER - if we can see public fields
+	 */
+	private CodeDataFilter getAccessLevelFilter(PHPProjectModel projectModel, String fileName, String className, int offset, boolean isInstanceOf) {
+		PHPCodeContext context = getContext(projectModel, fileName, offset);
+		String contextClassName = context.getContainerClassName();
+		// if the name of the context class is the same as the className itself then we are
+		// inside the same class - meaning we can use private methodes. 
+		if (contextClassName.equals(className)) {
+			return ModelSupport.PIRVATE_ACCESS_LEVEL_FILTER;
+		}
+		// if we are out side of a class or this is an instance of a class and not $this
+		if (contextClassName.equals("") || isInstanceOf) {
+			return ModelSupport.PUBLIC_ACCESS_LEVEL_FILTER;
+		}
+		PHPClassData classData = projectModel.getClass(fileName, contextClassName);
+		String superClassName = classData.getSuperClassData().getName();
+		while (superClassName != null) {
+			if (superClassName.equals(className)) {
+				return ModelSupport.PROTECTED_ACCESS_LEVEL_FILTER;
+			}
+			classData = projectModel.getClass(fileName, superClassName);
+			if (classData == null) {
+				break;
+			}
+			superClassName = classData.getSuperClassData().getName();
+		}
+		return ModelSupport.PUBLIC_ACCESS_LEVEL_FILTER;
+	}
+

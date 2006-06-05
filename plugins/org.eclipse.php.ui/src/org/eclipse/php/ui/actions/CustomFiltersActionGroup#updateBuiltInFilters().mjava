@@ -1,0 +1,37 @@
+	private void updateBuiltInFilters() {
+		Set installedFilters = fInstalledBuiltInFilters.keySet();
+		Set filtersToAdd = new HashSet(fEnabledFilterIds.size());
+		Set filtersToRemove = new HashSet(fEnabledFilterIds.size());
+		Iterator iter = fEnabledFilterIds.entrySet().iterator();
+		while (iter.hasNext()) {
+			Map.Entry entry = (Map.Entry) iter.next();
+			String id = (String) entry.getKey();
+			boolean isEnabled = ((Boolean) entry.getValue()).booleanValue();
+			if (isEnabled && !installedFilters.contains(id))
+				filtersToAdd.add(id);
+			else if (!isEnabled && installedFilters.contains(id))
+				filtersToRemove.add(id);
+		}
+
+		// Install the filters
+		FilterDescriptor[] filterDescs = getCachedFilterDescriptors();
+		for (int i = 0; i < filterDescs.length; i++) {
+			String id = filterDescs[i].getId();
+			// just to double check - id should denote a custom filter anyway
+			boolean isCustomFilter = filterDescs[i].isCustomFilter();
+			if (isCustomFilter) {
+				if (filtersToAdd.contains(id)) {
+					ViewerFilter filter = filterDescs[i].createViewerFilter();
+					if (filter != null) {
+						fViewer.addFilter(filter);
+						fInstalledBuiltInFilters.put(id, filter);
+					}
+				}
+				if (filtersToRemove.contains(id)) {
+					fViewer.removeFilter((ViewerFilter) fInstalledBuiltInFilters.get(id));
+					fInstalledBuiltInFilters.remove(id);
+				}
+			}
+		}
+	}
+

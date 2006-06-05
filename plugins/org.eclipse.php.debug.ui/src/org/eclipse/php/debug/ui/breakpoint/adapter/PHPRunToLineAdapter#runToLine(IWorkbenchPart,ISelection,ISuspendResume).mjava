@@ -1,0 +1,44 @@
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.eclipse.debug.ui.actions.IRunToLineTarget#runToLine(org.eclipse.ui.IWorkbenchPart,
+     *      org.eclipse.jface.viewers.ISelection,
+     *      org.eclipse.debug.core.model.ISuspendResume)
+     */
+    public void runToLine(IWorkbenchPart part, ISelection selection, ISuspendResume target) throws CoreException {
+        IEditorPart editorPart = (IEditorPart) part;
+        IEditorInput input = editorPart.getEditorInput();
+        String errorMessage = null;
+        if (input == null) {
+            errorMessage = PHPDebugUIMessages.PHPRunToLineAdapter_0;
+        } else {
+            ITextEditor textEditor = (ITextEditor) editorPart;
+            IDocument document = textEditor.getDocumentProvider().getDocument(input);
+            if (document == null) {
+                errorMessage = PHPDebugUIMessages.PHPRunToLineAdapter_1;
+            } else {
+                ITextSelection textSelection = (ITextSelection) selection;
+                int lineNumber = textSelection.getStartLine() + 1;
+                if (lineNumber > 0) {
+                    if (getValidPosition(document, lineNumber) != -1) {
+                        if (target instanceof IAdaptable) {
+                            IDebugTarget debugTarget = (IDebugTarget) ((IAdaptable) target).getAdapter(IDebugTarget.class);
+                            if (debugTarget != null) {
+                                IFile file = getFile(textEditor);
+                                IBreakpoint breakpoint = new PHPRunToLineBreakpoint(file, lineNumber);
+                                RunToLineHandler handler = new RunToLineHandler(debugTarget, target, breakpoint);
+                                handler.run(new NullProgressMonitor());
+                                return;
+                            }
+                        }
+                    } else {
+                        errorMessage = PHPDebugUIMessages.PHPRunToLineAdapter_2;
+                    }
+                } else {
+                    errorMessage = PHPDebugUIMessages.PHPRunToLineAdapter_2;
+                }
+            }
+        }
+        throw new CoreException(new Status(IStatus.ERROR, PHPDebugUIPlugin.getID(), IPHPConstants.INTERNAL_ERROR, errorMessage, null));
+    }
+

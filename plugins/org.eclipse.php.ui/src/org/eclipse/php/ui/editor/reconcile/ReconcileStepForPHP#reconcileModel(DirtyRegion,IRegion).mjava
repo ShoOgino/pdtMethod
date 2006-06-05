@@ -1,0 +1,38 @@
+	protected IReconcileResult[] reconcileModel(DirtyRegion dirtyRegion, IRegion subRegion) {
+
+		IStructuredModel sModel = StructuredModelManager.getModelManager().getExistingModelForRead(getStructuredDocument());
+		IReconcileResult[] results = EMPTY_RECONCILE_RESULT_SET;
+		try {
+			if (sModel != null) {
+
+				PHPEditorModel model = (PHPEditorModel) sModel;
+
+				//@GINO: Updata the FileData because the content has changed
+				//this might not be the best way to do this
+				model.updateFileData();
+
+				PHPFileData fileData = model.getFileData();
+				if (fileData == null) {
+					return EMPTY_RECONCILE_RESULT_SET;
+				}
+				IPHPMarker[] markers = fileData.getMarkers();
+
+				ArrayList annotations = new ArrayList();
+				if (markers != null) {
+					for (int i = 0; markers.length > i; i++) {
+						IReconcileResult annotation = createAnnotation(markers[i]);
+						if (annotation != null) {
+							annotations.add(annotation);
+						}
+					}
+				}
+
+				results = (IReconcileResult[]) annotations.toArray(new IReconcileResult[annotations.size()]);
+			}
+		} finally {
+			if (sModel != null)
+				sModel.releaseFromRead();
+		}
+		return results;
+	}
+

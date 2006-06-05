@@ -1,0 +1,42 @@
+	void updateListDependencies() {
+		String id= fStore.getString(PreferenceConstants.EDITOR_FOLDING_PROVIDER);
+		PHPFoldingStructureProviderDescriptor desc= (PHPFoldingStructureProviderDescriptor) fProviderDescriptors.get(id);
+		IPHPFoldingPreferenceBlock prefs;
+		
+		if (desc == null) {
+			// safety in case there is no such descriptor
+			String message= PHPUIMessages.FoldingConfigurationBlock_error_not_exist; 
+			PHPUiPlugin.log(new Status(IStatus.WARNING, PHPUiPlugin.getPluginId(), IStatus.OK, message, null));
+			prefs= new ErrorPreferences(message);
+		} else {
+			prefs= (IPHPFoldingPreferenceBlock) fProviderPreferences.get(id);
+			if (prefs == null) {
+				try {
+					prefs= desc.createPreferences();
+					fProviderPreferences.put(id, prefs);
+				} catch (CoreException e) {
+					PHPUiPlugin.log(e);
+					prefs= new ErrorPreferences(e.getLocalizedMessage());
+				}
+			}
+		}
+		
+		Control control= (Control) fProviderControls.get(id);
+		if (control == null) {
+			control= prefs.createControl(fGroup);
+			if (control == null) {
+				String message= PHPUIMessages.FoldingConfigurationBlock_info_no_preferences; 
+				control= new ErrorPreferences(message).createControl(fGroup);
+			} else {
+				fProviderControls.put(id, control);
+			}
+		}
+		Dialog.applyDialogFont(control);
+		fStackLayout.topControl= control;
+		control.pack();
+		fGroup.layout();
+		fGroup.getParent().layout();
+		
+		prefs.initialize();
+	}
+

@@ -1,0 +1,34 @@
+	void handleDropMove(DragSourceEvent event) {
+		final List elements = getResources();
+		if (elements == null || elements.size() == 0)
+			return;
+
+		WorkspaceModifyOperation op = new WorkspaceModifyOperation() {
+			public void execute(IProgressMonitor monitor) throws CoreException {
+				try {
+					monitor.beginTask("Deleting ...", elements.size()); //$NON-NLS-1$
+					MultiStatus status = createMultiStatus();
+					Iterator iter = elements.iterator();
+					while (iter.hasNext()) {
+						IResource resource = (IResource) iter.next();
+						try {
+							monitor.subTask(resource.getFullPath().toOSString());
+							resource.delete(true, null);
+
+						} catch (CoreException e) {
+							status.add(e.getStatus());
+						} finally {
+							monitor.worked(1);
+						}
+					}
+					if (!status.isOK()) {
+						throw new CoreException(status);
+					}
+				} finally {
+					monitor.done();
+				}
+			}
+		};
+		runOperation(op, true, false);
+	}
+

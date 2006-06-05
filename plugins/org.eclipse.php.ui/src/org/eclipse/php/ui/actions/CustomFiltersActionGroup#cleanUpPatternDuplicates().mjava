@@ -1,0 +1,21 @@
+	private void cleanUpPatternDuplicates() {
+		if (!areUserDefinedPatternsEnabled())
+			return;
+		List userDefinedPatterns = new ArrayList(Arrays.asList(fUserDefinedPatterns));
+		FilterDescriptor[] filters = getCachedFilterDescriptors();
+
+		for (int i = 0; i < filters.length; i++) {
+			if (filters[i].isPatternFilter()) {
+				String pattern = filters[i].getPattern();
+				if (userDefinedPatterns.contains(pattern)) {
+					fEnabledFilterIds.put(filters[i].getId(), Boolean.TRUE);
+					boolean hasMore = true;
+					while (hasMore)
+						hasMore = userDefinedPatterns.remove(pattern);
+				}
+			}
+		}
+		fUserDefinedPatterns = (String[]) userDefinedPatterns.toArray(new String[userDefinedPatterns.size()]);
+		setUserDefinedPatternsEnabled(fUserDefinedPatternsEnabled && fUserDefinedPatterns.length > 0);
+	}
+

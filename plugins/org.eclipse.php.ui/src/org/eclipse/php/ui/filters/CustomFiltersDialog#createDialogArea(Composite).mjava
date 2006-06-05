@@ -1,0 +1,58 @@
+	/**
+	 * Overrides method in Dialog
+	 * 
+	 * @see org.eclipse.jface.dialogs.Dialog#createDialogArea(Composite)
+	 */
+	protected Control createDialogArea(Composite parent) {
+		initializeDialogUnits(parent);
+		// create a composite with standard margins and spacing
+		Composite composite = new Composite(parent, SWT.NONE);
+		GridLayout layout = new GridLayout();
+		layout.marginHeight = convertVerticalDLUsToPixels(IDialogConstants.VERTICAL_MARGIN);
+		layout.marginWidth = convertHorizontalDLUsToPixels(IDialogConstants.HORIZONTAL_MARGIN);
+		layout.verticalSpacing = convertVerticalDLUsToPixels(IDialogConstants.VERTICAL_SPACING);
+		layout.horizontalSpacing = convertHorizontalDLUsToPixels(IDialogConstants.HORIZONTAL_SPACING);
+		composite.setLayout(layout);
+		composite.setLayoutData(new GridData(GridData.FILL_BOTH));
+		composite.setFont(parent.getFont());
+		Composite group = composite;
+
+		// Checkbox
+		fEnableUserDefinedPatterns = new Button(group, SWT.CHECK);
+		fEnableUserDefinedPatterns.setFocus();
+		fEnableUserDefinedPatterns.setText(FilterMessages.CustomFiltersDialog_enableUserDefinedPattern);
+
+		// Pattern	field
+		fUserDefinedPatterns = new Text(group, SWT.SINGLE | SWT.BORDER);
+		GridData data = new GridData(GridData.HORIZONTAL_ALIGN_FILL | GridData.GRAB_HORIZONTAL);
+		data.widthHint = convertWidthInCharsToPixels(59);
+		fUserDefinedPatterns.setLayoutData(data);
+		String patterns = convertToString(fPatterns, SEPARATOR);
+		fUserDefinedPatterns.setText(patterns);
+
+		// Info text
+		final Label info = new Label(group, SWT.LEFT);
+		info.setText(FilterMessages.CustomFiltersDialog_patternInfo);
+
+		// Enabling / disabling of pattern group
+		fEnableUserDefinedPatterns.setSelection(fEnablePatterns);
+		fUserDefinedPatterns.setEnabled(fEnablePatterns);
+		info.setEnabled(fEnablePatterns);
+		fEnableUserDefinedPatterns.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				boolean state = fEnableUserDefinedPatterns.getSelection();
+				fUserDefinedPatterns.setEnabled(state);
+				info.setEnabled(fEnableUserDefinedPatterns.getSelection());
+				if (state)
+					fUserDefinedPatterns.setFocus();
+			}
+		});
+
+		// Filters provided by extension point
+		if (fBuiltInFilters.length > 0)
+			createCheckBoxList(group);
+
+		applyDialogFont(parent);
+		return parent;
+	}
+

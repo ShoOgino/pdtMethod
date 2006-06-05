@@ -1,0 +1,63 @@
+	/**
+	 * Returns the list control. When called the first time, the control will be created.
+	 * @param parent The parent composite when called the first time, or <code>null</code>
+	 * after.
+	 */
+	public Control getListControl(Composite parent) {
+		if (fTableControl == null) {
+			assertCompositeNotNull(parent);
+
+			if (fTableColumns == null) {
+				fTable = createTableViewer(parent);
+				Table tableControl = fTable.getTable();
+
+				fTableControl = tableControl;
+				tableControl.setLayout(new TableLayout());
+			} else {
+				TableLayoutComposite composite = new TableLayoutComposite(parent, SWT.NONE);
+				composite.setFont(parent.getFont());
+				fTableControl = composite;
+
+				fTable = createTableViewer(composite);
+				Table tableControl = fTable.getTable();
+
+				tableControl.setHeaderVisible(fTableColumns.headers != null);
+				tableControl.setLinesVisible(fTableColumns.drawLines);
+				ColumnLayoutData[] columns = fTableColumns.columns;
+				for (int i = 0; i < columns.length; i++) {
+					composite.addColumnData(columns[i]);
+					TableColumn column = new TableColumn(tableControl, SWT.NONE);
+					//tableLayout.addColumnData(columns[i]);
+					if (fTableColumns.headers != null) {
+						column.setText(fTableColumns.headers[i]);
+					}
+				}
+			}
+
+			fTable.getTable().addKeyListener(new KeyAdapter() {
+				public void keyPressed(KeyEvent e) {
+					handleKeyPressed(e);
+				}
+			});
+
+			//fTableControl.setLayout(tableLayout);						
+
+			fTable.setContentProvider(fListViewerAdapter);
+			fTable.setLabelProvider(fLabelProvider);
+			fTable.addSelectionChangedListener(fListViewerAdapter);
+			fTable.addDoubleClickListener(fListViewerAdapter);
+
+			fTable.setInput(fParentElement);
+
+			if (fViewerSorter != null) {
+				fTable.setSorter(fViewerSorter);
+			}
+
+			fTableControl.setEnabled(isEnabled());
+			if (fSelectionWhenEnabled != null) {
+				postSetSelection(fSelectionWhenEnabled);
+			}
+		}
+		return fTableControl;
+	}
+

@@ -1,0 +1,35 @@
+	/*
+	 * Implements method from IWorkingSetPage
+	 */
+	public void finish() {
+		String workingSetName = fWorkingSetName.getText();
+		ArrayList elements = new ArrayList(10);
+		findCheckedElements(elements, fTree.getInput());
+		if (fWorkingSet == null) {
+			IWorkingSetManager workingSetManager = PlatformUI.getWorkbench().getWorkingSetManager();
+			fWorkingSet = workingSetManager.createWorkingSet(workingSetName, (IAdaptable[]) elements.toArray(new IAdaptable[elements.size()]));
+		} else {
+			// Add inaccessible resources
+			IAdaptable[] oldItems = fWorkingSet.getElements();
+			ArrayList closedWithChildren = new ArrayList(elements.size());
+			for (int i = 0; i < oldItems.length; i++) {
+				IResource oldResource = null;
+				if (oldItems[i] instanceof IResource) {
+					oldResource = (IResource) oldItems[i];
+				} else {
+					oldResource = (IResource) oldItems[i].getAdapter(IResource.class);
+				}
+				if (oldResource != null && oldResource.isAccessible() == false) {
+					IProject project = oldResource.getProject();
+					if (elements.contains(project) || closedWithChildren.contains(project)) {
+						elements.add(oldItems[i]);
+						elements.remove(project);
+						closedWithChildren.add(project);
+					}
+				}
+			}
+			fWorkingSet.setName(workingSetName);
+			fWorkingSet.setElements((IAdaptable[]) elements.toArray(new IAdaptable[elements.size()]));
+		}
+	}
+

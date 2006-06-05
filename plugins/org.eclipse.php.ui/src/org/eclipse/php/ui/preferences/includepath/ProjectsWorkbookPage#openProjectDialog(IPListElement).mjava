@@ -1,0 +1,29 @@
+	private IPListElement[] openProjectDialog(IPListElement elem) {
+
+		ArrayList selectable = new ArrayList();
+		selectable.addAll(Arrays.asList(PHPWorkspaceModelManager.getInstance().listProjects()));
+		selectable.remove(fCurrPHPProject);
+
+		List elements = fProjectsList.getElements();
+		for (int i = 0; i < elements.size(); i++) {
+			IPListElement curr = (IPListElement) elements.get(0);
+			selectable.remove(curr.getResource());
+		}
+		Object[] selectArr = selectable.toArray();
+		new PHPElementSorter().sort(null, selectArr);
+
+		ListSelectionDialog dialog = new ListSelectionDialog(getShell(), Arrays.asList(selectArr), new ListContentProvider(), new PHPUILabelProvider(), PHPUIMessages.ProjectsWorkbookPage_chooseProjects_message);
+		dialog.setTitle(PHPUIMessages.ProjectsWorkbookPage_chooseProjects_title);
+		if (dialog.open() == Window.OK) {
+			Object[] result = dialog.getResult();
+			IPListElement[] cpElements = new IPListElement[result.length];
+			for (int i = 0; i < result.length; i++) {
+				IProject curr = (IProject) result[i];
+				cpElements[i] = new IPListElement(fCurrPHPProject, IIncludePathEntry.IPE_PROJECT, IIncludePathEntry.K_SOURCE, curr.getFullPath(), curr);
+			}
+			return cpElements;
+		}
+
+		return null;
+	}
+

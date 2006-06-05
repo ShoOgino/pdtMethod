@@ -1,0 +1,38 @@
+		public static SearchPatternData create(IDialogSettings settings) {
+			String pattern = settings.get("pattern"); //$NON-NLS-1$
+			if (pattern.length() == 0) {
+				return null;
+			}
+			//						PHPCodeData elem= null;
+			//						String handleId= settings.get("phpElement"); //$NON-NLS-1$
+			//						if (handleId != null && handleId.length() > 0) {
+			//							PHPCodeData restored= JavaCore.create(handleId); //$NON-NLS-1$
+			//							if (restored != null && isSearchableType(restored) && restored.exists()) {
+			//								elem= restored;
+			//							}
+			//						}
+			String[] wsIds = settings.getArray("workingSets"); //$NON-NLS-1$
+			IWorkingSet[] workingSets = null;
+			if (wsIds != null && wsIds.length > 0) {
+				IWorkingSetManager workingSetManager = PlatformUI.getWorkbench().getWorkingSetManager();
+				workingSets = new IWorkingSet[wsIds.length];
+				for (int i = 0; workingSets != null && i < wsIds.length; i++) {
+					workingSets[i] = workingSetManager.getWorkingSet(wsIds[i]);
+					if (workingSets[i] == null) {
+						workingSets = null;
+					}
+				}
+			}
+
+			try {
+				int searchFor = settings.getInt("searchFor"); //$NON-NLS-1$
+				int scope = settings.getInt("scope"); //$NON-NLS-1$
+				int limitTo = settings.getInt("limitTo"); //$NON-NLS-1$
+				boolean isCaseSensitive = settings.getBoolean("isCaseSensitive"); //$NON-NLS-1$
+
+				return new SearchPatternData(searchFor, limitTo, pattern, isCaseSensitive, null, scope, workingSets);
+			} catch (NumberFormatException e) {
+				return null;
+			}
+		}
+

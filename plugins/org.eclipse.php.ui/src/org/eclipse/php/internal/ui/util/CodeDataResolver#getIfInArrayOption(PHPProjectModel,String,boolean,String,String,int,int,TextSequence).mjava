@@ -1,0 +1,39 @@
+	private CodeData getIfInArrayOption(PHPProjectModel projectModel, String fileName, boolean haveSpacesAtEnd, String firstWord, String elementName, int startPosition, int offset, TextSequence text) {
+		boolean isArrayOption = false;
+		if (startPosition > 0 && !elementName.startsWith("$")) {
+			if (haveSpacesAtEnd) {
+				if (elementName.length() == 0 && firstWord.length() == 0) {
+					if (text.charAt(startPosition - 1) == '[') {
+						isArrayOption = true;
+					}
+				}
+			} else {
+				if (firstWord.length() == 0) {
+					if (text.charAt(startPosition - 1) == '[') {
+						isArrayOption = true;
+					}
+				}
+			}
+		}
+		if (!isArrayOption) {
+			return null;
+		}
+		int endPosition = startPosition - 1;
+
+		endPosition = PHPTextSequenceUtilities.readBackwardSpaces(text, endPosition);
+		startPosition = PHPTextSequenceUtilities.readIdentifiarStartIndex(text, endPosition, true);
+		String variableName = text.subSequence(startPosition, endPosition).toString();
+
+		if (variableName.startsWith("$")) {
+			variableName = variableName.substring(1);
+		}
+		CodeData[] arrayResult = projectModel.getArrayVariables(fileName, variableName, elementName, true);
+		CodeData[] functions = projectModel.getFunction(elementName);
+		CodeData[] mergeData = ModelSupport.merge(functions, arrayResult);
+		CodeData constant = projectModel.getConstantData(elementName, CONSTANT_CASE_SENSITIVE);
+		if (constant != null) {
+			mergeData = ModelSupport.merge(new CodeData[] { constant }, mergeData);
+		}
+		return filterExact (mergeData, elementName);
+	}
+

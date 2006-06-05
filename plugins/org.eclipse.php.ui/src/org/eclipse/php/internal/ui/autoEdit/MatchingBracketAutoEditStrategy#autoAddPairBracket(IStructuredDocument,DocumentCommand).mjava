@@ -1,0 +1,55 @@
+	private void autoAddPairBracket(IStructuredDocument document, DocumentCommand command) {
+		int currentPosition = command.offset;
+		int commandLength = command.length;
+		char c = command.text.charAt(0);
+		boolean extraCharWasAdded = false;
+		String removedText = "";
+
+		try {
+			if (currentPosition + commandLength < document.getLength()) {
+				if (!shouldAddClosingBracket(document, currentPosition + commandLength, false)) {
+					return;
+				}
+			}
+
+			//adding the first ( in order to make the calculation more easy
+			removedText = document.get(currentPosition, commandLength);
+
+			//tarning of the undo 
+			document.getUndoManager().disableUndoManagement();
+			document.replace(currentPosition, commandLength, command.text);
+			extraCharWasAdded = true;
+
+			int result = isMatchingCharNeeded(document, currentPosition, c);
+			// rollback the change we made
+			document.replace(currentPosition, 1, removedText);
+			//putting back the undo
+			document.getUndoManager().enableUndoManagement();
+
+			if (result == MATCHING_BRACKET_NEEDED) {
+				char match = getMatchingChar(c);
+				command.text = command.text + match;
+				//making the change in ther documet ourselfs and consuming the original command
+				document.replace(currentPosition, commandLength, command.text);
+				document.getUndoManager().disableUndoManagement();
+				document.replace(currentPosition + 1, 0, "");
+				document.getUndoManager().enableUndoManagement();
+				command.offset++; //this will cause the caret to be set between the brackets.
+				command.length = 0;
+				command.text = "";
+			}
+
+		} catch (Exception exc) {
+			Logger.logException(exc);
+			if (extraCharWasAdded) {
+				try {
+					document.replace(currentPosition, 1, removedText);
+					document.getUndoManager().enableUndoManagement();
+				} catch (BadLocationException e) {
+					Logger.logException(e);
+				}
+			}
+		}
+
+	}
+

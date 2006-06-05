@@ -1,0 +1,28 @@
+	private void insertClosingChar(IStructuredDocument document, DocumentCommand command) {
+		int endSelection = command.offset + command.length;
+		char addedChar = command.text.charAt(0);
+		try {
+			char nextChar = document.getChar(endSelection);
+			if (nextChar == addedChar) {
+				int result;
+				result = isMatchingCharNeeded(document, endSelection, getMatchingChar(addedChar));
+				// this check means that all opening brackets has a closing one
+				if (result == MATCHING_BRACKET_NOT_NEEDED) {
+					// this check is for the case of ()) when the carret is between the two ')'
+					// typing ')' will add another ')' to the document
+					if (matcher.match(document, endSelection + 1) != null) {
+						if (command.length == 0) {
+							command.offset++;
+							command.text = "";
+						} else {
+							command.length++;
+						}
+					}
+				}
+			}
+		} catch (BadLocationException e) {
+			Logger.logException(e);
+		}
+		return;
+	}
+

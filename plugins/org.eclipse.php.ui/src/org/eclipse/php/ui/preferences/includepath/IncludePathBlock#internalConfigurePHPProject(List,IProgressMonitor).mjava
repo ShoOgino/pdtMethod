@@ -1,0 +1,35 @@
+	/*
+	 * Creates the PHP project and sets the configured include path and output location.
+	 * If the project already exists only include paths are updated.
+	 */
+	private void internalConfigurePHPProject(List includePathEntries, IProgressMonitor monitor) throws CoreException, OperationCanceledException {
+		// 10 monitor steps to go
+
+		if (monitor.isCanceled()) {
+			throw new OperationCanceledException();
+		}
+		monitor.worked(2);
+
+		int nEntries = includePathEntries.size();
+		IIncludePathEntry[] includepath = new IIncludePathEntry[nEntries];
+
+		// create and set the include path
+		for (int i = 0; i < nEntries; i++) {
+			IPListElement entry = ((IPListElement) includePathEntries.get(i));
+			IResource res = entry.getResource();
+			if ((res instanceof IFolder) && !res.exists()) {
+				createFolder((IFolder) res, true, true, null);
+			}
+
+			includepath[i] = entry.getIncludePathEntry();
+		}
+
+		if (monitor.isCanceled()) {
+			throw new OperationCanceledException();
+		}
+		monitor.worked(1);
+
+		phpOptions.setRawIncludePath(includepath, new SubProgressMonitor(monitor, 7));
+		initializeTimeStamps();
+	}
+

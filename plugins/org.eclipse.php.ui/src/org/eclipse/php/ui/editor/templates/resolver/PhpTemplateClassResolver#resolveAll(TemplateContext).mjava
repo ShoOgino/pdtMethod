@@ -1,0 +1,29 @@
+	protected String[] resolveAll(TemplateContext context) {
+		ArrayList classNames = new ArrayList();
+		final PhpTemplateContext phpTemplateContext = (PhpTemplateContext) context;
+
+		IModelManager modelManager = StructuredModelManager.getModelManager();
+		if (modelManager == null) {
+			return new String[] { DEFAULT_VAR };
+		}
+
+		IStructuredModel structuredModel = modelManager.getExistingModelForRead(phpTemplateContext.getDocument());
+		if (structuredModel == null) {
+			return new String[] { DEFAULT_VAR };
+		}
+
+		try {
+			PHPEditorModel phpEditorModel = (PHPEditorModel) structuredModel;
+			CodeData[] codeDatas = phpEditorModel.getProjectModel().getClasses();
+			for (int i = 0; i < codeDatas.length; i++) {
+				CodeData codeData = codeDatas[i];
+				classNames.add(codeData.getName());
+			}
+
+		} finally {
+			structuredModel.releaseFromRead();
+		}
+
+		return (String[]) classNames.toArray(new String[classNames.size()]);
+	}
+

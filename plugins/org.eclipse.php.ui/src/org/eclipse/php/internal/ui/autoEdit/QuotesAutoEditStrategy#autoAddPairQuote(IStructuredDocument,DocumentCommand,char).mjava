@@ -1,0 +1,47 @@
+	private void autoAddPairQuote(IStructuredDocument document, DocumentCommand command, char insertedChar) {
+		int startOffset = command.offset;
+		int endOffset = startOffset + command.length;
+
+		try {
+			String startState = FormatterUtils.getPartitionType(document, startOffset);
+			String endState = FormatterUtils.getPartitionType(document, endOffset);
+			if (startState == PHPPartitionTypes.PHP_QUOTED_STRING || endState == PHPPartitionTypes.PHP_QUOTED_STRING) {
+				if (endOffset < document.getLength() && startOffset == endOffset) {
+					char nextChar = document.getChar(endOffset);
+					if (insertedChar == nextChar) {
+						char prevChar = document.getChar(startOffset - 1);
+						if (prevChar != BACK_SLASH) {
+							if (command.length == 0) {
+								command.offset++;
+								command.text = "";
+							} else {
+								command.length++;
+							}
+						}
+					}
+				}
+				return;
+			}
+			if (isQuoteAllowed(startState, insertedChar)) {
+				if ((shouldAddClosingBracket(document, endOffset, true))) {
+					int result = isMatchingCharNeeded(document, endOffset, insertedChar);
+					if (result == MATCHING_BRACKET_NEEDED) {
+						command.text = command.text + insertedChar;
+						//making the change in ther documet ourselfs and consuming the original command
+						document.replace(command.offset, command.length, command.text);
+						document.getUndoManager().disableUndoManagement();
+						document.replace(command.offset + 1, 0, "");
+						document.getUndoManager().enableUndoManagement();
+						command.offset++; //this will cause the caret to be set between the quotes.
+						command.length = 0;
+						command.text = "";
+					}
+				}
+			}
+
+		} catch (BadLocationException e) {
+			Logger.logException(e);
+			document.getUndoManager().enableUndoManagement();
+		}
+	}
+

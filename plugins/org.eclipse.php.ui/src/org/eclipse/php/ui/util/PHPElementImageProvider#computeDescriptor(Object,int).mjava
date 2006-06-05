@@ -1,0 +1,37 @@
+	private ImageDescriptor computeDescriptor(Object element, int flags) {
+		if (element instanceof PHPCodeData) {
+			return getPHPImageDescriptor((PHPCodeData) element, flags);
+		} else if (element instanceof PHPProjectModel) {
+			return DESC_OBJ_PROJECT;
+		} else if (element instanceof IFile) {
+			IFile file = (IFile) element;
+			if ("as".equals(file.getFileExtension())) { //$NON-NLS-1$
+				return getCUResourceImageDescriptor(file, flags); // image for a CU not on the build path
+			}
+			return getWorkbenchImageDescriptor(file, flags);
+		} else if (element instanceof IAdaptable) {
+			return getWorkbenchImageDescriptor((IAdaptable) element, flags);
+		} else if (element.equals(PHPFunctionsContentProvider.CONSTANTS_NODE_NAME)) {
+			return PHPPluginImages.DESC_OBJ_PHP_CONSTANTS_GROUP;
+		}  else if (element instanceof PHPIncludePathModel) {
+			PHPIncludePathModel model = (PHPIncludePathModel)element;
+			switch (model.getType()) {
+				case PHPIncludePathModel.TYPE_ZIP:
+					return PHPPluginImages.DESC_OBJS_EXTZIP;
+				case PHPIncludePathModel.TYPE_VARIABLE:
+					return PHPPluginImages.DESC_OBJS_ENV_VAR;
+				default:
+					return PHPPluginImages.DESC_OBJS_LIBRARY;
+			}
+		}
+		switch (ProjectOutlineContentProvider.getNodeType(element)) {
+			case ProjectOutlineContentProvider.CLASSES:
+				return PHPPluginImages.DESC_OBJ_PHP_CLASSES_GROUP;
+			case ProjectOutlineContentProvider.CONSTANTS:
+				return PHPPluginImages.DESC_OBJ_PHP_CONSTANTS_GROUP;
+			case ProjectOutlineContentProvider.FUNCTIONS:
+				return PHPPluginImages.DESC_OBJ_PHP_FUNCTIONS_GROUP;
+		}
+		return null;
+	}
+

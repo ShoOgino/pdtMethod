@@ -1,0 +1,43 @@
+	/*
+	 * Compute the PHP doc blocks additions.
+	 */
+	private void computePHPDocAdditions(PHPFileData fileData, Map map) {
+		ArrayList data = new ArrayList();
+		// Get the file data doc-block
+		PHPDocBlock fileDataDocBlock = fileData.getDocBlock();
+		data.add(fileDataDocBlock);
+
+		// Get the external consts docs
+		PHPConstantData[] constants = fileData.getConstants();
+		for (int k = 0; k < constants.length; k++) {
+			data.add(constants[k].getDocBlock());
+		}
+
+		// Get the functions docs
+		PHPFunctionData[] functionsData = fileData.getFunctions();
+		for (int index = 0; index < functionsData.length; index++) {
+			data.add(functionsData[index].getDocBlock());
+		}
+
+		// For each class, get the functions docs, the variables docs and the constants docs
+		PHPClassData[] classData = fileData.getClasses();
+		for (int j = 0; j < classData.length; j++) {
+			data.add(classData[j].getDocBlock());
+			PHPFunctionData[] functions = classData[j].getFunctions();
+			for (int k = 0; k < functions.length; k++) {
+				data.add(functions[k].getDocBlock());
+			}
+			PHPClassConstData[] classConstants = classData[j].getConsts();
+			for (int k = 0; k < classConstants.length; k++) {
+				data.add(classConstants[k].getDocBlock());
+			}
+			PHPClassVarData[] variables = classData[j].getVars();
+			for (int k = 0; k < variables.length; k++) {
+				data.add(variables[k].getDocBlock());
+			}
+		}
+
+		// Add the collected doc-blocks to the map.
+		addAnnotations(data, map, allowCollapsing && collapsePHPDoc, true);
+	}
+

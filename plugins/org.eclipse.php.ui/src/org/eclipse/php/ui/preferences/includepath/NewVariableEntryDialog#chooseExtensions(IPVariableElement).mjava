@@ -1,0 +1,23 @@
+	private IPath[] chooseExtensions(IPVariableElement elem) {
+		File file = elem.getPath().toFile();
+
+		ZipFileSelectionDialog dialog = new ZipFileSelectionDialog(getShell(), true, false);
+		dialog.setTitle(PHPUIMessages.NewVariableEntryDialog_ExtensionDialog_title);
+		dialog.setMessage(MessageFormat.format(PHPUIMessages.NewVariableEntryDialog_ExtensionDialog_description, new String[] { elem.getName() }));
+		dialog.setInput(file);
+		if (dialog.open() == Window.OK) {
+			Object[] selected = dialog.getResult();
+			IPath[] paths = new IPath[selected.length];
+			for (int i = 0; i < selected.length; i++) {
+				IPath filePath = Path.fromOSString(((File) selected[i]).getPath());
+				IPath resPath = new Path(elem.getName());
+				for (int k = elem.getPath().segmentCount(); k < filePath.segmentCount(); k++) {
+					resPath = resPath.append(filePath.segment(k));
+				}
+				paths[i] = resPath;
+			}
+			return paths;
+		}
+		return null;
+	}
+

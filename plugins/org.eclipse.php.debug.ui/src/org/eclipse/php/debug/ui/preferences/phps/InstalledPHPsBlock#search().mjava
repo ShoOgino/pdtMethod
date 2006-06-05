@@ -1,0 +1,63 @@
+	/**
+	 * Search for installed VMs in the file system
+	 */
+	protected void search() {
+
+		// choose a root directory for the search 
+		DirectoryDialog dialog = new DirectoryDialog(getShell());
+		dialog.setMessage(PHPDebugUIMessages.InstalledPHPsBlock_9); //$NON-NLS-1$
+		dialog.setText(PHPDebugUIMessages.InstalledPHPsBlock_10); //$NON-NLS-1$
+		String path = dialog.open();
+		if (path == null) {
+			return;
+		}
+
+		// ignore installed locations
+		final Set exstingLocations = new HashSet();
+		Iterator iter = fPHPexes.iterator();
+		while (iter.hasNext()) {
+			exstingLocations.add(((PHPexeItem) iter.next()).getPhpEXE().getParentFile());
+		}
+
+		// search
+		final File rootDir = new File(path);
+		final List locations = new ArrayList();
+
+		IRunnableWithProgress r = new IRunnableWithProgress() {
+			public void run(IProgressMonitor monitor) {
+				monitor.beginTask(PHPDebugUIMessages.InstalledPHPsBlock_11, IProgressMonitor.UNKNOWN); //$NON-NLS-1$
+				search(rootDir, locations, exstingLocations, monitor);
+				monitor.done();
+			}
+		};
+
+		try {
+			ProgressMonitorDialog progress = new ProgressMonitorDialog(getShell());
+			progress.run(true, true, r);
+		} catch (InvocationTargetException e) {
+			PHPDebugUIPlugin.log(e);
+		} catch (InterruptedException e) {
+			// cancelled
+			return;
+		}
+
+		if (locations.isEmpty()) {
+			MessageDialog.openInformation(getShell(), PHPDebugUIMessages.InstalledPHPsBlock_12, MessageFormat.format(PHPDebugUIMessages.InstalledPHPsBlock_13, new String[] { path })); //$NON-NLS-1$ //$NON-NLS-2$
+		} else {
+			iter = locations.iterator();
+			while (iter.hasNext()) {
+				File location = (File) iter.next();
+				String name = location.getParentFile().getName();
+				String nameCopy = new String(name);
+				int i = 1;
+				while (isDuplicateName(nameCopy)) {
+					nameCopy = name + '(' + i++ + ')';
+				}
+				PHPexeItem phpExe = new PHPexeItem(nameCopy, location, true);
+				phpExes.addItem(phpExe);
+				phpExeAdded(phpExe);
+			}
+		}
+
+	}
+

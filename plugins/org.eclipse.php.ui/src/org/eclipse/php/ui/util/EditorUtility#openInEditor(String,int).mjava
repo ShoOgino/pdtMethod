@@ -1,0 +1,28 @@
+	/**
+	 * Opens a PHP editor for file and line number
+	 * 
+	 * @param file name
+	 * @param line number
+	 * @throws CoreException 
+	 */
+	public static void openInEditor(String fileName, int lineNumber) throws CoreException {
+
+		IWorkspace workspace = ResourcesPlugin.getWorkspace();
+		IWorkspaceRoot root = workspace.getRoot();
+
+		Path path = new Path(fileName);
+		IFile file = root.getFile(path);
+		if (file == null) { // full path specified
+			file = root.getFileForLocation(path);
+		}
+
+		IMarker marker = file.createMarker(IMarker.TEXT);
+		marker.setAttribute(IMarker.LINE_NUMBER, lineNumber);
+		marker.setAttribute(IDE.EDITOR_ID_ATTR, PHPUiConstants.PHP_EDITOR_ID);
+		IWorkbenchPage p = PHPUiPlugin.getActivePage();
+		if (p != null) {
+			IDE.openEditor(p, marker);
+		}
+		marker.delete();
+	}
+

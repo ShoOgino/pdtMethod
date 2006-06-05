@@ -1,0 +1,132 @@
+	private CodeData getCodeData (ITextViewer viewer, PHPEditorModel editorModel, int offset) throws BadLocationException {
+		PHPFileData fileData = editorModel.getFileData();
+		if (fileData == null) {
+			return null;
+		}
+		String fileName = fileData.getName();
+
+		PHPProjectModel projectModel = editorModel.getProjectModel();
+
+		IStructuredDocumentRegion sdRegion = ContentAssistUtils.getStructuredDocumentRegion((StructuredTextViewer) viewer, offset);
+		ITextRegion textRegion = sdRegion.getRegionAtCharacterOffset(offset);
+		if (textRegion == null) {
+			return null;
+		}
+		// find the start String for completion
+		int startOffset = sdRegion.getStartOffset(textRegion);
+		//should not take into account the found region
+		//find the previous region and update the start offset
+		if (startOffset == offset) {
+			textRegion = sdRegion.getRegionAtCharacterOffset(offset - 1);
+			if (textRegion == null) {
+				return null;
+			}
+			startOffset = sdRegion.getStartOffset(textRegion);
+		}
+
+		TextSequence statmentText = PHPTextSequenceUtilities.getStatment(offset, sdRegion, true);
+		String type = textRegion.getType();
+		CodeData tmp;
+		if ((tmp = getIfInArrayOptionQuotes(projectModel, fileName, type, offset, statmentText)) != null) {
+			// the current position is inside quotes as a parameter for an array.
+			return tmp;
+		}
+
+		if (isPHPSingleQuote(sdRegion, textRegion) || (!type.equals(PHPRegionTypes.PHP_HEREDOC_TAG) && PhpLexer.isPHPCommentState(type))) {
+			// we dont have code completion inside single quotes.
+			return null;
+		}
+
+		if ((tmp = getIfInFunctionDeclaretion(projectModel, fileName, statmentText, offset)) != null) {
+			// the current position is inside function declaretion.
+			return tmp;
+		}
+
+		if ((tmp = getIfInClassDeclaretion(projectModel, fileName, statmentText, offset)) != null) {
+			// the current position is inside class declaretion.
+			return tmp;
+		}
+
+		if ((tmp = getIfInCatchStatment(projectModel, statmentText, offset)) != null) {
+			// the current position is inside catch statment.
+			return tmp;
+		}
+
+		int totalLength = statmentText.length();
+
+		int endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statmentText, totalLength); // read whitespace
+		int startPosition = PHPTextSequenceUtilities.readIdentifiarStartIndex(statmentText, endPosition, true);
+		String lastWord = statmentText.subSequence(startPosition, endPosition).toString();
+		boolean haveSpacesAtEnd = totalLength != endPosition;
+
+		if (haveSpacesAtEnd && (tmp = getIfNewOrInstanceofStatment(projectModel, lastWord, "", offset, type)) != null) {
+			// the current position is inside new or instanceof statment.
+			return tmp;
+		}
+
+		int line = sdRegion.getParentDocument().getLineOfOffset(offset);
+		if ((tmp = getIfClassFunctionCompletion(projectModel, fileName, statmentText, offset, line, lastWord, startPosition, haveSpacesAtEnd)) != null) {
+			// the current position is in class function.
+			return tmp;
+		}
+
+		endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statmentText, startPosition); // read whitespace
+		startPosition = PHPTextSequenceUtilities.readIdentifiarStartIndex(statmentText, endPosition, true);
+		String firstWord = statmentText.subSequence(startPosition, endPosition).toString();
+
+		if (!haveSpacesAtEnd && (tmp = getIfNewOrInstanceofStatment(projectModel, firstWord, lastWord, offset, type)) != null) {
+			// the current position is inside new or instanceof statment.
+			return tmp;
+		}
+
+		if (haveSpacesAtEnd && isFunctionCall(projectModel, lastWord)) {
+			// the current position is between the end of a function call and open bracket.
+			return null;
+		}
+		
+		if ((tmp = getIfInArrayOption(projectModel, fileName, haveSpacesAtEnd, firstWord, lastWord, startPosition, offset, statmentText)) != null) {
+			// the current position is after '[' sign show special completion.
+			return tmp;
+		}
+
+		String elementName = lastWord;
+		if (elementName.startsWith("$")) {
+			if (PhpLexer.isPHPQuotesState(type)) {
+				IStructuredDocument doc = sdRegion.getParentDocument();
+				try {
+					char charBefore = doc.get(offset - 2, 1).charAt(0);
+					if (charBefore == '\\') {
+						return null;
+					}
+				} catch (BadLocationException badLocationException) {
+					Logger.logException(badLocationException);
+				}
+			}
+			PHPCodeContext context = getContext(projectModel, fileName, offset - elementName.length());
+			elementName = elementName.substring(1);
+			CodeData[] variables = projectModel.getVariables(fileName, context, elementName, true);
+			return filterExact (variables, elementName);
+		}
+
+		if (PhpLexer.isPHPQuotesState(type) || (type.equals(PHPRegionTypes.PHP_HEREDOC_TAG) && sdRegion.getStartOffset(textRegion) + textRegion.getLength() <= offset)) {
+			return null;
+		}
+
+		CodeData[] functions = projectModel.getFunction(elementName);
+		CodeData constant = projectModel.getConstantData(elementName, CONSTANT_CASE_SENSITIVE);
+		CodeData classes = projectModel.getClass(fileName, elementName);
+		CodeData[] keywords = projectModel.getKeywordData(elementName);
+
+		CodeData[] mergeData = null;
+		mergeData = ModelSupport.merge(keywords, mergeData);
+		if (classes != null) {
+			mergeData = ModelSupport.merge(new CodeData[] { classes }, mergeData);
+		}
+		if (constant != null) {
+			mergeData = ModelSupport.merge(new CodeData[] { constant }, mergeData);
+		}
+		mergeData = ModelSupport.merge(functions, mergeData);
+		
+		return filterExact (mergeData, elementName);
+	}
+

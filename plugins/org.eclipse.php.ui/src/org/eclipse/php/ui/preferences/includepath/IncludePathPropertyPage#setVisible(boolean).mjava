@@ -1,0 +1,29 @@
+	/* (non-Javadoc)
+	 * @see org.eclipse.jface.dialogs.IDialogPage#setVisible(boolean)
+	 */
+	public void setVisible(boolean visible) {
+		if (fIncludePathsBlock != null) {
+			if (!visible) {
+				if (fIncludePathsBlock.hasChangesInDialog()) {
+					String title = PHPUIMessages.IncludePathsPropertyPage_unsavedchanges_title;
+					String message = PHPUIMessages.IncludePathsPropertyPage_unsavedchanges_message;
+					String[] buttonLabels = new String[] { PHPUIMessages.IncludePathsPropertyPage_unsavedchanges_button_save, PHPUIMessages.IncludePathsPropertyPage_unsavedchanges_button_discard, PHPUIMessages.IncludePathsPropertyPage_unsavedchanges_button_ignore };
+					MessageDialog dialog = new MessageDialog(getShell(), title, null, message, MessageDialog.QUESTION, buttonLabels, 0);
+					int res = dialog.open();
+					if (res == 0) {
+						performOk();
+					} else if (res == 1) {
+						fIncludePathsBlock.init(getProject(), null);
+					} else {
+						// keep unsaved
+					}
+				}
+			} else {
+				if (!fIncludePathsBlock.hasChangesInDialog() && fIncludePathsBlock.hasChangesInIncludePathFile()) {
+					fIncludePathsBlock.init(getProject(), null);
+				}
+			}
+		}
+		super.setVisible(visible);
+	}
+

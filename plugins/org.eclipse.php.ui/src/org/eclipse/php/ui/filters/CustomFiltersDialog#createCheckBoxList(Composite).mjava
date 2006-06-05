@@ -1,0 +1,57 @@
+	private void createCheckBoxList(Composite parent) {
+		// Filler
+		new Label(parent, SWT.NONE);
+
+		Label info = new Label(parent, SWT.LEFT);
+		info.setText(FilterMessages.CustomFiltersDialog_filterList_label);
+
+		fCheckBoxList = CheckboxTableViewer.newCheckList(parent, SWT.BORDER);
+		GridData data = new GridData(GridData.FILL_BOTH);
+		data.heightHint = fCheckBoxList.getTable().getItemHeight() * 10;
+		fCheckBoxList.getTable().setLayoutData(data);
+
+		fCheckBoxList.setLabelProvider(createLabelPrivder());
+		fCheckBoxList.setContentProvider(new ArrayContentProvider());
+		Arrays.sort(fBuiltInFilters);
+		fCheckBoxList.setInput(fBuiltInFilters);
+		setInitialSelections(getEnabledFilterDescriptors());
+
+		List initialSelection = getInitialElementSelections();
+		if (initialSelection != null && !initialSelection.isEmpty())
+			checkInitialSelections();
+
+		// Description
+		info = new Label(parent, SWT.LEFT);
+		info.setText(FilterMessages.CustomFiltersDialog_description_label);
+		final Text description = new Text(parent, SWT.LEFT | SWT.WRAP | SWT.MULTI | SWT.READ_ONLY | SWT.BORDER | SWT.V_SCROLL);
+		data = new GridData(GridData.FILL_HORIZONTAL);
+		data.heightHint = convertHeightInCharsToPixels(3);
+		description.setLayoutData(data);
+		fCheckBoxList.addSelectionChangedListener(new ISelectionChangedListener() {
+			public void selectionChanged(SelectionChangedEvent event) {
+				ISelection selection = event.getSelection();
+				if (selection instanceof IStructuredSelection) {
+					Object selectedElement = ((IStructuredSelection) selection).getFirstElement();
+					if (selectedElement instanceof FilterDescriptor)
+						description.setText(((FilterDescriptor) selectedElement).getDescription());
+				}
+			}
+		});
+		fCheckBoxList.addCheckStateListener(new ICheckStateListener() {
+			/*
+			 * @see org.eclipse.jface.viewers.ICheckStateListener#checkStateChanged(org.eclipse.jface.viewers.CheckStateChangedEvent)
+			 */
+			public void checkStateChanged(CheckStateChangedEvent event) {
+				Object element = event.getElement();
+				if (element instanceof FilterDescriptor) {
+					// renew if already touched
+					if (fFilterDescriptorChangeHistory.contains(element))
+						fFilterDescriptorChangeHistory.remove(element);
+					fFilterDescriptorChangeHistory.push(element);
+				}
+			}
+		});
+
+		addSelectionButtons(parent);
+	}
+

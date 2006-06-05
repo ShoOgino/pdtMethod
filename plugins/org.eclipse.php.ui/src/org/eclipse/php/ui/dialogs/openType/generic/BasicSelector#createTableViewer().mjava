@@ -1,0 +1,44 @@
+	private void createTableViewer() {
+		tableViewerComposite = new Composite(this, SWT.NONE);
+		FillLayout fillLayout = new FillLayout();
+		tableViewerComposite.setLayout(fillLayout);
+		tableViewer = new HighLoadTableViewer(tableViewerComposite, SWT.SINGLE | SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER);
+		phpTypeViewerFilter = new ViewerElementFilter();
+		tableViewer.addFilter(phpTypeViewerFilter);
+		//Functionality to go to the text when pressing the up arrow and found in the first element
+		tableViewer.getControl().addKeyListener(new KeyListener() {
+			public void keyPressed(KeyEvent e) {
+				StructuredSelection structuredSelection = (StructuredSelection)tableViewer.getSelection();
+				if (structuredSelection.getFirstElement() == tableViewer.getElementAt(0) && SWT.ARROW_UP == e.keyCode) {
+					filterText.setFocus();
+				}
+			}
+			public void keyReleased(KeyEvent e) {
+			}
+			
+		});
+		
+		tableViewer.getControl().addKeyListener(new KeyListener() {
+			public void keyPressed(KeyEvent e) {
+				if ((e.keyCode & SWT.KEYCODE_BIT) == 0) {
+					if ((e.keyCode > 'a' && e.keyCode < 'z') || (e.keyCode > 'A' && e.keyCode < 'Z')) {
+						filterText.setFocus();
+						filterText.setText(filterText.getText() + e.character);
+						filterText.setSelection(filterText.getText().length());
+					}else if (e.keyCode == SWT.BS) {
+						filterText.setFocus();
+						String text = filterText.getText();
+						if (text.length() == 0) {
+							return;
+						}
+						filterText.setText(text.substring(0, text.length()-1));
+						filterText.setSelection(text.length()-1);
+					}
+				}
+			}
+			public void keyReleased(KeyEvent e) {
+			}
+			
+		});
+	}
+

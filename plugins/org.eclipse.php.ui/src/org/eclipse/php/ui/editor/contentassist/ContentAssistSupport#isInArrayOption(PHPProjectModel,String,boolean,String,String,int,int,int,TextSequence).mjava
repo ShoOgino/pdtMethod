@@ -1,0 +1,47 @@
+	private boolean isInArrayOption(PHPProjectModel projectModel, String fileName, boolean haveSpacesAtEnd, String firstWord, String lastWord, int startPosition, int offset, int selectionLength, TextSequence text) {
+		boolean isArrayOption = false;
+		if (startPosition > 0 && !lastWord.startsWith("$")) {
+			if (haveSpacesAtEnd) {
+				if (lastWord.length() == 0 && firstWord.length() == 0) {
+					if (text.charAt(startPosition - 1) == '[') {
+						isArrayOption = true;
+					}
+				}
+			} else {
+				if (firstWord.length() == 0) {
+					if (text.charAt(startPosition - 1) == '[') {
+						isArrayOption = true;
+					}
+				}
+			}
+		}
+		if (!isArrayOption) {
+			return false;
+		}
+		int endPosition = startPosition - 1;
+
+		endPosition = PHPTextSequenceUtilities.readBackwardSpaces(text, endPosition);
+		startPosition = PHPTextSequenceUtilities.readIdentifiarStartIndex(text, endPosition, true);
+		String variableName = text.subSequence(startPosition, endPosition).toString();
+
+		if (variableName.startsWith("$")) {
+			variableName = variableName.substring(1);
+		}
+		CodeData[] arrayResult = projectModel.getArrayVariables(fileName, variableName, lastWord, determineObjectTypeFromOtherFile);
+		CodeData[] functions;
+		CodeData[] constans;
+		if (lastWord.length() == 0) {
+			functions = projectModel.getFunctions();
+			constans = (disableConstants) ? null : projectModel.getConstants();
+		} else {
+			functions = projectModel.getFunctions(lastWord);
+			constans = (disableConstants) ? null : projectModel.getConstants(lastWord, constantCaseSensitive);
+		}
+		CodeData[] result = ModelSupport.merge(functions, ModelSupport.merge(arrayResult, constans));
+
+		completionProposalGroup = arrayCompletionProposalGroup;
+		completionProposalGroup.setData(offset, result, lastWord, selectionLength);
+
+		return true;
+	}
+

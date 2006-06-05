@@ -1,0 +1,46 @@
+	private IStatus updateFileNameStatus() {
+		StatusInfo status = new StatusInfo();
+		fFileVariablePath = null;
+
+		String fileName = fFileNameField.getText();
+		if (fileName.length() == 0) {
+			status.setError(PHPUIMessages.EditVariableEntryDialog_filename_empty);
+			return status;
+		} else {
+			if (!Path.EMPTY.isValidPath(fileName)) {
+				status.setError(PHPUIMessages.EditVariableEntryDialog_filename_error_notvalid);
+				return status;
+			}
+			IPath filePath = Path.fromOSString(fileName);
+			IPath resolvedPath;
+
+			if (filePath.getDevice() != null) {
+				status.setError(PHPUIMessages.EditVariableEntryDialog_filename_error_deviceinpath);
+				return status;
+			}
+			String varName = filePath.segment(0);
+			if (varName == null) {
+				status.setError(PHPUIMessages.EditVariableEntryDialog_filename_error_notvalid);
+				return status;
+			}
+			fFileVariablePath = PHPProjectOptions.getIncludePathVariable(varName);
+			if (fFileVariablePath == null) {
+				status.setError(PHPUIMessages.EditVariableEntryDialog_filename_error_varnotexists);
+				return status;
+			}
+			resolvedPath = fFileVariablePath.append(filePath.removeFirstSegments(1));
+
+			if (resolvedPath.isEmpty()) {
+				status.setWarning(PHPUIMessages.EditVariableEntryDialog_filename_warning_varempty);
+				return status;
+			}
+			File file = resolvedPath.toFile();
+			if (!file.isFile()) {
+				String message = MessageFormat.format(PHPUIMessages.EditVariableEntryDialog_filename_error_filenotexists, new String[] { resolvedPath.toOSString() });
+				status.setInfo(message);
+				return status;
+			}
+		}
+		return status;
+	}
+

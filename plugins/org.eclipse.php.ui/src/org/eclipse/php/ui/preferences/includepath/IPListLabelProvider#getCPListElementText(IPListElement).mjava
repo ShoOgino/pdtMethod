@@ -1,0 +1,59 @@
+	public String getCPListElementText(IPListElement cpentry) {
+		IPath path = cpentry.getPath();
+		switch (cpentry.getEntryKind()) {
+			case IIncludePathEntry.IPE_LIBRARY: {
+				IResource resource = cpentry.getResource();
+				if (resource instanceof IContainer) {
+					StringBuffer buf = new StringBuffer(path.makeRelative().toString());
+					buf.append(' ');
+					buf.append(fClassLabel);
+					if (!resource.exists()) {
+						buf.append(' ');
+						if (cpentry.isMissing()) {
+							buf.append(fCreateLabel);
+						} else {
+							buf.append(fNewLabel);
+						}
+					}
+					return buf.toString();
+				} else if (ZipFileFilter.isZipPath(path)) {
+					return getPathString(path, resource == null);
+				}
+				// should not get here
+				return path.makeRelative().toString();
+			}
+			case IIncludePathEntry.IPE_VARIABLE: {
+				return getVariableString(path);
+			}
+			case IIncludePathEntry.IPE_PROJECT:
+				return path.lastSegment();
+			case IIncludePathEntry.IPE_CONTAINER:
+				IIncludePathContainer container = PHPProjectOptions.getIncludePathContainer(path, cpentry.getProject());
+				if (container != null) {
+					return container.getDescription();
+				}
+				IncludePathContainerInitializer initializer = PHPProjectOptions.getIncludePathContainerInitializer(path.segment(0));
+				if (initializer != null) {
+					String description = initializer.getDescription(path, cpentry.getProject());
+					return MessageFormat.format(PHPUIMessages.CPListLabelProvider_unbound_library, new Object[] { description });
+				}
+				return path.toString();
+			case IIncludePathEntry.IPE_SOURCE: {
+				StringBuffer buf = new StringBuffer(path.makeRelative().toString());
+				IResource resource = cpentry.getResource();
+				if (resource != null && !resource.exists()) {
+					buf.append(' ');
+					if (cpentry.isMissing()) {
+						buf.append(fCreateLabel);
+					} else {
+						buf.append(fNewLabel);
+					}
+				}
+				return buf.toString();
+			}
+			default:
+		// pass
+		}
+		return PHPUIMessages.CPListLabelProvider_unknown_element_label;
+	}
+

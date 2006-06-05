@@ -1,0 +1,52 @@
+    /**
+     * Finds a valid position somewhere on lineNumber in document, idoc, where a
+     * breakpoint can be set and returns that position. -1 is returned if a
+     * position could not be found.
+     * 
+     * @param idoc
+     * @param editorLineNumber
+     * @return position to set breakpoint or -1 if no position could be found
+     */
+    private int getValidPosition(IDocument idoc, int editorLineNumber) {
+        int result = -1;
+        if (idoc != null) {
+
+            int startOffset = 0;
+            int endOffset = 0;
+            try {
+                IRegion line = idoc.getLineInformation(editorLineNumber - 1);
+                startOffset = line.getOffset();
+                endOffset = Math.max(line.getOffset(), line.getOffset() + line.getLength());
+
+                String lineText = idoc.get(startOffset, endOffset - startOffset).trim();
+
+                // blank lines or lines with only an open PHP
+                // tags cannot have a breakpoint
+
+                if (lineText.equals("") || lineText.equals("<%") || //$NON-NLS-1$ //$NON-NLS-2$ 
+                    lineText.equals("%>") || lineText.equals("<?php") || lineText.equals("?>") || (lineText.trim()).startsWith("//")) { //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+                    result = -1;
+                } else {
+
+                    // get all partitions for current line
+                    ITypedRegion[] partitions = null;
+
+                    partitions = idoc.computePartitioning(startOffset, endOffset - startOffset);
+
+                    for (int i = 0; i < partitions.length; ++i) {
+                        String type = partitions[i].getType();
+                        // if found PHP
+                        // return that position
+                        if (PHPStructuredTextPartitioner.isPHPPartitionType(type)) {
+                            result = partitions[i].getOffset();
+                        }
+                    }
+                }
+            } catch (BadLocationException e) {
+                result = -1;
+            }
+        }
+
+        return result;
+    }
+

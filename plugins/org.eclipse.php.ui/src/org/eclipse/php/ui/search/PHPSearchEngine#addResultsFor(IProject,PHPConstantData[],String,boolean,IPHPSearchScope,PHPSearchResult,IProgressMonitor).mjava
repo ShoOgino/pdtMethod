@@ -1,0 +1,17 @@
+	private void addResultsFor(IProject project, PHPConstantData[] constants, String stringPattern, boolean caseSensitive, IPHPSearchScope scope, PHPSearchResult textResult, IProgressMonitor monitor) {
+		for (int i = 0; i < constants.length; i++) {
+			if (i % 100 == 0) {
+				// Check for monitor cancellation every 100 ticks
+				if (monitor != null && monitor.isCanceled()) {
+					throw new OperationCanceledException();
+				}
+			}
+			PHPConstantData constantData = constants[i];
+			if (SearchPattern.match(stringPattern, constantData.getName(), caseSensitive)) {
+				int start = constantData.getUserData().getStopPosition();
+				textResult.addMatch(new Match(new PHPConstantDataDecorator(constantData, project), start, constantData.getName().length()));
+			}
+			monitor.worked(1);
+		}
+	}
+

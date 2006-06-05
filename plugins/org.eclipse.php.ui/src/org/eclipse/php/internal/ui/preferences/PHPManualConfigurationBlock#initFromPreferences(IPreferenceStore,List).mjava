@@ -1,0 +1,31 @@
+    /**
+     * Initializes array of PHPManualConfigs from preferences
+     * @param configs
+     */
+    public static void initFromPreferences (IPreferenceStore store, List configs) {
+    	String storedSites = store.getString(PreferenceConstants.PHP_MANUAL_SITES);
+		if (storedSites != null) {
+			StringTokenizer sitesTokenizer = new StringTokenizer(storedSites, PREFERENCES_DELIMITER);
+			while (sitesTokenizer.hasMoreTokens()) {
+				String name = sitesTokenizer.nextToken();
+				if (sitesTokenizer.hasMoreTokens()) {
+					String url = sitesTokenizer.nextToken();
+					if (sitesTokenizer.hasMoreTokens()) {
+						String extension = sitesTokenizer.nextToken();
+						PHPManualConfig config = new PHPManualConfig(name, url, extension, false);
+						boolean alreadyExists = false;
+						for (int i=0; i<configs.size(); ++i) {
+							PHPManualConfig existing = (PHPManualConfig)configs.get(i);
+							if (existing.label.equals(config.label) || existing.url.equals(config.url)) {
+								alreadyExists = true;
+							}
+						}
+						if (!alreadyExists) {
+							configs.add(config);
+						}
+					}
+				}
+			}
+		}
+    }
+

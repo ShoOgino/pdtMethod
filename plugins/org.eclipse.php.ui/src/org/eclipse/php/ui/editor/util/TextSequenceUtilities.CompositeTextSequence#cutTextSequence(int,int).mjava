@@ -1,0 +1,46 @@
+		public TextSequence cutTextSequence(int start, int end) {
+			int startPart = 0;
+			int endPart = 0;
+			int startPartLength = 0;
+			for (int i = 0; i < indexes.length; i += 2) {
+				if (startPartLength + indexes[i + 1] > start) {
+					startPart = i >> 1;
+					break;
+				}
+				startPartLength += indexes[i + 1];
+			}
+			int endPartLength = startPartLength;
+			for (int i = startPart << 1; i < indexes.length; i += 2) {
+				if (endPartLength + indexes[i + 1] >= end) {
+					endPart = i >> 1;
+					break;
+				}
+				endPartLength += indexes[i + 1];
+			}
+			int numberOfParts = indexes.length >> 1;
+			int newNumberOfParts = startPart + numberOfParts - endPart + 1;
+			int[] newIndexes = new int[newNumberOfParts << 1];
+			int part;
+			// set indexes before start Part
+			for (part = 0; part < startPart; part++) {
+				newIndexes[(part << 1)] = indexes[(part << 1)];
+				newIndexes[(part << 1) + 1] = indexes[(part << 1) + 1];
+			}
+			// set indexes at start part
+			newIndexes[(part << 1)] = indexes[(startPart << 1)];
+			newIndexes[(part << 1) + 1] = start - startPartLength;
+			// set indexes at end part
+			part++;
+			newIndexes[(part << 1)] = indexes[(endPart << 1)] + (end - endPartLength);
+			newIndexes[(part << 1) + 1] = indexes[(endPart << 1) + 1] - (end - endPartLength);
+			// set indexes after end part
+			part++;
+			int diff = numberOfParts - newNumberOfParts;
+			for (; part + diff < numberOfParts; part++) {
+				newIndexes[(part << 1)] = indexes[((part + diff) << 1)];
+				newIndexes[(part << 1) + 1] = indexes[((part + diff) << 1) + 1];
+			}
+
+			return new CompositeTextSequence(source, segment, newIndexes, segmentOriginalStart);
+		}
+

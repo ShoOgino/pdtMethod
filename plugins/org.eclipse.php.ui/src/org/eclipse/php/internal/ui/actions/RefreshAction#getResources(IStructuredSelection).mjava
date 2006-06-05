@@ -1,0 +1,24 @@
+	private IResource[] getResources(IStructuredSelection selection) {
+		if (selection.isEmpty()) {
+			return new IResource[] { ResourcesPlugin.getWorkspace().getRoot() };
+		}
+
+		List result = new ArrayList(selection.size());
+		for (Iterator iter = selection.iterator(); iter.hasNext();) {
+			Object element = iter.next();
+			if (element instanceof IAdaptable) {
+				IResource resource = (IResource) ((IAdaptable) element).getAdapter(IResource.class);
+				if (resource != null)
+					result.add(resource);
+			}
+		}
+
+		for (Iterator iter = result.iterator(); iter.hasNext();) {
+			IResource resource = (IResource) iter.next();
+			if (isDescendent(result, resource))
+				iter.remove();
+		}
+
+		return (IResource[]) result.toArray(new IResource[result.size()]);
+	}
+

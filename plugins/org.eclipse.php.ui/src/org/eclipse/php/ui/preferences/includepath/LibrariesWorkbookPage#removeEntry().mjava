@@ -1,0 +1,30 @@
+	private void removeEntry() {
+		List selElements = fLibrariesList.getSelectedElements();
+		HashSet containerEntriesToUpdate = new HashSet();
+		for (int i = selElements.size() - 1; i >= 0; i--) {
+			Object elem = selElements.get(i);
+			if (elem instanceof IPListElementAttribute) {
+				IPListElementAttribute attrib = (IPListElementAttribute) elem;
+				String key = attrib.getKey();
+				Object value = null;
+				attrib.getParent().setAttribute(key, value);
+				selElements.remove(i);
+
+				if (attrib.getParent().getParentContainer() instanceof IPListElement) { // inside a container: apply changes right away
+					containerEntriesToUpdate.add(attrib.getParent());
+				}
+			}
+		}
+		if (selElements.isEmpty()) {
+			fLibrariesList.refresh();
+			fIncludePathList.dialogFieldChanged(); // validate
+		} else {
+			fLibrariesList.removeElements(selElements);
+		}
+		for (Iterator iter = containerEntriesToUpdate.iterator(); iter.hasNext();) {
+			IPListElement curr = (IPListElement) iter.next();
+			IIncludePathEntry updatedEntry = curr.getIncludePathEntry();
+			updateContainerEntry(updatedEntry, fCurrJProject, ((IPListElement) curr.getParentContainer()).getPath());
+		}
+	}
+

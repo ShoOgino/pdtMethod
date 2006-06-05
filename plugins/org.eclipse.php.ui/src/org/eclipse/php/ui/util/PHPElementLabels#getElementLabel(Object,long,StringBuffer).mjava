@@ -1,0 +1,44 @@
+	/**
+	 * Returns the label for a PHP element. Flags as defined above.
+	 */
+	public static void getElementLabel(Object element, long flags, StringBuffer buf) {
+		IContainer root = null;
+
+		if ((element instanceof PHPCodeData))
+			root = PHPModelUtil.getPHPFolderRoot((PHPCodeData) element);
+		if (root != null && getFlag(flags, PREPEND_ROOT_PATH)) {
+			getPHPFolderRootLabel(root, ROOT_QUALIFIED, buf);
+			buf.append(CONCAT_STRING);
+		}
+
+		if (element instanceof PHPFunctionData) {
+			getMethodLabel((PHPFunctionData) element, flags, buf);
+		} else if (element instanceof PHPVariableData) {
+			getFieldLabel((PHPVariableData) element, flags, buf);
+		} else if (element instanceof PHPClassData) {
+			getTypeLabel((PHPClassData) element, flags, buf);
+		} else if (element instanceof PHPConstantData) {
+			buf.append(((PHPConstantData) element).getName());
+		} else if (element instanceof PHPClassConstData) {
+			buf.append(((PHPClassConstData) element).getName());
+		} else if (element instanceof PHPFileData) {
+			getCompilationUnitLabel((PHPFileData) element, flags, buf);
+		} else if (element instanceof PHPIncludeFileData) {
+			getIncludeFileLabel((PHPIncludeFileData) element, flags, buf);
+		} else if (element instanceof IFolder) {
+			getPHPFolderLabel((IFolder) element, flags, buf);
+		} else if (element instanceof PHPProjectModel) {
+			IProject project = PHPWorkspaceModelManager.getInstance().getProjectForModel((PHPProjectModel) element);
+			buf.append(project.getName());
+		} else if (element instanceof PHPWorkspaceModelManager) {
+			buf.append("PHP Model");
+		} else if (element instanceof IResource) {
+			buf.append(((IResource) element).getName());
+		}
+
+		if (root != null && getFlag(flags, APPEND_ROOT_PATH)) {
+			buf.append(CONCAT_STRING);
+			getPHPFolderRootLabel(root, ROOT_QUALIFIED, buf);
+		}
+	}
+

@@ -1,0 +1,25 @@
+	/**
+	 * This function tries to search for code data, that corresponds to the specified offset
+	 * 
+	 * @param textViewer
+	 * @param offset
+	 * @return CodeData
+	 * @throws BadLocationException
+	 */
+	public static CodeData getCodeData (ITextViewer textViewer, int offset) throws BadLocationException {
+		IStructuredModel sModel = StructuredModelManager.getModelManager().getExistingModelForRead (textViewer.getDocument());
+		if (sModel instanceof PHPEditorModel) {
+			PHPEditorModel editorModel = (PHPEditorModel) sModel;
+			try {
+				return instance.getCodeData (textViewer, editorModel, offset);
+			} catch (BadLocationException e) {
+				Logger.logException(e);
+			} finally {
+				sModel.releaseFromRead();
+			}
+		} else if (sModel != null) {
+			sModel.releaseFromRead();
+		}
+		return null;
+	}
+

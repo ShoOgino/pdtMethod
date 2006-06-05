@@ -1,0 +1,21 @@
+	/*
+	 * @see SourceViewerConfiguration#getTextHover(ISourceViewer, String, int)
+	 */
+	public ITextHover getTextHover(ISourceViewer sourceViewer, String contentType, int stateMask) {
+		// Screen out any non-PHP content
+		if (!PHPStructuredTextPartitioner.isPHPPartitionType(contentType)) {
+			return super.getTextHover(sourceViewer, contentType, stateMask);
+		}
+
+		PHPEditorTextHoverDescriptor[] hoverDescs = PHPUiPlugin.getDefault().getPHPEditorTextHoverDescriptors();
+		int i = 0;
+		while (i < hoverDescs.length) {
+			if (hoverDescs[i].isEnabled() && hoverDescs[i].getStateMask() == stateMask) {
+				return new PHPTextHoverProxy(hoverDescs[i], null);
+			}
+			i++;
+		}
+
+		return null;
+	}
+

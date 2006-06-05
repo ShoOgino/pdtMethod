@@ -1,0 +1,30 @@
+	/**
+	 * Returns the statment start.
+	 * the statment start is: Math.max(position of the last ';', position of php start tag)
+	 */
+	public static TextSequence getStatment(int offset, IStructuredDocumentRegion sdRegion, boolean removeComments) {
+		int startPosition = sdRegion.getStartOffset();
+		ITextRegion tRegion = sdRegion.getRegionAtCharacterOffset(offset);
+		if (tRegion.getType() != PHPRegionTypes.PHP_OPENTAG && sdRegion.getStartOffset(tRegion) == offset) {
+			tRegion = sdRegion.getRegionAtCharacterOffset(offset - 1);
+		}
+		IStructuredDocument document = sdRegion.getParentDocument();
+		while (tRegion != null && tRegion.getType() != PHPRegionTypes.PHP_OPENTAG) {
+			String type = tRegion.getType();
+			int textStart = sdRegion.getStartOffset(tRegion);
+			if (type == PHPRegionTypes.PHP_SEMICOLON || type == PHPRegionTypes.PHP_CURLY_OPEN || type == PHPRegionTypes.PHP_CURLY_CLOSE) {
+				startPosition = textStart + 1;
+				break;
+			}
+			tRegion = sdRegion.getRegionAtCharacterOffset(textStart - 1);
+		}
+		TextSequence textSequence = TextSequenceUtilities.createTextSequence(sdRegion, startPosition, offset - startPosition);
+
+		if (removeComments) {
+			textSequence = removeComments(textSequence);
+		}
+		// remove spaces from start.
+		textSequence = textSequence.subTextSequence(readForwardSpaces(textSequence, 0), textSequence.length());
+		return textSequence;
+	}
+

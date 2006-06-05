@@ -1,0 +1,33 @@
+		protected CodeDataCompletionProposal createProposal(CodeData codeData) {
+			String suffix = " ";
+			int caretOffsetInSuffix = 1;
+			boolean showTypeHints = false;
+			
+			if (codeData instanceof PHPKeywordData) {
+				PHPKeywordData phpKeywordData = (PHPKeywordData) codeData;
+				suffix = phpKeywordData.getSuffix();
+				caretOffsetInSuffix = phpKeywordData.getSuffixOffset();
+			}
+			else if (codeData instanceof PHPFunctionData) {
+				PHPFunctionData phpFunctionData = (PHPFunctionData) codeData;
+				suffix = "()";
+				showTypeHints = true;
+				caretOffsetInSuffix = 2;
+				boolean hasArgs = phpFunctionData.getParameters().length > 0;
+				if (hasArgs) {
+					caretOffsetInSuffix--; /* put the cursor between the parentheses */
+				}
+				String returnType = phpFunctionData.getReturnType();
+				if (returnType != null && returnType.compareToIgnoreCase("void") == 0) {
+					suffix += ";";
+					if (!hasArgs) {
+						caretOffsetInSuffix++;
+					}
+				}
+			} else if(codeData instanceof PHPVariableData || codeData instanceof PHPConstantData){
+				suffix = "";
+				caretOffsetInSuffix = 0;
+			}
+			return new CodeDataCompletionProposal(codeData, getOffset() - key.length(), key.length(), selectionLength, "", suffix, caretOffsetInSuffix, showTypeHints);
+		}
+

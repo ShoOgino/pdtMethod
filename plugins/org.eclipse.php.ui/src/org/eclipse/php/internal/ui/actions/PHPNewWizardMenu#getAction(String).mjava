@@ -1,0 +1,20 @@
+	/* (non-Javadoc)
+	 * Returns the action for the given wizard id, or null if not found.
+	 */
+	private IAction getAction(String id) {
+		// Keep a cache, rather than creating a new action each time,
+		// so that image caching in ActionContributionItem works.
+		IAction action = (IAction) actions.get(id);
+		if (action == null) {
+			IWizardDescriptor wizardDesc = WorkbenchPlugin.getDefault().getNewWizardRegistry().findWizard(id);
+			if (wizardDesc != null) {
+				action = new NewWizardShortcutAction(window, wizardDesc);
+				actions.put(id, action);
+				IConfigurationElement element = (IConfigurationElement) wizardDesc.getAdapter(IConfigurationElement.class);
+				if (element != null)
+					window.getExtensionTracker().registerObject(element.getDeclaringExtension(), action, IExtensionTracker.REF_WEAK);
+			}
+		}
+		return action;
+	}
+

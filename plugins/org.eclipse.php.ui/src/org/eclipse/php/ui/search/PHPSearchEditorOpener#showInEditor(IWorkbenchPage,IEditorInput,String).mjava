@@ -1,0 +1,40 @@
+	private IEditorPart showInEditor(IWorkbenchPage page, IEditorInput input, String editorId) {
+		IEditorPart editor= page.findEditor(input);
+		if (editor != null)
+			page.bringToTop(editor);
+		else {
+			boolean isOpen= false;
+			if (fEditor != null) {
+				IEditorReference[] parts= page.getEditorReferences();
+				int i= 0;
+				while (!isOpen && i < parts.length)
+					isOpen= fEditor == parts[i++].getEditor(false);
+			}
+
+			boolean canBeReused= isOpen && !fEditor.isDirty() && !isPinned(fEditor);
+			boolean showsSameInputType= fEditor != null && fEditor.getSite().getId().equals(editorId);
+			if (canBeReused && !showsSameInputType) {
+				page.closeEditor(fEditor, false);
+				fEditor= null;
+			}
+
+			if (canBeReused && showsSameInputType) {
+				((IReusableEditor) fEditor).setInput(input);
+				page.bringToTop(fEditor);
+				editor= fEditor;
+			} else {
+				try {
+					editor= page.openEditor(input, editorId, false);
+					if (editor instanceof IReusableEditor)
+						fEditor= editor;
+					else
+						fEditor= null;
+				} catch (PartInitException ex) {
+					MessageDialog.openError(PHPUiPlugin.getActiveWorkbenchShell(), SearchMessages.Search_Error_openEditor_title, SearchMessages.Search_Error_openEditor_message); 
+					return null;
+				}
+			}
+		}
+		return editor;
+	}
+

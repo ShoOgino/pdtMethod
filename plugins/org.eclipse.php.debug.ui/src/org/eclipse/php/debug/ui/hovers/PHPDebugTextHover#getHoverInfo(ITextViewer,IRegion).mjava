@@ -1,0 +1,27 @@
+	public String getHoverInfo(ITextViewer textViewer, IRegion hoverRegion) {
+		PHPDebugTarget debugTarget = getDebugTarget();
+		if (debugTarget == null || textViewer == null || textViewer.getDocument() == null) {
+			return null;
+		}
+		int offset = hoverRegion.getOffset();
+		IStructuredDocumentRegion flatNode = ((IStructuredDocument) textViewer.getDocument()).getRegionAtCharacterOffset(offset);
+		ITextRegion region = null;
+		if (flatNode != null) {
+			region = flatNode.getRegionAtCharacterOffset(offset);
+		}
+		if (region != null) {
+			String regionType = region.getType();
+			if (regionType.equalsIgnoreCase(PHPRegionTypes.PHP_VARIABLE)) {
+				String variable = null;
+				try {
+					variable = textViewer.getDocument().get(hoverRegion.getOffset(), hoverRegion.getLength());
+					variable = "<B>" + variable + " = </B>" + getValue(debugTarget, variable);
+				} catch (BadLocationException e) {
+					Logger.logException("Error retrieving the value\n", e);
+				}
+				return variable;
+			}
+		}
+		return null;
+	}
+

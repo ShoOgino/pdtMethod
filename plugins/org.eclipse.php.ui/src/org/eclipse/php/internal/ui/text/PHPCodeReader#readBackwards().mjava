@@ -1,0 +1,41 @@
+	private int readBackwards() throws BadLocationException {
+
+		while (0 < fOffset) {
+			-- fOffset;
+
+			handleSingleLineComment();
+
+			char current= fDocument.getChar(fOffset);
+			switch (current) {
+				case '/':
+
+					if (fSkipComments && fOffset > 1) {
+						char next= fDocument.getChar(fOffset - 1);
+						if (next == '*') {
+							// a comment ends, advance to the comment start
+							fOffset -= 2;
+							gotoCommentStart();
+							continue;
+						}
+					}
+
+					return current;
+
+				case '"':
+				case '\'':
+
+					if (fSkipStrings) {
+						-- fOffset;
+						gotoStringStart(current);
+						continue;
+					}
+
+					return current;
+			}
+
+			return current;
+		}
+
+		return EOF;
+	}
+
