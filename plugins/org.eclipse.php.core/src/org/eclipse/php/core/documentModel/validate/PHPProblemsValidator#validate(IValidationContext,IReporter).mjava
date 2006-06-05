@@ -1,0 +1,28 @@
+	public void validate(IValidationContext helper, IReporter reporter) throws ValidationException {
+		String[] uris = helper.getURIs();
+		IWorkspaceRoot wsRoot = ResourcesPlugin.getWorkspace().getRoot();
+		if (uris.length > 0) {
+			IFile currentFile = null;
+			for (int i = 0; i < uris.length && !reporter.isCancelled(); i++) {
+				currentFile = wsRoot.getFile(new Path(uris[i]));
+				if (currentFile != null && currentFile.exists()) {
+					validateFile(currentFile, reporter);
+				}
+			}
+		} else {
+			// it's an entire workspace "clean"
+			PHPFileVisitor visitor = new PHPFileVisitor(reporter);
+			try {
+				//  collect all jsp files
+				ResourcesPlugin.getWorkspace().getRoot().accept(visitor, IResource.DEPTH_INFINITE);
+			} catch (CoreException e) {
+				e.printStackTrace();
+			}
+			IFile[] files = visitor.getFiles();
+			for (int i = 0; i < files.length && !reporter.isCancelled(); i++) {
+				validateFile(files[i], reporter);
+			}
+		}
+
+	}
+

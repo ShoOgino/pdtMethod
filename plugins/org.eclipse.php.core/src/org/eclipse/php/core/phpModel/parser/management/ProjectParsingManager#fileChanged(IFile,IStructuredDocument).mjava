@@ -1,0 +1,15 @@
+	public void fileChanged(IFile file, IStructuredDocument sDocument) {
+		ParserClient parserClient = buildParserClient(file, IParserClientFactory.fileChanged);
+		if (parserClient == null) {
+			return;
+		}
+		try {
+			StringReader reader = new StringReader(sDocument.get());
+			Pattern[] tasksPatterns = TaskPatternsProvider.getInstance().getPatternsForProject(file.getProject());
+			parserManager.parse(reader, file.getFullPath().toString(), file.getModificationStamp(), parserClient, tasksPatterns, UseAspTagsHandler.useAspTagsAsPhp(project));
+		} catch (IOException e) {
+			PHPCorePlugin.log(e);
+			return;
+		}
+	}
+

@@ -1,0 +1,52 @@
+	private void handlePhpComment() throws IOException {
+		int commentStart = 0;
+		int commentLegth = 0;
+		String commentType = "";
+
+		PhpLexer phpLexer = getPhpLexer();
+		if (context == PHPRegionTypes.PHP_COMMENT_START || context == PHPRegionTypes.PHPDOC_COMMENT_START) {
+			commentType = context.substring(0, context.length() - 6);//PHPRegionTypes.PHPDOC_COMMENT;
+			ITextRegion tRegion = new PHPContentRegion(start, textLength, length, context);
+			storedPhpTokens.add(tRegion);
+			commentStart = phpLexer.getTokenStart() + phpLexer.yylength();
+			commentLegth = 0;
+		} else {
+			commentType = context;
+			commentStart = phpLexer.getTokenStart();
+			commentLegth = phpLexer.yylength();
+		}
+
+		for (context = phpLexer.yylex(); context != null; context = phpLexer.yylex()) {
+			if (context == PHPRegionTypes.PHP_CLOSETAG) {
+				checkForTodo(commentType, commentStart, commentLegth, source.getText(commentStart, commentLegth));
+				fBufferedContext = context;
+				fBufferedStart = phpLexer.getTokenStart();
+				fBufferedLength = phpLexer.yylength();
+				fShouldLoadBuffered = true;
+				return;
+			}
+			if (isPHPCommentState(context)) {
+				commentLegth += phpLexer.yylength();
+				continue;
+			}
+			checkForTodo(commentType, commentStart, commentLegth, source.getText(commentStart, commentLegth));
+			if (context == PHPRegionTypes.WHITESPACE) {
+				((ITextRegion) storedPhpTokens.get(storedPhpTokens.size() - 1)).adjustLength(phpLexer.yylength());
+				return;
+			}
+
+			if (context.startsWith("PHPDOC") && context != PHPRegionTypes.PHPDOC_COMMENT_END) { //if its phpdoc tags
+				commentStart = phpLexer.getTokenStart() + phpLexer.yylength();
+				commentLegth = 0;
+			} else {
+				fBufferedContext = context;
+				fBufferedStart = phpLexer.getTokenStart();
+				fBufferedLength = phpLexer.yylength();
+				fShouldLoadBuffered = true;
+				return;
+			}
+
+		}
+		checkForTodo(commentType, commentStart, commentLegth, source.getText(commentStart, commentLegth));
+	}
+

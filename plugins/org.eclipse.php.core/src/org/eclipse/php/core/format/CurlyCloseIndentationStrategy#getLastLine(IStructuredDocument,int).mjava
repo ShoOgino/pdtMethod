@@ -1,0 +1,39 @@
+	/**
+	 * This function returns the line in which the corresponding '{' of the '}' found
+	 * 
+	 *  TODO this function has a bug in it: if there is a '{' inside inner state then it will not ignore it 
+	 *  as it should.
+	 */
+	private IRegion getLastLine(IStructuredDocument document, int forOffset) throws BadLocationException {
+		int offset = forOffset;
+		int curlyCounter = 0;
+		while (offset >= 0) {
+			IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(offset);
+			if (sdRegion == null) {
+				return null;
+			}
+			if (sdRegion.getType() != PHPRegionTypes.PHP_CONTENT) {
+				offset = sdRegion.getStartOffset() - 1;
+				continue;
+			}
+			ITextRegion tRegion = sdRegion.getRegionAtCharacterOffset(offset - 1);
+
+			while (tRegion != null) {
+				String token = tRegion.getType();
+				if (token == PHPRegionTypes.PHP_CURLY_OPEN) {
+					curlyCounter--;
+					if (curlyCounter < 0) {
+						return document.getLineInformationOfOffset(tRegion.getStart() + sdRegion.getStartOffset());
+					}
+				} else if (token == PHPRegionTypes.PHP_CURLY_CLOSE) {
+					curlyCounter++;
+				}
+
+				tRegion = sdRegion.getRegionAtCharacterOffset(tRegion.getStart() + sdRegion.getStartOffset() - 1);
+			}
+			offset = sdRegion.getStartOffset() - 1;
+		}
+		return null;
+
+	}
+

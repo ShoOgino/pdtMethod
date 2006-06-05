@@ -1,0 +1,33 @@
+  /** Full constructor.
+   * @param prod production this item uses.
+   * @param pos  position of the "dot" within the item.
+   */
+  public lr_item_core(production prod, int pos) throws internal_error
+    {
+      symbol          after_dot = null;
+      production_part part;
+
+      if (prod == null)
+	throw new internal_error(
+	  "Attempt to create an lr_item_core with a null production");
+
+      _the_production = prod;
+
+      if (pos < 0 || pos > _the_production.rhs_length())
+	throw new internal_error(
+	  "Attempt to create an lr_item_core with a bad dot position");
+
+      _dot_pos = pos;
+
+      /* compute and cache hash code now */
+      _core_hash_cache = 13*_the_production.hashCode() + pos;
+
+      /* cache the symbol after the dot */
+      if (_dot_pos < _the_production.rhs_length())
+	{
+	  part = _the_production.rhs(_dot_pos);
+	  if (!part.is_action())
+	    _symbol_after_dot = ((symbol_part)part).the_symbol();
+	}
+    } 
+

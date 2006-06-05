@@ -1,0 +1,28 @@
+	/**
+	 * Adds a builder to the build spec for the given project.
+	 */
+	protected ICommand addToFrontOfBuildSpec(String builderID) throws CoreException {
+		ICommand command = null;
+		IProjectDescription description = getProject().getDescription();
+		ICommand[] commands = description.getBuildSpec();
+		boolean found = false;
+		for (int i = 0; i < commands.length; ++i) {
+			if (commands[i].getBuilderName().equals(builderID)) {
+				found = true;
+				command = commands[i];
+				break;
+			}
+		}
+		if (!found) {
+			command = description.newCommand();
+			command.setBuilderName(builderID);
+			ICommand[] newCommands = new ICommand[commands.length + 1];
+			System.arraycopy(commands, 0, newCommands, 1, commands.length);
+			newCommands[0] = command;
+			IProjectDescription desc = getProject().getDescription();
+			desc.setBuildSpec(newCommands);
+			getProject().setDescription(desc, null);
+		}
+		return command;
+	}
+

@@ -1,0 +1,25 @@
+	private void initExtensionPoints() {
+		Plugin phpCorePlugin = PHPCorePlugin.getDefault();
+		if (phpCorePlugin == null)
+			return;
+
+		IExtensionPoint extension = Platform.getExtensionRegistry().getExtensionPoint(PHPCoreConstants.PLUGIN_ID, PHPCoreConstants.IP_VARIABLE_INITIALIZER_EXTPOINT_ID);
+		if (extension != null) {
+			IExtension[] extensions = extension.getExtensions();
+			for (int i = 0; i < extensions.length; i++) {
+				IConfigurationElement[] configElements = extensions[i].getConfigurationElements();
+				for (int j = 0; j < configElements.length; j++) {
+					String varAttribute = configElements[j].getAttribute("variable"); //$NON-NLS-1$
+					try {
+						Object execExt = configElements[j].createExecutableExtension("class"); //$NON-NLS-1$
+						if (execExt instanceof IncludePathVariableInitializer) {
+							((IncludePathVariableInitializer) execExt).initialize(varAttribute);
+						}
+					} catch (CoreException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		}
+	}
+

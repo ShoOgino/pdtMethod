@@ -1,0 +1,42 @@
+	public static String getPartitionType(IStructuredDocument document, int offset) {
+		IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(offset);
+		ITextRegion tRegion = sdRegion.getRegionAtCharacterOffset(offset);
+		if (tRegion == null) {
+			return null;
+		}
+		String result = null;
+
+		if (tRegion instanceof PHPContentRegion) {
+			if (PhpLexer.isPHPMultiLineCommentState(tRegion.getType())) {
+				result = PHPPartitionTypes.PHP_MULTI_LINE_COMMENT; 
+			} else if (PhpLexer.isPHPLineCommentState(tRegion.getType())) {
+				result = PHPPartitionTypes.PHP_SINGLE_LINE_COMMENT ; 
+			} else if (PhpLexer.isPHPDocState(tRegion.getType())) {
+				result = PHPPartitionTypes.PHP_DOC; 
+			} else if (PhpLexer.isPHPQuotesState(tRegion.getType())) {
+				result = checkBounds(sdRegion, tRegion, offset, PHPPartitionTypes.PHP_QUOTED_STRING);
+			} else if (PHPRegionTypes.TASK.equals(tRegion.getType())) {
+				// return the previous region type
+				if (sdRegion.getPrevious() == null) {
+					return null;
+				}
+				result = getPartitionType(document, sdRegion.getStartOffset() + tRegion.getStart() - 1);
+			} else {
+				result = PHPPartitionTypes.PHP_DEFAULT;
+			}
+		} else if (tRegion.getType() == PHPRegionTypes.PHP_OPENTAG) {
+			if(offset >= sdRegion.getStartOffset() + tRegion.getTextEnd()){
+				result = PHPPartitionTypes.PHP_DEFAULT;
+			} else {
+				result = PHPRegionTypes.PHP_OPENTAG;
+			}
+		} else if (tRegion.getType() == PHPRegionTypes.PHP_CLOSETAG) {
+			if(offset == sdRegion.getStartOffset() + tRegion.getStart()){
+				result = PHPPartitionTypes.PHP_DEFAULT;
+			} else {
+				result = PHPRegionTypes.PHP_CLOSETAG;
+			}
+		}
+		return result;
+	}
+

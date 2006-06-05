@@ -1,0 +1,22 @@
+	/**
+	 * Update the include-paths XML when a project is removed. 
+	 * This method also check for any un-used cache files and remove them from the disk.
+	 * 
+	 * @param project The IProject that was removed.
+	 * @return The cached Map of IProject name to List of cache files names
+	 */
+	public Map projectRemoved(IProject project) {
+		Map cachedMap = null;
+		synchronized (lock) {
+			String key = project.getName();
+			cachedMap = getCachedMap();
+			List pathsToRemove = (List) cachedMap.remove(key);
+			if (pathsToRemove != null) {
+				checkPaths(pathsToRemove, cachedMap);
+				deletePaths(pathsToRemove);
+			}
+			saveMap(cachedMap);
+		}
+		return cachedMap;
+	}
+

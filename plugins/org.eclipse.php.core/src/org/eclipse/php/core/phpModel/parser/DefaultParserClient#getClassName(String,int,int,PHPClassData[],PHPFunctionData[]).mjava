@@ -1,0 +1,40 @@
+	private String getClassName(String className, int position, int lineNumber, PHPClassData[] cls, PHPFunctionData[] func) {
+		String[] classNameParts = className.split(";");
+		String sourceClassName = null;
+		int propertyNamePosition = 1;
+
+		if (classNameParts.length < 2) {
+			return null;
+		}
+		if (classNameParts.length == 2) {
+			// meaning we are in a statment of $a = $b
+			return PHPFileDataUtilities.getVariableType(workingFileName, classNameParts[1], position, lineNumber, userModel, true);
+		}
+		if ((classNameParts[1].equals("function_call"))) {
+			// meaning it's $a = foo();
+			sourceClassName = getFunctionReturnType(classNameParts[2], position, cls, func);
+			propertyNamePosition = 3;
+		} else {
+			propertyNamePosition = 2;
+			sourceClassName = classNameParts[1];
+			if (sourceClassName.charAt(0) == '$') {
+				// meaning its $a = $b->foo()
+				sourceClassName = PHPFileDataUtilities.getVariableType(workingFileName, sourceClassName, position, lineNumber, userModel, true);
+			} // else its $a = MyClass::foo()
+		}
+
+		// this loop is for the case there is a nesting: $a = $b->foo()->bar()
+		for (; propertyNamePosition < classNameParts.length; propertyNamePosition++) {
+			if (!classNameParts[propertyNamePosition].equals("null")) {
+				sourceClassName = getPropertyType(sourceClassName, classNameParts[propertyNamePosition], cls, func);
+				// the "-" stands for finding the property but couldn't find
+				// it's type
+				if (sourceClassName != null && sourceClassName.equals("-")) {
+					sourceClassName = null;
+					break;
+				}
+			}
+		}
+		return sourceClassName;
+	}
+

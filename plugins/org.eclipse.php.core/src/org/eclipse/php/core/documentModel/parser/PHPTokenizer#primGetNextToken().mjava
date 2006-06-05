@@ -1,0 +1,514 @@
+  /**
+   * Resumes scanning until the next regular expression is matched,
+   * the end of input is encountered or an I/O-Error occurs.
+   *
+   * @return      the next token
+   * @exception   IOException  if any I/O-Error occurs
+   */
+  public String primGetNextToken() throws java.io.IOException {
+    int yy_input;
+    int yy_action;
+
+
+    while (true) {
+
+      yychar+= yylength();
+
+      boolean yy_counted = false;
+      for (yy_currentPos = yy_startRead; yy_currentPos < yy_markedPos;
+                                                      yy_currentPos++) {
+        switch (yy_buffer[yy_currentPos]) {
+        case '\r':
+          yyline++;
+          yy_counted = true;
+          break;
+        case '\n':
+          if (yy_counted)
+            yy_counted = false;
+          else {
+            yyline++;
+          }
+          break;
+        default:
+          yy_counted = false;
+        }
+      }
+
+      if (yy_counted) {
+        if ( yy_advance() == '\n' ) yyline--;
+        if ( !yy_atEOF ) yy_currentPos--;
+      }
+
+      yy_action = -1;
+
+      yy_currentPos = yy_startRead = yy_markedPos;
+
+      yy_state = yy_lexical_state;
+
+
+      yy_forAction: {
+        while (true) {
+    
+          yy_input = yy_advance();
+
+          if ( yy_input == YYEOF ) break yy_forAction;
+
+          int yy_next = yytrans[ yy_rowMap[yy_state] + yycmap[yy_input] ];
+          if (yy_next == -1) break yy_forAction;
+          yy_state = yy_next;
+
+          int yy_attributes = YY_ATTRIBUTE[yy_state];
+          if ( (yy_attributes & 1) > 0 ) {
+            yy_action = yy_state; 
+            yy_markedPos = yy_currentPos; 
+            if ( (yy_attributes & 8) > 0 ) break yy_forAction;
+          }
+
+        }
+      }
+
+
+      switch (yy_action) {    
+
+        case 219: 
+        case 220: 
+        case 221: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("\nCDATA start");//$NON-NLS-1$
+	fStateStack.push(yystate());
+	yybegin(ST_CDATA_TEXT);
+	return XML_CDATA_OPEN;
+ }
+        case 223: break;
+        case 213: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("element");//$NON-NLS-1$
+	yybegin(ST_XML_ELEMENT_DECLARATION);
+	return XML_ELEMENT_DECLARATION;
+ }
+        case 224: break;
+        case 212: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("attlist");//$NON-NLS-1$
+	yybegin(ST_XML_ATTLIST_DECLARATION);
+	return XML_ATTLIST_DECLARATION;
+ }
+        case 225: break;
+        case 211: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("doctype");//$NON-NLS-1$
+	yybegin(ST_XML_DOCTYPE_DECLARATION);
+	return XML_DOCTYPE_DECLARATION;
+ }
+        case 226: break;
+        case 207: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("doctype external id");//$NON-NLS-1$
+	yybegin(ST_XML_DOCTYPE_ID_PUBLIC);
+	return XML_DOCTYPE_EXTERNAL_ID_PUBLIC;
+ }
+        case 227: break;
+        case 206: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("doctype external id");//$NON-NLS-1$
+	yybegin(ST_XML_DOCTYPE_ID_SYSTEM);
+	return XML_DOCTYPE_EXTERNAL_ID_SYSTEM;
+ }
+        case 228: break;
+        case 52: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("doctype type");//$NON-NLS-1$
+	yybegin(ST_XML_DOCTYPE_EXTERNAL_ID);
+	return XML_DOCTYPE_NAME;
+ }
+        case 229: break;
+        case 46: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("declaration end");//$NON-NLS-1$
+	if (Debug.debugTokenizer) {
+		if(fStateStack.peek()!=YYINITIAL)
+			System.out.println("end embedded region");//$NON-NLS-1$
+	}
+	yybegin(fStateStack.pop());
+	return XML_DECLARATION_CLOSE;
+ }
+        case 230: break;
+        case 41: 
+        case 43: 
+        case 44: 
+        case 96: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("attr value");//$NON-NLS-1$
+        yybegin(ST_XML_ATTRIBUTE_NAME);
+        return XML_TAG_ATTRIBUTE_VALUE;
+ }
+        case 231: break;
+        case 40: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("equals");//$NON-NLS-1$
+        yybegin(ST_XML_ATTRIBUTE_VALUE);
+        return XML_TAG_ATTRIBUTE_EQUALS;
+ }
+        case 232: break;
+        case 39: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("attr name");//$NON-NLS-1$
+        yybegin(ST_XML_EQUALS);
+        return XML_TAG_ATTRIBUTE_NAME;
+ }
+        case 233: break;
+        case 36: 
+        case 37: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("tag name");//$NON-NLS-1$
+        yybegin(ST_XML_ATTRIBUTE_NAME);
+        return XML_TAG_NAME;
+ }
+        case 234: break;
+        case 34: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("tag close");//$NON-NLS-1$
+	if(isBlockMarker()) {
+        	yybegin(ST_BLOCK_TAG_SCAN);
+	}
+	else
+        	yybegin(YYINITIAL);
+        return XML_TAG_CLOSE;
+ }
+        case 235: break;
+        case 30: 
+        case 31: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("comment content");//$NON-NLS-1$
+	return scanXMLCommentText();
+ }
+        case 236: break;
+        case 29: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("LINE FEED");//$NON-NLS-1$
+	return WHITE_SPACE;
+ }
+        case 237: break;
+        case 0: 
+        case 20: 
+        case 86: 
+        case 88: 
+        case 153: 
+        case 154: 
+        case 180: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("\nXML content");//$NON-NLS-1$
+	return XML_CONTENT;
+ }
+        case 238: break;
+        case 5: 
+        case 33: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("inappropriate tag name");//$NON-NLS-1$
+	yybegin(YYINITIAL);
+        return XML_CONTENT;
+ }
+        case 239: break;
+        case 6: 
+        case 7: 
+        case 8: 
+        case 9: 
+        case 10: 
+        case 11: 
+        case 12: 
+        case 13: 
+        case 14: 
+        case 15: 
+        case 17: 
+        case 38: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("white space");//$NON-NLS-1$
+        return WHITE_SPACE;
+ }
+        case 240: break;
+        case 16: 
+        case 69: 
+        case 70: 
+        case 137: 
+        case 172: 
+        case 190: 
+        case 200: 
+        case 208: 
+        case 214: 
+        case 217: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("elementdecl contentspec");//$NON-NLS-1$
+	return XML_ELEMENT_DECL_CONTENT;
+ }
+        case 241: break;
+        case 18: 
+        case 76: 
+        case 77: 
+        case 148: 
+        case 176: 
+        case 192: 
+        case 201: 
+        case 209: 
+        case 215: 
+        case 218: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("attlist contentspec");//$NON-NLS-1$
+	return XML_ATTLIST_DECL_CONTENT;
+ }
+        case 242: break;
+        case 21: 
+        case 45: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("\nstart tag open");//$NON-NLS-1$
+        yybegin(ST_XML_TAG_NAME);
+        return XML_TAG_OPEN;
+ }
+        case 243: break;
+        case 22: 
+        case 23: 
+        case 26: 
+        case 27: 
+        case 28: 
+        case 32: 
+        case 35: 
+        case 42: 
+        case 47: 
+        case 48: 
+        case 49: 
+        case 50: 
+        case 51: 
+        case 53: 
+        case 54: 
+        case 56: 
+        case 61: 
+        case 66: 
+        case 73: 
+          { 
+	if (Debug.debugTokenizer)
+		System.out.println("!!!unexpected!!!: \"" + yytext() + "\":" + //$NON-NLS-2$//$NON-NLS-1$
+			yychar + "-" + (yychar + yylength()));//$NON-NLS-1$
+	return UNDEFINED;
+ }
+        case 244: break;
+        case 24: 
+        case 25: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("CDATA text");//$NON-NLS-1$
+	String blockContext = doBlockScan("]]>", XML_CDATA_TEXT, ST_CDATA_END);//$NON-NLS-1$
+	if(blockContext == XML_CDATA_TEXT)
+		yybegin(ST_CDATA_END);
+	return blockContext;
+ }
+        case 245: break;
+        case 55: 
+        case 57: 
+        case 58: 
+        case 59: 
+        case 110: 
+        case 111: 
+        case 114: 
+        case 115: 
+        case 167: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("doctype public reference");//$NON-NLS-1$
+	yybegin(ST_XML_DOCTYPE_ID_SYSTEM);
+	return XML_DOCTYPE_EXTERNAL_ID_PUBREF;
+ }
+        case 246: break;
+        case 60: 
+        case 62: 
+        case 63: 
+        case 64: 
+        case 122: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("doctype system reference");//$NON-NLS-1$
+	yybegin(ST_XML_DECLARATION_CLOSE);
+	return XML_DOCTYPE_EXTERNAL_ID_SYSREF;
+ }
+        case 247: break;
+        case 65: 
+        case 67: 
+        case 68: 
+        case 130: 
+        case 131: 
+        case 134: 
+        case 135: 
+        case 170: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("elementdecl name");//$NON-NLS-1$
+	yybegin(ST_XML_ELEMENT_DECLARATION_CONTENT);
+	return XML_ELEMENT_DECL_NAME;
+ }
+        case 248: break;
+        case 71: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("elementdecl close");//$NON-NLS-1$
+	if (Debug.debugTokenizer) {
+		if(fStateStack.peek()!=YYINITIAL)
+			System.out.println("end embedded region");//$NON-NLS-1$
+	}
+	yybegin(fStateStack.pop());
+	return XML_DECLARATION_CLOSE;
+ }
+        case 249: break;
+        case 72: 
+        case 74: 
+        case 75: 
+        case 141: 
+        case 142: 
+        case 145: 
+        case 146: 
+        case 174: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("attlist name");//$NON-NLS-1$
+	yybegin(ST_XML_ATTLIST_DECLARATION_CONTENT);
+	return XML_ATTLIST_DECL_NAME;
+ }
+        case 250: break;
+        case 78: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("attlist close");//$NON-NLS-1$
+	if (Debug.debugTokenizer) {
+		if(fStateStack.peek()!=YYINITIAL)
+			System.out.println("end embedded region");//$NON-NLS-1$
+	}
+	yybegin(fStateStack.pop());
+	return XML_DECLARATION_CLOSE;
+ }
+        case 251: break;
+        case 81: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("\nend tag open");//$NON-NLS-1$
+        yybegin(ST_XML_TAG_NAME);
+        return XML_END_TAG_OPEN;
+ }
+        case 252: break;
+        case 82: 
+        case 84: 
+        case 151: 
+          { 
+    if (UseAspTagsHandler.useAspTagsAsPhp(project) ||yytext().charAt(1) != '%') {
+    	return PHP_OPEN;
+    }
+    yypushback(1);
+	yybegin(ST_XML_TAG_NAME);
+	return XML_TAG_OPEN;
+ }
+        case 253: break;
+        case 83: 
+          { 
+	fStateStack.push(yystate());
+	if(Debug.debugTokenizer)
+		dump("\ndeclaration start");//$NON-NLS-1$
+        yybegin(ST_XML_DECLARATION);
+	return XML_DECLARATION_OPEN;
+ }
+        case 254: break;
+        case 92: 
+          { 
+        yybegin(YYINITIAL);
+	if(Debug.debugTokenizer)
+		dump("empty tag close");//$NON-NLS-1$
+        return XML_EMPTY_TAG_CLOSE;
+ }
+        case 255: break;
+        case 104: 
+        case 118: 
+        case 126: 
+          { 
+	return XML_DOCTYPE_INTERNAL_SUBSET;
+ }
+        case 256: break;
+        case 155: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("\nEntityRef");//$NON-NLS-1$
+	return XML_ENTITY_REFERENCE;
+ }
+        case 257: break;
+        case 158: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("\nPEReference");//$NON-NLS-1$
+	return XML_PE_REFERENCE;
+ }
+        case 258: break;
+        case 159: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("CDATA end");//$NON-NLS-1$
+	yybegin(fStateStack.pop());
+	return XML_CDATA_CLOSE;
+ }
+        case 259: break;
+        case 160: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("comment end");//$NON-NLS-1$
+	yybegin(YYINITIAL);
+	return XML_COMMENT_CLOSE;
+ }
+        case 260: break;
+        case 177: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("\ncomment start");//$NON-NLS-1$
+	yybegin(ST_XML_COMMENT);
+	return XML_COMMENT_OPEN;
+ }
+        case 261: break;
+        case 181: 
+          { 
+	if(Debug.debugTokenizer)
+		dump("\nCharRef");//$NON-NLS-1$
+	return XML_CHAR_REFERENCE;
+ }
+        case 262: break;
+        case 79: 
+        case 80: 
+          { 
+		return doBlockTagScan();
+	 }
+        case 263: break;
+        default: 
+          if (yy_input == YYEOF && yy_startRead == yy_currentPos) {
+            yy_atEOF = true;
+            yy_do_eof();
+              return null;
+          } 
+          else {
+            yy_ScanError(YY_NO_MATCH);
+          }
+      }
+    }
+  }    
+

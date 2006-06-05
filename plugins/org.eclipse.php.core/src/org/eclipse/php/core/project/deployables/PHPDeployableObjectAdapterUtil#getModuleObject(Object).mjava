@@ -1,0 +1,31 @@
+	public static IModuleArtifact getModuleObject(Object obj) {
+		IResource resource = null;
+		if (obj instanceof IResource)
+			resource = (IResource) obj;
+		else if (obj instanceof IAdaptable)
+			resource = (IResource) ((IAdaptable) obj).getAdapter(IResource.class);
+		else if(obj instanceof PHPFileData)
+		{
+			PHPFileData fileData = (PHPFileData)obj;
+			String name = fileData.getName();
+			resource = createResource(name);
+		}
+		if (resource == null)
+			return null;
+
+		// find deployable
+		PHPNature phpNature = getNature(resource.getProject());
+		if (phpNature == null || !(phpNature instanceof PHPNature))
+			return null;
+
+		if (resource instanceof IProject)
+			return new WebResource(getModule(phpNature), resource.getFullPath()); //$NON-NLS-1$
+
+		// determine path
+		IPath resourcePath = resource.getProjectRelativePath();
+
+		// return Web resource type
+		return new WebResource(getModule(phpNature), resourcePath);
+
+	}
+

@@ -1,0 +1,35 @@
+	/**
+	 * Update the include-paths XML when a project PHP version is changed.
+	 * Note: This method assumes that any cache file ends-up with the PHP version string.
+	 * 
+	 * 
+	 * @param project
+	 * @param oldVersion
+	 * @param newVersion 
+	 * @return The cached Map of IProject name to List of cache files names; Null if the old or the new phpVersion
+	 * are null.
+	 */
+	public Map phpVersionChanged(IProject project, String oldVersion, String newVersion) {
+		if (oldVersion == null || newVersion == null) {
+			return null;
+		}
+		Map cachedMap = null;
+		synchronized (lock) {
+			String key = project.getName();
+			cachedMap = getCachedMap();
+			List oldPaths = (List)cachedMap.get(key);
+			if (oldPaths != null) {
+				// Go over the names and change each on of them to end with the new PHP version.
+				List newNames = new ArrayList(oldPaths.size());
+				for (int i = 0; i < oldPaths.size(); i++) {
+					newNames.add(((String)oldPaths.get(i)).replaceAll(oldVersion, newVersion));
+				}
+				cachedMap.put(key, newNames);
+				checkPaths(oldPaths, cachedMap);
+				deletePaths(oldPaths);
+			}
+			saveMap(cachedMap);
+		}
+		return cachedMap;
+	}
+

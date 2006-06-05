@@ -1,0 +1,32 @@
+	private void parseZip(File zipFile, ParserClient client) {
+		ZipInputStream is = null;
+		try {
+			is = new ZipInputStream(new FileInputStream(zipFile));
+			ZipEntry ze = is.getNextEntry();
+
+			while (ze != null) {
+				if (!ze.isDirectory()) {
+					String fileName = ze.getName();
+					if (isPhpFile(fileName)) {
+						int size = (int) ze.getSize();
+						LimitedByteReader byteReader = new LimitedByteReader(is, size);
+						parserManager.parse(byteReader, fileName, zipFile.lastModified(), client, UseAspTagsHandler.useAspTagsAsPhp(project));
+					} else {
+						is.skip(ze.getSize());
+					}
+				}
+				ze = is.getNextEntry();
+			}
+		} catch (FileNotFoundException e) {
+			//handled before
+		} catch (IOException io) {
+			Logger.logException(io);
+		}
+		if (is != null) {
+			try {
+				is.close();
+			} catch (IOException e) {
+			}
+		}
+	}
+

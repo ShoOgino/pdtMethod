@@ -1,0 +1,57 @@
+	/**
+	 * This method returns a unioned list from the newNodes.
+	 * The purpose here is to union some structured document that can be merged
+	 * This is done in order to save a contract that all regions are seperated by close region
+	 * or semicolon region 
+	 * @param newNodes
+	 */
+	private CoreNodeList toUnionList(List newNodes) {
+
+		int i = 0;
+		while (i + 1 < newNodes.size()) { // while we have next node  
+			final IStructuredDocumentRegion current = (IStructuredDocumentRegion) newNodes.get(i);
+			final String type = current.getLastRegion().getType();
+
+			IStructuredDocumentRegion next = (IStructuredDocumentRegion) newNodes.get(i + 1);
+			
+			// if we can merge the current 
+			// region with the next region - merge it!
+			if (type != PHPRegionTypes.PHP_SEMICOLON && type != PHPRegionTypes.PHP_CLOSETAG && newNodes.get(i + 1) != null) { 
+				 
+				final int itemLength = current.getLength();
+
+				// here, we add all regions of the next document 
+				// this is done by adjusting the start position of the region by 
+				// the length of the item's length and adding it to the item's list
+				final ITextRegionList regions = next.getRegions();
+				for (int j = 0; j < regions.size(); ++j) {
+					final ITextRegion textRegion = regions.get(j);
+					textRegion.adjustStart(itemLength);
+					current.addRegion(textRegion);
+				}
+
+				// at last we can adjust the length of the item by the next's sd length 
+				current.adjustLength(next.getLength());
+				newNodes.remove(i + 1); // remove the nexr structured document
+				
+				// update links 
+				if (i + 1 < newNodes.size()) {
+					next = (IStructuredDocumentRegion) newNodes.get(i + 1);				
+					current.setNext(next);
+					next.setPrevious(current);
+				} else 
+					current.setNext(null);
+				
+			} else {
+				// here do not increment the index i since we want to 
+				// unite the next ostructured document with the current one.
+
+				i++;
+			}
+			
+		}
+		// now build the new CoreNodeList from the final list 
+		// the list may changed so get the list size again...
+		return new CoreNodeList((IStructuredDocumentRegion) newNodes.get(0), (IStructuredDocumentRegion) newNodes.get(newNodes.size() - 1));
+	}
+

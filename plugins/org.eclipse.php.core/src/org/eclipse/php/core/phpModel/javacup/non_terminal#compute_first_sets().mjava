@@ -1,0 +1,42 @@
+  /** Compute first sets for all non-terminals.  This assumes nullability has
+   *  already computed.
+   */
+  public static void compute_first_sets() throws internal_error
+    {
+      boolean      change = true;
+      Enumeration  n;
+      Enumeration  p;
+      non_terminal nt;
+      production   prod;
+      terminal_set prod_first;
+
+      /* repeat this process until we have no change */
+      while (change)
+	{
+	  /* look for a new change */
+	  change = false;
+
+	  /* consider each non-terminal */
+	  for (n = all(); n.hasMoreElements(); )
+	    {
+	      nt = (non_terminal)n.nextElement();
+
+	      /* consider every production of that non terminal */
+	      for (p = nt.productions(); p.hasMoreElements(); )
+		{
+		  prod = (production)p.nextElement();
+
+		  /* get the updated first of that production */
+		  prod_first = prod.check_first_set();
+
+		  /* if this going to add anything, add it */
+		  if (!prod_first.is_subset_of(nt._first_set))
+		    {
+		      change = true;
+		      nt._first_set.add(prod_first);
+		    }
+		}
+	    }
+	}
+    }
+

@@ -1,0 +1,25 @@
+	public void placeMatchingBlanks(IStructuredDocument document, StringBuffer result, int lineNumber, int forOffset) throws BadLocationException {
+		int lastNonEmptyLineIndex = getIndentationBaseLine(document, lineNumber, forOffset);
+		IRegion lastNonEmptyLine = document.getLineInformation(lastNonEmptyLineIndex);
+		String blanks = FormatterUtils.getLineBlanks(document, lastNonEmptyLine);
+		result.append(blanks);
+
+		int lastLineEndOffset = lastNonEmptyLine.getOffset() + lastNonEmptyLine.getLength();
+		int offset;
+		int line;
+		if (forOffset < lastLineEndOffset) {
+			offset = forOffset;
+			line = lineNumber;
+		} else {
+			offset = lastLineEndOffset;
+			line = lastNonEmptyLineIndex;
+		}
+		if (shouldIndent(document, offset, line)) {
+			int indentationSize = FormatPreferencesSupport.getInstance().getIndentationSize(document);
+			char indentationChar = FormatPreferencesSupport.getInstance().getIndentationChar(document);
+			for (int i = 0; i < indentationSize; i++) {
+				result.append(indentationChar);
+			}
+		}
+	}
+

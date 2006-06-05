@@ -1,0 +1,25 @@
+	private int getIndentationBaseLine(IStructuredDocument document, int lineNumber, int offset) throws BadLocationException {
+		int currLineIndex = lineNumber;
+		while (currLineIndex >= 0) {
+			IRegion lineInfo = document.getLineInformation(currLineIndex);
+			if (lineInfo.getLength() == 0) {
+				//then its not indentation base for sure
+				currLineIndex--;
+				continue;
+			}
+			int currLineEndOffset = lineInfo.getOffset() + lineInfo.getLength();
+			boolean isIndentationBase;
+			if (currLineEndOffset == 0) {
+				isIndentationBase = isIndentationBase(document, currLineEndOffset, offset);
+			} else {
+				//here was (in the studio)  (currLineEndOffset - 1) inside the min function 
+				isIndentationBase = isIndentationBase(document, Math.min(offset, currLineEndOffset), offset);
+			}
+			if (isIndentationBase) {
+				return currLineIndex;
+			}
+			currLineIndex--;
+		}
+		return 0;
+	}
+

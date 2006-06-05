@@ -1,0 +1,15 @@
+	public ITextRegion createToken(String context, int start, int textLength, int length, String lang, String surroundingTag, String tokenText) {
+		ITextRegion newRegion = null;
+		if (context == PHPRegionContext.PHP_OPEN) {
+			int trailingWhitespacesSize = this.getTrailingWhitespacesSize(tokenText);
+			newRegion = new OpenPHPRegion(start, textLength - trailingWhitespacesSize, length);
+		} else if (context == PHPRegionContext.PHP_CLOSE) {
+			newRegion = new ClosePHPRegion(start, textLength, length);
+		} else if (context == PHPRegionContext.PHP_CONTENT || context == PHPRegionContext.PHP_ASP_CONTENT) {
+			newRegion = new PHPContentRegion(start, textLength, length);
+		} else
+			newRegion = super.createToken(context, start, textLength, length, lang, surroundingTag);
+
+		return newRegion;
+	}
+

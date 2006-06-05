@@ -1,0 +1,23 @@
+	private static PHPVariablesTypeManager deserializeVariableTypeManager(DataInputStream inputStream) throws IOException {
+		int size = inputStream.readInt();
+		Map/*<PHPCodeContext,PHPVariableData[]>*/contextsToVariables = new HashMap/*<PHPCodeContext,PHPVariableData[]>*/(size);
+		for (int i = 0; i < size; i++) {
+			PHPCodeContext codeContext = deserializeCodeContext(inputStream);
+			PHPVariableData[] list = deserializePHPVariableDataArray(inputStream);
+			contextsToVariables.put(codeContext, list);
+		}
+
+		size = inputStream.readInt();
+		Map/*<String,List<PHPVariableTypeData>>*/variables = new HashMap/*<String,List<PHPVariableTypeData>>*/(size);
+		for (int i = 0; i < size; i++) {
+			String key = readString(inputStream);
+			int listSize = inputStream.readInt();
+			List/*<PHPVariableTypeData>*/list = new ArrayList/*<PHPVariableTypeData>*/(listSize);
+			for (int j = 0; j < listSize; j++) {
+				list.add(deserializePHPVariableTypeData(inputStream));
+			}
+			variables.put(key, list);
+		}
+		return VariableContextBuilder.createPHPVariablesTypeManager(contextsToVariables, variables);
+	}
+

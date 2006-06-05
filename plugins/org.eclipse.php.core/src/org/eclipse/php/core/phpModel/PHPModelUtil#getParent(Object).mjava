@@ -1,0 +1,30 @@
+	public static Object getParent(Object element) {
+
+		// try to map resources to the containing source folder
+		if (element instanceof IResource) {
+			if (element instanceof IProject)
+				return PHPWorkspaceModelManager.getInstance();
+			IResource parent = ((IResource) element).getParent();
+			if (parent instanceof IProject)
+				return PHPWorkspaceModelManager.getInstance().getModelForProject((IProject) parent);
+
+			return parent;
+		} else if (element instanceof PHPCodeData) {
+			PHPCodeData parent = ((PHPCodeData) element).getContainer();
+			// for source folders that are contained in a project source folder
+			// we have to skip the source folder root as the parent.
+
+			if (parent == null && element instanceof PHPFileData) {
+				IResource resource = getResource(element);
+				IResource parentResource = resource.getParent();
+				//				if (parentResource instanceof IProject)
+				//					return PHPModelManager.getInstance().getModelForProject((IProject)parentResource).PHPBrowserModel();
+				return parentResource;
+			}
+			return parent;
+		} else if (element instanceof PHPProjectModel)
+			return PHPWorkspaceModelManager.getInstance();
+
+		return null;
+	}
+

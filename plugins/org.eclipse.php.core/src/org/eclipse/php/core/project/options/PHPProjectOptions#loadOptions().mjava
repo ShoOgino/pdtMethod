@@ -1,0 +1,63 @@
+	private void loadOptions() {
+
+		IFile optionsFile = project.getFile(FILE_NAME);
+		if (!optionsFile.exists())
+			return;
+
+		ArrayList paths = new ArrayList();
+		IIncludePathEntry defaultOutput = null;
+		includePathEntries = EMPTY_INCLUDEPATH;
+		try {
+			Element cpElement;
+			Reader reader = new InputStreamReader(optionsFile.getContents());
+
+			try {
+				DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+				cpElement = parser.parse(new InputSource(reader)).getDocumentElement();
+			} catch (SAXException e) {
+				throw new IOException("Bad project options file format");
+			} catch (ParserConfigurationException e) {
+				throw new IOException("Bad project options file format");
+			} finally {
+				reader.close();
+			}
+
+			options = new HashMap();
+			if (!cpElement.getNodeName().equalsIgnoreCase(TAG_OPTIONS)) { //$NON-NLS-1$
+				throw new IOException("Bad project options file format");
+			}
+			NodeList list = cpElement.getElementsByTagName(TAG_OPTION); //$NON-NLS-1$
+			int length = list.getLength();
+			for (int i = 0; i < length; ++i) {
+				Element element = (Element) list.item(i);
+				String key = element.getAttribute("name");
+				String value = element.getFirstChild().getNodeValue().trim();
+				options.put(key, value);
+			}
+
+			list = cpElement.getElementsByTagName(IncludePathEntry.TAG_INCLUDEPATH); //$NON-NLS-1$
+			if (list.getLength() > 0) {
+				Element includePathElement = (Element) list.item(0);
+				list = includePathElement.getElementsByTagName(IncludePathEntry.TAG_INCLUDEPATHENTRY); //$NON-NLS-1$
+				length = list.getLength();
+
+				for (int i = 0; i < length; ++i) {
+					Node node = list.item(i);
+					if (node.getNodeType() == Node.ELEMENT_NODE) {
+						IIncludePathEntry entry = IncludePathEntry.elementDecode((Element) node, this);
+						paths.add(entry);
+					}
+				}
+
+			}
+		} catch (IOException e) {
+			PHPCorePlugin.log(e);
+		} catch (CoreException e) {
+			PHPCorePlugin.log(e);
+		}
+		int pathSize = paths.size();
+		includePathEntries = new IIncludePathEntry[pathSize];
+		paths.toArray(includePathEntries);
+
+	}
+

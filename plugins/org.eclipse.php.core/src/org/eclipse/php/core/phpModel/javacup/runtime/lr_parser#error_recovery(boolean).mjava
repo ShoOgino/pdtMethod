@@ -1,0 +1,71 @@
+  /** Attempt to recover from a syntax error.  This returns false if recovery 
+   *  fails, true if it succeeds.  Recovery happens in 4 steps.  First we
+   *  pop the parse stack down to a point at which we have a shift out
+   *  of the top-most state on the error Symbol.  This represents the
+   *  initial error recovery configuration.  If no such configuration is
+   *  found, then we fail.  Next a small number of "lookahead" or "parse
+   *  ahead" Symbols are read into a buffer.  The size of this buffer is 
+   *  determined by error_sync_size() and determines how many Symbols beyond
+   *  the error must be matched to consider the recovery a success.  Next, 
+   *  we begin to discard Symbols in attempt to get past the point of error
+   *  to a point where we can continue parsing.  After each Symbol, we attempt 
+   *  to "parse ahead" though the buffered lookahead Symbols.  The "parse ahead"
+   *  process simulates that actual parse, but does not modify the real 
+   *  parser's configuration, nor execute any actions. If we can  parse all 
+   *  the stored Symbols without error, then the recovery is considered a 
+   *  success.  Once a successful recovery point is determined, we do an
+   *  actual parse over the stored input -- modifying the real parse 
+   *  configuration and executing all actions.  Finally, we return the the 
+   *  normal parser to continue with the overall parse.
+   *
+   * @param debug should we produce debugging messages as we parse.
+   */
+  protected boolean error_recovery(boolean debug)
+    throws java.lang.Exception
+    {
+      if (debug) debug_message("# Attempting error recovery");
+
+      /* first pop the stack back into a state that can shift on error and 
+	 do that shift (if that fails, we fail) */
+      if (!find_recovery_config(debug))
+	{
+	  if (debug) debug_message("# Error recovery fails");
+	  return false;
+	}
+
+      /* read ahead to create lookahead we can parse multiple times */
+      read_lookahead();
+
+      /* repeatedly try to parse forward until we make it the required dist */
+      for (;;)
+	{
+	  /* try to parse forward, if it makes it, bail out of loop */
+	  if (debug) debug_message("# Trying to parse ahead");
+	  if (try_parse_ahead(debug))
+	    {
+	      break;
+	    }
+
+	  /* if we are now at EOF, we have failed */
+	  if (lookahead[0].sym == EOF_sym()) 
+	    {
+	      if (debug) debug_message("# Error recovery fails at EOF");
+	      return false;
+	    }
+
+	  /* otherwise, we consume another Symbol and try again */
+	  if (debug) 
+	  debug_message("# Consuming Symbol #" + cur_err_token().sym);
+	  restart_lookahead();
+	}
+
+      /* we have consumed to a point where we can parse forward */
+      if (debug) debug_message("# Parse-ahead ok, going back to normal parse");
+
+      /* do the real parse (including actions) across the lookahead */
+      parse_lookahead(debug);
+
+      /* we have success */
+      return true;
+    }
+

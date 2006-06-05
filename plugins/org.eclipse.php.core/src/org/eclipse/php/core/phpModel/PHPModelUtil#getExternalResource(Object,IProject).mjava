@@ -1,0 +1,39 @@
+	public static Object getExternalResource(Object element, IProject project) {
+		if (!(element instanceof PHPCodeData)) {
+			return null;
+		}
+		String fileName = ((PHPCodeData) element).getUserData().getFileName();
+		File file = new File(fileName);
+		if (file != null && file.exists()) {
+			return file;
+		}
+		PHPFileData fileData = null;
+		if (element instanceof PHPFileData) {
+			fileData = (PHPFileData) element;
+		} else {
+			fileData = getPHPFileContainer((PHPCodeData) element);
+		}
+		if (fileData == null) {
+			return null;
+		}
+		PHPProjectModel projectModel = null;
+		if (project == null) {
+			fileName = fileData.getName();
+			PHPProjectModel[] models = PHPWorkspaceModelManager.getInstance().listModels();
+			for (int i = 0; i < models.length; i++) {
+				if (models[i].getFileData(fileName) == fileData) {
+					projectModel = models[i];
+					break;
+				}
+			}
+
+		} else {
+			projectModel = PHPWorkspaceModelManager.getInstance().getModelForProject(project);
+		}
+
+		if (projectModel == null) {
+			return null;
+		}
+		return projectModel.getExternalResource(fileData);
+	}
+

@@ -1,0 +1,73 @@
+	public void handleFunctionDeclaration(String functionName, boolean isClassFunction, int modifier, PHPDocBlock docInfo, int startPosition, int stopPosition, int lineNumber) {
+		PHPFunctionData.PHPFunctionParameter[] parameters = new PHPFunctionData.PHPFunctionParameter[functionParameters.size()];
+		functionParameters.toArray(parameters);
+		functionParameters.clear();
+
+		String returnType = null;
+
+		if (docInfo != null) {
+			Iterator it = docInfo.getTags(PHPDocTag.PARAM);
+			while (it.hasNext()) {
+				PHPDocTag param = (PHPDocTag) it.next();
+				String arg = (param.getValue()).trim();
+				String[] values = arg.split(" ");
+				String name = null;
+				String type = null;
+
+				int length = values.length > 2 ? 2 : values.length;
+				for (int i = 0; i < length; i++) {
+					if (values[i].equals("") && length < values.length) {
+						length++;
+					}
+					if (values[i].startsWith("$")) {
+						name = values[i];
+					} else if (type == null) {
+						type = values[i];
+					}
+				}
+				if (name == null) {
+					name = values[0];
+				}
+				PHPFunctionData.PHPFunctionParameter parameter = getParameter(parameters, name);
+
+				if (parameter == null) {
+					type = values[0];
+					name = values.length > 1 ? values[1] : null;
+					parameter = getParameter(parameters, type);
+				}
+				// update parameter.
+				if (parameter != null && type != null && type.length() > 0) {
+					String originalClassType = parameter.getClassType();
+					if (originalClassType == null || originalClassType.length() == 0) {
+						parameter.setClassType(type);
+					}
+				}
+			}
+			Iterator returnIt = docInfo.getTags(PHPDocTag.RETURN);
+			returnType = returnIt.hasNext() ? (String) ((PHPDocTag) returnIt.next()).getValue() : null;
+		}
+
+		if (returnType == null) {
+			if (isClassFunction && functionName.equals(getCurrentClassName())) {
+				returnType = getCurrentClassName();
+			} else {
+				returnType = "void";
+			}
+		}
+
+		UserData userData = PHPCodeDataFactory.createUserData(workingFileName, startPosition, stopPosition, stopPosition, lineNumber);
+		PHPFunctionData functionData = PHPCodeDataFactory.createPHPFuctionData(functionName, modifier, docInfo, userData, parameters, returnType);
+		if (isClassFunction) {
+			classFunctions.add(functionData);
+		} else {
+			functions.add(functionData);
+		}
+
+		functionsStack.push(functionData);
+		for (int i = 0; i < parameters.length; i++) {
+			((PHPCodeDataFactory.PHPFunctionParameterImp) parameters[i]).setContainer(functionData);
+			variableContextBuilder.addVariable(getContext(), parameters[i]);
+			variableContextBuilder.addObjectInstantiation(getContext(), parameters[i].getName(), parameters[i].getClassType(), false, 0, startPosition);
+		}
+	}
+

@@ -1,0 +1,52 @@
+	private void formatLine(IStructuredDocumentRegion sdRegion, int lineNumber) {
+
+		resultBuffer.setLength(0);
+
+		try {
+			IStructuredDocument document = sdRegion.getParentDocument();
+			IRegion lineInfo = document.getLineInformation(lineNumber);
+			int startOffset = lineInfo.getOffset();
+			int lineLength = lineInfo.getLength();
+
+			if (!shouldReformat(document, lineInfo)) {
+				return;
+			}
+			String lineText = document.get(startOffset, lineLength);
+
+			// remove ending spaces.
+			int endingWhiteSpaces = getEndingWhiteSpaces(lineText);
+			if (endingWhiteSpaces != lineLength) {
+				document.replace(startOffset + endingWhiteSpaces, lineLength - endingWhiteSpaces, "");
+			}
+			if (endingWhiteSpaces == 0) {
+				return;
+			}
+
+			int startingWhiteSpaces = getStartingWhiteSpaces(lineText);
+
+			IIndentationStrategy insertionStrategy;
+
+			ITextRegion firstTokenInLine = sdRegion.getRegionAtCharacterOffset(lineInfo.getOffset());
+			if (firstTokenInLine.getStart() + sdRegion.getStartOffset() < lineInfo.getOffset() || firstTokenInLine.getType() == PHPRegionTypes.WHITESPACE) {
+				//meaning we got previos line last token
+				firstTokenInLine = sdRegion.getRegionAtCharacterOffset(sdRegion.getStartOffset() + firstTokenInLine.getEnd());
+			}
+			String firstTokenType = firstTokenInLine.getType();
+			if (firstTokenType == PHPRegionTypes.PHP_CASE || firstTokenType == PHPRegionTypes.PHP_DEFAULT) {
+				insertionStrategy = caseDefualtIndentationStrategy;
+			} else {
+				insertionStrategy = getIndentationStrategy(lineText.charAt(startingWhiteSpaces));
+			}
+
+			// Fill the buffer with blanks as if we added a "\n" to the end of the prev element.
+			//insertionStrategy.placeMatchingBlanks(editor,doc,insertionStrtegyKey,resultBuffer,startOffset-1);
+			insertionStrategy.placeMatchingBlanks(document, resultBuffer, lineNumber, document.getLineOffset(lineNumber));
+
+			// replace the starting spaces
+			document.replaceText(sdRegion, startOffset, startingWhiteSpaces, resultBuffer.toString());
+
+		} catch (BadLocationException e) {
+			Logger.logException(e);
+		}
+	}
+

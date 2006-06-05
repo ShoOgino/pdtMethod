@@ -1,0 +1,54 @@
+  /** Check for unused symbols.  Unreduced productions get checked when
+   *  tables are created.
+   */
+  protected static void check_unused()
+    {
+      terminal term;
+      non_terminal nt;
+
+      /* check for unused terminals */
+      for (Enumeration t = terminal.all(); t.hasMoreElements(); )
+	{
+	  term = (terminal)t.nextElement();
+
+	  /* don't issue a message for EOF */
+	  if (term == terminal.EOF) continue;
+
+	  /* or error */
+	  if (term == terminal.error) continue;
+
+	  /* is this one unused */
+	  if (term.use_count() == 0)
+	    {
+	      /* count it and warn if we are doing warnings */
+	      emit.unused_term++;
+	      if (!emit.nowarn) 
+		{
+		  System.err.println("Warning: Terminal \"" + term.name() + 
+				     "\" was declared but never used");
+		  lexer.warning_count++;
+		}
+	    }
+	}
+
+      /* check for unused non terminals */
+      for (Enumeration n = non_terminal.all(); n.hasMoreElements(); )
+	{
+	  nt = (non_terminal)n.nextElement();
+
+	  /* is this one unused */
+	  if (nt.use_count() == 0)
+	    {
+	      /* count and warn if we are doing warnings */
+	      emit.unused_term++;
+	      if (!emit.nowarn) 
+		{
+		  System.err.println("Warning: Non terminal \"" + nt.name() + 
+				     "\" was declared but never used");
+		  lexer.warning_count++;
+		}
+	    }
+	}
+
+    }
+
