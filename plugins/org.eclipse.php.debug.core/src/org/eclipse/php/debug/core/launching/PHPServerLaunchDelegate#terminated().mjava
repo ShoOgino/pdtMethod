@@ -1,0 +1,17 @@
+	/**
+	 * Called when the debug session was terminated. 
+	 */
+	public void terminated() {
+		// We have to force the termination of the ILaunch because at this stage there is no
+		// PHPDebugTarget, thus we create a dummy debug target to overcome this issue and terminate the launch.
+		IDebugTarget dummyDebugTarget = new DummyDebugTarget(launch);
+		DebugEvent event = new DebugEvent(dummyDebugTarget, DebugEvent.TERMINATE);
+		if (launch != null) {
+			launch.addDebugTarget(dummyDebugTarget);
+			IDebugEventSetListener launchListener = (IDebugEventSetListener)launch;
+			launchListener.handleDebugEvents(new DebugEvent[] {event});
+		}
+		event = new DebugEvent(this, DebugEvent.TERMINATE);
+		fireEvent(event);
+	}
+

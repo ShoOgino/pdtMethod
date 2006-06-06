@@ -1,44 +1,44 @@
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.eclipse.debug.core.IBreakpointListener#breakpointAdded(org.eclipse.debug.core.model.IBreakpoint)
-     */
-    public void breakpointAdded(IBreakpoint breakpoint) {
-        if (supportsBreakpoint(breakpoint)) {
-            try {
-                if (breakpoint.isEnabled()) {
-                    fLastcmd = "breakpointAdded";
-                    PHPLineBreakpoint bp = (PHPLineBreakpoint) breakpoint;
-                    IMarker marker = bp.getMarker();
-                    IResource resource = null;
-                    Breakpoint runtimeBreakpoint = bp.getRuntimeBreakpoint();
-                    int lineNumber = runtimeBreakpoint.getLineNumber();
-                    if (breakpoint instanceof PHPRunToLineBreakpoint) {
-                        PHPRunToLineBreakpoint rtl = (PHPRunToLineBreakpoint) breakpoint;
-                        resource = rtl.getSourceFile();
-                    } else {
-                        resource = marker.getResource();
-                        lineNumber = marker.getAttribute(IMarker.LINE_NUMBER, 0);
-                        runtimeBreakpoint.setLineNumber(lineNumber);
-                    }
-                    String fileName;
-                    if (!fIsPHPCGI) {
-                        if (resource instanceof IWorkspaceRoot) {
-                            fileName = fHTDocs + "/" + (String)marker.getAttribute(IPHPConstants.Include_Storage);
-                        } else {
-                            fileName = fHTDocs + fContextRoot + resource.getProjectRelativePath();
-                        }
-                    } else {
-                        fileName = (resource.getRawLocation()).toString();
-                    }
-                    
-                    runtimeBreakpoint.setFileName(fileName);
-                    Logger.debugMSG("PHPDebugTarget: Setting Breakpoint - File " + fileName + " Line Number " + lineNumber);
-                    debugger.addBreakpoint(bp.getRuntimeBreakpoint(), fBreakpointAddedResponseHandler);
-                }
-            } catch (CoreException e1) {
-                Logger.logException("PHPDebugTarget: Exception Adding Breakpoint", e1);
-            }
-        }
-    }
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.eclipse.debug.core.IBreakpointListener#breakpointAdded(org.eclipse.debug.core.model.IBreakpoint)
+	 */
+	public void breakpointAdded(IBreakpoint breakpoint) {
+		if (supportsBreakpoint(breakpoint)) {
+			try {
+				if (breakpoint.isEnabled()) {
+					fLastcmd = "breakpointAdded";
+					PHPLineBreakpoint bp = (PHPLineBreakpoint) breakpoint;
+					IMarker marker = bp.getMarker();
+					IResource resource = null;
+					Breakpoint runtimeBreakpoint = bp.getRuntimeBreakpoint();
+					int lineNumber = runtimeBreakpoint.getLineNumber();
+					if (breakpoint instanceof PHPRunToLineBreakpoint) {
+						PHPRunToLineBreakpoint rtl = (PHPRunToLineBreakpoint) breakpoint;
+						resource = rtl.getSourceFile();
+					} else {
+						resource = marker.getResource();
+						lineNumber = marker.getAttribute(IMarker.LINE_NUMBER, 0);
+						runtimeBreakpoint.setLineNumber(lineNumber);
+					}
+					String fileName;
+					if (!fIsPHPCGI) {
+						if (resource instanceof IWorkspaceRoot) {
+							fileName = fHTDocs + "/" + (String) marker.getAttribute(IPHPConstants.Include_Storage);
+						} else {
+							fileName = fHTDocs + fContextRoot + resource.getProjectRelativePath();
+						}
+					} else {
+						fileName = (resource.getRawLocation()).toString();
+					}
+
+					runtimeBreakpoint.setFileName(fileName);
+					Logger.debugMSG("[" + this + "] PHPDebugTarget: Setting Breakpoint - File " + fileName + " Line Number " + lineNumber);
+					debugger.addBreakpoint(bp.getRuntimeBreakpoint(), fBreakpointAddedResponseHandler);
+				}
+			} catch (CoreException e1) {
+				Logger.logException("PHPDebugTarget: Exception Adding Breakpoint", e1);
+			}
+		}
+	}
 

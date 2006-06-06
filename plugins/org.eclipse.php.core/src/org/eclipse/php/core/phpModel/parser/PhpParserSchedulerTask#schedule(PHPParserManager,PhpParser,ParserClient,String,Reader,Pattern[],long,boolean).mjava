@@ -1,0 +1,34 @@
+	/**
+	 * PRODUCER - Schedules a new operation for the parser stack
+	 * @param phpParser
+	 * @param client
+	 * @param reader
+	 * @param lastModified
+	 */
+	public void schedule(PHPParserManager parserManager, PhpParser phpParser, ParserClient client, String filename, Reader reader, Pattern[] tasksPatterns, long lastModified, boolean useAspTagsAsPhp) {
+
+		synchronized (buffer) {
+
+			// add it (saftly)
+			// if the stack is full - wait() for an empty place 
+			while (buffer.size() >= BUFFER_MAX_SIZE) {
+				try {
+					buffer.wait();
+				} catch (InterruptedException e) {
+					// process of scheduling was canceled
+					// ignore operation
+					return;
+				}
+			}
+
+			// creates the new task properties
+			final ParserExecuter parserProperties = new ParserExecuter(parserManager, phpParser, client, filename, reader, tasksPatterns, lastModified, useAspTagsAsPhp);
+
+			buffer.addFirst(parserProperties);
+
+			// now you can notify that the stack is not empty
+			buffer.notifyAll();
+
+		}
+	}
+

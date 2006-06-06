@@ -5,7 +5,7 @@
 
 		PhpLexer phpLexer = getPhpLexer();
 		if (context == PHPRegionTypes.PHP_COMMENT_START || context == PHPRegionTypes.PHPDOC_COMMENT_START) {
-			commentType = context.substring(0, context.length() - 6);//PHPRegionTypes.PHPDOC_COMMENT;
+			commentType = context == PHPRegionTypes.PHP_COMMENT_START ? PHPRegionTypes.PHP_COMMENT : PHPRegionTypes.PHPDOC_COMMENT;  
 			ITextRegion tRegion = new PHPContentRegion(start, textLength, length, context);
 			storedPhpTokens.add(tRegion);
 			commentStart = phpLexer.getTokenStart() + phpLexer.yylength();
@@ -34,8 +34,9 @@
 				((ITextRegion) storedPhpTokens.get(storedPhpTokens.size() - 1)).adjustLength(phpLexer.yylength());
 				return;
 			}
-
 			if (context.startsWith("PHPDOC") && context != PHPRegionTypes.PHPDOC_COMMENT_END) { //if its phpdoc tags
+				ITextRegion tRegion = new PHPContentRegion(phpLexer.getTokenStart(), phpLexer.yylength(), phpLexer.yylength(), context);
+				storedPhpTokens.add(tRegion);
 				commentStart = phpLexer.getTokenStart() + phpLexer.yylength();
 				commentLegth = 0;
 			} else {

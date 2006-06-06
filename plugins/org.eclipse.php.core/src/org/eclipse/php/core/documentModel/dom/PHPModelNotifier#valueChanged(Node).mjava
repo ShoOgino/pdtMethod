@@ -1,0 +1,43 @@
+	/**
+	 * valueChanged method
+	 * 
+	 * @param node
+	 *            org.w3c.dom.Node
+	 */
+	public void valueChanged(Node node) {
+		if (node == null)
+			return;
+		IDOMNode notifier = null;
+		if (node.getNodeType() == Node.ATTRIBUTE_NODE) {
+			Attr attr = (Attr) node;
+			notifier = (IDOMNode) attr.getOwnerElement();
+			// TODO_dmw: experimental: changed 06/29/2004 to send "strucuture
+			// changed" even for attribute value changes
+			// there are pros and cons to considering attribute value
+			// "structure changed". Will (re)consider
+			// setCommonRootIfNeeded(notifier);
+			if (notifier == null)
+				return;
+			String value = attr.getValue();
+			int offset = notifier.getStartOffset();
+			notify(notifier, INodeNotifier.CHANGE, attr, null, value, offset);
+		} else {
+			// note: we do not send structured changed event for content
+			// changed
+			notifier = (IDOMNode) node;
+			// PHP ELEMENTS CHANGE: meaning - do not optimize php elements!
+			final boolean isPhpContent = node.getNodeType() == Node.TEXT_NODE && ((TextImpl) node).getFirstStructuredDocumentRegion().getType() == PHPRegionContext.PHP_CONTENT;
+			String value = isPhpContent ? null : node.getNodeValue();
+			// end of change
+			int offset = notifier.getStartOffset();
+			notify(notifier, INodeNotifier.CHANGE, null, null, value, offset);
+			if (node.getNodeType() != Node.ELEMENT_NODE) {
+				IDOMNode parent = (IDOMNode) node.getParentNode();
+				if (parent != null) {
+					notify(parent, INodeNotifier.CONTENT_CHANGED, node, null, value, offset);
+				}
+			}
+		}
+		propertyChanged(notifier);
+	}
+

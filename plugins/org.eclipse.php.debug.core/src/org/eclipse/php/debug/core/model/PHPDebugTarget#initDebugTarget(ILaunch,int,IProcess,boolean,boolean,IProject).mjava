@@ -1,67 +1,77 @@
-    private void initDebugTarget(ILaunch launch, int requestPort, IProcess process, boolean runAsDebug, boolean stopAtFirstLine, IProject project) throws CoreException {
-        fLaunch = launch;
-        fProcess = process;
-        fIsRunAsDebug = runAsDebug;
-        fIsStopAtFirstLine = stopAtFirstLine;
-        fProject = project;
-        if (project != null)fProjectName = project.getName();
-        fProcess.setAttribute(IProcess.ATTR_PROCESS_TYPE, IPHPConstants.PHPProcessType);
-        ((PHPProcess)fProcess).setDebugTarget(this);
-        fRequestPort = requestPort;
+	/*
+	 * Initialize the debug target.
+	 * @param launch
+	 * @param requestPort
+	 * @param process
+	 * @param runAsDebug
+	 * @param stopAtFirstLine
+	 * @param project
+	 * @throws CoreException
+	 */
+	private void initDebugTarget(ILaunch launch, int requestPort, IProcess process, boolean runAsDebug, boolean stopAtFirstLine, IProject project) throws CoreException {
+		fLaunch = launch;
+		fProcess = process;
+		fIsRunAsDebug = runAsDebug;
+		fProject = project;
+		if (project != null)
+			fProjectName = project.getName();
+		fProcess.setAttribute(IProcess.ATTR_PROCESS_TYPE, IPHPConstants.PHPProcessType);
+		((PHPProcess) fProcess).setDebugTarget(this);
+		fRequestPort = requestPort;
 
-        synchronized (fUsedPorts){ 
-            if (fUsedPorts.containsKey(String.valueOf(requestPort))){
-                Logger.debugMSG("PHPDebugTarget: Debug Port already in use");
-                String errorMessage = PHPDebugCoreMessages.DebuggerDebugPortInUse_1;
-                completeTerminated();
-                throw new DebugException(new Status(IStatus.ERROR, PHPDebugPlugin.getID(), IPHPConstants.INTERNAL_ERROR, errorMessage, null));
-            } else {
-                fUsedPorts.put(String.valueOf(requestPort),new Integer(requestPort));
-                fRequestPort = requestPort;
-            }
-        }
-        
-        fBreakpointSet = new BreakpointSet(project, fIsPHPCGI);
-        
-        IDebugHandler debugHandler = null;
-        IDebugParametersInitializer parametersInitializer = DebugParametersInitializersRegistry.getBestMatchDebugParametersInitializer(launch.getLaunchMode());
-        if (parametersInitializer != null) {
-        	String debugHandlerID = parametersInitializer.getDebugHandler();
-        	if (debugHandlerID != null) {
-        		try {
-        			debugHandler = DebugHandlersRegistry.getHandler(debugHandlerID);
-        		} catch (Exception e) {
-        			PHPDebugPlugin.log(e);
-        		}
-        	}
-        }
-        // If couldn't find contributed IDebugHandler - use default
-        if (debugHandler == null) {
-        	debugHandler = new ServerDebugHandler();
-        }
-        debugHandler.setDebugTarget(this);
-        debugger = debugHandler.getRemoteDebugger();
-        
-        fThread = new PHPThread(this);
-        fThreads = new IThread[] { fThread };
-        fTerminated = false;
+		//		synchronized (fUsedPorts) {
+		//			if (fUsedPorts.containsKey(String.valueOf(requestPort))) {
+		//				Logger.debugMSG("PHPDebugTarget: Debug Port already in use");
+		//				String errorMessage = PHPDebugCoreMessages.DebuggerDebugPortInUse_1;
+		//				completeTerminated();
+		//				throw new DebugException(new Status(IStatus.ERROR, PHPDebugPlugin.getID(), IPHPConstants.INTERNAL_ERROR, errorMessage, null));
+		//			} else {
+		//				fUsedPorts.put(String.valueOf(requestPort), new Integer(requestPort));
+		//				fRequestPort = requestPort;
+		//			}
+		//		}
 
-        // create response handlers
-        fPHPResponseHandler = new PHPResponseHandler(this);
-        fStartResponseHandler = fPHPResponseHandler.new StartResponseHandler();
-        fBreakpointAddedResponseHandler = fPHPResponseHandler.new BreakpointAddedResponseHandler();
-        fBreakpointRemovedResponseHandler = fPHPResponseHandler.new BreakpointRemovedResponseHandler();
-        fStepIntoResponseHandler = fPHPResponseHandler.new StepIntoResponseHandler();
-        fStepOverResponseHandler = fPHPResponseHandler.new StepOverResponseHandler();
-        fStepOutResponseHandler = fPHPResponseHandler.new StepOutResponseHandler();
-        fGoResponseHandler = fPHPResponseHandler.new GoResponseHandler();
-        fPauseResponseHandler = fPHPResponseHandler.new PauseResponseHandler();
+		fBreakpointSet = new BreakpointSet(project, fIsPHPCGI);
 
-        fSuspendCount = 0;
-        fContextManager = new ContextManager(this, debugger);
+		IDebugHandler debugHandler = null;
+		IDebugParametersInitializer parametersInitializer = DebugParametersInitializersRegistry.getBestMatchDebugParametersInitializer(launch.getLaunchMode());
+		if (parametersInitializer != null) {
+			String debugHandlerID = parametersInitializer.getDebugHandler();
+			if (debugHandlerID != null) {
+				try {
+					debugHandler = DebugHandlersRegistry.getHandler(debugHandlerID);
+				} catch (Exception e) {
+					PHPDebugPlugin.log(e);
+				}
+			}
+		}
+		// If couldn't find contributed IDebugHandler - use default
+		if (debugHandler == null) {
+			debugHandler = new ServerDebugHandler();
+		}
+		debugHandler.setDebugTarget(this);
+		debugger = debugHandler.getRemoteDebugger();
 
-        fBreakpointManager = DebugPlugin.getDefault().getBreakpointManager();
-        fBreakpointManager.addBreakpointListener(this);
-        fBreakpointManager.addBreakpointManagerListener(this);
-    }
+		fThread = new PHPThread(this);
+		fThreads = new IThread[] { fThread };
+		fTerminated = false;
+
+		// create response handlers
+		fPHPResponseHandler = new PHPResponseHandler(this);
+		fStartResponseHandler = fPHPResponseHandler.new StartResponseHandler();
+		fBreakpointAddedResponseHandler = fPHPResponseHandler.new BreakpointAddedResponseHandler();
+		fBreakpointRemovedResponseHandler = fPHPResponseHandler.new BreakpointRemovedResponseHandler();
+		fStepIntoResponseHandler = fPHPResponseHandler.new StepIntoResponseHandler();
+		fStepOverResponseHandler = fPHPResponseHandler.new StepOverResponseHandler();
+		fStepOutResponseHandler = fPHPResponseHandler.new StepOutResponseHandler();
+		fGoResponseHandler = fPHPResponseHandler.new GoResponseHandler();
+		fPauseResponseHandler = fPHPResponseHandler.new PauseResponseHandler();
+
+		fSuspendCount = 0;
+		fContextManager = new ContextManager(this, debugger);
+
+		fBreakpointManager = DebugPlugin.getDefault().getBreakpointManager();
+		fBreakpointManager.addBreakpointListener(this);
+		fBreakpointManager.addBreakpointManagerListener(this);
+	}
 

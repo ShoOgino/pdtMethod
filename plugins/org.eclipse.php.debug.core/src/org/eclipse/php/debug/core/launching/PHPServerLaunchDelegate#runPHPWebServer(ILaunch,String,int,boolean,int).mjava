@@ -1,0 +1,20 @@
+	public void runPHPWebServer(ILaunch launch, String url, int port, boolean stopAtFirstLine, int debugSessionID) {
+		PHPWebServerDebuggerInitializer debuggerInitializer = new PHPWebServerDebuggerInitializer(launch);
+		try {
+			debuggerInitializer.debug(url, port, stopAtFirstLine, debugSessionID);
+		} catch (DebugException e) {
+			IStatus status = e.getStatus();
+			String errorMessage = null;
+			if (status == null) {
+				Logger.traceException("Unexpected Error return from debuggerInitializer ", e);
+				fireError(PHPDebugCoreMessages.Debugger_Unexpected_Error_1, e);
+				errorMessage = PHPDebugCoreMessages.Debugger_Unexpected_Error_1;
+			} else {
+				fireError(status);
+				errorMessage = status.getMessage();
+			}
+			terminated();
+			displayErrorMessage(errorMessage);
+		}
+	}
+

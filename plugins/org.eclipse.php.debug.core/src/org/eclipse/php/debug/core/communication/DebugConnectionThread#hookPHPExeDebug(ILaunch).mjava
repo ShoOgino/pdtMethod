@@ -1,0 +1,39 @@
+	// Hook a PHP executable debug session
+	private void hookPHPExeDebug(ILaunch launch) throws CoreException {
+		ILaunchConfiguration launchConfiguration = launch.getLaunchConfiguration();
+		String phpExeString = launchConfiguration.getAttribute(PHPCoreConstants.ATTR_LOCATION, (String) null);
+		String fileNameString = launchConfiguration.getAttribute(PHPCoreConstants.ATTR_FILE, (String) null);
+		boolean runWithDebugInfo = launchConfiguration.getAttribute(IPHPConstants.RunWithDebugInfo, true);
+		String projectString = launchConfiguration.getAttribute(PHPCoreConstants.ATTR_WORKING_DIRECTORY, (String) null);
+
+		if (launch.getLaunchMode().equals(ILaunchManager.DEBUG_MODE)) {
+			runWithDebugInfo = false;
+		}
+		
+		IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
+		IProject project;
+		String debugFileName;
+		
+		IPath filePath = new Path(fileNameString);
+		IResource res = workspaceRoot.findMember(filePath);
+		if (res != null) {
+			IFile fileToDebug = (IFile) res;
+			debugFileName = fileToDebug.getName();
+			project = fileToDebug.getProject();
+		} else if(projectString != null) {
+			project = workspaceRoot.getProject(projectString);
+			debugFileName = fileNameString;
+		} else {
+			return;
+		}
+		String workspaceRootPath = PHPDebugTarget.getWorkspaceRootPath(project.getWorkspace());
+		boolean stopAtFirstLine = PHPProjectPreferences.getStopAtFirstLine(project);
+		int requestPort = PHPProjectPreferences.getDebugPort(project);
+
+		IPath phpExe = new Path(phpExeString);
+		PHPProcess process = new PHPProcess(launch, phpExe.toOSString());
+
+		PHPDebugTarget target = new PHPDebugTarget(this, launch, phpExeString, debugFileName, workspaceRootPath, requestPort, process, runWithDebugInfo, stopAtFirstLine, project);
+		launch.addDebugTarget(target);
+	}
+

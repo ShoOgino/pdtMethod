@@ -1,0 +1,23 @@
+	/**
+	 * Hook the debug session to the currect ILaunch that started it. 
+	 * In case there is no such launch, the user will have to fill in some of the detailes needed to start a debug
+	 * session currectly.
+	 *  
+	 * @param debugSessionStartedNotification
+	 */
+	protected void hookDebugSession(DebugSessionStartedNotification debugSessionStartedNotification) throws CoreException {
+		String query = debugSessionStartedNotification.getQuery();
+		int sessionID = getSessionID(query);
+		ILaunch launch = PHPSessionLaunchMapper.remove(sessionID);
+		if (launch != null) {
+			if (launch instanceof PHPServerLaunchDecorator) {
+				hookServerDebug(launch);
+			} else {
+				hookPHPExeDebug(launch);
+			}
+		} else {
+			Logger.log(Logger.ERROR, "No session id");
+			// TODO - Display a user input that will fill up the needed information for the current debug session.
+		}
+	}
+

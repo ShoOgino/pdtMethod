@@ -1,0 +1,26 @@
+	/**
+	 * Run the consumer operation 
+	 */
+	public void run() {
+
+		while (threadAlive) {
+			try {
+				// do a single operation of parsing
+				final ParserExecuter release = release();
+
+				// if release == null something with our stack lock mechanism is wrong!
+				assert release != null;
+
+				// do the job of parsing with the given information
+				display.asyncExec(release);
+
+				// waits until the parse action is done, no cross parsing is allowed
+				release.join();
+
+			} catch (InterruptedException e) {
+				// thread was stoped or canceled...
+				// just go out!
+			}
+		}
+	}
+

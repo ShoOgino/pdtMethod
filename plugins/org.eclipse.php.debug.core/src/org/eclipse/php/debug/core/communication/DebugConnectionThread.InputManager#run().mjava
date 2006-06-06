@@ -1,0 +1,109 @@
+		/**
+		 * @see java.lang.Thread#run()
+		 */
+		public void run() {
+			while (isAlive) {
+
+				while (!inWork && isAlive) {
+					try {
+						synchronized (this) {
+							synchronized (READY_FOR_RESTART_LOCK) {
+								READY_FOR_RESTART_LOCK.notify(); // release one thread.
+
+							}
+							wait();
+							// This way we will start working untill the connectionCreator
+							// hase finished updating the in + out.
+							synchronized (in) {
+							}
+						}
+					} catch (InterruptedException e) {
+					}
+				}
+
+				try {
+
+					if (!isAlive) {
+						break;
+					}
+
+					// reads the length
+					int num = in.readInt();
+					if (isDebugMode) {
+						System.out.println("recieved message size = " + num);
+					}
+					if (num < 0) {
+						shutDown();
+						System.out.println("Socket error (length is negative): possibly Server is SSL, Client is not.");
+					}
+					// We have a new message. process it !!.
+					// This part is synchronized since we do not want the thread to be stoped
+					// when in processing of a message.
+					synchronized (this) {
+
+						int messageType = in.readShort();
+						if (isDebugMode) {
+							System.out.println("message type=" + messageType);
+						}
+
+						IDebugMessage message = DebugMessagesRegistry.getMessage(messageType);
+
+						// handle the message
+						if (message instanceof IDebugNotificationMessage) {
+							if (isDebugMode) {
+								System.out.println("Starting to read notification ");
+							}
+							message.deserialize(in);
+							if (isDebugMode) {
+								System.out.println("End reading of notification " + message);
+							}
+							//getCommunicationClient().handleNotification((Notification)message);
+							//PUT NOTIFICATION TO NOTIFICATION QUEUE
+							inputMessageHandler.queueIn(message);
+						} else if (message instanceof IDebugResponseMessage) {
+							if (isDebugMode) {
+								System.out.println("Starting to read response");
+							}
+							message.deserialize(in);
+							int idd = ((IDebugResponseMessage) message).getID();
+							if (isDebugMode) {
+								System.out.println("End reading of response " + message);
+							}
+							//responseQueue.queueIn(message);
+							//INSERT RESPONSE TO TABLE AND RELEASE THE THREAD WAITING FOR THE REQUEST
+							ResponseHandler handler = (ResponseHandler) responseHandlers.get(new Integer(idd)); // find the handler.
+							if (handler == null) {
+								responseTable.put(/*requestId*/idd, message);
+								IDebugRequestMessage req = (IDebugRequestMessage) requestsTable.remove(idd); // find the request.
+								synchronized (req) {
+									req.notifyAll(); // Notify the response is here.
+								}
+							} else {
+								inputMessageHandler.queueIn(message);
+							}
+						} else if (message instanceof IDebugRequestMessage) { // this is a request.
+							if (isDebugMode) {
+								System.out.println("Starting to read request");
+							}
+							message.deserialize(in);
+							if (isDebugMode) {
+								System.out.println("End reading of request " + message);
+							}
+							//Response response =  getCommunicationClient().handleRequest((Request)message);
+							inputMessageHandler.queueIn(message);
+						}
+					} // end of synchronized part.
+
+				} catch (EOFException exc) {
+					shutDown();
+				} catch (SocketException exc) {
+					shutDown();
+				} catch (IOException exc) {
+					PHPDebugPlugin.log(exc);
+					shutDown();
+				} catch (Exception exc) {
+					PHPDebugPlugin.log(exc);
+				}
+			}
+		}
+

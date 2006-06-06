@@ -1,0 +1,34 @@
+	/**
+	 * Return best matching ICommunicationDaemon.
+	 * The returned ICommunicationDaemon is always a new instance.
+	 * In case of an error, null is returned.
+	 * 
+	 * @return A new instance of a best match ICommunicationDaemon
+	 */
+	public static ICommunicationDaemon getBestMatchCommunicationDaemon() {
+		try {
+			ICommunicationDaemon defaultDaemon = null;
+			Dictionary factories = getInstance().getDaemons();
+			Enumeration e = factories.elements();
+			while (e.hasMoreElements()) {
+				CommunicationDaemonFactory initializerFactory = (CommunicationDaemonFactory) e.nextElement();
+				ICommunicationDaemon initializerDaemon = initializerFactory.createDaemon();
+				if (DEFAULT_DEBUG_DAEMONS_NAMESPACE.equals(initializerFactory.element.getNamespaceIdentifier())) {
+					if (initializerDaemon.isEnabled()) {
+						defaultDaemon = initializerDaemon;
+					}
+				} else {
+					if (initializerDaemon.isEnabled()) {
+						return initializerDaemon;
+					}
+				}
+			}
+			if (defaultDaemon != null) {
+				return defaultDaemon;
+			}
+		} catch (Exception e) {
+			DaemonPlugin.log(e);
+		}
+		return null;
+	}
+

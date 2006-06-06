@@ -1,0 +1,29 @@
+	protected String resolve(TemplateContext context) {
+		PhpTemplateContext phpTemplateContext = (PhpTemplateContext) context;
+
+		IModelManager modelManager = StructuredModelManager.getModelManager();
+		if (modelManager == null) {
+			return null;
+		}
+
+		IStructuredModel structuredModel = modelManager.getExistingModelForRead(phpTemplateContext.getDocument());
+		if (structuredModel == null) {
+			return null;
+		}
+
+		try {
+			PHPEditorModel phpEditorModel = (PHPEditorModel) structuredModel;
+			PHPFileData fileData = phpEditorModel.getFileData();
+			if (fileData == null) {
+				return null;
+			}
+			String fileName = fileData.getName();
+			if (fileName == null || fileName.equals("")) {
+				return null;
+			}
+			return fileName;
+		} finally {
+			structuredModel.releaseFromRead();
+		}
+	}
+

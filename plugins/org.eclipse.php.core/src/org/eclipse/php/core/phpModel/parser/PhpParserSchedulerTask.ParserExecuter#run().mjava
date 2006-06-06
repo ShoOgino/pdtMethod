@@ -1,0 +1,37 @@
+		/**
+		 * The parsing action - in a seperate (async) thread 
+		 * @throws InterruptedException 
+		 */
+		public void run() {
+			try {
+				final CompletionLexer lexer = parserManager.createCompletionLexer(reader);
+				lexer.setUseAspTagsAsPhp(useAspTagsAsPhp);
+				lexer.setParserClient(client);
+				lexer.setTasksPatterns(tasksPatterns);
+
+				if (phpParser == null) {
+					phpParser = parserManager.createPhpParser();
+				}
+				phpParser.setScanner(lexer);
+				phpParser.setParserClient(client);
+
+				client.startParsing(filename);
+				phpParser.parse();
+
+			} catch (Exception e) {
+				Logger.logException(e);
+
+
+			} finally {
+				if (client != null && phpParser != null) {
+					client.finishParsing(phpParser.getLength(), phpParser.getCurrentLine(), lastModified);
+				}
+				
+				try {
+					reader.close();
+				} catch (Exception e) {
+					Logger.logException(e);
+				}
+			}
+		}
+

@@ -1,0 +1,28 @@
+	/**
+	 * Deliver a Notification.
+	 *
+	 * @param msg The delivered notification message.
+	 */
+	public void sendNotification(Object msg) {
+		try {
+			synchronized (byteArrayOutputStream) {
+				byteArrayOutputStream.reset();
+				((IDebugMessage) msg).serialize(dataOutputStream);
+				synchronized (out) {
+					out.writeInt(byteArrayOutputStream.size());
+					if (isDebugMode) {
+						System.out.println("sending notification request size=" + byteArrayOutputStream.size());
+					}
+					byteArrayOutputStream.writeTo(out);
+					out.flush();
+				}
+			}
+		} catch (SocketException se) {
+			// probably because the remote host disconnected
+			// Just log a warning (might be removed in the near future)
+			Logger.log(Logger.WARNING, se.getMessage(), se);
+		} catch (Exception exc) {
+			PHPDebugPlugin.log(exc);
+		}
+	}
+
