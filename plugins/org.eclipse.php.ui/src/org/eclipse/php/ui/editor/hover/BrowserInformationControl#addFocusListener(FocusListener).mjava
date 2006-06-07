@@ -1,0 +1,23 @@
+	/*
+	 * @see IInformationControl#addFocusListener(FocusListener)
+	 */
+	public void addFocusListener(final FocusListener listener) {
+		fBrowser.addFocusListener(listener);
+
+		/*
+		 * FIXME:	This is a workaround for bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=84532
+		 * 			(Browser widget does not send focusLost event)
+		 */
+		if (fFocusListeners.isEmpty()) {
+			fDeactivateListener = new Listener() {
+				public void handleEvent(Event event) {
+					Object[] listeners = fFocusListeners.getListeners();
+					for (int i = 0; i < listeners.length; i++)
+						((FocusListener) listeners[i]).focusLost(new FocusEvent(event));
+				}
+			};
+			fBrowser.getShell().addListener(SWT.Deactivate, fDeactivateListener);
+		}
+		fFocusListeners.add(listener);
+	}
+

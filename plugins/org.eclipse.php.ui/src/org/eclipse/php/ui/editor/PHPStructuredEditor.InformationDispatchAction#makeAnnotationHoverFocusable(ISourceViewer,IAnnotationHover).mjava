@@ -1,0 +1,71 @@
+		/**
+		 * Tries to make an annotation hover focusable (or "sticky").
+		 * 
+		 * @param sourceViewer the source viewer to display the hover over
+		 * @param annotationHover the hover to make focusable
+		 * @return <code>true</code> if successful, <code>false</code> otherwise
+		 * @since 3.2
+		 */
+		private boolean makeAnnotationHoverFocusable(ISourceViewer sourceViewer, IAnnotationHover annotationHover) {
+			IVerticalRulerInfo info = getVerticalRuler();
+			int line = info.getLineOfLastMouseButtonActivity();
+			if (line == -1)
+				return false;
+
+			try {
+
+				// compute the hover information
+				Object hoverInfo;
+				if (annotationHover instanceof IAnnotationHoverExtension) {
+					IAnnotationHoverExtension extension = (IAnnotationHoverExtension) annotationHover;
+					ILineRange hoverLineRange = extension.getHoverLineRange(sourceViewer, line);
+					if (hoverLineRange == null)
+						return false;
+					final int maxVisibleLines = Integer.MAX_VALUE; // allow any number of lines being displayed, as we support scrolling
+					hoverInfo = extension.getHoverInfo(sourceViewer, hoverLineRange, maxVisibleLines);
+				} else {
+					hoverInfo = annotationHover.getHoverInfo(sourceViewer, line);
+				}
+
+				// hover region: the beginning of the concerned line to place the control right over the line
+				IDocument document = sourceViewer.getDocument();
+				int offset = document.getLineOffset(line);
+				String contentType = TextUtilities.getContentType(document, PHPPartitionTypes.PHP_DOC, offset, true);
+
+				IInformationControlCreator controlCreator = null;
+
+				/* 
+				 * XXX: This is a hack to avoid API changes at the end of 3.2,
+				 * and should be fixed for 3.3, see: https://bugs.eclipse.org/bugs/show_bug.cgi?id=137967
+				 */
+				if ("org.eclipse.jface.text.source.projection.ProjectionAnnotationHover".equals(annotationHover.getClass().getName())) { //$NON-NLS-1$
+					controlCreator = new IInformationControlCreator() {
+						public IInformationControl createInformationControl(Shell shell) {
+							int shellStyle = SWT.RESIZE | SWT.TOOL | getOrientation();
+							int style = SWT.V_SCROLL | SWT.H_SCROLL;
+							return new SourceViewerInformationControl(shell, shellStyle, style);
+						}
+					};
+
+				} else {
+					if (annotationHover instanceof IInformationProviderExtension2)
+						controlCreator = ((IInformationProviderExtension2) annotationHover).getInformationPresenterControlCreator();
+					else if (annotationHover instanceof IAnnotationHoverExtension)
+						controlCreator = ((IAnnotationHoverExtension) annotationHover).getHoverControlCreator();
+				}
+
+				IInformationProvider informationProvider = new InformationProvider(new Region(offset, 0), hoverInfo, controlCreator);
+
+				fInformationPresenter.setOffset(offset);
+				fInformationPresenter.setAnchor(AbstractInformationControlManager.ANCHOR_RIGHT);
+				fInformationPresenter.setMargins(4, 0); // AnnotationBarHoverManager sets (5,0), minus SourceViewer.GAP_SIZE_1
+				fInformationPresenter.setInformationProvider(informationProvider, contentType);
+				fInformationPresenter.showInformation();
+
+				return true;
+
+			} catch (BadLocationException e) {
+				return false;
+			}
+		}
+

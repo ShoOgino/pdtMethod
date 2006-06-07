@@ -1,0 +1,48 @@
+		/**
+		 * Tries to make a text hover focusable (or "sticky").
+		 * 
+		 * @param sourceViewer the source viewer to display the hover over
+		 * @param textHover the hover to make focusable
+		 * @return <code>true</code> if successful, <code>false</code> otherwise
+		 * @since 3.2
+		 */
+		private boolean makeTextHoverFocusable(ISourceViewer sourceViewer, ITextHover textHover) {
+			Point hoverEventLocation = ((ITextViewerExtension2) sourceViewer).getHoverEventLocation();
+			int offset = computeOffsetAtLocation(sourceViewer, hoverEventLocation.x, hoverEventLocation.y);
+			if (offset == -1)
+				return false;
+
+			try {
+				IRegion hoverRegion = textHover.getHoverRegion(sourceViewer, offset);
+				if (hoverRegion == null)
+					return false;
+
+				String hoverInfo = textHover.getHoverInfo(sourceViewer, hoverRegion);
+
+				if (messageDecorator != null) {
+					String decoratedMessage = messageDecorator.getDecoratedMessage(hoverInfo);
+					if (decoratedMessage != null && decoratedMessage.length() > 0) {
+						hoverInfo = decoratedMessage;
+					}
+				}
+
+				IInformationControlCreator controlCreator = null;
+				if (textHover instanceof IInformationProviderExtension2)
+					controlCreator = ((IInformationProviderExtension2) textHover).getInformationPresenterControlCreator();
+
+				IInformationProvider informationProvider = new InformationProvider(hoverRegion, hoverInfo, controlCreator);
+
+				fInformationPresenter.setOffset(offset);
+				fInformationPresenter.setAnchor(AbstractInformationControlManager.ANCHOR_BOTTOM);
+				fInformationPresenter.setMargins(6, 6); // default values from AbstractInformationControlManager
+				String contentType = TextUtilities.getContentType(sourceViewer.getDocument(), PHPPartitionTypes.PHP_DOC, offset, true);
+				fInformationPresenter.setInformationProvider(informationProvider, contentType);
+				fInformationPresenter.showInformation();
+
+				return true;
+
+			} catch (BadLocationException e) {
+				return false;
+			}
+		}
+
