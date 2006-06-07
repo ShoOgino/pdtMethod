@@ -5,19 +5,26 @@
 		for (int i = 0; i < projects.length; i++) {
 			IProject project = projects[i];
 			try {
-			if (!project.hasNature(PHPNature.ID)) {
-				continue;
-			}
+				if (!project.exists() || !project.isOpen() || !project.hasNature(PHPNature.ID)) {
+					continue;
+				}
 			} catch (CoreException ce) {
 				ce.printStackTrace();
 				continue;
 			}
 			PHPProjectModel projectModel = PHPWorkspaceModelManager.getInstance().getModelForProject(project);
-			addClassesData(projectModel.getPHPUserModel().getClasses(), arrayList);
-			addData(projectModel.getPHPUserModel().getFunctions(), arrayList);
-			addData(projectModel.getPHPUserModel().getConstants(), arrayList);
+			IPhpModel[] models = projectModel.getModels();
+			IPHPLanguageModel languageModel = projectModel.getPHPLanguageModel();
+			for (int j = 0; j < models.length; ++j) {
+				IPhpModel model = models[j];
+				if (model != languageModel) {
+					addClassesData(model.getClasses(), arrayList);
+					addData(model.getFunctions(), arrayList);
+					addData(model.getConstants(), arrayList);
+				}
+			}
 		}
-		
+
 		Object[] elements = arrayList.toArray();
 		Arrays.sort(elements, new Comparator() {
 			public int compare(Object arg0, Object arg1) {
