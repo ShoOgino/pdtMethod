@@ -1,20 +1,17 @@
-	public void initializeDebug(String phpExe, String fileName, int debugPort, String extendedParameters, boolean stopAtFirstLine, int debugSessionID) {
+	public void initializeDebug(String phpExe, String fileName) {
 		try {
 			IPath phpExePath = new Path(phpExe);
 			File workingDir = new File(phpExePath.removeLastSegments(1).toString());
 			String phpConfigDir = workingDir.getAbsolutePath();
 
 			IDebugParametersInitializer parametersInitializer = DebugParametersInitializersRegistry.getBestMatchDebugParametersInitializer(launch.getLaunchMode());
-			parametersInitializer.addParameter(IDebugParametersKeys.PORT, new Integer(debugPort));
-			parametersInitializer.addParameter(IDebugParametersKeys.FIRST_LINE_BREAKPOINT, Boolean.valueOf(stopAtFirstLine));
-			parametersInitializer.addParameter(IDebugParametersKeys.SESSION_ID, new Integer(debugSessionID));
 
 			systemEnvironmentVariables.put("REQUEST_METHOD", "GET");
 			systemEnvironmentVariables.put("SCRIPT_FILENAME", fileName);
 			systemEnvironmentVariables.put("SCRIPT_NAME", fileName);
 			systemEnvironmentVariables.put("PATH_TRANSLATED", fileName);
 			systemEnvironmentVariables.put("PATH_INFO", fileName);
-			systemEnvironmentVariables.put("QUERY_STRING", parametersInitializer.generateQuery() + extendedParameters + "&debug_host=127.0.0.1");
+			systemEnvironmentVariables.put("QUERY_STRING", parametersInitializer.generateQuery(launch) + "&debug_host=127.0.0.1");
 			systemEnvironmentVariables.put("REDIRECT_STATUS", "1");
 			systemEnvironmentVariables.put("PHPRC", phpConfigDir);
 
