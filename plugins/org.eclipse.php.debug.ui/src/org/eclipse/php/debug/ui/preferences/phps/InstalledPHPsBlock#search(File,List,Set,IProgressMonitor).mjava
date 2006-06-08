@@ -1,6 +1,6 @@
 	/**
-	 * Searches the specified directory recursively for installed VMs, adding each
-	 * detected VM to the <code>found</code> list. Any directories specified in
+	 * Searches the specified directory recursively for installed PHP executables, adding each
+	 * detected executable to the <code>found</code> list. Any directories specified in
 	 * the <code>ignore</code> are not traversed.
 	 * 
 	 * @param directory
@@ -13,6 +13,14 @@
 			return;
 		}
 
+		// Search the root directory
+		if (!ignore.contains(directory)) {
+			File foundExe = PHPexeItem.findPHPExecutable(directory);
+			if (foundExe != null) {
+				found.add(foundExe);
+			}
+		}
+
 		String[] names = directory.list();
 		if (names == null) {
 			return;
@@ -23,26 +31,22 @@
 				return;
 			}
 			File file = new File(directory, names[i]);
-			PHPexeItem[] vmTypes = phpExes.getEditableItems();
+			//			PHPexeItem[] vmTypes = phpExes.getEditableItems();
 			if (file.isDirectory()) {
 				try {
 					monitor.subTask(MessageFormat.format(PHPDebugUIMessages.InstalledPHPsBlock_14, new String[] { Integer.toString(found.size()), file.getCanonicalPath() })); //$NON-NLS-1$
 				} catch (IOException e) {
 				}
 				if (!ignore.contains(file)) {
-					boolean validLocation = false;
-
 					if (monitor.isCanceled()) {
 						return;
 					}
 					File foundExe = PHPexeItem.findPHPExecutable(file);
 					if (foundExe != null) {
 						found.add(foundExe);
-						validLocation = true;
+						ignore.add(file);
 					}
-					if (!validLocation) {
-						subDirs.add(file);
-					}
+					subDirs.add(file);
 				}
 			}
 		}
