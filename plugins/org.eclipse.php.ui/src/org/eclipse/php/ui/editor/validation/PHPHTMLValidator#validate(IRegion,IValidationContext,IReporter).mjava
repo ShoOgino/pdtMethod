@@ -8,10 +8,11 @@
 			return;
 		}
 
-		if (typedRegion.getType().equals(IHTMLPartitionTypes.HTML_DEFAULT)) {
+		final String type = typedRegion.getType();
+		if (type.equals(IHTMLPartitions.HTML_DEFAULT)) {
 			super.validate(dirtyRegion, helper, reporter);
 			return;
-		} else if (!typedRegion.getType().equals(PHPPartitionTypes.PHP_DEFAULT)) {
+		} else if (!type.equals(PHPPartitionTypes.PHP_DEFAULT) && !type.equals(PHPPartitionTypes.PHP_QUOTED_STRING)) {
 			return;
 		}
 
@@ -47,9 +48,12 @@
     			String descr = marker.getDescription();
     			LocalizedMessage mess = new LocalizedMessage(IMessage.HIGH_SEVERITY, descr);
     			UserData userData = marker.getUserData();
-    			//			mess.setLineNo(userData.get);
-    			mess.setOffset(userData.getStartPosition());
-    			mess.setLength(userData.getEndPosition() - userData.getStartPosition());
+    			
+    			final int startPosition = userData.getStartPosition();
+    			final int length = userData.getEndPosition() - startPosition;
+
+    			mess.setOffset(startPosition);
+				mess.setLength(length);
     			reporter.addMessage(this, mess);
     		}
 		} finally {
