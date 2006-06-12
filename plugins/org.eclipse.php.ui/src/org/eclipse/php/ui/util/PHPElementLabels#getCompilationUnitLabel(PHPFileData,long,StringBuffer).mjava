@@ -11,7 +11,17 @@
 				
 			}
 		}
-		buf.append(cu.getName());
+		
+		// try to get the resource for the current PHPFileData.
+		// In case it exists, it means it is part of the project - so we want just the name.
+		// otherwise it is an include path and we need the full path
+		IPath path = new Path(cu.getName());
+		IFile resourceFile = ResourcesPlugin.getWorkspace().getRoot().getFile(path);
+		if (resourceFile != null && resourceFile.exists()){
+			buf.append(cu.getComparableName());
+		} else {
+			buf.append(cu.getName());
+		}
 
 		if (getFlag(flags, CU_POST_QUALIFIED)) {
 			IFile file = (IFile) PHPModelUtil.getResource(cu);
