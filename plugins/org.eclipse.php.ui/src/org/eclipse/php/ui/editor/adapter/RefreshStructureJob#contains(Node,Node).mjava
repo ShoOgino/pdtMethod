@@ -1,0 +1,57 @@
+	/**
+	 * @param root
+	 * @param possible
+	 * @return if the root is parent of possible, return true, otherwise
+	 *         return false
+	 */
+	private boolean contains(Node root, Node possible) {
+		if (DEBUG) {
+			System.out.println("=============================================================================================================="); //$NON-NLS-1$
+			System.out.println("recursive call w/ root: " + root.getNodeName() + " and possible: " + possible); //$NON-NLS-1$ //$NON-NLS-2$
+			System.out.println("--------------------------------------------------------------------------------------------------------------"); //$NON-NLS-1$
+		}
+
+		// the following checks are important
+		// #document node will break the algorithm otherwise
+
+		// can't contain the parent if it's null
+		if (root == null) {
+			if (DEBUG)
+				System.out.println("returning false: root is null"); //$NON-NLS-1$
+			return false;
+		}
+		// nothing can be parent of Document node
+		if (possible instanceof Document) {
+			if (DEBUG)
+				System.out.println("returning false: possible is Document node"); //$NON-NLS-1$
+			return false;
+		}
+		// document contains everything
+		if (root instanceof Document) {
+			if (DEBUG)
+				System.out.println("returning true: root is Document node"); //$NON-NLS-1$
+			return true;
+		}
+
+		// depth first
+		Node current = root;
+		// loop siblings
+		while (current != null) {
+			if (DEBUG)
+				System.out.println("   -> iterating sibling (" + current.getNodeName() + ")"); //$NON-NLS-1$ //$NON-NLS-2$
+			// found it
+			if (possible.equals(current)) {
+				if (DEBUG)
+					System.out.println("   !!! found: " + possible.getNodeName() + " in subtree for: " + root.getNodeName()); //$NON-NLS-1$ //$NON-NLS-2$
+				return true;
+			}
+			// drop one level deeper if necessary
+			if (current.getFirstChild() != null) {
+				return contains(current.getFirstChild(), possible);
+			}
+			current = current.getNextSibling();
+		}
+		// never found it
+		return false;
+	}
+

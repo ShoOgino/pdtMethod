@@ -1,0 +1,37 @@
+	/**
+	 * Refresh must be on UI thread because it's on a SWT widget.
+	 * 
+	 * The deferance in the functionallty is this: 
+	 * If we are refreshing the outline when its in PHPOutlineContentProvider.MODE_PHP mode then
+	 * it doesn't metter which node was changed (unless is not php node) - we need to refresh the whole tree.
+	 * otherwise - (using the default behaivor) refreshing only the relevent items in the tree. 
+	 * 
+	 * @param node
+	 */
+	private void doRefresh(final Node node, final StructuredViewer[] viewers) {
+		final Display display = PlatformUI.getWorkbench().getDisplay();
+		display.asyncExec(new Runnable() {
+			public void run() {
+				if (DEBUG)
+					System.out.println("refresh on: [" + node.getNodeName() + "]"); //$NON-NLS-1$ //$NON-NLS-2$
+
+				for (int i = 0; i < viewers.length; i++) {
+					if (!viewers[i].getControl().isDisposed()) {
+						StructuredViewer viewer = viewers[i];
+						Node nodeX = node;
+						if (node.getNodeType() == Node.DOCUMENT_NODE || // this was the original condition
+							((nodeX.getNodeType() == Node.ELEMENT_NODE) && (((IDOMNode) nodeX).getFirstStructuredDocumentRegion().getType() == PHPRegionTypes.PHP_CONTENT) && (viewer.getContentProvider() instanceof PHPOutlineContentProvider) && (((PHPOutlineContentProvider) viewer
+								.getContentProvider()).getMode() == PHPOutlineContentProvider.MODE_PHP))) {
+							viewers[i].refresh(true);
+						} else {
+							viewers[i].refresh(node, true);
+						}
+					} else {
+						if (DEBUG)
+							System.out.println("   !!! skipped refreshing disposed viewer: " + viewers[i]); //$NON-NLS-1$
+					}
+				}
+			}
+		});
+	}
+
