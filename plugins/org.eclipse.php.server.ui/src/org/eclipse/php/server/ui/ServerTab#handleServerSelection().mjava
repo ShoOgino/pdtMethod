@@ -1,0 +1,37 @@
+	/**
+	 * Called when a server is selected.
+	 * This method should not be called directly.
+	 */
+	protected void handleServerSelection() {
+		int numEntries = serverCombo.getItemCount();
+		int index = serverCombo.getSelectionIndex();
+
+		if (!servers.isEmpty()) {
+			Object obj = servers.get(serverCombo.getSelectionIndex());
+			if (obj != null && obj instanceof Server) {
+				server = (Server) servers.get(serverCombo.getSelectionIndex());
+
+//				ApacheServer apacheServer = (ApacheServer) server.getAdapter(ApacheServer.class);
+//				if (apacheServer == null)
+//					apacheServer = (ApacheServer) server.loadAdapter(ApacheServer.class, null);
+
+				boolean canPublish = false;
+				if (server != null)
+					canPublish = server.canPublish();
+
+				serverCanPublish = canPublish;
+				publish.setSelection(canPublish);
+				publish.setEnabled(canPublish);
+
+				initializeURLControl();
+			}
+		}
+
+		if (server == null && (index + 1) != numEntries)
+			setErrorMessage("No server selected");
+		else {
+			setErrorMessage(null);
+		}
+		updateLaunchConfigurationDialog();
+	}
+

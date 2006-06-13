@@ -1,0 +1,27 @@
+	protected Server getServerFromWizard() {
+		Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
+		NullProgressMonitor monitor = new NullProgressMonitor();
+		Server theServer = null;
+		FragmentedWizard wizard = new FragmentedWizard(null, null);
+		ClosableWizardDialog dialog = new ClosableWizardDialog(shell, wizard);
+		if (dialog.open() == Window.CANCEL) {
+			monitor.setCanceled(true);
+			return null;
+		}
+
+		try {
+			Platform.getJobManager().join("org.eclipse.wst.server.ui.family", null);
+		} catch (Exception e) {
+			Logger.logException("Error waiting for job", e);
+		}
+		theServer = (Server) wizard.getRootFragment().getWizardModel().getObject(WizardModel.SERVER);
+
+		try {
+			Platform.getJobManager().join("org.eclipse.wst.server.ui.family", new NullProgressMonitor());
+		} catch (Exception e) {
+			Logger.logException("Error waiting for job", e);
+		}
+
+		return theServer;
+	}
+

@@ -1,0 +1,63 @@
+	/**
+	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#initializeFrom(ILaunchConfiguration)
+	 */
+	public void initializeFrom(ILaunchConfiguration configuration) {
+		serverCombo.setEnabled(true);
+		//remove error message that other instances may have set
+		setErrorMessage(null);
+
+		try {
+			String fileName = configuration.getAttribute(Server.FILE_NAME, "");
+			String contextRoot = configuration.getAttribute(Server.DOCUMENT_ROOT, "");
+			boolean deployable = configuration.getAttribute(Server.PUBLISH, false);
+			String url = configuration.getAttribute(Server.BASE_URL, "");
+
+			if (deployable) {
+				publish.setSelection(true);
+			}
+			if (fileName.equals("") && Activator.currentSelection != null && !Activator.currentSelection.isEmpty()) {
+
+				IStructuredSelection sel = Activator.currentSelection;
+				// TODO - ?
+//				IModuleArtifact moduleArtifact = ServerPlugin.getModuleArtifact(sel.getFirstElement());
+//
+//				if (moduleArtifact instanceof WebResource) {
+//					WebResource webResource = (WebResource) moduleArtifact;
+//					IModule module = webResource.getModule();
+//
+//					if (module != null) {
+//						IProject proj = module.getProject();
+//
+//						if (proj != null) {
+//							IPath filePath = webResource.getPath();
+//
+//							if (filePath.isEmpty()) {
+//								fileName = proj.getFullPath().toString();
+//							} else {
+//								IFile file = proj.getFile(filePath);
+//								fileName = file.getFullPath().toString();
+//							}
+//
+//							contextRoot = proj.getName();
+//						}
+//					}
+//				}
+			}
+
+			initializeServerControl(configuration);
+
+			fFile.setText(fileName);
+			fContextRoot.setText(contextRoot);
+
+			if (url.equals("")) {
+				initializeURLControl(contextRoot, fileName);
+			} else {
+				fURL.setText(url);
+			}
+		} catch (CoreException e) {
+			// ignore
+		}
+
+		initializeExtensionControls(configuration);
+	}
+

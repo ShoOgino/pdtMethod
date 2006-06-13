@@ -1,0 +1,58 @@
+	public Control createControl(Composite parent) {
+
+		ServerAdapter adapter = new ServerAdapter();
+		String buttons[] = new String[] { "New", "Edit", "Remove" };
+		fServersList = new ListDialogField(adapter, buttons, new PHPServersLabelProvider()) {
+			protected boolean managedButtonPressed(int index) {
+				if (index == getRemoveButtonIndex()) {
+					handleRemoveServer();
+				}
+				return super.managedButtonPressed(index);
+			}
+		};
+		fServersList.setDialogFieldListener(adapter);
+		fServersList.setRemoveButtonIndex(IDX_REMOVE);
+
+		String[] columnsHeaders = new String[] { "Name", "URL", "Publish" };
+		ColumnLayoutData[] layoutDatas = new ColumnLayoutData[] { new ColumnWeightData(40), new ColumnWeightData(40), new ColumnWeightData(20) };
+		fServersList.setTableColumns(new ListDialogField.ColumnsDescription(layoutDatas, columnsHeaders, true));
+
+		if (fServersList.getSize() > 0) {
+			fServersList.selectFirstElement();
+		} else {
+			fServersList.enableButton(IDX_EDIT, false);
+		}
+
+		fServersStatus = new StatusInfo();
+
+		GridLayout layout = new GridLayout();
+		layout.marginHeight = 0;
+		layout.marginWidth = 0;
+		layout.numColumns = 2;
+
+		PixelConverter conv = new PixelConverter(parent);
+
+		ScrolledCompositeImpl scrolledCompositeImpl = new ScrolledCompositeImpl(parent, SWT.V_SCROLL | SWT.H_SCROLL);
+		Composite composite = new Composite(scrolledCompositeImpl, SWT.NONE);
+		composite.setLayout(layout);
+		scrolledCompositeImpl.setContent(composite);
+
+		scrolledCompositeImpl.setLayout(layout);
+		scrolledCompositeImpl.setFont(parent.getFont());
+
+		GridData data = new GridData(GridData.FILL_BOTH);
+		data.widthHint = conv.convertWidthInCharsToPixels(50);
+		Control listControl = fServersList.getListControl(composite);
+		listControl.setLayoutData(data);
+
+		Control buttonsControl = fServersList.getButtonBox(composite);
+		buttonsControl.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL | GridData.VERTICAL_ALIGN_BEGINNING));
+
+		addFiller(composite);
+
+		Point size = composite.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+		scrolledCompositeImpl.setMinSize(size.x, size.y);
+
+		return scrolledCompositeImpl;
+	}
+

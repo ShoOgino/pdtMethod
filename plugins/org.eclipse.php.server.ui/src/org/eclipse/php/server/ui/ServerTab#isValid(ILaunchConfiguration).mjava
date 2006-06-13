@@ -1,0 +1,32 @@
+	/**
+	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#isValid(ILaunchConfiguration) 
+	 */
+	public boolean isValid(ILaunchConfiguration launchConfig) {
+		setMessage(null);
+		setErrorMessage(null);
+
+		try {
+			String serverName = launchConfig.getAttribute(Server.NAME, "");
+			if (serverName != null && !serverName.equals("")) {
+				Server server = ServersManager.getServer(serverName);
+				if (server == null) {
+					setErrorMessage("A Configuration for that server does not exist");
+					return false;
+				}
+			}
+
+			String fileName = launchConfig.getAttribute(Server.FILE_NAME, "");
+			if (fileName != null && !(fileName.equals(""))) {
+				if (!fileExists(fileName)) {
+					setErrorMessage("File Does Not Exist");
+					return false;
+				}
+			}
+
+		} catch (CoreException e) {
+			// ignore
+		}
+
+		return isValidExtension(launchConfig);
+	}
+

@@ -1,0 +1,29 @@
+	protected void initializeServerControl(ILaunchConfiguration configuration) {
+		try {
+			String serverName = configuration.getAttribute(Server.NAME, "");
+			if (serverName != null && !serverName.equals("")) {
+				server = ServersManager.getServer(serverName);
+
+				if (server == null) { //server no longer exists				
+					setErrorMessage("Invalid server");
+					//serverCombo.clearSelection();  //appears to be broken...doesn't work with read only?												
+					serverCombo.setEnabled(false);
+					return;
+				}
+
+				serverCombo.setText(server.getName());
+				//if (server.getServerState() != IServer.STATE_STOPPED)
+				//	setErrorMessage(Messages.errorServerAlreadyRunning);
+			} else {
+				if (serverCombo.getItemCount() > 0) {
+					serverCombo.select(0);
+				}
+			}
+			//flag should only be set if launch has been attempted on the config
+			if (configuration.getAttribute(READ_ONLY, false)) {
+				serverCombo.setEnabled(false);
+			}
+		} catch (Exception e) {
+		}
+	}
+
