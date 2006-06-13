@@ -1,0 +1,40 @@
+	protected void validate() {
+		if (server == null) {
+			setMessage("", IMessageProvider.ERROR);
+			return;
+		}
+
+		setMessage("", IMessageProvider.NONE);
+
+		String serverName = modifiedValuesCache.serverName;
+		if (serverName == null || serverName.trim().equals("")) {
+			setMessage("Missing Server Name", IMessageProvider.ERROR);
+		} else {
+			boolean ok = checkServerName(serverName);
+			if (!ok) {
+				setMessage("Duplicate Server Name", IMessageProvider.ERROR);
+			}
+		}
+
+		String urlStr = url.getText();
+		if (urlStr == null || urlStr.equals("")) {
+			setMessage("Please enter a valid URL", IMessageProvider.ERROR);
+			return;
+		}
+
+		try {
+			URL baseURL = new URL(urlStr);
+			String host = baseURL.getHost();
+			int port = baseURL.getPort();
+
+			//			workingCopy.setHost(host);
+			//			server.setPort(String.valueOf(port));
+			modifiedValuesCache.host = host;
+			modifiedValuesCache.port = port;
+		} catch (Exception e) {
+			setMessage("Please enter a valid URL", IMessageProvider.ERROR);
+			return;
+		}
+		controlHandler.update();
+	}
+
