@@ -1,0 +1,35 @@
+    /**
+     * Recursively deletes a directory.
+     *
+     * @param dir java.io.File
+     * @param monitor a progress monitor, or <code>null</code>
+     */
+    public static void deleteDirectory(File dir, IProgressMonitor monitor) {
+        try {
+            if (!dir.exists() || !dir.isDirectory())
+                return;
+
+            File[] files = dir.listFiles();
+            int size = files.length;
+            monitor = ProgressUtil.getMonitorFor(monitor);
+            monitor.beginTask(NLS.bind(Messages.getString("FileUtil.deleting"), new String[] { dir.getAbsolutePath() }), size * 10); //$NON-NLS-1$
+
+            // cycle through files
+            for (int i = 0; i < size; i++) {
+                File current = files[i];
+                if (current.isFile()) {
+                    current.delete();
+                    monitor.worked(10);
+                } else if (current.isDirectory()) {
+                    monitor.subTask(NLS.bind(Messages.getString("FileUtil.deleting"), new String[] { current.getAbsolutePath() })); //$NON-NLS-1$
+                    deleteDirectory(current, ProgressUtil.getSubMonitorFor(monitor, 10));
+                }
+            }
+            dir.delete();
+        } catch (Exception e) {
+        	Logger.logException(Messages.getString("FileUtil.errorDeletingDirectory") + dir.getAbsolutePath(), e); //$NON-NLS-1$
+        } finally {
+        	monitor.done();
+        }
+    }
+

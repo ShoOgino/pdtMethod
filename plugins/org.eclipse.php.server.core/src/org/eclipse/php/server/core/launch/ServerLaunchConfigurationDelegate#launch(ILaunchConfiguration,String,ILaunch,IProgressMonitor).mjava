@@ -1,0 +1,17 @@
+	public void launch(ILaunchConfiguration configuration, String mode, ILaunch launch, IProgressMonitor monitor) throws CoreException {
+
+		IExtensionRegistry registry = Platform.getExtensionRegistry();
+		IConfigurationElement[] elements = registry.getConfigurationElementsFor(Activator.PLUGIN_ID, "httpServerLaunchDelegate");
+
+		if (elements == null || !elements[0].getName().equals("launchDelegate")) {
+			doLaunch(configuration, mode, launch, monitor);
+			return;
+		}
+
+		IConfigurationElement element = elements[0];
+		IHTTPServerLaunch serverLaunch = (IHTTPServerLaunch) element.createExecutableExtension("class");
+		serverLaunch.setHTTPServerDelegate(this);
+
+		serverLaunch.launch(configuration, mode, launch, monitor);
+	}
+
