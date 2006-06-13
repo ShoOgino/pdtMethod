@@ -1,44 +1,44 @@
-    /**
-     * Copies a directory from a to b.
-     *
-     * @param from java.lang.String
-     * @param to java.lang.String
-     * @param monitor a progress monitor, or <code>null</code>
-     */
-    public static void copyDirectory(String from, String to, IProgressMonitor monitor) {
-        try {
-            File fromDir = new File(from);
-            File toDir = new File(to);
+	/**
+	 * Copies a directory from a to b.
+	 *
+	 * @param from java.lang.String
+	 * @param to java.lang.String
+	 * @param monitor a progress monitor, or <code>null</code>
+	 */
+	public static void copyDirectory(String from, String to, IProgressMonitor monitor) {
+		try {
+			File fromDir = new File(from);
+			File toDir = new File(to);
 
-            File[] files = fromDir.listFiles();
+			File[] files = fromDir.listFiles();
 
-            toDir.mkdir();
+			toDir.mkdir();
 
-            // cycle through files
-            int size = files.length;
-            monitor = ProgressUtil.getMonitorFor(monitor);
-            monitor.beginTask(NLS.bind(Messages.getString("FileUtil.copying"), new String[] { from, to }), size * 50); //$NON-NLS-1$
+			// cycle through files
+			int size = files.length;
+			monitor = ProgressUtil.getMonitorFor(monitor);
+			monitor.beginTask(NLS.bind(Messages.getString("FileUtil.copying"), new String[] { from, to }), size * 50); //$NON-NLS-1$
 
-            for (int i = 0; i < size; i++) {
-                File current = files[i];
-                String fromFile = current.getAbsolutePath();
-                String toFile = to;
-                if (!toFile.endsWith(File.separator))
-                    toFile += File.separator;
-                toFile += current.getName();
-                if (current.isFile()) {
-                    copyFile(fromFile, toFile);
-                    monitor.worked(50);
-                } else if (current.isDirectory()) {
-                    monitor.subTask(NLS.bind(Messages.getString("FileUtil.copying"), new String[] { fromFile, toFile })); //$NON-NLS-1$
-                    copyDirectory(fromFile, toFile, ProgressUtil.getSubMonitorFor(monitor, 50));
-                }
-                if (monitor.isCanceled())
-                    return;
-            }
-            monitor.done();
-        } catch (Exception e) {
-            Logger.logException(Messages.getString("FileUtil.errorCopyingDirectory"), e); //$NON-NLS-1$
-        }
-    }
+			for (int i = 0; i < size; i++) {
+				File current = files[i];
+				String fromFile = current.getAbsolutePath();
+				String toFile = to;
+				if (!toFile.endsWith(File.separator))
+					toFile += File.separator;
+				toFile += current.getName();
+				if (current.isFile()) {
+					copyFile(fromFile, toFile);
+					monitor.worked(50);
+				} else if (current.isDirectory()) {
+					monitor.subTask(NLS.bind(Messages.getString("FileUtil.copying"), new String[] { fromFile, toFile })); //$NON-NLS-1$
+					copyDirectory(fromFile, toFile, ProgressUtil.getSubMonitorFor(monitor, 50));
+				}
+				if (monitor.isCanceled())
+					return;
+			}
+			monitor.done();
+		} catch (Exception e) {
+			Logger.logException(Messages.getString("FileUtil.errorCopyingDirectory"), e); //$NON-NLS-1$
+		}
+	}
 
