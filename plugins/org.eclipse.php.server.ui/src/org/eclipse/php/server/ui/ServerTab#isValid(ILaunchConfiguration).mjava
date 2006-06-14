@@ -4,13 +4,24 @@
 	public boolean isValid(ILaunchConfiguration launchConfig) {
 		setMessage(null);
 		setErrorMessage(null);
-
+		// TODO - Note that this method of removing invalid launches is still buggy
+		// In order to fix it completely, we might have to perform similar checks when removing or renaming a server from
+		// the PHP Servers preferences page.
 		try {
 			String serverName = launchConfig.getAttribute(Server.NAME, "");
-			if (serverName != null && !serverName.equals("")) {
+			if (!serverName.equals("")) {
 				Server server = ServersManager.getServer(serverName);
 				if (server == null) {
-					setErrorMessage("A Configuration for that server does not exist");
+					deleteLaunchConfiguration(launchConfig);
+					ILaunchConfiguration[] allConfigurations = DebugPlugin.getDefault().getLaunchManager().getLaunchConfigurations();
+					for (int i = 0; i < allConfigurations.length; i++) {
+						launchConfig = allConfigurations[i];
+						serverName = launchConfig.getAttribute(Server.NAME, "");
+						if (!serverName.equals("") && ServersManager.getServer(serverName) == null) {
+							// The server was removed, so remove this launch configuration!
+							deleteLaunchConfiguration(launchConfig);
+						}
+					}
 					return false;
 				}
 			}
