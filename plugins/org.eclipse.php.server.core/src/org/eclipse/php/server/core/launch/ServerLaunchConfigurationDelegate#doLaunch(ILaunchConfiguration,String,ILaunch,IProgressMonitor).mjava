@@ -1,39 +1,30 @@
 	public void doLaunch(ILaunchConfiguration configuration, String mode, ILaunch launch, IProgressMonitor monitor) throws CoreException {
 
-		Server server = null; //ServersManager.getServer(configuration.); // TODO - Get the server name
+		Server server = ServersManager.getServer(configuration.getAttribute(Server.NAME, ""));
 		if (server == null) {
 			Logger.log(Logger.ERROR, "Launch configuration could not find server");
 			//throw CoreException();
 			return;
 		}
-
-		//        ApacheServerBehaviour apacheServerBehaviour = (ApacheServerBehaviour) server.loadAdapter(ApacheServerBehaviour.class, null);
-		//        apacheServerBehaviour.setupLaunch(launch, mode, monitor);
-		//
-		//        IModuleArtifact moduleArtifact = getModuleArtifact(configuration);
-		//        if (moduleArtifact == null)
-		//            return;
-		//
-		//        IModule module = moduleArtifact.getModule();
-		//        ILaunchableAdapter launchableAdapter = getLaunchableAdapter(server, moduleArtifact);
-		//        Object launchable = launchableAdapter.getLaunchable(server, moduleArtifact);
-		//        IClient client = getClient(launchable, server, mode);
-		//
-		//        if (client == null) {
-		//            //EclipseUtil.openError(Messages.errorNoClient);
-		//            Logger.log(Logger.WARNING, "No launchable clients!");
-		//            return;
-		//        }
-
-		//        IModule[] modules = new IModule[] { module }; // TODO: get parent heirarchy correct
+		String fileName = configuration.getAttribute(Server.FILE_NAME, (String) null);
+		// Get the project from the file name
+		IPath filePath = new Path(fileName);
+		IProject proj = null;
+		try {
+			proj = ResourcesPlugin.getWorkspace().getRoot().getProject(filePath.segment(0));
+		} catch (Throwable t) {
+		}
+		if (proj == null) {
+			Logger.log(Logger.ERROR, "Could not launch (Project is null).");
+			return;
+		}
 
 		boolean publish = configuration.getAttribute(Server.PUBLISH, false);
-
 		if (publish) {
-//			FileUtil.publish(null, configuration, monitor);
+			if (!FileUtil.publish(server, proj, configuration, monitor)) {
+				// Return if the publish failed.
+				return;
+			}
 		}
-		//        LaunchClientJob clientJob = new LaunchClientJob(server, modules, mode, moduleArtifact, launchableAdapter, client);
-		//        clientJob.schedule();
-
 	}
 
