@@ -5,15 +5,13 @@
 	 * @param reader
 	 * @param lastModified
 	 */
-	public void schedule(PHPParserManager parserManager, PhpParser phpParser, ParserClient client, String filename, Reader reader, Pattern[] tasksPatterns, long lastModified, boolean useAspTagsAsPhp) {
-
-		synchronized (buffer) {
+	public synchronized void schedule(PHPParserManager parserManager, PhpParser phpParser, ParserClient client, String filename, Reader reader, Pattern[] tasksPatterns, long lastModified, boolean useAspTagsAsPhp) {
 
 			// add it (saftly)
 			// if the stack is full - wait() for an empty place 
 			while (buffer.size() >= BUFFER_MAX_SIZE) {
 				try {
-					buffer.wait();
+					wait();
 				} catch (InterruptedException e) {
 					// process of scheduling was canceled
 					// ignore operation
@@ -27,8 +25,6 @@
 			buffer.addFirst(parserProperties);
 
 			// now you can notify that the stack is not empty
-			buffer.notifyAll();
-
-		}
+			notifyAll();
 	}
 

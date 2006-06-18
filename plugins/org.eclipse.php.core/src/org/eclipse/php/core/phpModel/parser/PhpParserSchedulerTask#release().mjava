@@ -3,14 +3,12 @@
 	 * @throws InterruptedException 
 	 * @throws InterruptedException 
 	 */
-	protected ParserExecuter release() throws InterruptedException {
-
-		synchronized (buffer) {
+	protected synchronized ParserExecuter release() throws InterruptedException {
 
 			// pop a new parser task properties from stack
 			while (buffer.size() == 0) {
 				try {
-					buffer.wait();
+					wait();
 				} catch (InterruptedException e) {
 					// process of releasing was canceled
 					// ignore operation
@@ -21,10 +19,10 @@
 			final ParserExecuter item = (ParserExecuter) buffer.removeFirst();
 
 			// notify that the stack is not full 
-			buffer.notifyAll();
+			notifyAll();
 
 			return item;
-		}
+		
 
 	}
 
