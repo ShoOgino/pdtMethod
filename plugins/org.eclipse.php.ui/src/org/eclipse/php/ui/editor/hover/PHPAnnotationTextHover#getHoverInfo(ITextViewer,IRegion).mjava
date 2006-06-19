@@ -5,10 +5,19 @@
 				IStructuredDocument sDoc = (IStructuredDocument) document;
 				IStructuredDocumentRegion sdRegion = sDoc.getRegionAtCharacterOffset(hoverRegion.getOffset());
 				ITextRegion textRegion = sdRegion.getRegionAtCharacterOffset(hoverRegion.getOffset());
-				if (textRegion.getTextEnd() >= hoverRegion.getOffset()) {
-					CodeData codeData = CodeDataResolver.getCodeData(textViewer, textRegion.getTextEnd());
+				if (sdRegion.getStartOffset() + textRegion.getTextEnd() >= hoverRegion.getOffset()) {
+					CodeData codeData = CodeDataResolver.getCodeData(textViewer, sdRegion.getStartOffset() + textRegion.getTextEnd());
 					if (codeData != null) {
-						return PHPElementLabels.getElementLabel(codeData, LABEL_FLAGS);
+						IStructuredModel sModel = StructuredModelManager.getModelManager().getExistingModelForRead (textViewer.getDocument());
+						if (sModel instanceof PHPEditorModel) {
+							try {
+								PHPEditorModel editorModel = (PHPEditorModel) sModel;
+								PHPProjectModel projectModel = editorModel.getProjectModel();
+								return PHPCodeDataHTMLDescriptionUtilities.getHTMLHyperlinkDescriptionText(codeData, projectModel);
+							} finally {
+								sModel.releaseFromRead();
+							}
+						}
 					}
 				}
 			} catch (BadLocationException e) {
