@@ -1,5 +1,37 @@
 	public String getHoverInfo(ITextViewer textViewer, IRegion hoverRegion) {
-		// TODO: provide source text hover
+		IDocument document = textViewer.getDocument();
+		if (document instanceof IStructuredDocument) {
+			try {
+				IStructuredDocument sDoc = (IStructuredDocument) document;
+				IStructuredDocumentRegion sdRegion = sDoc.getRegionAtCharacterOffset(hoverRegion.getOffset());
+				ITextRegion textRegion = sdRegion.getRegionAtCharacterOffset(hoverRegion.getOffset());
+				if (sdRegion.getStartOffset() + textRegion.getTextEnd() >= hoverRegion.getOffset()) {
+					CodeData codeData = CodeDataResolver.getCodeData(textViewer, sdRegion.getStartOffset() + textRegion.getTextEnd());
+					if (codeData != null) {
+						UserData userData = codeData.getUserData();
+						if (userData != null) {
+							IFile file = ResourcesPlugin.getWorkspace().getRoot().getFile(new Path(userData.getFileName()));
+							if (file != null) {
+								BufferedReader r = new BufferedReader(new InputStreamReader(file.getContents()));
+								r.skip(userData.getStartPosition());
+								StringBuffer buf = new StringBuffer();
+								String line;
+								int lines = 0;
+								while (lines < MAX_LINES && (line = r.readLine()) != null) {
+									buf.append(line);
+									buf.append("\n");
+									lines ++;
+								}
+								r.close();
+								return buf.toString();
+							}
+						}
+					}
+				}
+			} catch (Exception e) {
+				Logger.logException(e);
+			}
+		}
 		return null;
 	}
 

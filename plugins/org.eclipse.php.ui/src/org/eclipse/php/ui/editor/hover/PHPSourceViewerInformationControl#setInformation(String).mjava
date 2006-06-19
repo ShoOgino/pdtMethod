@@ -1,0 +1,39 @@
+	/*
+	 * @see IInformationControl#setInformation(String)
+	 */
+	public void setInformation(String content) {
+		if (content == null) {
+			fViewer.setInput(null);
+			return;
+		}
+
+		fInput = content;
+
+		StringBuffer buf = new StringBuffer();
+		buf.append("<?"); //$NON-NLS-1$
+		buf.append(content);
+		buf.append("?>"); //$NON-NLS-1$
+
+		IDocument doc = new Document(buf.toString());
+		DocumentReader docReader = new DocumentReader(doc);
+		getParser().reset(docReader);
+		IStructuredDocumentRegion sdRegion = getParser().getDocumentRegions();
+
+		// This hack is needed in order to remove the open and close PHP tags we added before.
+		// We were forced to add these tags, in order to enable PHP parser.
+		sdRegion = sdRegion.getNext(); // skip open PHP tag region
+		if (sdRegion.getNext() != null) {
+			fNodes = sdRegion;
+			do {
+				sdRegion.adjustStart(-2);
+				sdRegion = sdRegion.getNext();
+			} while (sdRegion.getNext() != null);
+			sdRegion.getPrevious().setNext(null); // remove close PHP tag region
+		}
+
+		doc = new Document(fInput);
+		doc.setDocumentPartitioner(new PHPStructuredTextPartitioner());
+		fViewer.setInput(doc);
+		applyStyles();
+	}
+
