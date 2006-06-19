@@ -29,6 +29,14 @@
 			return super.core_reparse(rescanStart, rescanEnd, oldNodes, firstTime);
 		}
 		
+		// in case we edit PHP first region attach the previous one to the nodes list (for the <?php case)
+		IStructuredDocumentRegion previous = head.getPrevious();
+		if (isPreviousPhpOpenTag(previous)) {
+			rescanStart = previous.getStart();
+			oldNodes = attachFirst(previous, oldNodes);
+			head = previous;
+		}
+		
 		// Gets the old region (to restore the last state)
 		PHPStructuredDocumentRegion oldPhpStructureDocument = (PHPStructuredDocumentRegion) head;
 		
