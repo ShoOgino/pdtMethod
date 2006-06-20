@@ -7,8 +7,16 @@
 		String currentState = FormatterUtils.getPartitionType(document, offset);
 
 		char prevChar = document.getChar(offset - 1);
-		if (TypingPreferences.closeCurlyBracket && (prevChar == '{') && (currentState == PHPPartitionTypes.PHP_DEFAULT)) {
-			return pairCurlyBracketAutoEditStrategy;
+		if (TypingPreferences.closeCurlyBracket && (prevChar == '{')) {
+			if (currentState != PHPPartitionTypes.PHP_DEFAULT) {
+				if (document.getLength() == offset) {// if we are editing in the end of the document then we need to check one step back
+					currentState = FormatterUtils.getPartitionType(document, offset - 1);
+				}
+			}
+			if (currentState == PHPPartitionTypes.PHP_DEFAULT) {
+				return pairCurlyBracketAutoEditStrategy;
+			}
+
 		}
 		return null;
 	}
