@@ -1,0 +1,23 @@
+	/*
+	 * (non-Javadoc)
+	 * @see org.eclipse.php.server.ui.CompositeFragment#performCancel()
+	 */
+	public boolean performCancel() {
+		// Since the performOk might be triggered if this composite is inside a wizard fragment, we have to 
+		// implement the perform cancel to revert any changes made.
+		try {
+			if (server != null) {
+				server.setPort(String.valueOf(originalValuesCache.port));
+				server.setBaseURL(originalValuesCache.url);
+				server.setDocumentRoot(originalValuesCache.publishDir);
+				server.setPublish(originalValuesCache.canPublish);
+			}
+			server.setHost(originalValuesCache.host);
+			server.setName(originalValuesCache.serverName);
+		} catch (Throwable e) {
+			Logger.logException("Error while reverting the server settings", e);
+			return false;
+		}
+		return super.performCancel();
+	}
+
