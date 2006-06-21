@@ -1,0 +1,25 @@
+	/**
+	 * Adds a Server to the manager.
+	 * If a server with the same name exists in the manager, the existing server will be overidden with 
+	 * the new one and event notifications will be fired for the removal and for the addition.
+	 * 
+	 * @param server A Server
+	 */
+	public static void addServer(Server server) {
+		if (server == null) {
+			return;
+		}
+		ServersManager manager = getInstance();
+		Server oldValue = (Server) manager.servers.put(server.getName(), server);
+		if (oldValue != null) {
+			oldValue.removePropertyChangeListener(manager);
+			ServerManagerEvent event = new ServerManagerEvent(ServerManagerEvent.MANAGER_EVENT_REMOVED, oldValue);
+			manager.fireEvent(event);
+		}
+		ServerManagerEvent event = new ServerManagerEvent(ServerManagerEvent.MANAGER_EVENT_ADDED, server);
+		manager.fireEvent(event);
+
+		// Register the manager as a Server lister to get nofitications about attribute changes.
+		server.addPropertyChangeListener(manager);
+	}
+
