@@ -1,17 +1,20 @@
-        private IHyperlink createLink(DebugError debugError) {
+		private IHyperlink createLink(DebugError debugError) {
 
-            IHyperlink fileLink = null;
-            try {
-                String fileName = debugError.getFileName();
-                int lineNumber = debugError.getLineNumber();
-                ILaunchConfiguration configuration = fLaunch.getLaunchConfiguration();
-                String projectName = configuration.getAttribute(IPHPConstants.PHP_Project, (String) null);
-                IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
-                IFile file = project.getFile(fileName);
-                fileLink = new FileLink(file, EditorID, -1, -1, lineNumber);
-            } catch (CoreException e) {
-                Logger.logException("PHPConsoleListener unexpected error", e);
-            }
-            return fileLink;
-        }
+			IHyperlink fileLink = null;
+			try {
+				String fileName = debugError.getFileName();
+				int lineNumber = debugError.getLineNumber();
+				IFile file = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(fileName));
+				if (file == null) {
+					ILaunchConfiguration configuration = fLaunch.getLaunchConfiguration();
+					String projectName = configuration.getAttribute(IPHPConstants.PHP_Project, (String) null);
+					IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
+					file = project.getFile(fileName);
+				}
+				fileLink = new FileLink(file, EditorID, -1, -1, lineNumber);
+			} catch (CoreException e) {
+				Logger.logException("PHPConsoleListener unexpected error", e);
+			}
+			return fileLink;
+		}
 
