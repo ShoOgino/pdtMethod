@@ -1,38 +1,4 @@
 	public void initializeDebug(String phpExe, String fileName) {
-		try {
-			IPath phpExePath = new Path(phpExe);
-			File workingDir = new File(phpExePath.removeLastSegments(1).toString());
-			String phpConfigDir = workingDir.getAbsolutePath();
-
-			IDebugParametersInitializer parametersInitializer = DebugParametersInitializersRegistry.getBestMatchDebugParametersInitializer(launch.getLaunchMode());
-
-			systemEnvironmentVariables.put("REQUEST_METHOD", "GET");
-			systemEnvironmentVariables.put("SCRIPT_FILENAME", fileName);
-			systemEnvironmentVariables.put("SCRIPT_NAME", fileName);
-			systemEnvironmentVariables.put("PATH_TRANSLATED", fileName);
-			systemEnvironmentVariables.put("PATH_INFO", fileName);
-			systemEnvironmentVariables.put("QUERY_STRING", parametersInitializer.generateQuery(launch) + "&debug_host=127.0.0.1");
-			systemEnvironmentVariables.put("REDIRECT_STATUS", "1");
-			systemEnvironmentVariables.put("PHPRC", phpConfigDir);
-
-			String[] combinedEnvVars = mapAsArray(systemEnvironmentVariables);
-
-			String[] phpCmdArray = { phpExe, "-c", phpConfigDir, fileName };
-			Process p = Runtime.getRuntime().exec(phpCmdArray, combinedEnvVars, workingDir);
-
-			Runnable reader = new ProcessOutputReader(p);
-			new Thread(reader).start();
-
-		} catch (final Exception e) {
-			final Display display = Display.getDefault();
-			display.asyncExec(new Runnable() {
-				public void run() {
-					String message = e.getLocalizedMessage();
-					message = message.replaceFirst(e.getClass().getName() + ": ", "");
-					MessageDialog.openError(display.getActiveShell(), "Error", NLS.bind("Error running PHP executable:\n\n{0}", message));
-				}
-			});
-			DebugPlugin.log(e);
-		}
+		initializeDebug(phpExe, fileName, null);
 	}
 
