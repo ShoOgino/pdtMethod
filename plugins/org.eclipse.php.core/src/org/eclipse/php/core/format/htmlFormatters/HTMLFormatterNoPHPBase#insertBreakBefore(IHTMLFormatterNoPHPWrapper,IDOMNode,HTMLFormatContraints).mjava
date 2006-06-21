@@ -1,0 +1,34 @@
+	/**
+	 */
+	public static void insertBreakBefore(IHTMLFormatterNoPHPWrapper f, IDOMNode node, HTMLFormatContraints contraints) {
+		if (node == null)
+			return;
+		if (node.getNodeType() == Node.TEXT_NODE)
+			return;
+		Node parent = node.getParentNode();
+		if (parent == null)
+			return;
+		Node prev = node.getPreviousSibling();
+
+		String spaces = null;
+		if (prev != null && prev.getNodeType() == Node.TEXT_NODE) {
+			if (contraints != null && contraints.getFormatWithSiblingIndent()) {
+				IDOMNode text = (IDOMNode) prev;
+				IStructuredFormatter formatter = HTMLFormatterNoPHPFactory.getInstance().createFormatter(text, f.getFormatPreferences());
+				if (formatter instanceof HTMLTextFormatterNoPHP) {
+					HTMLTextFormatterNoPHP textFormatter = (HTMLTextFormatterNoPHP) formatter;
+					textFormatter.runFormatText(text, contraints, HTMLTextFormatter.FORMAT_TAIL);
+				}
+			}
+			return;
+		}
+		else {
+			spaces = f.runGetBreakSpaces(node);
+		}
+		if (spaces == null || spaces.length() == 0)
+			return;
+
+		f.runReplaceSource(node.getModel(), node.getStartOffset(), 0, spaces);
+		f.runSetWidth(contraints, spaces);
+	}
+

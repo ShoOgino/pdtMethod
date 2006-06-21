@@ -1,0 +1,36 @@
+	public static void insertBreakAfter(IHTMLFormatterNoPHPWrapper f, IDOMNode node, HTMLFormatContraints contraints) {
+		if (node == null)
+			return;
+		if (node.getNodeType() == Node.TEXT_NODE)
+			return;
+		Node parent = node.getParentNode();
+		if (parent == null)
+			return;
+		Node next = node.getNextSibling();
+
+		String spaces = null;
+		if (next == null) { // last spaces
+			// use parent indent for the end tag
+			spaces = f.runGetBreakSpaces(parent);
+		}
+		else if (next.getNodeType() == Node.TEXT_NODE) {
+			if (contraints != null && contraints.getFormatWithSiblingIndent()) {
+				IDOMNode text = (IDOMNode) next;
+				IStructuredFormatter formatter = HTMLFormatterNoPHPFactory.getInstance().createFormatter(text, f.getFormatPreferences());
+				if (formatter instanceof HTMLTextFormatterNoPHP) {
+					HTMLTextFormatterNoPHP textFormatter = (HTMLTextFormatterNoPHP) formatter;
+					textFormatter.runFormatText(text, contraints, HTMLTextFormatter.FORMAT_HEAD);
+				}
+			}
+			return;
+		}
+		else {
+			spaces = f.runGetBreakSpaces(node);
+		}
+		if (spaces == null || spaces.length() == 0)
+			return;
+
+		f.runReplaceSource(node.getModel(), node.getEndOffset(), 0, spaces);
+		f.runSetWidth(contraints, spaces);
+	}
+
