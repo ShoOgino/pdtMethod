@@ -1,0 +1,24 @@
+	/**
+	 * Returns an array on newly initialized WizardFragments that complies to the given server type 
+	 * id.
+	 * The returned fragments array contains a union of the server specific fragments and the global
+	 * fragments that can be defined by adding a fragments extention with a visibility of 'Always'.
+	 * 
+	 * @param serverType	The id of the server.
+	 * @return	An array of ICompositeFragmentFactory.
+	 */
+	public static ICompositeFragmentFactory[] getFragmentsFactories() {
+		ServerFragmentsFactoryRegistry registry = getInstance();
+		if (registry.factories == null) {
+			List fragments = registry.fragments;
+			List factoriesList = new ArrayList();
+			for (int i = 0; i < fragments.size(); i++) {
+				FragmentsFactory factory = (FragmentsFactory) fragments.get(i);
+				factoriesList.add(factory.createFragmentFactory());
+			}
+			registry.factories = new ICompositeFragmentFactory[factoriesList.size()];
+			factoriesList.toArray(registry.factories);
+		}
+		return registry.factories;
+	}
+
