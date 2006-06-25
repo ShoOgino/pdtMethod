@@ -6,7 +6,6 @@
 		setUpPopupMenu();
 		actionGroup = new FunctionsViewGroup(this);
 
-		//		fViewer.addPostSelectionChangedListener(fPostSelectionListener);
 		addDoubleClickListener();
 		addMouseTrackListener();
 		getSite().getPage().addPartListener(this);
@@ -14,11 +13,25 @@
 		IStatusLineManager slManager = getViewSite().getActionBars().getStatusLineManager();
 		fViewer.addSelectionChangedListener(new StatusBarUpdater(slManager));
 
+		fViewer.getTree().addFocusListener(new FocusListener() {
+
+			public void focusGained(FocusEvent e) {
+				Display.getCurrent().asyncExec(new Runnable() {
+
+					public void run() {
+						if (shouldRefresh) {
+							fViewer.refresh();
+							shouldRefresh = false;
+						}
+					}
+
+				});
+			}
+
+			public void focusLost(FocusEvent e) {
+			}
+
+		});
 		updateTitle();
-
-		IEditorPart editorPart = getViewSite().getPage().getActiveEditor();
-		updateInputForCurrentEditor(editorPart);
-
-		fViewer.refresh();
 	}
 
