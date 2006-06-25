@@ -36,6 +36,16 @@
 				return;
 			}
 		}
+		Preferences prefs = PHPProjectPreferences.getModelPreferences();
+		boolean autoSave = prefs.getBoolean(PHPDebugCorePreferenceNames.AUTO_SAVE_DIRTY);
+		SaveFilesRunnable runnable = new SaveFilesRunnable(project, true, autoSave);
+		Display.getDefault().syncExec(runnable);
+		if (!runnable.isSaved())
+			return;
+		if (runnable.isAutoSaved() && !autoSave) {
+			prefs.setValue(PHPDebugCorePreferenceNames.AUTO_SAVE_DIRTY, true);
+			PHPDebugPlugin.getDefault().savePluginPreferences();
+		}
 
 		if (mode.equals(ILaunchManager.DEBUG_MODE) || runWithDebugInfo == true) {
 			boolean stopAtFirstLine = PHPProjectPreferences.getStopAtFirstLine(project);
