@@ -5,20 +5,25 @@
 		setErrorMessage(null);
 		try {
 			String phpExe = launchConfig.getAttribute(PHPCoreConstants.ATTR_LOCATION, "");
-			if (phpExe != "" && phpExe != null) {
+			boolean phpExeExists = true;
+			try {
 				File file = new File(phpExe);
 				if (!file.exists()) {
-					setErrorMessage(PHPDebugUIMessages.PHP_Location_Message);
-					return false;
+					phpExeExists = false;
 				}
+			} catch (NullPointerException e) {
+				phpExeExists = false;
 			}
+			if (!phpExeExists) {
+				setErrorMessage(PHPDebugUIMessages.PHP_Location_Message);
+				return false;
+			}
+
 			if (enableFileSelection) {
 				String phpFile = launchConfig.getAttribute(PHPCoreConstants.ATTR_FILE, "");
-				if (phpFile != "" && phpExe != null) {
-					if (!fileExists(phpFile)) {
-						setErrorMessage(PHPDebugUIMessages.PHP_File_Not_Exist);
-						return false;
-					}
+				if (!fileExists(phpFile)) {
+					setErrorMessage(PHPDebugUIMessages.PHP_File_Not_Exist);
+					return false;
 				}
 			}
 		} catch (CoreException e) {
