@@ -7,7 +7,7 @@
 				ITextRegion textRegion = sdRegion.getRegionAtCharacterOffset(hoverRegion.getOffset());
 				if (sdRegion.getStartOffset() + textRegion.getTextEnd() >= hoverRegion.getOffset()) {
 					CodeData codeData = CodeDataResolver.getCodeData(textViewer, sdRegion.getStartOffset() + textRegion.getTextEnd());
-					if (codeData != null) {
+					if (codeData != null && !(codeData instanceof PHPVariableData)) {
 						UserData userData = codeData.getUserData();
 						if (userData != null) {
 							IFile file = ResourcesPlugin.getWorkspace().getRoot().getFile(new Path(userData.getFileName()));
@@ -16,14 +16,12 @@
 								r.skip(userData.getStartPosition());
 								StringBuffer buf = new StringBuffer();
 								String line;
-								int lines = 0;
-								while (lines < MAX_LINES && (line = r.readLine()) != null) {
+								while ((line = r.readLine()) != null) {
 									buf.append(line);
 									buf.append("\n");
-									lines ++;
 								}
 								r.close();
-								return buf.toString();
+								return cutStatement(buf.toString());
 							}
 						}
 					}

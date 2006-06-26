@@ -1,0 +1,30 @@
+	private String cutStatement(String code) {
+		try {
+			PHPCodeReader codeReader = new PHPCodeReader();
+			Document doc = new Document(code);
+			codeReader.configureForwardReader(doc, 0, doc.getLength(), true, true);
+			
+			int curlyBraces = 0;
+			
+			int ch = codeReader.read();
+			while (ch != PHPCodeReader.EOF) {
+				if (ch == ';' && curlyBraces == 0) {
+					break;
+				}
+				if (ch == '{') {
+					curlyBraces ++;
+				}
+				if (ch == '}') {
+					curlyBraces --;
+					if (curlyBraces == 0) {
+						break;
+					}
+				}
+				ch = codeReader.read();
+			}
+			code = code.substring(0, codeReader.getOffset()+1);
+		} catch (Exception e) {
+		}
+		return code;
+	}
+
