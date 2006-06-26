@@ -1,12 +1,15 @@
 	protected void loadFile(PHPLanguageManager languageManager) {
 		try {
 			String phpFunctionPath = languageManager.getPHPFunctionPath();
-			Reader reader = new InputStreamReader(PHPCorePlugin.getDefault().openStream(new Path(phpFunctionPath)));
+			Reader reader = new InputStreamReader(FileLocator.openStream(PHPCorePlugin.getDefault().getBundle(), new Path(phpFunctionPath), false));
 
-			// Reader reader = new InputStreamReader(new FileInputStream(new
-			// File(phpFunctionPath).getAbsoluteFile()));
+			// parse the language model
+			final PHPParserManager phpParserManager = languageManager.createPHPParserManager();
+			final ParserExecuter executer = new ParserExecuter(phpParserManager, null, new InnerParserClient(), phpFunctionPath, reader, new Pattern[0], 0, false);
+			executer.run();
+			
+			// phpParserManager.parse(reader, phpFunctionPath, 0, new InnerParserClient(), false);
 
-			languageManager.createPHPParserManager().parse(reader, phpFunctionPath, 0, new InnerParserClient(), false);
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 		}
