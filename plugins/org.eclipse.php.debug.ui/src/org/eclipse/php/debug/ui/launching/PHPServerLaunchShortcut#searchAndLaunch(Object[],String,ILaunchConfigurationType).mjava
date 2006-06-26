@@ -1,4 +1,4 @@
-	static public void searchAndLaunch(Object[] search, String mode, ILaunchConfigurationType configType) {
+	public static void searchAndLaunch(Object[] search, String mode, ILaunchConfigurationType configType) {
 		int entries = search == null ? 0 : search.length;
 		for (int i = 0; i < entries; i++) {
 			try {
@@ -24,18 +24,18 @@
 					throw new CoreException(new Status(IStatus.ERROR, PHPDebugUIPlugin.ID, IStatus.OK, PHPDebugUIMessages.launch_failure_no_target, null));
 				}
 
-				PHPexes exes = new PHPexes();
-				exes.load(PHPDebugUIPlugin.getDefault().getPluginPreferences());
-				PHPexeItem defaultEXE = exes.getDefaultItem();
-				String phpExeName = (defaultEXE != null) ? exes.getDefaultItem().getPhpEXE().getAbsolutePath().toString() : null;
-
-				if (phpExeName == null) {
-					ErrorDialog.openError(PHPDebugUIPlugin.getActiveWorkbenchShell(), PHPDebugUIMessages.launch_noexe_msg_title, PHPDebugUIMessages.launch_noexe_msg_text, new Status(Status.ERROR, PHPDebugUIPlugin.ID, 0, "", null));
-					return;
+				Server defaultServer = ServersManager.getDefaultServer();
+				if (defaultServer == null) {
+					PHPDebugPlugin.createDefaultPHPServer();
+					defaultServer = ServersManager.getDefaultServer();
+					if (defaultServer == null) {
+						// Sould not happen
+						throw new CoreException(new Status(IStatus.ERROR, PHPDebugUIPlugin.ID, IStatus.OK, "Could not create a defualt server for the launch.", null));
+					}
 				}
 
 				// Launch the app
-				ILaunchConfiguration config = findLaunchConfiguration(project.getName(), phpPathString, phpExeName, mode, configType);
+				ILaunchConfiguration config = findLaunchConfiguration(project, phpPathString, defaultServer, mode, configType);
 				if (config != null) {
 					DebugUITools.launch(config, mode);
 				} else {
@@ -46,7 +46,7 @@
 				final IStatus stat = ce.getStatus();
 				Display.getDefault().asyncExec(new Runnable() {
 					public void run() {
-						ErrorDialog.openError(PHPDebugUIPlugin.getActiveWorkbenchShell(), PHPDebugUIMessages.launch_failure_msg_title, PHPDebugUIMessages.launch_failure_exec_msg_text, stat);
+						ErrorDialog.openError(PHPDebugUIPlugin.getActiveWorkbenchShell(), PHPDebugUIMessages.launch_failure_msg_title, PHPDebugUIMessages.launch_failure_server_msg_text, stat);
 					}
 				});
 			}

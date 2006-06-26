@@ -1,0 +1,24 @@
+	/**
+	 * Create & return a new configuration
+	 */
+	static ILaunchConfiguration createConfiguration(IProject project, String fileName, Server server, ILaunchConfigurationType configType) throws CoreException {
+		ILaunchConfiguration config = null;
+		if(!FileUtils.fileExists(fileName)) {
+			return null;
+		}
+		ILaunchConfigurationWorkingCopy wc = configType.newInstance(null, DebugPlugin.getDefault().getLaunchManager().generateUniqueLaunchConfigurationNameFrom("New_configuration"));
+
+		wc.setAttribute(Server.NAME, server.getName());
+		wc.setAttribute(Server.FILE_NAME, fileName);
+		wc.setAttribute(Server.CONTEXT_ROOT, project.getName());
+		wc.setAttribute(Server.BASE_URL,server.getBaseURL() + '/' + project.getName() + '/' + new Path(fileName).lastSegment());
+		wc.setAttribute(IPHPConstants.RunWithDebugInfo, PHPDebugPlugin.getDebugInfoOption());
+		if (server.canPublish()) {
+			wc.setAttribute(Server.PUBLISH, true);
+		}
+
+		config = wc.doSave();
+
+		return config;
+	}
+

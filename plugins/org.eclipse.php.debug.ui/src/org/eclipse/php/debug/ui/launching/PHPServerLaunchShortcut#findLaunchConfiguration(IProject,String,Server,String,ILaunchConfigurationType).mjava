@@ -1,0 +1,31 @@
+	/**
+	 * Locate a configuration to relaunch for the given type.  If one cannot be found, create one.
+	 * 
+	 * @return a re-useable config or <code>null</code> if none
+	 */
+	static ILaunchConfiguration findLaunchConfiguration(IProject project, String fileName, Server server, String mode, ILaunchConfigurationType configType) {
+		ILaunchConfiguration config = null;
+
+		try {
+			ILaunchConfiguration[] configs = DebugPlugin.getDefault().getLaunchManager().getLaunchConfigurations(configType);
+
+			int numConfigs = configs == null ? 0 : configs.length;
+			for (int i = 0; i < numConfigs; i++) {
+				String configuredServerName = configs[i].getAttribute(Server.NAME, (String) null);
+				String configuredFileName = configs[i].getAttribute(Server.FILE_NAME, (String) null);
+
+				if (configuredFileName.equals(fileName) && server.getName().equals(configuredServerName)) {
+					config = configs[i].getWorkingCopy();
+					break;
+				}
+			}
+
+			if (config == null) {
+				config = createConfiguration(project, fileName, server, configType);
+			}
+		} catch (CoreException ce) {
+			ce.printStackTrace();
+		}
+		return config;
+	}
+
