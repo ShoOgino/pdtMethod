@@ -1,15 +1,29 @@
 	// Loads the servers from the preferences store.
 	private void loadServers() {
+		String defaultServerName = Activator.getDefault().getPluginPreferences().getString(DEFAULT_SERVER_PREFERENCES_KEY);
 		// First, we read the configurations of the servers from the preferences.
-		HashMap[] serversConfigs = XMLPreferencesReader.read(Activator.getDefault().getPluginPreferences(), PREFERENCES_KEY);
+		HashMap[] serversConfigs = XMLPreferencesReader.read(Activator.getDefault().getPluginPreferences(), SERVERS_PREFERENCES_KEY);
 		// Then we create the servers from their configurations...
+		Server firstServer = null;
 		for (int i = 0; i < serversConfigs.length; i++) {
 			HashMap serverMap = serversConfigs[i];
 			Server server = new Server();
 			server.restoreFromMap(serverMap);
-			servers.put(server.getName(), server);
+			if (firstServer == null) {
+				firstServer = server;
+			}
+			String serverName = server.getName();
+			servers.put(serverName, server);
+			if (defaultServer == null && serverName.equals(defaultServerName)) {
+				defaultServer = server;
+			}
 			// Register the manager as a Server lister to get nofitications about attribute changes.
 			server.addPropertyChangeListener(this);
+		}
+		if (defaultServer == null) {
+			// make the first as default.
+			defaultServer = firstServer;
+			innerSaveDefaultServer();
 		}
 	}
 
