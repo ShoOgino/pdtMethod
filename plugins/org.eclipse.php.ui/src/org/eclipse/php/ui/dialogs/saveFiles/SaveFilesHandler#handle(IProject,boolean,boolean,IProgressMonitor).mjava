@@ -1,0 +1,21 @@
+	public static SaveFilesResult handle(IProject project, boolean autoSave, boolean promptAutoSave, IProgressMonitor monitor) {
+		SaveFilesResult result = new SaveFilesResult();
+		IEditorPart[] dirtyEditors = getDirtyEditors(project);
+		if (dirtyEditors == null || dirtyEditors.length == 0) {
+			result.setSaved(true);
+			return result;
+		}
+		if (!autoSave) {
+			Display.getDefault().syncExec(new SaveFilesDialogRunnable(dirtyEditors, result, promptAutoSave));
+		} else {
+			result.setSaved(true);
+		}
+		if (result.isSaved()) {
+			Display.getDefault().syncExec(new SaveFilesRunnable(dirtyEditors, monitor));
+		}
+		if (monitor.isCanceled()) {
+			result.setSaved(false);
+		}
+		return result;
+	}
+

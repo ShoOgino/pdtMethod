@@ -1,4 +1,5 @@
 	public void launch(ILaunchConfiguration configuration, String mode, ILaunch launch, IProgressMonitor monitor) throws CoreException {
+		IProgressMonitor subMonitor; // the total of monitor is 100
 		if (monitor.isCanceled()) {
 			return;
 		}
@@ -36,17 +37,11 @@
 				return;
 			}
 		}
-		Preferences prefs = PHPProjectPreferences.getModelPreferences();
-		boolean autoSave = prefs.getBoolean(PHPDebugCorePreferenceNames.AUTO_SAVE_DIRTY);
-		SaveFilesRunnable runnable = new SaveFilesRunnable(project, true, autoSave);
-		Display.getDefault().syncExec(runnable);
-		if (!runnable.isSaved())
+
+		subMonitor = new SubProgressMonitor(monitor, 10); // 10 of 100
+		if (!saveFiles(project, monitor)) {
 			return;
-		if (runnable.isAutoSaved() && !autoSave) {
-			prefs.setValue(PHPDebugCorePreferenceNames.AUTO_SAVE_DIRTY, true);
-			PHPDebugPlugin.getDefault().savePluginPreferences();
 		}
-		
 
 		if (mode.equals(ILaunchManager.DEBUG_MODE) || runWithDebugInfo == true) {
 			boolean stopAtFirstLine = PHPProjectPreferences.getStopAtFirstLine(project);
@@ -127,12 +122,14 @@
 			processAttributes.put(IProcess.ATTR_PROCESS_TYPE, programName);
 
 			if (p != null) {
-				monitor.beginTask(MessageFormat.format("start launch", new String[] { configuration.getName() }), IProgressMonitor.UNKNOWN); //$NON-NLS-1$
+				subMonitor = new SubProgressMonitor(monitor, 80); // 10+80 of 100;
+				subMonitor.beginTask(MessageFormat.format("start launch", new String[] { configuration.getName() }), IProgressMonitor.UNKNOWN); //$NON-NLS-1$
 				process = DebugPlugin.newProcess(launch, p, phpExe.toOSString(), processAttributes);
 				if (process == null) {
 					p.destroy();
 					throw new CoreException(new Status(IStatus.ERROR, PHPDebugPlugin.getID(), 0, null, null)); //$NON-NLS-1$
 				}
+				subMonitor.done();
 
 			}
 			process.setAttribute(IProcess.ATTR_CMDLINE, fileNameString);
@@ -159,7 +156,8 @@
 				}
 
 				// refresh resources
-				RefreshTab.refreshResources(configuration, monitor);
+				subMonitor = new SubProgressMonitor(monitor, 10); // 10+80+10 of 100;
+				RefreshTab.refreshResources(configuration, subMonitor);
 			}
 		}
 
