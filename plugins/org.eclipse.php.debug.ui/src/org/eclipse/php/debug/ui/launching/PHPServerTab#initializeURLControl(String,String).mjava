@@ -1,0 +1,37 @@
+	protected void initializeURLControl(String contextRoot, String fileName) {
+		if (server == null)
+			return;
+
+		if (server.getName().equals(IPHPConstants.Default_Server_Name)) {
+			IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
+			IResource resource = workspaceRoot.findMember(fileName);
+			if (resource == null) {
+				super.initializeURLControl(contextRoot, fileName);
+				return;
+			}
+			IProject project = resource.getProject();
+			String urlString = "";
+			if (project == null) {
+				urlString = PHPDebugPlugin.getWorkspaceURL();
+			} else {
+				urlString = PHPProjectPreferences.getDefaultServerURL(project);
+			}
+
+			if (urlString.equals(""))
+				urlString = "http://localhost";
+
+			StringBuffer url = new StringBuffer(urlString);
+
+			url.append("/");
+			url.append(contextRoot);
+			if (contextRoot != "")
+				url.append("/");
+			url.append(fileName);
+
+			fURL.setText(url.toString());
+		} else {
+			super.initializeURLControl(contextRoot, fileName);
+		}
+
+	}
+
