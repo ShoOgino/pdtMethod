@@ -2,29 +2,29 @@
 		try {
 			//the basic assumption is that we are allready in phpDoc state.
 			IRegion lineInfo = document.getLineInformationOfOffset(command.offset);
+
 			int startOffset = lineInfo.getOffset();
 
 			String line = document.get(startOffset, lineInfo.getLength());
 			String blanks = getBlanks(line);
 
 			String trimedLine = line.trim();
+
 			boolean isFirstLine = false;
 			boolean isDocBlock = true;
 			// if this is the first line of the docBlock
-			if (trimedLine.startsWith("/**")) {
-				if(command.offset + command.length < lineInfo.getOffset() + line.indexOf("/**") + 3){ // checking we are after the /**
-					//otherwise there is no need to continue since its not inside the docblock
+			int docStart;
+			if ((docStart = trimedLine.indexOf("/*")) != -1) {
+				if (command.offset + command.length < startOffset + docStart + 2)
 					return;
-				}
 				isFirstLine = true;
-			} else if (trimedLine.startsWith("/*")) {
-				if(command.offset + command.length < lineInfo.getOffset() + line.indexOf("/*") + 2){ // checking we are after the /*
-					//otherwise there is no need to continue since its not inside the docblock
-					return;
+				if (trimedLine.indexOf("/**") != docStart) {
+					isDocBlock = false;
 				}
-				isFirstLine = true;
-				isDocBlock = false;
 			}
+			Matcher m = Pattern.compile("/\\*.*\\*/").matcher(trimedLine);
+			if (m.find())
+				return;
 			if (isFirstLine) {
 				blanks += ' ';
 				command.text += blanks;
@@ -45,7 +45,7 @@
 				return;
 			}
 			boolean lastLint = document.get(startOffset, command.offset - startOffset).endsWith("*/");
-			if (!lastLint)	{ // only if the line starts with * then we add * to the new line
+			if (!lastLint) { // only if the line starts with * then we add * to the new line
 				if (trimedLine.length() > 0 && trimedLine.charAt(0) == '*') {
 					command.text = command.text + blanks + lineStart;
 				}

@@ -4,18 +4,23 @@
 	 * -1 if the caret should be at the end of the command.text
 	 */
 	private int handleDocBlockStart(IStructuredDocument document, DocumentCommand command, String blanks, boolean isDocBlock) {
-		String commentStart = (isDocBlock) ? "/**" : "/*";
-		int commentStartLength = commentStart.length();
-		command.text += lineStart;
-		int rvPosition = command.offset + command.text.length();
-		int selectionEnd = command.offset + command.length;
-		if (isInsideExistingDocBlock(document, selectionEnd)) {
-			return -1;
-		}
+		int rvPosition = 0;
 		try {
 			IRegion lineInfo = document.getLineInformationOfOffset(command.offset);
 			int lineStart = lineInfo.getOffset();
 			String line = document.get(lineStart, command.offset - lineStart);
+
+			Matcher m = Pattern.compile("\\/\\*+").matcher(line);
+			m.find();
+			String commentStart = line.substring(m.start(), m.end());
+			int commentStartLength = commentStart.length();
+			command.text += "* ";
+			rvPosition = command.offset + command.text.length();
+			int selectionEnd = command.offset + command.length;
+			if (isInsideExistingDocBlock(document, selectionEnd)) {
+				return -1;
+			}
+
 			lineStart += line.indexOf(commentStart);
 			String lineContent = line.substring(line.indexOf(commentStart) + commentStartLength).trim();
 			rvPosition = lineStart + commentStartLength + command.text.length();
@@ -49,15 +54,15 @@
 				if (lineContent.equals("")) { //this is a patch in order to make PHPDescriptionTool add a default shortDescription
 					lineContent = null;
 				}
-				
+
 				String stub = getDocBlockStub(editorModel, document, lineStart, lineContent);
-				
+
 				// putting back the /** that was taken off
 				command.offset += commentStart.length();
 				document.getUndoManager().disableUndoManagement();
 				document.replace(lineStart, 0, commentStart);
 				document.getUndoManager().enableUndoManagement();
-				
+
 				if (stub != null) {
 					command.text = stub.substring(3);
 					if (lineContent == null) {
