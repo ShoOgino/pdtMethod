@@ -46,17 +46,20 @@
 		}
 
 		// Look in the other phpFileDataDB in global context.
-		Iterator iterator = phpFileDataDB.asList().iterator();
-		while (iterator.hasNext()) {
-			fileData = (PHPFileData) iterator.next();
-			if (fileData.getName().equals(fileName)) {
-				continue; // no point in looking again...
-			}
-			variablesTypeManager = fileData.getVariableTypeManager();
+		List list = Collections.synchronizedList(phpFileDataDB.asList());
+		synchronized (list) {
+			Iterator iterator = list.iterator();
+			while (iterator.hasNext()) {
+				fileData = (PHPFileData) iterator.next();
+				if (fileData.getName().equals(fileName)) {
+					continue; // no point in looking again...
+				}
+				variablesTypeManager = fileData.getVariableTypeManager();
 
-			typeData = variablesTypeManager.getVariableTypeData(context, variableName, fileData.getUserData().getStopLine());
-			if (typeData != null) {
-				return typeData.getType();
+				typeData = variablesTypeManager.getVariableTypeData(context, variableName, fileData.getUserData().getStopLine());
+				if (typeData != null) {
+					return typeData.getType();
+				}
 			}
 		}
 		return null;
