@@ -13,15 +13,13 @@
 							IFile file = ResourcesPlugin.getWorkspace().getRoot().getFile(new Path(userData.getFileName()));
 							if (file != null) {
 								BufferedReader r = new BufferedReader(new InputStreamReader(file.getContents()));
-								r.skip(userData.getStartPosition());
-								StringBuffer buf = new StringBuffer();
-								String line;
-								while ((line = r.readLine()) != null) {
-									buf.append(line);
-									buf.append("\n");
-								}
+								int startPosition = userData.getStartPosition();
+								int len = userData.getEndPosition() - startPosition;
+								char[] buf = new char[len];
+								r.skip(startPosition);
+								r.read(buf, 0, len);
 								r.close();
-								return cutStatement(buf.toString());
+								return formatHoverInfo(new String(buf));
 							}
 						}
 					}
