@@ -1,23 +1,27 @@
 	public static void getCompilationUnitLabel(PHPFileData cu, long flags, StringBuffer buf) {
 		if (getFlag(flags, CU_QUALIFIED)) {
 			IFile file = (IFile) PHPModelUtil.getResource(cu);
-			if (file!=null)
-			{
+			if (file != null) {
 				IContainer folder = file.getParent();
 				if (!(folder instanceof IProject)) {
 					buf.append(folder.getName());
 					buf.append('.');
 				}
-				
+
 			}
 		}
-		
+
 		// try to get the resource for the current PHPFileData.
 		// In case it exists, it means it is part of the project - so we want just the name.
 		// otherwise it is an include path and we need the full path
 		IPath path = new Path(cu.getName());
-		IFile resourceFile = ResourcesPlugin.getWorkspace().getRoot().getFile(path);
-		if (resourceFile != null && resourceFile.exists()){
+		IFile resourceFile = null;
+		try {
+			resourceFile = ResourcesPlugin.getWorkspace().getRoot().getFile(path);
+		} catch (IllegalArgumentException e) {
+			// do nothing - this can happen when the file data is from a zip file under the include path.
+		}
+		if (resourceFile != null && resourceFile.exists()) {
 			buf.append(cu.getComparableName());
 		} else {
 			buf.append(cu.getName());
