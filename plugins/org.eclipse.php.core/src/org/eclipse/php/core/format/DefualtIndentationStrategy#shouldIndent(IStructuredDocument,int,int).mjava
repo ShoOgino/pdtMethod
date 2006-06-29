@@ -1,13 +1,18 @@
 	boolean shouldIndent(IStructuredDocument document, int offset, int lineNumber) {
 		try {
 			IRegion lineInfo = document.getLineInformation(lineNumber);
-			ITextRegion token = getLastToken(document, lineInfo, offset);
-			String tokenType = (token == null) ? (PHPRegionTypes.WHITESPACE) : token.getType();
+			int lastTokenOffset = getLastTokenOffset(document, lineInfo, offset);
+			if (lastTokenOffset == -1) {
+				return false;
+			}
+			
+			IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(lastTokenOffset);
+			ITextRegion token = sdRegion.getRegionAtCharacterOffset(lastTokenOffset);
+			String tokenType = token.getType();
+			
 			if (tokenType == PHPRegionTypes.PHP_CURLY_OPEN) {
 				return true;
 			}
-
-			IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(lineInfo.getOffset()+1);
 
 			if (tokenType == PHPRegionTypes.PHP_TOKEN && document.getChar(sdRegion.getStartOffset() + token.getStart()) == ':') {
 				//checking if the line starts with "case" or "default"
