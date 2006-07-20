@@ -1,17 +1,21 @@
 	/* (non-Javadoc)
 	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#isValid(org.eclipse.debug.core.ILaunchConfiguration)
 	 */
-	public boolean isValid(ILaunchConfiguration launchConfig) {
+	public boolean isValid(final ILaunchConfiguration launchConfig) {
 		setErrorMessage(null);
 		try {
 			String phpExe = launchConfig.getAttribute(PHPCoreConstants.ATTR_LOCATION, "");
+			if (phpExe.equals("")) {
+				final PHPexes phpExes = new PHPexes();
+				phpExes.load(PHPDebugUIPlugin.getDefault().getPluginPreferences());
+				phpExe = phpExes.getDefaultItem().getPhpEXE().toString();
+			}
 			boolean phpExeExists = true;
 			try {
-				File file = new File(phpExe);
-				if (!file.exists()) {
+				final File file = new File(phpExe);
+				if (!file.exists())
 					phpExeExists = false;
-				}
-			} catch (NullPointerException e) {
+			} catch (final NullPointerException e) {
 				phpExeExists = false;
 			}
 			if (!phpExeExists) {
@@ -20,13 +24,13 @@
 			}
 
 			if (enableFileSelection) {
-				String phpFile = launchConfig.getAttribute(PHPCoreConstants.ATTR_FILE, "");
+				final String phpFile = launchConfig.getAttribute(PHPCoreConstants.ATTR_FILE, "");
 				if (!fileExists(phpFile)) {
 					setErrorMessage(PHPDebugUIMessages.PHP_File_Not_Exist);
 					return false;
 				}
 			}
-		} catch (CoreException e) {
+		} catch (final CoreException e) {
 		}
 
 		return true;
