@@ -3,16 +3,16 @@
 	 * 
 	 * @param anscestor containing control
 	 */
-	public void createControl(Composite ancestor) {
-		Font font = ancestor.getFont();
-		Composite comp = new Composite(ancestor, SWT.NONE);
+	public void createControl(final Composite ancestor) {
+		final Font font = ancestor.getFont();
+		final Composite comp = new Composite(ancestor, SWT.NONE);
 		GridLayout layout = new GridLayout();
 		comp.setLayout(new GridLayout());
 		comp.setLayoutData(new GridData(GridData.FILL_BOTH));
 		fControl = comp;
 		comp.setFont(font);
 
-		Group group = new Group(comp, SWT.NULL);
+		final Group group = new Group(comp, SWT.NULL);
 		layout = new GridLayout();
 		layout.numColumns = 3;
 		group.setLayout(layout);
@@ -21,9 +21,8 @@
 
 		GridData data;
 
-		if (fTitle == null) {
-			fTitle = PHPDebugUIMessages.PHPexesComboBlock_3; //$NON-NLS-1$
-		}
+		if (fTitle == null)
+			fTitle = PHPDebugUIMessages.PHPexesComboBlock_3;
 		group.setText(fTitle);
 
 		// display a 'use default PHPexe' check box
@@ -31,10 +30,9 @@
 			fDefaultButton = new Button(group, SWT.RADIO);
 			fDefaultButton.setText(fDefaultDescriptor.getDescription());
 			fDefaultButton.addSelectionListener(new SelectionAdapter() {
-				public void widgetSelected(SelectionEvent e) {
-					if (fDefaultButton.getSelection()) {
+				public void widgetSelected(final SelectionEvent e) {
+					if (fDefaultButton.getSelection())
 						setUseDefaultPHPexe();
-					}
 				}
 			});
 			data = new GridData();
@@ -44,19 +42,17 @@
 		}
 
 		fSpecificButton = new Button(group, SWT.RADIO);
-		if (fSpecificDescriptor != null) {
+		if (fSpecificDescriptor != null)
 			fSpecificButton.setText(fSpecificDescriptor.getDescription());
-		} else {
-			fSpecificButton.setText(PHPDebugUIMessages.PHPexesComboBlock_1); //$NON-NLS-1$
-		}
+		else
+			fSpecificButton.setText(PHPDebugUIMessages.PHPexesComboBlock_1);
 		fSpecificButton.addSelectionListener(new SelectionAdapter() {
-			public void widgetSelected(SelectionEvent e) {
+			public void widgetSelected(final SelectionEvent e) {
 				if (fSpecificButton.getSelection()) {
 					fCombo.setEnabled(true);
 					fManageButton.setEnabled(true);
-					if (fCombo.getText().length() == 0 && !fVMs.isEmpty()) {
+					if (fCombo.getText().length() == 0 && !fVMs.isEmpty())
 						fCombo.select(0);
-					}
 					fireSelectionChanged();
 				}
 			}
@@ -73,52 +69,48 @@
 		ControlAccessibleListener.addListener(fCombo, fSpecificButton.getText());
 
 		fCombo.addSelectionListener(new SelectionAdapter() {
-			public void widgetSelected(SelectionEvent e) {
+			public void widgetSelected(final SelectionEvent e) {
 				setPHPexe(getPHPexe());
 			}
 		});
 
-		fManageButton = createPushButton(group, PHPDebugUIMessages.PHPexesComboBlock_2); //$NON-NLS-1$
+		fManageButton = createPushButton(group, PHPDebugUIMessages.PHPexesComboBlock_2);
 		fManageButton.addListener(SWT.Selection, new Listener() {
-			public void handleEvent(Event event) {
-				PHPexeItem oldSelection = getPHPexe();
+			public void handleEvent(final Event event) {
+				final PHPexeItem oldSelection = getPHPexe();
 
 				int oldIndex = -1;
-				if (oldSelection != null) {
+				if (oldSelection != null)
 					oldIndex = fVMs.indexOf(oldSelection);
-				}
-				ShowPHPsPreferences showPrefs = new ShowPHPsPreferences();
+				final ShowPHPsPreferences showPrefs = new ShowPHPsPreferences();
 				showPrefs.run(null);
 
 				fillWithWorkspacePHPexes();
 				int newIndex = -1;
-				if (oldSelection != null) {
+				if (oldSelection != null)
 					newIndex = fVMs.indexOf(oldSelection);
-				}
-				if (newIndex != oldIndex) {
+				if (newIndex != oldIndex)
 					// clear the old selection so that a selection changed is fired
 					fPrevSelection = null;
-				}
 				// update text
 				setDefaultPHPexeDescriptor(fDefaultDescriptor);
-				if (isDefaultPHPexe()) {
+				if (isDefaultPHPexe())
 					// reset in case default has changed
 					setUseDefaultPHPexe();
-				} else {
+				else {
 					// restore selection
-					if (newIndex >= 0) {
+					if (newIndex >= 0)
 						fCombo.select(newIndex);
-					} else {
+					else
 						// select the first PHPexe
 						fCombo.select(0);
-					}
 					setPHPexe(getPHPexe());
 				}
 			}
 		});
 
 		if (getPHPs(true).getDefaultItem() == null) {
-			MessageDialog.openInformation(getShell(),PHPDebugUIMessages.PHPsComboBlock_NoPHPsTitle,PHPDebugUIMessages.PHPsComboBlock_noPHPsMessage);
+			MessageDialog.openInformation(getShell(), PHPDebugUIMessages.PHPsComboBlock_NoPHPsTitle, PHPDebugUIMessages.PHPsComboBlock_noPHPsMessage);
 			new ShowPHPsPreferences().run(null);
 		}
 		fillWithWorkspacePHPexes();

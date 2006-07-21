@@ -2,6 +2,17 @@
 	 * @see org.eclipse.debug.ui.ILaunchConfigurationTab#setDefaults(org.eclipse.debug.core.ILaunchConfigurationWorkingCopy)
 	 */
 	public void setDefaults(final ILaunchConfigurationWorkingCopy configuration) {
+		try {
+			String location = configuration.getAttribute(PHPCoreConstants.ATTR_LOCATION, ""); //$NON-NLS-1$
+			if (location.equals("")) {
+				final PHPexes phpExes = new PHPexes();
+				phpExes.load(PHPDebugUIPlugin.getDefault().getPluginPreferences());
+				location = phpExes.getDefaultItem().getPhpEXE().toString();
+				configuration.setAttribute(PHPCoreConstants.ATTR_LOCATION, location);
+			}
+		} catch (final CoreException e) {
+			Logger.log(Logger.ERROR, "Error setting default configuration", e); //$NON-NLS-1$
+		}
 		return;
 	}
 
