@@ -41,7 +41,12 @@
 		//		}
 
 		if (mode.equals(ILaunchManager.DEBUG_MODE) || runWithDebugInfo == true) {
-			final boolean stopAtFirstLine = PHPProjectPreferences.getStopAtFirstLine(project);
+			boolean stopAtFirstLine = false;
+			if (configuration.getAttribute(IDebugParametersKeys.OVERRIDE_FIRST_LINE_BREAKPOINT, false)) {
+				stopAtFirstLine = configuration.getAttribute(IDebugParametersKeys.FIRST_LINE_BREAKPOINT, false);
+			} else {
+				stopAtFirstLine = PHPProjectPreferences.getStopAtFirstLine(project);
+			}
 			final int requestPort = PHPProjectPreferences.getDebugPort(project);
 
 			// Set Project Name
@@ -125,7 +130,7 @@
 				process = DebugPlugin.newProcess(launch, p, phpExe.toOSString(), processAttributes);
 				if (process == null) {
 					p.destroy();
-					throw new CoreException(new Status(IStatus.ERROR, PHPDebugPlugin.getID(), 0, null, null)); 
+					throw new CoreException(new Status(IStatus.ERROR, PHPDebugPlugin.getID(), 0, null, null));
 				}
 				subMonitor.done();
 
