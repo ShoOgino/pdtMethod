@@ -24,6 +24,19 @@
 			stream.close();
 		} catch (IOException e) {
 		}
+		
+		// Change file encoding:
+		if (container instanceof IProject) {
+			PHPProjectOptions options = PHPProjectOptions.forProject((IProject)container);
+			if (options != null) {
+				String defaultEncoding = (String) options.getOption(PHPCoreConstants.PHPOPTION_DEFAULT_ENCODING);
+				if (defaultEncoding == null || defaultEncoding.length() == 0) {
+					defaultEncoding = container.getDefaultCharset();
+				}
+				file.setCharset(defaultEncoding, monitor);
+			}
+		}
+		
 		monitor.worked(1);
 		monitor.setTaskName(NLS.bind(PHPUIMessages.newPhpFile_openning, fileName));
 		getShell().getDisplay().asyncExec(new Runnable() {
