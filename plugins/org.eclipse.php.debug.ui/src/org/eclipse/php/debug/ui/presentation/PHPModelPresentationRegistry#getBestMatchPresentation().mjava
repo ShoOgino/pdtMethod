@@ -1,0 +1,32 @@
+	/**
+	 * Returns the best match IDebugModelPresentation.
+	 * @return An IDebugModelPresentation.
+	 */
+	public static IDebugModelPresentation getBestMatchPresentation() {
+		PHPModelPresentationRegistry registry = getInstance();
+		if (registry.bestMatchPresentation != null) {
+			return registry.bestMatchPresentation;
+		}
+		try {
+			DebugModelPresentationFactory bestModelPresentationFactory = null;
+			Dictionary presentations = registry.debugModelPresentations;
+			Enumeration e = presentations.elements();
+			while (e.hasMoreElements()) {
+				DebugModelPresentationFactory modelPresentationFactory = (DebugModelPresentationFactory) e.nextElement();
+				if (PHPDebugUIPlugin.getID().equals(modelPresentationFactory.element.getNamespaceIdentifier())) {
+					bestModelPresentationFactory = modelPresentationFactory;
+				} else {
+					registry.bestMatchPresentation = modelPresentationFactory.createParametersInitializer();
+					return registry.bestMatchPresentation;
+				}
+			}
+			if (bestModelPresentationFactory != null) {
+				registry.bestMatchPresentation = bestModelPresentationFactory.createParametersInitializer();
+				return registry.bestMatchPresentation;
+			}
+		} catch (Exception e) {
+			PHPDebugPlugin.log(e);
+		}
+		return null;
+	}
+
