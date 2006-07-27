@@ -1,0 +1,21 @@
+	private ServerLaunchTabsRegistry() {
+		IExtensionRegistry registry = Platform.getExtensionRegistry();
+		IConfigurationElement[] elements = registry.getConfigurationElementsFor(Activator.PLUGIN_ID, EXTENSION_POINT_NAME);
+
+		for (int i = 0; i < elements.length; i++) {
+			final IConfigurationElement element = elements[i];
+			if (TAB_TAG.equals(element.getName())) {
+				String id = element.getAttribute(ID_ATTRIBUTE);
+				String placeAfter = element.getAttribute(PLACE_AFTER_ATTRIBUTE);
+				if (element.getNamespaceIdentifier().equals(Activator.PLUGIN_ID)) {
+					// Make sure that extentions that exists in this plugin will appear ahead of all others
+					// when the user-class calls for getLaunchTabs().
+					factories.add(0, new TabFactory(element, id, placeAfter));
+				} else {
+					factories.add(new TabFactory(element, id, placeAfter));
+				}
+			}
+		}
+		sortFragmentsByPlace();
+	}
+

@@ -1,0 +1,41 @@
+	// Sort the factories according to the 'placeAfter' attribute
+	private void sortFragmentsByPlace() {
+		// Scan the factories and separate the factories that lacks the place-after property from
+		// those that have it.
+		ArrayList rootsFragments = new ArrayList(factories.size());
+		ArrayList nonRootFragments = new ArrayList(factories.size());
+		for (int i = 0; i < factories.size(); i++) {
+			TabFactory factory = (TabFactory) factories.get(i);
+			if (factory.getPlaceAfter() == null || factory.getPlaceAfter().equals("")) {
+				addAsList(rootsFragments, factory);
+			} else {
+				addAsList(nonRootFragments, factory);
+			}
+		}
+
+		// Traverse over the non-root factories and position them.
+		for (int i = 0; i < nonRootFragments.size(); i++) {
+			TabFactory factory = getFactory(nonRootFragments, i);
+			// try to move it to the roots factories first (order is important).
+			boolean moved = placeFragment(rootsFragments, factory);
+			if (!moved) {
+				// in case we can't find it there, try to move it inside the non-roots factories.
+				moved = placeFragment(nonRootFragments, factory);
+			}
+			if (!moved) {
+				// move it to the roots anyway, since there is an error in the extention definitions.
+				addAsList(rootsFragments, factory);
+				Logger.log(Logger.WARNING, "Invalid 'placeAfter' id (" + factory.getPlaceAfter() + ')');
+			}
+		}
+
+		// At this stage, the root fragments should hold all the fragments sorted.
+		factories.clear();
+		for (int i = 0; i < rootsFragments.size(); i++) {
+			List list = (List) rootsFragments.get(i);
+			for (int j = 0; j < list.size(); j++) {
+				factories.add(list.get(j));
+			}
+		}
+	}
+
