@@ -1,15 +1,16 @@
 	/**
-	 * Return best matching ICommunicationDaemon.
-	 * The returned ICommunicationDaemon is always a new instance.
+	 * Return best matching ICommunicationDaemons array.
+	 * The returned ICommunicationDaemons are always new instances.
 	 * In case of an error, null is returned.
 	 * 
-	 * @return A new instance of a best match ICommunicationDaemon
+	 * @return New instances of a best match ICommunicationDaemons
 	 */
-	public static ICommunicationDaemon getBestMatchCommunicationDaemon() {
+	public static ICommunicationDaemon[] getBestMatchCommunicationDaemons() {
 		try {
 			ICommunicationDaemon defaultDaemon = null;
 			Dictionary factories = getInstance().getDaemons();
 			Enumeration e = factories.elements();
+			ArrayList daemons = new ArrayList(4);
 			while (e.hasMoreElements()) {
 				CommunicationDaemonFactory initializerFactory = (CommunicationDaemonFactory) e.nextElement();
 				ICommunicationDaemon initializerDaemon = initializerFactory.createDaemon();
@@ -19,13 +20,16 @@
 					}
 				} else {
 					if (initializerDaemon.isEnabled()) {
-						return initializerDaemon;
+						daemons.add(initializerDaemon);
 					}
 				}
 			}
-			if (defaultDaemon != null) {
-				return defaultDaemon;
+			if (daemons.isEmpty() && defaultDaemon != null) {
+				return new ICommunicationDaemon[] { defaultDaemon };
 			}
+			ICommunicationDaemon[] daemonsLoaded = new ICommunicationDaemon[daemons.size()];
+			daemons.toArray(daemonsLoaded);
+			return daemonsLoaded;
 		} catch (Exception e) {
 			DaemonPlugin.log(e);
 		}
