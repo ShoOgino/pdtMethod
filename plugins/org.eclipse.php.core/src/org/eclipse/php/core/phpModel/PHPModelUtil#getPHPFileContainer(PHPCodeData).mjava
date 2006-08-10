@@ -1,7 +1,15 @@
-	public static PHPFileData getPHPFileContainer(PHPCodeData element) {
+	public static PHPFileData getPHPFileContainer(final PHPCodeData element) {
 		PHPCodeData parent = element.getContainer();
 		while (parent != null && !(parent instanceof PHPFileData))
 			parent = parent.getContainer();
+		if (parent == null) {
+			final UserData userData = element.getUserData();
+			if (userData != null) {
+				final IPath path = new Path(userData.getFileName());
+				if (ResourcesPlugin.getWorkspace().getRoot().findMember(path) != null)
+					parent = PHPWorkspaceModelManager.getInstance().getModelForFile(path.toString());
+			}
+		}
 		return (PHPFileData) parent;
 	}
 
