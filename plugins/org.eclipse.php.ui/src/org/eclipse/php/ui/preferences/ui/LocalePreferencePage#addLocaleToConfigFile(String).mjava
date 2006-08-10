@@ -1,0 +1,35 @@
+	public boolean addLocaleToConfigFile(String locale){
+
+		String configFilePath = findConfigFile();
+		 
+		if (configFilePath == null) {
+			Logger.log(Logger.ERROR,PHPUIMessages.getString("LanguageSetting_config_file_error"));
+	    	return false;
+		}
+				
+	    File configFile = new File(configFilePath);
+	    
+	    try {
+	    	String fileContents = FileUtils.getContents(configFile);
+	    	
+	    	// in case nl already exists in the config file, remove it (before the new addition)
+	    	if ((fileContents.indexOf("-nl")) != -1){
+	    		fileContents = fileContents.replaceAll("-nl[\n\r]*.*##[\n\r]*", "");
+	    	}
+	    	
+	    	StringBuffer buffer = new StringBuffer();
+		    buffer.append("-nl");
+		    buffer.append(System.getProperty("line.separator"));
+		    buffer.append(locale);
+		    buffer.append("##"); // add delimiter in order to enable replacement
+		    buffer.append(System.getProperty("line.separator"));
+	    	buffer.append(fileContents);
+	    	FileUtils.setContents(configFile, buffer.toString());
+	    } catch (Exception ex){
+	    	Logger.logException(PHPUIMessages.getString("LanguageSetting_change_locale_error"), ex);
+	    	return false;
+	    }
+	    
+	    return true;
+	}
+
