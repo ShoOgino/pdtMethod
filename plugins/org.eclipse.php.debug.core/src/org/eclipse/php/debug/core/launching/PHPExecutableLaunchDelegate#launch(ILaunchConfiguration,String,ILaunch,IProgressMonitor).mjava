@@ -41,6 +41,14 @@
 		//			return;
 		//		}
 
+		File phpIni = IniModifier.findPHPIni(phpExeString);
+		if(IniModifier.findPHPIni(phpExeString) != null) {
+			File tempIni = IniModifier.addIncludePath(phpIni, project);
+			if(tempIni != null) {
+				launch.setAttribute(IDebugParametersKeys.PHP_INI_LOCATION, tempIni.getAbsolutePath());
+			}
+		}
+		
 		if (mode.equals(ILaunchManager.DEBUG_MODE) || runWithDebugInfo == true) {
 			boolean stopAtFirstLine = false;
 			if (configuration.getAttribute(IDebugParametersKeys.OVERRIDE_FIRST_LINE_BREAKPOINT, false)) {
@@ -111,7 +119,15 @@
 			if (monitor.isCanceled())
 				return;
 
-			final String[] cmdLine = new String[] { phpExe.toOSString(), phpFile.toOSString() };
+			File workingDir = new File(phpExe.removeLastSegments(1).toString());
+			String phpConfigDir = workingDir.getAbsolutePath();
+
+			String phpIniLocation = launch.getAttribute(IDebugParametersKeys.PHP_INI_LOCATION);
+			if(phpIniLocation != null && !phpIniLocation.equals("")) {
+				phpConfigDir = phpIniLocation;
+			}
+
+			final String[] cmdLine = new String[] { phpExe.toOSString(), "-c", phpConfigDir, phpFile.toOSString() };
 
 			final Process p = DebugPlugin.exec(cmdLine, projectDir, envp);
 			IProcess process = null;
