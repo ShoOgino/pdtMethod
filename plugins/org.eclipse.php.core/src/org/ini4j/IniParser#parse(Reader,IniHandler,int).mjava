@@ -1,0 +1,63 @@
+	public void parse(final Reader input, final IniHandler handler, final int mode) throws IOException, InvalidIniFormatException {
+		final LineNumberReader reader = new LineNumberReader(input);
+
+		handler.startIni();
+
+		String sectionName = DEFAULT_SECTION_NAME;
+		handler.startSection(sectionName);
+
+		for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+			line = line.trim();
+
+			if (line.length() == 0 || COMMENTS.indexOf(line.charAt(0)) >= 0)
+				continue;
+
+			if (line.charAt(0) == SECTION_BEGIN) {
+				if (sectionName != null)
+					handler.endSection();
+
+				if (line.charAt(line.length() - 1) != SECTION_END)
+					parseError(line, reader.getLineNumber());
+
+				sectionName = line.substring(1, line.length() - 1).trim();
+				if ((mode & Ini.IGNORE_ESCAPE) == 0)
+					sectionName = unescape(sectionName);
+
+				if (sectionName.length() == 0)
+					parseError(line, reader.getLineNumber());
+
+				handler.startSection(sectionName);
+			} else {
+				if (sectionName == null)
+					parseError(line, reader.getLineNumber());
+
+				final int idx = line.indexOf(OPERATOR);
+
+				if (idx <= 0)
+					parseError(line, reader.getLineNumber());
+
+				String name = line.substring(0, idx);
+				if ((mode & Ini.IGNORE_ESCAPE) == 0)
+					name = unescape(name);
+				name = name.trim();
+
+				String value = line.substring(idx + 1);
+				if ((mode & Ini.IGNORE_ESCAPE) == 0)
+					value = unescape(value);
+				value = value.trim();
+				if ((mode & Ini.STRIP_QUOTES) > 0)
+					value = value.replaceAll("\"", ""); //$NON-NLS-1$ //$NON-NLS-2$
+
+				if (name.length() == 0)
+					parseError(line, reader.getLineNumber());
+
+				handler.handleOption(name, value);
+			}
+		}
+
+		if (sectionName != null)
+			handler.endSection();
+
+		handler.endIni();
+	}
+

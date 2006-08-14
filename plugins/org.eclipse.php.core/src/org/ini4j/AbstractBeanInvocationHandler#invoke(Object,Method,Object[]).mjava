@@ -1,0 +1,41 @@
+	public Object invoke(final Object proxy, final Method method, final Object[] args) throws PropertyVetoException {
+		Object ret = null;
+		final String name = method.getName();
+		String property;
+
+		synchronized (this) {
+			if (_proxy == null)
+				_proxy = proxy;
+		}
+
+		if (name.startsWith(READ_PREFIX)) {
+			property = Introspector.decapitalize(name.substring(READ_PREFIX_LEN));
+			ret = getProperty(property, method.getReturnType());
+		} else if (name.startsWith(READ_BOOLEAN_PREFIX)) {
+			property = Introspector.decapitalize(name.substring(READ_BOOLEAN_PREFIX_LEN));
+			ret = getProperty(property, method.getReturnType());
+		} else if (name.startsWith(WRITE_PREFIX)) {
+			property = Introspector.decapitalize(name.substring(WRITE_PREFIX_LEN));
+			setProperty(property, args[0], method.getParameterTypes()[0]);
+		} else if (name.startsWith(ADD_PREFIX)) {
+			final String listener = name.substring(ADD_PREFIX_LEN);
+
+			if (listener.equals(PROPERTY_CHANGE_LISTENER))
+				addPropertyChangeListener((String) args[0], (PropertyChangeListener) args[1]);
+			else if (listener.equals(VETOABLE_CHANGE_LISTENER))
+				addVetoableChangeListener((String) args[0], (VetoableChangeListener) args[1]);
+		} else if (name.startsWith(REMOVE_PREFIX)) {
+			final String listener = name.substring(REMOVE_PREFIX_LEN);
+
+			if (listener.equals(PROPERTY_CHANGE_LISTENER))
+				removePropertyChangeListener((String) args[0], (PropertyChangeListener) args[1]);
+			else if (listener.equals(VETOABLE_CHANGE_LISTENER))
+				removeVetoableChangeListener((String) args[0], (VetoableChangeListener) args[1]);
+		} else if (name.startsWith(HAS_PREFIX)) {
+			property = Introspector.decapitalize(name.substring(HAS_PREFIX_LEN));
+			ret = Boolean.valueOf(hasProperty(property));
+		}
+
+		return ret;
+	}
+
