@@ -1,0 +1,39 @@
+	static IPath[] projectGetIncludePaths(final IProject project) {
+		final PHPProjectOptions options = PHPProjectOptions.forProject(project);
+		final IIncludePathEntry[] entries = options.readRawIncludePath();
+		final List paths = new /*<IPath>*/ArrayList(entries.length);
+		for (int i = 0; i < entries.length; ++i) {
+			final IPath path = entries[i].getPath();
+			if (entries[i].getEntryKind() == IIncludePathEntry.IPE_LIBRARY) {
+				if (entries[i].getContentKind() == IIncludePathEntry.K_BINARY) {
+					// not implemented
+				} else
+					paths.add(path);
+			} else if (entries[i].getEntryKind() == IIncludePathEntry.IPE_PROJECT) {
+				final IResource includeResource = entries[i].getResource();
+				if (includeResource instanceof IProject)
+					paths.add(includeResource.getLocation());
+			} else if (entries[i].getEntryKind() == IIncludePathEntry.IPE_VARIABLE) {
+				String variableName = path.toString();
+				final int index = variableName.indexOf('/');
+				String extension = ""; //$NON-NLS-1$
+				if (index != -1) {
+					if (index + 1 < variableName.length())
+						extension = variableName.substring(index + 1);
+					variableName = variableName.substring(0, index);
+				}
+				if (extension != "") {
+
+				}
+				IPath includePath = PHPProjectOptions.getIncludePathVariable(variableName);
+				includePath = includePath.append(extension);
+				extension = includePath.getFileExtension();
+				if (extension != null && extension.equalsIgnoreCase("zip")) {
+					// not implemented
+				} else
+					paths.add(includePath);
+			}
+		}
+		return (IPath[]) paths.toArray(new IPath[paths.size()]);
+	}
+
