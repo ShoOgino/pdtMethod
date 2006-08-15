@@ -12,52 +12,53 @@
 		if (type.equals(IHTMLPartitions.HTML_DEFAULT)) {
 			super.validate(dirtyRegion, helper, reporter);
 			return;
-		} else if (!type.equals(PHPPartitionTypes.PHP_DEFAULT) && !type.equals(PHPPartitionTypes.PHP_QUOTED_STRING)) {
+		} else if (!isPHPPartition(type)) {
 			return;
 		}
 
-        IStructuredModel structuredModel = null;
-        try {
-    		structuredModel = StructuredModelManager.getModelManager().getExistingModelForRead(fDocument);
-    		if (structuredModel == null) {
-    			return; // error
-    		}
-    		PHPEditorModel model = (PHPEditorModel) structuredModel;
-    
-    		//@GINO: Updata the FileData because the content has changed
-    		//this might not be the best way to do this
-    		if (!PHPEditorModel.FREQUENT_MODEL_UPDATE)
-    			model.updateFileData();
-    
-    		PHPFileData fileData = model.getFileData();
-    		if (fileData == null) {
-    			return;
-    		}
-    
-    		reporter.removeAllMessages(this);
-    		IPHPMarker[] markers = fileData.getMarkers();
-    
-    		if (markers == null) {
-    			return;
-    		}
-    		for (int i = 0; markers.length > i; i++) {
-    			IPHPMarker marker = markers[i];
-    			if(marker.getType().equals(IPHPMarker.TASK)){
-    				continue;
-    			}
-    			String descr = marker.getDescription();
-    			LocalizedMessage mess = new LocalizedMessage(IMessage.HIGH_SEVERITY, descr);
-    			UserData userData = marker.getUserData();
-    			
-    			final int startPosition = userData.getStartPosition();
-    			final int length = userData.getEndPosition() - startPosition;
+		IStructuredModel structuredModel = null;
+		try {
+			structuredModel = StructuredModelManager.getModelManager().getExistingModelForRead(fDocument);
+			if (structuredModel == null) {
+				return; // error
+			}
+			PHPEditorModel model = (PHPEditorModel) structuredModel;
 
-    			mess.setOffset(startPosition);
+			//@GINO: Updata the FileData because the content has changed
+			//this might not be the best way to do this
+			if (!PHPEditorModel.FREQUENT_MODEL_UPDATE)
+				model.updateFileData();
+
+			PHPFileData fileData = model.getFileData();
+			if (fileData == null) {
+				return;
+			}
+
+			reporter.removeAllMessages(this);
+			IPHPMarker[] markers = fileData.getMarkers();
+
+			if (markers == null) {
+				return;
+			}
+			for (int i = 0; markers.length > i; i++) {
+				IPHPMarker marker = markers[i];
+				if (marker.getType().equals(IPHPMarker.TASK)) {
+					continue;
+				}
+				String descr = marker.getDescription();
+				LocalizedMessage mess = new LocalizedMessage(IMessage.HIGH_SEVERITY, descr);
+				UserData userData = marker.getUserData();
+
+				final int startPosition = userData.getStartPosition();
+				final int length = userData.getEndPosition() - startPosition;
+
+				mess.setOffset(startPosition);
 				mess.setLength(length);
-    			reporter.addMessage(this, mess);
-    		}
+				reporter.addMessage(this, mess);
+			}
 		} finally {
-			if (structuredModel != null)structuredModel.releaseFromRead();
+			if (structuredModel != null)
+				structuredModel.releaseFromRead();
 		}
 
 	}
