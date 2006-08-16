@@ -1,18 +1,16 @@
-	boolean shouldIndent(IStructuredDocument document, int offset, int lineNumber) {
+	boolean shouldIndent(final IStructuredDocument document, final int offset, final int lineNumber) {
 		try {
-			IRegion lineInfo = document.getLineInformation(lineNumber);
-			int lastTokenOffset = getLastTokenOffset(document, lineInfo, offset);
-			if (lastTokenOffset == -1) {
+			final IRegion lineInfo = document.getLineInformation(lineNumber);
+			final int lastTokenOffset = getLastTokenOffset(document, lineInfo, offset);
+			if (lastTokenOffset == -1)
 				return false;
-			}
-			
-			IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(lastTokenOffset);
+
+			final IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(lastTokenOffset);
 			ITextRegion token = sdRegion.getRegionAtCharacterOffset(lastTokenOffset);
 			String tokenType = token.getType();
-			
-			if (tokenType == PHPRegionTypes.PHP_CURLY_OPEN) {
+
+			if (tokenType == PHPRegionTypes.PHP_CURLY_OPEN)
 				return true;
-			}
 
 			if (tokenType == PHPRegionTypes.PHP_TOKEN && document.getChar(sdRegion.getStartOffset() + token.getStart()) == ':') {
 				//checking if the line starts with "case" or "default"
@@ -20,14 +18,13 @@
 				while (currentOffset >= lineInfo.getOffset()) {
 					token = sdRegion.getRegionAtCharacterOffset(currentOffset);
 					tokenType = token.getType();
-					if ((tokenType == PHPRegionTypes.PHP_CASE) || (tokenType == PHPRegionTypes.PHP_DEFAULT)) {
+					if (tokenType == PHPRegionTypes.PHP_CASE || tokenType == PHPRegionTypes.PHP_DEFAULT)
 						return true;
-					}
 					currentOffset = sdRegion.getStartOffset() + token.getStart() - 1;
 				}
 
 			}
-		} catch (BadLocationException e) {
+		} catch (final BadLocationException e) {
 		}
 		return false;
 	}

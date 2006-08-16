@@ -1,27 +1,24 @@
-	private boolean isIndentationBase(IStructuredDocument document, int checkedOffset, int forOffset) throws BadLocationException {
-		IRegion lineInfo = document.getLineInformationOfOffset(checkedOffset);
+	private boolean isIndentationBase(final IStructuredDocument document, final int checkedOffset, final int forOffset) throws BadLocationException {
+		final IRegion lineInfo = document.getLineInformationOfOffset(checkedOffset);
 		int lineStart = lineInfo.getOffset();
 
-		if (isBlanks(document, lineStart, checkedOffset, forOffset)) {
+		if (isBlanks(document, lineStart, checkedOffset, forOffset))
 			return false;
-		}
 
 		//need to get to the first tRegion - so that we wont get the state of the 
 		//tRegion in the previos line
-		while (Character.isWhitespace(document.getChar(lineStart))) {
+		while (Character.isWhitespace(document.getChar(lineStart)))
 			lineStart++;
-		}
 
-		String checkedLineBeginState = FormatterUtils.getPartitionType(document, lineStart);
+		final String checkedLineBeginState = FormatterUtils.getPartitionType(document, lineStart, true);
 
-		String checkedLineEndState = FormatterUtils.getPartitionType(document, checkedOffset);
+		final String checkedLineEndState = FormatterUtils.getPartitionType(document, checkedOffset, true);
 
-		String forLineEndState = FormatterUtils.getPartitionType(document, forOffset);
+		final String forLineEndState = FormatterUtils.getPartitionType(document, forOffset);
 
-		if (shouldNotConsiderAsIndentationBase(checkedLineBeginState, forLineEndState)) {
+		if (shouldNotConsiderAsIndentationBase(checkedLineBeginState, forLineEndState))
 			return false;
-		}
 
-		return (lineShouldInedent(checkedLineBeginState, checkedLineEndState) || (forLineEndState == checkedLineBeginState));
+		return lineShouldInedent(checkedLineBeginState, checkedLineEndState) || forLineEndState == checkedLineBeginState;
 	}
 
