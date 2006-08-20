@@ -1,34 +1,31 @@
-	private static ZipEntryStorageEditorInput createZipEntryStorageEditorInput(ZipFile zipFile, PHPCodeData element, IProject project) {
+	private static ZipEntryStorageEditorInput createZipEntryStorageEditorInput(final ZipFile zipFile, final PHPCodeData element, final IProject project) {
 		ZipInputStream is = null;
 		ZipEntry ze = null;
 
 		try {
-			File f = new File(zipFile.getName());
+			final File f = new File(zipFile.getName());
 			is = new ZipInputStream(new FileInputStream(f));
 			ze = is.getNextEntry();
 			PHPFileData fileData = null;
-			if (element instanceof PHPFileData) {
+			if (element instanceof PHPFileData)
 				fileData = (PHPFileData) element;
-			} else {
-				fileData = PHPModelUtil.getPHPFileContainer((PHPCodeData) element);
-			}
+			else
+				fileData = PHPModelUtil.getPHPFileContainer(element);
 			String phpFileName = fileData.getName();
 			phpFileName = phpFileName.substring(phpFileName.indexOf(File.separatorChar) + 1); // removing the name of the zip file from the file name
 
-			while (ze != null && !ze.getName().equals(phpFileName)) {
+			while (ze != null && !ze.getName().equals(phpFileName))
 				ze = is.getNextEntry();
-			}
-			if (ze == null) {
+			if (ze == null)
 				return null;
-			}
 
-			ZipEntryStorage zipEntryStorage = new ZipEntryStorage(zipFile, ze);
+			final ZipEntryStorage zipEntryStorage = new ZipEntryStorage(zipFile, ze);
 			zipEntryStorage.setProject(project);
 			return new ZipEntryStorageEditorInput(zipEntryStorage);
-		} catch (FileNotFoundException e) {
+		} catch (final FileNotFoundException e) {
 			Logger.logException(e);
 			return null;
-		} catch (IOException io) {
+		} catch (final IOException io) {
 			Logger.logException(io);
 			return null;
 		}

@@ -1,41 +1,36 @@
 	/**
 	 * Opens a PHP editor for file and line number
 	 * 
-	 * @param file name
-	 * @param line number
 	 * @throws CoreException 
 	 */
-	public static IEditorPart openInEditor(String fileName, int lineNumber) throws CoreException {
+	public static IEditorPart openInEditor(final String fileName, final int lineNumber) throws CoreException {
 
-		IWorkspace workspace = ResourcesPlugin.getWorkspace();
-		IWorkspaceRoot root = workspace.getRoot();
+		final IWorkspace workspace = ResourcesPlugin.getWorkspace();
+		final IWorkspaceRoot root = workspace.getRoot();
 
 		IFile file = root.getFileForLocation(new Path(fileName));
 		if (file == null) {
-			IProject[] projects = root.getProjects();
+			final IProject[] projects = root.getProjects();
 			for (int i = 0; i < projects.length; ++i) {
 				if (!projects[i].isOpen())
 					continue;
 				file = projects[i].getFile(fileName);
-				if (file != null) {
+				if (file != null)
 					break;
-				}
 			}
 		}
 
-		if (file == null) {
+		if (file == null)
 			return null;
-		}
 
-		IMarker marker = file.createMarker(IMarker.TEXT);
+		final IMarker marker = file.createMarker(IMarker.TEXT);
 		marker.setAttribute(IMarker.LINE_NUMBER, lineNumber);
 		//marker.setAttribute(IDE.EDITOR_ID_ATTR, PHPUiConstants.PHP_EDITOR_ID);
-		IWorkbenchPage p = PHPUiPlugin.getActivePage();
+		final IWorkbenchPage p = PHPUiPlugin.getActivePage();
 
 		IEditorPart editor = null;
-		if (p != null) {
+		if (p != null)
 			editor = IDE.openEditor(p, marker);
-		}
 		marker.delete();
 		return editor;
 	}

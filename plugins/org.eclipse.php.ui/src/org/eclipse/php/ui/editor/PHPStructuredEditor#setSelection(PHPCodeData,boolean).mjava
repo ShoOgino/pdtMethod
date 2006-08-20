@@ -1,25 +1,24 @@
-	public void setSelection(PHPCodeData element, boolean reveal) {
+	public void setSelection(final PHPCodeData element, boolean reveal) {
 		if (element != null) {
-			UserData userData = element.getUserData();
+			final UserData userData = element.getUserData();
 			int start = userData.getStartPosition();
 			int length = userData.getEndPosition() - userData.getStartPosition() + 1;
 
-			IDocument document = getSourceViewer().getDocument();
+			final IDocument document = getSourceViewer().getDocument();
 			if (document instanceof IStructuredDocument) {
-				IStructuredDocument sDocument = (IStructuredDocument) document;
-				IStructuredDocumentRegion sdRegion = sDocument.getRegionAtCharacterOffset(start);
+				final IStructuredDocument sDocument = (IStructuredDocument) document;
+				final IStructuredDocumentRegion sdRegion = sDocument.getRegionAtCharacterOffset(start);
 				if (sdRegion != null) {
 					// Need it in case the php document doesn't start at the first
 					// line of the page
-					int sdRegionStart = sdRegion.getStartOffset();
+					final int sdRegionStart = sdRegion.getStartOffset();
 
 					ITextRegion region = sdRegion.getRegionAtCharacterOffset(start);
 					String elementName = element.getName();
-					if (element instanceof PHPVariableData) {
+					if (element instanceof PHPVariableData)
 						elementName = "$" + elementName; //$NON-NLS-1$
-					}
-					while (region != null && (region.getEnd() + sdRegionStart) < start + length) {
-						String text = sdRegion.getText(region).trim();
+					while (region != null && region.getEnd() + sdRegionStart < start + length) {
+						final String text = sdRegion.getText(region).trim().replaceAll("[\"']+", "");
 						if (elementName.equals(text)) {
 							start = region.getStart() + sdRegionStart;
 							length = region.getTextLength();

@@ -6,9 +6,9 @@
 		 * @return <code>true</code> if successful, <code>false</code> otherwise
 		 * @since 3.2
 		 */
-		private boolean makeAnnotationHoverFocusable(ISourceViewer sourceViewer, IAnnotationHover annotationHover) {
-			IVerticalRulerInfo info = getVerticalRuler();
-			int line = info.getLineOfLastMouseButtonActivity();
+		private boolean makeAnnotationHoverFocusable(final ISourceViewer sourceViewer, final IAnnotationHover annotationHover) {
+			final IVerticalRulerInfo info = getVerticalRuler();
+			final int line = info.getLineOfLastMouseButtonActivity();
 			if (line == -1)
 				return false;
 
@@ -17,20 +17,19 @@
 				// compute the hover information
 				Object hoverInfo;
 				if (annotationHover instanceof IAnnotationHoverExtension) {
-					IAnnotationHoverExtension extension = (IAnnotationHoverExtension) annotationHover;
-					ILineRange hoverLineRange = extension.getHoverLineRange(sourceViewer, line);
+					final IAnnotationHoverExtension extension = (IAnnotationHoverExtension) annotationHover;
+					final ILineRange hoverLineRange = extension.getHoverLineRange(sourceViewer, line);
 					if (hoverLineRange == null)
 						return false;
 					final int maxVisibleLines = Integer.MAX_VALUE; // allow any number of lines being displayed, as we support scrolling
 					hoverInfo = extension.getHoverInfo(sourceViewer, hoverLineRange, maxVisibleLines);
-				} else {
+				} else
 					hoverInfo = annotationHover.getHoverInfo(sourceViewer, line);
-				}
 
 				// hover region: the beginning of the concerned line to place the control right over the line
-				IDocument document = sourceViewer.getDocument();
-				int offset = document.getLineOffset(line);
-				String contentType = TextUtilities.getContentType(document, PHPPartitionTypes.PHP_DOC, offset, true);
+				final IDocument document = sourceViewer.getDocument();
+				final int offset = document.getLineOffset(line);
+				final String contentType = TextUtilities.getContentType(document, PHPPartitionTypes.PHP_DOC, offset, true);
 
 				IInformationControlCreator controlCreator = null;
 
@@ -38,23 +37,20 @@
 				 * XXX: This is a hack to avoid API changes at the end of 3.2,
 				 * and should be fixed for 3.3, see: https://bugs.eclipse.org/bugs/show_bug.cgi?id=137967
 				 */
-				if ("org.eclipse.jface.text.source.projection.ProjectionAnnotationHover".equals(annotationHover.getClass().getName())) { //$NON-NLS-1$
+				if ("org.eclipse.jface.text.source.projection.ProjectionAnnotationHover".equals(annotationHover.getClass().getName()))
 					controlCreator = new IInformationControlCreator() {
-						public IInformationControl createInformationControl(Shell shell) {
-							int shellStyle = SWT.RESIZE | SWT.TOOL | getOrientation();
-							int style = SWT.V_SCROLL | SWT.H_SCROLL;
+						public IInformationControl createInformationControl(final Shell shell) {
+							final int shellStyle = SWT.RESIZE | SWT.TOOL | getOrientation();
+							final int style = SWT.V_SCROLL | SWT.H_SCROLL;
 							return new SourceViewerInformationControl(shell, shellStyle, style);
 						}
 					};
+				else if (annotationHover instanceof IInformationProviderExtension2)
+					controlCreator = ((IInformationProviderExtension2) annotationHover).getInformationPresenterControlCreator();
+				else if (annotationHover instanceof IAnnotationHoverExtension)
+					controlCreator = ((IAnnotationHoverExtension) annotationHover).getHoverControlCreator();
 
-				} else {
-					if (annotationHover instanceof IInformationProviderExtension2)
-						controlCreator = ((IInformationProviderExtension2) annotationHover).getInformationPresenterControlCreator();
-					else if (annotationHover instanceof IAnnotationHoverExtension)
-						controlCreator = ((IAnnotationHoverExtension) annotationHover).getHoverControlCreator();
-				}
-
-				IInformationProvider informationProvider = new InformationProvider(new Region(offset, 0), hoverInfo, controlCreator);
+				final IInformationProvider informationProvider = new InformationProvider(new Region(offset, 0), hoverInfo, controlCreator);
 
 				fInformationPresenter.setOffset(offset);
 				fInformationPresenter.setAnchor(AbstractInformationControlManager.ANCHOR_RIGHT);
@@ -64,7 +60,7 @@
 
 				return true;
 
-			} catch (BadLocationException e) {
+			} catch (final BadLocationException e) {
 				return false;
 			}
 		}

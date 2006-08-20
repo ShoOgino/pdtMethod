@@ -6,26 +6,25 @@
 		 * @return <code>true</code> if successful, <code>false</code> otherwise
 		 * @since 3.2
 		 */
-		private boolean makeTextHoverFocusable(ISourceViewer sourceViewer, ITextHover textHover) {
-			Point hoverEventLocation = ((ITextViewerExtension2) sourceViewer).getHoverEventLocation();
-			int offset = computeOffsetAtLocation(sourceViewer, hoverEventLocation.x, hoverEventLocation.y);
+		private boolean makeTextHoverFocusable(final ISourceViewer sourceViewer, final ITextHover textHover) {
+			final Point hoverEventLocation = ((ITextViewerExtension2) sourceViewer).getHoverEventLocation();
+			final int offset = computeOffsetAtLocation(sourceViewer, hoverEventLocation.x, hoverEventLocation.y);
 			if (offset == -1)
 				return false;
 
 			try {
-				IRegion hoverRegion = textHover.getHoverRegion(sourceViewer, offset);
+				final IRegion hoverRegion = textHover.getHoverRegion(sourceViewer, offset);
 				if (hoverRegion == null)
 					return false;
 
 				String hoverInfo = textHover.getHoverInfo(sourceViewer, hoverRegion);
 
 				if (textHover instanceof IPHPTextHover) {
-					IHoverMessageDecorators decorator = ((IPHPTextHover) textHover).getMessageDecorator();
+					final IHoverMessageDecorators decorator = ((IPHPTextHover) textHover).getMessageDecorator();
 					if (decorator != null) {
-						String decoratedMessage = decorator.getDecoratedMessage(hoverInfo);
-						if (decoratedMessage != null && decoratedMessage.length() > 0) {
+						final String decoratedMessage = decorator.getDecoratedMessage(hoverInfo);
+						if (decoratedMessage != null && decoratedMessage.length() > 0)
 							hoverInfo = decoratedMessage;
-						}
 					}
 				}
 
@@ -33,18 +32,18 @@
 				if (textHover instanceof IInformationProviderExtension2)
 					controlCreator = ((IInformationProviderExtension2) textHover).getInformationPresenterControlCreator();
 
-				IInformationProvider informationProvider = new InformationProvider(hoverRegion, hoverInfo, controlCreator);
+				final IInformationProvider informationProvider = new InformationProvider(hoverRegion, hoverInfo, controlCreator);
 
 				fInformationPresenter.setOffset(offset);
 				fInformationPresenter.setAnchor(AbstractInformationControlManager.ANCHOR_BOTTOM);
 				fInformationPresenter.setMargins(6, 6); // default values from AbstractInformationControlManager
-				String contentType = TextUtilities.getContentType(sourceViewer.getDocument(), PHPPartitionTypes.PHP_DOC, offset, true);
+				final String contentType = TextUtilities.getContentType(sourceViewer.getDocument(), PHPPartitionTypes.PHP_DOC, offset, true);
 				fInformationPresenter.setInformationProvider(informationProvider, contentType);
 				fInformationPresenter.showInformation();
 
 				return true;
 
-			} catch (BadLocationException e) {
+			} catch (final BadLocationException e) {
 				return false;
 			}
 		}

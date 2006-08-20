@@ -1,17 +1,32 @@
 	private void postRefresh(final Object root, final boolean updateLabels) {
-		Runnable runnable = new Runnable() {
+		final Runnable runnable = new Runnable() {
 			public void run() {
 				Control ctrl = fViewer.getControl();
 				if (ctrl != null && !ctrl.isDisposed()) {
+					IResource res = PHPModelUtil.getResource(root);
+					PHPProjectModel model = null;
+					if (res != null)
+						model = PHPWorkspaceModelManager.getInstance().getModelForProject(res.getProject());
+					OutlineNode outlineNode;
 					for (int i = 0; i < groupNodes.length; i++) {
-						if (groupNodes[i] instanceof OutlineNode) {
-							OutlineNode outlineNode = (OutlineNode) groupNodes[i];
-							outlineNode.resetChildren();
-						}
-						fViewer.refresh(updateLabels);
+						outlineNode = groupNodes[i];
+						if (model != outlineNode.getModel())
+							outlineNode.setModel(model);
+						outlineNode.resetChildren();
 
+						//						ISelection selection = fViewer.getSelection();
+
+						// bug workaround
+						//						fViewer.getTree().setRedraw(false);
+						//						fViewer.getTree().setRedraw(true);
+
+						fViewer.refresh(groupNodes[i], updateLabels);
+						//						fViewer.setSelection(selection);
 					}
 				}
+				//				fViewer.getTree().setRedraw(false);
+				//				fViewer.getTree().setRedraw(true);
+				fViewer.refresh(updateLabels);
 			}
 		};
 		fViewer.getControl().getDisplay().asyncExec(runnable);
