@@ -1,9 +1,12 @@
 	public void createPartControl(final Composite parent) {
 		fViewer = createViewer(parent);
+		fSelectionListener.setViewer(getViewer());
+		fSelectionListener.setResetEmptySelection(true);
 		setProviders();
 		fViewer.setUseHashlookup(true);
 
 		setUpPopupMenu();
+		initLinkingEnabled();
 		actionGroup = createActionGroup();
 
 		fViewer.addPostSelectionChangedListener(fPostSelectionListener);
@@ -18,7 +21,6 @@
 
 		final IStatusLineManager slManager = getViewSite().getActionBars().getStatusLineManager();
 		fViewer.addSelectionChangedListener(new StatusBarUpdater(slManager));
-
 		updateTitle();
 
 		final IEditorPart editorPart = getViewSite().getPage().getActiveEditor();
@@ -27,15 +29,10 @@
 		openEditorAction = new OpenAction(getSite());
 		fillActionBars();
 
-		if (isLinkingEnabled()) {
-			final IEditorPart editor = getViewSite().getPage().getActiveEditor();
-			if (editor != null)
-				editorActivated(editor);
-		}
+		// refresh linking:
+		setLinkingEnabled(isLinkingEnabled());
+
 		fViewer.refresh();
-
-		getSite().getPage().addPostSelectionListener(fSelectionListener);
-
 		PHPWorkspaceModelManager.getInstance().addModelListener(fContentProvider);
 
 	}

@@ -1,29 +1,29 @@
-	private boolean processResourceDelta(IResourceDelta delta, Object parent) {
-		int status = delta.getKind();
-		int flags = delta.getFlags();
+	private boolean processResourceDelta(final IResourceDelta delta, final Object parent) {
+		final int status = delta.getKind();
+		final int flags = delta.getFlags();
 
-		IResource resource = delta.getResource();
+		final IResource resource = delta.getResource();
 		// filter out changes affecting the output folder
 		if (resource == null)
 			return false;
 
 		// this could be optimized by handling all the added children in the parent
 		if ((status & IResourceDelta.REMOVED) != 0) {
-//			look for explenation in the add section
-//			if (parent instanceof IFolder) {
-//				// refresh one level above to deal with empty folder filtering properly
-//				postRefresh(internalGetParent(parent));
-//				return true;
-//			} else {
-				Object removeItem = resource;
-				if (resource instanceof IFile) {
-					PHPFileData fileData = PHPModelUtil.getPHPFile((IFile) resource);
-					if (fileData != null)
-						removeItem = fileData;
-				}
+			//			look for explenation in the add section
+			//			if (parent instanceof IFolder) {
+			//				// refresh one level above to deal with empty folder filtering properly
+			//				postRefresh(internalGetParent(parent));
+			//				return true;
+			//			} else {
+			Object removeItem = resource;
+			if (resource instanceof IFile) {
+				final PHPFileData fileData = PHPModelUtil.getPHPFile((IFile) resource);
+				if (fileData != null)
+					removeItem = fileData;
+			}
 
-				postRemove(parent, removeItem);
-//			}
+			postRemove(parent, removeItem);
+			//			}
 		}
 		if ((status & IResourceDelta.ADDED) != 0) {
 			//The following commented lines are a workaround for bug #145969 - since this code is used to support a filter we do not support
@@ -37,11 +37,10 @@
 			// if adding file, convert to php element
 			if (resource instanceof IFile && PHPModelUtil.isPhpFile((IFile) resource)) {
 				PHPFileData fileData = PHPWorkspaceModelManager.getInstance().getModelForFile((IFile) resource, false);
-				if (fileData == null) {
+				if (fileData == null)
 					fileData = PHPCodeDataFactory.createPHPFileData(((IFile) resource).getFullPath().toString(), PHPCodeDataFactory.createUserData(((IFile) resource).getFullPath().toString(), 0, 0, 0, 0), PHPCodeDataFactory.EMPTY_CLASS_DATA_ARRAY, PHPCodeDataFactory.EMPTY_FUNCTIONS_DATA_ARRAY,
 						VariableContextBuilder.createPHPVariablesTypeManager(new HashMap(), new HashMap()), PHPCodeDataFactory.EMPTY_INCLUDE_DATA_ARRAY, PHPCodeDataFactory.EMPTY_CONSTANT_DATA_ARRAY, PHPCodeDataFactory.EMPTY_MARKERS_DATA_ARRAY, PHPCodeDataFactory.EMPTY_PHP_BLOCK_ARRAY,
 						new PHPDocBlockImp("", "", new PHPDocTag[0], 0), System.currentTimeMillis());
-				}
 				if (fileData != null)
 					addItem = fileData;
 			}

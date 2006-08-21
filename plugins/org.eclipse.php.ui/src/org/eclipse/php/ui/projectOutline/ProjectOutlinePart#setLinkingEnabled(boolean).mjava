@@ -1,11 +1,20 @@
 	public void setLinkingEnabled(final boolean enabled) {
 		fLinkingEnabled = enabled;
-		PreferenceConstants.getPreferenceStore().setValue(PreferenceConstants.LINK_EXPLORER_TO_EDITOR, enabled);
+		PreferenceConstants.getPreferenceStore().setValue(PreferenceConstants.LINK_BROWSING_PROJECTS_TO_EDITOR, enabled);
+
+		final IWorkbenchPartSite site = getSite();
+		if (site == null)
+			return;
+		final IWorkbenchPage page = site.getPage();
+		if (page == null)
+			return;
 
 		if (enabled) {
-			final IEditorPart editor = getSite().getPage().getActiveEditor();
+			page.addPostSelectionListener(fSelectionListener);
+			final IEditorPart editor = page.getActiveEditor();
 			if (editor != null)
 				editorActivated(editor);
-		}
+		} else
+			page.removePostSelectionListener(fSelectionListener);
 	}
 
