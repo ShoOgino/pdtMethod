@@ -1,48 +1,43 @@
 	private void loadExtensions() {
-		IExtensionRegistry registry = Platform.getExtensionRegistry();
-		IConfigurationElement[] elements = registry.getConfigurationElementsFor(PHPDebugPlugin.getID(), EXTENSION_POINT_NAME);
+		final IExtensionRegistry registry = Platform.getExtensionRegistry();
+		final IConfigurationElement[] elements = registry.getConfigurationElementsFor(PHPDebugPlugin.getID(), EXTENSION_POINT_NAME);
 
 		boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows"); //$NON-NLS-1$ //$NON-NLS-2$
 
 		for (int i = 0; i < elements.length; i++) {
 			final IConfigurationElement element = elements[i];
 			if (PHPEXE_TAG.equals(element.getName())) {
-				String name = element.getAttribute(NAME_ATTRIBUTE);
+				final String name = element.getAttribute(NAME_ATTRIBUTE);
 				String location = element.getAttribute(LOCATION_ATTRIBUTE);
-				String version = element.getAttribute(VERSION_ATTRIBUTE);
-				boolean isDefault = "true".equalsIgnoreCase(element.getAttribute(DEFAULT_ATTRIBUTE));
-				
-				if(isWindows) {
-					location = location + ".exe"; //$NON-NLS-1$
-				}
+				final String version = element.getAttribute(VERSION_ATTRIBUTE);
+				final boolean isDefault = "true".equalsIgnoreCase(element.getAttribute(DEFAULT_ATTRIBUTE));
 
-				String pluginId = element.getDeclaringExtension().getNamespaceIdentifier();
+				if (isWindows)
+					location = location + ".exe"; //$NON-NLS-1$
+
+				final String pluginId = element.getDeclaringExtension().getNamespaceIdentifier();
 				URL url = FileLocator.find(Platform.getBundle(pluginId), new Path(location), new HashMap());
 				boolean itemFound = false;
-				if (url != null) {
+				if (url != null)
 					try {
 						url = FileLocator.resolve(url);
-						String filename = url.getFile();
-						File file = new File(filename);
+						final String filename = url.getFile();
+						final File file = new File(filename);
 						if (file.exists()) {
-							PHPexeItem newItem = new PHPexeItem(name, file, false);
+							final PHPexeItem newItem = new PHPexeItem(name, file, false);
 							newItem.setVersion(version);
 							items.put(name, newItem);
-							if (isDefault) {
+							if (isDefault)
 								defaultItem = newItem;
-							}
 							itemFound = true;
-							if (!isWindows) {
+							if (!isWindows)
 								// Try to setup permissions of this file:
 								UnixChmodUtil.chmod(filename, UnixChmodUtil.S_IRWXU | UnixChmodUtil.S_IRGRP | UnixChmodUtil.S_IXGRP | UnixChmodUtil.S_IROTH | UnixChmodUtil.S_IXOTH);
-							}
 						}
-					} catch (IOException e) {
+					} catch (final IOException e) {
 					}
-				}
-				if (!itemFound) {
+				if (!itemFound)
 					PHPDebugPlugin.getDefault().getLog().log(new Status(1, PHPDebugPlugin.getID(), 1001, "PHP executable " + location + " not found neither in plugin " + pluginId + " nor in fragments attached to it", null));
-				}
 			}
 		}
 	}
