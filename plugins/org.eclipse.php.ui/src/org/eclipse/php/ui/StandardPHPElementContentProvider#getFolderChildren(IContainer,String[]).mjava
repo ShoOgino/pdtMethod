@@ -1,35 +1,41 @@
-	protected Object[] getFolderChildren(final IContainer folder, final String[] filterNames) {
+	protected Object[] getFolderChildren(IContainer folder, String[] filterNames) {
 		try {
-			final IResource[] members = folder.members();
-			final IProject project = folder.getProject();
+			IResource[] members = folder.members();
+			IProject project = folder.getProject();
+			PHPProjectModel projectModel = PHPWorkspaceModelManager.getInstance().getModelForProject(project);
+			if (projectModel == null)
+				return members;
 			if (!project.exists())
 				return members;
-			final ArrayList folderList = new ArrayList();
-			final ArrayList fileList = new ArrayList();
+			ArrayList folderList = new ArrayList();
+			ArrayList fileList = new ArrayList();
 			for (int i = 0; i < members.length; i++) {
-				final IResource member = members[i];
+				IResource member = members[i];
 				//				PHPFileData fileData = null;
 				boolean filterOut = false;
 				if (filterNames != null)
-					for (int j = 0; j < filterNames.length; j++)
+					for (int j = 0; j < filterNames.length; j++) {
 						if (filterNames[j].equals(member.getName())) {
 							filterOut = true;
 							break;
 						}
+					}
 				if (filterOut)
 					continue;
-				if (member instanceof IFolder)
+				if (member instanceof IFolder) {
 					folderList.add(member);
-				else if (member instanceof IFile)
+				} else {
+					if (member instanceof IFile)
 					//						fileData = projectModel.getFileData(member.getFullPath().toString());
 					//					if (fileData != null)
 					//						fileList.add(fileData);
 					//					else
 					fileList.add(members[i]);
+				}
 			}
 			folderList.addAll(fileList);
 			return folderList.toArray();
-		} catch (final CoreException e) {
+		} catch (CoreException e) {
 			return NO_CHILDREN;
 		}
 	}
