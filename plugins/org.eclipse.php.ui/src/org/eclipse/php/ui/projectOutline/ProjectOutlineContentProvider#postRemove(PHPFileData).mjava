@@ -1,0 +1,35 @@
+	private void postRemove(final PHPFileData fileData) {
+		if (fViewer == null || fViewer.getControl() == null)
+			return;
+
+		Runnable runnable = new Runnable() {
+			public void run() {
+				if (fViewer == null)
+					return;
+
+				Control control = fViewer.getControl();
+				if (control == null || control.isDisposed())
+					return;
+
+				IResource res = PHPModelUtil.getResource(fileData);
+				if (res == null)
+					return;
+
+				if (res.getProject() != fStoredProject)
+					return;
+
+				PHPProjectModel model = PHPWorkspaceModelManager.getInstance().getModelForProject(res.getProject());
+				OutlineNode outlineNode;
+				Object[] toUpdate;
+				for (int i = 0; i < groupNodes.length; i++) {
+					outlineNode = groupNodes[i];
+					if (model != outlineNode.getModel())
+						outlineNode.setModel(model);
+					toUpdate = outlineNode.removeChildren(fileData);
+					fViewer.remove(outlineNode, toUpdate);
+				}
+			}
+		};
+		fViewer.getControl().getDisplay().asyncExec(runnable);
+	}
+
