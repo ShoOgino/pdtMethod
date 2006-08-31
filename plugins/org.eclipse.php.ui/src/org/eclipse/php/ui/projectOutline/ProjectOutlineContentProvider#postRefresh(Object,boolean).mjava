@@ -1,11 +1,8 @@
-	private void postRefresh(final Object root, final boolean updateLabels) {
+	public void postRefresh(final Object root, final boolean updateLabels) {
 		if (fViewer == null || fViewer.getControl() == null)
 			return;
 		final Runnable runnable = new Runnable() {
 			public void run() {
-				boolean queued = false;
-				if (inProgress > 2)
-					queued = true;
 				if (fViewer == null) {
 					--inProgress;
 					return;
@@ -30,44 +27,16 @@
 				PHPProjectModel model = null;
 				model = PHPWorkspaceModelManager.getInstance().getModelForProject(res.getProject());
 				OutlineNode outlineNode;
-				PHPCodeData[] currentToAdd;
-				PHPCodeData[] currentToRemove;
-
-				PHPFileData newData = null;
-				PHPFileData oldData = null;
-				if (root instanceof PHPFileData) {
-					newData = (PHPFileData) root;
-				}
-				if (fStoredFileData != null) {
-					oldData = fStoredFileData;
-				}
-				fStoredFileData = newData;
-				if (newData != null && oldData != null && oldData.getComparableName().equals(newData.getComparableName())) {
-					for (int i = 0; i < groupNodes.length; i++) {
-						outlineNode = groupNodes[i];
-						if (model != outlineNode.getModel())
-							outlineNode.setModel(model);
-						currentToRemove = outlineNode.removeChildren(oldData);
-						currentToAdd = outlineNode.addChildren(newData);
-						toRemove.addAll(Arrays.asList(currentToRemove));
-						toAdd.addAll(Arrays.asList(currentToAdd));
-						if (!queued) {
-							fViewer.remove(toRemove.toArray(new PHPCodeData[toRemove.size()]));
-							fViewer.add(outlineNode, toAdd.toArray(new PHPCodeData[toAdd.size()]));
-							toRemove.clear();
-							toAdd.clear();
-						}
-					}
-				} else {
+				if (inProgress < 2) {
 					for (int i = 0; i < groupNodes.length; i++) {
 						outlineNode = groupNodes[i];
 						if (model != outlineNode.getModel())
 							outlineNode.setModel(model);
 						outlineNode.loadChildren();
+						fViewer.refresh(outlineNode, false);
 					}
-					if (!queued)
-						fViewer.refresh(updateLabels);
 				}
+				//				}
 				--inProgress;
 			}
 		};
