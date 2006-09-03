@@ -4,45 +4,53 @@
 		final Runnable runnable = new Runnable() {
 			public void run() {
 				if (fViewer == null) {
-					--inProgress;
+					//					--inProgress;
 					return;
 				}
 				Control control = fViewer.getControl();
 				if (control == null || control.isDisposed()) {
-					--inProgress;
+					//					--inProgress;
 					return;
 				}
 
 				IResource res = PHPModelUtil.getResource(root);
 				if (res == null) {
-					--inProgress;
+					//					--inProgress;
 					return;
 				}
 
 				if (res.getProject() != fStoredProject) {
-					--inProgress;
+					//					--inProgress;
 					return;
 				}
 
 				PHPProjectModel model = null;
 				model = PHPWorkspaceModelManager.getInstance().getModelForProject(res.getProject());
 				OutlineNode outlineNode;
-				if (inProgress < 2) {
-					for (int i = 0; i < groupNodes.length; i++) {
-						outlineNode = groupNodes[i];
-						if (model != outlineNode.getModel())
-							outlineNode.setModel(model);
-						outlineNode.loadChildren();
-						fViewer.refresh(outlineNode, false);
-					}
+				//				if (inProgress < 2) {
+				for (int i = 0; i < groupNodes.length; i++) {
+					outlineNode = groupNodes[i];
+					if (model != outlineNode.getModel())
+						outlineNode.setModel(model);
+					outlineNode.loadChildren();
+					fViewer.refresh(outlineNode, false);
 				}
 				//				}
-				--inProgress;
+				//				}
+				//				--inProgress;
 			}
 		};
-		if (inProgress < 1) {
-			++inProgress;
-			fViewer.getControl().getDisplay().asyncExec(runnable);
+		//		if (inProgress < 2) {
+		//			++inProgress;
+		if (timer != null) {
+			timer.cancel();
 		}
+		timer = new Timer(true);
+		timer.schedule(new TimerTask() {
+			public void run() {
+				fViewer.getControl().getDisplay().asyncExec(runnable);
+			}
+		}, 1000);
+		//		}
 	}
 
