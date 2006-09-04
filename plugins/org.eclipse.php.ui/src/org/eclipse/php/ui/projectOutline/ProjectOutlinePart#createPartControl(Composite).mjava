@@ -1,4 +1,5 @@
 	public void createPartControl(final Composite parent) {
+		getSite().getPage().addPartListener(fPartListener);
 		fViewer = createViewer(parent);
 		fViewer.getControl().addFocusListener(this);
 		fSelectionListener.setViewer(getViewer());
@@ -24,7 +25,6 @@
 				openEditorAction.run((IStructuredSelection) fLastOpenSelection);
 			}
 		});
-		getSite().getPage().addPartListener(fPartListener);
 
 		final IStatusLineManager slManager = getViewSite().getActionBars().getStatusLineManager();
 		fViewer.addSelectionChangedListener(new StatusBarUpdater(slManager));
@@ -38,9 +38,11 @@
 
 		// refresh linking:
 		setLinkingEnabled(isLinkingEnabled());
+		if (initProjectName != null) {
+			setProject(ResourcesPlugin.getWorkspace().getRoot().getProject(initProjectName));
+		}
 
-		fViewer.refresh();
 		PHPWorkspaceModelManager.getInstance().addModelListener(fContentProvider);
-
+		fViewer.refresh();
 	}
 
