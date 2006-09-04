@@ -1,38 +1,8 @@
 	public void selectionChanged(final IWorkbenchPart part, final ISelection selection) {
-		if (viewer == null || viewer.getControl() == null || viewer.getControl().isDisposed())
-			return;
-		if (selection instanceof IStructuredSelection) {
-			final IStructuredSelection structuredSelection = (IStructuredSelection) selection;
-			if (structuredSelection.size() > 0) {
-				final Object firstElement = structuredSelection.getFirstElement();
-				PHPCodeData codeData = null;
-				if (firstElement instanceof PHPElementImpl && part instanceof PHPStructuredEditor) {
-					final PHPElementImpl phpElement = (PHPElementImpl) firstElement;
-					codeData = phpElement.getPHPCodeData(((TextSelection) selection).getOffset());
-				} else if (firstElement instanceof NodeImpl) {
-					final IDOMDocument doc = (IDOMDocument) ((NodeImpl) firstElement).getOwnerDocument();
-					if (doc == null)
-						return;
-					final IDOMModel model = doc.getModel();
-					if (!(model instanceof PHPEditorModel))
-						return;
-					codeData = PHPElementImpl.getPHPCodeData((NodeImpl) firstElement, ((TextSelection) selection).getOffset());
-				} else if (firstElement instanceof PHPCodeData) {
-					codeData = (PHPCodeData) firstElement;
-					viewer.reveal(codeData);
-					return;
-				}
-				Object selectedElement = null;
-				if (codeData != null)
-					if (codeData instanceof PHPFileData)
-						selectedElement = PHPModelUtil.getResource(codeData);
-					else
-						selectedElement = codeData;
-				if (selectedElement != null)
-					viewer.setSelection(new StructuredSelection(selectedElement), true);
-				else if (resetEmptySelection)
-					viewer.setSelection(null);
-			}
-		}
+		Object selectedElement = computeSelectedElement(part, selection);
+		if (selectedElement != null)
+			viewer.setSelection(new StructuredSelection(selectedElement), true);
+		else if (resetEmptySelection)
+			viewer.setSelection(null);
 	}
 

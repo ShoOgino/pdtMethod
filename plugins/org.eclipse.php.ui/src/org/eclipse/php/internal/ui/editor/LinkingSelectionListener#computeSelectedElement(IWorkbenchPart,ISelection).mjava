@@ -1,0 +1,40 @@
+	Object computeSelectedElement(IWorkbenchPart part, ISelection selection) {
+		if (viewer == null || viewer.getControl() == null || viewer.getControl().isDisposed())
+			return null;
+		if (selection instanceof IStructuredSelection) {
+			final IStructuredSelection structuredSelection = (IStructuredSelection) selection;
+			if (structuredSelection.size() > 0) {
+				final Object firstElement = structuredSelection.getFirstElement();
+				PHPCodeData codeData = null;
+				if (firstElement instanceof PHPElementImpl && part instanceof PHPStructuredEditor) {
+					final PHPElementImpl phpElement = (PHPElementImpl) firstElement;
+					codeData = phpElement.getPHPCodeData(((TextSelection) selection).getOffset());
+				} else if (firstElement instanceof NodeImpl) {
+					final IDOMDocument doc = (IDOMDocument) ((NodeImpl) firstElement).getOwnerDocument();
+					if (doc == null)
+						return null;
+					final IDOMModel model = doc.getModel();
+					if (!(model instanceof PHPEditorModel))
+						return null;
+					codeData = PHPElementImpl.getPHPCodeData((NodeImpl) firstElement, ((TextSelection) selection).getOffset());
+				} else if (firstElement instanceof PHPCodeData) {
+					codeData = (PHPCodeData) firstElement;
+					viewer.reveal(codeData);
+					return null;
+				}
+				Object selectedElement = null;
+				if (codeData != null)
+					if (codeData instanceof PHPFileData) {
+						IResource res = PHPModelUtil.getResource(codeData);
+						if (res.getProject() != null && res.getProject().isAccessible())
+							selectedElement = res;
+						else
+							selectedElement = codeData;
+					} else
+						selectedElement = codeData;
+				return selectedElement;
+			}
+		}
+		return null;
+	}
+
