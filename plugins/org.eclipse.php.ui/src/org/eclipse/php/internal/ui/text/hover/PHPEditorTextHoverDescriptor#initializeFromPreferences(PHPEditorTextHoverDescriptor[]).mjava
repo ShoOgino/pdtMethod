@@ -1,56 +1,56 @@
 	private static void initializeFromPreferences(PHPEditorTextHoverDescriptor[] hovers) {
-		String compiledTextHoverModifiers= PreferenceConstants.getPreferenceStore().getString(PreferenceConstants.EDITOR_TEXT_HOVER_MODIFIERS);
+		String compiledTextHoverModifiers = PreferenceConstants.getPreferenceStore().getString(PreferenceConstants.EDITOR_TEXT_HOVER_MODIFIERS);
 
-		StringTokenizer tokenizer= new StringTokenizer(compiledTextHoverModifiers, VALUE_SEPARATOR);
-		HashMap idToModifier= new HashMap(tokenizer.countTokens() / 2);
+		StringTokenizer tokenizer = new StringTokenizer(compiledTextHoverModifiers, VALUE_SEPARATOR);
+		HashMap idToModifier = new HashMap(tokenizer.countTokens() / 2);
 
 		while (tokenizer.hasMoreTokens()) {
-			String id= tokenizer.nextToken();
+			String id = tokenizer.nextToken();
 			if (tokenizer.hasMoreTokens())
 				idToModifier.put(id, tokenizer.nextToken());
 		}
 
-		String compiledTextHoverModifierMasks= PreferenceConstants.getPreferenceStore().getString(PreferenceConstants.EDITOR_TEXT_HOVER_MODIFIER_MASKS);
+		String compiledTextHoverModifierMasks = PreferenceConstants.getPreferenceStore().getString(PreferenceConstants.EDITOR_TEXT_HOVER_MODIFIER_MASKS);
 
-		tokenizer= new StringTokenizer(compiledTextHoverModifierMasks, VALUE_SEPARATOR);
-		HashMap idToModifierMask= new HashMap(tokenizer.countTokens() / 2);
+		tokenizer = new StringTokenizer(compiledTextHoverModifierMasks, VALUE_SEPARATOR);
+		HashMap idToModifierMask = new HashMap(tokenizer.countTokens() / 2);
 
 		while (tokenizer.hasMoreTokens()) {
-			String id= tokenizer.nextToken();
+			String id = tokenizer.nextToken();
 			if (tokenizer.hasMoreTokens())
 				idToModifierMask.put(id, tokenizer.nextToken());
 		}
 
-		for (int i= 0; i < hovers.length; i++) {
-			String modifierString= (String)idToModifier.get(hovers[i].getId());
-			boolean enabled= true;
+		for (int i = 0; i < hovers.length; i++) {
+			String modifierString = (String) idToModifier.get(hovers[i].getId());
+			boolean enabled = true;
 			if (modifierString == null)
-				modifierString= DISABLED_TAG;
+				modifierString = DISABLED_TAG;
 
 			if (modifierString.startsWith(DISABLED_TAG)) {
-				enabled= false;
-				modifierString= modifierString.substring(1);
+				enabled = false;
+				modifierString = modifierString.substring(1);
 			}
 
 			if (modifierString.equals(NO_MODIFIER))
-				modifierString= ""; //$NON-NLS-1$
+				modifierString = ""; //$NON-NLS-1$
 
-			hovers[i].fModifierString= modifierString;
-			hovers[i].fIsEnabled= enabled;
-			hovers[i].fStateMask= computeStateMask(modifierString);
+			hovers[i].fModifierString = modifierString;
+			hovers[i].fIsEnabled = enabled;
+			hovers[i].fStateMask = computeStateMask(modifierString);
 			if (hovers[i].fStateMask == -1) {
 				// Fallback: use stored modifier masks
 				try {
-					hovers[i].fStateMask= Integer.parseInt((String)idToModifierMask.get(hovers[i].getId()));
+					hovers[i].fStateMask = Integer.parseInt((String) idToModifierMask.get(hovers[i].getId()));
 				} catch (NumberFormatException ex) {
-					hovers[i].fStateMask= -1;
+					hovers[i].fStateMask = -1;
 				}
 				// Fix modifier string
-				int stateMask= hovers[i].fStateMask;
+				int stateMask = hovers[i].fStateMask;
 				if (stateMask == -1)
-					hovers[i].fModifierString= ""; //$NON-NLS-1$
+					hovers[i].fModifierString = ""; //$NON-NLS-1$
 				else
-					hovers[i].fModifierString= EditorUtility.getModifierString(stateMask);
+					hovers[i].fModifierString = EditorUtility.getModifierString(stateMask);
 			}
 		}
 	}
