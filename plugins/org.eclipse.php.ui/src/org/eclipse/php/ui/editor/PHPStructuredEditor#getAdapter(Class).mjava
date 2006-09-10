@@ -17,26 +17,22 @@
 					if (event.getSelection().isEmpty() || selecting)
 						return;
 
-					if (getSourceViewer() != null && getSourceViewer().getTextWidget() != null && !getSourceViewer().getTextWidget().isDisposed() && !getSourceViewer().getTextWidget().isFocusControl())
+					if (getSourceViewer() != null && getSourceViewer().getTextWidget() != null && !getSourceViewer().getTextWidget().isDisposed() && getSite().getPage().getActivePart() != getPart())
 						if (event.getSelection() instanceof IStructuredSelection) {
 							final ISelection current = getSelectionProvider().getSelection();
 							if (current instanceof IStructuredSelection) {
-								final Object newSelection = ((IStructuredSelection) event.getSelection()).getFirstElement();
-								final Object currentSelection = ((IStructuredSelection) current).getFirstElement();
-								if (current instanceof TextSelection && newSelection instanceof PHPCodeData) {
-									if (PHPElementImpl.isInside(((TextSelection) current).getOffset(), (PHPCodeData) newSelection)) {
-										return;
-									}
-								}
-								if (!currentSelection.equals(newSelection))
-									if (newSelection != null) {
+								final Object[] currentSelection = ((IStructuredSelection) current).toArray();
+								final Object[] newSelection = ((IStructuredSelection) event.getSelection()).toArray();
+								if (!Arrays.equals(currentSelection, newSelection))
+									if (newSelection.length > 0) {
 										/*
 										 * No ordering is guaranteed for
 										 * multiple selection
 										 */
+										final Object o = newSelection[0];
 										selecting = true;
-										if (newSelection instanceof PHPCodeData)
-											setSelection((PHPCodeData) newSelection, true);
+										if (o instanceof PHPCodeData)
+											setSelection((PHPCodeData) o, true);
 										selecting = false;
 									}
 							}
