@@ -21,18 +21,22 @@
 						if (event.getSelection() instanceof IStructuredSelection) {
 							final ISelection current = getSelectionProvider().getSelection();
 							if (current instanceof IStructuredSelection) {
-								final Object[] currentSelection = ((IStructuredSelection) current).toArray();
-								final Object[] newSelection = ((IStructuredSelection) event.getSelection()).toArray();
-								if (!Arrays.equals(currentSelection, newSelection))
-									if (newSelection.length > 0) {
+								final Object newSelection = ((IStructuredSelection) event.getSelection()).getFirstElement();
+								final Object currentSelection = ((IStructuredSelection) current).getFirstElement();
+								if (current instanceof TextSelection && newSelection instanceof PHPCodeData) {
+									if (PHPElementImpl.isInside(((TextSelection) current).getOffset(), (PHPCodeData) newSelection)) {
+										return;
+									}
+								}
+								if (!currentSelection.equals(newSelection))
+									if (newSelection != null) {
 										/*
 										 * No ordering is guaranteed for
 										 * multiple selection
 										 */
-										final Object o = newSelection[0];
 										selecting = true;
-										if (o instanceof PHPCodeData)
-											setSelection((PHPCodeData) o, true);
+										if (newSelection instanceof PHPCodeData)
+											setSelection((PHPCodeData) newSelection, true);
 										selecting = false;
 									}
 							}
