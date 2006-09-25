@@ -1,0 +1,42 @@
+	protected Control createContents(Composite parent) {
+		breakpoint = (PHPConditionalBreakpoint) getElement().getAdapter(PHPConditionalBreakpoint.class);
+		if (breakpoint == null) {
+			Logger.log(Logger.ERROR, "Could not adapt to PHPConditionalBreakpoint");
+			return null;
+		}
+		conditionEnabled = breakpoint.isConditionEnabled();
+		String currentCondition = breakpoint.getCondition();
+		if (currentCondition.equals("")) {
+			conditionEnabled = true;
+		}
+		Label label = new Label(parent, SWT.WRAP);
+		label.setText(MessageFormat.format(PHPDebugUIMessages.EnterCondition_1, new Object[] {}));
+		GridData data = new GridData(GridData.GRAB_HORIZONTAL | GridData.HORIZONTAL_ALIGN_FILL | GridData.VERTICAL_ALIGN_CENTER);
+		data.widthHint = convertHorizontalDLUsToPixels(IDialogConstants.MINIMUM_MESSAGE_AREA_WIDTH);
+		label.setLayoutData(data);
+		label.setFont(parent.getFont());
+		text = new Text(parent, SWT.SINGLE | SWT.BORDER);
+		text.setLayoutData(new GridData(GridData.GRAB_HORIZONTAL | GridData.HORIZONTAL_ALIGN_FILL));
+		text.setText(currentCondition);
+		final Button checkbox = new Button(parent, SWT.CHECK);
+		data = new GridData(GridData.GRAB_HORIZONTAL | GridData.HORIZONTAL_ALIGN_FILL);
+		data.widthHint = convertHorizontalDLUsToPixels(IDialogConstants.MINIMUM_MESSAGE_AREA_WIDTH);
+		checkbox.setLayoutData(data);
+		checkbox.setFont(parent.getFont());
+		checkbox.setText(MessageFormat.format(PHPDebugUIMessages.EnableSetCondition_1, new Object[] {}));
+		checkbox.setSelection(conditionEnabled);
+		text.setEnabled(conditionEnabled);
+
+		checkbox.addSelectionListener(new SelectionListener() {
+			public void widgetSelected(SelectionEvent e) {
+				conditionEnabled = checkbox.getSelection();
+				text.setEnabled(conditionEnabled);
+			}
+
+			public void widgetDefaultSelected(SelectionEvent e) {
+			}
+
+		});
+		return parent;
+	}
+
