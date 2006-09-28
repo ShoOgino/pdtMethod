@@ -1,4 +1,20 @@
 	public void run(IAction action) {
-		// TODO
+		IStructuredSelection selection = getCurrentSelection();
+		if (selection instanceof TextSelection) {
+			TextSelection textSelection = (TextSelection) selection;
+			IExpressionManager expressionManager = DebugPlugin.getDefault().getExpressionManager();
+			IDOMText domText = (IDOMText) selection.getFirstElement();
+			String expression;
+			try {
+				expression = domText.getFirstStructuredDocumentRegion().getParentDocument().get(textSelection.getOffset(), textSelection.getLength());
+				//	create the new watch expression
+				IWatchExpression watchExpression = expressionManager.newWatchExpression(expression.trim());
+				expressionManager.addExpression(watchExpression);
+				// refresh and re-evaluate
+				watchExpression.setExpressionContext(getContext());
+			} catch (Exception e) {
+				Logger.logException(e);
+			}
+		}
 	}
 
