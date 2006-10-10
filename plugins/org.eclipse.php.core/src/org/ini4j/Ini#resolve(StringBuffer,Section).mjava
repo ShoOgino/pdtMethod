@@ -20,7 +20,7 @@
 				String var = buffer.substring(begin + SUBST_BEGIN_LEN, end);
 				String group = null;
 				final int sep = var.indexOf(SUBST_SEPARATOR);
-				String value = null;
+				List values = new ArrayList(1);
 
 				if (sep > 0) {
 					group = var.substring(0, sep);
@@ -29,20 +29,26 @@
 
 				if (var != null)
 					if (group == null)
-						value = owner.fetch(var);
-					else if (SUBST_ENVIRONMENT.equals(group))
-						value = System.getenv(var);
-					else if (SUBST_PROPERTY.equals(group))
-						value = System.getProperty(var);
-					else {
+						values = Arrays.asList(owner.fetch(var));
+					else if (SUBST_ENVIRONMENT.equals(group)) {
+						String value = System.getenv(var);
+						if (value != null)
+							values.add(value);
+
+					} else if (SUBST_PROPERTY.equals(group)) {
+						String value = System.getProperty(var);
+						if (value != null)
+							values.add(value);
+
+					} else {
 						owner = (Section) get(group);
 
 						if (owner != null)
-							value = owner.fetch(var);
+							values = Arrays.asList(owner.fetch(var));
 					}
 
-				if (value != null)
-					buffer.replace(begin, end + SUBST_END_LEN, value);
+				if (values.size() > 0)
+					buffer.replace(begin, end + SUBST_END_LEN, (String) values.get(0));
 			}
 		}
 	}
