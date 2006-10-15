@@ -8,13 +8,31 @@
 	protected void hookDebugSession(DebugSessionStartedNotification debugSessionStartedNotification) throws CoreException {
 		String query = debugSessionStartedNotification.getQuery();
 		int sessionID = getSessionID(query);
-		ILaunch launch = PHPSessionLaunchMapper.remove(sessionID);
+		// Get the launch, but keep it in the mapper for any other debug requests that are 
+		// related to the debug session id.
+		// The launch is mapped until the launches are cleared.
+		ILaunch launch = PHPSessionLaunchMapper.get(sessionID);
 		if (launch != null) {
+			// Remove any debug targets and processes that were terminated.
+			IDebugTarget[] debugTargets = launch.getDebugTargets();
+			IProcess[] processes = launch.getProcesses();
+			for (int i = 0; i < debugTargets.length; i++) {
+				if (debugTargets[i].isTerminated()) {
+					launch.removeDebugTarget(debugTargets[i]);
+				}
+			}
+			for (int i = 0; i < processes.length; i++) {
+				if (processes[i].isTerminated()) {
+					launch.removeProcess(processes[i]);
+				}
+			}
+			
 			if (launch instanceof PHPServerLaunchDecorator) {
 				hookServerDebug(launch);
 			} else {
 				hookPHPExeDebug(launch);
 			}
+			
 		} else {
 			Logger.log(Logger.ERROR, "No session id");
 		}
