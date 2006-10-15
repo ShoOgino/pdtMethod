@@ -1,0 +1,52 @@
+	/*
+	 * Use this function in order to fix the indentation of multiple line templates.
+	 * 
+	 * (non-Javadoc)
+	 * @see org.eclipse.jface.text.templates.TemplateProposal#apply(org.eclipse.jface.text.ITextViewer, char, int, int)
+	 */
+	public void apply(ITextViewer viewer, char trigger, int stateMask, int offset) {
+
+		IStructuredDocument document = (IStructuredDocument) viewer.getDocument();
+		String originalTemplate = getTemplate().getPattern();
+
+		String blanks = "";
+
+		int lineNumber = document.getLineOfOffset(offset);
+		IRegion lineRegion;
+		try {
+			lineRegion = document.getLineInformation(lineNumber);
+			blanks = FormatterUtils.getLineBlanks(document, lineRegion);
+		} catch (BadLocationException e) {
+			Logger.logException(e);
+			super.apply(viewer, trigger, stateMask, offset);
+			return;
+		}
+
+		String docLineDelimiter = document.getLineDelimiter();
+
+		String lineDelimiter = "\n";
+		StringBuffer sb = new StringBuffer();
+
+		// Look for document line delimiter or "\n" in the template
+		// and add to each occurance found the appropriate indentation
+		Pattern p = Pattern.compile(docLineDelimiter + "|" + lineDelimiter);
+		Matcher m = p.matcher(originalTemplate);
+		String matchedDelimiter = "";
+		boolean result = m.find();
+		while (result) {
+			matchedDelimiter = m.group(0);
+			m.appendReplacement(sb, matchedDelimiter + blanks);
+			result = m.find();
+		}
+		// Add the last segment of input to the new String
+		m.appendTail(sb);
+		String newTemplate = sb.toString();
+
+		// temporary replace the template with the "fixed" one (with proper indentation)
+		// and then restore the original
+		getTemplate().setPattern(newTemplate);
+		super.apply(viewer, trigger, stateMask, offset);
+		getTemplate().setPattern(originalTemplate);
+
+	}
+
