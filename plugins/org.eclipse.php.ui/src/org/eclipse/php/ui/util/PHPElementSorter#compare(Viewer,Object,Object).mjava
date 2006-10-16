@@ -2,38 +2,67 @@
 	 * @see ViewerSorter#compare
 	 */
 	public int compare(Viewer viewer, Object e1, Object e2) {
+
 		int cat1 = category(e1);
 		int cat2 = category(e2);
 
-		if (cat1 != cat2)
-			return cat1 - cat2;
+		if (usingCategories) {
+			if (cat1 != cat2)
+				return cat1 - cat2;
+		}
 
 		if (cat1 == PROJECTS || cat1 == RESOURCES || cat1 == RESOURCEFOLDERS || cat1 == STORAGE || cat1 == OTHERS) {
 			String name1 = getNonPHPElementLabel(viewer, e1);
 			String name2 = getNonPHPElementLabel(viewer, e2);
-			if (name1 != null && name2 != null) {
+			if (name1 == name2)
+				return 0;
+			if (name1 != null) {
 				return getCollator().compare(name1, name2);
 			}
-			return 0; // can't compare
+			return -1; // can't compare
 		}
 
 		// if it is an outline node (classes, functions, constants) sort by type
 		if (cat1 == OUTLINE_NODES && cat2 == OUTLINE_NODES) {
-			assert e1 instanceof OutlineNode && e2 instanceof OutlineNode;
 			return ((Comparable) e1).compareTo(e2);
 		}
 
+		int vis = 0;
 		if (e1 instanceof PHPCodeData) {
 			if (fMemberOrderCache.isSortByVisibility()) {
 				int flags1 = getVisibilityCode(e1);
 				int flags2 = getVisibilityCode(e2);
-				int vis = fMemberOrderCache.getVisibilityIndex(flags1) - fMemberOrderCache.getVisibilityIndex(flags2);
-				if (vis != 0) {
-					return vis;
+				vis = fMemberOrderCache.getVisibilityIndex(flags1) - fMemberOrderCache.getVisibilityIndex(flags2);
+				if (usingCategories) {
+					if (vis != 0) {
+						return vis;
+					}
 				}
 			}
 		}
 
+		boolean currentUsingLocation = false;
+
+		UserData userData1 = null;
+		UserData userData2 = null;
+
+		if (usingLocation && e1 instanceof PHPCodeData && e2 instanceof PHPCodeData) {
+			currentUsingLocation = true;
+			PHPCodeData code1 = (PHPCodeData) e1;
+			PHPCodeData code2 = (PHPCodeData) e2;
+			if (PHPModelUtil.getPHPFileContainer(code1) != PHPModelUtil.getPHPFileContainer(code2)) {
+				currentUsingLocation = false;
+			} else {
+				userData1 = code1.getUserData();
+				userData2 = code2.getUserData();
+
+				if (userData1 == null || userData2 == null)
+					currentUsingLocation = false;
+			}
+		}
+		if (currentUsingLocation) {
+			return userData1.getStartPosition() - userData2.getStartPosition();
+		}
 		String name1 = getElementName(e1);
 		String name2 = getElementName(e2);
 
@@ -42,7 +71,9 @@
 			return cmp;
 		}
 
-		if (e1 instanceof PHPFunctionData) {
+		// from here names are equal:
+
+		if (e1 instanceof PHPFunctionData && e2 instanceof PHPFunctionData) {
 			PHPFunctionParameter[] params1 = ((PHPFunctionData) e1).getParameters();
 			PHPFunctionParameter[] params2 = ((PHPFunctionData) e2).getParameters();
 			int len = Math.min(params1.length, params2.length);
@@ -57,6 +88,11 @@
 					return -1;
 			}
 			return params1.length - params2.length;
+		}
+		if (!usingCategories) { // process categories after names, if not categorized:
+			if (cat1 != cat2)
+				return cat1 - cat2;
+			return vis;
 		}
 		return 0;
 	}
