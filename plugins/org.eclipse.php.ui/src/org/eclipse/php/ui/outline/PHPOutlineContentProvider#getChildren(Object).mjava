@@ -1,23 +1,18 @@
 	public Object[] getChildren(final Object object) {
-		if (object instanceof PHPElementImpl && mode == MODE_MIXED) {
-			final ArrayList list = getPHPChildren((PHPElementImpl) object);
-			return list.toArray();
-		} else if (object instanceof PHPCodeData)
+		if (object instanceof PHPElementImpl && mode == MODE_MIXED)
+			return getPHPChildren((PHPElementImpl) object);
+		else if (object instanceof PHPCodeData)
 			return phpContentProvider.getChildren(object);
 		else if (object instanceof PHPEditorModel && mode == MODE_PHP) {
 			editorModel = (PHPEditorModel) object;
-			final PHPEditorModel editorModel = (PHPEditorModel) object;
-			PHPFileData fileData = editorModel.getFileData();
+			editorModel.getDocument().getAdapterFor(IJFaceNodeAdapter.class);
+			final PHPFileData fileData = editorModel.getFileData();
 			if (fileData != null) {
 				final GroupNode[] groupNodes = getGroupNodes(fileData);
 				if (groupNodes != null)
 					return groupNodes;
 			}
-			final Object[] providerChildren = phpContentProvider.getChildren(fileData);
-			final Object[] children = new Object[providerChildren.length + 1];
-			System.arraycopy(providerChildren, 0, children, 1, providerChildren.length);
-			children[0] = getIncludeFilesNode(fileData);
-			return children;
+			return getChildren(fileData);
 		} else if (object instanceof GroupNode)
 			return ((GroupNode) object).getChildren();
 		else if (object instanceof PHPTreeNode)
