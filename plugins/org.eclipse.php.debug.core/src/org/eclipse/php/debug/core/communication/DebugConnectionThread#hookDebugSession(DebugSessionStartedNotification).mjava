@@ -12,6 +12,18 @@
 		// related to the debug session id.
 		// The launch is mapped until the launches are cleared.
 		ILaunch launch = PHPSessionLaunchMapper.get(sessionID);
+		if (launch == null) {
+			// We cannot find a launch the we can associate to the given session id (if any)
+			// Try to take the first launch that is terminated and has a 'Debug all Pages' attribute.
+			ILaunch[] launchs = DebugPlugin.getDefault().getLaunchManager().getLaunches();
+			for (int i = 0; i < launchs.length; i++) {
+				ILaunch aLaunch = launchs[i];
+				if (aLaunch.isTerminated() && IPHPConstants.DEBUGGING_ALL_PAGES.equals(aLaunch.getAttribute(IPHPConstants.DEBUGGING_PAGES))) {
+					launch = aLaunch;
+					break;
+				}
+			}
+		}
 		if (launch != null) {
 			// Remove any debug targets and processes that were terminated.
 			IDebugTarget[] debugTargets = launch.getDebugTargets();
@@ -26,14 +38,14 @@
 					launch.removeProcess(processes[i]);
 				}
 			}
-			
-			if (launch instanceof PHPServerLaunchDecorator) {
+
+			if (launch instanceof PHPServerLaunchDecorator || Boolean.toString(true).equals(launch.getAttribute(IDebugParametersKeys.WEB_SERVER_DEBUGGER))) {
 				hookServerDebug(launch);
 			} else {
 				hookPHPExeDebug(launch);
 			}
-			
 		} else {
+			// TODO - Display an error/warning message to the user.
 			Logger.log(Logger.ERROR, "No session id");
 		}
 	}

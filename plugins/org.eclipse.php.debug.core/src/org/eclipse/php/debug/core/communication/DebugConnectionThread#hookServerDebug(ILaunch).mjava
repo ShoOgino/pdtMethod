@@ -4,8 +4,16 @@
 	 * @param launch An {@link ILaunch}
 	 */
 	protected void hookServerDebug(ILaunch launch) throws CoreException {
-		PHPServerLaunchDecorator launchDecorator = (PHPServerLaunchDecorator) launch;
 		ILaunchConfiguration launchConfiguration = launch.getLaunchConfiguration();
+		PHPServerLaunchDecorator launchDecorator;
+		if (launch instanceof PHPServerLaunchDecorator) {
+			launchDecorator = (PHPServerLaunchDecorator) launch;
+		} else {
+			// Get the project by its name
+			String projectName = launchConfiguration.getAttribute(IPHPConstants.PHP_Project, (String) null);
+			IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
+			launchDecorator = new PHPServerLaunchDecorator(launch, project);
+		}
 		inputManager.setTransferEncoding(launchConfiguration.getAttribute(IDebugParametersKeys.TRANSFER_ENCODING, ""));
 		String URL = launchConfiguration.getAttribute(Server.BASE_URL, "");
 		String contextRoot = launchConfiguration.getAttribute(Server.CONTEXT_ROOT, "");
