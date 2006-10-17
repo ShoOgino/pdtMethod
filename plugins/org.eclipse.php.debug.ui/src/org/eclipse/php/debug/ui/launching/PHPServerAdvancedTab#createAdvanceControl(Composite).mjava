@@ -1,0 +1,62 @@
+	/**
+	 * Create the advanced control.
+	 * 
+	 * @param composite
+	 */
+	protected void createAdvanceControl(Composite composite) {
+		Group group = new Group(composite, SWT.NONE);
+		GridLayout layout = new GridLayout(3, false);
+		layout.marginWidth = 5;
+		layout.marginHeight = 5;
+		group.setLayout(layout);
+		group.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		group.setText("Session Settings");
+
+		debugAllPagesBt = createRadioButton(group, "Debug &All Pages");
+		GridData data = (GridData) debugAllPagesBt.getLayoutData();
+		data.horizontalSpan = 3;
+
+		debugFirstPageBt = createRadioButton(group, "Debug &First Page Only");
+		data = (GridData) debugFirstPageBt.getLayoutData();
+		data.horizontalSpan = 3;
+
+		debugStartFromBt = createRadioButton(group, "&Start Debug from:");
+
+		debugFromTxt = new Text(group, SWT.SINGLE | SWT.BORDER);
+		data = new GridData(GridData.FILL_HORIZONTAL);
+		debugFromTxt.setLayoutData(data);
+
+		resetBt = createPushButton(group, "Default", null);
+		resetBt.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				if (launchConfiguration != null) {
+					try {
+						debugFromTxt.setText(launchConfiguration.getAttribute(Server.BASE_URL, ""));
+					} catch (CoreException e1) {
+					}
+				}
+			}
+		});
+
+		debugContinueBt = createCheckButton(group, "&Continue Debug from This Page");
+		data = (GridData) debugContinueBt.getLayoutData();
+		data.horizontalSpan = 3;
+		data.horizontalIndent = 20;
+
+		// Add listeners
+		debugStartFromBt.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				updateDebugFrom();
+			}
+		});
+
+		updateDebugFrom();
+
+		// Add widget listeners
+		debugFirstPageBt.addSelectionListener(listener);
+		debugAllPagesBt.addSelectionListener(listener);
+		debugContinueBt.addSelectionListener(listener);
+		debugStartFromBt.addSelectionListener(listener);
+		debugFromTxt.addModifyListener(listener);
+	}
+
