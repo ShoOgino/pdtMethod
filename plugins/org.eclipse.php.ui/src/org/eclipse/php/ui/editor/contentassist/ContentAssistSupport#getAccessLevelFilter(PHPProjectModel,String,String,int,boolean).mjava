@@ -14,15 +14,22 @@
 		if (contextClassName.equals(className)) {
 			return ModelSupport.PIRVATE_ACCESS_LEVEL_FILTER;
 		}
-		// if we are out side of a class or this is an instance of a class and not $this
-		if (contextClassName.equals("") || isInstanceOf) {
+		
+//		if this is an instance of a class and not $this
+		if (isInstanceOf) {
 			return ModelSupport.PUBLIC_ACCESS_LEVEL_FILTER;
 		}
+		
+		// if we are out side of a class 
+		if (contextClassName.equals("")) {
+			return ModelSupport.PUBLIC_ACCESS_LEVEL_FILTER_EXCLUDE_VARS_NOT_STATIC;
+		}
+		
 		PHPClassData classData = projectModel.getClass(fileName, contextClassName);
 		String superClassName = classData.getSuperClassData().getName();
 		while (superClassName != null) {
 			if (superClassName.equals(className)) {
-				return ModelSupport.PROTECTED_ACCESS_LEVEL_FILTER;
+				return ModelSupport.PROTECTED_ACCESS_LEVEL_FILTER_EXCLUDE_VARS_NOT_STATIC;//exclude non static vars !!!
 			}
 			classData = projectModel.getClass(fileName, superClassName);
 			if (classData == null) {
@@ -30,6 +37,12 @@
 			}
 			superClassName = classData.getSuperClassData().getName();
 		}
+		
+		//inside a class with no inheritence
+		if (superClassName == null && !contextClassName.equals("")){
+			return ModelSupport.PUBLIC_ACCESS_LEVEL_FILTER_EXCLUDE_VARS_NOT_STATIC; 
+		}
+		
 		return ModelSupport.PUBLIC_ACCESS_LEVEL_FILTER;
 	}
 
