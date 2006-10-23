@@ -1,10 +1,12 @@
 	public boolean performOk() {
 		ArrayList removedVariables = new ArrayList();
-		ArrayList changedVariables = new ArrayList();
+		ArrayList changedVariables = new ArrayList();		
 		removedVariables.addAll(Arrays.asList(PHPProjectOptions.getIncludePathVariableNames()));
 
 		// remove all unchanged
 		List changedElements = fVariablesList.getElements();
+		List unchangedElements = fVariablesList.getElements();
+		
 		for (int i = changedElements.size() - 1; i >= 0; i--) {
 			IPVariableElement curr = (IPVariableElement) changedElements.get(i);
 			if (curr.isReserved()) {
@@ -13,12 +15,14 @@
 				IPath path = curr.getPath();
 				IPath prevPath = PHPProjectOptions.getIncludePathVariable(curr.getName());
 				if (prevPath != null && prevPath.equals(path)) {
-					changedElements.remove(curr);
+					changedElements.remove(curr);					
 				} else {
 					changedVariables.add(curr.getName());
+					unchangedElements.remove(curr);
 				}
 			}
 			removedVariables.remove(curr.getName());
+			
 		}
 		int steps = changedElements.size() + removedVariables.size();
 		if (steps > 0) {
@@ -36,7 +40,7 @@
 				needsBuild = (res == 0);
 			}
 
-			final VariableBlockRunnable runnable = new VariableBlockRunnable(removedVariables, changedElements, needsBuild);
+			final VariableBlockRunnable runnable = new VariableBlockRunnable(removedVariables, changedElements, unchangedElements, needsBuild);
 			Job buildJob = new Job(PHPUIMessages.VariableBlock_job_description) {
 				protected IStatus run(IProgressMonitor monitor) {
 					try {
