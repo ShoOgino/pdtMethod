@@ -1,0 +1,32 @@
+	/**
+	 * Search and return the IFile resource that might be the match for the given resource name.
+	 * The search trims the resourceName from left to right (using the / path separator) until a match
+	 * is found under the given project. 
+	 * In case there was no exact match, a non existing IFile is returned (a result of project.getFile(resourceName)).
+	 * 
+	 * @param resourceName
+	 * @param project
+	 * @return
+	 */
+	public static IFile getResource(String resourceName, IProject project) {
+		IFile file = project.getFile(resourceName);
+		if (file.exists()) {
+			return file;
+		}
+		// Search for a possible match.
+		// Stop on the first match.
+		int separatorIndex = resourceName.indexOf(SEPARATOR);
+		while (separatorIndex > -1) {
+			resourceName = resourceName.substring(separatorIndex + 1);
+			IFile f = project.getFile(resourceName);
+			if (f.exists()) {
+				return f;
+			}
+			separatorIndex = resourceName.indexOf(SEPARATOR);
+		}
+
+		// If we could not find any matching resource, return the non-existing IFile resource
+		// the the project.getFile(resourceName) returned.
+		return file;
+	}
+
