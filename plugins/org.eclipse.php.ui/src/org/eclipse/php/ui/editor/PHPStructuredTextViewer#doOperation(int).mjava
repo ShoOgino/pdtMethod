@@ -1,0 +1,39 @@
+	/**
+	 * This method overrides WST since sometimes we get a subset of the document and NOT the whole document,
+	 * although the case is FORMAT_DOCUMENT. In all other cases we call the parent method.
+	 */
+	public void doOperation(int operation) {
+		Point selection = getTextWidget().getSelection();
+		int cursorPosition = selection.x;
+		int selectionLength = selection.y - selection.x;
+		if (operation == FORMAT_DOCUMENT) {
+			try {
+				// begin recording
+				beginRecording(FORMAT_DOCUMENT_TEXT, FORMAT_DOCUMENT_TEXT, cursorPosition, selectionLength);
+
+				// format the whole document !
+				IRegion region = new Region(0,getDocument().getLength());
+				if (fContentFormatter instanceof IContentFormatterExtension) {
+					IContentFormatterExtension extension = (IContentFormatterExtension) fContentFormatter;
+					IFormattingContext context = new FormattingContext();
+					context.setProperty(FormattingContextProperties.CONTEXT_DOCUMENT, Boolean.TRUE);
+					context.setProperty(FormattingContextProperties.CONTEXT_REGION, region);
+					extension.format(getDocument(), context);
+				}
+				else {
+					fContentFormatter.format(getDocument(), region);
+				}
+			}
+			finally {
+				// end recording
+				selection = getTextWidget().getSelection();
+				cursorPosition = selection.x;
+				selectionLength = selection.y - selection.x;
+				endRecording(cursorPosition, selectionLength);
+			}
+		}
+		else {
+			super.doOperation(operation);
+		}
+	}
+
