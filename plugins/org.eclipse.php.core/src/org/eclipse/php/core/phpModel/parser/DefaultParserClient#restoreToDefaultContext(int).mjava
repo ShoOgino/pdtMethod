@@ -1,11 +1,15 @@
 	private void restoreToDefaultContext(int endPosition) {
-		boolean isInsideClass = !getCurrentClassName().equals("");
-		if (!getCurrentFunctionName().equals("")) {
-			handleFunctionDeclarationEnds(getCurrentFunctionName(), isInsideClass, endPosition);
+		final String currentClassName = getCurrentClassName();
+		final boolean isInsideClass = currentClassName.length() > 0;
+		final String currentFunctionName = getCurrentFunctionName();
+		if (currentFunctionName.length() > 0) {
+			endPosition = getEndPosition(endPosition, currentFunctionName, isInsideClass ? classFunctions : functions);
+			handleFunctionDeclarationEnds(currentFunctionName, isInsideClass, endPosition);
 			restoreToDefaultContext(endPosition);
 		}
 		if (isInsideClass) {
-			handleClassDeclarationEnds(getCurrentClassName(), endPosition);
+			endPosition = getEndPosition(endPosition, currentClassName, classes);
+			handleClassDeclarationEnds(currentClassName, endPosition);
 			restoreToDefaultContext(endPosition);
 		}
 	}
