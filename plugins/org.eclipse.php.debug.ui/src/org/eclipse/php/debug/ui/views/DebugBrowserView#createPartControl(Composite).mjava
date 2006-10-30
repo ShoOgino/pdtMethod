@@ -7,16 +7,27 @@
 	    GridLayout layout = new GridLayout();
 	    layout.numColumns=1;
 	    layout.makeColumnsEqualWidth=true;
+	    layout.marginHeight = 0;
+	    layout.marginWidth = 0;
 	    container.setLayout(layout);
 	    RowLayout rowLayout =new RowLayout();
 	    rowLayout.spacing=1;
-		swtBrowser=new Browser(container,SWT.NONE);
-		GridData gridData=new GridData();
+	    
+	    GridData gridData=new GridData();
 		gridData.grabExcessHorizontalSpace=true;
 		gridData.grabExcessVerticalSpace=true;
 		gridData.horizontalAlignment=SWT.FILL;
 		gridData.verticalAlignment=SWT.FILL;
-		swtBrowser.setLayoutData(gridData);
+		
+	    try {
+	    	swtBrowser = new Browser(container,SWT.NONE);
+	    	swtBrowser.setLayoutData(gridData);
+	    } catch (SWTError error) {
+	    	swtBrowser = null;
+	    	Label label = new Label(container, SWT.WRAP);
+	    	label.setText(PHPDebugUIMessages.DebugBrowserView_swtBrowserNotAvailable0);
+	    	label.setLayoutData(gridData);
+	    }
 		
 		debugViewHelper = new DebugViewHelper();
 		
@@ -33,7 +44,7 @@
 					
 						if ( events[i].getKind() == DebugEvent.TERMINATE) {
 							target = (PHPDebugTarget)obj;
-							Job job = new UIJob("debug output") {
+							Job job = new UIJob("debug output") { //$NON-NLS-1$
 								public IStatus runInUIThread(IProgressMonitor monitor) {
 									update(target);
 									return Status.OK_STATUS;
