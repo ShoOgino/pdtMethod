@@ -4,10 +4,20 @@
 			return treeNode.getText();
 		} else if (element instanceof PHPIncludePathModel) {
 			PHPIncludePathModel includePathModel = (PHPIncludePathModel) element;
-			return includePathModel.getID();
+			return includePathModel.getID() + " (" + IncludePathVariableManager.instance().getIncludePathVariable(includePathModel.getID()).toOSString() + ")";
 		} else if (element instanceof PhpModelProxy) {
 			PhpModelProxy proxy = (PhpModelProxy) element;
 			return proxy.getID();
+		} else if (element instanceof PHPFileData) {
+			PHPFileData fileData = (PHPFileData) element;
+			IPath[] modelPaths = includePathTree.getChildren(includePathTree.getRoot());
+			for (int i = 0; i < modelPaths.length; ++i) {
+				PHPIncludePathModel includePathModel = (PHPIncludePathModel) includePathTree.getElementData(modelPaths[i]);
+				IPath includePath = IncludePathVariableManager.instance().getIncludePathVariable(includePathModel.getID());
+				if (fileData.getName().startsWith(includePath.toOSString())) {
+					return new Path(fileData.getName()).lastSegment();
+				}
+			}
 		}
 		return null;
 	}

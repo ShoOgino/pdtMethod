@@ -17,7 +17,17 @@
 			return includeModelManager.listModels();
 		} else if (parentElement instanceof PHPIncludePathModel) {
 			PHPIncludePathModel includePathModel = (PHPIncludePathModel) parentElement;
-			return includePathModel.getFileDatas();
+			String modelRoot = includePathModel.getID().replace(Path.SEPARATOR, '\0'); // in case it's a plain directory, not a variable
+			IPath modelPath = new Path(modelRoot);
+			if (!includePathTree.includes(modelPath)) {
+				includePathTree.createElement(modelPath, includePathModel);
+			}
+			return getPathChildren(modelPath);
+		} else if (parentElement instanceof IResource) {
+			IPath resourcePath = ((IResource) parentElement).getFullPath();
+			if (includePathTree.includes(((IResource) parentElement).getFullPath())) {
+				return getPathChildren(resourcePath);
+			}
 		} else if (parentElement instanceof PhpModelProxy) {
 			PhpModelProxy proxy = (PhpModelProxy) parentElement;
 			return proxy.getPHPFilesData(null);
