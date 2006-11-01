@@ -1,4 +1,38 @@
+	/**
+	 */
 	protected void insertBreakAfter(IDOMNode node, HTMLFormatContraints contraints) {
-		HTMLFormatterNoPHPBase.insertBreakAfter(this, node, contraints);
+		if (node == null)
+			return;
+		if (node.getNodeType() == Node.TEXT_NODE)
+			return;
+		Node parent = node.getParentNode();
+		if (parent == null)
+			return;
+		Node next = node.getNextSibling();
+
+		String spaces = null;
+		if (next == null) { // last spaces
+			// use parent indent for the end tag
+			spaces = getBreakSpaces(parent);
+		}
+		else if (next.getNodeType() == Node.TEXT_NODE) {
+			if (contraints != null && contraints.getFormatWithSiblingIndent()) {
+				IDOMNode text = (IDOMNode) next;
+				IStructuredFormatter formatter = HTMLFormatterNoPHPFactory.getInstance().createFormatter(text, getFormatPreferences());
+				if (formatter instanceof HTMLTextFormatter) {
+					HTMLTextFormatterNoPHP textFormatter = (HTMLTextFormatterNoPHP) formatter;
+					textFormatter.formatText(text, contraints, HTMLTextFormatter.FORMAT_HEAD);
+				}
+			}
+			return;
+		}
+		else {
+			spaces = getBreakSpaces(node);
+		}
+		if (spaces == null || spaces.length() == 0)
+			return;
+
+		replaceSource(node.getModel(), node.getEndOffset(), 0, spaces);
+		setWidth(contraints, spaces);
 	}
 
