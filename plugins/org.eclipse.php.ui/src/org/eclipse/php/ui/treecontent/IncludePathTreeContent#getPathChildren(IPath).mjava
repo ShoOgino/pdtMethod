@@ -1,66 +1,30 @@
 	Object[] getPathChildren(IPath parentPath) {
-		IPath modelPath = new Path(parentPath.segment(0));
+		IPath modelPath = parentPath.uptoSegment(2);
 		if (!includePathTree.includes(modelPath)) {
 			return NO_CHILDREN;
 		}
 		PHPIncludePathModel includePathModel = (PHPIncludePathModel) includePathTree.getElementData(modelPath);
-		IPath includePath = IncludePathVariableManager.instance().getIncludePathVariable(includePathModel.getID());
-		File folder = new File(includePath.append(parentPath.removeFirstSegments(1)).toOSString());
-		// remove not existing elements:
-		IPath[] innerFilePaths = includePathTree.getChildren(parentPath);
-		for (int i = 0; i < innerFilePaths.length; ++i) {
-			Object elementData = includePathTree.getElementData(innerFilePaths[i]);
-			boolean toDelete = false;
-			if (elementData instanceof PHPFileData) {
-				PHPFileData realFileData = includePathModel.getFileData(includePath.append(innerFilePaths[i].removeFirstSegments(1)).toOSString());
-				if (realFileData == null) {
-					toDelete = true;
-				}
-			} else {
-				IResource resource = (IResource) elementData;
-				PHPFileData[] fileDatas = includePathModel.getFileDatas();
-				boolean startFound = false;
-				for (int j = 0; j < fileDatas.length; ++j) {
-					if (fileDatas[j].getName().startsWith(includePath.append(resource.getFullPath().removeFirstSegments(1)).toOSString())) {
-						startFound = true;
-						break;
-					}
-				}
-				toDelete = !startFound;
+		IPath includeLocation = getIncludeModelLocation(includePathModel);
+		// find and add missing elements:
+		PHPFileData[] fileDatas = includePathModel.getFileDatas();
+		for (int i = 0; i < fileDatas.length; ++i) {
+			IPath fileLocation = new Path(fileDatas[i].getName());
+			IPath fileTreeLocation = modelPath.append(fileLocation.removeFirstSegments(includeLocation.segmentCount()));
+			if (includePathTree.includes(fileTreeLocation)) {
+				continue;
 			}
-			if (toDelete) {
-				includePathTree.deleteElement(innerFilePaths[i]);
+			// find existing directory:
+			IPath existingDirectoryTreeLocation;
+			for (existingDirectoryTreeLocation = fileTreeLocation.removeLastSegments(1); existingDirectoryTreeLocation.segmentCount() > modelPath.segmentCount() && !includePathTree.includes(existingDirectoryTreeLocation); existingDirectoryTreeLocation = existingDirectoryTreeLocation
+				.removeLastSegments(1)) {
 			}
-		}
-		// add missing elements:
-		String[] innerFileNames = folder.list();
-		if (innerFileNames != null) {
-			for (int i = 0; i < innerFileNames.length; ++i) {
-				File innerFile = new File(folder.getPath() + File.separatorChar + innerFileNames[i]);
-				PHPFileData[] fileDatas = includePathModel.getFileDatas();
+			// add missing directories:
+			for (IPath missingDirectoryTreeLocation = existingDirectoryTreeLocation.append(fileTreeLocation.segment(existingDirectoryTreeLocation.segmentCount())); missingDirectoryTreeLocation.segmentCount() < fileTreeLocation.segmentCount(); missingDirectoryTreeLocation = missingDirectoryTreeLocation
+				.append(fileTreeLocation.segment(missingDirectoryTreeLocation.segmentCount()))) {
+				includePathTree.createElement(missingDirectoryTreeLocation, ((Workspace) ResourcesPlugin.getWorkspace()).newResource(missingDirectoryTreeLocation, IResource.FOLDER));
+			}
+			includePathTree.createElement(fileTreeLocation, fileDatas[i]);
 
-				boolean startFound = false;
-				PHPFileData exactMatchingFileData = null;
-				for (int j = 0; j < fileDatas.length; ++j) {
-					if (fileDatas[j].getName().startsWith(innerFile.getAbsolutePath())) {
-						startFound = true;
-						if (fileDatas[j].getName().equals(innerFile.getAbsolutePath())) {
-							exactMatchingFileData = fileDatas[j];
-						}
-						break;
-					}
-				}
-				if (startFound) {
-					IPath innerFilePath = parentPath.append(new Path(innerFileNames[i]));
-					if (!includePathTree.includes(innerFilePath)) {
-						if (exactMatchingFileData != null) {
-							includePathTree.createElement(innerFilePath, exactMatchingFileData);
-						} else {
-							includePathTree.createElement(innerFilePath, ((Workspace) ResourcesPlugin.getWorkspace()).newResource(innerFilePath, innerFile.isFile() ? IResource.FILE : IResource.FOLDER));
-						}
-					}
-				}
-			}
 		}
 		// getting the children:
 		IPath[] childrenPaths = includePathTree.getChildren(parentPath);

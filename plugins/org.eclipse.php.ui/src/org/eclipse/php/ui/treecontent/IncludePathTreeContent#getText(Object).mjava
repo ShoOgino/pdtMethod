@@ -4,7 +4,12 @@
 			return treeNode.getText();
 		} else if (element instanceof PHPIncludePathModel) {
 			PHPIncludePathModel includePathModel = (PHPIncludePathModel) element;
-			return includePathModel.getID() + " (" + IncludePathVariableManager.instance().getIncludePathVariable(includePathModel.getID()).toOSString() + ")";
+			String id = includePathModel.getID();
+			IPath location = IncludePathVariableManager.instance().getIncludePathVariable(includePathModel.getID());
+			if (location != null) {
+				return id + " (" + IncludePathVariableManager.instance().getIncludePathVariable(includePathModel.getID()).toOSString() + ")";
+			}
+			return id;
 		} else if (element instanceof PhpModelProxy) {
 			PhpModelProxy proxy = (PhpModelProxy) element;
 			return proxy.getID();
@@ -13,7 +18,7 @@
 			IPath[] modelPaths = includePathTree.getChildren(includePathTree.getRoot());
 			for (int i = 0; i < modelPaths.length; ++i) {
 				PHPIncludePathModel includePathModel = (PHPIncludePathModel) includePathTree.getElementData(modelPaths[i]);
-				IPath includePath = IncludePathVariableManager.instance().getIncludePathVariable(includePathModel.getID());
+				IPath includePath = getIncludeModelLocation(includePathModel);
 				if (fileData.getName().startsWith(includePath.toOSString())) {
 					return new Path(fileData.getName()).lastSegment();
 				}

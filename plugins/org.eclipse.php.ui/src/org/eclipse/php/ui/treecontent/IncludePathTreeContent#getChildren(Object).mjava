@@ -10,15 +10,17 @@
 		} else if ((parentElement instanceof PHPTreeNode) && ID_INCLUDES_NODE.equals(((PHPTreeNode) parentElement).getId())) {
 			PHPTreeNode treeNode = (PHPTreeNode) parentElement;
 			PHPProjectModel projectModel = PHPWorkspaceModelManager.getInstance().getModelForProject((IProject) treeNode.getData(), true);//			PHPIncludePathModel model=PHPIncludePathModelManager
-			PHPIncludePathModelManager includeModelManager = (PHPIncludePathModelManager) projectModel.getModel("CompositeIncludePathModel");
+			PHPIncludePathModelManager includeModelManager = (PHPIncludePathModelManager) projectModel.getModel(INCLUDE_MODEL_MANAGER_ID);
 			if (includeModelManager == null) {
 				return new Object[0];
 			}
 			return includeModelManager.listModels();
 		} else if (parentElement instanceof PHPIncludePathModel) {
 			PHPIncludePathModel includePathModel = (PHPIncludePathModel) parentElement;
-			String modelRoot = includePathModel.getID().replace(Path.SEPARATOR, '\0'); // in case it's a plain directory, not a variable
-			IPath modelPath = new Path(modelRoot);
+			if (!includePathTree.includes(INCLUDE_MODELS_PATH_ROOT)) {
+				includePathTree.createElement(INCLUDE_MODELS_PATH_ROOT, INCLUDE_MODELS_PATH_ROOT.segment(1));
+			}
+			IPath modelPath = INCLUDE_MODELS_PATH_ROOT.append(IncludeModelPathRootConverter.to(includePathModel));
 			if (!includePathTree.includes(modelPath)) {
 				includePathTree.createElement(modelPath, includePathModel);
 			}
