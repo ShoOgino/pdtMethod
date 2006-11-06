@@ -1,5 +1,5 @@
 	public void selectionChanged(IStructuredSelection selection) {
-		selectedResources=null;
+		selectedResources = null;
 		if (!selection.isEmpty()) {
 			if (ActionUtils.containsOnlyProjects(selection.toList())) {
 				setEnabled(createWorkbenchAction(selection).isEnabled());
@@ -8,33 +8,32 @@
 			List elements = selection.toList();
 			IResource[] resources = ActionUtils.getResources(elements);
 			Object[] phpElements = ActionUtils.getPHPElements(elements);
-			
+
 			if (elements.size() != resources.length + phpElements.length)
 				setEnabled(false);
-			else
-			{
-				boolean enabled=true;
-				if (PHPUiConstants.DISABLE_ELEMENT_REFACTORING)
-				{
+			else {
+				boolean enabled = true;
+				if (PHPUiConstants.DISABLE_ELEMENT_REFACTORING) {
 					for (int i = 0; i < phpElements.length; i++) {
-						if (!(phpElements[i]instanceof PHPFileData))
-							enabled=false;
+						if (!(phpElements[i] instanceof PHPFileData))
+							enabled = false;
 					}
 				}
-				if (enabled)
-				{
-					List list=new ArrayList(Arrays.asList(resources));
+				if (enabled) {
+					List list = new ArrayList(Arrays.asList(resources));
 					for (int i = 0; i < phpElements.length; i++) {
-						if (phpElements[i]instanceof PHPFileData)
-						{
-							list.add(PHPModelUtil.getResource(phpElements[i]));
+						if (phpElements[i] instanceof PHPFileData) {
+							IResource res = PHPModelUtil.getResource(phpElements[i]);
+							if (res != null && res.exists()) {
+								list.add(PHPModelUtil.getResource(phpElements[i]));
+							}
 						}
-						
+
 					}
-					if (list.size()==elements.size())						// only files selected
+					if (list.size() == elements.size()) // only files selected
 					{
-						selectedResources= new StructuredSelection(list);
-						enabled=createWorkbenchAction(selectedResources).isEnabled();
+						selectedResources = new StructuredSelection(list);
+						enabled = createWorkbenchAction(selectedResources).isEnabled();
 					}
 				}
 				setEnabled(enabled);
