@@ -1,0 +1,40 @@
+	/**
+	 * Return best matching debug parameters initializer according the the launch
+	 * The returned IDebugParametersInitializer is always a new instance.
+	 * 
+	 * @param launch
+	 * @return A new instance of a best match IDebugParametersInitializer
+	 */
+	public static IDebugParametersInitializer getBestMatchDebugParametersInitializer(ILaunch launch) {
+		try {
+			Dictionary factories = getInstance().getInitializersFactories(launch.getLaunchMode());
+
+			// 1st try to get the one with matching configuration type
+			for (Enumeration e = factories.elements(); e.hasMoreElements();) {
+				DebugParametersInitializerFactory initializerFactory = (DebugParametersInitializerFactory) e.nextElement();
+				String configurationTypeId = initializerFactory.element.getAttribute(LAUNCH_CONFIGURATION_TYPE_ATTRIBUTE);
+				if (configurationTypeId != null && !"".equals(configurationTypeId) && configurationTypeId.equals(launch.getLaunchConfiguration().getType().getIdentifier())) {
+					return initializerFactory.createParametersInitializer();
+				}
+			}
+			// Then if not found try to get with empty configuration type and not a default one
+			for (Enumeration e = factories.elements(); e.hasMoreElements();) {
+				DebugParametersInitializerFactory initializerFactory = (DebugParametersInitializerFactory) e.nextElement();
+				String configurationTypeId = initializerFactory.element.getAttribute(LAUNCH_CONFIGURATION_TYPE_ATTRIBUTE);
+				if ((configurationTypeId == null || "".equals(configurationTypeId)) && !PHPDebugPlugin.getID().equals(initializerFactory.element.getNamespaceIdentifier())) {
+					return initializerFactory.createParametersInitializer();
+				}
+			}
+			//	Last, if nothing found get the default
+			for (Enumeration e = factories.elements(); e.hasMoreElements();) {
+				DebugParametersInitializerFactory initializerFactory = (DebugParametersInitializerFactory) e.nextElement();
+				if (PHPDebugPlugin.getID().equals(initializerFactory.element.getNamespaceIdentifier())) {
+					return initializerFactory.createParametersInitializer();
+				}
+			}
+		} catch (Exception e) {
+			PHPDebugPlugin.log(e);
+		}
+		return getCurrentDebugParametersInitializer();
+	}
+
