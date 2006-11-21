@@ -1,9 +1,27 @@
 	public Object[] getChildren(final Object object) {
 		if (object instanceof PHPElementImpl && mode == MODE_MIXED)
 			return getPHPChildren((PHPElementImpl) object);
-		else if (object instanceof PHPCodeData)
-			return phpContentProvider.getChildren(object);
-		else if (object instanceof PHPEditorModel && mode == MODE_PHP) {
+		else if (object instanceof PHPCodeData) {
+			ArrayList children = new ArrayList(Arrays.asList(phpContentProvider.getChildren(object)));
+			if (object instanceof PHPClassData) {
+				PHPClassData classData = (PHPClassData) object;
+				PHPSuperClassNameData superClassNameData = classData.getSuperClassData();
+				if (superClassNameData != null && PHPModelUtil.discoverSuperClass(classData, superClassNameData.getName()) != null) {
+					children.add(superClassNameData);
+				}
+			}
+			if (object instanceof PHPSuperClassNameData) {
+				PHPSuperClassNameData superClassNameData = (PHPSuperClassNameData) object;
+				PHPClassData classData = (PHPClassData) superClassNameData.getContainer();
+				if (classData != null) {
+					PHPClassData superClassData = PHPModelUtil.discoverSuperClass(classData, superClassNameData.getName());
+					if (superClassData != null) {
+						return getChildren(superClassData);
+					}
+				}
+			}
+			return children.toArray();
+		} else if (object instanceof PHPEditorModel && mode == MODE_PHP) {
 			editorModel = (PHPEditorModel) object;
 			editorModel.getDocument().getAdapterFor(IJFaceNodeAdapter.class);
 			final PHPFileData fileData = editorModel.getFileData();
