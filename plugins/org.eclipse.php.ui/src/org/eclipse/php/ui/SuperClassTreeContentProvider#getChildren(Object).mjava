@@ -1,0 +1,19 @@
+	public Object[] getChildren(final Object object) {
+		if (object instanceof PHPClassData) {
+			final PHPClassData classData = (PHPClassData) object;
+			final PHPSuperClassNameData superClassNameData = classData.getSuperClassData();
+			if (superClassNameData != null && PHPModelUtil.discoverSuperClass(classData, superClassNameData.getName()) != null)
+				return new Object[] { superClassNameData };
+		}
+		if (object instanceof PHPSuperClassNameData) {
+			final PHPSuperClassNameData superClassNameData = (PHPSuperClassNameData) object;
+			final PHPClassData classData = (PHPClassData) superClassNameData.getContainer();
+			if (classData != null) {
+				final PHPClassData superClassData = PHPModelUtil.discoverSuperClass(classData, superClassNameData.getName());
+				if (superClassData != null)
+					return provider.getChildren(superClassData);
+			}
+		}
+		return new Object[0];
+	}
+
