@@ -1,0 +1,36 @@
+	public static IIncludePathEntry getEntry(String sPath, String sEntryKind, String sContentKind, String sResource, boolean isExported, IPath projectPath ){
+//		 ensure path is absolute
+		IPath path = new Path(sPath);
+		int entryKind = entryKindFromString(sEntryKind);
+		if (entryKind != IIncludePathEntry.IPE_VARIABLE && entryKind != IIncludePathEntry.IPE_CONTAINER && !path.isAbsolute()) {
+			path = projectPath.append(path);
+		}
+		IResource resource = null;
+
+		// recreate the CP entry
+		IIncludePathEntry entry = null;
+		switch (entryKind) {
+
+			case IIncludePathEntry.IPE_PROJECT:
+				resource = ResourcesPlugin.getWorkspace().getRoot().getProject(sResource);
+				entry = newProjectEntry(path, resource, isExported);
+				break;
+			case IIncludePathEntry.IPE_LIBRARY:
+				entry = new IncludePathEntry(contentKindFromString(sContentKind), IIncludePathEntry.IPE_LIBRARY, path, resource, isExported);
+				break;
+			case IIncludePathEntry.IPE_SOURCE:
+				// must be an entry in this project or specify another project
+				entry = newSourceEntry(path, resource);
+				break;
+			case IIncludePathEntry.IPE_VARIABLE:
+				entry = newVariableEntry(path, resource, isExported);
+				break;
+			case IIncludePathEntry.IPE_CONTAINER:
+				entry = newContainerEntry(path, resource, isExported);
+				break;
+			default:
+				throw new AssertionError(Messages.bind(Messages.includePath_unknownKind, sEntryKind));
+		}
+		return entry;
+	}
+

@@ -6,44 +6,15 @@
 		String pathAttr = element.getAttribute(TAG_PATH);
 		String resourceAttr = element.getAttribute(TAG_RESOURCE);
 
-		String createdReferenceAttr = element.getAttribute(TAG_CREATEDREFERENCE);
-		boolean createdReference = "true".equalsIgnoreCase(createdReferenceAttr);
+		// not in use: comment out
+//		String createdReferenceAttr = element.getAttribute(TAG_CREATEDREFERENCE);
+//		boolean createdReference = "true".equalsIgnoreCase(createdReferenceAttr);
 
-		// ensure path is absolute
-		IPath path = new Path(pathAttr);
-		int entryKind = entryKindFromString(entryKindAttr);
-		if (entryKind != IIncludePathEntry.IPE_VARIABLE && entryKind != IIncludePathEntry.IPE_CONTAINER && !path.isAbsolute()) {
-			path = projectPath.append(path);
-		}
-		IResource resource = null;
 
 		// exported flag (optional)
 		boolean isExported = element.getAttribute(TAG_EXPORTED).equals("true"); //$NON-NLS-1$
 
-		// recreate the CP entry
-		IIncludePathEntry entry = null;
-		switch (entryKind) {
-
-			case IIncludePathEntry.IPE_PROJECT:
-				resource = ResourcesPlugin.getWorkspace().getRoot().getProject(resourceAttr);
-				entry = newProjectEntry(path, resource, isExported);
-				break;
-			case IIncludePathEntry.IPE_LIBRARY:
-				entry = new IncludePathEntry(contentKindFromString(contentKindAttr), IIncludePathEntry.IPE_LIBRARY, path, resource, isExported);
-				break;
-			case IIncludePathEntry.IPE_SOURCE:
-				// must be an entry in this project or specify another project
-				entry = newSourceEntry(path, resource);
-				break;
-			case IIncludePathEntry.IPE_VARIABLE:
-				entry = newVariableEntry(path, resource, isExported);
-				break;
-			case IIncludePathEntry.IPE_CONTAINER:
-				entry = newContainerEntry(path, resource, isExported);
-				break;
-			default:
-				throw new AssertionError(Messages.bind(Messages.includePath_unknownKind, entryKindAttr));
-		}
+		IIncludePathEntry entry = getEntry(pathAttr, entryKindAttr, contentKindAttr, resourceAttr, isExported, projectPath);
 		return entry;
 	}
 
