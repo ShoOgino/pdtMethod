@@ -1,0 +1,22 @@
+		protected void refresh(PHPFileData fileData, boolean deleted) {
+			IPhpModel model = findModel(fileData);
+			if (model == null) {
+				return;
+			}
+			IPath includeLocation = getIncludeModelLocation(model);
+			String fileName = fileData.getName();
+			IPath fileLocation = new Path(fileName);
+			IPath modelPath = INCLUDE_MODELS_PATH_ROOT.append(IncludeModelPathRootConverter.to(model));
+			IPath fileTreeLocation = modelPath.append(fileLocation.removeFirstSegments(includeLocation.segmentCount()));
+			if (includePathTree.includes(fileTreeLocation)) {
+				if (deleted) {
+					includePathTree.deleteElement(fileTreeLocation);
+					refresh(fileTreeLocation.removeLastSegments(1));
+				} else {
+					refresh(fileTreeLocation);
+				}
+			} else {
+				refresh();
+			}
+		}
+

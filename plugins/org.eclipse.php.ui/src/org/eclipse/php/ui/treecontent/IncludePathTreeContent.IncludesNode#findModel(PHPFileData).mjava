@@ -1,0 +1,21 @@
+		private IPhpModel findModel(PHPFileData fileData) {
+			IPath[] modelPaths = includePathTree.getChildren(INCLUDE_MODELS_PATH_ROOT);
+			IResource res = PHPModelUtil.getResource(fileData);
+			IPath filePath = new Path(fileData.getName());
+			String filePathString = filePath.toOSString();
+			if (res != null) {
+				filePathString = res.getLocation().toOSString();
+			}
+			for (int i = 0; i < modelPaths.length; ++i) {
+				IPhpModel model = IncludeModelPathRootConverter.from(modelPaths[i].segment(1));
+				if (model == null) {
+					continue;
+				}
+				IPath modelLocation = getIncludeModelLocation(model);
+				if (filePathString.startsWith(modelLocation.toOSString()) || (filePath.isAbsolute() && filePath.segment(0).equals(model.getID()))) {
+					return model;
+				}
+			}
+			return null;
+		}
+
