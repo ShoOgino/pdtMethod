@@ -1,0 +1,30 @@
+		/*
+		 * @see org.eclipse.ui.texteditor.AbstractTextEditor.LineStartAction#getLineStartPosition(java.lang.String, int, java.lang.String)
+		 */
+		protected int getLineStartPosition(final IDocument document, final String line, final int length, final int offset) {
+
+			String type = IDocument.DEFAULT_CONTENT_TYPE;
+			try {
+				type = TextUtilities.getContentType(document, IPhpPartitions.PHP_PARTITIONING, offset, true);
+			} catch (BadLocationException exception) {
+				// Should not happen
+			}
+
+			int index = super.getLineStartPosition(document, line, length, offset);
+			if (type.equals(IPhpPartitions.PHP_DOC) || type.equals(IPhpPartitions.PHP_MULTI_LINE_COMMENT)) {
+				if (index < length - 1 && line.charAt(index) == '*' && line.charAt(index + 1) != '/') {
+					do {
+						++index;
+					} while (index < length && Character.isWhitespace(line.charAt(index)));
+				}
+			} else {
+				if (index < length - 1 && line.charAt(index) == '/' && line.charAt(index + 1) == '/') {
+					index++;
+					do {
+						++index;
+					} while (index < length && Character.isWhitespace(line.charAt(index)));
+				}
+			}
+			return index;
+		}
+

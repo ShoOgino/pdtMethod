@@ -1,0 +1,77 @@
+		/*
+		 * @see org.eclipse.jface.action.IAction#run()
+		 */
+		public void run() {
+			boolean isSmartHomeEndEnabled = true;
+			IPreferenceStore store = getPreferenceStore();
+			if (store != null) {
+				isSmartHomeEndEnabled = store.getBoolean(PreferenceConstants.USE_SMART_HOME_END);
+			}
+
+			ISourceViewer fSourceViewer = getSourceViewer();
+			StyledText st = fSourceViewer.getTextWidget();
+			if (st == null || st.isDisposed())
+				return;
+
+			int caretOffset = st.getCaretOffset();
+			int lineNumber = st.getLineAtOffset(caretOffset);
+			int lineOffset = st.getOffsetAtLine(lineNumber);
+
+			int lineLength;
+			int caretOffsetInDocument;
+			final IDocument document = fSourceViewer.getDocument();
+
+			try {
+				caretOffsetInDocument = widgetOffset2ModelOffset(fSourceViewer, caretOffset);
+				lineLength = document.getLineInformationOfOffset(caretOffsetInDocument).getLength();
+			} catch (BadLocationException ex) {
+				return;
+			}
+
+			String line = ""; //$NON-NLS-1$
+			if (lineLength > 0) {
+				int end = lineOffset + lineLength - 1;
+				end = Math.min(end, st.getCharCount() - 1);
+				line = st.getText(lineOffset, end);
+			}
+
+			// Compute the line start offset
+			int index = getLineStartPosition(document, line, lineLength, caretOffsetInDocument);
+
+			// Remember current selection
+			Point oldSelection = st.getSelection();
+
+			// Compute new caret position
+			int newCaretOffset = -1;
+			if (isSmartHomeEndEnabled) {
+
+				if (caretOffset - lineOffset == index)
+					// to beginning of line
+					newCaretOffset = lineOffset;
+				else
+					// to beginning of text
+					newCaretOffset = lineOffset + index;
+
+			} else {
+
+				if (caretOffset > lineOffset)
+					// to beginning of line
+					newCaretOffset = lineOffset;
+			}
+
+			if (newCaretOffset == -1)
+				newCaretOffset = caretOffset;
+			else
+				st.setCaretOffset(newCaretOffset);
+
+			if (fDoSelect) {
+				if (caretOffset < oldSelection.y)
+					st.setSelection(oldSelection.y, newCaretOffset);
+				else
+					st.setSelection(oldSelection.x, newCaretOffset);
+			} else
+				st.setSelection(newCaretOffset);
+
+			fireSelectionChanged(oldSelection);
+		}
+
