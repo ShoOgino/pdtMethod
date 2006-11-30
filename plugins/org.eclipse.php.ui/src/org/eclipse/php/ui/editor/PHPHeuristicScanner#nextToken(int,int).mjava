@@ -1,0 +1,76 @@
+	/**
+	 * Returns the next token in forward direction, starting at
+	 * <code>start</code>, and not extending further than
+	 * <code>bound</code>. The return value is one of the constants defined
+	 * in {@link Symbols}. After a call, {@link #getPosition()} will return
+	 * the position just after the scanned token (i.e. the next position that
+	 * will be scanned).
+	 * 
+	 * @param start
+	 *            the first character position in the document to consider
+	 * @param bound
+	 *            the first position not to consider any more
+	 * @return a constant from {@link Symbols} describing the next token
+	 */
+	public int nextToken(int start, int bound) {
+		int pos = scanForward(start, bound, fNonWSDefaultPart);
+		if (pos == NOT_FOUND)
+			return TokenEOF;
+
+		fPos++;
+
+		switch (fChar) {
+			case LBRACE :
+				return TokenLBRACE;
+			case RBRACE :
+				return TokenRBRACE;
+			case LBRACKET :
+				return TokenLBRACKET;
+			case RBRACKET :
+				return TokenRBRACKET;
+			case LPAREN :
+				return TokenLPAREN;
+			case RPAREN :
+				return TokenRPAREN;
+			case SEMICOLON :
+				return TokenSEMICOLON;
+			case COMMA :
+				return TokenCOMMA;
+			case QUESTIONMARK :
+				return TokenQUESTIONMARK;
+			case EQUAL :
+				return TokenEQUAL;
+			case LANGLE :
+				return TokenLESSTHAN;
+			case RANGLE :
+				return TokenGREATERTHAN;
+		}
+
+		// else
+		if (Character.isJavaIdentifierPart(fChar)) {
+			// assume an ident or keyword
+			int from = pos, to;
+			pos = scanForward(pos + 1, bound, fNonIdent);
+			if (pos == NOT_FOUND)
+				to = bound == UNBOUND ? fDocument.getLength() : bound;
+			else
+				to = pos;
+
+			String identOrKeyword;
+			try {
+				identOrKeyword = fDocument.get(from, to - from);
+			}
+			catch (BadLocationException e) {
+				return TokenEOF;
+			}
+
+			return getToken(identOrKeyword);
+
+
+		}
+		else {
+			// operators, number literals etc
+			return TokenOTHER;
+		}
+	}
+

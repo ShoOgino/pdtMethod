@@ -1,0 +1,44 @@
+	/**
+	 * Returns the position of the opening peer character (backward search).
+	 * Any scopes introduced by closing peers are skipped. All peers accounted
+	 * for must reside in the default partition.
+	 * 
+	 * <p>
+	 * Note that <code>start</code> must not point to the closing peer, but
+	 * to the first character being searched.
+	 * </p>
+	 * 
+	 * @param start
+	 *            the start position
+	 * @param openingPeer
+	 *            the opening peer character (e.g. '{')
+	 * @param closingPeer
+	 *            the closing peer character (e.g. '}')
+	 * @return the matching peer character position, or <code>NOT_FOUND</code>
+	 */
+	public int findOpeningPeer(int start, char openingPeer, char closingPeer) {
+		Assert.isTrue(start < fDocument.getLength());
+
+		try {
+			int depth = 1;
+			start += 1;
+			while (true) {
+				start = scanBackward(start - 1, UNBOUND, new CharacterMatch(new char[]{openingPeer, closingPeer}));
+				if (start == NOT_FOUND)
+					return NOT_FOUND;
+
+				if (fDocument.getChar(start) == closingPeer)
+					depth++;
+				else
+					depth--;
+
+				if (depth == 0)
+					return start;
+			}
+
+		}
+		catch (BadLocationException e) {
+			return NOT_FOUND;
+		}
+	}
+
