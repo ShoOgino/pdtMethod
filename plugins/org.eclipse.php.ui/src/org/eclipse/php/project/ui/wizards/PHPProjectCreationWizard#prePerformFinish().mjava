@@ -1,6 +1,15 @@
 	protected boolean prePerformFinish() {
 		getDataModel().setProperty(PHPCoreConstants.PHPOPTION_INCLUDE_PATH,includePathPage.getIncludePathsBlock().getIncludepathEntries());
- 		basePage.setProjectOptionInModel(getDataModel());
+		createdProject = (IProject)getDataModel().getProperty(IProjectCreationPropertiesNew.PROJECT);
+		
+		// call the prePerformFinish for any page added trough the extention point
+		if (createdProject != null) {
+			for(Iterator it = wizardPagesList.iterator(); it.hasNext();){
+				BasicPHPWizardPageExtended page = (BasicPHPWizardPageExtended) it.next();
+				page.prePerformFinish(createdProject);		
+			}
+		}
+		basePage.setProjectOptionInModel(getDataModel());
         return super.prePerformFinish();
 	}
 
