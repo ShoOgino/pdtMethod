@@ -1,0 +1,91 @@
+    public final Control createContents(Composite parent) {
+        Composite composite = new Composite(parent, SWT.NULL);
+
+        GridLayout layout = new GridLayout();
+        composite.setLayout(layout);
+        GridData data = new GridData(GridData.FILL_BOTH);
+        composite.setLayoutData(data);
+
+        Composite checkLinkComposite = new Composite(composite, SWT.NONE);
+        checkLinkComposite.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        checkLinkComposite.setLayout(new GridLayout(2, false));
+
+        if (getProject() != null) {
+            fEnableProjectSettings = new Button(checkLinkComposite, SWT.CHECK);
+            fEnableProjectSettings.setText("Enable project specific settings");
+            fEnableProjectSettings.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
+            boolean enabledForProject = createPreferenceScopes()[0].getNode(getPreferenceNodeQualifier()).getBoolean(getProjectSettingsKey(), false);
+            fEnableProjectSettings.setSelection(enabledForProject);
+        } else {
+            Label spacer = new Label(checkLinkComposite, SWT.CHECK);
+            spacer.setLayoutData(new GridData());
+        }
+
+        fProjectSettingsLink = new Link(checkLinkComposite, SWT.NONE);
+        fProjectSettingsLink.setFont(composite.getFont());
+        fProjectSettingsLink.setLayoutData(new GridData(SWT.END, SWT.BEGINNING, true, false));
+
+        /*
+         * "element" should be a project, if null, link to per-project
+         * properties
+         */
+        if (getProject() != null) {
+            fProjectSettingsLink.setText("<a>" + "Configure Workspace Settings..." + "</a>"); //$NON-NLS-1$//$NON-NLS-3$
+        } else {
+            fProjectSettingsLink.setText("<a>" + "Configure Project Specific Settings..." + "</a>"); //$NON-NLS-1$//$NON-NLS-3$
+        }
+
+        updateLinkEnablement();
+
+        fProjectSettingsLink.addSelectionListener(new SelectionListener() {
+            public void widgetDefaultSelected(SelectionEvent e) {
+                widgetSelected(e);
+            }
+
+            public void widgetSelected(SelectionEvent e) {
+                if (getProject() == null) {
+                    openProjectSettings();
+                } else {
+                    openWorkspaceSettings();
+                }
+            }
+
+        });
+
+        if (getProject() != null) {
+            Label line = new Label(composite, SWT.SEPARATOR | SWT.HORIZONTAL);
+            line.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL));
+        }
+
+        
+        final Control common = createProjectContents(composite);
+        common.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL));
+        
+        final Control workspaceControls = createWorkspaceContents(composite);
+        workspaceControls.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+        if (fEnableProjectSettings != null) {
+            SelectionAdapter selectionAdapter = new SelectionAdapter() {
+                ControlEnableState enablements = null;
+
+                public void widgetSelected(SelectionEvent e) {
+                    super.widgetSelected(e);
+                    if (fEnableProjectSettings.getSelection()) {
+                        if (enablements != null) {
+                            enablements.restore();
+                            enablements = null;
+                        }
+                    } else {
+                        ControlEnableState.disable(workspaceControls);
+                        enablements = ControlEnableState.disable(common);
+                    }
+                }
+            };
+            selectionAdapter.widgetSelected(null);
+            ControlEnableState.disable(workspaceControls);
+            workspaceControls.setVisible(false);
+            fEnableProjectSettings.addSelectionListener(selectionAdapter);
+        }
+        return composite;
+    }
+
