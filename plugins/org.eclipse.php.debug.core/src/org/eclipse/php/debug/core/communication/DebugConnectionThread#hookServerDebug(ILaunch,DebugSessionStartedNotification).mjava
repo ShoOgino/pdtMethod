@@ -4,7 +4,7 @@
 	 * @param launch An {@link ILaunch}
 	 * @param startedNotification	A DebugSessionStartedNotification
 	 */
-	protected void hookServerDebug(ILaunch launch, DebugSessionStartedNotification startedNotification) throws CoreException {
+	protected void hookServerDebug(final ILaunch launch, DebugSessionStartedNotification startedNotification) throws CoreException {
 		ILaunchConfiguration launchConfiguration = launch.getLaunchConfiguration();
 		PHPServerLaunchDecorator launchDecorator;
 		if (launch instanceof PHPServerLaunchDecorator) {
@@ -27,5 +27,11 @@
 		PHPProcess process = new PHPProcess(launch, URL);
 		debugTarget = new PHPDebugTarget(this, launch, URL, requestPort, process, contextRoot, runWithDebug, stopAtFirstLine, launchDecorator.getProject());
 		launch.addDebugTarget(debugTarget);
+		Display.getDefault().asyncExec(new Runnable() {
+			public void run() {
+				LaunchManager manager = (LaunchManager)DebugPlugin.getDefault().getLaunchManager();
+				manager.fireUpdate(new ILaunch[] {launch}, LaunchManager.ADDED);
+			}
+		});
 	}
 
