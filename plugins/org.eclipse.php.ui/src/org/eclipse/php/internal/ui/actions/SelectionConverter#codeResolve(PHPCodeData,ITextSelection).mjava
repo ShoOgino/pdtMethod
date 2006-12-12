@@ -1,4 +1,35 @@
 	public static PHPCodeData[] codeResolve(PHPCodeData input, ITextSelection selection) {
+		// a workaround:
+		String text = selection.getText();
+		if (text == null) {
+			return EMPTY_RESULT;
+		}
+		text = text.trim();
+		if("".equals(text)) {
+			 return EMPTY_RESULT;
+		}
+
+		ArrayList codeDatas = new ArrayList();
+
+		if (input instanceof PHPFileData && text.matches("^[\\w]+$")) {
+			PHPWorkspaceModelManager modelManager = PHPWorkspaceModelManager.getInstance();
+			IProject project = modelManager.getProjectForFileData((PHPFileData) input, null);
+			PHPProjectModel model = modelManager.getModelForProject(project);
+			PHPClassData classData = model.getClass(input.getName(), text);
+			if (classData != null) {
+				codeDatas.add(classData);
+			}
+			CodeData[] functionDatas = model.getFunctions(text);
+			if (functionDatas != null && functionDatas.length > 0) {
+				codeDatas.addAll(Arrays.asList(functionDatas));
+			}
+			CodeData[] constantDatas = model.getConstants(text, false);
+			if (constantDatas != null && constantDatas.length > 0) {
+				codeDatas.addAll(Arrays.asList(constantDatas));
+			}
+			return (PHPCodeData[]) codeDatas.toArray(new PHPCodeData[codeDatas.size()]);
+			
+		}
 		return EMPTY_RESULT;
 	}
 
