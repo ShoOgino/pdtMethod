@@ -1,82 +1,82 @@
-		/*
-		 * @see org.eclipse.jface.action.IAction#run()
-		 */
-		public void run() {
-			boolean isSmartHomeEndEnabled = true;
-			IPreferenceStore store = getPreferenceStore();
-			if (store != null) {
-				isSmartHomeEndEnabled = store.getBoolean(PreferenceConstants.USE_SMART_HOME_END);
-			}
+        /*
+         * @see org.eclipse.jface.action.IAction#run()
+         */
+        public void run() {
+            boolean isSmartHomeEndEnabled = true;
+            IPreferenceStore store = getPreferenceStore();
+            if (store != null) {
+                isSmartHomeEndEnabled = store.getBoolean(PreferenceConstants.USE_SMART_HOME_END);
+            }
 
-			ISourceViewer fSourceViewer = getSourceViewer();
-			StyledText st = fSourceViewer.getTextWidget();
-			if (st == null || st.isDisposed())
-				return;
-			int caretOffset = st.getCaretOffset();
-			int lineNumber = st.getLineAtOffset(caretOffset);
-			int lineOffset = st.getOffsetAtLine(lineNumber);
+            ISourceViewer fSourceViewer = getSourceViewer();
+            StyledText st = fSourceViewer.getTextWidget();
+            if (st == null || st.isDisposed())
+                return;
+            int caretOffset = st.getCaretOffset();
+            int lineNumber = st.getLineAtOffset(caretOffset);
+            int lineOffset = st.getOffsetAtLine(lineNumber);
 
-			int lineLength;
-			try {
-				int caretOffsetInDocument = widgetOffset2ModelOffset(fSourceViewer, caretOffset);
-				lineLength = fSourceViewer.getDocument().getLineInformationOfOffset(caretOffsetInDocument).getLength();
-			} catch (BadLocationException ex) {
-				return;
-			}
-			int lineEndOffset = lineOffset + lineLength;
+            int lineLength;
+            try {
+                int caretOffsetInDocument = widgetOffset2ModelOffset(fSourceViewer, caretOffset);
+                lineLength = fSourceViewer.getDocument().getLineInformationOfOffset(caretOffsetInDocument).getLength();
+            } catch (BadLocationException ex) {
+                return;
+            }
+            int lineEndOffset = lineOffset + lineLength;
 
-			int delta = lineEndOffset - st.getCharCount();
-			if (delta > 0) {
-				lineEndOffset -= delta;
-				lineLength -= delta;
-			}
+            int delta = lineEndOffset - st.getCharCount();
+            if (delta > 0) {
+                lineEndOffset -= delta;
+                lineLength -= delta;
+            }
 
-			String line = ""; //$NON-NLS-1$
-			if (lineLength > 0)
-				line = st.getText(lineOffset, lineEndOffset - 1);
-			int i = lineLength - 1;
-			while (i > -1 && Character.isWhitespace(line.charAt(i))) {
-				i--;
-			}
-			i++;
+            String line = ""; //$NON-NLS-1$
+            if (lineLength > 0)
+                line = st.getText(lineOffset, lineEndOffset - 1);
+            int i = lineLength - 1;
+            while (i > -1 && Character.isWhitespace(line.charAt(i))) {
+                i--;
+            }
+            i++;
 
-			// Remember current selection
-			Point oldSelection = st.getSelection();
+            // Remember current selection
+            Point oldSelection = st.getSelection();
 
-			// Compute new caret position
-			int newCaretOffset = -1;
+            // Compute new caret position
+            int newCaretOffset = -1;
 
-			if (isSmartHomeEndEnabled) {
+            if (isSmartHomeEndEnabled) {
 
-				if (caretOffset - lineOffset == i)
-					// to end of line
-					newCaretOffset = lineEndOffset;
-				else
-					// to end of text
-					newCaretOffset = lineOffset + i;
+                if (caretOffset - lineOffset == i)
+                    // to end of line
+                    newCaretOffset = lineEndOffset;
+                else
+                    // to end of text
+                    newCaretOffset = lineOffset + i;
 
-			} else {
+            } else {
 
-				if (caretOffset < lineEndOffset)
-					// to end of line
-					newCaretOffset = lineEndOffset;
+                if (caretOffset < lineEndOffset)
+                    // to end of line
+                    newCaretOffset = lineEndOffset;
 
-			}
+            }
 
-			if (newCaretOffset == -1)
-				newCaretOffset = caretOffset;
-			else
-				st.setCaretOffset(newCaretOffset);
+            if (newCaretOffset == -1)
+                newCaretOffset = caretOffset;
+            else
+                st.setCaretOffset(newCaretOffset);
 
-			st.setCaretOffset(newCaretOffset);
-			if (fDoSelect) {
-				if (caretOffset < oldSelection.y)
-					st.setSelection(oldSelection.y, newCaretOffset);
-				else
-					st.setSelection(oldSelection.x, newCaretOffset);
-			} else
-				st.setSelection(newCaretOffset);
+            st.setCaretOffset(newCaretOffset);
+            if (fDoSelect) {
+                if (caretOffset < oldSelection.y)
+                    st.setSelection(oldSelection.y, newCaretOffset);
+                else
+                    st.setSelection(oldSelection.x, newCaretOffset);
+            } else
+                st.setSelection(newCaretOffset);
 
-			fireSelectionChanged(oldSelection);
-		}
+            fireSelectionChanged(oldSelection);
+        }
 

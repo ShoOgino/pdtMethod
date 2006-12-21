@@ -1,0 +1,28 @@
+        /*
+         * @see org.eclipse.jface.action.IAction#run()
+         */
+        public void run() {
+            // Check whether the feature is enabled in Preferences
+            final IPreferenceStore store = getPreferenceStore();
+            if (!store.getBoolean(PreferenceConstants.USE_SUB_WORD_NAVIGATION)) {
+                super.run();
+                return;
+            }
+
+            final ISourceViewer viewer = getSourceViewer();
+            final IDocument document = viewer.getDocument();
+            fIterator.setText((CharacterIterator) new DocumentCharacterIterator(document));
+            int position = widgetOffset2ModelOffset(viewer, viewer.getTextWidget().getCaretOffset());
+            if (position == -1) {
+                return;
+            }
+
+            int next = findNextPosition(position);
+            if (next != BreakIterator.DONE) {
+                setCaretPosition(next);
+                getTextWidget().showSelection();
+                fireSelectionChanged();
+            }
+
+        }
+

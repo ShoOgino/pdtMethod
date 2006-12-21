@@ -1,42 +1,42 @@
-	public void setSelection(final PHPCodeData element, boolean reveal) {
-		if (element != null) {
-			final UserData userData = element.getUserData();
-			PHPFileData fileData = getPHPFileData();
-			if (userData == null || fileData == null || !userData.getFileName().equals(fileData.getUserData().getFileName())) {
-				return;
-			}
-			int start = userData.getStartPosition();
-			int length = userData.getEndPosition() - userData.getStartPosition() + 1;
+    public void setSelection(final PHPCodeData element, boolean reveal) {
+        if (element != null) {
+            final UserData userData = element.getUserData();
+            PHPFileData fileData = getPHPFileData();
+            if (userData == null || fileData == null || !userData.getFileName().equals(fileData.getUserData().getFileName())) {
+                return;
+            }
+            int start = userData.getStartPosition();
+            int length = userData.getEndPosition() - userData.getStartPosition() + 1;
 
-			final IDocument document = getSourceViewer().getDocument();
-			if (document instanceof IStructuredDocument) {
-				final IStructuredDocument sDocument = (IStructuredDocument) document;
-				final IStructuredDocumentRegion sdRegion = sDocument.getRegionAtCharacterOffset(start);
-				if (sdRegion != null) {
-					// Need it in case the php document doesn't start at the first
-					// line of the page
-					final int sdRegionStart = sdRegion.getStartOffset();
+            final IDocument document = getSourceViewer().getDocument();
+            if (document instanceof IStructuredDocument) {
+                final IStructuredDocument sDocument = (IStructuredDocument) document;
+                final IStructuredDocumentRegion sdRegion = sDocument.getRegionAtCharacterOffset(start);
+                if (sdRegion != null) {
+                    // Need it in case the php document doesn't start at the first
+                    // line of the page
+                    final int sdRegionStart = sdRegion.getStartOffset();
 
-					ITextRegion region = sdRegion.getRegionAtCharacterOffset(start);
-					String elementName = element.getName();
-					if (element instanceof PHPVariableData)
-						elementName = "$" + elementName; //$NON-NLS-1$
-					while (region != null && region.getEnd() + sdRegionStart < start + length) {
-						final String text = sdRegion.getText(region).trim().replaceAll("[\"']+", "");
-						if (elementName.equals(text)) {
-							start = region.getStart() + sdRegionStart;
-							length = region.getTextLength();
-							break;
-						}
-						region = sdRegion.getRegionAtCharacterOffset(region.getEnd() + sdRegionStart);
-					}
-				}
-			}
+                    ITextRegion region = sdRegion.getRegionAtCharacterOffset(start);
+                    String elementName = element.getName();
+                    if (element instanceof PHPVariableData)
+                        elementName = "$" + elementName; //$NON-NLS-1$
+                    while (region != null && region.getEnd() + sdRegionStart < start + length) {
+                        final String text = sdRegion.getText(region).trim().replaceAll("[\"']+", "");
+                        if (elementName.equals(text)) {
+                            start = region.getStart() + sdRegionStart;
+                            length = region.getTextLength();
+                            break;
+                        }
+                        region = sdRegion.getRegionAtCharacterOffset(region.getEnd() + sdRegionStart);
+                    }
+                }
+            }
 
-			if (!reveal)
-				getSourceViewer().setSelectedRange(start, length);
-			else
-				selectAndReveal(start, length);
-		}
-	}
+            if (!reveal)
+                getSourceViewer().setSelectedRange(start, length);
+            else
+                selectAndReveal(start, length);
+        }
+    }
 
