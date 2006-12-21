@@ -1,0 +1,55 @@
+	/**
+	 * Returns the dafault debug server.
+	 * 
+	 * @return
+	 */
+	public static Server getDefaultServer(IProject project) {
+		ServersManager manager = getInstance();
+		// First, try to get it from the memory.
+		Server server = (Server) manager.defaultServersMap.get(project);
+		if (project != null) {
+			// In case that the project is not null, check that we have project-specific settings for it.
+			// Otherwise, map it to the workspace default server.
+			IScopeContext[] preferenceScopes = createPreferenceScopes(project);
+			String projectSpecificServer = preferenceScopes[0].getNode(NODE_QUALIFIER).get(DEFAULT_SERVER_PREFERENCES_KEY, (String)null);
+			if (projectSpecificServer == null) {
+				// We do not have a project specific setting for this project. Map it to the default workspace server.
+				manager.defaultServersMap.put(project, manager.defaultServersMap.get(null));
+				server = (Server) manager.defaultServersMap.get(null);
+			}
+		}
+		// If the server was no found in our hash, try to load it from the preferences.
+		// This part of code should only happen one time when the first call for the 
+		// getDefaultServer. Once it's done, there is no reason to re-load the servers definitions
+		// from the preferences (XML).
+		if (server == null) {
+			String serverName = null;
+			if (project == null) {
+				// Get the default workspace server.
+				Preferences prefs = Activator.getDefault().getPluginPreferences();
+				serverName = prefs.getString(DEFAULT_SERVER_PREFERENCES_KEY);
+			} else {
+				// Get the projects' default server
+				IScopeContext[] preferenceScopes = createPreferenceScopes(project);
+				serverName = preferenceScopes[0].getNode(NODE_QUALIFIER).get(DEFAULT_SERVER_PREFERENCES_KEY, (String)null);
+				if (serverName == null) {
+					// Take the workspace Server and make it the project's default server
+					Preferences prefs = Activator.getDefault().getPluginPreferences();
+					serverName = prefs.getString(DEFAULT_SERVER_PREFERENCES_KEY);
+				}
+			}
+			if (serverName != null && !"".equals(serverName)) {
+				server = (Server) manager.servers.get(serverName);
+				// Map this server as the default for the project (if not null) or for the workspace (when the project is null).
+				manager.defaultServersMap.put(project, server);
+			} else {
+				// Create a default server and hook it as a workspace and the project server (can be the same).
+				server = createServer(Default_Server_Name, BASE_URL);
+				manager.defaultServersMap.put(null, server);
+				manager.defaultServersMap.put(project, server);
+				manager.save();
+			}
+		} 
+		return server;
+	}
+
