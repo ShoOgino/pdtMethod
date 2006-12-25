@@ -1,0 +1,19 @@
+	// Returns the default php executable name for the current project. 
+	// In case the project does not have any special settings, return the workspace default.
+	private static String getDefaultPHPExe(IProject project) {
+		Preferences prefs = PHPProjectPreferences.getModelPreferences();
+		String phpExe = prefs.getString(PHPDebugCorePreferenceNames.DEFAULT_PHP);
+		if (project != null) {
+			// In case that the project is not null, check that we have project-specific settings for it.
+			// Otherwise, map it to the workspace default server.
+			IScopeContext[] preferenceScopes = createPreferenceScopes(project);
+			if (preferenceScopes[0] instanceof ProjectScope) {
+				IEclipsePreferences node = preferenceScopes[0].getNode(PHPProjectPreferences.getPreferenceNodeQualifier());
+				if (node != null) {
+					phpExe = node.get(PHPDebugCorePreferenceNames.DEFAULT_PHP, phpExe);
+				}
+			}
+		}
+		return phpExe;
+	}
+

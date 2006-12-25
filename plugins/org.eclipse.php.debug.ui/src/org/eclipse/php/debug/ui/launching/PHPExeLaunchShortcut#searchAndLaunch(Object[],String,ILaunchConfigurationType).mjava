@@ -24,10 +24,14 @@
 					throw new CoreException(new Status(IStatus.ERROR, PHPDebugUIPlugin.ID, IStatus.OK, PHPDebugUIMessages.launch_failure_no_target, null));
 				}
 
+				String defaultPHPExe = getDefaultPHPExe(project);
 				PHPexes exes = new PHPexes();
 				exes.load(PHPDebugUIPlugin.getDefault().getPluginPreferences());
-				PHPexeItem defaultEXE = exes.getDefaultItem();
-				String phpExeName = (defaultEXE != null) ? exes.getDefaultItem().getPhpEXE().getAbsolutePath().toString() : null;
+				PHPexeItem defaultEXE = exes.getItem(defaultPHPExe);
+				if (defaultEXE == null) {
+					defaultEXE = exes.getDefaultItem();
+				}
+				String phpExeName = (defaultEXE != null) ? defaultEXE.getPhpEXE().getAbsolutePath().toString() : null;
 
 				if (phpExeName == null) {
 					ErrorDialog.openError(PHPDebugUIPlugin.getActiveWorkbenchShell(), PHPDebugUIMessages.launch_noexe_msg_title, PHPDebugUIMessages.launch_noexe_msg_text, new Status(Status.ERROR, PHPDebugUIPlugin.ID, 0, "", null));
