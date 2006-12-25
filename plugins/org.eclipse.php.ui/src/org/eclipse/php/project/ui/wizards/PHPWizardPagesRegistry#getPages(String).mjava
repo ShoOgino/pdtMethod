@@ -1,0 +1,23 @@
+	/**
+	 * Returns all pages contributed to the Wizard with specified ID through extension point <code>org.eclipse.php.ui.phpWizardPages</code>. 
+	 * @param id Wizard id
+	 * @return Array of {@link BasicPHPWizardPageExtended} pages, or <code>null</code> if no pages where contributed.
+	 */
+	public static BasicPHPWizardPageExtended[] getPages(String id) {
+		final List elementsList = (List) instance.pages.get(id);
+		if (elementsList != null) {
+			final List pagesList = new LinkedList();
+			SafeRunner.run(new SafeRunnable("Error creating pages for extension point " + EXTENSION_POINT) {
+				public void run() throws Exception {
+					Iterator i = elementsList.iterator();
+					while (i.hasNext()) {
+						IConfigurationElement element = (IConfigurationElement)i.next();
+						pagesList.add(element.createExecutableExtension(CLASS_ATTRIBUTE));
+					}
+				}
+			});
+			return (BasicPHPWizardPageExtended[]) pagesList.toArray(new BasicPHPWizardPageExtended[pagesList.size()]);
+		}
+		return null;
+	}
+
