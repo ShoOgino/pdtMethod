@@ -6,12 +6,13 @@
 		if (!FileUtils.fileExists(fileName)) {
 			return null;
 		}
+		String URL = server.getBaseURL() + '/' + new Path(fileName).removeFirstSegments(1);
 		ILaunchConfigurationWorkingCopy wc = configType.newInstance(null, DebugPlugin.getDefault().getLaunchManager().generateUniqueLaunchConfigurationNameFrom("New_configuration"));
 
 		wc.setAttribute(Server.NAME, server.getName());
 		wc.setAttribute(Server.FILE_NAME, fileName);
-		wc.setAttribute(Server.CONTEXT_ROOT, project.getName());
-		wc.setAttribute(Server.BASE_URL, server.getBaseURL() + '/' + project.getName() + '/' + new Path(fileName).lastSegment());
+		wc.setAttribute(Server.CONTEXT_ROOT, computeContextRoot(URL, fileName, server));
+		wc.setAttribute(Server.BASE_URL, URL);
 		wc.setAttribute(IPHPConstants.RUN_WITH_DEBUG_INFO, PHPDebugPlugin.getDebugInfoOption());
 		wc.setAttribute(IPHPConstants.OPEN_IN_BROWSER, PHPDebugPlugin.getOpenInBrowserOption());
 		if (server.canPublish()) {
