@@ -5,102 +5,44 @@
 	 */
 	public void createControl(final Composite ancestor) {
 		final Font font = ancestor.getFont();
-		final Composite comp = new Composite(ancestor, SWT.NONE);
+		final Group group = new Group(ancestor, SWT.NULL);
 		GridLayout layout = new GridLayout();
-		comp.setLayout(new GridLayout());
-		comp.setLayoutData(new GridData(GridData.FILL_BOTH));
-		fControl = comp;
-		comp.setFont(font);
-
-		final Group group = new Group(comp, SWT.NULL);
-		layout = new GridLayout();
 		layout.numColumns = 3;
 		group.setLayout(layout);
 		group.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		group.setFont(font);
+		fControl = group;
 
 		GridData data;
-
 		if (fTitle == null)
 			fTitle = PHPDebugUIMessages.PHPexesComboBlock_3;
 		group.setText(fTitle);
 
-		// display a 'use default PHPexe' check box
-		if (fDefaultDescriptor != null) {
-			fDefaultButton = new Button(group, SWT.RADIO);
-			fDefaultButton.setText(fDefaultDescriptor.getDescription());
-			fDefaultButton.addSelectionListener(new SelectionAdapter() {
-				public void widgetSelected(final SelectionEvent e) {
-					if (fDefaultButton.getSelection())
-						setUseDefaultPHPexe();
-				}
-			});
-			data = new GridData(GridData.FILL_HORIZONTAL);
-			data.horizontalSpan = 3;
-			fDefaultButton.setLayoutData(data);
-			fDefaultButton.setFont(font);
-		}
-
-		fSpecificButton = new Button(group, SWT.RADIO);
-		if (fSpecificDescriptor != null)
-			fSpecificButton.setText(fSpecificDescriptor.getDescription());
-		else
-			fSpecificButton.setText(PHPDebugUIMessages.PHPexesComboBlock_1);
-		fSpecificButton.addSelectionListener(new SelectionAdapter() {
-			public void widgetSelected(final SelectionEvent e) {
-				if (fSpecificButton.getSelection()) {
-					fCombo.setEnabled(true);
-					fManageButton.setEnabled(true);
-					if (fCombo.getText().length() == 0 && !fVMs.isEmpty())
-						fCombo.select(0);
-					fireSelectionChanged();
-				}
-			}
-		});
-		fSpecificButton.setFont(font);
-		data = new GridData(GridData.BEGINNING);
-		fSpecificButton.setLayoutData(data);
-
 		fCombo = new Combo(group, SWT.DROP_DOWN | SWT.READ_ONLY);
 		fCombo.setFont(font);
 		data = new GridData(GridData.FILL_HORIZONTAL);
-		data.horizontalSpan = 1;
+		data.horizontalSpan = 2;
 		fCombo.setLayoutData(data);
-		ControlAccessibleListener.addListener(fCombo, fSpecificButton.getText());
-
 		fCombo.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(final SelectionEvent e) {
 				setPHPexe(getPHPexe());
 			}
 		});
 
-		fManageButton = createPushButton(group, PHPDebugUIMessages.PHPexesComboBlock_2);
-		fManageButton.addListener(SWT.Selection, new Listener() {
-			public void handleEvent(final Event event) {
-				final PHPexeItem oldSelection = getPHPexe();
-
-				int oldIndex = -1;
-				if (oldSelection != null)
-					oldIndex = fVMs.indexOf(oldSelection);
-				final ShowPHPsPreferences showPrefs = new ShowPHPsPreferences();
-				showPrefs.run(null);
-
+		Link link = new Link(group, SWT.NONE);
+		link.setFont(font);
+		data = new GridData(SWT.BEGINNING, SWT.BOTTOM, true, false);
+		data.horizontalSpan = 1;
+		link.setLayoutData(data);
+		link.setText(PHPDebugUIMessages.PhpDebugPreferencePage_installedPHPsLink);
+		link.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				PHPexeItem selected = getPHPexe();
+				new ShowPHPsPreferences().run(null);
 				fillWithWorkspacePHPexes();
-				int newIndex = -1;
-				if (oldSelection != null)
-					newIndex = fVMs.indexOf(oldSelection);
-				if (newIndex != oldIndex)
-					// clear the old selection so that a selection changed is fired
-					fPrevSelection = null;
-				// update text
-				setDefaultPHPexeDescriptor(fDefaultDescriptor);
-				if (isDefaultPHPexe())
-					// reset in case default has changed
-					setUseDefaultPHPexe();
-				else {
-					if (fCombo != null)
-						fCombo.select(fCombo.indexOf(fDefaultDescriptor.getDescription()));
-					setPHPexe(getPHPexe());
+				if (phpExecutables.contains(selected)) {
+					String name = selected.getName() + " (" + selected.getPhpEXE().toString() + ")"; //$NON-NLS-1$ //$NON-NLS-2$
+					fCombo.select(fCombo.indexOf(name));
 				}
 			}
 		});
