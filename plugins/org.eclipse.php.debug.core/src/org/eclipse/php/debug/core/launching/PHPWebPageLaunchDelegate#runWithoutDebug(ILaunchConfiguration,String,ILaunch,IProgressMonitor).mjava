@@ -1,0 +1,30 @@
+	public void runWithoutDebug(ILaunchConfiguration configuration, String mode, ILaunch launch, IProgressMonitor monitor) throws CoreException {
+
+		Server server = ServersManager.getServer(configuration.getAttribute(Server.NAME, ""));
+		if (server == null) {
+			Logger.log(Logger.ERROR, "Launch configuration could not find server");
+			//throw CoreException();
+			return;
+		}
+		String fileName = configuration.getAttribute(Server.FILE_NAME, (String) null);
+		// Get the project from the file name
+		IPath filePath = new Path(fileName);
+		IProject proj = null;
+		try {
+			proj = ResourcesPlugin.getWorkspace().getRoot().getProject(filePath.segment(0));
+		} catch (Throwable t) {
+		}
+		if (proj == null) {
+			Logger.log(Logger.ERROR, "Could not launch (Project is null).");
+			return;
+		}
+
+		boolean publish = configuration.getAttribute(Server.PUBLISH, false);
+		if (publish) {
+			if (!FileUtil.publish(server, proj, configuration, DeployFilter.getFilterMap(), monitor)) {
+				// Return if the publish failed.
+				return;
+			}
+		}
+	}
+
