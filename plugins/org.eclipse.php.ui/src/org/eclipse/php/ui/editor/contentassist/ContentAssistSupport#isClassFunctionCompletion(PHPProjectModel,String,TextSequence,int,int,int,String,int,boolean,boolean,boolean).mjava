@@ -4,10 +4,17 @@
 			return false;
 		}
 		boolean isClassTriger = false;
+		boolean isParent = false;
 		String triggerText = statmentText.subSequence(startFunctionPosition - 2, startFunctionPosition).toString();
 		if (triggerText.equals(OBJECT_FUNCTIONS_TRIGGER)) {
 		} else if (triggerText.equals(CLASS_FUNCTIONS_TRIGGER)) {
 			isClassTriger = true;
+			if (startFunctionPosition <= 8) {
+				String parentText = statmentText.subSequence(startFunctionPosition - 8, startFunctionPosition - 2).toString();
+				if (parentText.equals("parent")) {
+					isParent = true;
+				}
+			}
 		} else {
 			return false;
 		}
@@ -24,7 +31,11 @@
 		}
 
 		if (isClassTriger) {
-			showClassStaticCall(projectModel, fileName, offset, className, functionName, selectionLength, explicit);
+			if (isParent) {
+				showParentCall(projectModel, fileName, offset, className, functionName, selectionLength, explicit, isStrict);
+			} else {
+				showClassStaticCall(projectModel, fileName, offset, className, functionName, selectionLength, explicit);
+			}
 		} else {
 			String parent = statmentText.toString().substring(0, statmentText.toString().lastIndexOf(OBJECT_FUNCTIONS_TRIGGER)).trim();
 			boolean isInstanceOf = !parent.equals("$this");
