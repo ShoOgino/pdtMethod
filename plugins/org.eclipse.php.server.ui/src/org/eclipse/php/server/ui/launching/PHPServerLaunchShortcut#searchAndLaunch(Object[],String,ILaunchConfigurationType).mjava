@@ -1,0 +1,55 @@
+	public static void searchAndLaunch(Object[] search, String mode, ILaunchConfigurationType configType) {
+		int entries = search == null ? 0 : search.length;
+		for (int i = 0; i < entries; i++) {
+			try {
+				String phpPathString = null;
+				IProject project = null;
+				Object obj = search[i];
+
+				//TODO: if IProject, offer choices?
+				if (obj instanceof PHPCodeData) {
+					obj = PHPModelUtil.getResource(obj);
+				}
+				if (obj instanceof IFile) {
+					IFile file = (IFile) obj;
+					project = file.getProject();
+					IContentType contentType = Platform.getContentTypeManager().getContentType(ContentTypeIdForPHP.ContentTypeID_PHP);
+					if (contentType.isAssociatedWith(file.getName())) {
+						phpPathString = file.getFullPath().toString();
+					}
+				}
+
+				if (phpPathString == null) {
+					// Could not find target to launch
+					throw new CoreException(new Status(IStatus.ERROR, PHPDebugUIPlugin.ID, IStatus.OK, PHPDebugUIMessages.launch_failure_no_target, null));
+				}
+
+				Server defaultServer = ServersManager.getDefaultServer(project);
+				if (defaultServer == null) {
+					PHPDebugPlugin.createDefaultPHPServer();
+					defaultServer = ServersManager.getDefaultServer(project);
+					if (defaultServer == null) {
+						// Sould not happen
+						throw new CoreException(new Status(IStatus.ERROR, PHPDebugUIPlugin.ID, IStatus.OK, "Could not create a defualt server for the launch.", null));
+					}
+				}
+
+				// Launch the app
+				ILaunchConfiguration config = findLaunchConfiguration(project, phpPathString, defaultServer, mode, configType);
+				if (config != null) {
+					DebugUITools.launch(config, mode);
+				} else {
+					// Could not find launch configuration or the user cancelled.
+					// throw new CoreException(new Status(IStatus.ERROR, PHPDebugUIPlugin.ID, IStatus.OK, PHPDebugUIMessages.launch_failure_no_config, null));
+				}
+			} catch (CoreException ce) {
+				final IStatus stat = ce.getStatus();
+				Display.getDefault().asyncExec(new Runnable() {
+					public void run() {
+						ErrorDialog.openError(PHPDebugUIPlugin.getActiveWorkbenchShell(), PHPDebugUIMessages.launch_failure_msg_title, PHPDebugUIMessages.launch_failure_server_msg_text, stat);
+					}
+				});
+			}
+		}
+	}
+
