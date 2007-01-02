@@ -6,18 +6,23 @@
 			if (!project.exists()) {
 				project.create(desc, subMonitor);
 			}
-
-//			for (Iterator iter = wizardPags.iterator(); iter.hasNext();) {
-//				BasicPHPWizardPageExtended element = (BasicPHPWizardPageExtended) iter.next();
-//				element.postPerformFinish(project);
-//				element.flushPreferences();		
-//			}
 			
 			if (monitor.isCanceled())
 				throw new OperationCanceledException();
 			subMonitor = new SubProgressMonitor(monitor, IProgressMonitor.UNKNOWN);
 
 			project.open(subMonitor);
+			
+			// For every page added to the projectCreationWizard, call its execute method
+			// Here the project settings should be stored into the preferences 
+			// This action needs to happen here, after the project has been created and opened
+			// and before setNatureIds is called
+			
+			for (Iterator iter = wizardPageFactories.iterator(); iter.hasNext();) {
+				WizardPageFactory pageFactory = (WizardPageFactory) iter.next();
+				pageFactory.execute();
+			}
+			
 
 			String[] natureIds = (String[]) model.getProperty(PROJECT_NATURES);
 			if (null != natureIds) {
