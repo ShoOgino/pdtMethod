@@ -1,4 +1,6 @@
 	private WizardFragmentsFactoryRegistry() {
+		factories = new HashMap(4);
+		fragments = new HashMap(5);
 		IExtensionRegistry registry = Platform.getExtensionRegistry();
 		IConfigurationElement[] elements = registry.getConfigurationElementsFor(PHPUiPlugin.ID, EXTENSION_POINT_NAME);
 
@@ -6,16 +8,26 @@
 			final IConfigurationElement element = elements[i];
 			if (FRAGMENT_TAG.equals(element.getName())) {
 				String id = element.getAttribute(ID_ATTRIBUTE);
+				String groupID = element.getAttribute(FRAGMENTS_GROUP_ID);
 				String placeAfter = element.getAttribute(PLACE_AFTER_ATTRIBUTE);
+				ArrayList list = (ArrayList) fragments.get(groupID);
+				if (list == null) {
+					list = new ArrayList(5);
+					fragments.put(groupID, list);
+				}
 				if (element.getNamespaceIdentifier().equals(PHPUiPlugin.ID)) {
 					// Make sure that extentions that exists in this plugin will appear ahead of all others
 					// when the user-class calls for getFragmentsFactories().
-					fragments.add(0, new FragmentsFactory(element, id, placeAfter));
+					list.add(0, new FragmentsFactory(element, id, placeAfter));
 				} else {
-					fragments.add(new FragmentsFactory(element, id, placeAfter));
+					list.add(new FragmentsFactory(element, id, placeAfter));
 				}
 			}
 		}
-		sortFragmentsByPlace();
+		// Sort all the fragment groups
+		Iterator keys = fragments.keySet().iterator();
+		while (keys.hasNext()) {
+			sortFragmentsByPlace((ArrayList) fragments.get(keys.next()));
+		}
 	}
 

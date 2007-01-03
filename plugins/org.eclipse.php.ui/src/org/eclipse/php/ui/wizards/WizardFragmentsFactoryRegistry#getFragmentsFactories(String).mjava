@@ -7,18 +7,22 @@
 	 * @param serverType	The id of the server.
 	 * @return	An array of ICompositeFragmentFactory.
 	 */
-	public static ICompositeFragmentFactory[] getFragmentsFactories() {
+	public static ICompositeFragmentFactory[] getFragmentsFactories(String fragmentsGroupID) {
 		WizardFragmentsFactoryRegistry registry = getInstance();
-		if (registry.factories == null) {
-			List fragments = registry.fragments;
+		ICompositeFragmentFactory[] factories = (ICompositeFragmentFactory[]) registry.factories.get(fragmentsGroupID);
+		if (factories == null) {
+			List fragments = (List) registry.fragments.get(fragmentsGroupID);
 			List factoriesList = new ArrayList();
 			for (int i = 0; i < fragments.size(); i++) {
 				FragmentsFactory factory = (FragmentsFactory) fragments.get(i);
 				factoriesList.add(factory.createFragmentFactory());
 			}
-			registry.factories = new ICompositeFragmentFactory[factoriesList.size()];
-			factoriesList.toArray(registry.factories);
+			factories = new ICompositeFragmentFactory[factoriesList.size()];
+			factoriesList.toArray(factories);
+			registry.factories.put(fragmentsGroupID, factories);
+			// Clear the fragments mapping, since it is no longer needed.
+			registry.fragments.remove(fragmentsGroupID);
 		}
-		return registry.factories;
+		return factories;
 	}
 
