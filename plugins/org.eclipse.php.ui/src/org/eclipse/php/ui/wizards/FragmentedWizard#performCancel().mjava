@@ -1,0 +1,42 @@
+	/**
+	 * Cancel the client selection.
+	 *
+	 * @return boolean
+	 */
+	public boolean performCancel() {
+		final List list = getAllWizardFragments();
+		IRunnableWithProgress runnable = new IRunnableWithProgress() {
+			public void run(IProgressMonitor monitor) throws InvocationTargetException {
+				try {
+					Iterator iterator = list.iterator();
+					while (iterator.hasNext())
+						executeTask((WizardFragment) iterator.next(), CANCEL, monitor);
+				} catch (CoreException ce) {
+					throw new InvocationTargetException(ce);
+				}
+			}
+		};
+
+		Throwable t = null;
+		try {
+			if (getContainer() != null)
+				getContainer().run(true, true, runnable);
+			else
+				runnable.run(new NullProgressMonitor());
+			return true;
+		} catch (InvocationTargetException te) {
+			t = te.getCause();
+		} catch (Exception e) {
+			t = e;
+		}
+		PHPUiPlugin.log(new Status(IStatus.ERROR, PHPUiPlugin.ID, 0, "Error cancelling task wizard", t)); //$NON-NLS-1$
+
+		if (t instanceof CoreException) {
+			openError(t.getLocalizedMessage(), ((CoreException) t).getStatus());
+		} else
+			openError(t.getLocalizedMessage());
+
+		return false;
+
+	}
+
