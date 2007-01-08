@@ -3,12 +3,16 @@
 	 * @return active PHP manual site config
 	 */
 	public static PHPManualConfig getActiveManualSite(IPreferenceStore store, List configs) {
-		String storedSite = store.getString(PreferenceConstants.PHP_MANUAL_SITE);
-		for (int i = 0; i < configs.size(); ++i) {
-			PHPManualConfig config = (PHPManualConfig) configs.get(i);
-			if (config.url.equals(storedSite)) {
-				return config;
+		String storedConfigString = store.getString(PreferenceConstants.PHP_MANUAL_SITE);
+		if (storedConfigString != null && !"".equals(storedConfigString)) {
+			PHPManualConfig config = PHPManualConfigSerializer.fromString(storedConfigString);
+			for (Iterator i = configs.iterator(); i.hasNext();) {
+				Object next = i.next();
+				if (config.equals(next)) {
+					return (PHPManualConfig) next;
+				}
 			}
+			return config;
 		}
 		return null;
 	}
