@@ -17,6 +17,7 @@
 				String partitionType = null;
 				IRegion line;
 				String linePart;
+				boolean phpPartitionVisited = false;
 
 				do {
 					line = idoc.getLineInformation(editorLineNumber - 1);
@@ -30,16 +31,17 @@
 					for (int i = 0; i < partitions.length; ++i) {
 						partitionType = partitions[i].getType();
 						if (partitionType.equals(PHPPartitionTypes.PHP_DEFAULT)) {
+							phpPartitionVisited = true;
 							startOffset = partitions[i].getOffset();
 							linePart = idoc.get(startOffset, partitions[i].getLength()).trim();
-							if (Pattern.matches(".*[a-zA-Z]+.*", linePart) && !linePart.toLowerCase().startsWith("<?php")) {
+							if (Pattern.matches(".*[a-zA-Z0-0_]+.*", linePart) && !linePart.trim().toLowerCase().equals("<?php")) {
 								result = startOffset;
 								break;
 							}
 						}
 					}
 					++editorLineNumber;
-				} while (PHPStructuredTextPartitioner.isPHPPartitionType(partitionType) && result == -1);
+				} while ((!phpPartitionVisited || PHPStructuredTextPartitioner.isPHPPartitionType(partitionType)) && result == -1);
 			} catch (BadLocationException e) {
 				result = -1;
 			}
