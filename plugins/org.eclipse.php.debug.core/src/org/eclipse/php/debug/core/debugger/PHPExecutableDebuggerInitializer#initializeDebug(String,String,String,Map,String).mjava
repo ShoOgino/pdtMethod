@@ -1,25 +1,23 @@
-	public void initializeDebug(String phpExe, String fileName, Map envVariables) {
+	public void initializeDebug(String phpExe, String fileName, String query, Map envVariables, String phpIniLocation) {
 		try {
 			IPath phpExePath = new Path(phpExe);
 			File workingDir = new File(phpExePath.removeLastSegments(1).toString());
 			String phpConfigDir = workingDir.getAbsolutePath();
-			String phpIniLocation = launch.getAttribute(IDebugParametersKeys.PHP_INI_LOCATION);
-			if(phpIniLocation != null && !phpIniLocation.equals("")) {
+			if (phpIniLocation != null && !phpIniLocation.equals("")) {
 				phpConfigDir = phpIniLocation;
 			}
-			
+
 			// Important!!! 
 			// Note that php executable -c parameter (for php 4) must get the path to the directory that contains the php.ini file.
 			// We cannot use a full path to the php.ini file nor modify the file name! (for example php.temp.ini).
 			phpConfigDir = (new File(phpConfigDir)).getParentFile().getAbsolutePath();
-			IDebugParametersInitializer parametersInitializer = DebugParametersInitializersRegistry.getBestMatchDebugParametersInitializer(launch);
 
 			systemEnvironmentVariables.put("REQUEST_METHOD", "GET");
 			systemEnvironmentVariables.put("SCRIPT_FILENAME", fileName);
 			systemEnvironmentVariables.put("SCRIPT_NAME", fileName);
 			systemEnvironmentVariables.put("PATH_TRANSLATED", fileName);
 			systemEnvironmentVariables.put("PATH_INFO", fileName);
-			systemEnvironmentVariables.put("QUERY_STRING", parametersInitializer.generateQuery(launch) + "&debug_host=127.0.0.1");
+			systemEnvironmentVariables.put("QUERY_STRING", query + "&debug_host=127.0.0.1");
 			systemEnvironmentVariables.put("REDIRECT_STATUS", "1");
 			systemEnvironmentVariables.put("PHPRC", phpConfigDir);
 			if (envVariables != null) {
