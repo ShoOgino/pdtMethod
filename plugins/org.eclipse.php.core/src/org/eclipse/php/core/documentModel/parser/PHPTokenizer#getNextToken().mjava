@@ -12,11 +12,15 @@
  * so that whitespace can be collapsed.
  */
 public final ITextRegion getNextToken() throws IOException {
-	if(fInPhpState){
-		return getNextPhpToken();
-	}
+	fEmbeddedContainer = null;
 	// load the starting non-whitespace token (assume that it is so)
 	if (fShouldLoadBuffered) {
+		if (fBufferedEmbeddedContainer != null) {
+			ITextRegion container = fBufferedEmbeddedContainer;
+			fBufferedEmbeddedContainer = null;
+			fShouldLoadBuffered = false;
+			return container;
+		}
 		context = fBufferedContext;
 		text = fBufferedText;
 		start = fBufferedStart;
@@ -45,12 +49,23 @@ public final ITextRegion getNextToken() throws IOException {
 			return null;
 		}
 	}
-	if(context == PHP_OPEN){
-    	fInPhpState = true;
-		return PHPRegionFactory.getInstance().createToken(context, start, textLength, length, null, null, text);
-	}
+	
 	// store the next token
-	fBufferedContext = primGetNextToken();
+	f_context = primGetNextToken();
+	if (f_context == PROXY_CONTEXT) {
+		fBufferedEmbeddedContainer = fEmbeddedContainer;
+		fShouldLoadBuffered = true;
+	} else if (f_context == XML_TAG_NAME) {
+		if(containsTagName(yy_buffer, yy_startRead, yy_markedPos-yy_startRead))
+			fCurrentTagName = yytext();
+		else
+			fCurrentTagName = null;
+	} else if (f_context == XML_TAG_OPEN) {
+		fIsBlockingEnabled = true;
+	} else if (f_context == XML_END_TAG_OPEN) {
+		fIsBlockingEnabled = false;
+	}
+	fBufferedContext = f_context;
 	fBufferedText = yytext();
 	if (fBufferedContext == XML_TAG_NAME) {
 		if(containsTagName(yy_buffer, yy_startRead, yy_markedPos-yy_startRead))
@@ -80,6 +95,12 @@ public final ITextRegion getNextToken() throws IOException {
 		return null;
 	}
 	fTokenCount++;
-	return PHPRegionFactory.getInstance().createToken(context, start, textLength, length, null, fCurrentTagName, text);
+
+	// if it is php content we extract the tokens
+	if (context == PHP_CONTENT) {
+		return fRegionFactory.createToken(context, start, textLength, length, project, text); 
+	} else {
+		return fRegionFactory.createToken(context, start, textLength, length);
+	}
 }
 

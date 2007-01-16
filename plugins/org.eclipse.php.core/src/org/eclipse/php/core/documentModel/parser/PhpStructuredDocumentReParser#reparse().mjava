@@ -1,0 +1,28 @@
+	/**
+	 * This implementation updates the php tokens model after updating WST editor model
+	 */
+	public StructuredDocumentEvent reparse() {
+		final StructuredDocumentEvent documentEvent = super.reparse();
+		
+		if (documentEvent instanceof RegionChangedEvent) {
+			// safe cast
+			RegionChangedEvent event = (RegionChangedEvent) documentEvent;
+			final ITextRegion region = event.getRegion();
+
+			// if it is a php script region - reparse the php tokens according to the new text 
+			if (region.getType() == PHPRegionContext.PHP_CONTENT) {
+
+				try {
+					PhpScriptRegion phpRegion = (PhpScriptRegion) region;
+					final String newText = documentEvent.getDocument().get(region.getStart(), region.getLength());
+					phpRegion.reparse(newText);
+
+				} catch (BadLocationException e) {
+					Logger.logException(e);
+				}
+			}
+		}
+
+		return documentEvent;
+	}
+
