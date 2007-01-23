@@ -1,0 +1,27 @@
+	/**
+	 * Check that all the projects in the map actually exists in the workspace.
+	 * If a project is missing (probably as a result of a renaming) remove it from the map and check 
+	 * if any of its cache files can also be removed.
+	 */
+	public void checkCache() {
+		Map cachedMap = getCachedMap();
+		IProject[] projects = PHPWorkspaceModelManager.getInstance().listProjects();
+		HashMap projectsMap = new HashMap();
+		for (int i = 0; i < projects.length; i++) {
+			projectsMap.put(projects[i].getName(), projects[i]);
+		}
+		List pathsToRemove = new ArrayList();
+		Set keysSet = cachedMap.keySet();
+		Object[] keys = new Object[keysSet.size()];
+		keysSet.toArray(keys);
+		for (int i = 0; i < keys.length; i++) {
+			if (!projectsMap.containsKey(keys[i])) {
+				List list = (List)cachedMap.remove(keys[i]);
+				pathsToRemove.addAll(list);
+			}
+		}
+		// Delete any cache file that is not related to other projects
+		checkPaths(pathsToRemove, cachedMap);
+		deletePaths(pathsToRemove);
+	}
+

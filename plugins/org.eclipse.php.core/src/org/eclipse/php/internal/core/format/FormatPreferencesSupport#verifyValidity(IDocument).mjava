@@ -1,0 +1,25 @@
+	private void verifyValidity(IDocument document) {
+		if (fLastDocument != document) {
+			DOMModelForPHP editorModel = (DOMModelForPHP) StructuredModelManager.getModelManager().getExistingModelForRead(document);
+			PHPProjectModel projectModel = editorModel.getProjectModel();
+
+			IProject project = PHPWorkspaceModelManager.getInstance().getProjectForModel(projectModel);
+			if (fLastProject != project) {
+				fLastProject = project;
+				verifyListening();
+			}
+			editorModel.releaseFromRead();
+		}
+
+		if (fLastDocument != document || preferencesChanged) {
+			String useTab = preferencesSupport.getPreferencesValue(PHPCoreConstants.FORMATTER_USE_TABS, null, fLastProject);
+			String indentSize = preferencesSupport.getPreferencesValue(PHPCoreConstants.FORMATTER_INDENTATION_SIZE, null, fLastProject);
+
+			indentationChar = (Boolean.valueOf(useTab).booleanValue()) ? '\t' : ' ';
+			indentationSize = Integer.valueOf(indentSize).intValue();
+
+			preferencesChanged = false;
+			fLastDocument = document;
+		}
+	}
+

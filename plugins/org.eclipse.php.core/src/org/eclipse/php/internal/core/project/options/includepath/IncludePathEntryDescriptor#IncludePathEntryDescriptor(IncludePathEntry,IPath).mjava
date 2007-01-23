@@ -1,0 +1,25 @@
+	public IncludePathEntryDescriptor(IncludePathEntry entry, IPath projectPath){
+		this.entryKind = IncludePathEntry.entryKindToString(entry.entryKind);
+		this.contentKind = IncludePathEntry.contentKindToString(entry.contentKind);
+		//path = entry.path.toOSString();
+		if (entry.resource != null) {
+			this.resourceName = entry.resource.getName();
+		}
+		this.isExported = entry.isExported;
+		this.createdReference = false;
+		
+		IPath entryPath = entry.path;
+		if (entry.entryKind != IIncludePathEntry.IPE_VARIABLE && entry.entryKind != IIncludePathEntry.IPE_CONTAINER) {
+			// translate to project relative from absolute (unless a device path)
+			if (projectPath != null && projectPath.isPrefixOf(entryPath)) {
+				if (entryPath.segment(0).equals(projectPath.segment(0))) {
+					entryPath = entryPath.removeFirstSegments(1);
+					entryPath = entryPath.makeRelative();
+				} else {
+					entryPath = entryPath.makeAbsolute();
+				}
+			}
+		}		
+		this.path = String.valueOf(entryPath);	
+	}
+

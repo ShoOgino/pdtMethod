@@ -1,0 +1,17 @@
+	public CodeData[] getClassConsts(String fileName, String className, String startsWith) {
+		PHPClassData classData = getClass(fileName, className);
+		if (classData == null) {
+			return null;
+		}
+
+		CodeData[] variables = ModelSupport.getCodeDataStartingWith(classData.getConsts(), startsWith);
+
+		CodeData[] superConsts = null;
+		String superClass = classData.getSuperClassData().getName();
+		if (superClass != null) {
+			fileName = (classData.isUserCode()) ? classData.getUserData().getFileName() : "";
+			superConsts = getClassConsts(fileName, superClass, startsWith);
+		}
+		return ModelSupport.merge(variables, superConsts);
+	}
+

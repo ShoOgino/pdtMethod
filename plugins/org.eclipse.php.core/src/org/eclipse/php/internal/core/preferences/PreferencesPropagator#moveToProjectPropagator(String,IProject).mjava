@@ -1,0 +1,24 @@
+	/*
+	 * Move the listeners to the project preferences propagator.
+	 */
+	private void moveToProjectPropagator(String key, IProject project) {
+		List list = null;
+		IPreferencesPropagatorListener[] listeners = null;
+		synchronized (lock) {
+			list = getPropagatorListeners(key);
+			if (list == null) {
+				return;
+			}
+			listeners = new IPreferencesPropagatorListener[list.size()];
+			list.toArray(listeners);
+		}
+		for (int i = 0; i < listeners.length; i++) {
+			IPreferencesPropagatorListener listener = listeners[i];
+			if (project.equals(listener.getProject())) {
+				// Move the listener from this propagator to the project specific preferences propagator
+				super.removePropagatorListener(listener, key);
+				addToProjectPropagator(listener, key);
+			}
+		}
+	}
+

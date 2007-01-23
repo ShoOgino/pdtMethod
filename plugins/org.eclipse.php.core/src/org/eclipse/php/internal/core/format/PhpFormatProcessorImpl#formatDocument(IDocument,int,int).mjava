@@ -1,0 +1,40 @@
+	public void formatDocument(IDocument document, int start, int length) throws IOException, CoreException {
+
+		if (document == null)
+			return;
+
+		if ((start >= 0) && (length >= 0)) {
+			// the following if is the reason for not using the super (except for saving the start and length)
+			// the bug in the super is that in a multipass formatter the document length is changed and thus
+			// the test (start + length <= document.getLength()) is not valid because it will always fail
+			if ((start + length > document.getLength())) {
+				if (start > document.getLength()) {
+					return;
+				}
+				length = document.getLength() - start;
+			}
+			this.start = start;
+			this.length = length;
+			IStructuredModel structuredModel = null;
+			// OutputStream outputStream = null;
+			try {
+				// setup structuredModel
+				// Note: We are getting model for edit. Will save model if
+				// model changed.
+				structuredModel = StructuredModelManager.getModelManager().getExistingModelForEdit(document);
+
+				// format
+				formatModel(structuredModel, start, length);
+
+				// save model if needed
+				if (!structuredModel.isSharedForEdit() && structuredModel.isSaveNeeded())
+					structuredModel.save();
+			} finally {
+				// ensureClosed(outputStream, null);
+				// release from model manager
+				if (structuredModel != null)
+					structuredModel.releaseFromEdit();
+			}
+		}
+	}
+

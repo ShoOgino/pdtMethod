@@ -1,0 +1,62 @@
+		public void handleFunctionDeclaration(String functionName, boolean isClassFunction, int modifier, PHPDocBlock docInfo, int startPosition, int stopPosition, int lineNumber) {
+			PHPFunctionData.PHPFunctionParameter[] parameters = new PHPFunctionData.PHPFunctionParameter[functionParametersList.size()];
+			functionParametersList.toArray(parameters);
+			functionParametersList.clear();
+
+			String returnType = null;
+
+			if (docInfo != null) {
+				Iterator it = docInfo.getTags(PHPDocTag.PARAM);
+				while (it.hasNext()) {
+					PHPDocTag param = (PHPDocTag) it.next();
+					String arg = (param.getValue()).trim();
+					String[] values = arg.split(" ");
+					String name = null;
+					String type = null;
+
+					int length = values.length > 2 ? 2 : values.length;
+					for (int i = 0; i < length; i++) {
+						if (values[i].startsWith("$")) {
+							name = values[i];
+						} else {
+							type = values[i];
+						}
+					}
+					if (name == null) {
+						name = values[0];
+					}
+					PHPFunctionData.PHPFunctionParameter parameter = getParameter(parameters, name);
+
+					if (parameter == null) {
+						type = values[0];
+						name = values.length > 1 ? values[1] : null;
+						parameter = getParameter(parameters, type);
+					}
+					// update parameter.
+					if (parameter != null && type != null && type.length() > 0) {
+						String originalClassType = parameter.getClassType();
+						if (originalClassType == null || originalClassType.length() == 0) {
+							parameter.setClassType(type);
+						}
+					}
+				}
+				Iterator returnIt = docInfo.getTags(PHPDocTag.RETURN);
+				returnType = returnIt.hasNext() ? (String) ((PHPDocTag) returnIt.next()).getValue() : null;
+			}
+
+			if (returnType == null) {
+				if (isClassFunction && functionName.equals(className)) {
+					returnType = className;
+				} else {
+					returnType = "void";
+				}
+			}
+
+			PHPFunctionData functionData = PHPCodeDataFactory.createPHPFuctionData(functionName, modifier, docInfo, null, parameters, returnType);
+			if (isClassFunction) {
+				classFunctionsList.add(functionData);
+			} else {
+				functionsList.add(functionData);
+			}
+		}
+

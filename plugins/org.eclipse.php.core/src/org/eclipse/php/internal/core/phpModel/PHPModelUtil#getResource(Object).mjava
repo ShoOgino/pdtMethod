@@ -1,0 +1,30 @@
+	public static IResource getResource(final Object element) {
+		if (element instanceof PHPCodeData) {
+			PHPCodeData parent = null;
+			if (!(element instanceof PHPFileData))
+				parent = getPHPFileContainer((PHPCodeData) element);
+			final PHPFileData fileData = (PHPFileData) parent;
+			String filename = null;
+			final PHPCodeData codeData = (PHPCodeData) element;
+			if (fileData != null)
+				filename = fileData.getName();
+			else if (codeData.isUserCode()) {
+				codeData.getContainer();
+				final UserData userData = codeData.getUserData();
+				filename = userData.getFileName();
+			} else
+				return null; //no resource
+			final Path path = new Path(filename);
+			if (path.segmentCount() < 2) // path doesnt include project name, return null
+				return null;
+			final IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(path);
+			return resource;
+		} else if (element instanceof PHPProjectModel) {
+			final PHPProjectModel projectModel = (PHPProjectModel) element;
+			final IProject project = PHPWorkspaceModelManager.getInstance().getProjectForModel(projectModel);
+			return project;
+		} else if (element instanceof IResource)
+			return (IResource) element;
+		return null;
+	}
+

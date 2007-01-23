@@ -1,0 +1,24 @@
+	private boolean isIndentationBase(final IStructuredDocument document, final int checkedOffset, final int forOffset) throws BadLocationException {
+		final IRegion lineInfo = document.getLineInformationOfOffset(checkedOffset);
+		int lineStart = lineInfo.getOffset();
+
+		if (isBlanks(document, lineStart, checkedOffset, forOffset))
+			return false;
+
+		//need to get to the first tRegion - so that we wont get the state of the 
+		//tRegion in the previos line
+		while (Character.isWhitespace(document.getChar(lineStart)))
+			lineStart++;
+
+		final String checkedLineBeginState = FormatterUtils.getPartitionType(document, lineStart, true);
+
+		final String checkedLineEndState = FormatterUtils.getPartitionType(document, checkedOffset, true);
+
+		final String forLineEndState = FormatterUtils.getPartitionType(document, forOffset);
+
+		if (shouldNotConsiderAsIndentationBase(checkedLineBeginState, forLineEndState))
+			return false;
+
+		return lineShouldInedent(checkedLineBeginState, checkedLineEndState) || forLineEndState == checkedLineBeginState;
+	}
+

@@ -1,0 +1,27 @@
+	/**
+	 * This functions checks if an offset is right before/next a partition, if so then the offset bellongs to the before/next partition
+	 */
+	private static String checkBounds(IStructuredDocumentRegion sdRegion, ITextRegion tRegion, int offset, String defaultPartitionType) {
+		if (sdRegion.getStartOffset() + tRegion.getStart() == offset) {
+			tRegion = sdRegion.getRegionAtCharacterOffset(offset - 1);
+			if (tRegion == null) {
+				return defaultPartitionType;
+			}
+			if (tRegion.getType() == PHPRegionTypes.PHP_OPENTAG) {
+				return PHPRegionTypes.PHP_OPENTAG;
+			}
+			return tRegion.getType(); // PHPPartitionTypes.PHP_DEFAULT;
+		}
+		if (sdRegion.getStartOffset() + tRegion.getTextEnd() == offset) {
+			tRegion = sdRegion.getRegionAtCharacterOffset(offset + 1);
+			if (tRegion == null) {
+				return defaultPartitionType;
+			}
+			if (tRegion.getType() == PHPRegionTypes.PHP_CLOSETAG) {
+				return PHPRegionTypes.PHP_CLOSETAG;
+			}
+			return tRegion.getType();
+		}
+		return defaultPartitionType;
+	}
+

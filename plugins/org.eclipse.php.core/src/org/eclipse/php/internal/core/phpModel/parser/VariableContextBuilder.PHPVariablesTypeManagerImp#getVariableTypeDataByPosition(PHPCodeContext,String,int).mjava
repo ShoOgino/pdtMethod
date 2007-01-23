@@ -1,0 +1,29 @@
+		public PHPVariableTypeData getVariableTypeDataByPosition(PHPCodeContext context, String variableName, int position) {
+			variableName = removeDollar(variableName);
+			Object variablrContext = createVariableContext(variableName, context);
+			List list = (List) variablesInstansiation.get(variablrContext);
+			if (list == null) {
+				return null;
+			}
+			PHPVariableTypeData lastKnowenData = null;
+			for (int i = list.size() - 1; i >= 0; i -= 1) {
+				PHPVariableTypeData curr = (PHPVariableTypeData) list.get(i);
+				if (curr.getPosition() <= position) {
+					if (lastKnowenData == null) {
+						if (curr.getType() != null) {
+							return curr;
+						}
+						lastKnowenData = curr;
+					} else {
+						if (curr.getType() != null) {
+							if (curr.isUserDocumentation()) {
+								return curr;
+							}
+							return lastKnowenData;
+						}
+					}
+				}
+			}
+			return lastKnowenData;
+		}
+

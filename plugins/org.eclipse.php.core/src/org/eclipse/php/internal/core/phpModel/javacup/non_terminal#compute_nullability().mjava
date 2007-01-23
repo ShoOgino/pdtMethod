@@ -1,0 +1,39 @@
+  /** Compute nullability of all non-terminals. */
+  public static void compute_nullability() throws internal_error
+    {
+      boolean      change = true;
+      non_terminal nt;
+      Enumeration  e;
+      production   prod;
+
+      /* repeat this process until there is no change */
+      while (change)
+	{
+	  /* look for a new change */
+	  change = false;
+
+	  /* consider each non-terminal */
+	  for (e=all(); e.hasMoreElements(); )
+	    {
+	      nt = (non_terminal)e.nextElement();
+
+	      /* only look at things that aren't already marked nullable */
+	      if (!nt.nullable())
+		{
+		  if (nt.looks_nullable())
+		    {
+		      nt._nullable = true;
+		      change = true;
+		    }
+		}
+	    }
+	}
+      
+      /* do one last pass over the productions to finalize all of them */
+      for (e=production.all(); e.hasMoreElements(); )
+	{
+	  prod = (production)e.nextElement();
+	  prod.set_nullable(prod.check_nullable());
+	}
+    }
+

@@ -1,0 +1,69 @@
+	public void finishParsing(int lastPosition, int lastLine, long lastModified) {
+		restoreToDefaultContext(lastPosition);
+
+		PHPClassData[] cls = new PHPClassData[classes.size()];
+		classes.toArray(cls);
+
+		PHPFunctionData[] func = new PHPFunctionData[functions.size()];
+		functions.toArray(func);
+
+		PHPIncludeFileData[] include = new PHPIncludeFileData[includeFiles.size()];
+		includeFiles.toArray(include);
+
+		IPHPMarker[] allMarkers = new IPHPMarker[markers.size()];
+		markers.toArray(allMarkers);
+
+		if (phpTags.size() % 2 == 1) {
+			phpTags.add(PHPCodeDataFactory.createUserData(workingFileName, lastPosition, lastPosition, lastPosition, 0));
+		}
+
+		PHPBlock[] phpBlocks = new PHPBlock[(phpTags.size() + 1) >> 1]; // we
+		// want
+		// to
+		// round
+		// the
+		// result
+		// up
+		for (int i = 0; i < phpBlocks.length; i++) {
+			int p = i << 1;
+			UserData startTag = (UserData) phpTags.get(p);
+			UserData endTag;
+			if (p + 1 < phpTags.size()) {
+				endTag = (UserData) phpTags.get(p + 1);
+			} else {
+				endTag = (UserData) phpTags.get(p);
+			}
+			phpBlocks[i] = new PHPBlock(startTag, endTag);
+		}
+
+		fixObjectInstantiation(cls, func);
+		PHPVariablesTypeManager variablesTypeManager = variableContextBuilder.getPHPVariablesTypeManager();
+
+		UserData userData = PHPCodeDataFactory.createUserData(workingFileName, 0, 0, 0, lastLine);
+
+		PHPConstantData[] allConstans = new PHPConstantData[constans.size()];
+		constans.toArray(allConstans);
+
+		PHPIncludeFileData[] allIncludes = new PHPIncludeFileData[includeFiles.size()];
+		includeFiles.toArray(allIncludes);
+
+		PHPFileData fileData = PHPCodeDataFactory.createPHPFileData(workingFileName, userData, cls, func, variablesTypeManager, include, allConstans, allMarkers, phpBlocks, firstPHPDocBlock, lastModified);
+		for (int i = 0; i < cls.length; i++) {
+			cls[i].setContainer(fileData);
+		}
+
+		for (int i = 0; i < func.length; i++) {
+			func[i].setContainer(fileData);
+		}
+
+		for (int i = 0; i < allConstans.length; i++) {
+			allConstans[i].setContainer(fileData);
+		}
+
+		for (int i = 0; i < allIncludes.length; i++) {
+			allIncludes[i].setContainer(fileData);
+		}
+
+		userModel.insert(fileData);
+	}
+

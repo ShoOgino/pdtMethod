@@ -1,0 +1,19 @@
+	public void dispose() {
+		super.dispose();
+		PHPProjectOptions options = PHPProjectOptions.forProject(project);
+		if (options != null) {
+			options.removeOptionChangeListener(PHPCoreConstants.PHPOPTION_INCLUDE_PATH, includePathListener);
+		}
+		PhpVersionChangedHandler.getInstance().removePhpVersionChangedListener(phpVersionListener);
+
+		IPath location = project.getLocation();
+		if (location != null) {
+			// Cache the models that are new or out-of-date
+			Iterator models = modelsToCache.keySet().iterator();
+			while (models.hasNext()) {
+				IPhpModel model = (IPhpModel) models.next();
+				DefaultCacheManager.instance().save(project, model, true);
+			}
+		}
+	}
+

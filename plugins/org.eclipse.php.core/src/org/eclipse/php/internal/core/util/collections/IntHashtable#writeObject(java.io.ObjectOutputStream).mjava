@@ -1,0 +1,28 @@
+	/**
+	 * Save the state of the Hashtable to a stream (i.e., serialize it).
+	 *
+	 * @serialData The <i>capacity</i> of the Hashtable (the length of the
+	 *		   bucket array) is emitted (int), followed  by the
+	 *		   <i>size</i> of the Hashtable (the number of key-value
+	 *		   mappings), followed by the key (Object) and value (Object)
+	 *		   for each key-value mapping represented by the Hashtable
+	 *		   The key-value mappings are emitted in no particular order.
+	 */
+	private synchronized void writeObject(java.io.ObjectOutputStream s) throws IOException {
+		// Write out the length, threshold, loadfactor
+		s.defaultWriteObject();
+
+		// Write out length, count of elements and then the key/value objects
+		s.writeInt(table.length);
+		s.writeInt(count);
+		for (int index = table.length - 1; index >= 0; index--) {
+			Entry entry = table[index];
+
+			while (entry != null) {
+				s.write(entry.key);
+				s.writeObject(entry.value);
+				entry = entry.next;
+			}
+		}
+	}
+

@@ -1,0 +1,44 @@
+	public PHPFileData getModelForFile(String filename, boolean forceCreation) {
+
+		Path path = new Path(filename);
+		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+		IProject project = root.getProject(path.segment(0));
+		final PHPProjectModel projModel;
+		if (!project.isAccessible()) {
+			project = null;
+			projModel = null;
+		} else {
+			projModel = getModelForProject(project, forceCreation);
+		}
+
+		PHPFileData fileData = null;
+
+		if (projModel == null) { // possibly external resource
+			IProject[] projects = root.getProjects();
+			String filenameOS = new Path(filename).toOSString();
+			for (int i = 0; i < projects.length; ++i) {
+				PHPProjectModel model = PHPWorkspaceModelManager.getInstance().getModelForProject(projects[i]);
+				if (model != null) {
+					String projectPath = projects[i].getLocation().toOSString();
+					String modelFilename;
+					if(filenameOS.startsWith(projectPath)) {
+						modelFilename = new Path(StringUtils.replace(filenameOS, projectPath, "")).toPortableString();
+					} else {
+						modelFilename = filenameOS;
+					}
+					fileData = model.getFileData(modelFilename);
+					if (fileData != null)
+						break;
+				}
+			}
+		} else {
+			fileData = projModel.getFileData(filename);
+		}
+		if (fileData == null && forceCreation) {
+			IFile file = ResourcesPlugin.getWorkspace().getRoot().getFile(path);
+			addFileToModel(file);
+			fileData = projModel.getFileData(filename);
+		}
+		return fileData;
+	}
+

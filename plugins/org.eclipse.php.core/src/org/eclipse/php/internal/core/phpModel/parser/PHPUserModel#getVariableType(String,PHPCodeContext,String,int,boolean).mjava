@@ -1,0 +1,67 @@
+	public String getVariableType(String fileName, PHPCodeContext context, String variableName, int line, boolean showObjectsFromOtherFiles) {
+		PHPFileData fileData = (PHPFileData) phpFileDataDB.getUniqCodeData(fileName);
+		if (fileData == null) {
+			// we cant find the file return.
+			return null;
+		}
+
+		if (variableName.length() > 0 && variableName.charAt(0) == '$') {
+			variableName = variableName.substring(1);
+		}
+
+		PHPVariablesTypeManager variablesTypeManager = fileData.getVariableTypeManager();
+
+		// search in this context.
+		PHPVariableTypeData typeData = variablesTypeManager.getVariableTypeData(context, variableName, line);
+		if (typeData != null) {
+			return typeData.getType();
+		}
+
+		// if we are inside a class function check if it is a class variables.
+		String className = context.getContainerClassName();
+		if (className != null && !className.equals("")) {
+			// we are inside a class.
+			String classVariableType = getClassVariableType(getClass(fileName, className), variableName, line);
+			if (classVariableType != null && classVariableType.length() > 0) {
+				return classVariableType;
+			}
+		}
+
+		if (!context.equals(ModelSupport.EMPTY_CONTEXT)) {
+			// if we cant find the variable or its not global return.
+			PHPVariableData variable = variablesTypeManager.getVariable(context, variableName);
+			if (variable == null || !variable.isGlobal()) {
+				return null;
+			}
+			// search in this file with global context.
+			context = ModelSupport.EMPTY_CONTEXT;
+			typeData = variablesTypeManager.getVariableTypeData(context, variableName, fileData.getUserData().getStopLine());
+			if (typeData != null) {
+				return typeData.getType();
+			}
+		}
+
+		if (!showObjectsFromOtherFiles) {
+			return null;
+		}
+
+		// Look in the other phpFileDataDB in global context.
+		List list = Collections.synchronizedList(phpFileDataDB.asList());
+		synchronized (list) {
+			Iterator iterator = list.iterator();
+			while (iterator.hasNext()) {
+				fileData = (PHPFileData) iterator.next();
+				if (fileData.getName().equals(fileName)) {
+					continue; // no point in looking again...
+				}
+				variablesTypeManager = fileData.getVariableTypeManager();
+
+				typeData = variablesTypeManager.getVariableTypeData(context, variableName, fileData.getUserData().getStopLine());
+				if (typeData != null) {
+					return typeData.getType();
+				}
+			}
+		}
+		return null;
+	}
+

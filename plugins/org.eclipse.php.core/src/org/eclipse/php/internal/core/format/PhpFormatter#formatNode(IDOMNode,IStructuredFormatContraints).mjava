@@ -1,0 +1,25 @@
+	/**
+	 * Recursivly call the format node on every node in the model
+	 * @param node - to fotmat
+	 * @param formatContraints
+	 */
+	private void formatNode(IDOMNode node, IStructuredFormatContraints formatContraints) {
+
+		// if it is php node - format
+		if (node instanceof PHPElementImpl || (node instanceof TextImpl && node.getFirstStructuredDocumentRegion() instanceof PHPStructuredDocumentRegion)) {
+
+			IStructuredDocumentRegion sdRegionStart = node.getStartStructuredDocumentRegion();
+			IStructuredDocumentRegion sdRegionEnd = node.getLastStructuredDocumentRegion();
+			sdRegionEnd = sdRegionEnd == null ? sdRegionStart : sdRegionEnd;
+			format(sdRegionStart, sdRegionEnd);
+		}
+
+		if (node.hasChildNodes()) { // container
+			IDOMNode child = (IDOMNode) node.getFirstChild();
+			while (child != null) {
+				formatNode(child, formatContraints);
+				child = (IDOMNode) child.getNextSibling();
+			}
+		}
+	}
+

@@ -1,0 +1,42 @@
+  /** Update (and return) the first set based on current NT firsts. 
+   *  This assumes that nullability has already been computed for all non 
+   *  terminals and productions. 
+   */
+  public terminal_set check_first_set() throws internal_error
+    {
+      int    part;
+      symbol sym;
+
+      /* walk down the right hand side till we get past all nullables */
+      for (part=0; part<rhs_length(); part++)
+	{
+	  /* only look at non-actions */
+	  if (!rhs(part).is_action())
+	    {
+	      sym = ((symbol_part)rhs(part)).the_symbol();
+
+	      /* is it a non-terminal?*/
+	      if (sym.is_non_term())
+		{
+		  /* add in current firsts from that NT */
+		  _first_set.add(((non_terminal)sym).first_set());
+
+		  /* if its not nullable, we are done */
+		  if (!((non_terminal)sym).nullable())
+		    break;
+		}
+	      else
+		{
+	          /* its a terminal -- add that to the set */
+		  _first_set.add((terminal)sym);
+
+		  /* we are done */
+		  break;
+		}
+	    }
+	}
+
+      /* return our updated first set */
+      return first_set();
+    }
+

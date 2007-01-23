@@ -1,0 +1,29 @@
+	public void initialize(IProject project) {
+		if (initialized) {
+			if (project != this.project) {
+				PHPCorePlugin.logErrorMessage("PHPIncludePathModelManager in already initialized with a different project."); //$NON-NLS-1$
+			}
+			return;
+		}
+		includeCacheManager = DefaultCacheManager.instance().getIncludeCacheManager();
+		this.project = project;
+		initListeners();
+
+		setPHPVersion(PhpVersionProjectPropertyHandler.getVersion(project));
+
+		PHPProjectOptions options = PHPProjectOptions.forProject(project);
+		if (options == null) {
+			return;
+		}
+		IIncludePathEntry[] entries = options.readRawIncludePath();
+		loadChanges(entries);
+
+		// Update the XML mapping for this project.
+		List list = new ArrayList(variables);
+		list.addAll(libraries);
+		list.addAll(zips);
+		includeCacheManager.includePathChanged(project, getAsCachedNames(list));
+
+		initialized = true;
+	}
+

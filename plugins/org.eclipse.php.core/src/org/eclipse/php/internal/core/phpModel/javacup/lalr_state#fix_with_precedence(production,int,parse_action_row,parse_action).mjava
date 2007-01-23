@@ -1,0 +1,86 @@
+  /** Procedure that attempts to fix a shift/reduce error by using
+   * precedences.  --frankf 6/26/96
+   *  
+   *  if a production (also called rule) or the lookahead terminal
+   *  has a precedence, then the table can be fixed.  if the rule
+   *  has greater precedence than the terminal, a reduce by that rule
+   *  in inserted in the table.  If the terminal has a higher precedence, 
+   *  it is shifted.  if they have equal precedence, then the associativity
+   *  of the precedence is used to determine what to put in the table:
+   *  if the precedence is left associative, the action is to reduce. 
+   *  if the precedence is right associative, the action is to shift.
+   *  if the precedence is non associative, then it is a syntax error.
+   *
+   *  @param p           the production
+   *  @param term_index  the index of the lokahead terminal
+   *  @param parse_action_row  a row of the action table
+   *  @param act         the rule in conflict with the table entry
+   */
+
+    protected boolean fix_with_precedence(
+		        production       p,
+			int              term_index,
+			parse_action_row table_row,
+			parse_action     act)
+
+      throws internal_error {
+
+      terminal term = terminal.find(term_index);
+
+      /* if the production has a precedence number, it can be fixed */
+      if (p.precedence_num() > assoc.no_prec) {
+
+	/* if production precedes terminal, put reduce in table */
+	if (p.precedence_num() > term.precedence_num()) {
+	  table_row.under_term[term_index] = 
+	    insert_reduce(table_row.under_term[term_index],act);
+	  return true;
+	} 
+
+	/* if terminal precedes rule, put shift in table */
+	else if (p.precedence_num() < term.precedence_num()) {
+	  table_row.under_term[term_index] = 
+	    insert_shift(table_row.under_term[term_index],act);
+	  return true;
+	} 
+	else {  /* they are == precedence */
+
+	  /* equal precedences have equal sides, so only need to 
+	     look at one: if it is right, put shift in table */
+	  if (term.precedence_side() == assoc.right) {
+	  table_row.under_term[term_index] = 
+	    insert_shift(table_row.under_term[term_index],act);
+	    return true;
+	  }
+
+	  /* if it is left, put reduce in table */
+	  else if (term.precedence_side() == assoc.left) {
+	    table_row.under_term[term_index] = 
+	      insert_reduce(table_row.under_term[term_index],act);
+	    return true;
+	  }
+
+	  /* if it is nonassoc, we're not allowed to have two nonassocs
+	     of equal precedence in a row, so put in NONASSOC */
+	  else if (term.precedence_side() == assoc.nonassoc) {
+            table_row.under_term[term_index] = new nonassoc_action();
+	    return true;
+	  } else {
+	    /* something really went wrong */
+	    throw new internal_error("Unable to resolve conflict correctly");
+	  }
+	}
+      }
+      /* check if terminal has precedence, if so, shift, since 
+	 rule does not have precedence */
+      else if (term.precedence_num() > assoc.no_prec) {
+	 table_row.under_term[term_index] = 
+	   insert_shift(table_row.under_term[term_index],act);
+	 return true;
+      }
+       
+      /* otherwise, neither the rule nor the terminal has a precedence,
+	 so it can't be fixed. */
+      return false;
+    }
+
