@@ -4,19 +4,25 @@
 	 */
 	private void setPhpTokens() {
 		assert lexer != null;
-		
+
 		int start = 0;
-		this.tokensContaier.clear();
+		this.tokensContaier.getModelForCreation();
+		this.tokensContaier.reset();
 		try {
+			Object state = lexer.createLexicalStateMemento();
 			String yylex = lexer.yylex();
+			int yylength;
 			while (yylex != null) {
-				final int yylength = lexer.yylength();
-				this.tokensContaier.pushToken(new PHPContentRegion(start, yylength, yylength, yylex), lexer.yystate());
+				yylength = lexer.yylength();
+				this.tokensContaier.addLast(yylex, start, yylength, yylength, state);
 				start += yylength;
-				yylex = lexer.yylex();				
+				state = lexer.createLexicalStateMemento();
+				yylex = lexer.yylex();
 			}
 		} catch (IOException e) {
 			Logger.logException(e);
+		} finally {
+			this.tokensContaier.releaseModelFromCreation(); 
 		}
 	}
 
