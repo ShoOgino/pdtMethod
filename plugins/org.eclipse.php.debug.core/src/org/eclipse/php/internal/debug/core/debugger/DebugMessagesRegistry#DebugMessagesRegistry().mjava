@@ -1,0 +1,30 @@
+	private DebugMessagesRegistry() {
+
+		IExtensionRegistry registry = Platform.getExtensionRegistry();
+		IConfigurationElement[] elements = registry.getConfigurationElementsFor(PHPDebugPlugin.getID(), EXTENSION_POINT_NAME);
+		
+		for (int i = 0; i < elements.length; i++) {
+			final IConfigurationElement element = elements[i];
+
+			if (MESSAGE_TAG.equals(element.getName())) {
+				final IDebugMessage messages[] = new IDebugMessage[1];
+			
+				SafeRunnable.run(new SafeRunnable("Error creation extension for extension-point org.eclipse.php.internal.debug.core.phpDebugMessages") {
+					public void run() throws Exception {
+						messages[0] = (IDebugMessage) element.createExecutableExtension(CLASS_ATTRIBUTE);
+					}
+				});
+				
+				if (messages[0] != null && !this.messagesHash.containsKey(messages[0].getType())) {	
+					this.messagesHash.put (messages[0].getType(), messages[0]);
+					messagesTypes.put (element.getAttribute(ID_ATTRIBUTE), new Integer(messages[0].getType()));
+					
+					String handlerClass = element.getAttribute(HANDLER_ATTRIBUTE);
+					if (handlerClass != null && !handlers.containsKey(messages[0].getType())) {
+						handlers.put(messages[0].getType(), new DebugMessageHandlerFactory(element));
+					}
+				}
+			}
+		}
+	}
+
