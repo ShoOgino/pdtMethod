@@ -1,0 +1,34 @@
+	/**
+	 * There is no need for a remove method because oll the observer automatically removed when a project is closed
+	 * @param project
+	 * @param projectChangeObserver
+	 */
+	public boolean addProjectClosedObserver(IProject project, IProjectClosedObserver projectChangeObserver) {
+		if (resourceChangeListener == null) {
+			resourceChangeListener = new IResourceChangeListener() {
+				public void resourceChanged(IResourceChangeEvent event) {
+					IResourceDelta resourceDelta = event.getDelta();
+					if (resourceDelta == null) {
+						return;
+					}
+					//always the workspace so the children must be projects
+					IResourceDelta[] affectedChildren = resourceDelta.getAffectedChildren(IResourceDelta.CHANGED);
+					if (affectedChildren.length > 0) {
+						handleClosedProjects(affectedChildren);
+					}else {
+						affectedChildren = resourceDelta.getAffectedChildren(IResourceDelta.REMOVED);
+						handleRemovedProjects(affectedChildren);
+					}
+				}
+			};
+		}
+		ResourcesPlugin.getWorkspace().addResourceChangeListener(resourceChangeListener);
+
+		if (!project.isAccessible()) {
+			return false;
+		}
+		CompositeProjectChangeObserver compositeProjectChangeObserver = getCompositeProjectChangeObserver(project);
+		compositeProjectChangeObserver.add(projectChangeObserver);
+		return true;
+	}
+

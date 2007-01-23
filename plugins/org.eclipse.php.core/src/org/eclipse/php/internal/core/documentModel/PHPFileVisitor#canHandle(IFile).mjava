@@ -1,0 +1,28 @@
+	protected boolean canHandle(IFile file) {
+		boolean result = false;
+		if (file != null) {
+			try {
+				IContentTypeManager contentTypeManager = Platform.getContentTypeManager();
+
+				IContentDescription contentDescription = file.getContentDescription();
+				IContentType phpContentType = contentTypeManager.getContentType(ContentTypeIdForPHP.ContentTypeID_PHP);
+				if (contentDescription != null) {
+					IContentType fileContentType = contentDescription.getContentType();
+
+					if (phpContentType != null) {
+						if (fileContentType.isKindOf(phpContentType)) {
+							result = true;
+						}
+					}
+				} else if (phpContentType != null) {
+					result = phpContentType.isAssociatedWith(file.getName());
+				}
+			} catch (CoreException e) {
+				// should be rare, but will ignore to avoid logging "encoding
+				// exceptions" and the like here.
+				// Logger.logException(e);
+			}
+		}
+		return result;
+	}
+
