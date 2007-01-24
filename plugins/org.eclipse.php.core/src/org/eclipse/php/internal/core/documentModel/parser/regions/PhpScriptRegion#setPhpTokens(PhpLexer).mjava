@@ -1,0 +1,28 @@
+	/**
+	 * @param script 
+	 * @return a list of php tokens
+	 */
+	private void setPhpTokens(PhpLexer lexer) {
+		assert lexer != null;
+
+		int start = 0;
+		this.tokensContaier.getModelForCreation();
+		this.tokensContaier.reset();
+		try {
+			Object state = lexer.createLexicalStateMemento();
+			String yylex = lexer.yylex();
+			int yylength;
+			while (yylex != null) {
+				yylength = lexer.yylength();
+				this.tokensContaier.addLast(yylex, start, yylength, yylength, state);
+				start += yylength;
+				state = lexer.createLexicalStateMemento();
+				yylex = lexer.yylex();
+			}
+		} catch (IOException e) {
+			Logger.logException(e);
+		} finally {
+			this.tokensContaier.releaseModelFromCreation(); 
+		}
+	}
+
