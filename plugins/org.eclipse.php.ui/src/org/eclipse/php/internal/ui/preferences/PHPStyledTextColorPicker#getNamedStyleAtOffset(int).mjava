@@ -9,30 +9,24 @@
 		if (fNodes == null) {
 			return null;
 		}
-		IStructuredDocumentRegion aNode = fNodes;
-		while (aNode != null && !aNode.containsOffset(offset)) {
-			aNode = aNode.getNext();
+
+		String regionContext;
+		ITextRegion interest = fNodes.getRegionAtCharacterOffset(offset);
+		if (interest.getType() == PHPRegionContext.PHP_CONTENT) {
+			PhpScriptRegion phpScript = (PhpScriptRegion) interest;
+			try {
+				regionContext = phpScript.getPhpTokenType(offset - phpScript.getStart());
+			} catch (BadLocationException e) {
+				assert false;
+				return null;
+			}
+		} else {
+			regionContext = interest.getType();
 		}
-		if (aNode != null) {
-			// find the ITextRegion's Context at this offset
-			ITextRegion interest = aNode.getRegionAtCharacterOffset(offset);
-			if (interest == null) {
-				return null;
-			}
-			if (offset > aNode.getTextEndOffset(interest)) {
-				return null;
-			}
-			String regionContext = interest.getType();
-			if (regionContext == null) {
-				return null;
-			}
-			// find the named style (internal/selectable name) for that
-			// context
-			String namedStyle = (String) getContextStyleMap().get(regionContext);
-			if (namedStyle != null) {
-				return namedStyle;
-			}
-		}
-		return null;
+
+		// find the named style (internal/selectable name) for that
+		// context
+		String namedStyle = (String) getContextStyleMap().get(regionContext);
+		return namedStyle;
 	}
 
