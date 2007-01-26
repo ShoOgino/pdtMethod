@@ -18,18 +18,20 @@
 		DocumentReader docReader = new DocumentReader(doc);
 		getParser().reset(docReader);
 		IStructuredDocumentRegion sdRegion = getParser().getDocumentRegions();
-
+		
 		// This hack is needed in order to remove the open and close PHP tags we added before.
 		// We were forced to add these tags, in order to enable PHP parser.
-		sdRegion = sdRegion.getNext(); // skip open PHP tag region
-		if (sdRegion.getNext() != null) {
-			fNodes = sdRegion;
-			do {
-				sdRegion.adjustStart(-2);
-				sdRegion = sdRegion.getNext();
-			} while (sdRegion.getNext() != null);
-			sdRegion.getPrevious().setNext(null); // remove close PHP tag region
+		ITextRegionList phpRegionsList = sdRegion.getRegions();
+		Iterator i = phpRegionsList.iterator();
+		while (i.hasNext()) {
+			ITextRegion region = (ITextRegion)i.next();
+			if (region.getType() == PHPRegionContext.PHP_OPEN) {
+				sdRegion.adjustStart(region.getEnd() * -1); // remove open PHP tag
+			} else if (region.getType() == PHPRegionContext.PHP_CLOSE) {
+				sdRegion.adjustLength(sdRegion.getLength() - region.getLength()); // remove close PHP tag
+			}
 		}
+		fNodes = sdRegion;
 
 		doc = new Document(fInput);
 		doc.setDocumentPartitioner(new PHPStructuredTextPartitioner());

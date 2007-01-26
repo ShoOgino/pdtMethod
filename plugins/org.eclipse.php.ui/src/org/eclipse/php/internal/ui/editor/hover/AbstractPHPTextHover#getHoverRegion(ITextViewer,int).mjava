@@ -12,8 +12,16 @@
 			region = flatNode.getRegionAtCharacterOffset(offset);
 		}
 
-		if (region != null) {
-			return new Region(flatNode.getStartOffset(region), region.getLength());
+		if (region.getType() == PHPRegionContext.PHP_CONTENT) {
+			PhpScriptRegion phpScriptRegion = (PhpScriptRegion)region;
+			try {
+				region = phpScriptRegion.getPhpToken(offset - flatNode.getStartOffset() - region.getStart());
+			} catch (BadLocationException e) {
+				region = null;
+			}
+			if (region != null) {
+				return new Region(flatNode.getStartOffset() + phpScriptRegion.getStart() + region.getStart() , region.getLength());
+			}
 		}
 		return null;
 	}
