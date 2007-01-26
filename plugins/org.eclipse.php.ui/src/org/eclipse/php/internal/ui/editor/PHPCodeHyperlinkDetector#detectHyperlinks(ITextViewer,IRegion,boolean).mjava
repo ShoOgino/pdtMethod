@@ -8,53 +8,76 @@
 		try {
 			IDocument document = textViewer.getDocument();
 			if (document instanceof IStructuredDocument) {
+				
+				// Find the PHP token region:
 				IStructuredDocument sDoc = (IStructuredDocument) document;
 				IStructuredDocumentRegion sdRegion = sDoc.getRegionAtCharacterOffset(region.getOffset());
 				ITextRegion textRegion = sdRegion.getRegionAtCharacterOffset(region.getOffset());
-				if (PHPPartitionTypes.PHP_QUOTED_STRING.equals(fTextPartitioner.getPartitionType(textRegion, region.getOffset()))) {
-					ITextRegion prevRegion = sdRegion.getRegionAtCharacterOffset(sdRegion.getStartOffset() + textRegion.getStart() - 1);
-					if (prevRegion != null) {
-						prevRegion = sdRegion.getRegionAtCharacterOffset(sdRegion.getStartOffset() + prevRegion.getStart() - 1);
-						if (prevRegion != null && isIncludeType(prevRegion.getType())) {
-							String fileName = sdRegion.getText(textRegion);
-							Matcher quotesMatcher = QUOTES_PATTERN.matcher(fileName);
-							fileName = quotesMatcher.replaceAll("");
-							IPath path = new Path(fileName);
-							IWorkbenchPage page = PHPUiPlugin.getActivePage();
-							if (page != null) {
-								IEditorPart editor = page.getActiveEditor();
-								final PHPStructuredEditor phpEditor = EditorUtility.getPHPStructuredEditor(editor);
-								if (phpEditor != null) {
-									IFile currentFile = phpEditor.getFile();
-									IProject currentProject = currentFile.getProject();
-									IFile file = currentProject.getFile(path);
-									if (file != null && file.exists()) {
-										return new IHyperlink[] { new WorkspaceFileHyperlink(new Region(sdRegion.getStartOffset(textRegion), textRegion.getTextLength()), file) };
+				
+				if (textRegion.getType() == PHPRegionContext.PHP_CONTENT) {
+					PhpScriptRegion phpScriptRegion = (PhpScriptRegion)textRegion;
+					ITextRegion phpToken = phpScriptRegion.getPhpToken(region.getOffset() - sdRegion.getStartOffset() - phpScriptRegion.getStart());
+					
+					// Check whether the current token is string, if it is - try to resolve file name from this string:
+					if (PHPPartitionTypes.isPHPQuotesState(phpToken.getType())) {
+						
+						// Skip left parenthesis:
+						ITextRegion prevRegion = phpScriptRegion.getPhpToken(phpToken.getStart() - 1);
+						if (prevRegion != null) {
+							
+							// Check whether this string belongs to some kind of include/require structure:
+							prevRegion = phpScriptRegion.getPhpToken(prevRegion.getStart() - 1);
+							if (prevRegion != null && isIncludeType(prevRegion.getType())) {
+								
+								int startOffset = sdRegion.getStartOffset() + phpScriptRegion.getStart() + phpToken.getStart();
+								int offsetLength = phpToken.getLength();
+								
+								// Get the string contents - it's an included file name:
+								String fileName = sDoc.get(startOffset, offsetLength);
+								
+								// Trim quotes around the filename:
+								Matcher quotesMatcher = QUOTES_PATTERN.matcher(fileName);
+								fileName = quotesMatcher.replaceAll("");
+								
+								// Find the file in already opened editors:
+								IPath path = new Path(fileName);
+								IWorkbenchPage page = PHPUiPlugin.getActivePage();
+								if (page != null) {
+									IEditorPart editor = page.getActiveEditor();
+									final PHPStructuredEditor phpEditor = EditorUtility.getPHPStructuredEditor(editor);
+									if (phpEditor != null) {
+										IFile currentFile = phpEditor.getFile();
+										IProject currentProject = currentFile.getProject();
+										IFile file = currentProject.getFile(path);
+										if (file != null && file.exists()) {
+											return new IHyperlink[] { new WorkspaceFileHyperlink(new Region(startOffset, offsetLength), file) };
+										}
 									}
 								}
-							}
-							// look into other projects
-							IWorkspace workspace = ResourcesPlugin.getWorkspace();
-							IWorkspaceRoot root = workspace.getRoot();
-							IProject[] projects = root.getProjects();
-							for (int i = 0; i < projects.length; ++i) {
-								IFile file = projects[i].getFile(path);
-								if (file != null && file.exists()) {
-									return new IHyperlink[] { new WorkspaceFileHyperlink(new Region(sdRegion.getStartOffset(textRegion), textRegion.getTextLength()), file) };
+								
+								// Look for the file in other projects:
+								IWorkspace workspace = ResourcesPlugin.getWorkspace();
+								IWorkspaceRoot root = workspace.getRoot();
+								IProject[] projects = root.getProjects();
+								for (int i = 0; i < projects.length; ++i) {
+									IFile file = projects[i].getFile(path);
+									if (file != null && file.exists()) {
+										return new IHyperlink[] { new WorkspaceFileHyperlink(new Region(startOffset, offsetLength), file) };
+									}
+								}
+								
+								// Try to open external file:
+								File file = new File(fileName);
+								if (file.exists()) {
+									return new IHyperlink[] { new ExternalFileHyperlink(new Region(startOffset, offsetLength), file) };
 								}
 							}
-							
-							// Try to open external file:
-							File file = new File(fileName);
-							if (file.exists()) {
-								return new IHyperlink[] { new ExternalFileHyperlink(new Region(sdRegion.getStartOffset(textRegion), textRegion.getTextLength()), file) };
-							}
 						}
-					}
-				} else {
-					CodeData codeData = CodeDataResolver.getCodeData(textViewer, region.getOffset());
-					if (codeData != null && codeData.isUserCode()) {
-						return new IHyperlink[] { new PHPCodeHyperLink(selectWord(document, region.getOffset()), codeData) };
+					} else { // The current token is not a string - resolve this PHP element
+						CodeData codeData = CodeDataResolver.getCodeData(textViewer, region.getOffset());
+						if (codeData != null && codeData.isUserCode()) {
+							return new IHyperlink[] { new PHPCodeHyperLink(selectWord(document, region.getOffset()), codeData) };
+						}
 					}
 				}
 			}
