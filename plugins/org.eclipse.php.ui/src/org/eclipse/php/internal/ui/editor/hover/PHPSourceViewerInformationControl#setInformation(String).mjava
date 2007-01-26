@@ -7,30 +7,31 @@
 			return;
 		}
 
-		fInput = content;
-
+		// Add open and close PHP tags in order to enable PHP parser on content:
 		StringBuffer buf = new StringBuffer();
 		buf.append("<?"); //$NON-NLS-1$
 		buf.append(content);
 		buf.append("?>"); //$NON-NLS-1$
-
+		
 		IDocument doc = new Document(buf.toString());
 		DocumentReader docReader = new DocumentReader(doc);
 		getParser().reset(docReader);
 		IStructuredDocumentRegion sdRegion = getParser().getDocumentRegions();
 		
 		// This hack is needed in order to remove the open and close PHP tags we added before.
-		// We were forced to add these tags, in order to enable PHP parser.
 		ITextRegionList phpRegionsList = sdRegion.getRegions();
+		phpRegionsList.remove(0); // remove open PHP tag
+		phpRegionsList.remove(phpRegionsList.size() - 1); // remove close PHP tag
+		
+		// Update starting location of PHP token regions:
 		Iterator i = phpRegionsList.iterator();
 		while (i.hasNext()) {
-			ITextRegion region = (ITextRegion)i.next();
-			if (region.getType() == PHPRegionContext.PHP_OPEN) {
-				sdRegion.adjustStart(region.getEnd() * -1); // remove open PHP tag
-			} else if (region.getType() == PHPRegionContext.PHP_CLOSE) {
-				sdRegion.adjustLength(sdRegion.getLength() - region.getLength()); // remove close PHP tag
-			}
+			ITextRegion tokenRegion = (ITextRegion)i.next();
+			tokenRegion.adjustStart(-2);
 		}
+		sdRegion.setRegions(phpRegionsList);
+		
+		fInput = content;
 		fNodes = sdRegion;
 
 		doc = new Document(fInput);
