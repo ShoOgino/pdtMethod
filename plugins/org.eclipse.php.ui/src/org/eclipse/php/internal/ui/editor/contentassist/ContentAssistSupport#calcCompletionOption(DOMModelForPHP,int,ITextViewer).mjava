@@ -52,21 +52,33 @@
 			startOffset = sdRegion.getStartOffset(textRegion);
 		}
 
+		PhpScriptRegion phpScriptRegion = (PhpScriptRegion) textRegion;
+		int internalOffset = offset - sdRegion.getStartOffset() - phpScriptRegion.getStart();
+
+		String partitionType = phpScriptRegion.getPartition(internalOffset);
+		if ((partitionType == PHPPartitionTypes.PHP_DEFAULT) || (partitionType == PHPPartitionTypes.PHP_MULTI_LINE_COMMENT) || (partitionType == PHPPartitionTypes.PHP_QUOTED_STRING) || (partitionType == PHPPartitionTypes.PHP_SINGLE_LINE_COMMENT)) {
+		} else {
+			return;
+		}
+
+		ContextRegion internalPHPRegion = (ContextRegion) phpScriptRegion.getPhpToken(internalOffset);
+
 		// if there is no project model (the file is not part of a project)
 		// complete with language model only 
 		if (fileData == null) {
-			getRegularCompletion(viewer, projectModel, "", "", offset, selectionLength, explicit, sdRegion, textRegion, isStrict);
+			getRegularCompletion(viewer, projectModel, "", "", offset, selectionLength, explicit, sdRegion, phpScriptRegion, internalPHPRegion, isStrict);
 			return;
 		}
 
 		TextSequence statmentText = PHPTextSequenceUtilities.getStatment(offset, sdRegion, true);
-		String type = textRegion.getType();
+
+		String type = internalPHPRegion.getType();
 		if (isInArrayOptionQuotes(projectModel, fileName, type, offset, selectionLength, statmentText)) {
 			// the current position is inside quotes as a parameter for an array.
 			return;
 		}
 
-		if (isPHPSingleQuote(sdRegion, textRegion) || PHPPartitionTypes.isPHPCommentState(type)) {
+		if (isPHPSingleQuote(sdRegion, phpScriptRegion, internalPHPRegion, offset) || isLineComment(sdRegion, phpScriptRegion, offset)) {
 			// we dont have code completion inside single quotes.
 			return;
 		}
@@ -124,9 +136,9 @@
 		}
 
 		if (haveSpacesAtEnd) {
-			getRegularCompletion(viewer, projectModel, fileName, "", offset, selectionLength, explicit, sdRegion, textRegion, isStrict);
+			getRegularCompletion(viewer, projectModel, fileName, "", offset, selectionLength, explicit, sdRegion, phpScriptRegion, internalPHPRegion, isStrict);
 		} else {
-			getRegularCompletion(viewer, projectModel, fileName, lastWord, offset, selectionLength, explicit, sdRegion, textRegion, isStrict);
+			getRegularCompletion(viewer, projectModel, fileName, lastWord, offset, selectionLength, explicit, sdRegion, phpScriptRegion, internalPHPRegion, isStrict);
 		}
 
 		return;
