@@ -27,10 +27,15 @@
 			}
 
 			IDebugResponseMessage response = null;
+			int timeoutCount = 3;
 			while (response == null && isConnected()) {
 				synchronized (request) {
 					response = (IDebugResponseMessage) responseTable.remove(theMsg.getID());
 					if (response == null) {
+						// TODO - Display a message that we are waiting for the server response.
+						// In case that the responce finally arrives, remove the message.
+						// In case we have a timeout, close the connection and display a different message.
+						
 						request.wait(peerResponseTimeout);
 					} else if (isDebugMode) {
 						System.out.println("waiting for response " + response.getID());
@@ -48,7 +53,14 @@
 					}
 					// Handle time out will stop the communication if need to stop.
 					//System.out.println("handleto");
-					handlePeerResponseTimeout();
+					
+					if(timeoutCount > 0) {
+						timeoutCount--;
+						handlePeerResponseTimeout();
+					} else {
+						closeConnection();
+						PHPLaunchUtilities.showDebuggerErrorMessage();
+					}
 					if (!isConnected())
 						break;
 					//System.out.println("rewaiting");
