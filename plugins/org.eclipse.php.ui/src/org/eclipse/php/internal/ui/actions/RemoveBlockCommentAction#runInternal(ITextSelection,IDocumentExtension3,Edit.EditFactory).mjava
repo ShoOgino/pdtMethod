@@ -7,23 +7,30 @@
 		int endOffset = offset + selection.getLength();
 
 		do {
-			ITypedRegion partition = docExtension.getPartition(fDocumentPartitioning, offset, false);
-			if (partition.getType() == PHPPartitionTypes.PHP_MULTI_LINE_COMMENT) {
-				IStructuredDocument sDocument = (IStructuredDocument) docExtension;
-				IStructuredDocumentRegion sdRegion = sDocument.getRegionAtCharacterOffset(offset);
-				ITextRegion startRegion = PHPTextSequenceUtilities.getMultilineCommentStartRegion(sdRegion, offset);
-				ITextRegion endRegion = PHPTextSequenceUtilities.getMultilineCommentEndRegion(sdRegion, offset);
-				if (startRegion != null && endRegion != null) {
-					int startCommentOffset = sdRegion.getStartOffset(startRegion);
-					int endCommentOffset = sdRegion.getStartOffset(endRegion);
-					edits.add(factory.createEdit(startCommentOffset, startRegion.getLength(), "")); //$NON-NLS-1$
-					edits.add(factory.createEdit(endCommentOffset, getCommentEnd().length(), "")); //$NON-NLS-1$
-					offset = endCommentOffset + endRegion.getLength();
-				} else {
-					break; // comment is not opened or not closed
+			if (docExtension instanceof IStructuredDocument) {
+				IStructuredDocument sDoc = (IStructuredDocument)docExtension;
+				IStructuredDocumentRegion sdRegion = sDoc.getRegionAtCharacterOffset(offset);
+				ITextRegion region = sdRegion.getRegionAtCharacterOffset(offset);
+				if (region.getType() == PHPRegionContext.PHP_CONTENT) {
+					PhpScriptRegion phpScriptRegion = (PhpScriptRegion)region;
+					region = phpScriptRegion.getPhpToken(offset - sdRegion.getStartOffset() - phpScriptRegion.getStart());
+					if (PHPPartitionTypes.isPHPMultiLineCommentState(region.getType())) {
+						ITextRegion startRegion = PHPTextSequenceUtilities.getMultilineCommentStartRegion(sdRegion, offset);
+						ITextRegion endRegion = PHPTextSequenceUtilities.getMultilineCommentEndRegion(sdRegion, offset);
+						if (startRegion != null && endRegion != null) {
+							int startCommentOffset = sdRegion.getStart() + phpScriptRegion.getStart() + startRegion.getStart();
+							int endCommentOffset = sdRegion.getStart() + phpScriptRegion.getStart() + endRegion.getStart();
+							edits.add(factory.createEdit(startCommentOffset, startRegion.getLength(), "")); //$NON-NLS-1$
+							edits.add(factory.createEdit(endCommentOffset, getCommentEnd().length(), "")); //$NON-NLS-1$
+							offset = endCommentOffset + endRegion.getLength();
+						} else {
+							break; // comment is not opened or not closed
+						}
+					} else {
+						int endPartitionOffset = PHPPartitionTypes.getPartitionStart(phpScriptRegion, offset - sdRegion.getStartOffset() - phpScriptRegion.getStart());
+						offset = sdRegion.getStart() + phpScriptRegion.getStart() + endPartitionOffset;
+					}
 				}
-			} else {
-				offset = partition.getOffset() + partition.getLength();
 			}
 		} while (offset < endOffset);
 
