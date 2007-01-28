@@ -1,10 +1,8 @@
 	private boolean validAction() {
-			
 		ITextEditor editor= getTextEditor();
 		if (editor == null) {
 			return false;
 		}
-			
 		
 		IDocumentProvider docProvider= editor.getDocumentProvider();
 		IEditorInput input= editor.getEditorInput();
@@ -16,7 +14,7 @@
 		if (document == null) {
 			return false;
 		}
-
+		
 		if (!(document instanceof IStructuredDocument)) {
 			return false;
 		}
@@ -36,13 +34,22 @@
 		}
 		
 		IStructuredDocumentRegion structuredDocumentRegion = structuredDocument.getRegionAtCharacterOffset(offset);
-		
 		ITextRegion textRegion = structuredDocumentRegion.getRegionAtCharacterOffset(offset);
 		if (textRegion == null) {
 			return false;
 		}
 		
-		offset = textRegion.getEnd() + structuredDocumentRegion.getStartOffset();
+		if (textRegion.getType() == PHPRegionContext.PHP_CONTENT) {
+			PhpScriptRegion phpScriptRegion = (PhpScriptRegion)textRegion;
+			try {
+				textRegion = phpScriptRegion.getPhpToken(offset - structuredDocumentRegion.getStartOffset() - phpScriptRegion.getStart());
+			} catch (BadLocationException e) {
+				textRegion = null;
+			}
+		}
+		if (textRegion == null) {
+			return false;
+		}
 		
 		StructuredTextEditor structuredTextEditor = (StructuredTextEditor)editor;
 		CodeData codeData;
