@@ -9,17 +9,27 @@
 		if (flatNode != null) {
 			region = flatNode.getRegionAtCharacterOffset(offset);
 		}
-		if (region != null) {
-			String regionType = region.getType();
-			if (regionType.equalsIgnoreCase(PHPRegionTypes.PHP_VARIABLE)) {
-				String variable = null;
-				try {
-					variable = textViewer.getDocument().get(hoverRegion.getOffset(), hoverRegion.getLength());
-					variable = "<B>" + variable + " = </B>" + getValue(debugTarget, variable);
-				} catch (BadLocationException e) {
-					Logger.logException("Error retrieving the value\n", e);
+
+		if (region.getType() == PHPRegionContext.PHP_CONTENT) {
+			PhpScriptRegion phpScriptRegion = (PhpScriptRegion) region;
+			try {
+				region = phpScriptRegion.getPhpToken(offset - flatNode.getStartOffset() - region.getStart());
+			} catch (BadLocationException e) {
+				region = null;
+			}
+
+			if (region != null) {
+				String regionType = region.getType();
+				if (regionType == PHPRegionTypes.PHP_VARIABLE) {
+					String variable = null;
+					try {
+						variable = textViewer.getDocument().get(hoverRegion.getOffset(), hoverRegion.getLength());
+						variable = "<B>" + variable + " = </B>" + getValue(debugTarget, variable);
+					} catch (BadLocationException e) {
+						Logger.logException("Error retrieving the value\n", e);
+					}
+					return variable;
 				}
-				return variable;
 			}
 		}
 		return null;
