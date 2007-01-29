@@ -28,17 +28,18 @@
 
 		final PhpTokenContainer newContainer = new PhpTokenContainer();
 		final PhpLexer phpLexer = getPhpLexer(project, getStream(newText, newTokenOffset), startState);
+
+		Object state = startState;
 		try {
-			Object state = startState;
-			String yylex = phpLexer.yylex();
+			String yylex = phpLexer.getNextToken();
 			int yylength;
-			final int toOffset = Math.max(offset + length, tokenEnd.getEnd());
-			while (yylex != null && newTokenOffset <= toOffset) {
-				yylength = phpLexer.yylength();
+			final int toOffset = offset + length;
+			while (yylex != null && (newTokenOffset <= toOffset || yylex == PHPRegionTypes.WHITESPACE)) {
+				yylength = phpLexer.getLength();
 				newContainer.addLast(yylex, newTokenOffset, yylength, yylength, state);
 				newTokenOffset += yylength;
 				state = phpLexer.createLexicalStateMemento();
-				yylex = phpLexer.yylex();
+				yylex = phpLexer.getNextToken();
 			}
 		} catch (IOException e) {
 			Logger.logException(e);
@@ -49,7 +50,7 @@
 		// 2. adjust next regions start location
 		// 3. update state changes
 		final int size = length - deletedLength;
-		if (phpLexer.yystate() == endState.getTopState()) {
+		if (state.equals(endState)) {
 			// 1. replace the regions
 			final ListIterator oldIterator = tokensContaier.removeSubList(tokenStart, tokenEnd);
 			ITextRegion[] newTokens = newContainer.getPhpTokens(); // now, add the new ones
