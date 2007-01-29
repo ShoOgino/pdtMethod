@@ -8,19 +8,36 @@
 
 	private boolean isNoCodeBetween(IStructuredDocument document, int offset, int endOffset) {
 		int index = offset;
-		IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(index);
 
-		while (sdRegion != null && index < endOffset) {
+		try {
+			IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(index);
+
 			ITextRegion tRegion = sdRegion.getRegionAtCharacterOffset(index);
-			String regionType = tRegion.getType();
-			if (regionType == PHPRegionTypes.PHP_LINE_COMMENT || sdRegion.getStartOffset() + tRegion.getTextEnd() < index) {
-				index = sdRegion.getStartOffset() + tRegion.getEnd() + 1;
-				if (sdRegion.getEndOffset() < index) {
-					sdRegion = sdRegion.getNext();
-				}
-			} else {
-				return false;
+			int regionStart = sdRegion.getStartOffset(tRegion);
+
+			if (tRegion instanceof ITextRegionContainer) {
+				ITextRegionContainer container = (ITextRegionContainer) tRegion;
+				tRegion = container.getRegionAtCharacterOffset(index);
+				regionStart += tRegion.getStart();
 			}
+
+			// find the specified php token in the PhpScriptRegion
+			if (tRegion instanceof PhpScriptRegion) {
+				while (tRegion != null && index < endOffset) {
+					PhpScriptRegion scriptRegion = (PhpScriptRegion) tRegion;
+					tRegion = scriptRegion.getPhpToken(index - regionStart);
+
+					if (tRegion != null) {
+						String regionType = tRegion.getType();
+						if (regionType == PHPRegionTypes.PHP_LINE_COMMENT || regionStart + tRegion.getTextEnd() < index) {
+							index = regionStart + tRegion.getEnd() + 1;
+						} else {
+							return false;
+						}
+					}
+				}
+			}
+		} catch (BadLocationException e) {
 		}
 
 		return true;

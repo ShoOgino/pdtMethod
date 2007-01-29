@@ -4,27 +4,35 @@
 		if (sdRegion == null || sdRegion.getType() != PHPRegionTypes.PHP_CONTENT) {
 			return;
 		}
-
-		ITextRegion tRegion = sdRegion.getRegionAtCharacterOffset(offset);
-		if (tRegion == null) {
-			return;
-		}
-		String regionType = tRegion.getType();
-		if (regionType != PHPRegionTypes.PHP_TOKEN) {
-			return;
-		}
-
 		try {
-			char nextChar = document.getChar(offset + 1);
-			char matchingChar = getMatchingChar(deletedChar);
-			if (matchingChar == '-' || nextChar != matchingChar) {
-				return;
+			ITextRegion tRegion = sdRegion.getRegionAtCharacterOffset(offset);
+
+			// in case of container we have the extract the PhpScriptRegion
+			if (tRegion instanceof ITextRegionContainer) {
+				ITextRegionContainer container = (ITextRegionContainer) tRegion;
+				tRegion = container.getRegionAtCharacterOffset(offset);
 			}
 
-			boolean removeBoth = (isMatchingCharNeeded(document, offset, deletedChar) == MATCHING_BRACKET_NOT_NEEDED);
+			if (tRegion instanceof PhpScriptRegion) {
+				PhpScriptRegion scriptRegion = (PhpScriptRegion) tRegion;
+				tRegion = scriptRegion.getPhpToken(offset - sdRegion.getStartOffset(scriptRegion));
 
-			if (removeBoth) {
-				command.length = 2;
+				if (tRegion == null || tRegion.getType() != PHPRegionTypes.PHP_TOKEN) {
+					return;
+				}
+
+				char nextChar = document.getChar(offset + 1);
+				char matchingChar = getMatchingChar(deletedChar);
+				if (matchingChar == '-' || nextChar != matchingChar) {
+					return;
+				}
+
+				boolean removeBoth = (isMatchingCharNeeded(document, offset, deletedChar) == MATCHING_BRACKET_NOT_NEEDED);
+
+				if (removeBoth) {
+					command.length = 2;
+				}
+
 			}
 		} catch (BadLocationException e) {
 		}

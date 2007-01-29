@@ -10,48 +10,35 @@
 			int curlyCloseCounter = 0;
 			int currOffset = offset;
 			IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(currOffset);
-			while (currOffset >= 0 && sdRegion != null) {
-				if (sdRegion.getType() != PHPRegionTypes.PHP_CONTENT) {
-					currOffset = sdRegion.getStartOffset() - 1;
-					sdRegion = sdRegion.getPrevious();
-					continue;
-				}
-				int regionStart = sdRegion.getStart();
-				String text = sdRegion.getFullText();
 
-				ITextRegion tRegion = null;
-				int indexInText = text.length() - 1;
-				while (indexInText >= 0) {
-					char currChar = text.charAt(indexInText);
-					if (currChar == CURLY_CLOSE) {
-						tRegion = sdRegion.getRegionAtCharacterOffset(regionStart + indexInText);
-						if (tRegion.getType() == PHPRegionTypes.PHP_CURLY_CLOSE) {
-							curlyCloseCounter++;
-						}
-					} else if (currChar == CURLY_OPEN) {
-						tRegion = sdRegion.getRegionAtCharacterOffset(regionStart + indexInText);
-						String regionType = tRegion.getType();
-						if (regionType != PHPRegionTypes.PHP_CURLY_OPEN) {
-							indexInText--;
-							continue;
-						}
-						curlyCloseCounter--;
-						if (curlyCloseCounter < 0) {
-							if (matcher.match(document, regionStart + indexInText + 1) == null) {
-								addCurlyClose = true;
-								break;
-							}
-							curlyCloseCounter++;
-						}
+			int regionStart = sdRegion.getStart();
+			String text = sdRegion.getFullText();
+
+			ITextRegion tRegion = null;
+			int indexInText = text.length() - 1;
+			while (indexInText >= 0) {
+				char currChar = text.charAt(indexInText);
+				if (currChar == CURLY_CLOSE) {
+					tRegion = getPhpToken(sdRegion, regionStart + indexInText);
+					if (tRegion == null || tRegion.getType() == PHPRegionTypes.PHP_CURLY_CLOSE) {
+						curlyCloseCounter++;
 					}
-					indexInText--;
+				} else if (currChar == CURLY_OPEN) {
+					tRegion = getPhpToken(sdRegion, regionStart + indexInText);
+					if (tRegion == null || tRegion.getType() != PHPRegionTypes.PHP_CURLY_OPEN) {
+						indexInText--;
+						continue;
+					}
+					curlyCloseCounter--;
+					if (curlyCloseCounter < 0) {
+						if (matcher.match(document, regionStart + indexInText + 1) == null) {
+							addCurlyClose = true;
+							break;
+						}
+						curlyCloseCounter++;
+					}
 				}
-				if (addCurlyClose) {
-					break;
-				}
-
-				currOffset = sdRegion.getStartOffset() - 1;
-				sdRegion = sdRegion.getPrevious();
+				indexInText--;
 			}
 
 			if (addCurlyClose) {

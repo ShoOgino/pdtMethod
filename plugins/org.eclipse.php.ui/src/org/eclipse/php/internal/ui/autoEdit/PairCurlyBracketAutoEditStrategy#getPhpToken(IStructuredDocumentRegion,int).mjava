@@ -1,0 +1,31 @@
+	/**
+	 * get the php token according to the given sdRegion and offset.
+	 * @param sdRegion
+	 * @param offset
+	 * @return
+	 */
+	private ITextRegion getPhpToken(IStructuredDocumentRegion sdRegion, int offset) {
+		try {
+			// get the ITextRegionContainer region or PhpScriptRegion region
+			ITextRegion tRegion = sdRegion.getRegionAtCharacterOffset(offset);
+			int regionStart = sdRegion.getStartOffset(tRegion);
+
+			// in case of container we have the extract the PhpScriptRegion
+			if (tRegion instanceof ITextRegionContainer) {
+				ITextRegionContainer container = (ITextRegionContainer) tRegion;
+				tRegion = container.getRegionAtCharacterOffset(offset);
+				regionStart += tRegion.getStart();
+			}
+
+			// find the specified php token in the PhpScriptRegion
+			if (tRegion instanceof PhpScriptRegion) {
+				PhpScriptRegion scriptRegion = (PhpScriptRegion) tRegion;
+				tRegion = scriptRegion.getPhpToken(offset - regionStart);
+
+				return tRegion;
+			}
+		} catch (BadLocationException e) {
+		}
+		return null;
+	}
+
