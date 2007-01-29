@@ -1,0 +1,44 @@
+	// go backward and look for any region except comment region or white space region 
+	// in the given line
+	private ITextRegion getLastTokenRegion(final IStructuredDocument document, final IRegion line, final int forOffset) throws BadLocationException {
+
+		int lineStartOffset = line.getOffset();
+		IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(forOffset);
+		if (sdRegion == null) {
+			return null;
+		}
+
+		// in 'case default' indentation case we move one char back to avoid 
+		// the first 'case' or 'default' region 
+		ITextRegion tRegion = sdRegion.getRegionAtCharacterOffset(forOffset);
+		int regionStart = sdRegion.getStartOffset(tRegion);
+
+		// in case of container we have the extract the PhpScriptRegion
+		if (tRegion instanceof ITextRegionContainer) {
+			ITextRegionContainer container = (ITextRegionContainer) tRegion;
+			tRegion = container.getRegionAtCharacterOffset(forOffset);
+			regionStart += tRegion.getStart();
+		}
+
+		if (tRegion instanceof PhpScriptRegion) {
+			PhpScriptRegion scriptRegion = (PhpScriptRegion) tRegion;
+			tRegion = scriptRegion.getPhpToken(forOffset - regionStart);
+
+			if (tRegion == null)
+				return null;
+
+			// go backward over the region to find a region (not comment nor whitespace)
+			// in the same line
+			do {
+				String token = tRegion.getType();
+				if (!PHPPartitionTypes.isPHPCommentState(token) && token != PHPRegionTypes.WHITESPACE) {
+					// not comment nor white space
+					return tRegion;
+				}
+				tRegion = scriptRegion.getPhpToken(tRegion.getStart() - 1);
+			} while (tRegion != null && tRegion.getStart() + regionStart > lineStartOffset);
+		}
+
+		return null;
+	}
+

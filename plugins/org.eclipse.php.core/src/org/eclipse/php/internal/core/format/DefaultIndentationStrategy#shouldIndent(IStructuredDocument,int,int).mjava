@@ -1,28 +1,36 @@
 	boolean shouldIndent(final IStructuredDocument document, final int offset, final int lineNumber) {
 		try {
 			final IRegion lineInfo = document.getLineInformation(lineNumber);
-			final int lastTokenOffset = getLastTokenOffset(document, lineInfo, offset);
-			if (lastTokenOffset == -1)
-				return false;
 
-			final IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(lastTokenOffset);
-			ITextRegion token = sdRegion.getRegionAtCharacterOffset(lastTokenOffset);
+			final IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(offset);
+			ITextRegion token = getLastTokenRegion(document, lineInfo, offset);
+			if (token == null)
+				return false;
 			String tokenType = token.getType();
 
 			if (tokenType == PHPRegionTypes.PHP_CURLY_OPEN)
 				return true;
 
-			if (tokenType == PHPRegionTypes.PHP_TOKEN && document.getChar(sdRegion.getStartOffset() + token.getStart()) == ':') {
-				//checking if the line starts with "case" or "default"
-				int currentOffset = sdRegion.getStartOffset() + token.getStart() - 1;
-				while (currentOffset >= lineInfo.getOffset()) {
-					token = sdRegion.getRegionAtCharacterOffset(currentOffset);
-					tokenType = token.getType();
-					if (tokenType == PHPRegionTypes.PHP_CASE || tokenType == PHPRegionTypes.PHP_DEFAULT)
-						return true;
-					currentOffset = sdRegion.getStartOffset() + token.getStart() - 1;
+			ITextRegion scriptRegion = sdRegion.getRegionAtCharacterOffset(offset);
+			int regionStart = sdRegion.getStartOffset(scriptRegion);
+			// in case of container we have the extract the PhpScriptRegion
+			if (scriptRegion instanceof ITextRegionContainer) {
+				ITextRegionContainer container = (ITextRegionContainer) scriptRegion;
+				scriptRegion = container.getRegionAtCharacterOffset(offset);
+				regionStart += scriptRegion.getStart();
+			}
+			if (scriptRegion instanceof PhpScriptRegion) {
+				if (tokenType == PHPRegionTypes.PHP_TOKEN && document.getChar(regionStart + token.getStart()) == ':') {
+					//checking if the line starts with "case" or "default"
+					int currentOffset = regionStart + token.getStart() - 1;
+					while (currentOffset >= lineInfo.getOffset()) {
+						token = ((PhpScriptRegion) scriptRegion).getPhpToken(token.getStart() - 1);
+						tokenType = token.getType();
+						if (tokenType == PHPRegionTypes.PHP_CASE || tokenType == PHPRegionTypes.PHP_DEFAULT)
+							return true;
+						currentOffset = regionStart + token.getStart() - 1;
+					}
 				}
-
 			}
 		} catch (final BadLocationException e) {
 		}

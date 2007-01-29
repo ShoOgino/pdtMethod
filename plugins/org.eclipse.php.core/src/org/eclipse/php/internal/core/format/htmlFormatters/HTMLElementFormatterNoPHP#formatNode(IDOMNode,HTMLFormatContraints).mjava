@@ -1,0 +1,25 @@
+	protected void formatNode(IDOMNode node, HTMLFormatContraints contraints) {
+		super.formatNode(node, contraints);
+
+		// get over the attribute and look for php attributes
+
+		NamedNodeMap attributes = node.getAttributes();
+		for (int i = 0; i < attributes.getLength(); i++) {
+			AttrImplForPhp attribute = (AttrImplForPhp) attributes.item(i);
+			ITextRegionContainer container = null;
+			if (attribute.getNameRegion() instanceof ITextRegionContainer) {
+				container = (ITextRegionContainer) attribute.getNameRegion();
+			}
+
+			if (attribute.getValueRegion() instanceof ITextRegionContainer) {
+				container = (ITextRegionContainer) attribute.getValueRegion();
+			}
+
+			if (container != null && container.getFirstRegion().getType().equals(PHPRegionContext.PHP_OPEN)) {
+				PhpFormatter phpFormatter = new PhpFormatter(attribute.getStartOffset(), attribute.getEndOffset());
+				phpFormatter.format(attribute, contraints);
+			}
+		}
+
+	}
+

@@ -1,5 +1,29 @@
 	public static String getPartitionType(IStructuredDocument document, int offset, boolean perferOpenPartitions) {
+		try {
+			IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(offset);
+			if (sdRegion == null) {
+				return null;
+			}
+			// in 'case default' indentation case we move one char back to avoid 
+			// the first 'case' or 'default' region 
+			ITextRegion tRegion = sdRegion.getRegionAtCharacterOffset(offset);
+			int regionStart = sdRegion.getStartOffset(tRegion);
+
+			// in case of container we have the extract the PhpScriptRegion
+			if (tRegion != null && tRegion instanceof ITextRegionContainer) {
+				ITextRegionContainer container = (ITextRegionContainer) tRegion;
+				tRegion = container.getRegionAtCharacterOffset(offset);
+				regionStart += tRegion.getStart();
+			}
+
+			if (tRegion != null && tRegion instanceof PhpScriptRegion) {
+				PhpScriptRegion scriptRegion = (PhpScriptRegion) tRegion;
+				return scriptRegion.getPartition(offset - regionStart);
+			}
+		} catch (final BadLocationException e) {
+		}
 		partitioner.connect(document);
+
 		return partitioner.getContentType(offset, perferOpenPartitions);
 	}
 

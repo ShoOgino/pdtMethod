@@ -6,12 +6,23 @@
 	private void formatNode(IDOMNode node, IStructuredFormatContraints formatContraints) {
 
 		// if it is php node - format
-		if (node instanceof PHPElementImpl || (node instanceof TextImpl && node.getFirstStructuredDocumentRegion() instanceof PHPStructuredDocumentRegion)) {
-
+		if (node instanceof ElementImplForPhp && ((ElementImplForPhp) node).isPhpTag()) {
 			IStructuredDocumentRegion sdRegionStart = node.getStartStructuredDocumentRegion();
-			IStructuredDocumentRegion sdRegionEnd = node.getLastStructuredDocumentRegion();
-			sdRegionEnd = sdRegionEnd == null ? sdRegionStart : sdRegionEnd;
-			format(sdRegionStart, sdRegionEnd);
+			//IStructuredDocumentRegion sdRegionEnd = node.getLastStructuredDocumentRegion();
+			//sdRegionEnd = sdRegionEnd == null ? sdRegionStart : sdRegionEnd;
+			format(sdRegionStart);
+		}
+
+		if (node instanceof AttrImplForPhp) {
+			// calculate lines
+			IStructuredDocument document = node.getStructuredDocument();
+			int lineIndex = document.getLineOfOffset(node.getStartOffset());
+			int endLineIndex = document.getLineOfOffset(node.getEndOffset());
+
+			// format each line
+			for (; lineIndex <= endLineIndex; lineIndex++) {
+				formatLine(document, lineIndex);
+			}
 		}
 
 		if (node.hasChildNodes()) { // container

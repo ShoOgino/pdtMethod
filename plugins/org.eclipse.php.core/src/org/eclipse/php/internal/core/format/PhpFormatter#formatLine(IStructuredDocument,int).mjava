@@ -43,15 +43,29 @@
 			final IIndentationStrategy insertionStrategy;
 			final IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(formattedLineStart);
 			ITextRegion firstTokenInLine = sdRegion.getRegionAtCharacterOffset(formattedLineStart);
+			int regionStart = sdRegion.getStartOffset(firstTokenInLine);
+			if (firstTokenInLine instanceof ITextRegionContainer) {
+				ITextRegionContainer container = (ITextRegionContainer) firstTokenInLine;
+				firstTokenInLine = container.getRegionAtCharacterOffset(formattedLineStart);
+				regionStart += firstTokenInLine.getStart();
+			}
+
+			if (firstTokenInLine instanceof PhpScriptRegion) {
+				PhpScriptRegion scriptRegion = (PhpScriptRegion) firstTokenInLine;
+				firstTokenInLine = scriptRegion.getPhpToken(formattedLineStart - regionStart);
+				if (firstTokenInLine != null && firstTokenInLine.getStart() + sdRegion.getStartOffset() < orginalLineStart && firstTokenInLine.getType() == PHPRegionTypes.WHITESPACE) {
+					firstTokenInLine = scriptRegion.getPhpToken(formattedLineStart - regionStart + firstTokenInLine.getLength());
+				}
+			}
 
 			// if the first char is not from this line
 			if (firstTokenInLine == null)
 				return;
 
-			if (firstTokenInLine.getStart() + sdRegion.getStartOffset() < originalLineInfo.getOffset() || firstTokenInLine.getType() == PHPRegionTypes.WHITESPACE) {
-				//meaning we got previos line last token
-				firstTokenInLine = sdRegion.getRegionAtCharacterOffset(sdRegion.getStartOffset() + firstTokenInLine.getEnd());
-			}
+			/*if (firstTokenInLine.getStart() + sdRegion.getStartOffset() < originalLineInfo.getOffset() || firstTokenInLine.getType() == PHPRegionTypes.WHITESPACE) {
+			 //meaning we got previos line last token
+			 firstTokenInLine = sdRegion.getRegionAtCharacterOffset(sdRegion.getStartOffset() + firstTokenInLine.getEnd());
+			 }*/
 
 			// if the next char is not from this line
 			if (firstTokenInLine == null)
