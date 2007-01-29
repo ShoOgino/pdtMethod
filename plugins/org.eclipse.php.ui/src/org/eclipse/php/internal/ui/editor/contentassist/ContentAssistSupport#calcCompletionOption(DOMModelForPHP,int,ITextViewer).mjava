@@ -31,8 +31,18 @@
 		if (textRegion == null)
 			return;
 
-		if (textRegion.getType() == PHPRegionTypes.PHP_CLOSETAG) { // dont provide completion if staying after PHP close tag.
+		if (textRegion.getType() == PHPRegionContext.PHP_OPEN) {
 			return;
+		}
+		if (textRegion.getType() == PHPRegionContext.PHP_CLOSE) {
+			if (sdRegion.getStartOffset(textRegion) == offset) {
+				ITextRegion regionBefore = sdRegion.getRegionAtCharacterOffset(offset - 1);
+				if (regionBefore instanceof PhpScriptRegion) {
+					textRegion = regionBefore;
+				}
+			} else {
+				return;
+			}
 		}
 
 		// find the start String for completion
@@ -52,20 +62,25 @@
 			startOffset = sdRegion.getStartOffset(textRegion);
 		}
 
-		PhpScriptRegion phpScriptRegion = (PhpScriptRegion) textRegion;
-		int internalOffset = offset - sdRegion.getStartOffset() - phpScriptRegion.getStart();
+		PhpScriptRegion phpScriptRegion = null;
+		String partitionType = null;
+		int internalOffset = 0;
+		ContextRegion internalPHPRegion = null;
+		if (textRegion instanceof PhpScriptRegion) {
+			phpScriptRegion = (PhpScriptRegion) textRegion;
+			internalOffset = offset - sdRegion.getStartOffset() - phpScriptRegion.getStart();
 
-		String partitionType = phpScriptRegion.getPartition(internalOffset);
-		if ((partitionType == PHPPartitionTypes.PHP_DEFAULT) || (partitionType == PHPPartitionTypes.PHP_MULTI_LINE_COMMENT) || (partitionType == PHPPartitionTypes.PHP_QUOTED_STRING) || (partitionType == PHPPartitionTypes.PHP_SINGLE_LINE_COMMENT)) {
-		} else {
-			return;
+			partitionType = phpScriptRegion.getPartition(internalOffset);
+			if ((partitionType == PHPPartitionTypes.PHP_DEFAULT) || (partitionType == PHPPartitionTypes.PHP_MULTI_LINE_COMMENT) || (partitionType == PHPPartitionTypes.PHP_QUOTED_STRING) || (partitionType == PHPPartitionTypes.PHP_SINGLE_LINE_COMMENT)) {
+			} else {
+				return;
+			}
+			internalPHPRegion = (ContextRegion) phpScriptRegion.getPhpToken(internalOffset);
 		}
-
-		ContextRegion internalPHPRegion = (ContextRegion) phpScriptRegion.getPhpToken(internalOffset);
 
 		// if there is no project model (the file is not part of a project)
 		// complete with language model only 
-		if (fileData == null) {
+		if (fileData == null || phpScriptRegion == null) {
 			getRegularCompletion(viewer, projectModel, "", "", offset, selectionLength, explicit, sdRegion, phpScriptRegion, internalPHPRegion, isStrict);
 			return;
 		}
