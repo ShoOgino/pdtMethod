@@ -14,5 +14,18 @@
 			} catch (IOException exc) {
 				PHPDebugPlugin.log(exc);
 			}
+			// In case this thread ended and we do not have any IDebugTarget (PHPDebugTarget) hooked in the 
+			// launch that was created, we can tell that there is something wrong, and probably there is no debugger
+			// installed (e.g. the deubgger dll/so is not properly configured in the php.ini).
+			if (launch != null && launch.getDebugTarget() == null) {
+				String launchName = launch.getLaunchConfiguration().getName();
+				final String message = MessageFormat.format(PHPDebugCoreMessages.Debugger_Error_Message_2, new String[] { launchName });
+				Display.getDefault().asyncExec(new Runnable() {
+					public void run() {
+						MessageDialog.openWarning(Display.getDefault().getActiveShell(), PHPDebugCoreMessages.Debugger_Error, message);
+						DebugPlugin.getDefault().getLaunchManager().removeLaunch(launch);
+					}
+				});
+			}
 		}
 
