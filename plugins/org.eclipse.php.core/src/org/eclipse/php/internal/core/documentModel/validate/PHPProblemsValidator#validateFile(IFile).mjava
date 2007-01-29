@@ -25,6 +25,7 @@
 				rullerMarkersAttributes[i] = rullerAddedMarkers[i].getAttributes();
 			}
 			phpFile.deleteMarkers(IMarker.TASK, false, IResource.DEPTH_INFINITE);
+			phpFile.deleteMarkers(PHP_PROBLEM_MARKER_TYPE, false, IResource.DEPTH_INFINITE);
 		} catch (CoreException e1) {
 		}
 		if (markers != null) {
@@ -43,13 +44,7 @@
 						UserData userData = task.getUserData();
 						int prio = getPriority(task.getTaskName(), tags, caseSensitive);
 						try {
-							IMarker marker = phpFile.createMarker(IMarker.TASK);
-							marker.setAttribute(IMarker.LINE_NUMBER, userData.getStopLine() + 1);
-							marker.setAttribute(IMarker.CHAR_START, userData.getStartPosition());
-							marker.setAttribute(IMarker.CHAR_END, userData.getEndPosition() + 1);
-							marker.setAttribute(IMarker.MESSAGE, descr);
-							marker.setAttribute(IMarker.PRIORITY, prio);
-							marker.setAttribute(IMarker.USER_EDITABLE, false);
+							createMarker(phpFile, userData, IMarker.TASK, descr, prio);
 						} catch (CoreException e) {
 							// Logger.logException(e);
 						}
@@ -64,7 +59,8 @@
 					int lineNo = userData.getStopLine() + 1;
 					mess.setLineNo(lineNo);
 
-					TaskListUtility.addTask(ID, phpFile, String.valueOf(lineNo), null, descr, IMessage.HIGH_SEVERITY, phpFile.getFullPath().toString(), null, -1, -1);
+					int prio = IMarker.PRIORITY_HIGH;
+					createMarker(phpFile, userData, PHP_PROBLEM_MARKER_TYPE, descr, prio);
 				}
 			} catch (CoreException e) {
 				Logger.logException(e);
