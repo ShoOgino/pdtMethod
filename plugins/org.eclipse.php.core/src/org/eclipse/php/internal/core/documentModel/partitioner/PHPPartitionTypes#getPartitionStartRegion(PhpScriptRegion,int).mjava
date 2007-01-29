@@ -1,0 +1,21 @@
+	/**
+	 * Returns starting region of the current partition
+	 * @param region Region containing current offset
+	 * @param offset Current position relative to the containing region
+	 * @return Starting region of the current partition
+	 * @throws BadLocationException
+	 */	
+	public static final ITextRegion getPartitionStartRegion(PhpScriptRegion region, int offset) throws BadLocationException {
+		String partitionType = region.getPartition(offset);
+		ITextRegion internalRegion = region.getPhpToken(offset);
+		ITextRegion startRegion = internalRegion;
+		while (internalRegion.getStart() != 0) {
+			internalRegion = region.getPhpToken(internalRegion.getStart() - 1);
+			if (region.getPartition(internalRegion.getStart()) != partitionType) {
+				break;
+			}
+			startRegion = internalRegion;
+		}
+		return startRegion;
+	}
+
