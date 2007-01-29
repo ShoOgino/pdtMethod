@@ -2,19 +2,30 @@
 	 * @see org.eclipse.jdt.internal.ui.actions.BlockCommentAction#runInternal(org.eclipse.jface.text.ITextSelection, org.eclipse.jface.text.IDocumentExtension3, org.eclipse.jdt.internal.ui.actions.BlockCommentAction.Edit.EditFactory)
 	 */
 	protected void runInternal(ITextSelection selection, IDocumentExtension3 docExtension, Edit.EditFactory factory) throws BadLocationException, BadPartitioningException {
-	    int selectionOffset = selection.getOffset();
-	    int selectionEndOffset = selectionOffset + selection.getLength();
-	    List edits = new LinkedList();
-	    ITypedRegion partition = docExtension.getPartition(fDocumentPartitioning, selectionOffset, false);
+		int selectionOffset = selection.getOffset();
+		int selectionEndOffset = selectionOffset + selection.getLength();
+		List edits = new LinkedList();
 
-	    handleFirstPartition(partition, edits, factory, selectionOffset);
+		if (docExtension instanceof IStructuredDocument) {
+			IStructuredDocument sDoc = (IStructuredDocument) docExtension;
+			IStructuredDocumentRegion sdRegion = sDoc.getRegionAtCharacterOffset(selectionOffset);
+			ITextRegion region = sdRegion.getRegionAtCharacterOffset(selectionOffset);
 
-	    while (partition.getOffset() + partition.getLength() < selectionEndOffset) {
-	      partition = handleInteriorPartition(partition, edits, factory, docExtension);
-	    }
+			if (region.getType() == PHPRegionContext.PHP_CONTENT) {
+				PhpScriptRegion phpScriptRegion = (PhpScriptRegion) region;
+				ITypedRegion partition = PHPPartitionTypes.getPartition(phpScriptRegion, selectionOffset - sdRegion.getStartOffset() - phpScriptRegion.getStart());
 
-	    handleLastPartition(partition, edits, factory, selectionEndOffset);
+				int phpRegionStart = sdRegion.getStartOffset() + phpScriptRegion.getStart();
 
-	    executeEdits(edits);
+				handleFirstPartition(partition, edits, factory, selectionOffset, phpRegionStart);
+
+				while (phpRegionStart + partition.getOffset() + partition.getLength() < selectionEndOffset) {
+					partition = handleInteriorPartition(partition, edits, factory, docExtension, phpRegionStart);
+				}
+				handleLastPartition(partition, edits, factory, selectionEndOffset, phpRegionStart);
+			}
+		}
+
+		executeEdits(edits);
 	}
 
