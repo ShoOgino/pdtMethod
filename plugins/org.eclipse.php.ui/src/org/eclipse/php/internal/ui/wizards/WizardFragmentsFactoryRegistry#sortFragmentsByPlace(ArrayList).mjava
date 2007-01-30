@@ -15,17 +15,18 @@
 
 		// Traverse over the non-root fragments and position them.
 		for (int i = 0; i < nonRootFragments.size(); i++) {
-			FragmentsFactory factory = getFactory(nonRootFragments, i);
+			ArrayList fragmentsGroup = (ArrayList) nonRootFragments.get(i);
 			// try to move it to the roots fragments first (order is important).
-			boolean moved = placeFragment(rootsFragments, factory);
+			boolean moved = placeFragment(rootsFragments, fragmentsGroup);
 			if (!moved) {
 				// in case we can't find it there, try to move it inside the non-roots fragments.
-				moved = placeFragment(nonRootFragments, factory);
+				moved = placeFragment(nonRootFragments, fragmentsGroup);
 			}
 			if (!moved) {
 				// move it to the roots anyway, since there is an error in the extention definitions.
-				addAsList(rootsFragments, factory);
-				PHPUiPlugin.log(new Status(IStatus.WARNING, PHPUiPlugin.ID, 0, "Invalid 'placeAfter' id (" + factory.getPlaceAfter() + ')', null)); //$NON-NLS-1$
+				FragmentsFactory invalidFactory = getFactory(nonRootFragments, i);
+				addAsList(rootsFragments, invalidFactory);
+				PHPUiPlugin.log(new Status(IStatus.WARNING, PHPUiPlugin.ID, 0, "Invalid 'placeAfter' id (" + invalidFactory.getPlaceAfter() + ')', null)); //$NON-NLS-1$
 			}
 		}
 
