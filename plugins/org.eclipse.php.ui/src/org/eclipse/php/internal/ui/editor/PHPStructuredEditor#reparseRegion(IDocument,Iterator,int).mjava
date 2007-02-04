@@ -1,0 +1,23 @@
+		/**
+		 * iterate over regions 
+		 * in case of PhpScriptRegion reparse the region.
+		 * in case of region contaioner iterate over the container regions. 
+		 * @param doc structured document
+		 * @param regionsIt regions iterator
+		 * @param offset the container region start offset
+		 * @throws BadLocationException
+		 */
+		private void reparseRegion(IDocument doc, Iterator regionsIt, int offset) throws BadLocationException {
+			while (regionsIt.hasNext()) {
+				ITextRegion region = (ITextRegion) regionsIt.next();
+				if (region instanceof ITextRegionContainer) {
+					reparseRegion(doc, ((ITextRegionContainer)region).getRegions().iterator(), offset + region.getStart());
+				}
+				if (region instanceof PhpScriptRegion) {
+					int length = region.getLength();
+					String newText = doc.get(offset + region.getStart(), length);
+					((PhpScriptRegion) region).completeReparse(newText);
+				}
+			}
+		}
+
