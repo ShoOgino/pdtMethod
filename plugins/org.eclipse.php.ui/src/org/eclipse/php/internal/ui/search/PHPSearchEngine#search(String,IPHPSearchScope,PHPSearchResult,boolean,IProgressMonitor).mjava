@@ -23,20 +23,24 @@
 				return;
 			}
 			PHPUserModel userModel = projectModel.getPHPUserModel();
+			PHPClassData[] fClasses = (PHPClassData[]) userModel.getClasses();
 			switch (scope.getSearchFor()) {
 				case IPHPSearchConstants.CLASS:
 					addResultsFor(projectsInScope[i], (PHPClassData[]) userModel.getClasses(), stringPattern, caseSensitive, scope, textResult, monitor);
 					break;
 				case IPHPSearchConstants.FUNCTION:
 					addResultsFor(projectsInScope[i], (PHPFunctionData[]) userModel.getFunctions(), stringPattern, caseSensitive, scope, textResult, monitor);
-					// Add matches from the classes functions
-					PHPClassData[] fClasses = (PHPClassData[]) userModel.getClasses();
+					// Add matches from the classes functions					
 					for (int j = 0; j < fClasses.length; j++) {
 						addResultsFor(projectsInScope[i], fClasses[j].getFunctions(), stringPattern, caseSensitive, scope, textResult, monitor);
 					}
 					break;
-				case IPHPSearchConstants.CONSTANT:
+				case IPHPSearchConstants.CONSTANT:					
 					addResultsFor(projectsInScope[i], (PHPConstantData[]) userModel.getConstants(), stringPattern, caseSensitive, scope, textResult, monitor);
+//					 Add matches from the classes constants
+					for (int j = 0; j < fClasses.length; j++) {
+						addResultsFor(projectsInScope[i], fClasses[j].getConsts(), stringPattern, caseSensitive, scope, textResult, monitor);
+					}
 					break;
 				default:
 			// DO NOTHING
@@ -60,20 +64,24 @@
 				if (fileData == null) {
 					continue;
 				}
+				PHPClassData[] fClasses = fileData.getClasses();
 				switch (scope.getSearchFor()) {
 					case IPHPSearchConstants.CLASS:
 						addResultsFor(partialProjects[i], fileData.getClasses(), stringPattern, caseSensitive, scope, textResult, monitor);
 						break;
 					case IPHPSearchConstants.FUNCTION:
 						addResultsFor(partialProjects[i], fileData.getFunctions(), stringPattern, caseSensitive, scope, textResult, monitor);
-						// Add matches from the classes functions
-						PHPClassData[] fClasses = fileData.getClasses();
+						// Add matches from the classes functions						
 						for (int k = 0; k < fClasses.length; k++) {
 							addResultsFor(partialProjects[i], fClasses[k].getFunctions(), stringPattern, caseSensitive, scope, textResult, monitor);
 						}
 						break;
 					case IPHPSearchConstants.CONSTANT:
 						addResultsFor(partialProjects[i], fileData.getConstants(), stringPattern, caseSensitive, scope, textResult, monitor);
+//						 Add matches from the classes constants
+						for (int z = 0; z < fClasses.length; z++) {
+							addResultsFor(partialProjects[i], fClasses[z].getConsts(), stringPattern, caseSensitive, scope, textResult, monitor);							
+						}
 						break;
 					default:
 				// DO NOTHING
