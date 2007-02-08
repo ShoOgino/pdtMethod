@@ -1,9 +1,33 @@
 	public PHPClassData getClass(String fileName, String className) {
+
+		List classes = new ArrayList();
 		for (int i = 0; i < models.length; i++) {
-			PHPClassData res = models[i].getClass(fileName, className);
-			if (res != null) {
-				return res;
+			PHPClassData exactClass = models[i].getClass(fileName, className);
+			// if filename is matching - just return the file.
+			if (exactClass != null && exactClass.getUserData() != null && exactClass.getUserData().getFileName().equals(fileName)) {
+				return exactClass;
 			}
+			// else collect all the classes to apply filter
+			CodeData[] modelClasses = models[i].getClass(className);
+			if (modelClasses != null && modelClasses.length > 0) {
+				classes.addAll(Arrays.asList(modelClasses));
+			}
+		}
+		switch (classes.size()) {
+			case 0:
+				return null;
+			case 1:
+				return (PHPClassData) classes.get(0);
+		}
+		if (filter != null) {
+			for (Iterator i = classes.iterator(); i.hasNext();) {
+				PHPClassData classs = (PHPClassData) i.next();
+				if (filter.select(this, classs, fileName)) {
+					return classs;
+				}
+			}
+		} else {
+			return (PHPClassData) classes.get(0);
 		}
 		return null;
 	}
