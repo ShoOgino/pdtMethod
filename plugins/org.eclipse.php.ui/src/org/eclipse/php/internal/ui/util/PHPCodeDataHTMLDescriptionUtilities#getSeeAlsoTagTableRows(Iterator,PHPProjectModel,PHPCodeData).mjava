@@ -1,76 +1,76 @@
-    private static String getSeeAlsoTagTableRows(Iterator it, PHPProjectModel projectModel, PHPCodeData phpCodeData) {
-        helpBuffer.delete(0, helpBuffer.length());
-        helpBuffer.append("<br><dt>See Also</dt>");
-        helpBuffer.append("<dd>");
-        PHPDocTag see = (PHPDocTag) it.next();
-        String arg = (String) see.getValue();
-        String[] args = arg.split(",");
-        for (int i = 0; i < args.length; i++) {
-            String ref = args[i];
-            CodeData[] data = projectModel.getClasses(ref);
-            boolean shouldBreak = false;
-            // look it up in all classes
-            for (int j = 0; j < data.length; j++) {
-                CodeData codeData = data[j];
-                if (data.equals(codeData.getName())) {
-                    helpBuffer.append(codeData.getName());
-                    shouldBreak = true;
-                    break;
-                }
-            }
-            // found it look no more !
-            if (shouldBreak) {
-                break;
-            }
-            // it's a file append it and look no more !
-            if (projectModel.getFileData(ref) != null) {
-                helpBuffer.append(ref);
-                break;
-            }
-            // it's a constant append it and look no more !
-            CodeData codeData = projectModel.getConstantData(ref, false);
-            if (codeData != null) {
-                helpBuffer.append(codeData.getName());
-                break;
-            }
-            if (phpCodeData instanceof PHPFunctionData && phpCodeData.getContainer() != null && phpCodeData.getContainer() instanceof PHPClassData) {
-                String ref_orig = ref;
-                if (ref.indexOf('(') != -1) {
-                    ref_orig = ref.substring(0, ref.indexOf('('));
-                }
-                String fileName = phpCodeData.isUserCode() ? phpCodeData.getUserData().getFileName() : null;
-                if (fileName != null && projectModel.getClassFunctionData(fileName, phpCodeData.getContainer().getName(), ref_orig) != null) {
-                    helpBuffer.append(ref);
-                    break;
-                }
-                if (fileName != null) {
-                    PHPCodeContext context = ModelSupport.createContext(phpCodeData);
-                    ref_orig = ref;
-                    if (ref.startsWith("$")) {
-                        ref_orig = ref.substring(1);
-                    }
-                    data = projectModel.getVariables(fileName, context, ref_orig, true);
-                    for (int j = 0; j < data.length; j++) {
-                        codeData = data[j];
-                        if (((PHPCodeData) codeData).getName().equals(ref_orig)) {
-                            helpBuffer.append(ref);
-                            shouldBreak = true;
-                            break;
-                        }
-                    }
-                }
-                if (shouldBreak) {
-                    break;
-                }
-                if (projectModel.getFunction(ref) != null && projectModel.getFunction(ref).length > 0) {
-                    helpBuffer.append(ref);
-                    break;
-                }
-            }
-            // didn't find it...
-            helpBuffer.append(ref);
-        }
-        helpBuffer.append("</dd>");
-        return helpBuffer.toString();
-    }
+	private static String getSeeAlsoTagTableRows(Iterator it, PHPProjectModel projectModel, PHPCodeData phpCodeData) {
+		helpBuffer.delete(0, helpBuffer.length());
+		helpBuffer.append("<br><dt>See Also</dt>");
+		helpBuffer.append("<dd>");
+		PHPDocTag see = (PHPDocTag) it.next();
+		String arg = (String) see.getValue();
+		String[] args = arg.split(",");
+		for (int i = 0; i < args.length; i++) {
+			String ref = args[i];
+			CodeData[] data = projectModel.getClasses(ref);
+			boolean shouldBreak = false;
+			// look it up in all classes
+			for (int j = 0; j < data.length; j++) {
+				CodeData codeData = data[j];
+				if (data.equals(codeData.getName())) {
+					helpBuffer.append(codeData.getName());
+					shouldBreak = true;
+					break;
+				}
+			}
+			// found it look no more !
+			if (shouldBreak) {
+				break;
+			}
+			// it's a file append it and look no more !
+			if (projectModel.getFileData(ref) != null) {
+				helpBuffer.append(ref);
+				break;
+			}
+			// it's a constant append it and look no more !
+			CodeData codeData = projectModel.getConstantData(ref, false);
+			if (codeData != null) {
+				helpBuffer.append(codeData.getName());
+				break;
+			}
+			if (phpCodeData instanceof PHPFunctionData && phpCodeData.getContainer() != null && phpCodeData.getContainer() instanceof PHPClassData) {
+				String ref_orig = ref;
+				if (ref.indexOf('(') != -1) {
+					ref_orig = ref.substring(0, ref.indexOf('('));
+				}
+				String fileName = phpCodeData.isUserCode() ? phpCodeData.getUserData().getFileName() : null;
+				if (fileName != null && projectModel.getClassFunctionData(fileName, phpCodeData.getContainer().getName(), ref_orig) != null) {
+					helpBuffer.append(ref);
+					break;
+				}
+				if (fileName != null) {
+					PHPCodeContext context = ModelSupport.createContext(phpCodeData);
+					ref_orig = ref;
+					if (ref.startsWith("$")) {
+						ref_orig = ref.substring(1);
+					}
+					data = projectModel.getVariables(fileName, context, ref_orig, true);
+					for (int j = 0; j < data.length; j++) {
+						codeData = data[j];
+						if (((PHPCodeData) codeData).getName().equals(ref_orig)) {
+							helpBuffer.append(ref);
+							shouldBreak = true;
+							break;
+						}
+					}
+				}
+				if (shouldBreak) {
+					break;
+				}
+				if (projectModel.getFunction(ref) != null && projectModel.getFunction(ref).length > 0) {
+					helpBuffer.append(ref);
+					break;
+				}
+			}
+			// didn't find it...
+			helpBuffer.append(ref);
+		}
+		helpBuffer.append("</dd>");
+		return helpBuffer.toString();
+	}
 
