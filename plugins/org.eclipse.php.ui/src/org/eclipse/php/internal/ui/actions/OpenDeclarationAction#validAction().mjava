@@ -1,27 +1,27 @@
 	private boolean validAction() {
-		ITextEditor editor= getTextEditor();
+		ITextEditor editor = getTextEditor();
 		if (editor == null) {
 			return false;
 		}
-		
-		IDocumentProvider docProvider= editor.getDocumentProvider();
-		IEditorInput input= editor.getEditorInput();
+
+		IDocumentProvider docProvider = editor.getDocumentProvider();
+		IEditorInput input = editor.getEditorInput();
 		if (docProvider == null || input == null) {
 			return false;
 		}
-		
-		IDocument document= docProvider.getDocument(input);
+
+		IDocument document = docProvider.getDocument(input);
 		if (document == null) {
 			return false;
 		}
-		
+
 		if (!(document instanceof IStructuredDocument)) {
 			return false;
 		}
-		
+
 		ITextSelection currentSelection = getCurrentSelection();
 		int offset = currentSelection.getOffset();
-		IStructuredDocument structuredDocument = (IStructuredDocument)document;
+		IStructuredDocument structuredDocument = (IStructuredDocument) document;
 		String partitionType;
 		try {
 			partitionType = structuredDocument.getPartition(offset).getType();
@@ -32,15 +32,15 @@
 		if (!partitionType.equals(PHPPartitionTypes.PHP_DEFAULT)) {
 			return false;
 		}
-		
+
 		IStructuredDocumentRegion structuredDocumentRegion = structuredDocument.getRegionAtCharacterOffset(offset);
 		ITextRegion textRegion = structuredDocumentRegion.getRegionAtCharacterOffset(offset);
 		if (textRegion == null) {
 			return false;
 		}
-		
+
 		if (textRegion.getType() == PHPRegionContext.PHP_CONTENT) {
-			PhpScriptRegion phpScriptRegion = (PhpScriptRegion)textRegion;
+			PhpScriptRegion phpScriptRegion = (PhpScriptRegion) textRegion;
 			try {
 				textRegion = phpScriptRegion.getPhpToken(offset - structuredDocumentRegion.getStartOffset() - phpScriptRegion.getStart());
 			} catch (BadLocationException e) {
@@ -50,14 +50,9 @@
 		if (textRegion == null) {
 			return false;
 		}
-		
-		StructuredTextEditor structuredTextEditor = (StructuredTextEditor)editor;
-		try {
-			fCodeData = CodeDataResolver.getCodeData(structuredTextEditor.getTextViewer(), offset);
-		} catch (BadLocationException e) {
-			Logger.logException(e);
-			return false;
-		}
+
+		StructuredTextEditor structuredTextEditor = (StructuredTextEditor) editor;
+		fCodeData = CodeDataResolver.getCodeData(structuredTextEditor.getTextViewer(), offset);
 		if (fCodeData == null) {
 			return false;
 		}
