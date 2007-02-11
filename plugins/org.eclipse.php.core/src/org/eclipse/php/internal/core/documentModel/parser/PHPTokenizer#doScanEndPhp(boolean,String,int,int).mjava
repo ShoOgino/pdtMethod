@@ -1,109 +1,16 @@
-/**
- * Method doScanEndPhp
- * 
- * @see doScan(searchString, req...) 
- * this version can handle two strings as options to search string
- * it originally written to support ?> or %> close tags to php
- * The two strings must be on the same length
- *
- * @param isAsp - whether the asp %> close is premited
- * @param context - the context of the scanned region if non-zero length
- * @param exitState - the state to go to if the region was of non-zero length
- * @param abortState - the state to go to if the searchString was found immediately
- * @return String - the context found: the desired context on a non-zero length match, the abortContext on immediate success
- * @throws IOException
- */
 private final String doScanEndPhp(boolean isAsp, String searchContext, int exitState, int immediateFallbackState) throws IOException {
-	boolean stillSearching = true;
-	// Disable further block (probably)
-	fIsBlockingEnabled = false;
-	int n = 0;
-	int i;
-	boolean same = false;
-	char quoteChar = 0;
-	while (stillSearching) {
-		n = 0;
+	yypushback(1); // begin with the last char
 	
-		// Ensure that enough data from the input exists to compare against the search String.
-		n = yy_advance();
-		while(n != YYEOF && yy_currentPos < 2)
-			n = yy_advance();
-		// If the input was too short or we've exhausted the input, stop immediately.
-		if (n == YYEOF) {
-			stillSearching = false;
-		}
-		else {
-			// ignores the "?>" case i.e php end tags in a string
-			final char current = yy_buffer[yy_currentPos - 2];
-			if (current == '"' || current == '\'' || current == '`') { // start-end blockers
-				if (quoteChar == 0) {
-					quoteChar = current; 
-				} else {
-					if (quoteChar == current) {
-						quoteChar = 0;
-					}
-				}
-				continue;					
-			} else {
-				final char next = yy_buffer[yy_currentPos - 1];
-				if (current == '/' && next == '*') { // start blocker
-					if (quoteChar == 0) {
-						quoteChar = current; 
-					} 
-					continue;
-				} else if (current == '*' && next == '/' && quoteChar == next) { // end blocker
-					quoteChar = 0;
-				}				
-			}
-			if (quoteChar != 0) {
-				continue;
-			}		
-			///////////////////////////
+	int[] currentParameters = getParamenters();
+	currentParameters[6] = PhpLexer.ST_PHP_IN_SCRIPTING;
+	
+	final PhpLexer phpLexer = PhpScriptRegion.getPhpLexer(project, yy_reader, yy_buffer, currentParameters); 
+	bufferedTextRegion = new PhpScriptRegion(searchContext, yychar, project, phpLexer);
 
-			same = true;
-			// Ensure that we've not encountered a complete block (<%%>) that was *shorter* than the closeTagString and
-			// thus found twice at current-targetLength [since the first scan would have come out this far anyway].
-			// Check the characters in the target versus the last targetLength characters read from the buffer
-			// and see if it matches
-
-			// safety check for array accesses (yy_currentPos is the *last* character we can check against)
-			if(yy_currentPos >= 2 &&  yy_currentPos <= yy_buffer.length) {
-				for(i = 0; i < 2; i++) {
-					final char c = yy_buffer[i + yy_currentPos - 2];
-					// to enable search of ?> or %> 
-					if(same) {
-						same = c == "?>".charAt(i) || (isAsp && c == "%>".charAt(i));
-					}
-				}
-			}
-			// safety check failed; no match is possible right now
-			else {
-				same = false;
-			}
-			stillSearching = !same || (yy_currentPos < yy_startRead + 2);
-		}
-	}
-	if (n != YYEOF || same) {
-		// We've stopped short of the end or definitely found a match
-		yy_markedPos = yy_currentPos - 2;
-		yy_currentPos = yy_markedPos + 1;
-		// If the searchString occurs at the very beginning of what would have
-		// been a Block, resume scanning normally immediately
-		if (yy_markedPos == yy_startRead) {
-			yybegin(immediateFallbackState);
-			return primGetNextToken();
-		}
-	}
-	else {
-		// We ran through the rest of the input
-		yy_markedPos = yy_currentPos;
-		yy_currentPos++;
-	}
+	// restore the locations / states
+	reset(yy_reader, phpLexer.getYy_buffer(), phpLexer.getParamenters());
+	
 	yybegin(exitState);
-	// If the ending occurs at the very beginning of what would have
-	// been a Block, resume scanning normally immediately
-	if(yy_markedPos == yy_startRead)
-		return primGetNextToken();
 	return searchContext;
 }
 
