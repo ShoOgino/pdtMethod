@@ -1,0 +1,93 @@
+	public StructuredDocumentEvent updateRegion(Object requester, IStructuredDocumentRegion flatnode, String changes, int requestStart, int lengthToReplace) {
+		try {
+			final String newText = getNewRegionText(flatnode, changes, requestStart, lengthToReplace);
+			assert newText.length() > requestStart - 1;
+
+			final int offset = requestStart - flatnode.getStartOffset() - getStart();
+
+			// support the <?php case
+			if (offset < 3) {
+				return null;
+			}
+			
+			// checks for odd quotes
+			final String deletedText = lengthToReplace == 0 ? "" : flatnode.getParentDocument().get(requestStart, lengthToReplace);
+			final int length = changes.length();
+			if (startQuoted(deletedText) || startQuoted(changes) || isHereDoc(newText, offset)) {
+				return null;
+			}
+
+			// get the region to re-parse
+			final ITextRegion tokenStart = tokensContaier.getToken(offset == 0 ? 0 : offset - 1);
+			final int oldEndOffset = offset + lengthToReplace;
+			final ITextRegion tokenEnd = tokensContaier.getToken(oldEndOffset);
+			int newTokenOffset = tokenStart.getStart();
+
+			// get start and end states
+			final LexerState startState = tokensContaier.getState(newTokenOffset);
+			final LexerState endState = tokensContaier.getState(tokenEnd.getEnd() + 1);
+
+			final PhpTokenContainer newContainer = new PhpTokenContainer();
+			final PhpLexer phpLexer = getPhpLexer(project, getStream(newText, newTokenOffset), startState);
+
+			Object state = startState;
+			try {
+				String yylex = phpLexer.getNextToken();
+				int yylength;
+				final int toOffset = offset + length;
+				while (yylex != null && newTokenOffset <= toOffset && yylex != PHPRegionTypes.PHP_CLOSETAG) {
+					yylength = phpLexer.getLength();
+					newContainer.addLast(yylex, newTokenOffset, yylength, yylength, state);
+					newTokenOffset += yylength;
+					state = phpLexer.createLexicalStateMemento();
+					yylex = phpLexer.getNextToken();
+				}
+				if (yylex == PHPRegionTypes.WHITESPACE) {
+					yylength = phpLexer.getLength();
+					newContainer.adjustWhitespace(yylex, newTokenOffset, yylength, yylength, state);
+				}
+			} catch (IOException e) {
+				Logger.logException(e);
+			}
+
+			// if the fast reparser couldn't lex - - reparse all
+			if (newContainer.isEmpty()) {
+				return null;
+			}
+
+			// if the two streams end with the same lexer sate - 
+			// 1. replace the regions
+			// 2. adjust next regions start location
+			// 3. update state changes
+			final int size = length - lengthToReplace;
+			final int end = newContainer.getLastToken().getEnd();
+
+			if (!state.equals(endState) || tokenEnd.getEnd() + size != end) {
+				return null;
+			}
+
+			// 1. replace the regions
+			final ListIterator oldIterator = tokensContaier.removeTokensSubList(tokenStart, tokenEnd);
+			ITextRegion[] newTokens = newContainer.getPhpTokens(); // now, add the new ones
+			for (int i = 0; i < newTokens.length; i++) {
+				oldIterator.add(newTokens[i]);
+			}
+
+			// 2. adjust next regions start location
+			while (oldIterator.hasNext()) {
+				final ITextRegion adjust = (ITextRegion) oldIterator.next();
+				adjust.adjustStart(size);
+			}
+
+			// 3. update state changes
+			tokensContaier.updateStateChanges(newContainer, tokenStart.getStart(), end);
+			isFullReparsed = false;
+
+			return super.updateRegion(requester, flatnode, changes, requestStart, lengthToReplace);
+
+		} catch (BadLocationException e) {
+			PHPCorePlugin.log(e);
+			return null; // causes to full reparse in this case
+		}
+	}
+
