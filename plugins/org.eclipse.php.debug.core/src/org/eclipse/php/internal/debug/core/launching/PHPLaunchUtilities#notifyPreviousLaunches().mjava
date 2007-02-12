@@ -1,0 +1,63 @@
+	/**
+	 * Notify the existance of a previous PHP debug session in case the user launched a new session.
+	 *
+	 * @param newLaunchConfiguration
+	 * @param newLaunch
+	 * @return True, if the launch can be continued; False, otherwise. 
+	 * @throws CoreException
+	 */
+	public static boolean notifyPreviousLaunches() throws CoreException {
+		ILaunch[] launches = DebugPlugin.getDefault().getLaunchManager().getLaunches();
+		boolean hasActiveLaunch = false;
+		for (int i = 0; !hasActiveLaunch && i < launches.length; i++) {
+			if (!launches[i].isTerminated() && launches[i].getDebugTarget() instanceof PHPDebugTarget) {
+				hasActiveLaunch = true;
+			}
+		}
+		if (!hasActiveLaunch) {
+			return true;
+		}
+
+		// Check whether we should ask the user.
+		final IPreferenceStore store = PHPUiPlugin.getDefault().getPreferenceStore();
+		String option = store.getString(PreferenceConstants.ALLOW_MULTIPLE_LAUNCHES);
+		if (MessageDialogWithToggle.ALWAYS.equals(option)) {
+			// If always, then we should always allow the launch
+			return true;
+		}
+		if (MessageDialogWithToggle.NEVER.equals(option)) {
+			// We should never allow the launch, so display a message describing the situation.
+			final Display disp = Display.getDefault();
+			disp.syncExec(new Runnable() {
+				public void run() {
+					MessageDialog.openInformation(disp.getActiveShell(), PHPDebugCoreMessages.PHPLaunchUtilities_phpLaunchTitle, PHPDebugCoreMessages.PHPLaunchUtilities_activeLaunchDetected);
+				}
+			});
+			return false;
+		}
+
+		final DialogResultHolder resultHolder = new DialogResultHolder();
+		final Display disp = Display.getDefault();
+		disp.syncExec(new Runnable() {
+			public void run() {
+				// Display a dialog to notify the existance of a previous active launch.
+				MessageDialogWithToggle m = MessageDialogWithToggle.openYesNoQuestion(
+					disp.getActiveShell(), 
+					PHPDebugCoreMessages.PHPLaunchUtilities_confirmation, 
+					PHPDebugCoreMessages.PHPLaunchUtilities_multipleLaunchesPrompt, PHPDebugCoreMessages.PHPLaunchUtilities_rememberDecision, 
+					false, 
+					store,
+					PreferenceConstants.ALLOW_MULTIPLE_LAUNCHES);
+				resultHolder.setReturnCode(m.getReturnCode());
+			}
+		});
+		switch (resultHolder.getReturnCode()) {
+			case IDialogConstants.YES_ID:
+			case IDialogConstants.OK_ID :
+				return true;
+			case IDialogConstants.NO_ID :
+				return false;
+		}
+		return true;
+	}
+

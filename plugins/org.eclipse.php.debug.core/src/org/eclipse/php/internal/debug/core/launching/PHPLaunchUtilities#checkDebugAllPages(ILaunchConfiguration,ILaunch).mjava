@@ -2,8 +2,6 @@
 	 * Make all the necessary checks to see if the current launch can be launched with regards to the previous
 	 * launches that has 'debug all pages' attribute. 
 	 * @throws CoreException 
-	 * 
-	 * @throws CoreException 
 	 */
 	public static boolean checkDebugAllPages(final ILaunchConfiguration newLaunchConfiguration, final ILaunch newLaunch) throws CoreException {
 		// If the remote debugger already supports multiple debugging with the 'debug all pages', 
@@ -34,24 +32,26 @@
 		final boolean fHasContiniousLaunch = hasContiniousLaunch;
 
 		if ((fHasContiniousLaunch || newIsDebugAllPages || newIsStartDebugFrom) && launches.length > 1) {
+			final DialogResultHolder resultHolder = new DialogResultHolder();
 			Display.getDefault().syncExec(new Runnable() {
 				public void run() {
 					// TODO - Advanced message dialog with 'don't show this again' check.
 					if (fHasContiniousLaunch) {
-						confirm = MessageDialog
-							.openConfirm(Display.getDefault().getActiveShell(), "Launch Confirmation",
-								"A previous launch with 'Debug All Pages' or 'Start Debug From' attribute was identifed.\nLaunching a new session will terminate and remove the old launch, directing all future debug requests associated with it to the new launch.\nDo you wish to continue and launch a new session?");
+						resultHolder
+							.setResult(MessageDialog
+								.openConfirm(Display.getDefault().getActiveShell(), PHPDebugCoreMessages.PHPLaunchUtilities_confirmation,
+									"A previous launch with 'Debug All Pages' or 'Start Debug From' attribute was identifed.\nLaunching a new session will terminate and remove the old launch, directing all future debug requests associated with it to the new launch.\nDo you wish to continue and launch a new session?")); //$NON-NLS-1$
 					} else {
 						if (newIsDebugAllPages) {
-							confirm = MessageDialog.openConfirm(Display.getDefault().getActiveShell(), "Launch Confirmation",
-								"The requested launch has a 'Debug All Pages' attribute.\nLaunching this type of session will terminate and remove any other previous launches.\nDo you wish to continue and launch the new session?");
+							resultHolder.setResult(MessageDialog.openConfirm(Display.getDefault().getActiveShell(), PHPDebugCoreMessages.PHPLaunchUtilities_confirmation,
+								"The requested launch has a 'Debug All Pages' attribute.\nLaunching this type of session will terminate and remove any other previous launches.\nDo you wish to continue and launch the new session?")); //$NON-NLS-1$
 						} else {
 							// newIsStartDebugFrom == true
-							confirm = MessageDialog.openConfirm(Display.getDefault().getActiveShell(), "Launch Confirmation",
-								"The requested launch has a 'Start Debug From' attribute.\nLaunching this type of session will terminate and remove any other previous launches.\nDo you wish to continue and launch the new session?");
+							resultHolder.setResult(MessageDialog.openConfirm(Display.getDefault().getActiveShell(), PHPDebugCoreMessages.PHPLaunchUtilities_confirmation,
+								"The requested launch has a 'Start Debug From' attribute.\nLaunching this type of session will terminate and remove any other previous launches.\nDo you wish to continue and launch the new session?")); //$NON-NLS-1$
 						}
 					}
-					if (confirm) {
+					if (resultHolder.getResult()) {
 						// disable the auto remove launches for the next launch
 						PHPDebugPlugin.setDisableAutoRemoveLaunches(true);
 						// manually remove the old launches and continue this launch
@@ -62,7 +62,7 @@
 					}
 				}
 			});
-			return confirm;
+			return resultHolder.getResult();
 		} else {
 			if (newIsDebugAllPages || newIsStartDebugFrom) {
 				PHPDebugPlugin.setDisableAutoRemoveLaunches(true);
