@@ -1,19 +1,20 @@
 	public StructuredDocumentEvent updateRegion(Object requester, IStructuredDocumentRegion flatnode, String changes, int requestStart, int lengthToReplace) {
+		final long currentTimeMillis = System.currentTimeMillis();
 		try {
-			final String newText = getNewRegionText(flatnode, changes, requestStart, lengthToReplace);
+
+			System.out.println("update 1:" + (System.currentTimeMillis() - currentTimeMillis));
 
 			final int offset = requestStart - flatnode.getStartOffset() - getStart();
-			assert newText.length() > offset - 1;
 
 			// support the <?php case
 			if (offset < 3) {
 				return null;
 			}
-			
+
 			// checks for odd quotes
 			final String deletedText = lengthToReplace == 0 ? "" : flatnode.getParentDocument().get(requestStart, lengthToReplace);
 			final int length = changes.length();
-			if (startQuoted(deletedText) || startQuoted(changes) || isHereDoc(newText, offset)) {
+			if (startQuoted(deletedText) || startQuoted(changes)) {
 				return null;
 			}
 
@@ -28,7 +29,7 @@
 			final LexerState endState = tokensContaier.getState(tokenEnd.getEnd() + 1);
 
 			final PhpTokenContainer newContainer = new PhpTokenContainer();
-			final PhpLexer phpLexer = getPhpLexer(project, getStream(newText, newTokenOffset), startState);
+			final PhpLexer phpLexer = getPhpLexer(project, getStream(flatnode, changes, requestStart, lengthToReplace, newTokenOffset), startState);
 
 			Object state = startState;
 			try {
@@ -88,6 +89,8 @@
 		} catch (BadLocationException e) {
 			PHPCorePlugin.log(e);
 			return null; // causes to full reparse in this case
+		} finally {
+			System.out.println("update 2:" + (System.currentTimeMillis() - currentTimeMillis));
 		}
 	}
 

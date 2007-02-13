@@ -1,0 +1,46 @@
+	/**
+	 * Returns a stream that represents the new text
+	 * We have three regions:
+	 * 1) the php region before the change
+	 * 2) the change
+	 * 3) the php region after the region without the deleted text
+	 * @param flatnode
+	 * @param change
+	 * @param requestStart
+	 * @param lengthToReplace
+	 * @param newTokenOffset
+	 */
+	private final InputStream getStream(final IStructuredDocumentRegion flatnode, final String change, final int requestStart, final int lengthToReplace, final int newTokenOffset) {
+		// DataInputStream to enable multi-byte storage 
+		return new DataInputStream(new InputStream() {
+			final private IStructuredDocument parent = flatnode.getParentDocument();
+			final private int startPhpRegion = flatnode.getStart() + getStart();
+			final private int endPhpRegion = startPhpRegion + getLength();
+			final private int changeLength = change.length();
+			
+			private int index = startPhpRegion + newTokenOffset;
+			private int internalIndex = 0;
+
+			public int read() throws IOException {
+				try {
+					// state 1) 
+					if (index < requestStart) {
+						return parent.getChar(index++);
+					} // state 2)
+					if (internalIndex < changeLength) {
+						return change.charAt(internalIndex++);
+					} 
+					// skip the delted text
+					if (index < requestStart + lengthToReplace) {
+						index = requestStart + lengthToReplace;
+					}
+					// state 3)
+					return index < endPhpRegion ? parent.getChar(index++) : -1;
+
+				} catch (BadLocationException e) {
+					throw new IOException("Bad location error");
+				}
+			}
+		});
+	}
+
