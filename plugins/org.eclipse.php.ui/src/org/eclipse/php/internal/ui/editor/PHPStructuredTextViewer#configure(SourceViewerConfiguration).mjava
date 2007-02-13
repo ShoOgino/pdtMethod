@@ -1,0 +1,32 @@
+	/**
+	 * We override this function in order to use content assist for php 
+	 * and not use the defualt one dictated by StructuredTextViewerConfiguration 
+	 */
+	public void configure(SourceViewerConfiguration configuration) {
+		IContentAssistant oldContentAssistant = fContentAssistant;
+		super.configure(configuration);
+
+		if (!(configuration instanceof PHPStructuredTextViewerConfiguration)) {
+			return;
+		}
+		PHPStructuredTextViewerConfiguration phpConfiguration = (PHPStructuredTextViewerConfiguration) configuration;
+		IContentAssistant newAssistant = configuration.getContentAssistant(this);
+		((ContentAssistant) newAssistant).enableAutoActivation(false);
+		newAssistant = phpConfiguration.getPHPContentAssistant(this);
+		if (newAssistant != oldContentAssistant || newAssistant == null || oldContentAssistant == null) {
+			if (fContentAssistant != null)
+				fContentAssistant.uninstall();
+
+			fContentAssistant = newAssistant;
+
+			if (fContentAssistant != null) {
+				fContentAssistant.install(this);
+				fContentAssistantInstalled = true;
+			} else {
+				// 248036 - disable the content assist operation if no content assistant
+				enableOperation(CONTENTASSIST_PROPOSALS, false);
+			}
+		}
+
+	}
+

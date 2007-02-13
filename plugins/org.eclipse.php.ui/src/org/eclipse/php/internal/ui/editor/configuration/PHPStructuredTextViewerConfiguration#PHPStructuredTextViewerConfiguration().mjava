@@ -1,11 +1,13 @@
 	public PHPStructuredTextViewerConfiguration() {
 
-		IConfigurationElement[] elements = Platform.getExtensionRegistry().getConfigurationElementsFor("org.eclipse.php.ui.phpContentAssistProcessor");
+		String processorsExtensionName = "org.eclipse.php.ui.phpContentAssistProcessor";
+		
+		IConfigurationElement[] elements = Platform.getExtensionRegistry().getConfigurationElementsFor(processorsExtensionName);
 		for (int i = 0; i < elements.length; i++) {
 			IConfigurationElement element = elements[i];
 			if (element.getName().equals("processor")) {
-				ContentAssistProccesorProxy capProxy = new ContentAssistProccesorProxy(element);
-				IContentAssistProccesorForPHP processor = capProxy.getProcessor();
+				ElementCreationProxy ecProxy = new ElementCreationProxy(element, processorsExtensionName);
+				IContentAssistProcessor processor = (IContentAssistProcessor)ecProxy.getObject();
 				if (processor != null) {
 					processors.add(processor);
 				}
@@ -13,12 +15,13 @@
 		}
 
 		detectors.add(new PHPCodeHyperlinkDetector());
-		elements = Platform.getExtensionRegistry().getConfigurationElementsFor("org.eclipse.php.ui.phpHyperlinkDetector");
+		String detectorsExtensionName = "org.eclipse.php.ui.phpHyperlinkDetector";
+		elements = Platform.getExtensionRegistry().getConfigurationElementsFor(detectorsExtensionName);
 		for (int i = 0; i < elements.length; i++) {
 			IConfigurationElement element = elements[i];
 			if (element.getName().equals("detector")) {
-				HyperlinkDetectorProxy hldProxy = new HyperlinkDetectorProxy(element);
-				IHyperlinkDetectorForPHP detector = hldProxy.getDetector();
+				ElementCreationProxy ecProxy = new ElementCreationProxy(element, detectorsExtensionName);
+				IHyperlinkDetectorForPHP detector = (IHyperlinkDetectorForPHP)ecProxy.getObject();
 				if (detector != null) {
 					detectors.add(detector);
 				}
