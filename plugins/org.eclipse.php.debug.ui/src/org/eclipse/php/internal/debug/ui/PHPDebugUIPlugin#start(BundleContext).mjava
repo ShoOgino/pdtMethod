@@ -10,5 +10,18 @@
         // the user to return to the PHP perspective when all the debug sessions where terminated.
         finishDebugLaunchListener = new TerminateDebugLaunchListener();
         DebugPlugin.getDefault().getLaunchManager().addLaunchListener(finishDebugLaunchListener);
+        
+        // Register the PHPDebugElementAdapterFactory. 
+		// To make sure we are the first adapter factory for the IVariable class, we insert the
+		// factory before any other factory. 
+		AdapterManager manager = (AdapterManager) Platform.getAdapterManager();
+		List list = (List) manager.getFactories().get(IVariable.class.getName());
+		PHPDebugElementAdapterFactory propertiesFactory = new PHPDebugElementAdapterFactory();
+		manager.registerAdapters(propertiesFactory, IVariable.class);
+		// In case the list had some factories, make sure our factory is the first in the list.
+		if (list != null && list.size() > 1) {
+			list.remove(propertiesFactory);
+			list.add(0, propertiesFactory);
+		}
     }
 
