@@ -4,7 +4,6 @@
 			return null;
 		}
 		String fileName = fileData.getName();
-
 		PHPProjectModel projectModel = editorModel.getProjectModel();
 
 		IStructuredDocumentRegion sdRegion = ContentAssistUtils.getStructuredDocumentRegion((StructuredTextViewer) viewer, offset);
@@ -33,6 +32,7 @@
 		}
 
 		String type = textRegion.getType();
+
 		CodeData tmp;
 		if ((tmp = getIfInArrayOptionQuotes(projectModel, fileName, type, offset, statmentText)) != null) {
 			// the current position is inside quotes as a parameter for an array.
@@ -66,7 +66,7 @@
 		String lastWord = statmentText.subSequence(startPosition, endPosition).toString();
 		boolean haveSpacesAtEnd = totalLength != endPosition;
 
-		if (haveSpacesAtEnd && (tmp = getIfNewOrInstanceofStatment(projectModel, lastWord, "", offset, type)) != null) {
+		if (haveSpacesAtEnd && (tmp = getIfNewOrInstanceofStatment(fileName, projectModel, lastWord, "", offset, type)) != null) {
 			// the current position is inside new or instanceof statment.
 			return tmp;
 		}
@@ -81,7 +81,7 @@
 		startPosition = PHPTextSequenceUtilities.readIdentifiarStartIndex(statmentText, endPosition, true);
 		String firstWord = statmentText.subSequence(startPosition, endPosition).toString();
 
-		if (!haveSpacesAtEnd && (tmp = getIfNewOrInstanceofStatment(projectModel, firstWord, lastWord, offset, type)) != null) {
+		if (!haveSpacesAtEnd && (tmp = getIfNewOrInstanceofStatment(fileName, projectModel, firstWord, lastWord, offset, type)) != null) {
 			// the current position is inside new or instanceof statment.
 			return tmp;
 		}
@@ -113,7 +113,9 @@
 		if (PHPPartitionTypes.isPHPQuotesState(type) || (type.equals(PHPRegionTypes.PHP_HEREDOC_TAG) && sdRegion.getStartOffset(textRegion) + textRegion.getLength() <= offset)) {
 			return null;
 		}
-
+		if ("".equals(elementName)) {
+			return null;
+		}
 		CodeData function = projectModel.getFunction(fileName, elementName);
 		CodeData constant = projectModel.getConstant(fileName, elementName);
 		CodeData classs = projectModel.getClass(fileName, elementName);
