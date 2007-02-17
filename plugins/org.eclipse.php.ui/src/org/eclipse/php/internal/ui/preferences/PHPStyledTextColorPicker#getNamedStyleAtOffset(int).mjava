@@ -12,14 +12,25 @@
 
 		String regionContext;
 		ITextRegion interest = fNodes.getRegionAtCharacterOffset(offset);
+		
+		ITextRegionCollection container = fNodes;
+		if (interest instanceof ITextRegionContainer) {
+			container = (ITextRegionContainer) interest;
+			interest = container.getRegionAtCharacterOffset(offset);
+		}
+		
 		if (interest.getType() == PHPRegionContext.PHP_CONTENT) {
 			PhpScriptRegion phpScript = (PhpScriptRegion) interest;
 			try {
-				regionContext = phpScript.getPhpTokenType(offset - phpScript.getStart());
+				regionContext = phpScript.getPhpTokenType(offset - container.getStartOffset() - phpScript.getStart());
 			} catch (BadLocationException e) {
 				assert false;
 				return null;
 			}
+		} else if (interest.getType() == PHPRegionContext.PHP_OPEN) {
+			regionContext = PHPRegionTypes.PHP_OPENTAG;
+		} else if (interest.getType() == PHPRegionContext.PHP_CLOSE) {
+			regionContext = PHPRegionTypes.PHP_CLOSETAG;
 		} else {
 			regionContext = interest.getType();
 		}
