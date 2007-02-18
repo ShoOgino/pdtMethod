@@ -40,12 +40,23 @@
 		// advance to next partition
 		IStructuredDocument sDoc = (IStructuredDocument) docExtension;
 		IStructuredDocumentRegion sdRegion = sDoc.getRegionAtCharacterOffset(partEndOffset);
-		ITextRegion region = sdRegion.getRegionAtCharacterOffset(partEndOffset);
-		if (region.getType() == PHPRegionContext.PHP_CONTENT) {
-			PhpScriptRegion phpScriptRegion = (PhpScriptRegion) region;
-			partition = PHPPartitionTypes.getPartition(phpScriptRegion, partEndOffset - sdRegion.getStartOffset() - phpScriptRegion.getStart());
+		ITextRegion textRegion = sdRegion.getRegionAtCharacterOffset(partEndOffset);
+		
+		ITextRegionCollection container = sdRegion;
+		
+		if(textRegion instanceof ITextRegionContainer){
+			container = (ITextRegionContainer)textRegion;
+			textRegion = container.getRegionAtCharacterOffset(partEndOffset);
+		}
+
+		if (textRegion.getType() == PHPRegionContext.PHP_CONTENT) {
+			PhpScriptRegion phpScriptRegion = (PhpScriptRegion) textRegion;
+			partition = PHPPartitionTypes.getPartition(phpScriptRegion, partEndOffset - container.getStartOffset() - phpScriptRegion.getStart());
 			partType = partition.getType();
-			phpRegionStart = sdRegion.getStartOffset() + phpScriptRegion.getStart();
+			phpRegionStart = container.getStartOffset() + phpScriptRegion.getStart();
+		}
+		if (textRegion.getType() == PHPRegionContext.PHP_CLOSE) {
+			return null;
 		}
 
 		// start of next partition

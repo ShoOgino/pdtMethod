@@ -9,18 +9,30 @@
 		if (docExtension instanceof IStructuredDocument) {
 			IStructuredDocument sDoc = (IStructuredDocument) docExtension;
 			IStructuredDocumentRegion sdRegion = sDoc.getRegionAtCharacterOffset(selectionOffset);
-			ITextRegion region = sdRegion.getRegionAtCharacterOffset(selectionOffset);
+			ITextRegion textRegion = sdRegion.getRegionAtCharacterOffset(selectionOffset);
+			
+			ITextRegionCollection container = sdRegion;
+			
+			if(textRegion instanceof ITextRegionContainer){
+				container = (ITextRegionContainer)textRegion;
+				textRegion = container.getRegionAtCharacterOffset(selectionOffset);
+			}
 
-			if (region.getType() == PHPRegionContext.PHP_CONTENT) {
-				PhpScriptRegion phpScriptRegion = (PhpScriptRegion) region;
-				ITypedRegion partition = PHPPartitionTypes.getPartition(phpScriptRegion, selectionOffset - sdRegion.getStartOffset() - phpScriptRegion.getStart());
+			if (textRegion.getType() == PHPRegionContext.PHP_CONTENT) {
+				PhpScriptRegion phpScriptRegion = (PhpScriptRegion) textRegion;
+				ITypedRegion partition = PHPPartitionTypes.getPartition(phpScriptRegion, selectionOffset - container.getStartOffset() - phpScriptRegion.getStart());
 
-				int phpRegionStart = sdRegion.getStartOffset() + phpScriptRegion.getStart();
+				int phpRegionStart = container.getStartOffset(phpScriptRegion);
 
 				handleFirstPartition(partition, edits, factory, selectionOffset, phpRegionStart);
 
-				while (phpRegionStart + partition.getOffset() + partition.getLength() < selectionEndOffset) {
+				ITypedRegion lastPartition = partition;
+				while (partition != null && phpRegionStart + partition.getOffset() + partition.getLength() < selectionEndOffset) {
+					lastPartition = partition;
 					partition = handleInteriorPartition(partition, edits, factory, docExtension, phpRegionStart);
+				}
+				if(partition == null){
+					partition = lastPartition;
 				}
 				handleLastPartition(partition, edits, factory, selectionEndOffset, phpRegionStart);
 			}
