@@ -1,7 +1,21 @@
 	protected IContributionItem[] createMenuContributions(final TreeViewer viewer) {
 		IContributionItem[] items;
 		final IContributionItem showPHPItem = new ActionContributionItem(new ChangeOutlineModeAction(PHPUIMessages.PHPOutlinePage_mode_php, PHPOutlineContentProvider.MODE_PHP, viewer));
-		final IContributionItem showHTMLItem = new ActionContributionItem(new ChangeOutlineModeAction(PHPUIMessages.PHPOutlinePage_mode_html, PHPOutlineContentProvider.MODE_HTML, viewer));
+		ChangeOutlineModeAction action = new ChangeOutlineModeAction(PHPUIMessages.PHPOutlinePage_mode_html, PHPOutlineContentProvider.MODE_HTML, viewer);
+		action.addPropertyChangeListener(new IPropertyChangeListener() {
+
+			public void propertyChange(PropertyChangeEvent event) {
+				if (event.getProperty().equals("checked")) {
+					boolean checked = ((Boolean) event.getNewValue()).booleanValue();
+					if (sortAction != null) {
+						sortAction.setEnabled(!checked);
+					}
+				}
+
+			}
+
+		});
+		final IContributionItem showHTMLItem = new ActionContributionItem(action);
 		items = super.createMenuContributions(viewer);
 		if (items == null)
 			items = new IContributionItem[] { showPHPItem, showHTMLItem };
@@ -11,6 +25,9 @@
 			combinedItems[items.length] = showPHPItem;
 			combinedItems[items.length + 1] = showHTMLItem;
 			items = combinedItems;
+		}
+		if (action.isChecked()) {
+			sortAction.setEnabled(false);
 		}
 		return items;
 	}
