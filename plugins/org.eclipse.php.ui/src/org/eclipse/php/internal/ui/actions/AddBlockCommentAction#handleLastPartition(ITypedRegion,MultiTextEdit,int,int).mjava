@@ -5,20 +5,20 @@
 	 * partition, the entire partition is included inside the comment.
 	 * 
 	 * @param partition the partition under the selection end offset
-	 * @param edits the list of edits to add to
+	 * @param multiEdit container of edits
 	 * @param factory the edit factory
 	 * @param endOffset the end offset of the selection
 	 * @param offset where the PHP script region starts
 	 */
-	private void handleLastPartition(ITypedRegion partition, List edits, Edit.EditFactory factory, int endOffset, int phpRegionStart) throws BadLocationException {
+	private void handleLastPartition(ITypedRegion partition, MultiTextEdit multiEdit, int endOffset, int phpRegionStart) throws BadLocationException {
 		String partType = partition.getType();
 
 		if (partType == PHPPartitionTypes.PHP_DEFAULT) {
 			// normal PHP: end comment where selection ends
-			edits.add(factory.createEdit(endOffset, 0, getCommentEnd()));
+			multiEdit.addChild(new InsertEdit(endOffset, getCommentEnd()));
 		} else if (isSpecialPartition(partType)) {
 			// special types: consume entire partition
-			edits.add(factory.createEdit(phpRegionStart + partition.getOffset() + partition.getLength(), 0, getCommentEnd()));
+			multiEdit.addChild(new InsertEdit(phpRegionStart + partition.getOffset() + partition.getLength(), getCommentEnd()));
 		}
 	}
 

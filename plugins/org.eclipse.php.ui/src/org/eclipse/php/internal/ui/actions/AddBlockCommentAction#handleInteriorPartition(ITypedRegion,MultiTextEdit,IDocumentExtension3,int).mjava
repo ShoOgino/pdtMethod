@@ -13,15 +13,14 @@
 	 * </p>
 	 * 
 	 * @param partition the current partition
-	 * @param edits the list of edits to add to
-	 * @param factory the edit factory
+	 * @param multiEdit container of edits
 	 * @param docExtension the document to get the partitions from
 	 * @return the next partition after the current
 	 * @param offset where the PHP script region starts
 	 * @throws BadLocationException if accessing the document fails - this can only happen if the document gets modified concurrently
 	 * @throws BadPartitioningException if the document does not have a PHP partitioning
 	 */
-	private ITypedRegion handleInteriorPartition(ITypedRegion partition, List edits, Edit.EditFactory factory, IDocumentExtension3 docExtension, int phpRegionStart) throws BadPartitioningException, BadLocationException {
+	private ITypedRegion handleInteriorPartition(ITypedRegion partition, MultiTextEdit multiEdit, IDocumentExtension3 docExtension, int phpRegionStart) throws BadPartitioningException, BadLocationException {
 
 		// end of previous partition
 		String partType = partition.getType();
@@ -34,7 +33,7 @@
 			wasPHPDoc = true;
 		} else if (partType == PHPPartitionTypes.PHP_MULTI_LINE_COMMENT) {
 			// already in a comment - remove ending mark
-			edits.add(factory.createEdit(partEndOffset - tokenLength, tokenLength, "")); //$NON-NLS-1$
+			multiEdit.addChild(new DeleteEdit(partEndOffset - tokenLength, tokenLength));
 		}
 
 		// advance to next partition
@@ -63,15 +62,15 @@
 		if (wasPHPDoc) {
 			// if previous was PHPDoc, and the current one is not, then add block comment start
 			if (partType == PHPPartitionTypes.PHP_DEFAULT || isSpecialPartition(partType)) {
-				edits.add(factory.createEdit(phpRegionStart + partition.getOffset(), 0, getCommentStart()));
+				multiEdit.addChild(new InsertEdit(phpRegionStart + partition.getOffset(), getCommentStart()));
 			}
 		} else { // !wasPHPDoc
 			if (partType == PHPPartitionTypes.PHP_DOC) {
 				// if next is PHPDoc, end block comment before
-				edits.add(factory.createEdit(phpRegionStart + partition.getOffset(), 0, getCommentEnd()));
+				multiEdit.addChild(new InsertEdit(phpRegionStart + partition.getOffset(), getCommentEnd()));
 			} else if (partType == PHPPartitionTypes.PHP_MULTI_LINE_COMMENT) {
 				// already in a comment - remove startToken
-				edits.add(factory.createEdit(phpRegionStart + partition.getOffset(), getCommentStart().length(), "")); //$NON-NLS-1$
+				multiEdit.addChild(new DeleteEdit(phpRegionStart + partition.getOffset(), getCommentStart().length()));
 			}
 		}
 		return partition;

@@ -1,10 +1,9 @@
-	/*
-	 * @see org.eclipse.jdt.internal.ui.actions.BlockCommentAction#runInternal(org.eclipse.jface.text.ITextSelection, org.eclipse.jface.text.IDocumentExtension3, org.eclipse.jdt.internal.ui.actions.BlockCommentAction.Edit.EditFactory)
-	 */
-	protected void runInternal(ITextSelection selection, IDocumentExtension3 docExtension, Edit.EditFactory factory) throws BadLocationException, BadPartitioningException {
+	protected void runInternal(ITextSelection selection, IDocumentExtension3 docExtension) throws BadLocationException, BadPartitioningException {
+		
+		MultiTextEdit multiEdit = new MultiTextEdit();
+		
 		int selectionOffset = selection.getOffset();
 		int selectionEndOffset = selectionOffset + selection.getLength();
-		List edits = new LinkedList();
 
 		if (docExtension instanceof IStructuredDocument) {
 			IStructuredDocument sDoc = (IStructuredDocument) docExtension;
@@ -24,20 +23,20 @@
 
 				int phpRegionStart = container.getStartOffset(phpScriptRegion);
 
-				handleFirstPartition(partition, edits, factory, selectionOffset, phpRegionStart);
+				handleFirstPartition(partition, multiEdit, selectionOffset, phpRegionStart);
 
 				ITypedRegion lastPartition = partition;
 				while (partition != null && phpRegionStart + partition.getOffset() + partition.getLength() < selectionEndOffset) {
 					lastPartition = partition;
-					partition = handleInteriorPartition(partition, edits, factory, docExtension, phpRegionStart);
+					partition = handleInteriorPartition(partition, multiEdit, docExtension, phpRegionStart);
 				}
 				if(partition == null){
 					partition = lastPartition;
 				}
-				handleLastPartition(partition, edits, factory, selectionEndOffset, phpRegionStart);
+				handleLastPartition(partition, multiEdit, selectionEndOffset, phpRegionStart);
 			}
+			
+			multiEdit.apply(sDoc);
 		}
-
-		executeEdits(edits);
 	}
 
