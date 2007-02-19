@@ -31,7 +31,12 @@
 			}
 		} else if (operation == PASTE) {
 			super.doOperation(operation);
-			doOperation(FORMAT_ACTIVE_ELEMENTS);
+			TextTransfer plainTextTransfer = TextTransfer.getInstance();
+			String text = (String) new Clipboard(getTextWidget().getDisplay()).getContents(plainTextTransfer, DND.CLIPBOARD);
+			IRegion region = new Region(selection.x, selection.x + text.length());
+			((IStructuredDocument) getDocument()).getUndoManager().disableUndoManagement();
+			fContentFormatter.format(getDocument(), region);
+			((IStructuredDocument) getDocument()).getUndoManager().enableUndoManagement();
 		} else if (operation == CONTENTASSIST_PROPOSALS) {
 			// notifing the processors that the next request for completion is an explicit request
 			if (config != null) {
@@ -43,13 +48,13 @@
 				}
 			}
 			super.doOperation(operation);
-//		} 
-//		else if (operation == CONTENTASSIST_CONTEXT_INFORMATION) {
-//			if (fContentAssistant != null) {
-//				String err = fContentAssistant.showContextInformation();
-//				PlatformStatusLineUtil.displayErrorMessage(err);
-//				PlatformStatusLineUtil.addOneTimeClearListener();
-//			}
+			//		} 
+			//		else if (operation == CONTENTASSIST_CONTEXT_INFORMATION) {
+			//			if (fContentAssistant != null) {
+			//				String err = fContentAssistant.showContextInformation();
+			//				PlatformStatusLineUtil.displayErrorMessage(err);
+			//				PlatformStatusLineUtil.addOneTimeClearListener();
+			//			}
 		} else {
 			super.doOperation(operation);
 		}
