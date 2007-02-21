@@ -1,0 +1,63 @@
+	/**
+	 * This method returns all the interface that the given class data implements.
+	 * Note : This method returns only the interfaces 1 level above. (Not recursively)
+	 * @param classData
+	 * @return
+	 */
+	public static PHPClassData[] getInterfaces(final PHPClassData classData) {
+		final PHPInterfaceNameData[] interfaceNameDatas = classData.getInterfacesNamesData();
+		int numOfInterfaces = interfaceNameDatas.length;
+		ArrayList interfacesList = new ArrayList();
+		for (int i = 0; i < numOfInterfaces; i++) {
+			if (interfaceNameDatas[i] == null)
+				continue;
+			final String interfaceName = interfaceNameDatas[i].getName();
+			if (interfaceName == null)
+				continue;
+			final PHPFileData fileData = getPHPFileContainer(classData);
+			String fileName = null;
+			if (fileData != null)
+				fileName = fileData.getName();
+			if (fileName.equals(""))
+				fileName = null;
+			PHPClassData interfaceClassData = null;
+			IPhpModel model = null;
+			IProject project = null;
+			// first try to find in the same user model:
+			final IResource resource = getResource(classData);
+			if (resource != null) {
+				project = resource.getProject();
+				model = PHPWorkspaceModelManager.getInstance().getModelForProject(project);
+				if (model != null) {
+					interfaceClassData = model.getClass(resource.getName(), interfaceName);
+					if (interfaceClassData != null) {
+						interfacesList.add(interfaceClassData);
+					}
+				}
+			} else {
+				// then look up in other models by file:
+				final PHPProjectModel[] models = PHPWorkspaceModelManager.getInstance().listModels();
+				boolean foundInModeByFile = false;
+				for (int j = 0; j < models.length; j++) {
+					if (models[j].getFileData(fileName) == fileData && (interfaceClassData = models[j].getClass(fileName, interfaceName)) != null) {
+						interfacesList.add(interfaceClassData);
+						foundInModeByFile = true;
+						break;
+					}
+				}
+				if (foundInModeByFile) {
+					continue;
+				}
+				// an then just all the models:
+				for (int j = 0; j < models.length; j++) {
+					if ((interfaceClassData = models[j].getClass(fileName, interfaceName)) != null) {
+						interfacesList.add(interfaceClassData);
+					}
+				}
+			}
+		}
+		PHPClassData[] interfacesResult = new PHPClassData[interfacesList.size()];
+		interfacesList.toArray(interfacesResult);
+		return interfacesResult;
+	}
+
