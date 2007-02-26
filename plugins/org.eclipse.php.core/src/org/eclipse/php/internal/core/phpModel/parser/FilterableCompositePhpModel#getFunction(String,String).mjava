@@ -1,0 +1,33 @@
+	/** (non-Javadoc)
+	 * @see org.eclipse.php.internal.core.phpModel.parser.CompositePhpModel#getFunction(java.lang.String, java.lang.String)
+	 */
+	public PHPFunctionData getFunction(String fileName, String functionName) {
+		IPhpModel[] models = getModels();
+		PHPFunctionData exactFunction = super.getFunction(fileName, functionName);
+		if (exactFunction != null)
+			return exactFunction;
+		List functions = new ArrayList();
+		for (int i = 0; i < models.length; i++) {
+			// else collect all the functions to apply filter
+			CodeData[] modelFunctions = models[i].getFunction(functionName);
+			if (modelFunctions != null && modelFunctions.length > 0) {
+				functions.addAll(Arrays.asList(modelFunctions));
+			}
+		}
+		switch (functions.size()) {
+			case 0:
+				return null;
+			case 1:
+				return (PHPFunctionData) functions.get(0);
+		}
+		if (filter != null) {
+			for (Iterator i = functions.iterator(); i.hasNext();) {
+				PHPFunctionData function = (PHPFunctionData) i.next();
+				if (filter.select(this, function, fileName)) {
+					return function;
+				}
+			}
+		}
+		return (PHPFunctionData) functions.get(0);
+	}
+
