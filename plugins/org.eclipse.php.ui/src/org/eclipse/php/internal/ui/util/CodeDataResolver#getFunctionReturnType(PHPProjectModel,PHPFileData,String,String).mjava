@@ -1,8 +1,8 @@
 	/**
 	 * finding the return type of the function.
 	 */
-	private String getFunctionReturnType(PHPProjectModel projectModel, String fileName, String className, String functionName) {
-		CodeData classFunction = projectModel.getClassFunctionData(fileName, className, functionName);
+	private String getFunctionReturnType(PHPProjectModel projectModel, PHPFileData fileData, String className, String functionName) {
+		CodeData classFunction = projectModel.getClassFunctionData(fileData.getName(), className, functionName);
 		if (classFunction != null) {
 			if (classFunction instanceof PHPFunctionData) {
 				return ((PHPFunctionData) classFunction).getReturnType();
@@ -11,7 +11,7 @@
 		}
 
 		// checking if the function bellongs to one of the class's ancestor
-		PHPClassData classData = projectModel.getClass(fileName, className);
+		PHPClassData classData = projectModel.getClass(fileData.getName(), className);
 
 		if (classData == null) {
 			return null;
@@ -19,12 +19,11 @@
 		String rv = null;
 		PHPClassData.PHPSuperClassNameData superClassNameData = classData.getSuperClassData();
 		if (superClassNameData != null) {
-			rv = getFunctionReturnType(projectModel, fileName, superClassNameData.getName(), functionName);
+			rv = getFunctionReturnType(projectModel, fileData, superClassNameData.getName(), functionName);
 		}
 
 		// checking if its a non-class function from within the file
 		if (rv == null) {
-			PHPFileData fileData = projectModel.getFileData(fileName);
 			CodeData[] functions = fileData.getFunctions();
 			for (int i = 0; i < functions.length; i++) {
 				CodeData function = functions[i];

@@ -1,0 +1,156 @@
+	/**
+	 * This method resolved PHP code data which is under the specified offset in the document.
+	 * 
+	 * @param sDoc Document instance
+	 * @param offset Absolute offset in the document
+	 * @param phpModel Instance of PHP DOM Model
+	 * @return Array of resolved code datas, or empty array if offset doesn't point to PHP element (or in case of error).
+	 */
+	public CodeData[] resolve(IStructuredDocument sDoc, int offset, DOMModelForPHP phpModel) {
+		try {
+			IStructuredDocumentRegion sRegion = sDoc.getRegionAtCharacterOffset(offset);
+			if (sRegion != null) {
+				ITextRegion tRegion = sRegion.getRegionAtCharacterOffset(offset);
+
+				ITextRegionCollection container = sRegion;
+				if (tRegion instanceof ITextRegionContainer) {
+					container = (ITextRegionContainer) tRegion;
+					tRegion = container.getRegionAtCharacterOffset(offset);
+				}
+
+				if (tRegion.getType() == PHPRegionContext.PHP_CONTENT) {
+					PhpScriptRegion phpScriptRegion = (PhpScriptRegion) tRegion;
+					tRegion = phpScriptRegion.getPhpToken(offset - container.getStartOffset() - phpScriptRegion.getStart());
+
+					// Determine element name:
+					int elementStart = container.getStartOffset() + phpScriptRegion.getStart() + tRegion.getStart();
+					TextSequence statement = PHPTextSequenceUtilities.getStatment(elementStart + tRegion.getLength(), sRegion, true);
+					int endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statement, statement.length());
+					int startPosition = PHPTextSequenceUtilities.readIdentifiarStartIndex(statement, endPosition, true);
+					String elementName = statement.subSequence(startPosition, endPosition).toString();
+
+					// Determine previous word:
+					int prevWordEnd = PHPTextSequenceUtilities.readBackwardSpaces(statement, startPosition);
+					int prevWordStart = PHPTextSequenceUtilities.readIdentifiarStartIndex(statement, prevWordEnd, false);
+					String prevWord = statement.subSequence(prevWordStart, prevWordEnd).toString();
+
+					// Determine next word:
+					ITextRegion nextRegion = tRegion;
+					do {
+						nextRegion = phpScriptRegion.getPhpToken(nextRegion.getEnd());
+						if (!PHPPartitionTypes.isPHPCommentState(nextRegion.getType()) && nextRegion.getType() != PHPRegionTypes.WHITESPACE) {
+							break;
+						}
+					} while (tRegion.getEnd() < phpScriptRegion.getLength());
+					String nextWord = sDoc.get(container.getStartOffset() + phpScriptRegion.getStart() + nextRegion.getStart(), nextRegion.getTextLength());
+
+					if (elementName.length() > 0) {
+
+						PHPProjectModel projectModel = phpModel.getProjectModel();
+						PHPFileData fileData = phpModel.getFileData();
+						PHPClassData classData = PHPFileDataUtilities.getContainerClassDada(fileData, offset);
+
+						// If we are in function declaration:
+						if ("function".equalsIgnoreCase(prevWord)) {
+							if (classData != null) {
+								return toArray(projectModel.getClassFunctionData(fileData.getName(), classData.getName(), elementName));
+							}
+							return toArray(projectModel.getFunction(fileData.getName(), elementName));
+						}
+
+						// If we are in class declaration:
+						if ("class".equalsIgnoreCase(prevWord) || "interface".equalsIgnoreCase(prevWord)) {
+							return toArray(projectModel.getClass(fileData.getName(), elementName));
+						}
+
+						// Class instantiation:
+						if ("new".equalsIgnoreCase(prevWord) || "extends".equalsIgnoreCase(prevWord) || "implements".equalsIgnoreCase(prevWord)) {
+							return projectModel.getClass(elementName);
+						}
+
+						// If this is variable:
+						if (elementName.charAt(0) == '$') {
+							// Don't show escaped variables within PHP string:
+							if (PHPPartitionTypes.isPHPQuotesState(tRegion.getType())) {
+								try {
+									char charBefore = sDoc.get(elementStart - 2, 1).charAt(0);
+									if (charBefore == '\\') {
+										return EMPTY;
+									}
+								} catch (BadLocationException badLocationException) {
+									Logger.logException(badLocationException);
+								}
+							}
+
+							elementName = elementName.substring(1);
+
+							// If we are in var definition:
+							if (classData != null) {
+								if ("var".equalsIgnoreCase(prevWord) || "private".equalsIgnoreCase(prevWord) || "public".equalsIgnoreCase(prevWord) || "protected".equalsIgnoreCase(prevWord)) {
+									return filterExact(classData.getVars(), elementName);
+								}
+								if ("this".equalsIgnoreCase(elementName)) {
+									return toArray(classData);
+								}
+							}
+
+							PHPCodeContext context = ModelSupport.createContext(fileData, elementStart);
+							return filterExact(projectModel.getVariables(fileData.getName(), context, elementName, true), elementName);
+						}
+
+						// We are at class trigger:
+						if ("::".equals(nextWord)) {
+							return projectModel.getClass(elementName);
+						}
+
+						String className = getClassName(projectModel, fileData, statement, startPosition, offset, sDoc.getLineOfOffset(offset));
+						CodeData[] classDatas = projectModel.getClass(className);
+
+						// Is it function or method:
+						if ("(".equals(nextWord)) {
+							CodeData[] result = null;
+							if (classDatas.length > 0) {
+								for (int i = 0; i < classDatas.length; ++i) {
+									String fileName = classDatas[i].isUserCode() ? classDatas[i].getUserData().getFileName() : "";
+									result = ModelSupport.merge(result, toArray(projectModel.getClassFunctionData(fileName, className, elementName)));
+								}
+							} else {
+								result = projectModel.getFunction(elementName);
+							}
+							return result == null ? EMPTY : result;
+						}
+
+						if (classDatas.length > 0) {
+							// Check whether this is a class constant:
+							if (startPosition > 0) {
+								String trigger = statement.subSequence(startPosition - 2, startPosition).toString();
+								if ("::".equals(trigger)) {
+									CodeData[] result = null;
+									for (int i = 0; i < classDatas.length; ++i) {
+										String fileName = classDatas[i].isUserCode() ? classDatas[i].getUserData().getFileName() : "";
+										result = ModelSupport.merge(result, toArray(projectModel.getClassConstsData(fileName, className, elementName)));
+									}
+									return result == null ? EMPTY : result;
+								}
+							}
+
+							// What can it be? Only class variables:
+							CodeData[] result = null;
+							for (int i = 0; i < classDatas.length; ++i) {
+								String fileName = classDatas[i].isUserCode() ? classDatas[i].getUserData().getFileName() : "";
+								result = ModelSupport.merge(result, toArray(projectModel.getClassVariablesData(fileName, className, elementName)));
+							}
+							return result == null ? EMPTY : result;
+						}
+
+						// This can be only global constant, if we've reached here:
+						return filterExact(projectModel.getConstants(elementName, false), elementName);
+					}
+				}
+			}
+		} catch (Exception e) {
+			PHPUiPlugin.log(e);
+		}
+		return EMPTY;
+	}
+
