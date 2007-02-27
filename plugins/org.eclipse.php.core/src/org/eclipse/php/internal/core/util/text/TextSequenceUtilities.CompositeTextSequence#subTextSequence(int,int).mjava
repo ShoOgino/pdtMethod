@@ -1,0 +1,47 @@
+		public TextSequence subTextSequence(int start, int end) {
+			if (start == 0 && end == length()) {
+				return this;
+			}
+			int startPart = 0;
+			int endPart = 0;
+			int startPartLength = 0;
+			for (int i = 0; i < indexes.length; i += 2) {
+				if (startPartLength + indexes[i + 1] > start) {
+					startPart = i >> 1;
+					break;
+				}
+				startPartLength += indexes[i + 1];
+			}
+			int endPartLength = startPartLength;
+			for (int i = startPart << 1; i < indexes.length; i += 2) {
+				if (endPartLength + indexes[i + 1] >= end) {
+					endPart = i >> 1;
+					break;
+				}
+				endPartLength += indexes[i + 1];
+			}
+			int newNumberOfParts = endPart - startPart + 1;
+			if (newNumberOfParts == 1) {
+				int newStart = indexes[(startPart << 1)] + start - startPartLength;
+				int newLength = end - start;
+				return new SimpleTextSequence(source, segment, newStart, newLength, segmentOriginalStart);
+			}
+
+			int[] newIndexes = new int[newNumberOfParts << 1];
+			// set indexes at start Part
+			newIndexes[0] = indexes[(startPart << 1)] + start - startPartLength;
+			newIndexes[1] = indexes[(startPart << 1) + 1] - (start - startPartLength);
+			// set indexes after start Part and before last part
+
+			for (int i = 2; i < newIndexes.length - 3; i++) {
+				newIndexes[i] = indexes[i + (startPart << 1)];
+				newIndexes[i + 1] = indexes[i + (startPart << 1) + 1];
+			}
+
+			// set indexes at end Part
+			newIndexes[newIndexes.length - 2] = indexes[(endPart << 1)];
+			newIndexes[newIndexes.length - 1] = end - endPartLength;
+
+			return new CompositeTextSequence(source, segment, newIndexes, segmentOriginalStart);
+		}
+
