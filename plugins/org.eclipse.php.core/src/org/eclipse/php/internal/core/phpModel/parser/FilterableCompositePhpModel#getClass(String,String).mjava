@@ -2,32 +2,17 @@
 	 * @see org.eclipse.php.internal.core.phpModel.parser.CompositePhpModel#getClass(java.lang.String, java.lang.String)
 	 */
 	public PHPClassData getClass(String fileName, String className) {
-		IPhpModel[] models = getModels();
 		PHPClassData exactClass = super.getClass(fileName, className);
-		if (exactClass != null)
+		if (exactClass != null || filter == null)
 			return exactClass;
-		List classes = new ArrayList();
-		for (int i = 0; i < models.length; i++) {
-			// else collect all the classes to apply filter
-			CodeData[] modelClasses = models[i].getClass(className);
-			if (modelClasses != null && modelClasses.length > 0) {
-				classes.addAll(Arrays.asList(modelClasses));
-			}
-		}
-		switch (classes.size()) {
-			case 0:
-				return null;
-			case 1:
-				return (PHPClassData) classes.get(0);
-		}
-		if (filter != null) {
-			for (Iterator i = classes.iterator(); i.hasNext();) {
-				PHPClassData classs = (PHPClassData) i.next();
-				if (filter.select(this, classs, fileName)) {
-					return classs;
+		CodeData[] allClasses = getClass(className);
+		if (allClasses != null) {
+			for (int j = 0; j < allClasses.length; ++j) {
+				if (filter.select(this, allClasses[j], fileName)) {
+					return (PHPClassData) allClasses[j];
 				}
 			}
 		}
-		return (PHPClassData) classes.get(0);
+		return null;
 	}
 

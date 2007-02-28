@@ -2,32 +2,17 @@
 	 * @see org.eclipse.php.internal.core.phpModel.parser.CompositePhpModel#getConstant(java.lang.String, java.lang.String)
 	 */
 	public PHPConstantData getConstant(String fileName, String constantName) {
-		IPhpModel[] models = getModels();
 		PHPConstantData exactConstant = super.getConstant(fileName, constantName);
-		if (exactConstant != null)
+		if (exactConstant != null || filter == null)
 			return exactConstant;
-		List constants = new ArrayList();
-		for (int i = 0; i < models.length; i++) {
-			// else collect all the constants to apply filter
-			CodeData[] modelConstants = models[i].getConstant(constantName);
-			if (modelConstants != null && modelConstants.length > 0) {
-				constants.addAll(Arrays.asList(modelConstants));
-			}
-		}
-		switch (constants.size()) {
-			case 0:
-				return null;
-			case 1:
-				return (PHPConstantData) constants.get(0);
-		}
-		if (filter != null) {
-			for (Iterator i = constants.iterator(); i.hasNext();) {
-				PHPConstantData constant = (PHPConstantData) i.next();
-				if (filter.select(this, constant, fileName)) {
-					return constant;
+		CodeData[] allConstants = getConstant(constantName);
+		if (allConstants != null) {
+			for (int j = 0; j < allConstants.length; ++j) {
+				if (filter.select(this, allConstants[j], fileName)) {
+					return (PHPConstantData) allConstants[j];
 				}
 			}
 		}
-		return (PHPConstantData) constants.get(0);
+		return null;
 	}
 
