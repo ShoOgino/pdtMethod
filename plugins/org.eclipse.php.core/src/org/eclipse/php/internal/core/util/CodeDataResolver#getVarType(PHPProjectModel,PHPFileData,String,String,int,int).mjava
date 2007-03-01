@@ -1,0 +1,30 @@
+	/**
+	 * finding the type of the class variable.
+	 */
+	private String getVarType(PHPProjectModel projectModel, PHPFileData fileData, String className, String varName, int statmentStart, int line) {
+		String tempType = PHPFileDataUtilities.getVariableType(fileData.getName(), "this;*" + varName, statmentStart, line, projectModel.getPHPUserModel(), true);
+		if (tempType != null) {
+			return tempType;
+		}
+		CodeData classVar = projectModel.getClassVariablesData(fileData.getName(), className, varName);
+		if (classVar != null) {
+			if (classVar instanceof PHPClassVarData) {
+				return ((PHPClassVarData) classVar).getClassType();
+			}
+			return null;
+		}
+
+		// checking if the var bellongs to one of the class's ancestor
+
+		PHPClassData classData = projectModel.getClass(fileData.getName(), className);
+
+		if (classData == null) {
+			return null;
+		}
+		PHPClassData.PHPSuperClassNameData superClassNameData = classData.getSuperClassData();
+		if (superClassNameData == null) {
+			return null;
+		}
+		return getVarType(projectModel, fileData, superClassNameData.getName(), varName, statmentStart, line);
+	}
+
