@@ -1,0 +1,36 @@
+	/**
+	 * Checks if we are inside function declaretion statment.
+	 * If yes the start offset of the function, otherwisw returns -1.
+	 */
+	public static int isInFunctionDeclaretion(TextSequence textSequence) {
+		Matcher matcher = FUNCTION_PATTERN.matcher(textSequence);
+		// search for the 'function' word.
+		while (matcher.find()) {
+			// verify char before 'function' word.
+			int functionStart = matcher.start();
+			if (functionStart != 0 && Character.isJavaIdentifierStart(textSequence.charAt(functionStart - 1))) {
+				continue;
+			}
+
+			// verfy state
+			String type = TextSequenceUtilities.getType(textSequence, functionStart + 1);
+			if (PHPPartitionTypes.isPHPRegularState(type)) {
+				// verify the function is not closed.
+				int offset;
+				for (offset = matcher.end(); offset < textSequence.length(); offset++) {
+					if (textSequence.charAt(offset) == ')') {
+						// verify state
+						type = TextSequenceUtilities.getType(textSequence, offset);
+						if (PHPPartitionTypes.isPHPRegularState(type)) {
+							break;
+						}
+					}
+				}
+				if (offset == textSequence.length()) {
+					return functionStart;
+				}
+			}
+		}
+		return -1;
+	}
+

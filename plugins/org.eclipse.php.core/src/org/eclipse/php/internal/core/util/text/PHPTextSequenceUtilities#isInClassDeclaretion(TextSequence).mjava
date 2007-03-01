@@ -1,0 +1,32 @@
+	public static int isInClassDeclaretion(TextSequence textSequence) {
+		Matcher matcher = CLASS_PATTERN.matcher(textSequence);
+		// search for the 'class' or 'interface words.
+		while (matcher.find()) {
+			// verify char before start.
+			int startOffset = matcher.start();
+			if (startOffset != 0 && Character.isJavaIdentifierStart(textSequence.charAt(startOffset - 1))) {
+				continue;
+			}
+			// verfy state
+			String type = TextSequenceUtilities.getType(textSequence, startOffset + 1);
+			if (PHPPartitionTypes.isPHPRegularState(type)) {
+				int endOffset = matcher.end();
+				// verify the class is not closed.
+				int offset;
+				for (offset = endOffset; offset < textSequence.length(); offset++) {
+					if (textSequence.charAt(offset) == '}') {
+						// verify state
+						type = TextSequenceUtilities.getType(textSequence, offset);
+						if (PHPPartitionTypes.isPHPRegularState(type)) {
+							break;
+						}
+					}
+				}
+				if (offset == textSequence.length()) {
+					return endOffset;
+				}
+			}
+		}
+		return -1;
+	}
+
