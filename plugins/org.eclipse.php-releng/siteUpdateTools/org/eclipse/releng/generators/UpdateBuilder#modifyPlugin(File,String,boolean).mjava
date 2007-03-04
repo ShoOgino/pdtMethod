@@ -1,0 +1,27 @@
+	protected void modifyPlugin(File descriptor, String type, boolean pluginandbundle) throws Exception {
+		String name = descriptor.getParentFile().getName();
+		if (type.equals("bundle")) {
+			File parentDir = descriptor.getParentFile();
+			name = parentDir.getParentFile().getName();
+		}
+		String id = name.substring(0, name.indexOf("_"));
+		String tag = getTag((String) directory.get(type + "@" + id));
+
+		if (tag.equals("none"))
+			tag = buildNumber;
+
+		tag = verifyQualifier(tag);
+		PluginData pdata = (PluginData) plugins.get(id);
+		if (pdata == null) {
+			plugins.put(id, pdata = new PluginData());
+		}
+		
+		if (type.equals("bundle")) {
+			if (fixBundle(descriptor, id, tag, type, pluginandbundle, pdata))
+				pdata.tag = tag;
+		} else {
+			if (fixPluginXml(descriptor, id, tag, type, pluginandbundle, pdata))
+				pdata.tag = tag;
+		}
+	}
+

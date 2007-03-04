@@ -1,0 +1,45 @@
+	private String getAttributeValue(String elementName, String attributeName, File file) {
+
+		class Handler extends DefaultHandler {
+
+			String element;
+
+			String attribute;
+
+			String value;
+
+			Handler(String element, String attribute) {
+				this.element = element;
+				this.attribute = attribute;
+			}
+
+			//  Start Element Event Handler
+			public void startElement(String uri, String local, String qName, Attributes atts) {
+
+				String result = atts.getValue(attribute);
+
+				if (qName.equals(element)) {
+					value = result;
+				}
+			}
+		}
+
+		SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
+		SAXParser parser;
+
+		try {
+			Handler handler = new Handler(elementName, attributeName);
+			parser = saxParserFactory.newSAXParser();
+			parser.parse(file, handler);
+			return handler.value;
+
+		} catch (ParserConfigurationException e) {
+			e.printStackTrace();
+		} catch (SAXException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+

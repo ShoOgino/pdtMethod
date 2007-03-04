@@ -1,0 +1,41 @@
+	/*
+	 * Rewrite the jar file, replacing the manifest with the new manifest, into the rootFolder. It will use the same name as the incoming jar.
+	 * Return the size of the jar created. (In this case transfer size and installed size would be the same).
+	 * This is used only for Manifest jars. It is assumed that you will not have a jarred plugin that IS NOT a Manifest jar.
+	 * That is really old style mixing with new style which we don't expect to happen.
+	 */
+	private long[] writeJar(File pluginJar, String replacementManifest, String rootFolder) throws Exception {
+		ZipInputStream jin = null;
+		ZipOutputStream jos = null;
+		File outputjar = null;
+		long[] size = new long[2];
+		try {
+			jin = new ZipInputStream(new FileInputStream(pluginJar));
+			File destinationFolder = new File(siteLocation, rootFolder);
+			destinationFolder.mkdirs();
+			outputjar = new File(destinationFolder, pluginJar.getName());
+			jos = new ZipOutputStream(new FileOutputStream(outputjar));
+			
+			System.out.println("Writing " + outputjar.getAbsolutePath());
+			for(ZipEntry jentry = jin.getNextEntry(); jentry != null; jentry = jin.getNextEntry()) {
+				if (JarFile.MANIFEST_NAME.equals(jentry.getName())) {
+					writeJarEntry(jentry.getName(), new ByteArrayInputStream(replacementManifest.getBytes()), jentry.getTime(), jos);
+				} else
+					writeJarEntry(jentry.getName(), jin, jentry.getTime(), jos);
+			}
+		} finally {
+			try {
+				jin.close();
+			} catch (IOException e) {
+			}
+			if (jos != null) {
+				try {
+					jos.close();
+					size[DOWNLOAD_SIZE_INDEX] = size[INSTALLED_SIZE_INDEX] = outputjar.length(); 
+				} catch (IOException e) {
+				}
+			}
+		}
+		return size;
+	}
+

@@ -1,0 +1,97 @@
+	protected void writeSiteXML() throws Exception {
+		StringWriter extraInfo = new StringWriter();
+		PrintWriter writer = new PrintWriter(extraInfo);
+
+		try {
+			for (Iterator iter = features.iterator(); iter.hasNext();) {
+				FeatureData data = (FeatureData) iter.next();
+				String[] cats = categories != null ? getArrayFromString(categories.getProperty("feature@" + data.id)) : null;
+				if (cats == null || cats.length > 0) {
+					// We have some cats for this feature, so we will add it to the site.xml.
+					writer.println();
+					writer.print("\t");
+					writer.print("<feature url=\"features/");
+					writer.print(data.jar);
+
+					//fix for #38154
+					writer.print("\" patch=\"");
+					writer.print("false");
+
+					writer.print("\" id=\"");
+					writer.print(data.id);
+					writer.print("\" version=\"");
+					writer.print(data.version);
+
+					//add os, ws and arch attributes if they exist
+					if (data.os != null) {
+						writer.print("\" os=\"");
+						writer.print(data.os);
+					}
+					if (data.ws != null) {
+						writer.print("\" ws=\"");
+						writer.print(data.ws);
+					}
+					if (data.arch != null) {
+						writer.print("\" arch=\"");
+						writer.print(data.arch);
+					}
+					writer.println("\">");
+					if (cats != null) {
+						for (int i = 0; i < cats.length; i++) {
+							printCategoryReference(writer, cats[i]);
+						}
+					} else {
+						printCategoryReference(writer, DEFAULT_CATNAME);
+					}
+					writer.print("\t");
+					writer.println("</feature>");
+				}
+			}
+
+		} finally {
+			if (writer != null) {
+				writer.println();
+				writer.flush();
+				writer.close();
+			}
+		}
+
+		// read site.xml
+		File originalXML = new File(siteXMLLocation);
+		StringBuffer site = readFile(originalXML);
+		int pos = scan(site, 0, "<category-def");
+		if (pos == -1) {
+			pos = scan(site, 0, "</site");
+		}
+		if (pos == -1) {
+			System.out.println("Error writing site.xml.  Initial file and new file are both probably invalid");
+			pos = 0;
+		} else
+			pos = scanLineStart(site, pos);
+
+		// Insert features either before the first <category-def or, if there are
+		// no category-def, then before the /site.
+		site.insert(pos, extraInfo.toString());
+
+		if (needDefaultCat()) {
+			// Insert category-def before the /site
+			pos = scan(site, 0, "</site");
+			if (pos == -1) {
+				System.out.println("Error writing site.xml.  Initial file and new file are both probably invalid");
+			} else {
+				site.insert(scanLineStart(site, pos), getDefaultCat());
+			}
+		}
+
+		File destination = new File(siteLocation, "site.xml");
+		FileOutputStream fos = new FileOutputStream(destination);
+		try {
+			PrintWriter pw = new PrintWriter(fos);
+			pw.write(site.toString());
+			pw.flush();
+			pw.close();
+		} finally {
+			fos.close();
+		}
+	}
+

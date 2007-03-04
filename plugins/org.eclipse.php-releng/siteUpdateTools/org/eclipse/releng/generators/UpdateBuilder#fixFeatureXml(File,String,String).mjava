@@ -1,0 +1,142 @@
+	private void fixFeatureXml(File descriptor, String featureId, String featureTag) throws Exception {
+
+		File featureFolder = descriptor.getParentFile();
+		
+		// load feature.xml
+		StringBuffer xml = readFile(descriptor);
+		
+		boolean changedFile = false;
+
+		// store feature config information
+		String os = getAttributeValue("feature", "os", descriptor);
+		String ws = getAttributeValue("feature", "ws", descriptor);
+		String arch = getAttributeValue("feature", "arch", descriptor);
+
+		// fix up feature version
+		int start = scan(xml, 0, "<feature");
+		start = scan(xml, start, "version");
+
+		/*
+		 * HACK verify that this is the version attribute by checking for an equals sign within the next few spaces. Not sure why xml parser not being
+		 * used here.
+		 */
+		int equalsIndex = scan(xml, start, "=");
+		if ((equalsIndex - (start + 7)) > 3)
+			start = scan(xml, equalsIndex, "version");
+
+		start = scan(xml, start, "\"");
+		int end = scan(xml, start + 1, "\"");
+		String version = xml.substring(start + 1, end);
+		String[] va;
+		if (this.add4thPart) {
+			va = versionToArray(version);
+			if (va[3].equals("")) {
+				va[3] = featureTag;
+				version = arrayToVersion(va);
+				xml = xml.replace(start + 1, end, version);
+				changedFile = true;
+			}
+		}
+
+		String featureVersion = version;
+
+		// go through the includes elements and fix up feature versions
+		int includesStart = scan(xml, start + 1, "<includes");
+		while (includesStart != -1) {
+			start = scan(xml, includesStart, "version");
+
+			/*
+			 * HACK verify that this is the version attribute by checking for an equals sign within the next few spaces. Not sure why xml parser not
+			 * being used here.
+			 */
+			equalsIndex = scan(xml, start, "=");
+			if ((equalsIndex - (start + 7)) > 3)
+				start = scan(xml, equalsIndex, "version");
+
+			start = scan(xml, start, "\"");
+			end = scan(xml, start + 1, "\"");
+			version = xml.substring(start + 1, end);
+
+			if (this.add4thPart) {
+				va = versionToArray(version);
+				if (va[3].equals("")) {
+					va[3] = featureTag;
+					version = arrayToVersion(va);
+					xml = xml.replace(start + 1, end, version);
+					changedFile = true;
+				}
+			}
+
+			includesStart = scan(xml, start + 1, "<includes");
+		}
+
+		// go through the plugin elements and fix up their version
+		int pluginStart = scan(xml, start + 1, "<plugin");
+		while (pluginStart != -1) {
+			start = scan(xml, pluginStart, "id");
+			start = scan(xml, start, "\"");
+			end = scan(xml, start + 1, "\"");
+			String id = xml.substring(start + 1, end);
+			PluginData pdata = (PluginData) plugins.get(id);
+			if (pdata != null) {
+				start = scan(xml, end, "version");
+
+				/*
+				 * HACK verify that this is the version attribute by checking for an equals sign within the next few spaces. Not sure why xml parser
+				 * not being used here.
+				 */
+				equalsIndex = scan(xml, start, "=");
+				if ((equalsIndex - (start + 7)) > 3)
+					start = scan(xml, equalsIndex, "version");
+
+				start = scan(xml, start, "\"");
+				end = scan(xml, start + 1, "\"");
+				version = xml.substring(start + 1, end);
+
+				if (this.add4thPart && pdata.tag != null) {
+					va = versionToArray(version);
+					if (va[3].equals("")) {
+						va[3] = pdata.tag;
+						version = arrayToVersion(va);
+						xml = xml.replace(start + 1, end, version);
+						changedFile = true;
+					}
+				}
+				
+				if (setSizes) {
+					// Set the sizes too.
+					start = scan(xml, pluginStart, "download-size");
+					start = scan(xml, start, "\"");
+					end = scan(xml, start + 1, "\"");
+					xml = xml.replace(start + 1, end, String.valueOf((pdata.downloadSize+512)/1024));
+					
+					start = scan(xml, pluginStart, "install-size");
+					start = scan(xml, start, "\"");
+					end = scan(xml, start + 1, "\"");
+					xml = xml.replace(start + 1, end, String.valueOf((pdata.installedSize+512)/1024));
+					changedFile = true;
+				}
+
+			}
+			pluginStart = scan(xml, pluginStart + 7, "<plugin");
+		}
+
+		if (changedFile) {
+			// write it out to the descriptor location
+			char[] outbuf = xml.toString().toCharArray();
+			OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(descriptor));
+			try {
+				writer.write(outbuf);
+			} finally {
+				try {
+					writer.close();
+				} catch (IOException e) {
+				}
+			}
+			featureFolder = renameFolder(featureFolder, featureId, featureVersion);
+		}
+		writeJAR(featureFolder, "features");
+
+		features.add(new FeatureData(featureId, featureVersion, os, ws, arch, featureFolder.getName() + ".jar"));
+	}
+

@@ -1,0 +1,74 @@
+	private boolean fixPluginXml(File descriptor, String id, String qualifier, String type, boolean pluginandbundle, PluginData pdata) throws Exception {
+
+		// load plugin.xml or fragment.xml
+		StringBuffer xml = readFile(descriptor);
+		
+		boolean changedFile = false;
+		File pluginFolder = descriptor.getParentFile();
+
+		//	 fix up version
+		int start = scan(xml, 0, "<" + type);
+		if (start > -1) {
+			start = scan(xml, start, "version");
+
+			if (start > -1) {
+				/*
+				 * HACK verify that this is the version attribute by checking for an equals sign within the next few spaces. Not sure why xml parser
+				 * not being used here.
+				 */
+				int equalsIndex = scan(xml, start, "=");
+				if ((equalsIndex - (start + 7)) > 3)
+					start = scan(xml, equalsIndex, "version");
+				if (start > -1) {
+					start = scan(xml, start, "\"");
+					if (start > -1) {
+						int end = scan(xml, start + 1, "\"");
+						if (end > -1) {
+
+							/* HACK If the plugin.xml doesn't have a version string, refer to the Manifest */
+
+							String version = xml.substring(start + 1, end);
+
+							if (this.add4thPart) {
+								String[] va = versionToArray(version);
+								if (va[3].equals("")) {
+									va[3] = qualifier;
+									version = arrayToVersion(va);
+									xml = xml.replace(start + 1, end, version);
+									changedFile = true;
+								}
+							}
+
+							
+
+							if (changedFile) {
+								// write it out to the descriptor location
+								char[] outbuf = xml.toString().toCharArray();
+								OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(descriptor));
+								try {
+									writer.write(outbuf);
+								} finally {
+									try {
+										writer.close();
+									} catch (IOException e) {
+									}
+								}
+							}
+							System.out.println("Updated " + type + ".xml for " + descriptor.getAbsolutePath());
+							if (!(pluginandbundle)) {
+								if (changedFile) {
+									pluginFolder = renameFolder(pluginFolder, id, version);
+								}
+								long[] sizes = writeJAR(pluginFolder, "plugins");
+								pdata.downloadSize = sizes[DOWNLOAD_SIZE_INDEX];
+								pdata.installedSize = sizes[INSTALLED_SIZE_INDEX];
+								return changedFile;
+							}
+						}
+					}
+				}
+			}
+		}
+		return false;
+	}
+

@@ -1,0 +1,51 @@
+	protected String getDefaultCat() throws IOException {
+		if (catXMLText == null) {
+			if (catXMLLocation != null) {
+				StringBuffer catXMLTextBuffer = readFile(new File(catXMLLocation));
+				int i = 0;
+				while ((i = catXMLTextBuffer.indexOf("{buildid}", i)) != -1) {
+					catXMLTextBuffer.replace(i, i+9, buildNumber);
+					i+=buildNumber.length();
+				}
+				// Now need to find the name.
+				i = catXMLTextBuffer.indexOf("name=\"");
+				if (i != -1) {
+					i+=6;
+					int endlabel = catXMLTextBuffer.indexOf("\"", i);
+					catName = catXMLTextBuffer.substring(i, endlabel);
+				} else
+					catName = buildNumber;	// This is wrong, but we need something. Should of had a name="\
+				// Now make sure there is a new line at the end so that it doesn't cause
+				// an insert in a line where it is added, instead it should insert a new line.
+				StringWriter categoryExtraInfo = new StringWriter();
+				PrintWriter categoryWriter = new PrintWriter(categoryExtraInfo);
+				categoryWriter.println(catXMLTextBuffer.toString());
+				catXMLText = categoryExtraInfo.toString();
+			} else {
+				// create the default.
+				StringWriter categoryExtraInfo = new StringWriter();
+				PrintWriter categoryWriter = new PrintWriter(categoryExtraInfo);
+				catName = buildNumber;
+				categoryWriter.println();
+				categoryWriter.print("\t");
+				categoryWriter.print("<category-def label=\"Eclipse SDK ");
+				categoryWriter.print(buildNumber);
+				categoryWriter.print("\" name=\"");
+				categoryWriter.print(buildNumber);
+				categoryWriter.println("\">");
+				categoryWriter.print("\t\t");
+				categoryWriter.println("<description>");
+				categoryWriter.print("\t\t\tThis category contains the various features of the ");
+				categoryWriter.print(buildNumber);
+				categoryWriter.println(" build of Eclipse SDK.");
+				categoryWriter.print("\t\t");
+				categoryWriter.println("</description>");
+				categoryWriter.print("\t");
+				categoryWriter.println("</category-def>");
+				categoryWriter.println();
+				catXMLText = categoryExtraInfo.toString();
+			}
+		}
+		return catXMLText;
+	}
+

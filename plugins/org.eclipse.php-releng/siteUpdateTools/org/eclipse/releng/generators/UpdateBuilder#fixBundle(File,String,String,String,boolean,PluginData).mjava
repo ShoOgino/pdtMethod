@@ -1,0 +1,63 @@
+	private boolean fixBundle(File descriptor, String id, String qualifier, String type, boolean pluginandbundle, PluginData pdata) throws Exception {
+
+		// load plugin.xml or fragment.xml or MANIFEST.MF
+		StringBuffer xml = readFile(descriptor);
+
+		File bundleFolder = descriptor.getParentFile().getParentFile();	// i.e. bundleFolder/manifest/manifestfile
+		boolean changedFile = false;
+		
+		Headers headers = null;
+
+		try {
+			headers = Headers.parseManifest(new FileInputStream(new File(descriptor, "")));
+
+		} catch (BundleException e) {
+			e.printStackTrace();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+
+		//String version = descriptor.getName()+";bundle-version=\"["+headers.get("Bundle-version").toString();
+		String version = headers.get("Bundle-version").toString();
+		String vtitle = "Bundle-Version: " + version;
+
+		//	 fix up version
+		int start = scan(xml, 0, vtitle);
+
+		if (this.add4thPart) {
+			String[] va = versionToArray(version);
+			if (va[3].equals("")) {
+				va[3] = qualifier;
+				version = arrayToVersion(va);
+				int end = start + vtitle.length();
+				xml = xml.replace(start, end, "Bundle-Version: " + version);
+				changedFile = true;
+			}
+		}
+
+
+		// write it out to the descriptor location
+		descriptor = descriptor.getAbsoluteFile();
+
+		if (changedFile) {
+			char[] outbuf = xml.toString().toCharArray();
+			OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(descriptor));
+			try {
+				writer.write(outbuf);
+			} finally {
+				try {
+					writer.close();
+				} catch (IOException e) {
+				}
+			}
+		}
+		System.out.println("Updated " + type + ".xml for " + descriptor.getAbsolutePath());
+		if (changedFile) {
+			bundleFolder = renameFolder(bundleFolder, id, version);
+		}
+		long[] sizes = writeJAR(bundleFolder, "plugins");
+		pdata.installedSize = sizes[DOWNLOAD_SIZE_INDEX];
+		pdata.downloadSize = sizes[INSTALLED_SIZE_INDEX];
+		return changedFile;
+	}
+

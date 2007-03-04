@@ -1,0 +1,116 @@
+	/*
+	 * Process a plugin that is a jar. It is assumed to be a MANIFEST format only. Won't look at plugin.xml
+	 * @param pluginJarName
+	 * @param jarfile
+	 * @throws Exception
+	 * 
+	 * @since 1.2.0
+	 */
+	private void modifyPluginJar(String pluginJarName, File jarfile) throws Exception {
+		JarFile jzip = null; 
+		try {
+			jzip = new JarFile(jarfile, false);
+			ZipEntry man = jzip.getEntry(JarFile.MANIFEST_NAME);
+			if (man != null) {				
+				String id = pluginJarName.substring(0, pluginJarName.indexOf("_"));
+				String tag = getTag((String) directory.get("bundle@" + id));
+
+				if (tag.equals("none"))
+					tag = buildNumber;
+
+				tag = verifyQualifier(tag);
+				PluginData pdata = (PluginData) plugins.get(id);
+				if (pdata == null) {
+					plugins.put(id, pdata = new PluginData());
+				}
+				
+				// Now fixup the Manifest.
+				// load MANIFEST.MF
+				StringBuffer xml = readInputStream(jzip.getInputStream(man));
+				try {
+					jzip.close();
+				} catch (IOException e) {
+				}
+				jzip = null;
+				
+				boolean changedFile = false;
+				
+				Headers headers = null;
+
+				try {
+					headers = Headers.parseManifest(new ByteArrayInputStream(xml.toString().getBytes()));
+
+				} catch (BundleException e) {
+					e.printStackTrace();
+					return;
+				}
+
+				//String version = descriptor.getName()+";bundle-version=\"["+headers.get("Bundle-version").toString();
+				String version = headers.get("Bundle-version").toString();
+				String vtitle = "Bundle-Version: " + version;
+
+				//	 fix up version
+				int start = scan(xml, 0, vtitle);
+
+				if (this.add4thPart) {
+					String[] va = versionToArray(version);
+					if (va[3].equals("")) {
+						va[3] = tag;
+						version = arrayToVersion(va);
+						int end = start + vtitle.length();
+						xml = xml.replace(start, end, "Bundle-Version: " + version);
+						changedFile = true;
+					}
+				}
+
+				long[] sizes;
+				if (changedFile) {
+					jarfile = renameFile(jarfile, id, version);
+					sizes = writeJar(jarfile, xml.toString(), "plugins");
+					pdata.tag = tag;
+				} else {
+					sizes = new long[2];
+					sizes[DOWNLOAD_SIZE_INDEX] = sizes[INSTALLED_SIZE_INDEX] = jarfile.length();
+					// Now need to copy the file to site build area.
+					BufferedInputStream jarin = null;
+					BufferedOutputStream jarout = null;
+					try {
+						jarin = new BufferedInputStream(new FileInputStream(jarfile));
+						File destinationFolder = new File(siteLocation, "plugins");
+						destinationFolder.mkdirs();
+						jarout = new BufferedOutputStream(new FileOutputStream(new File(destinationFolder, jarfile.getName())));
+						int in;
+						while ((in = jarin.read()) != -1)
+							jarout.write(in);
+					} finally {
+						if (jarin != null) {
+							try {
+								jarin.close();
+							} catch (IOException e) {
+							}
+						}
+						if (jarout != null) {
+							try {
+								jarout.close();
+							} catch (IOException e) {
+							}
+						}						
+					}
+				}
+				System.out.println("Updated manifest for " + jarfile.getAbsolutePath());
+				pdata.installedSize = sizes[DOWNLOAD_SIZE_INDEX];
+				pdata.downloadSize = sizes[INSTALLED_SIZE_INDEX];
+				return;
+				
+			} else
+				System.out.println("Could not find manifest for: " + pluginJarName);
+		} finally {
+			if (jzip != null) {
+				try {
+					jzip.close();
+				} catch (IOException e) {
+				}
+			}
+		}
+	}
+

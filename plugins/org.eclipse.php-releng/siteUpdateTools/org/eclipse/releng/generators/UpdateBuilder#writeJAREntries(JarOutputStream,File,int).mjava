@@ -1,0 +1,40 @@
+	/*
+	 * write the folder to the jar, and return the accumlated size of the folder.
+	 */
+	protected long writeJAREntries(JarOutputStream jos, File folder, int rootMembers) throws Exception {
+		File[] list = folder.listFiles();
+		if (list == null) {
+			System.out.println("No files found in: " + folder.getAbsolutePath());
+			return 0;
+		}
+		
+		long size = 0;
+		String prefix = "";
+		File temp = folder;
+		for (int i = 0; i < rootMembers; i++) {
+			prefix = temp.getName() + "/" + prefix;
+			temp = temp.getParentFile();
+		}
+		rootMembers++;
+		for (int i = 0; i < list.length; i++) {
+			if (list[i].isDirectory()) {
+				size += writeJAREntries(jos, list[i], rootMembers);
+				continue;
+			}
+			size+=list[i].length();
+			FileInputStream is = new FileInputStream(list[i]);
+			try {
+				writeJarEntry(prefix + list[i].getName(), is, list[i].lastModified(), jos);
+			} finally {
+				if (is != null)
+					try {
+						is.close();
+					} catch (IOException e) {
+					}
+				is = null;
+			}
+		}
+		
+		return size;
+	}
+

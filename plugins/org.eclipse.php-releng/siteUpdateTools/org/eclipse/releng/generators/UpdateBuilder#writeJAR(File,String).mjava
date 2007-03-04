@@ -1,0 +1,46 @@
+	/*
+	 * Write a jar file from the given folder. Return the original, unzipped size and the final file size.
+	 * of the folder, including subdirectories.
+	 */
+	private long[] writeJAR(File pluginFolder, String rootFolder) throws Exception {
+		String[] list = pluginFolder.list();
+		if (list == null) {
+			System.out.println("No files found in: " + pluginFolder.getAbsolutePath());
+			return EMPTY_JAR;
+		}
+		File destination = new File(siteLocation, rootFolder);
+		destination.mkdirs();
+
+		String jarName = pluginFolder.getName() + ".jar";
+		JarOutputStream jos = null;
+
+		long[] size = new long[] {0, 0};
+		File jarFile = null;
+		try {
+			jarFile = new File(destination, jarName);
+			System.out.println("Writing " + jarFile.getAbsolutePath());
+
+			String testManifest = pluginFolder.getAbsolutePath() + File.separator + "META-INF" + File.separator + "MANIFEST.MF";
+			File ManifestFile = new File(testManifest);
+
+			if (!ManifestFile.exists()) {
+				size[INSTALLED_SIZE_INDEX]+=defaultManifestBytes.length;
+				jos = new JarOutputStream(new FileOutputStream(jarFile), man);
+			} else {
+				//InputStream isManifest = new FileInputStream(testManifest);
+				// Manifest manifest = new Manifest(isManifest);
+				jos = new JarOutputStream(new FileOutputStream(jarFile));
+
+			}
+			size[INSTALLED_SIZE_INDEX] += writeJAREntries(jos, pluginFolder, 0);
+		} finally {
+			if (jos != null)
+				try {
+					jos.close();
+					size[DOWNLOAD_SIZE_INDEX] = jarFile.length(); 
+				} catch (IOException e) {
+				}
+		}
+		return size;
+	}
+
