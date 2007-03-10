@@ -1,11 +1,33 @@
 	protected void initializeFields() {
 		if (edited != null) {
 			name.setText(edited.getLabel());
-			url.setText(edited.getUrl());
-			extension.setText(edited.getExtension());
+			fileExtCombo.setText(edited.getExtension());
+
+			String urlStr = edited.getUrl();
+			if (isWindows && urlStr.startsWith(CHM_PROTO)) {
+				urlStr = urlStr.substring(CHM_PROTO.length());
+				int sepIdx = urlStr.indexOf("::"); //$NON-NLS-1$
+				if (sepIdx != -1) {
+					urlStr = urlStr.substring(0, sepIdx);
+				}
+				chmFile.setText(urlStr);
+				chmFileBtn.setSelection(true);
+			} else if (urlStr.startsWith(FILE_PROTO)) {
+				urlStr = urlStr.substring(FILE_PROTO.length());
+				localDir.setText(urlStr);
+				localDirectoryBtn.setSelection(true);
+			} else {
+				url.setText(urlStr);
+			}
 		} else {
-			url.setText("http://"); //$NON-NLS-1$
-			extension.setText("php"); //$NON-NLS-1$
+			url.setText("http://www.php.net/manual/en"); //$NON-NLS-1$
+			remoteSiteBtn.setSelection(true);
+		}
+
+		remoteSiteBtn.notifyListeners(SWT.Selection, new Event());
+		localDirectoryBtn.notifyListeners(SWT.Selection, new Event());
+		if (isWindows) {
+			chmFileBtn.notifyListeners(SWT.Selection, new Event());
 		}
 	}
 

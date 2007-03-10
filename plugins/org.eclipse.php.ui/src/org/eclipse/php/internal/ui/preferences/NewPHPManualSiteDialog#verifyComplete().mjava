@@ -3,17 +3,9 @@
 			return;
 		}
 
-		if (name.getText().trim().length() == 0 || url.getText().trim().length() == 0) {
+		if (name.getText().trim().length() == 0) {
 			okButton.setEnabled(false);
-			this.updateStatus(new Status(IStatus.ERROR, PHPUiPlugin.getPluginId(), IStatus.OK, PHPUIMessages.NewPHPManualSiteDialog_siteOrUrlNotSpecified, null));
-			return;
-		}
-
-		try {
-			new URL(URLDecoder.decode(url.getText().trim(), "UTF-8")); //$NON-NLS-1$
-		} catch (Exception e) {
-			okButton.setEnabled(false);
-			this.updateStatus(new Status(IStatus.ERROR, PHPUiPlugin.getPluginId(), IStatus.OK, PHPUIMessages.NewPHPManualSiteDialog_incorrectUrl, null));
+			this.updateStatus(new Status(IStatus.ERROR, PHPUiPlugin.getPluginId(), IStatus.OK, PHPUIMessages.NewPHPManualSiteDialog_siteNotSpecified, null));
 			return;
 		}
 
@@ -23,6 +15,33 @@
 			okButton.setEnabled(true);
 			this.updateStatus(new Status(IStatus.OK, PHPUiPlugin.getPluginId(), IStatus.OK, "", null)); //$NON-NLS-1$
 		}
-		result = new PHPManualConfig(name.getText(), url.getText(), extension.getText(), false);
+
+		if (remoteSiteBtn.getSelection()) {
+			try {
+				String urlStr = url.getText().trim();
+				new URL(URLDecoder.decode(urlStr, "UTF-8")); //$NON-NLS-1$
+				result = new PHPManualConfig(name.getText(), urlStr, fileExtCombo.getText(), false);
+			} catch (Exception e) {
+				okButton.setEnabled(false);
+				this.updateStatus(new Status(IStatus.ERROR, PHPUiPlugin.getPluginId(), IStatus.OK, PHPUIMessages.NewPHPManualSiteDialog_incorrectUrl, null));
+				return;
+			}
+		} else if (localDirectoryBtn.getSelection()) {
+			String localDirStr = localDir.getText().trim();
+			if (!new File(localDirStr).isDirectory()) {
+				okButton.setEnabled(false);
+				this.updateStatus(new Status(IStatus.ERROR, PHPUiPlugin.getPluginId(), IStatus.OK, PHPUIMessages.getString("NewPHPManualSiteDialog_dirDoesntExist"), null));  //$NON-NLS-1$
+				return;
+			}
+			result = new PHPManualConfig(name.getText(), FILE_PROTO + localDirStr, fileExtCombo.getText(), false);
+		} else if (isWindows) {
+			String chmFileStr = chmFile.getText().trim();
+			if (!new File(chmFileStr).isFile()) {
+				okButton.setEnabled(false);
+				this.updateStatus(new Status(IStatus.ERROR, PHPUiPlugin.getPluginId(), IStatus.OK, PHPUIMessages.getString("NewPHPManualSiteDialog_fileDoesntExist"), null));  //$NON-NLS-1$
+				return;
+			}
+			result = new PHPManualConfig(name.getText(), CHM_PROTO + chmFileStr + "::/en", fileExtCombo.getText(), false); //$NON-NLS-1$
+		}
 	}
 

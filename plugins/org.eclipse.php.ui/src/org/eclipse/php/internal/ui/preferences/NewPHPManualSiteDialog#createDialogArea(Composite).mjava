@@ -1,18 +1,30 @@
 	protected Control createDialogArea(Composite parent) {
+		initializeDialogUnits(parent);
+
 		Composite composite = new Composite(parent, SWT.NONE);
 		GridLayout layout = new GridLayout();
-		layout.numColumns = 3;
+		layout.numColumns = 2;
+		layout.marginHeight = 10;
+		layout.marginWidth = 15;
 		composite.setLayout(layout);
 		GridData data = new GridData();
 		data.widthHint = 400;
 		composite.setLayoutData(data);
 
-		Label label = new Label(composite, SWT.NONE);
-		label.setText(PHPUIMessages.NewPHPManualSiteDialog_name);
-
-		name = new Text(composite, SWT.BORDER);
+		// --------- Site Name: ---------------------
+		Composite siteNameGroup = new Composite(composite, SWT.NONE);
+		layout = new GridLayout();
+		layout.numColumns = 2;
+		layout.marginWidth = 0;
+		siteNameGroup.setLayout(layout);
 		data = new GridData(GridData.FILL_HORIZONTAL);
 		data.horizontalSpan = 2;
+		siteNameGroup.setLayoutData(data);
+		Label label = new Label(siteNameGroup, SWT.NONE);
+		label.setText(PHPUIMessages.NewPHPManualSiteDialog_name);
+
+		name = new Text(siteNameGroup, SWT.BORDER);
+		data = new GridData(GridData.FILL_HORIZONTAL);
 		name.setLayoutData(data);
 		name.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
@@ -20,11 +32,23 @@
 			}
 		});
 
-		label = new Label(composite, SWT.NONE);
-		label.setText(PHPUIMessages.NewPHPManualSiteDialog_url);
+		// --------- Remote Site: ---------------------
+		remoteSiteBtn = new Button(composite, SWT.RADIO);
+		remoteSiteBtn.setText(PHPUIMessages.getString("NewPHPManualSiteDialog_remoteSiteURL"));  //$NON-NLS-1$
+		data = new GridData(GridData.FILL_HORIZONTAL);
+		data.horizontalSpan = 2;
+		remoteSiteBtn.setLayoutData(data);
+		remoteSiteBtn.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				boolean enabled = remoteSiteBtn.getSelection();
+				url.setEnabled(enabled);
+			}
+		});
 
 		url = new Text(composite, SWT.BORDER);
 		data = new GridData(GridData.FILL_HORIZONTAL);
+		data.horizontalIndent = convertWidthInCharsToPixels(3);
+		data.horizontalSpan = 2;
 		url.setLayoutData(data);
 		url.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
@@ -32,31 +56,116 @@
 			}
 		});
 
-		browseButton = new Button(composite, SWT.NULL);
-		data = new GridData();
-		data.horizontalAlignment = SWT.END;
-		data.widthHint = 50;
-		browseButton.setLayoutData(data);
-		browseButton.setText("..."); //$NON-NLS-1$
-		browseButton.setAlignment(SWT.CENTER);
-		browseButton.addListener(SWT.Selection, new Listener() {
-			public void handleEvent(Event event) {
-				choosePHPManualFolder();
+		// --------- Local Directory: ---------------------
+		localDirectoryBtn = new Button(composite, SWT.RADIO);
+		localDirectoryBtn.setText(PHPUIMessages.getString("NewPHPManualSiteDialog_localDirectory"));  //$NON-NLS-1$
+		data = new GridData(GridData.FILL_HORIZONTAL);
+		data.horizontalSpan = 2;
+		localDirectoryBtn.setLayoutData(data);
+		localDirectoryBtn.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				boolean enabled = localDirectoryBtn.getSelection();
+				localDir.setEnabled(enabled);
+				dirBrowseButton.setEnabled(enabled);
 			}
 		});
 
-		label = new Label(composite, SWT.NONE);
-		label.setText(PHPUIMessages.NewPHPManualSiteDialog_fileExtension);
-
-		extension = new Text(composite, SWT.BORDER);
+		localDir = new Text(composite, SWT.BORDER);
 		data = new GridData(GridData.FILL_HORIZONTAL);
-		data.horizontalSpan = 2;
-		extension.setLayoutData(data);
-		extension.addModifyListener(new ModifyListener() {
+		data.horizontalIndent = convertWidthInCharsToPixels(3);
+		localDir.setLayoutData(data);
+		localDir.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
 				verifyComplete();
 			}
 		});
+
+		dirBrowseButton = new Button(composite, SWT.NULL);
+		data = new GridData();
+		data.widthHint = 50;
+		data.horizontalAlignment = SWT.END;
+		dirBrowseButton.setLayoutData(data);
+		dirBrowseButton.setText("..."); //$NON-NLS-1$
+		dirBrowseButton.setAlignment(SWT.CENTER);
+		dirBrowseButton.addListener(SWT.Selection, new Listener() {
+			public void handleEvent(Event event) {
+				DirectoryDialog dialog = new DirectoryDialog(PHPUiPlugin.getDefault().getWorkbench().getActiveWorkbenchWindow().getShell(), SWT.OPEN);
+				dialog.setText(PHPUIMessages.NewPHPManualSiteDialog_chooseDir);
+				String directoryAsString = dialog.open();
+				if (directoryAsString == null) {
+					return;
+				}
+				localDir.setText(directoryAsString); //$NON-NLS-1$
+			}
+		});
+
+		// --------- Site Name: ---------------------
+		if (isWindows) {
+			chmFileBtn = new Button(composite, SWT.RADIO);
+			chmFileBtn.setText(PHPUIMessages.getString("NewPHPManualSiteDialog_windowsCHMFile"));  //$NON-NLS-1$
+			data = new GridData(GridData.FILL_HORIZONTAL);
+			data.horizontalSpan = 2;
+			chmFileBtn.setLayoutData(data);
+			chmFileBtn.addSelectionListener(new SelectionAdapter() {
+				public void widgetSelected(SelectionEvent e) {
+					boolean enabled = chmFileBtn.getSelection();
+					chmFile.setEnabled(enabled);
+					chmBrowseButton.setEnabled(enabled);
+				}
+			});
+
+			chmFile = new Text(composite, SWT.BORDER);
+			data = new GridData(GridData.FILL_HORIZONTAL);
+			data.horizontalIndent = convertWidthInCharsToPixels(3);
+			chmFile.setLayoutData(data);
+			chmFile.addModifyListener(new ModifyListener() {
+				public void modifyText(ModifyEvent e) {
+					verifyComplete();
+				}
+			});
+
+			chmBrowseButton = new Button(composite, SWT.NULL);
+			data = new GridData();
+			data.widthHint = 50;
+			data.horizontalAlignment = SWT.END;
+			chmBrowseButton.setLayoutData(data);
+			chmBrowseButton.setText("..."); //$NON-NLS-1$
+			chmBrowseButton.setAlignment(SWT.CENTER);
+			chmBrowseButton.addListener(SWT.Selection, new Listener() {
+				public void handleEvent(Event event) {
+					FileDialog dialog = new FileDialog(PHPUiPlugin.getDefault().getWorkbench().getActiveWorkbenchWindow().getShell(), SWT.OPEN);
+					dialog.setText(PHPUIMessages.getString("NewPHPManualSiteDialog_chooseCHMFile"));  //$NON-NLS-1$
+					dialog.setFilterExtensions(new String[] { "*.chm" }); //$NON-NLS-1$
+					String fileAsString = dialog.open();
+					if (fileAsString == null) {
+						return;
+					}
+					chmFile.setText(fileAsString); //$NON-NLS-1$
+				}
+			});
+		}
+
+		Composite fileExtGroup = new Composite(composite, SWT.NONE);
+		layout = new GridLayout();
+		layout.numColumns = 2;
+		layout.marginWidth = 0;
+		fileExtGroup.setLayout(layout);
+		data = new GridData();
+		data.horizontalSpan = 2;
+		fileExtGroup.setLayoutData(data);
+
+		fileExtLabel = new Label(fileExtGroup, SWT.NONE);
+		data = new GridData(GridData.FILL_HORIZONTAL);
+		fileExtLabel.setLayoutData(data);
+		fileExtLabel.setText(PHPUIMessages.getString("NewPHPManualSiteDialog_fileExtension"));  //$NON-NLS-1$
+		fileExtCombo = new Combo(fileExtGroup, SWT.READ_ONLY);
+		fileExtCombo.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				verifyComplete();
+			}
+		});
+		fileExtCombo.setItems(FILE_EXT);
+		fileExtCombo.select(0);
 
 		initializeFields();
 		Dialog.applyDialogFont(composite);
