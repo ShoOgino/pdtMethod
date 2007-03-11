@@ -2,36 +2,41 @@
 		 * handle only add new launch event
 		 */
 		public void launchesAdded(ILaunch[] launches) {
-			if (launches != null && launches.length > 0) {			
+			if (launches != null && launches.length > 0) {
 				final ILaunch[] currentLaunches = launches;
 				Display.getDefault().asyncExec(new Runnable() {
 					public void run() {
 						// get the LaunchView
 						IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
-						LaunchView view =  (LaunchView) page.findView(IDebugUIConstants.ID_DEBUG_VIEW);
-						
+						if (page == null)
+							return;
+						LaunchView view = (LaunchView) page.findView(IDebugUIConstants.ID_DEBUG_VIEW);
+						if (view == null)
+							return;
 						try {
 							// build the tree path LaunchManager->Launch->DebugTarget->PHPThread->PHPStackFrame
 							PHPDebugTarget target = (PHPDebugTarget) currentLaunches[0].getDebugTarget();
-							if (target != null) {
-								IThread thread = target.getThreads()[0];
-								PHPStackFrame frame = (PHPStackFrame) thread.getTopStackFrame();
-								if (thread != null && frame != null) {
-									Object[] segments = new Object[5];
-									segments[0] = DebugPlugin.getDefault().getLaunchManager();
-									segments[1] = currentLaunches[0];
-									segments[2] = target;
-									segments[3] = thread;
-									segments[4] = frame;
-									TreePath treePath = new TreePath(segments);
-									// set the current launch as the LaunchViewer selection.
-									((AsynchronousViewer) view.getViewer()).setSelection(new TreeSelection(treePath), true, true);
-								}
-							}
+							if (target == null)
+								return;
+							if (target.getThreads() == null || target.getThreads().length == 0)
+								return;
+							IThread thread = target.getThreads()[0];
+							PHPStackFrame frame = (PHPStackFrame) thread.getTopStackFrame();
+							if (frame == null)
+								return;
+							Object[] segments = new Object[5];
+							segments[0] = DebugPlugin.getDefault().getLaunchManager();
+							segments[1] = currentLaunches[0];
+							segments[2] = target;
+							segments[3] = thread;
+							segments[4] = frame;
+							TreePath treePath = new TreePath(segments);
+							// set the current launch as the LaunchViewer selection.
+							((AsynchronousViewer) view.getViewer()).setSelection(new TreeSelection(treePath), true, true);
 						} catch (DebugException e) {
-						}	
+						}
 					}
-				});	
+				});
 			}
 		}
 
