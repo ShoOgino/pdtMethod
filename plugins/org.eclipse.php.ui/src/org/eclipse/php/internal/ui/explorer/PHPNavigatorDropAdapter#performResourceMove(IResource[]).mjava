@@ -1,0 +1,29 @@
+    /**
+     * Performs a resource move
+     */
+    private IStatus performResourceMove(IResource[] sources) {
+        MultiStatus problems = new MultiStatus(PlatformUI.PLUGIN_ID, 1,
+                ResourceNavigatorMessages.DropAdapter_problemsMoving, null);
+        
+        mergeStatus(problems, validateTarget(getCurrentTarget(), getCurrentTransfer()));
+
+        IContainer target = getActualTarget((IResource) getCurrentTarget());
+        ReadOnlyStateChecker checker = new ReadOnlyStateChecker(
+                getShell(),
+                ResourceNavigatorMessages.MoveResourceAction_title,
+                ResourceNavigatorMessages.MoveResourceAction_checkMoveMessage);
+        sources = checker.checkReadOnlyResources(sources);
+        
+        fReorgMoveAction.setSources(sources);
+        fReorgMoveAction.setTarget(target);
+        
+        ISelection selection = LocalSelectionTransfer.getInstance().getSelection();
+        if (selection instanceof IStructuredSelection) {
+        	fReorgMoveAction.setSelection((StructuredSelection) selection);
+        	fReorgMoveAction.runDrop((IStructuredSelection) selection);        	
+        }
+        
+
+        return problems;
+    }
+
