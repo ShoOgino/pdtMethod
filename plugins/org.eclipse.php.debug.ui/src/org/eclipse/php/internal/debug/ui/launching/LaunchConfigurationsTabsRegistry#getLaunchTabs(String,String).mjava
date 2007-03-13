@@ -3,16 +3,18 @@
 	 * for the requested configuration tab group.
 	 * 
 	 * @param launchConfigurationTabGroupId The group id for the requested launch configuration tabs.
+	 * @param mode The launch mode requested.
 	 * @return	An array of AbstractLaunchConfigurationTab.
 	 */
-	public static AbstractLaunchConfigurationTab[] getLaunchTabs(String launchConfigurationTabGroupId) {
+	public static AbstractLaunchConfigurationTab[] getLaunchTabs(String launchConfigurationTabGroupId, String mode) {
 		LaunchConfigurationsTabsRegistry registry = getInstance();
 		List fragments = registry.factories;
 		List factoriesList = new ArrayList();
 		for (int i = 0; i < fragments.size(); i++) {
 			TabFactory factory = (TabFactory) fragments.get(i);
-			// Sort out only the tabs that are related to the requested configuration tab group.
-			if (factory.getGroupID().equals(launchConfigurationTabGroupId)) {
+			boolean modeOK = factory.getModes().length() == 0 || factory.getModes().indexOf(mode) > -1;
+			// Sort out only the tabs that are related to the requested configuration tab group and launch mode.
+			if (factory.getGroupID().equals(launchConfigurationTabGroupId) && modeOK) {
 				factoriesList.add(factory.createFragmentFactory());
 			}
 		}
