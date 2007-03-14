@@ -1,14 +1,17 @@
 	public void finishParsing(int lastPosition, int lastLine, long lastModified) {
 		restoreToDefaultContext(lastPosition);
 
-		PHPClassData[] cls = new PHPClassData[classes.size()];
-		classes.toArray(cls);
+		PHPClassData[] allClasses = new PHPClassData[classes.size()];
+		classes.toArray(allClasses);
 
-		PHPFunctionData[] func = new PHPFunctionData[functions.size()];
-		functions.toArray(func);
+		PHPFunctionData[] allFunctions = new PHPFunctionData[functions.size()];
+		functions.toArray(allFunctions);
 
-		PHPIncludeFileData[] include = new PHPIncludeFileData[includeFiles.size()];
-		includeFiles.toArray(include);
+		PHPIncludeFileData[] allIncludes = new PHPIncludeFileData[includeFiles.size()];
+		includeFiles.toArray(allIncludes);
+
+		PHPConstantData[] allConstants = new PHPConstantData[constants.size()];
+		constants.toArray(allConstants);
 
 		IPHPMarker[] allMarkers = new IPHPMarker[markers.size()];
 		markers.toArray(allMarkers);
@@ -36,28 +39,23 @@
 			phpBlocks[i] = new PHPBlock(startTag, endTag);
 		}
 
-		fixObjectInstantiation(cls, func);
+		fixObjectInstantiation(allClasses, allFunctions);
 		PHPVariablesTypeManager variablesTypeManager = variableContextBuilder.getPHPVariablesTypeManager();
 
 		UserData userData = PHPCodeDataFactory.createUserData(workingFileName, 0, 0, 0, lastLine);
 
-		PHPConstantData[] allConstans = new PHPConstantData[constans.size()];
-		constans.toArray(allConstans);
+		PHPFileData fileData = PHPCodeDataFactory.createPHPFileData(workingFileName, userData, allClasses, allFunctions, variablesTypeManager, allIncludes, allConstants, allMarkers, phpBlocks, firstPHPDocBlock, lastModified);
 
-		PHPIncludeFileData[] allIncludes = new PHPIncludeFileData[includeFiles.size()];
-		includeFiles.toArray(allIncludes);
-
-		PHPFileData fileData = PHPCodeDataFactory.createPHPFileData(workingFileName, userData, cls, func, variablesTypeManager, include, allConstans, allMarkers, phpBlocks, firstPHPDocBlock, lastModified);
-		for (int i = 0; i < cls.length; i++) {
-			cls[i].setContainer(fileData);
+		for (int i = 0; i < allClasses.length; i++) {
+			allClasses[i].setContainer(fileData);
 		}
 
-		for (int i = 0; i < func.length; i++) {
-			func[i].setContainer(fileData);
+		for (int i = 0; i < allFunctions.length; i++) {
+			allFunctions[i].setContainer(fileData);
 		}
 
-		for (int i = 0; i < allConstans.length; i++) {
-			allConstans[i].setContainer(fileData);
+		for (int i = 0; i < allConstants.length; i++) {
+			allConstants[i].setContainer(fileData);
 		}
 
 		for (int i = 0; i < allIncludes.length; i++) {
