@@ -1,7 +1,8 @@
 	/**
 	 * getting an instance and finding its type.
 	 */
-	private String innerGetClassName(PHPProjectModel projectModel, PHPFileData fileData, TextSequence statmentText, int propertyEndPosition, boolean isClassTriger, int offset, int line) {
+	private String innerGetClassName(PHPProjectModel projectModel, PHPFileData fileData, TextSequence statmentText,
+		int propertyEndPosition, boolean isClassTriger, int offset, int line) {
 		if (fileData == null) {
 			return null;
 		}
@@ -9,12 +10,18 @@
 		String className = statmentText.subSequence(classNameStart, propertyEndPosition).toString();
 		if (isClassTriger) {
 			if (className.equals("self")) {
-				PHPClassData classData = PHPFileDataUtilities.getContainerClassDada(fileData, offset - 6); //the offset before self::
+				PHPClassData classData = PHPFileDataUtilities.getContainerClassDada(fileData, offset - 6); // the
+				// offset
+				// before
+				// self::
 				if (classData != null) {
 					return classData.getName();
 				}
 			} else if (className.equals("parent")) {
-				PHPClassData classData = PHPFileDataUtilities.getContainerClassDada(fileData, offset - 8); //the offset before parent::
+				PHPClassData classData = PHPFileDataUtilities.getContainerClassDada(fileData, offset - 8); // the
+				// offset
+				// before
+				// parent::
 				if (classData != null) {
 					return projectModel.getSuperClassName(fileData.getName(), classData.getName());
 				}
@@ -24,16 +31,18 @@
 		// if its object call calc the object type.
 		if (className.length() > 0 && className.charAt(0) == '$') {
 			int statmentStart = offset - statmentText.length();
-			return PHPFileDataUtilities.getVariableType(fileData.getName(), className, statmentStart, line, projectModel.getPHPUserModel(), true);
+			return PHPFileDataUtilities.getVariableType(fileData.getName(), className, statmentStart, line,
+				projectModel.getPHPUserModel(), true);
 		}
 		// if its function call calc the return type.
 		if (statmentText.charAt(propertyEndPosition - 1) == ')') {
 			int functionNameEnd = getFunctionNameEndOffset(statmentText, propertyEndPosition - 1);
-			int functionNameStart = PHPTextSequenceUtilities.readIdentifiarStartIndex(statmentText, functionNameEnd, false);
+			int functionNameStart =
+				PHPTextSequenceUtilities.readIdentifiarStartIndex(statmentText, functionNameEnd, false);
 
 			String functionName = statmentText.subSequence(functionNameStart, functionNameEnd).toString();
 			PHPClassData classData = PHPFileDataUtilities.getContainerClassDada(fileData, offset);
-			if (classData != null) { //if its a clss function
+			if (classData != null) { // if its a clss function
 				return getFunctionReturnType(projectModel, fileData, classData.getName(), functionName);
 			}
 			// if its a non class function
