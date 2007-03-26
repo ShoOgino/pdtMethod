@@ -8,8 +8,19 @@
 	public RenameAction(IWorkbenchSite site) {
 		super(site);
 		setText(PHPUIMessages.RenameAction_text);
-		fRenamePHPElement = new RenamePHPElementAction(site);
-		fRenamePHPElement.setText(getText());
+		
+		// gets the right factory to the element rename refactoring
+		final IRenamePHPElementActionFactory actionDelegatorFactory = PHPActionDelegatorRegistry.getActionDelegatorFactory(RENAME_ELEMENT_ACTION_ID);
+		if (actionDelegatorFactory == null) {
+			// default rename action
+			fRenamePHPElement = new RenamePHPElementAction(site);
+			fRenamePHPElement.setText(getText());
+		} else {
+			fRenamePHPElement = actionDelegatorFactory.createRenameAction(site);
+			fRenamePHPElement.setText(getText());
+		}
+
+		// rename resource
 		fRenameResource = new RenameResourceAction(site);
 		fRenameResource.setText(getText());
 		PlatformUI.getWorkbench().getHelpSystem().setHelp(this, IPHPHelpContextIds.RENAME_ACTION);
