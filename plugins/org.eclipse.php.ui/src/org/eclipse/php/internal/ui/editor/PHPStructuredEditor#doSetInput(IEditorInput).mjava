@@ -3,6 +3,10 @@
 		if (input instanceof IFileEditorInput) {
 			final IFileEditorInput fileInput = (IFileEditorInput) input;
 			resource = fileInput.getFile();
+		} else if (input instanceof JavaFileEditorInput) {
+			JavaFileEditorInput fileInput = (JavaFileEditorInput) input;
+			IPath path = fileInput.getPath();
+			resource = ((IWorkspaceRoot) ResourcesPlugin.getWorkspace().getRoot()).getFile(path);
 		} else if (input instanceof StorageEditorInput) {
 			final StorageEditorInput editorInput = (StorageEditorInput) input;
 			final IStorage storage = editorInput.getStorage();
@@ -13,6 +17,11 @@
 		}
 		if (resource instanceof IFile) {
 			if (PHPModelUtil.isPhpFile((IFile) resource)) {
+				//add external php file to registry
+				if (input instanceof JavaFileEditorInput) {
+					IPath path = ((JavaFileEditorInput) input).getPath();
+					ExternalPhpFilesRegistry.getInstance().addFileEntry(resource.getFullPath().toString(), path.toString());
+				}
 				PhpSourceParser.editFile.set(resource);
 				super.doSetInput(input);
 			} else {
