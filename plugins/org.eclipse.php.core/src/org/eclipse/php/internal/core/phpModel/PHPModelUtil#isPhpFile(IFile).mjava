@@ -1,20 +1,28 @@
 	public static boolean isPhpFile(final IFile file) {
-		IContentDescription contentDescription;
-		try {
-			contentDescription = file.getContentDescription();
-		} catch (final CoreException e) {
-			PHPCorePlugin.log(e);
-			return false;
-		}
-		if (contentDescription == null) {
-			if (hasPhpExtention(file))
-				PHPCorePlugin.logErrorMessage("content description null!");
-			return false;
+		IContentDescription contentDescription = null;
+		if (file.exists()) {
+			try {
+				contentDescription = file.getContentDescription();
+			} catch (final CoreException e) {
+				PHPCorePlugin.log(e);
+				return false;
+			}
+
+			if (contentDescription == null) {
+				if (hasPhpExtention(file))
+					PHPCorePlugin.logErrorMessage("content description null!");
+				return false;
+			}
+
+			if (!ContentTypeIdForPHP.ContentTypeID_PHP.equals(contentDescription.getContentType().getId()))
+				return false;
+
+			return true;
 		}
 
-		if (!ContentTypeIdForPHP.ContentTypeID_PHP.equals(contentDescription.getContentType().getId()))
-			return false;
-
-		return true;
+		else if (hasPhpExtention(file)) {
+			return true;
+		}
+		return false;
 	}
 

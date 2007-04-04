@@ -6,15 +6,24 @@
 
 		InputStreamReader inputStreamReader;
 		try {
-			inputStreamReader = new InputStreamReader(file.getContents(), file.getCharset());
+			InputStream is = null;
+			if (!file.exists()) {
+				try {
+					is = new FileInputStream(file.getFullPath().toString());
+				} catch (IOException ioe) {
+				}
+			} else {
+				is = file.getContents();
+			}
+			inputStreamReader = new InputStreamReader(is, file.getCharset());
 		} catch (CoreException e) {
 			PHPCorePlugin.log(e);
 			return;
 		} catch (UnsupportedEncodingException e) {
 			PHPCorePlugin.log(e);
 			return;
-		} 
-		
+		}
+
 		Pattern[] tasksPatterns = TaskPatternsProvider.getInstance().getPatternsForProject(file.getProject());
 		try {
 			parserManager.parse(inputStreamReader, file.getFullPath().toString(), file.getModificationStamp(), parserClient, tasksPatterns, UseAspTagsHandler.useAspTagsAsPhp(project));

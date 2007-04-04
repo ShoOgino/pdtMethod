@@ -5,7 +5,15 @@
 		}
 		try {
 			StringReader reader = new StringReader(sDocument.get());
-			Pattern[] tasksPatterns = TaskPatternsProvider.getInstance().getPatternsForProject(file.getProject());
+			IProject project = null;
+			if (file.exists()) {
+				project = file.getProject();
+			} 
+			//external file
+			else if (ExternalPhpFilesRegistry.getInstance().isEntryExist(file.getFullPath().toString())) {
+				project = PHPWorkspaceModelManager.getDefaultPHPProjectModel().getProject();
+			}
+			Pattern[] tasksPatterns = TaskPatternsProvider.getInstance().getPatternsForProject(project);
 			parserManager.parse(reader, file.getFullPath().toString(), file.getModificationStamp(), parserClient, tasksPatterns, UseAspTagsHandler.useAspTagsAsPhp(project));
 		} catch (Exception e) {
 			PHPCorePlugin.log(e);
