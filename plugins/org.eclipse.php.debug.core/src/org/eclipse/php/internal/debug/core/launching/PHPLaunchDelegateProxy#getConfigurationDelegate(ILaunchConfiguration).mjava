@@ -1,0 +1,24 @@
+	/**
+	 * Create and return a launch configuration delegate.
+	 * In case the delegate was already created, return the cached delegate.
+	 * Note that in order to allow class instanciation from non-dependent plug-in, there is a need to
+	 * define the plug-in as Eclipse-RegisterBuddy: org.eclipse.php.debug.core
+	 * 
+	 * @param configuration An {@link ILaunchConfiguration}
+	 */
+	protected ILaunchConfigurationDelegate2 getConfigurationDelegate(ILaunchConfiguration configuration) throws CoreException {
+		if (launchConfigurationDelegate == null) {
+			try {
+				String className = configuration.getAttribute(PHPDebugCorePreferenceNames.CONFIGURATION_DELEGATE_CLASS, "");
+				if (className.length() == 0) {
+					throw new IllegalArgumentException();
+				}
+
+				launchConfigurationDelegate = (ILaunchConfigurationDelegate2) Class.forName(className).newInstance();
+			} catch (Throwable t) {
+				throw new CoreException(new Status(IStatus.ERROR, PHPDebugPlugin.ID, 0, "Launch configuration delegate loading error.", t));
+			}
+		}
+		return launchConfigurationDelegate;
+	}
+
