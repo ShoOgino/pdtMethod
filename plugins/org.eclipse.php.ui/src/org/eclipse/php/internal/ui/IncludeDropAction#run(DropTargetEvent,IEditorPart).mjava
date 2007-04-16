@@ -1,0 +1,30 @@
+	public boolean run(DropTargetEvent event, IEditorPart targetEditor) {
+		if (!(targetEditor instanceof PHPStructuredEditor))
+			return super.run(event, targetEditor);
+		PHPStructuredEditor phpEditor = (PHPStructuredEditor) targetEditor;
+		String[] fileNames = (String[]) event.data;
+		if (fileNames == null || fileNames.length == 0) {
+			return false;
+		}
+
+		List/* <String> */phpFileNames = new ArrayList();
+		for (int i = 0; i < fileNames.length; ++i) {
+			IFile file = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(fileNames[i]));
+			PHPFileData fileData = null;
+			if (file != null)
+				fileData = PHPWorkspaceModelManager.getInstance().getModelForFile(file, true);
+			else
+				fileData = PHPWorkspaceModelManager.getInstance().getModelForFile(fileNames[i], false);
+			if (fileData != null) {
+				phpFileNames.add(fileData.getName());
+			}
+		}
+		if (phpFileNames.size() != 0 && insert(phpFileNames, phpEditor)) {
+			return true;
+		}
+		// default behavior
+		EditorUtility.openFilesInEditor(Arrays.asList(fileNames));
+		return true;
+		// return super.run(event, targetEditor);
+	}
+

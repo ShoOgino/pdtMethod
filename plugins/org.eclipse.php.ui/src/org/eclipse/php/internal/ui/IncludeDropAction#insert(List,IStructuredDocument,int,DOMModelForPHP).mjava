@@ -1,0 +1,21 @@
+	private void insert(List phpFileNames, IStructuredDocument document, int insertionOffset, DOMModelForPHP model) {
+		PHPFileData currentFileData = model.getFileData();
+		IFile file = (IFile) PHPModelUtil.getResource(currentFileData);
+		boolean shrinkPaths = file != null && file.exists();
+		IProject project = file.getProject();
+		StringBuffer string = new StringBuffer();
+		for (Iterator i = phpFileNames.iterator(); i.hasNext();) {
+			String fileName = (String) i.next();
+			if (shrinkPaths) {
+				fileName = PHPModelUtil.getRelativeLocation(project, fileName);
+			}
+			string.append(MessageFormat.format("include_once ''{0}'';", new Object[] { fileName }));
+			string.append(document.getLineDelimiter());
+		}
+		try {
+			document.replace(insertionOffset, 0, string.toString());
+		} catch (BadLocationException e) {
+			PHPUiPlugin.log(e);
+		}
+	}
+

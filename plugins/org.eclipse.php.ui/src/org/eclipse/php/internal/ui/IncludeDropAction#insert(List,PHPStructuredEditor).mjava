@@ -1,0 +1,39 @@
+	protected boolean insert(List phpFiles, PHPStructuredEditor targetEditor) {
+		ISelection selection = targetEditor.getSelectionProvider().getSelection();
+		if (!(selection instanceof ITextSelection))
+			return false;
+		ITextSelection textSelection = (ITextSelection) selection;
+		int offset = textSelection.getOffset();
+
+		boolean isPHPState = false;
+		IStructuredDocument document = (IStructuredDocument) targetEditor.getDocumentProvider().getDocument(targetEditor.getEditorInput());
+		IStructuredModel model = StructuredModelManager.getModelManager().getModelForRead(document);
+		if (!(model instanceof DOMModelForPHP)) {
+			model.releaseFromRead();
+			return false;
+		}
+
+		// the stupid bug - if in the end of line it inserts in the previous offset:
+		int line = document.getLineOfOffset(offset);
+		int lineEndOffset = -1;
+		try {
+			IRegion lineInformation = document.getLineInformation(line);
+			String lineString = document.get(lineInformation.getOffset(), lineInformation.getLength()).replaceAll("[\n\r]+", "");
+			lineEndOffset = lineInformation.getOffset() + lineString.length();
+
+		} catch (BadLocationException e) {
+		}
+		if (lineEndOffset > 0 && offset == lineEndOffset - 1 && document.getLength() >= offset) {
+			offset++;
+		}
+
+		String partitionType = getPartitionType(document, offset);
+		isPHPState = PHPPartitionTypes.isPHPRegularState(partitionType) || PHPPartitionTypes.isPHPQuotesState(partitionType);
+		if (!isPHPState) {
+			return false;
+		}
+		insert(phpFiles, document, offset, (DOMModelForPHP) model);
+		model.releaseFromRead();
+		return true;
+	}
+
