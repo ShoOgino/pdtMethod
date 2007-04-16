@@ -1,0 +1,39 @@
+	/**
+	 * Identifies a constant use 
+	 * @param locateNode
+	 * @return
+	 */
+	private static boolean isConstant(ASTNode locateNode) {
+		assert locateNode != null;
+
+		// check if it is an identifier
+		if (locateNode.getType() != ASTNode.SCALAR) {
+			return false;
+		}
+		final Scalar scalar = (Scalar) locateNode;
+
+		// if it is not a dollared variable - it is not a global one
+		if (scalar.getScalarType() != Scalar.TYPE_STRING || scalar.getStringValue() == null) {
+			return false;
+		}
+
+		final int length = scalar.getStringValue().length() - 1;
+		if (scalar.getStringValue().charAt(0) != '"' && scalar.getStringValue().charAt(length) != '"') {
+			return true;
+		}
+
+		// check if it is part of define
+		final ASTNode previous = locateNode.getParent();
+		if (previous.getType() != ASTNode.FUNCTION_INVOCATION) {
+			return false;
+		}
+
+		final FunctionInvocation functionInvocation = (FunctionInvocation) previous;
+		if (functionInvocation.getFunctionName().getFunctionName().getType() != ASTNode.IDENTIFIER) {
+			return false;
+		}
+
+		final Identifier identifier = (Identifier) functionInvocation.getFunctionName().getFunctionName();
+		return "define".equalsIgnoreCase(identifier.getName());
+	}
+

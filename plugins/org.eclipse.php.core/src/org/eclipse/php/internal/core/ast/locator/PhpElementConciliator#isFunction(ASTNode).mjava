@@ -1,0 +1,33 @@
+	/**
+	 * @param locateNode
+	 * @return true if the given path indicates a function
+	 */
+	private static boolean isFunction(ASTNode locateNode) {
+		assert locateNode != null;
+
+		// check if it is an identifier
+		if (locateNode.getType() != ASTNode.IDENTIFIER) {
+			return false;
+		}
+		final Identifier targetIdentifier = (Identifier) locateNode;
+
+		// check if it is a function
+		final ASTNode parent = targetIdentifier.getParent();
+		if (parent.getType() != ASTNode.FUNCTION_DECLARATION && parent.getType() != ASTNode.FUNCTION_NAME) {
+			return false;
+		}
+
+		// check if it is a method
+		final int type = parent.getParent().getType();
+		if (type == ASTNode.FUNCTION_INVOCATION) {
+			final int parentParentType = parent.getParent().getParent().getType();
+			if (parentParentType == ASTNode.METHOD_DECLARATION || parentParentType == ASTNode.STATIC_METHOD_INVOCATION) {
+				return false;
+			}
+		} else if (type == ASTNode.METHOD_DECLARATION) {
+			return false;
+		}
+
+		return true;
+	}
+

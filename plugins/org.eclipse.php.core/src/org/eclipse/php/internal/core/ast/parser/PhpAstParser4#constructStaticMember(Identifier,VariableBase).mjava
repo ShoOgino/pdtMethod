@@ -1,0 +1,18 @@
+	protected VariableBase constructStaticMember(Identifier className, VariableBase dispatcher) {
+		VariableBase result = null;
+		if (dispatcher.getType() == ASTNode.FIELD_ACCESS) {
+			FieldAccess fieldAccess = (FieldAccess)dispatcher;
+			VariableBase var = constructStaticMember(className, fieldAccess.getDispatcher());
+			FieldAccess newFieldAccess = new FieldAccess(var.getStart(), fieldAccess.getField().getEnd() ,var, fieldAccess.getField());
+			result = newFieldAccess;
+		} else if (dispatcher.getType() == ASTNode.METHOD_INVOCATION) {
+			MethodInvocation methodInvocation = (MethodInvocation)dispatcher;
+			VariableBase var = constructStaticMember(className, methodInvocation.getDispatcher());
+			MethodInvocation newMethodInvocation =  new MethodInvocation(var.getStart(), methodInvocation.getMethod().getEnd() ,dispatcher, methodInvocation.getMethod());
+			result = newMethodInvocation;
+		} else {
+			result = new StaticFieldAccess(className.getStart(), dispatcher.getEnd(), className, (Variable)dispatcher);
+		}
+		return result;
+	}
+

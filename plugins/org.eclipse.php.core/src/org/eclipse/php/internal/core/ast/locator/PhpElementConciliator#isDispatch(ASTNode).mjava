@@ -1,0 +1,42 @@
+	/**
+	 * Identifies a dispatch usage 
+	 * @param locateNode
+	 */
+	private static boolean isDispatch(ASTNode node) {
+		assert node != null;
+
+		// check if it is an identifier
+		if (node.getType() != ASTNode.IDENTIFIER) {
+			return false;
+		}
+
+		ASTNode parent = node.getParent();
+
+		// check if it is a method declaration
+		if (parent.getType() == ASTNode.FUNCTION_DECLARATION) {
+			// check if it is a method declaration
+			if (parent.getParent() != null) {
+				parent = parent.getParent();
+				if (parent.getType() == ASTNode.METHOD_DECLARATION) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		if (parent.getType() == ASTNode.VARIABLE) {
+			if (parent.getParent().getType() == ASTNode.FIELD_DECLARATION) {
+				return true;
+			}
+		}
+
+		// check if it is a dispatch
+		while (parent != null) {
+			if (parent instanceof Dispatch || parent instanceof StaticDispatch) {
+				return true;
+			}
+			parent = parent.getParent();
+		}
+		return false;
+	}
+

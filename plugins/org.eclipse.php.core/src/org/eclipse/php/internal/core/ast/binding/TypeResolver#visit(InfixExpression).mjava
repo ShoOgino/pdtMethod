@@ -1,0 +1,82 @@
+	public void visit(InfixExpression infixExpression) {
+		Attribute leftAttr = null;
+		Attribute rightAttr = null;
+		switch (infixExpression.getOperator()) {
+			case InfixExpression.OP_IS_IDENTICAL: // "===";
+			case InfixExpression.OP_IS_NOT_IDENTICAL: // "!==";
+			case InfixExpression.OP_IS_EQUAL: // "==";
+			case InfixExpression.OP_IS_NOT_EQUAL: // "!=";
+			case InfixExpression.OP_RGREATER: // "<";
+			case InfixExpression.OP_IS_SMALLER_OR_EQUAL: // "<=";
+			case InfixExpression.OP_LGREATER: // ">";
+			case InfixExpression.OP_IS_GREATER_OR_EQUAL: // ">=";
+			case InfixExpression.OP_BOOL_OR: // "||";
+			case InfixExpression.OP_BOOL_AND: // "&&";
+				evaluatedAttribute = Attribute.BOOL_ATTRIBUTE;
+				break;
+			case InfixExpression.OP_STRING_OR: // "or";
+			case InfixExpression.OP_STRING_AND: // "and";
+			case InfixExpression.OP_STRING_XOR: // "xor"
+				// the operation gets the left hand side attribute
+				infixExpression.getLeft().accept(this);
+				break;
+			case InfixExpression.OP_OR: // "|"
+			case InfixExpression.OP_AND: // "&";
+			case InfixExpression.OP_XOR: // "^";
+				// the operation gets int attribute, but if string OP string gets string
+				infixExpression.getLeft().accept(this);
+				leftAttr = evaluatedAttribute;
+				if (leftAttr != Attribute.STRING_ATTRIBUTE) {
+					evaluatedAttribute = Attribute.INT_ATTRIBUTE;
+				} else {
+					infixExpression.getRight().accept(this);
+					rightAttr = evaluatedAttribute;
+					if (rightAttr == Attribute.STRING_ATTRIBUTE) {
+						evaluatedAttribute = Attribute.STRING_ATTRIBUTE;
+					} else {
+						evaluatedAttribute = Attribute.INT_ATTRIBUTE;
+					}
+				}
+				break;
+			case InfixExpression.OP_CONCAT: // ".";
+				evaluatedAttribute = Attribute.STRING_ATTRIBUTE;
+				break;
+			case InfixExpression.OP_PLUS: // "+";
+			case InfixExpression.OP_MINUS: // "-";
+				infixExpression.getLeft().accept(this);
+				leftAttr = evaluatedAttribute;
+				infixExpression.getRight().accept(this);
+				rightAttr = evaluatedAttribute;
+				if (leftAttr.getType() == AttributeType.ARRAY_ATTRIBUTE || leftAttr.getType() == AttributeType.CLASS_ATTRIBUTE || rightAttr.getType() == AttributeType.STRING_ATTRIBUTE || rightAttr.getType() == AttributeType.CLASS_ATTRIBUTE) {
+					// semantic error is detected
+				}
+				if (leftAttr == Attribute.REAL_ATTRIBUTE || rightAttr == Attribute.REAL_ATTRIBUTE) {
+					evaluatedAttribute = Attribute.REAL_ATTRIBUTE;
+				} else {
+					evaluatedAttribute = Attribute.INT_ATTRIBUTE;
+				}
+				break;
+
+			case InfixExpression.OP_MUL: // "*";
+			case InfixExpression.OP_DIV: // "/";
+				infixExpression.getLeft().accept(this);
+				leftAttr = evaluatedAttribute;
+				infixExpression.getRight().accept(this);
+				rightAttr = evaluatedAttribute;
+				if (leftAttr.getType() == AttributeType.ARRAY_ATTRIBUTE || leftAttr.getType() == AttributeType.CLASS_ATTRIBUTE || rightAttr.getType() == AttributeType.STRING_ATTRIBUTE || rightAttr.getType() == AttributeType.CLASS_ATTRIBUTE) {
+					// semantic error is detected
+				}
+				final CompositeAttribute attr = new CompositeAttribute();
+				attr.addAttribute(Attribute.INT_ATTRIBUTE);
+				attr.addAttribute(Attribute.REAL_ATTRIBUTE);
+				evaluatedAttribute = attr;
+				break;
+			case InfixExpression.OP_MOD: // "%";
+			case InfixExpression.OP_SL:
+			case InfixExpression.OP_SR:
+				evaluatedAttribute = Attribute.INT_ATTRIBUTE;
+			default:
+				throw new IllegalArgumentException();
+		}
+	}
+

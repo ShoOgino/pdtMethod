@@ -1,0 +1,69 @@
+	/**
+	 * @param locateNode
+	 * @return true if the given path indicates a global variable
+	 */
+	private static boolean isGlobalVariable(ASTNode locateNode) {
+		assert locateNode != null;
+
+		// check if it is an identifier
+		if (locateNode.getType() != ASTNode.IDENTIFIER) {
+			return false;
+		}
+		Identifier targetIdentifier = (Identifier) locateNode;
+
+		ASTNode parent = locateNode.getParent();
+		if (parent.getType() != ASTNode.VARIABLE) {
+			return false;
+		}
+
+		Variable variable = (Variable) parent;
+		// if it is not a dollared variable - it is not a global one
+		if (!variable.isDollared() || variable.getParent().getType() == ASTNode.FIELD_DECLARATION) {
+			return false;
+		}
+
+		// ignore static memeber call
+		if (parent.getParent().getType() == ASTNode.STATIC_FIELD_ACCESS) {
+			final StaticFieldAccess staticFieldAccess = (StaticFieldAccess) parent.getParent();
+			if (staticFieldAccess.getProperty() == variable) {
+				return false;
+			}
+		}
+
+		// check if declared global in function
+		while (parent != null) {
+
+			// if the variable was used inside a function
+			if (parent.getType() == ASTNode.FUNCTION_DECLARATION) {
+				boolean isGlobal = false;
+
+				final FunctionDeclaration functionDeclaration = (FunctionDeclaration) parent;
+				final Block body = functionDeclaration.getBody();
+				int i = 0;
+
+				final Statement[] statements = body.getStatements();
+				while (i < statements.length && statements[i].getStart() < targetIdentifier.getStart()) {
+					if (statements[i].getType() == ASTNode.GLOBAL_STATEMENT) {
+						final GlobalStatement globalStatement = (GlobalStatement) statements[i];
+						final Variable[] variables = globalStatement.getVariables();
+						for (int j = 0; j < variables.length; j++) {
+							final Variable current = variables[j];
+
+							assert current.getVariableName().getType() == ASTNode.IDENTIFIER;
+							Identifier id = (Identifier) variable.getVariableName();
+
+							// variables are case sensative
+							if (id.getName().equals(targetIdentifier.getName())) {
+								isGlobal = true;
+							}
+						}
+					}
+					i++;
+				}
+				return isGlobal;
+			}
+			parent = parent.getParent();
+		}
+		return true;
+	}
+

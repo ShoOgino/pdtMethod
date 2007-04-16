@@ -1,0 +1,32 @@
+	private static boolean isLocalVariable(ASTNode locateNode) {
+		assert locateNode != null;
+		// check if it is an identifier
+		if (locateNode.getType() != ASTNode.IDENTIFIER) {
+			return false;
+		}
+		final Identifier targetIdentifier = (Identifier) locateNode;
+
+		if (targetIdentifier.getParent().getType() != ASTNode.VARIABLE) {
+			return false;
+		}
+
+		Variable parent = (Variable) targetIdentifier.getParent();
+		if (!parent.isDollared() || targetIdentifier.equals(PhpElementConciliator.THIS)) {
+			return false;
+		}
+
+		if (parent.getType() == ASTNode.FIELD_DECLARATION) {
+			return false;
+		}
+
+		ASTNode node = parent;
+		while (node != null) {
+			final int type = node.getType();
+			if (type == ASTNode.FUNCTION_DECLARATION) {
+				return true;
+			}
+			node = node.getParent();
+		}
+		return false;
+	}
+
