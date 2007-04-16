@@ -1,0 +1,35 @@
+		/*
+		 * (non-Javadoc)
+		 * @see org.eclipse.php.internal.core.phpModel.ExternalPHPFilesListener#externalFileRemoved(java.lang.String, java.lang.String)
+		 */
+		public void externalFileRemoved(String iFilePath, String localPath) {
+			// Check if there is a launch for this file.
+			try {
+				ILaunchConfiguration[] configs = DebugPlugin.getDefault().getLaunchManager().getLaunchConfigurations(configType);
+				int numConfigs = configs == null ? 0 : configs.length;
+				for (int i = 0; i < numConfigs; i++) {
+					String fileName = configs[i].getAttribute(PHPCoreConstants.ATTR_FILE, (String) null);
+					if (localPath.equals(fileName)) {
+						deleteLaunchConfiguration(configs[i]);
+						break;
+					}
+				}
+			} catch (CoreException e) {
+				Logger.logException(e);
+			}
+
+			// Check for any marker that we have of the file and remove it when this file is closed.
+			IWorkspace workspace = ResourcesPlugin.getWorkspace();
+			try {
+				IMarker[] allMarkers = workspace.getRoot().findMarkers(null, true, IResource.DEPTH_INFINITE);
+				for (int i = 0; i < allMarkers.length; i++) {
+					Object nonWorkspaceBreakpoint = allMarkers[i].getAttribute(IPHPConstants.Non_Workspace_Breakpoint);
+					if (nonWorkspaceBreakpoint != null && nonWorkspaceBreakpoint == Boolean.TRUE) {
+						allMarkers[i].delete();
+					}
+				}
+			} catch (CoreException e) {
+				Logger.logException(e);
+			}
+		}
+

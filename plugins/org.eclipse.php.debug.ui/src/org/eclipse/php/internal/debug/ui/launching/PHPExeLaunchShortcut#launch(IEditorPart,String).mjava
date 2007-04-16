@@ -4,9 +4,15 @@
 	public void launch(IEditorPart editor, String mode) {
 		IEditorInput input = editor.getEditorInput();
 		IFile file = (IFile) input.getAdapter(IFile.class);
-		if (file != null) {
-			searchAndLaunch(new Object[] { file }, mode, getPHPExeLaunchConfigType());
+		String device = null;
+		if (file == null && input instanceof JavaFileEditorInput) {
+			// It's probably a launch for a file that is not in the workspace.
+			IPath path = ((JavaFileEditorInput) input).getPath();
+			file = ((IWorkspaceRoot) ResourcesPlugin.getWorkspace().getRoot()).getFile(path);
+			device = path.getDevice();
 		}
-
+		if (file != null) {
+			searchAndLaunch(new Object[] { file }, mode, getPHPExeLaunchConfigType(), device);
+		}
 	}
 

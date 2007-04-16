@@ -17,16 +17,25 @@
 		if (receiver instanceof List) {
 			List list = (List) receiver;
 			if (list.size() > 0) {
+				String launchType = args.length > 0 ? args[0].toString() : "";
 				// Test only the first element
 				IFile file = null;
-				if (list.get(0) instanceof FileEditorInput) {
+				Object obj = list.get(0);
+				if (obj instanceof FileEditorInput) {
 					FileEditorInput editorInput = (FileEditorInput) list.get(0);
 					file = editorInput.getFile();
+				} else if (SCRIPT_ID.equalsIgnoreCase(launchType) && obj instanceof JavaFileEditorInput) {
+					// In this case, the editor input is probably an external file. 
+					// Allow only script run/debug on this kind of file (internal executable launch).
+					JavaFileEditorInput editorInput = (JavaFileEditorInput) obj;
+					file = ((IWorkspaceRoot) ResourcesPlugin.getWorkspace().getRoot()).getFile(editorInput.getPath());
 				} else if (list.get(0) instanceof IFile) {
 					file = (IFile) list.get(0);
 				}
 				try {
 					return file.getContentDescription().getContentType().getId().equals(PHP_SOURCE_ID);
+				} catch (ResourceException re) {
+					return PHPModelUtil.isPhpFile(file);
 				} catch (Exception e) {
 				}
 			}
