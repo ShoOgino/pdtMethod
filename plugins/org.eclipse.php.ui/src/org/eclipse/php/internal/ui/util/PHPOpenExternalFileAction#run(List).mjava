@@ -1,0 +1,30 @@
+	/*
+	 * @see org.eclipse.jface.action.Action#run()
+	 */
+	public void run(List filePaths) {
+		if (filePaths != null) {
+			int numberOfFilesNotFound= 0;
+			
+			for (Iterator iter = filePaths.iterator(); iter.hasNext();) {				
+				String currentFilePath = (String) iter.next();
+				IPath path = new Path(currentFilePath);						
+				fFilterPath= path.removeLastSegments(1).toOSString();				
+				IFileStore fileStore= EFS.getLocalFileSystem().getStore(new Path(fFilterPath));
+				fileStore= fileStore.getChild(path.lastSegment());
+				if (!fileStore.fetchInfo().isDirectory() && fileStore.fetchInfo().exists()) {
+					IEditorInput input= createEditorInput(fileStore);
+					String editorId= getEditorId(fileStore);
+					IWorkbenchPage page= fWindow.getActivePage();
+					try {
+						page.openEditor(input, editorId);
+					} catch (PartInitException e) {
+					}
+				} else {
+					if (++numberOfFilesNotFound > 1)
+						notFound.append('\n');
+					notFound.append(currentFilePath);
+				}
+			}
+		}
+	}
+
