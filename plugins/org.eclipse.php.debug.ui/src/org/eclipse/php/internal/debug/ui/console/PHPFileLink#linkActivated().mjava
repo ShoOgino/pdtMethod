@@ -5,10 +5,20 @@
 		IEditorPart editorPart = null;
 		DOMModelForPHP domModel = null;
 		try {
+			if (fFile instanceof PHPCodeData) {
+				IPath path = Path.fromOSString(((PHPCodeData) fFile).getName());
+				fFile = new ExternalFileDecorator(ResourcesPlugin.getWorkspace().getRoot().getFile(path), path.getDevice()) {
+					/*
+					 * Override the default IFile exists method to allow the retrival of the DOM model.
+					 */
+					public boolean exists() {
+						return getFullPath().toFile().exists();
+					}
+				};
+			}
 			editorPart = EditorUtility.openInEditor(fFile, false);
 			if (editorPart != null && fFileLineNumber > 0) {
 				if (fFileOffset < 0) {
-					PHPStructuredEditor e = (PHPStructuredEditor) editorPart;
 					domModel = ((DOMModelForPHP) StructuredModelManager.getModelManager().getModelForRead((IFile) fFile));
 					IRegion region = domModel.getDocument().getStructuredDocument().getLineInformation(fFileLineNumber - 1);
 					fFileOffset = region.getOffset();
@@ -28,7 +38,7 @@
 		} finally {
 			if (editorPart != null) {
 				EditorUtility.revealInEditor(editorPart, fFileOffset, fFileLength);
-				if(domModel != null) {
+				if (domModel != null) {
 					domModel.releaseFromRead();
 				}
 			}
