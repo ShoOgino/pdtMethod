@@ -1,0 +1,54 @@
+		public void layout(Composite composite, boolean force) {
+			
+			// determine some derived sizes
+			int headerHeight= fLeftLabel.computeSize(SWT.DEFAULT, SWT.DEFAULT, true).y;
+			Rectangle r= composite.getClientArea();
+			
+			int centerWidth= getCenterWidth();	
+			int width1= (int)((r.width-centerWidth)*fHSplit);
+			int width2= r.width-width1-centerWidth;
+			
+			int height1= 0;
+			int height2= 0;
+			if (fAncestorEnabled && fShowAncestor) {
+				height1= (int)((r.height-(2*headerHeight))*fVSplit);
+				height2= r.height-(2*headerHeight)-height1;
+			} else {
+				height1= 0;
+				height2= r.height-headerHeight;
+			}		
+							
+			int y= 0;
+			
+			if (fAncestorEnabled && fShowAncestor) {
+				fAncestorLabel.setBounds(0, y, r.width, headerHeight);
+				fAncestorLabel.setVisible(true);
+				y+= headerHeight;
+				handleResizeAncestor(0, y, r.width, height1);
+				y+= height1;
+			} else {
+				fAncestorLabel.setVisible(false);
+				handleResizeAncestor(0, 0, 0, 0);
+			}
+			
+			fLeftLabel.getSize();	// without this resizing would not always work
+			
+			if (centerWidth > 3) {
+				fLeftLabel.setBounds(0, y, width1+1, headerHeight);
+				fDirectionLabel.setVisible(true);
+				fDirectionLabel.setBounds(width1+1, y, centerWidth-1, headerHeight);
+				fRightLabel.setBounds(width1+centerWidth, y, width2, headerHeight);
+			} else {
+				fLeftLabel.setBounds(0, y, width1, headerHeight);
+				fDirectionLabel.setVisible(false);
+				fRightLabel.setBounds(width1, y, r.width-width1, headerHeight);
+			}
+			
+			y+= headerHeight;
+			
+			if (fCenter != null && !fCenter.isDisposed())
+				fCenter.setBounds(width1, y, centerWidth, height2);
+					
+			handleResizeLeftRight(0, y, width1, centerWidth, width2, height2);
+		}
+

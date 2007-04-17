@@ -1,0 +1,139 @@
+	/*
+	 * Returns true if a new Document could be installed.
+	 */
+	private boolean setDocument(MergeSourceViewer tp, char type, Object o, String encoding) {
+
+		if (tp == null)
+			return false;
+
+		IDocument newDoc = null;
+		Position range = null;
+
+		if (o instanceof IDocumentRange) {
+			newDoc = ((IDocumentRange) o).getDocument();
+			range = ((IDocumentRange) o).getRange();
+
+		} else if (o instanceof IDocument) {
+			newDoc = (IDocument) o;
+
+		} else if (o instanceof IStreamContentAccessor) {
+
+			newDoc = DocumentManager.get(o);
+			if (newDoc == null) {
+				IStreamContentAccessor sca = (IStreamContentAccessor) o;
+				String s = null;
+				if (encoding == null)
+					encoding = ResourcesPlugin.getEncoding();
+
+				try {
+					s = Utilities.readString(sca.getContents(), encoding);
+				} catch (CoreException ex) {
+					setError(type, ex.getMessage());
+				}
+
+				// addition to the document
+				final PhpSourceParser phpSourceParser = new PhpSourceParser();
+				newDoc = StructuredDocumentFactory.getNewStructuredDocumentInstance(phpSourceParser);
+				newDoc.set(s);
+				// newDoc = new  Document(s != null ? s : ""); //$NON-NLS-1$
+				// end of addition
+				
+				DocumentManager.put(o, newDoc);
+				IDocumentPartitioner partitioner = getDocumentPartitioner();
+				if (partitioner != null) {
+					newDoc.setDocumentPartitioner(partitioner);
+					partitioner.connect(newDoc);
+				}
+			}
+		} else if (o == null) { // deletion on one side
+
+			ITypedElement parent = getParent(type); // we try to find an insertion position within the deletion's parent
+
+			if (parent instanceof IDocumentRange) {
+				newDoc = ((IDocumentRange) parent).getDocument();
+				newDoc.addPositionCategory(IDocumentRange.RANGE_CATEGORY);
+				Object input = getInput();
+				range = getNewRange(type, input);
+				if (range == null) {
+					int pos = 0;
+					if (input instanceof ICompareInput)
+						pos = findInsertionPosition(type, (ICompareInput) input);
+					range = new Position(pos, 0);
+					try {
+						newDoc.addPosition(IDocumentRange.RANGE_CATEGORY, range);
+					} catch (BadPositionCategoryException ex) {
+						// silently ignored
+						if (DEBUG)
+							System.out.println("BadPositionCategoryException: " + ex); //$NON-NLS-1$
+					} catch (BadLocationException ex) {
+						// silently ignored
+						if (DEBUG)
+							System.out.println("BadLocationException: " + ex); //$NON-NLS-1$
+					}
+					addNewRange(type, input, range);
+				}
+			} else if (parent instanceof IDocument) {
+				newDoc = ((IDocumentRange) o).getDocument();
+			}
+		}
+
+		boolean enabled = true;
+		if (newDoc == null) {
+			//System.out.println("setDocument: create new Document");
+			newDoc = new Document(""); //$NON-NLS-1$
+			enabled = false;
+		}
+
+		IDocument oldDoc = tp.getDocument();
+
+		if (newDoc != oldDoc) {
+
+			// got a new document
+
+			unsetDocument(tp);
+
+			if (newDoc != null) {
+				newDoc.addPositionCategory(IDocumentRange.RANGE_CATEGORY);
+				if (fPositionUpdater == null)
+					fPositionUpdater = new ChildPositionUpdater(IDocumentRange.RANGE_CATEGORY);
+				else
+					newDoc.removePositionUpdater(fPositionUpdater);
+				newDoc.addPositionUpdater(fPositionUpdater);
+			}
+
+			// install new document
+			if (newDoc != null) {
+
+				tp.setRegion(range);
+				if (fSubDoc) {
+					if (range != null) {
+						IRegion r = normalizeDocumentRegion(newDoc, toRegion(range));
+						tp.setDocument(newDoc, r.getOffset(), r.getLength());
+					} else
+						tp.setDocument(newDoc);
+				} else
+					tp.setDocument(newDoc);
+
+				tp.rememberDocument(newDoc);
+				newDoc.addDocumentListener(fDocumentListener);
+				//LeakTester.add(newDoc);
+			}
+
+		} else { // same document but different range
+
+			tp.setRegion(range);
+			if (fSubDoc) {
+				if (range != null) {
+					IRegion r = normalizeDocumentRegion(newDoc, toRegion(range));
+					tp.setVisibleRegion(r.getOffset(), r.getLength());
+				} else
+					tp.resetVisibleRegion();
+			} else
+				tp.resetVisibleRegion();
+		}
+
+		tp.setEnabled(enabled);
+
+		return enabled;
+	}
+

@@ -1,0 +1,53 @@
+	/**
+	 * This method is called from the <code>Viewer</code> method <code>inputChanged</code>
+	 * to save any unsaved changes of the old input.
+	 * <p>
+	 * The <code>ContentMergeViewer</code> implementation of this
+	 * method calls <code>saveContent(...)</code>. If confirmation has been turned on
+	 * with <code>setConfirmSave(true)</code>, a confirmation alert is posted before saving.
+	 * </p>
+	 * Clients can override this method and are free to decide whether
+	 * they want to call the inherited method.
+	 * @param newInput the new input of this viewer, or <code>null</code> if there is no new input
+	 * @param oldInput the old input element, or <code>null</code> if there was previously no input
+	 * @return <code>true</code> if saving was successful, or if the user didn't want to save (by pressing 'NO' in the confirmation dialog).
+	 * @since 2.0
+	 */
+	protected boolean doSave(Object newInput, Object oldInput) {
+		
+		// before setting the new input we have to save the old
+		if (fLeftSaveAction.isEnabled() || fRightSaveAction.isEnabled()) {
+			
+			// post alert
+			if (fConfirmSave) {
+				Shell shell= fComposite.getShell();
+				
+				MessageDialog dialog= new MessageDialog(shell,
+					Utilities.getString(getResourceBundle(), "saveDialog.title"), //$NON-NLS-1$
+					null, 	// accept the default window icon
+					Utilities.getString(getResourceBundle(), "saveDialog.message"), //$NON-NLS-1$
+					MessageDialog.QUESTION,
+					new String[] {
+						IDialogConstants.YES_LABEL,
+						IDialogConstants.NO_LABEL,
+					},
+					0);		// default button index
+									
+				switch (dialog.open()) {	// open returns index of pressed button
+				case 0:
+					saveContent(oldInput);
+					break;
+				case 1:
+					setLeftDirty(false);
+					setRightDirty(false);
+					break;
+				case 2:
+					throw new ViewerSwitchingCancelled();
+				}
+			} else
+				saveContent(oldInput);
+			return true;
+		}
+		return false;
+	}
+

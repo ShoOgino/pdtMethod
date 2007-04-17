@@ -1,0 +1,52 @@
+	private void scrollVertical(int avpos, int lvpos, int rvpos, MergeSourceViewer allBut) {
+
+		int s = 0;
+
+		if (fSynchronizedScrolling) {
+			s = getVirtualHeight() - rvpos;
+			int height = fRight.getViewportLines() / 4;
+			if (s < 0)
+				s = 0;
+			if (s > height)
+				s = height;
+		}
+
+		fInScrolling = true;
+
+		if (isThreeWay() && allBut != fAncestor) {
+			if (fSynchronizedScrolling || allBut == null) {
+				int y = virtualToRealPosition(fAncestor, avpos + s) - s;
+				fAncestor.vscroll(y);
+			}
+		}
+
+		if (allBut != fLeft) {
+			if (fSynchronizedScrolling || allBut == null) {
+				int y = virtualToRealPosition(fLeft, lvpos + s) - s;
+				fLeft.vscroll(y);
+			}
+		}
+
+		if (allBut != fRight) {
+			if (fSynchronizedScrolling || allBut == null) {
+				int y = virtualToRealPosition(fRight, rvpos + s) - s;
+				fRight.vscroll(y);
+			}
+		}
+
+		fInScrolling = false;
+
+		if (isThreeWay() && fAncestorCanvas != null)
+			fAncestorCanvas.repaint();
+
+		if (fLeftCanvas != null)
+			fLeftCanvas.repaint();
+
+		Control center = getCenter();
+		if (center instanceof BufferedCanvas)
+			((BufferedCanvas) center).repaint();
+
+		if (fRightCanvas != null)
+			fRightCanvas.repaint();
+	}
+

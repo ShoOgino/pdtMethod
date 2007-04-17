@@ -1,0 +1,46 @@
+	/*
+	 * Set the currently active Diff and update the toolbars controls and lines.
+	 * If <code>revealAndSelect</code> is <code>true</code> the Diff is revealed and
+	 * selected in both TextParts.
+	 */
+	private void setCurrentDiff(Diff d, boolean revealAndSelect) {
+
+		//	if (d == fCurrentDiff)
+		//		return;
+
+		if (fCenterButton != null && !fCenterButton.isDisposed())
+			fCenterButton.setVisible(false);
+
+		fEndOfDocReached = false;
+
+		Diff oldDiff = fCurrentDiff;
+
+		if (d != null && revealAndSelect) {
+
+			// before we set fCurrentDiff we change the selection
+			// so that the paint code uses the old background colors
+			// otherwise selection isn't drawn correctly
+			if (isThreeWay() && !fIgnoreAncestor)
+				fAncestor.setSelection(d.fAncestorPos);
+			fLeft.setSelection(d.fLeftPos);
+			fRight.setSelection(d.fRightPos);
+
+			// now switch diffs
+			fCurrentDiff = d;
+			revealDiff(d, d.fIsToken);
+		} else {
+			fCurrentDiff = d;
+		}
+
+		Diff d1 = oldDiff != null ? oldDiff.fParent : null;
+		Diff d2 = fCurrentDiff != null ? fCurrentDiff.fParent : null;
+		if (d1 != d2) {
+			updateDiffBackground(d1);
+			updateDiffBackground(d2);
+		}
+
+		updateControls();
+		invalidateLines();
+		refreshBirdsEyeView();
+	}
+

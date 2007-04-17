@@ -1,0 +1,32 @@
+	/**
+	 * Internal hook method called when the input to this viewer is
+	 * initially set or subsequently changed.
+	 * <p>
+	 * The <code>ContentMergeViewer</code> implementation of this <code>Viewer</code>
+	 * method tries to save the old input by calling <code>doSave(...)</code> and
+	 * then calls <code>internalRefresh(...)</code>.
+	 *
+	 * @param input the new input of this viewer, or <code>null</code> if there is no new input
+	 * @param oldInput the old input element, or <code>null</code> if there was previously no input
+	 */
+	protected final void inputChanged(Object input, Object oldInput) {
+		
+		if (input != oldInput)
+			if (oldInput instanceof ICompareInput)
+				((ICompareInput)oldInput).removeCompareInputChangeListener(fCompareInputChangeListener);
+		
+		boolean success= doSave(input, oldInput);
+		
+		if (input != oldInput)
+			if (input instanceof ICompareInput)
+				((ICompareInput)input).addCompareInputChangeListener(fCompareInputChangeListener);
+		
+		if (success) {
+			setLeftDirty(false);
+			setRightDirty(false);
+		}
+
+		if (input != oldInput)
+			internalRefresh(input);
+	}
+

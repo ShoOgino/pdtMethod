@@ -1,0 +1,57 @@
+	/*
+	 * Creates and initializes a text part.
+	 */
+	private MergeSourceViewer createPart(Composite parent) {
+
+		final MergeSourceViewer part = new MergeSourceViewer(parent, getDirection(), getResourceBundle());
+		final StyledText te = part.getTextWidget();
+
+		if (!fConfirmSave)
+			part.hideSaveAction();
+
+		te.addPaintListener(new PaintListener() {
+			public void paintControl(PaintEvent e) {
+				paint(e, part);
+			}
+		});
+		te.addKeyListener(new KeyAdapter() {
+			public void keyPressed(KeyEvent e) {
+				handleSelectionChanged(part);
+			}
+		});
+		te.addMouseListener(new MouseAdapter() {
+			public void mouseDown(MouseEvent e) {
+				//syncViewport(part);
+				handleSelectionChanged(part);
+			}
+		});
+
+		te.addFocusListener(new FocusAdapter() {
+			public void focusGained(FocusEvent fe) {
+				fFocusPart = part;
+				connectGlobalActions(fFocusPart);
+			}
+
+			public void focusLost(FocusEvent fe) {
+				connectGlobalActions(null);
+			}
+		});
+
+		part.addViewportListener(new IViewportListener() {
+			public void viewportChanged(int verticalPosition) {
+				syncViewport(part);
+			}
+		});
+
+		Font font = JFaceResources.getFont(fSymbolicFontName);
+		if (font != null)
+			te.setFont(font);
+
+		if (fBackground != null) // not default
+			te.setBackground(getColor(parent.getDisplay(), fBackground));
+
+		configureTextViewer(part);
+
+		return part;
+	}
+

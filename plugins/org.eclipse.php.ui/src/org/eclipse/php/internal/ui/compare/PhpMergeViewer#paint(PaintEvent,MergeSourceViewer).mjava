@@ -1,0 +1,46 @@
+	private void paint(PaintEvent event, MergeSourceViewer tp) {
+
+		if (!fHighlightRanges)
+			return;
+		if (fChangeDiffs == null)
+			return;
+
+		Control canvas = (Control) event.widget;
+		GC g = event.gc;
+
+		Display display = canvas.getDisplay();
+
+		int lineHeight = tp.getTextWidget().getLineHeight();
+		int w = canvas.getSize().x;
+		int shift = tp.getVerticalScrollOffset() + (2 - LW);
+		int maxh = event.y + event.height; // visibleHeight
+
+		//if (fIsMotif)
+		shift += fTopInset;
+
+		Point range = new Point(0, 0);
+
+		Iterator e = fChangeDiffs.iterator();
+		while (e.hasNext()) {
+			Diff diff = (Diff) e.next();
+			if (diff.isDeleted())
+				continue;
+
+			if (fShowCurrentOnly && !isCurrentDiff(diff))
+				continue;
+
+			tp.getLineRange(diff.getPosition(tp), range);
+			int y = (range.x * lineHeight) + shift;
+			int h = range.y * lineHeight;
+
+			if (y + h < event.y)
+				continue;
+			if (y > maxh)
+				break;
+
+			g.setBackground(getColor(display, getStrokeColor(diff)));
+			g.fillRectangle(0, y - 1, w, LW);
+			g.fillRectangle(0, y + h - 1, w, LW);
+		}
+	}
+

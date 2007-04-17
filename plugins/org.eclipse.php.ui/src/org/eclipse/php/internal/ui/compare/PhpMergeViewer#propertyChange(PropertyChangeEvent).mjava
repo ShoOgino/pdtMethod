@@ -1,0 +1,67 @@
+	/* package */void propertyChange(PropertyChangeEvent event) {
+
+		String key = event.getProperty();
+
+		if (key.equals(CompareConfiguration.IGNORE_WHITESPACE) || key.equals(ComparePreferencePage.SHOW_PSEUDO_CONFLICTS)) {
+
+			fShowPseudoConflicts = fPreferenceStore.getBoolean(ComparePreferencePage.SHOW_PSEUDO_CONFLICTS);
+
+			// clear stuff
+			fCurrentDiff = null;
+			fChangeDiffs = null;
+			fAllDiffs = null;
+
+			doDiff();
+
+			updateControls();
+			invalidateLines();
+			updateVScrollBar();
+			refreshBirdsEyeView();
+
+			selectFirstDiff();
+
+			//	} else if (key.equals(ComparePreferencePage.USE_SPLINES)) {
+			//		fUseSplines= fPreferenceStore.getBoolean(ComparePreferencePage.USE_SPLINES);
+			//		invalidateLines();
+
+		} else if (key.equals(ComparePreferencePage.USE_SINGLE_LINE)) {
+			fUseSingleLine = fPreferenceStore.getBoolean(ComparePreferencePage.USE_SINGLE_LINE);
+			//		fUseResolveUI= fUseSingleLine;
+			fBasicCenterCurve = null;
+			updateResolveStatus();
+			invalidateLines();
+
+			//	} else if (key.equals(ComparePreferencePage.USE_RESOLVE_UI)) {
+			//		fUseResolveUI= fPreferenceStore.getBoolean(ComparePreferencePage.USE_RESOLVE_UI);
+			//		updateResolveStatus();
+			//		invalidateLines();
+
+		} else if (key.equals(fSymbolicFontName)) {
+			updateFont();
+			invalidateLines();
+
+		} else if (key.equals(INCOMING_COLOR) || key.equals(OUTGOING_COLOR) || key.equals(CONFLICTING_COLOR) || key.equals(RESOLVED_COLOR)) {
+			updateColors(null);
+			invalidateLines();
+
+		} else if (key.equals(ComparePreferencePage.SYNCHRONIZE_SCROLLING)) {
+
+			boolean b = fPreferenceStore.getBoolean(ComparePreferencePage.SYNCHRONIZE_SCROLLING);
+			if (b != fSynchronizedScrolling)
+				toggleSynchMode();
+
+		} else if (key.equals(ComparePreferencePage.SHOW_MORE_INFO)) {
+
+			boolean b = fPreferenceStore.getBoolean(ComparePreferencePage.SHOW_MORE_INFO);
+			if (b != fShowMoreInfo) {
+				fShowMoreInfo = b;
+				if (fShowMoreInfo)
+					updateStatus(fCurrentDiff);
+				else
+					clearStatus();
+			}
+
+		} else
+			super.propertyChange(event);
+	}
+

@@ -1,0 +1,39 @@
+	void copyAllUnresolved(boolean leftToRight) {
+		if (fChangeDiffs != null && isThreeWay() && !fIgnoreAncestor) {
+			IRewriteTarget target = leftToRight ? fRight.getRewriteTarget() : fLeft.getRewriteTarget();
+			boolean compoundChangeStarted = false;
+			Iterator e = fChangeDiffs.iterator();
+			try {
+				while (e.hasNext()) {
+					Diff diff = (Diff) e.next();
+					switch (diff.fDirection) {
+						case RangeDifference.LEFT:
+							if (leftToRight) {
+								if (!compoundChangeStarted) {
+									target.beginCompoundChange();
+									compoundChangeStarted = true;
+								}
+								copy(diff, leftToRight);
+							}
+							break;
+						case RangeDifference.RIGHT:
+							if (!leftToRight) {
+								if (!compoundChangeStarted) {
+									target.beginCompoundChange();
+									compoundChangeStarted = true;
+								}
+								copy(diff, leftToRight);
+							}
+							break;
+						default:
+							continue;
+					}
+				}
+			} finally {
+				if (compoundChangeStarted) {
+					target.endCompoundChange();
+				}
+			}
+		}
+	}
+

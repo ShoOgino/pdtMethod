@@ -1,0 +1,54 @@
+	/*
+	 * Returns true if end (or beginning) of document reached.
+	 */
+	private boolean navigate(boolean down, boolean wrap, boolean deep) {
+
+		Diff diff = null;
+
+		for (;;) {
+
+			if (fChangeDiffs != null) {
+				MergeSourceViewer part = fFocusPart;
+				if (part == null)
+					part = fRight;
+
+				if (part != null) {
+					Point s = part.getSelectedRange();
+					if (down)
+						diff = findNext(part, fChangeDiffs, s.x, s.x + s.y, deep);
+					else
+						diff = findPrev(part, fChangeDiffs, s.x, s.x + s.y, deep);
+				}
+			}
+
+			if (diff == null) { // at end or beginning
+				if (wrap) {
+					if (!fEndOfDocReached) {
+						fEndOfDocReached = true;
+						if (!endOfDocumentReached(down))
+							return true;
+					}
+					fEndOfDocReached = false;
+					if (fChangeDiffs != null && fChangeDiffs.size() > 0) {
+						if (down)
+							diff = (Diff) fChangeDiffs.get(0);
+						else
+							diff = (Diff) fChangeDiffs.get(fChangeDiffs.size() - 1);
+					}
+				} else {
+					fEndOfDocReached = false;
+					return true;
+				}
+			}
+
+			setCurrentDiff(diff, true);
+
+			if (diff != null && diff.fDirection == RangeDifference.ANCESTOR && !getAncestorEnabled())
+				continue;
+
+			break;
+		}
+
+		return false;
+	}
+

@@ -1,0 +1,34 @@
+	/**
+	 * Overridden to prevent save confirmation if new input is sub document of current input.
+	 * @param newInput the new input of this viewer, or <code>null</code> if there is no new input
+	 * @param oldInput the old input element, or <code>null</code> if there was previously no input
+	 * @return <code>true</code> if saving was successful, or if the user didn't want to save (by pressing 'NO' in the confirmation dialog).
+	 * @since 2.0
+	 */
+	protected boolean doSave(Object newInput, Object oldInput) {
+
+		if (oldInput != null && newInput != null) {
+			// check whether underlying documents have changed.
+			if (sameDoc('A', newInput, oldInput) && sameDoc('L', newInput, oldInput) && sameDoc('R', newInput, oldInput)) {
+				if (DEBUG)
+					System.out.println("----- Same docs !!!!"); //$NON-NLS-1$
+				return false;
+			}
+		}
+
+		if (DEBUG)
+			System.out.println("***** New docs !!!!"); //$NON-NLS-1$
+
+		IDocument aDoc = getDocument2('A', oldInput);
+		DocumentManager.remove(aDoc);
+		IDocument lDoc = getDocument2('L', oldInput);
+		DocumentManager.remove(lDoc);
+		IDocument rDoc = getDocument2('R', oldInput);
+		DocumentManager.remove(rDoc);
+
+		if (DEBUG)
+			DocumentManager.dump();
+
+		return super.doSave(newInput, oldInput);
+	}
+

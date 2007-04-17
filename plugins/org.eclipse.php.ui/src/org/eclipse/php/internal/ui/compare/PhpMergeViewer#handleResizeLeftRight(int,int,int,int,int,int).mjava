@@ -1,0 +1,75 @@
+	/*
+	 * Lays out everything.
+	 */
+	protected final void handleResizeLeftRight(int x, int y, int width1, int centerWidth, int width2, int height) {
+
+		if (fBirdsEyeCanvas != null)
+			width2 -= BIRDS_EYE_VIEW_WIDTH;
+
+		Rectangle trim = fLeft.getTextWidget().computeTrim(0, 0, 0, 0);
+		int scrollbarHeight = trim.height + trim.x;
+
+		Composite composite = (Composite) getControl();
+
+		int leftTextWidth = width1;
+		if (fLeftCanvas != null) {
+			fLeftCanvas.setBounds(x, y, fMarginWidth, height - scrollbarHeight);
+			x += fMarginWidth;
+			leftTextWidth -= fMarginWidth;
+		}
+
+		fLeft.getTextWidget().setBounds(x, y, leftTextWidth, height);
+		x += leftTextWidth;
+
+		if (fCenter == null || fCenter.isDisposed())
+			fCenter = createCenter(composite);
+		fCenter.setBounds(x, y, centerWidth, height - scrollbarHeight);
+		x += centerWidth;
+
+		if (!fSynchronizedScrolling) { // canvas is to the left of text
+			if (fRightCanvas != null) {
+				fRightCanvas.setBounds(x, y, fMarginWidth, height - scrollbarHeight);
+				fRightCanvas.redraw();
+				x += fMarginWidth;
+			}
+			// we draw the canvas to the left of the text widget
+		}
+
+		int scrollbarWidth = 0;
+		if (fSynchronizedScrolling && fScrollCanvas != null) {
+			trim = fLeft.getTextWidget().computeTrim(0, 0, 0, 0);
+			scrollbarWidth = trim.width + 2 * trim.x;
+		}
+		int rightTextWidth = width2 - scrollbarWidth;
+		if (fRightCanvas != null)
+			rightTextWidth -= fMarginWidth;
+		fRight.getTextWidget().setBounds(x, y, rightTextWidth, height);
+		x += rightTextWidth;
+
+		if (fSynchronizedScrolling) {
+			if (fRightCanvas != null) { // canvas is to the right of the text
+				fRightCanvas.setBounds(x, y, fMarginWidth, height - scrollbarHeight);
+				x += fMarginWidth;
+			}
+			if (fScrollCanvas != null)
+				fScrollCanvas.setBounds(x, y, scrollbarWidth, height - scrollbarHeight);
+		}
+
+		if (fBirdsEyeCanvas != null) {
+			int verticalScrollbarButtonHeight = scrollbarWidth;
+			int horizontalScrollbarButtonHeight = scrollbarHeight;
+			if (fIsCarbon) {
+				verticalScrollbarButtonHeight += 2;
+				horizontalScrollbarButtonHeight = 18;
+			}
+			if (fSummaryHeader != null)
+				fSummaryHeader.setBounds(x + scrollbarWidth, y, BIRDS_EYE_VIEW_WIDTH, verticalScrollbarButtonHeight);
+			y += verticalScrollbarButtonHeight;
+			fBirdsEyeCanvas.setBounds(x + scrollbarWidth, y, BIRDS_EYE_VIEW_WIDTH, height - (2 * verticalScrollbarButtonHeight + horizontalScrollbarButtonHeight));
+		}
+
+		// doesn't work since TextEditors don't have their correct size yet.
+		updateVScrollBar();
+		refreshBirdsEyeView();
+	}
+

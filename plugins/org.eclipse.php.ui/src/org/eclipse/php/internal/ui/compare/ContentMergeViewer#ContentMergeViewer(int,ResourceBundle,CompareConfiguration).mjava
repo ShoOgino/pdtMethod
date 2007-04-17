@@ -1,0 +1,40 @@
+	/**
+	 * Creates a new content merge viewer and initializes with a resource bundle and a
+	 * configuration.
+	 * 
+	 * @param style SWT style bits
+	 * @param bundle the resource bundle
+	 * @param cc the configuration object
+	 */
+	protected ContentMergeViewer(int style, ResourceBundle bundle, CompareConfiguration cc) {
+		
+		fStyles= style & ~(SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT);	// remove BIDI direction bits
+		fBundle= bundle;
+		
+		fAncestorEnabled= Utilities.getBoolean(cc, ANCESTOR_ENABLED, fAncestorEnabled);
+		fConfirmSave= Utilities.getBoolean(cc, CompareEditor.CONFIRM_SAVE_PROPERTY, fConfirmSave);
+
+		setContentProvider(new MergeViewerContentProvider(cc));
+		
+		fCompareInputChangeListener= new ICompareInputChangeListener() {
+			public void compareInputChanged(ICompareInput input) {
+				ContentMergeViewer.this.internalRefresh(input);
+			}
+		};
+		
+		fCompareConfiguration= cc;
+		if (fCompareConfiguration != null) {
+			fPropertyChangeListener= new IPropertyChangeListener() {
+				public void propertyChange(PropertyChangeEvent event) {
+					ContentMergeViewer.this.propertyChange(event);
+				}
+			};
+			fCompareConfiguration.addPropertyChangeListener(fPropertyChangeListener);
+		}
+			
+		fLeftSaveAction= new SaveAction(true);
+		fLeftSaveAction.setEnabled(false);
+		fRightSaveAction= new SaveAction(false);
+		fRightSaveAction.setEnabled(false);
+	}
+

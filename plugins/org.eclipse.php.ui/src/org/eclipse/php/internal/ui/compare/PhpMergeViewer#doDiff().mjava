@@ -1,0 +1,169 @@
+	/**
+	 * Perform a two level 2- or 3-way diff.
+	 * The first level is based on line comparison, the second level on token comparison.
+	 */
+	private void doDiff() {
+
+		fAllDiffs = new ArrayList();
+		fChangeDiffs = new ArrayList();
+		fCurrentDiff = null;
+
+		IDocument aDoc = null;
+		IDocument lDoc = fLeft.getDocument();
+		IDocument rDoc = fRight.getDocument();
+		if (lDoc == null || rDoc == null)
+			return;
+
+		Position aRegion = null;
+		Position lRegion = fLeft.getRegion();
+		Position rRegion = fRight.getRegion();
+
+		boolean threeWay = isThreeWay();
+
+		if (threeWay && !fIgnoreAncestor) {
+			aDoc = fAncestor.getDocument();
+			aRegion = fAncestor.getRegion();
+		}
+
+		fAncestor.resetLineBackground();
+		fLeft.resetLineBackground();
+		fRight.resetLineBackground();
+
+		boolean ignoreWhiteSpace = Utilities.getBoolean(getCompareConfiguration(), CompareConfiguration.IGNORE_WHITESPACE, false);
+
+		DocLineComparator sright = new DocLineComparator(rDoc, toRegion(rRegion), ignoreWhiteSpace);
+		DocLineComparator sleft = new DocLineComparator(lDoc, toRegion(lRegion), ignoreWhiteSpace);
+		DocLineComparator sancestor = null;
+		if (aDoc != null)
+			sancestor = new DocLineComparator(aDoc, toRegion(aRegion), ignoreWhiteSpace);
+
+		if (!fSubDoc && rRegion != null && lRegion != null) {
+			// we have to add a diff for the ignored lines
+
+			int astart = 0;
+			int as = 0;
+			if (aRegion != null) {
+				astart = aRegion.getOffset();
+				as = Math.max(0, astart - 1);
+			}
+			int ys = Math.max(0, lRegion.getOffset() - 1);
+			int ms = Math.max(0, rRegion.getOffset() - 1);
+
+			if (as > 0 || ys > 0 || ms > 0) {
+				Diff diff = new Diff(null, RangeDifference.NOCHANGE, aDoc, aRegion, 0, astart, lDoc, lRegion, 0, lRegion.getOffset(), rDoc, rRegion, 0, rRegion.getOffset());
+				fAllDiffs.add(diff);
+			}
+		}
+
+		final ResourceBundle bundle = getResourceBundle();
+
+		final Object[] result = new Object[1];
+		final DocLineComparator sa = sancestor, sl = sleft, sr = sright;
+		IRunnableWithProgress runnable = new IRunnableWithProgress() {
+			public void run(IProgressMonitor monitor) throws InterruptedException, InvocationTargetException {
+				String progressTitle = Utilities.getString(bundle, "compareProgressTask.title"); //$NON-NLS-1$
+				monitor.beginTask(progressTitle, maxWork(sa, sl, sr));
+				try {
+					result[0] = RangeDifferencer.findRanges(monitor, sa, sl, sr);
+				} catch (OutOfMemoryError ex) {
+					System.gc();
+					throw new InvocationTargetException(ex);
+				}
+				if (monitor.isCanceled()) { // canceled
+					throw new InterruptedException();
+				}
+				monitor.done();
+			}
+		};
+		IProgressService progressService = PlatformUI.getWorkbench().getProgressService();
+
+		RangeDifference[] e = null;
+		try {
+			progressService.run(true, true, runnable);
+			e = (RangeDifference[]) result[0];
+		} catch (InvocationTargetException ex) {
+			String title = Utilities.getString(bundle, "tooComplexError.title"); //$NON-NLS-1$
+			String format = Utilities.getString(bundle, "tooComplexError.format"); //$NON-NLS-1$
+			String msg = MessageFormat.format(format, new Object[] { Integer.toString(progressService.getLongOperationTime() / 1000) });
+			MessageDialog.openError(fComposite.getShell(), title, msg);
+			e = null;
+		} catch (InterruptedException ex) {
+			// 
+		}
+
+		if (e == null) {
+			// we create a NOCHANGE range for the whole document
+			Diff diff = new Diff(null, RangeDifference.NOCHANGE, aDoc, aRegion, 0, aDoc != null ? aDoc.getLength() : 0, lDoc, lRegion, 0, lDoc.getLength(), rDoc, rRegion, 0, rDoc.getLength());
+
+			fAllDiffs.add(diff);
+		} else {
+			for (int i = 0; i < e.length; i++) {
+				String a = null, s = null, d = null;
+				RangeDifference es = e[i];
+
+				int kind = es.kind();
+
+				int ancestorStart = 0;
+				int ancestorEnd = 0;
+				if (sancestor != null) {
+					ancestorStart = sancestor.getTokenStart(es.ancestorStart());
+					ancestorEnd = getTokenEnd2(sancestor, es.ancestorStart(), es.ancestorLength());
+				}
+
+				int leftStart = sleft.getTokenStart(es.leftStart());
+				int leftEnd = getTokenEnd2(sleft, es.leftStart(), es.leftLength());
+
+				int rightStart = sright.getTokenStart(es.rightStart());
+				int rightEnd = getTokenEnd2(sright, es.rightStart(), es.rightLength());
+
+				Diff diff = new Diff(null, kind, aDoc, aRegion, ancestorStart, ancestorEnd, lDoc, lRegion, leftStart, leftEnd, rDoc, rRegion, rightStart, rightEnd);
+
+				fAllDiffs.add(diff); // remember all range diffs for scrolling
+
+				if (ignoreWhiteSpace) {
+					if (sancestor != null)
+						a = extract2(aDoc, sancestor, es.ancestorStart(), es.ancestorLength());
+					s = extract2(lDoc, sleft, es.leftStart(), es.leftLength());
+					d = extract2(rDoc, sright, es.rightStart(), es.rightLength());
+
+					if ((a == null || a.trim().length() == 0) && s.trim().length() == 0 && d.trim().length() == 0) {
+						diff.fIsWhitespace = true;
+						continue;
+					}
+				}
+
+				if (useChange(kind)) {
+					fChangeDiffs.add(diff); // here we remember only the real diffs
+					updateDiffBackground(diff);
+
+					if (s == null)
+						s = extract2(lDoc, sleft, es.leftStart(), es.leftLength());
+					if (d == null)
+						d = extract2(rDoc, sright, es.rightStart(), es.rightLength());
+
+					if (s.length() > 0 && d.length() > 0) {
+						if (a == null && sancestor != null)
+							a = extract2(aDoc, sancestor, es.ancestorStart(), es.ancestorLength());
+						if (USE_MERGING_TOKEN_DIFF)
+							mergingTokenDiff(diff, aDoc, a, rDoc, d, lDoc, s);
+						else
+							simpleTokenDiff(diff, aDoc, a, rDoc, d, lDoc, s);
+					}
+				}
+			}
+		}
+
+		if (!fSubDoc && rRegion != null && lRegion != null) {
+			// we have to add a diff for the ignored lines
+
+			int aEnd = 0;
+			int aLen = 0;
+			if (aRegion != null && aDoc != null) {
+				aEnd = aRegion.getOffset() + aRegion.getLength();
+				aLen = aDoc.getLength();
+			}
+			Diff diff = new Diff(null, RangeDifference.NOCHANGE, aDoc, aRegion, aEnd, aLen, lDoc, lRegion, lRegion.getOffset() + lRegion.getLength(), lDoc.getLength(), rDoc, rRegion, rRegion.getOffset() + rRegion.getLength(), rDoc.getLength());
+			fAllDiffs.add(diff);
+		}
+	}
+

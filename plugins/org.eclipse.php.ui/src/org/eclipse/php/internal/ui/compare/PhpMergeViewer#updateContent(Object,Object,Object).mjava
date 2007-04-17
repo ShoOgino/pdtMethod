@@ -1,0 +1,109 @@
+	/*
+	 * Initializes the text viewers of the three content areas with the given input objects.
+	 * Subclasses may extend.
+	 */
+	protected void updateContent(Object ancestor, Object left, Object right) {
+
+		boolean emptyInput = (ancestor == null && left == null && right == null);
+
+		Object input = getInput();
+
+		Position leftRange = null;
+		Position rightRange = null;
+
+		// if one side is empty use container
+		if (FIX_47640 && !emptyInput && (left == null || right == null)) {
+			if (input instanceof IDiffElement) {
+				IDiffContainer parent = ((IDiffElement) input).getParent();
+				if (parent instanceof ICompareInput) {
+					ICompareInput ci = (ICompareInput) parent;
+
+					if (ci.getAncestor() instanceof IDocumentRange || ci.getLeft() instanceof IDocumentRange || ci.getRight() instanceof IDocumentRange) {
+
+						if (left instanceof IDocumentRange)
+							leftRange = ((IDocumentRange) left).getRange();
+						if (right instanceof IDocumentRange)
+							rightRange = ((IDocumentRange) right).getRange();
+
+						ancestor = ci.getAncestor();
+						left = ci.getLeft();
+						right = ci.getRight();
+					}
+				}
+			}
+		}
+
+		int n = 0;
+		if (left != null)
+			n++;
+		if (right != null)
+			n++;
+		fHighlightRanges = n > 1;
+
+		// clear stuff
+		fCurrentDiff = null;
+		fChangeDiffs = null;
+		fAllDiffs = null;
+		fEndOfDocReached = false;
+		fHasErrors = false; // start with no errors
+
+		CompareConfiguration cc = getCompareConfiguration();
+		IMergeViewerContentProvider cp = getMergeContentProvider();
+
+		if (cp instanceof MergeViewerContentProvider) {
+			MergeViewerContentProvider mcp = (MergeViewerContentProvider) cp;
+			mcp.setAncestorError(null);
+			mcp.setLeftError(null);
+			mcp.setRightError(null);
+		}
+
+		// Get encodings from streams. If an encoding is null, abide by the other one
+		// Defaults to workbench encoding only if both encodings are null
+		fLeftEncoding = getEncoding(left);
+		fRightEncoding = getEncoding(right);
+		if (fLeftEncoding == null && fRightEncoding == null) {
+			fLeftEncoding = fRightEncoding = ResourcesPlugin.getEncoding();
+		} else if (fLeftEncoding == null) {
+			fLeftEncoding = fRightEncoding;
+		} else if (fRightEncoding == null) {
+			fRightEncoding = fLeftEncoding;
+		}
+
+		// set new documents
+		setDocument(fLeft, 'L', left, fLeftEncoding);
+		fLeftLineCount = fLeft.getLineCount();
+
+		setDocument(fRight, 'R', right, fRightEncoding);
+		fRightLineCount = fRight.getLineCount();
+
+		setDocument(fAncestor, 'A', ancestor, fLeftEncoding);
+
+		updateHeader();
+		updateControls();
+		updateToolItems();
+
+		if (!fHasErrors)
+			doDiff();
+
+		fRight.setEditable(cc.isRightEditable() && cp.isRightEditable(input));
+		fLeft.setEditable(cc.isLeftEditable() && cp.isLeftEditable(input));
+
+		invalidateLines();
+		updateVScrollBar();
+		refreshBirdsEyeView();
+
+		if (!fHasErrors && !emptyInput && !fComposite.isDisposed()) {
+			Diff selectDiff = null;
+			if (FIX_47640) {
+				if (leftRange != null)
+					selectDiff = findDiff('L', leftRange);
+				else if (rightRange != null)
+					selectDiff = findDiff('R', rightRange);
+			}
+			if (selectDiff != null)
+				setCurrentDiff(selectDiff, true);
+			else
+				selectFirstDiff();
+		}
+	}
+

@@ -1,0 +1,68 @@
+	/*
+	 * This method is called if a range of text on one side is copied into an empty sub-document
+	 * on the other side. The method returns the position where the sub-document is placed into the base document.
+	 * This default implementation determines the position by using the text range differencer.
+	 * However this position is not always optimal for specific types of text.
+	 * So subclasses (which are aware of the type of text they are dealing with) 
+	 * may override this method to find a better position where to insert a newly added
+	 * piece of text.
+	 * @param type the side for which the insertion position should be determined: 'A' for ancestor, 'L' for left hand side, 'R' for right hand side.
+	 * @param input the current input object of this viewer
+	 * @since 2.0
+	 */
+	protected int findInsertionPosition(char type, ICompareInput input) {
+
+		ITypedElement other = null;
+		char otherType = 0;
+
+		switch (type) {
+			case 'A':
+				other = input.getLeft();
+				otherType = 'L';
+				if (other == null) {
+					other = input.getRight();
+					otherType = 'R';
+				}
+				break;
+			case 'L':
+				other = input.getRight();
+				otherType = 'R';
+				if (other == null) {
+					other = input.getAncestor();
+					otherType = 'A';
+				}
+				break;
+			case 'R':
+				other = input.getLeft();
+				otherType = 'L';
+				if (other == null) {
+					other = input.getAncestor();
+					otherType = 'A';
+				}
+				break;
+		}
+
+		if (other instanceof IDocumentRange) {
+			IDocumentRange dr = (IDocumentRange) other;
+			Position p = dr.getRange();
+			Diff diff = findDiff(otherType, p.offset);
+			if (diff != null) {
+				switch (type) {
+					case 'A':
+						if (diff.fAncestorPos != null)
+							return diff.fAncestorPos.offset;
+						break;
+					case 'L':
+						if (diff.fLeftPos != null)
+							return diff.fLeftPos.offset;
+						break;
+					case 'R':
+						if (diff.fRightPos != null)
+							return diff.fRightPos.offset;
+						break;
+				}
+			}
+		}
+		return 0;
+	}
+
