@@ -1,0 +1,60 @@
+	/*
+	 * Performs a token based 3-way diff on the character range specified by the given baseDiff.
+	 */
+	private void simpleTokenDiff(final Diff baseDiff,
+				IDocument ancestorDoc, String a,
+				IDocument rightDoc, String d,
+				IDocument leftDoc, String s) {
+
+		int ancestorStart= 0;
+		ITokenComparator sa= null;
+		if (ancestorDoc != null) {
+			ancestorStart= baseDiff.fAncestorPos.getOffset();
+			sa= createTokenComparator(a);
+		}
+		
+		int rightStart= baseDiff.fRightPos.getOffset();	
+		ITokenComparator sm= createTokenComparator(d);
+		
+		int leftStart= baseDiff.fLeftPos.getOffset();
+		ITokenComparator sy= createTokenComparator(s);
+		
+		RangeDifference[] e= RangeDifferencer.findRanges(sa, sy, sm);
+		for (int i= 0; i < e.length; i++) {
+			RangeDifference es= e[i];
+			int kind= es.kind();
+			if (kind != RangeDifference.NOCHANGE) {
+				
+				int ancestorStart2= ancestorStart;
+				int ancestorEnd2= ancestorStart;
+				if (ancestorDoc != null) {
+					ancestorStart2 += sa.getTokenStart(es.ancestorStart());
+					ancestorEnd2 += getTokenEnd(sa, es.ancestorStart(), es.ancestorLength());
+				}
+				
+				int leftStart2= leftStart + sy.getTokenStart(es.leftStart());
+				int leftEnd2= leftStart + getTokenEnd(sy, es.leftStart(), es.leftLength());
+				
+				int rightStart2= rightStart + sm.getTokenStart(es.rightStart());
+				int rightEnd2= rightStart + getTokenEnd(sm, es.rightStart(), es.rightLength());
+				
+				Diff diff= new Diff(baseDiff, kind,
+						ancestorDoc, null, ancestorStart2, ancestorEnd2,
+						leftDoc, null, leftStart2, leftEnd2,
+						rightDoc, null, rightStart2, rightEnd2);
+				
+				// ensure that token diff is smaller than basediff
+				int leftS= baseDiff.fLeftPos.offset;
+				int leftE= baseDiff.fLeftPos.offset+baseDiff.fLeftPos.length;
+				int rightS= baseDiff.fRightPos.offset;
+				int rightE= baseDiff.fRightPos.offset+baseDiff.fRightPos.length;
+				if (leftS != leftStart2 || leftE != leftEnd2 ||
+							rightS != rightStart2 || rightE != rightEnd2) {
+					diff.fIsToken= true;
+					// add to base Diff
+					baseDiff.add(diff);
+				}
+			}
+		}
+	}
+

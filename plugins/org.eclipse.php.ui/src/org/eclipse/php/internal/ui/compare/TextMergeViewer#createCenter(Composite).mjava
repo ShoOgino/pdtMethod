@@ -1,0 +1,41 @@
+	/*
+	 * Creates the central Canvas.
+	 * Called from ContentMergeViewer.
+	 */
+	/* package */ Control createCenter(Composite parent) {
+		if (fSynchronizedScrolling) {
+			final Canvas canvas= new BufferedCanvas(parent, SWT.NONE) {
+				public void doPaint(GC gc) {
+					paintCenter(this, gc);
+				}
+			};
+			if (fUseResolveUI) {
+				
+				new HoverResizer(canvas, HORIZONTAL);
+								
+				fCenterButton= new Button(canvas, fIsCarbon ? SWT.FLAT : SWT.PUSH);
+				if (fNormalCursor == null) fNormalCursor= new Cursor(canvas.getDisplay(), SWT.CURSOR_ARROW);
+				fCenterButton.setCursor(fNormalCursor);
+				fCenterButton.setText("<");	 //$NON-NLS-1$
+				fCenterButton.pack();
+				fCenterButton.setVisible(false);
+				fCenterButton.addSelectionListener(
+					new SelectionAdapter() {
+						public void widgetSelected(SelectionEvent e) {
+							fCenterButton.setVisible(false);
+							if (fButtonDiff != null) {
+								setCurrentDiff(fButtonDiff, false);
+								copy(fCurrentDiff, false, fCurrentDiff.fDirection == RangeDifference.CONFLICT);
+							}
+						}
+					}
+				);				
+			} else {
+				new Resizer(canvas, HORIZONTAL);
+			}
+			
+			return canvas;
+		}
+		return super.createCenter(parent);
+	}
+

@@ -1,0 +1,59 @@
+	private void paintBirdsEyeView(Canvas canvas, GC gc) {
+		
+		Color c;
+		Rectangle r= new Rectangle(0, 0, 0, 0);
+		int yy, hh;
+		
+		Point size= canvas.getSize();
+		
+		int virtualHeight= fSynchronizedScrolling ? getVirtualHeight() : getRightHeight();		
+		if (virtualHeight < getViewportHeight())
+			return;
+				
+		Display display= canvas.getDisplay();
+		int y= 0;
+		if (fAllDiffs != null) {
+			Iterator e= fAllDiffs.iterator();
+			for (int i= 0; e.hasNext(); i++) {
+				Diff diff= (Diff) e.next();
+				int h= fSynchronizedScrolling ? diff.getMaxDiffHeight(fShowAncestor)
+											  : diff.getRightHeight();
+								
+				if (useChange(diff.fDirection) && !diff.fIsWhitespace) {
+					
+					yy= (y*size.y)/virtualHeight;
+					hh= (h*size.y)/virtualHeight;
+					if (hh < 3)
+						hh= 3;
+					
+					c= getColor(display, getFillColor(diff));
+					if (c != null) {
+						gc.setBackground(c);
+						gc.fillRectangle(BIRDS_EYE_VIEW_INSET, yy, size.x-(2*BIRDS_EYE_VIEW_INSET),hh);
+					}
+					c= getColor(display, getStrokeColor(diff));
+					if (c != null) {
+						gc.setForeground(c);
+						r.x= BIRDS_EYE_VIEW_INSET;
+						r.y= yy;
+						r.width= size.x-(2*BIRDS_EYE_VIEW_INSET)-1;
+						r.height= hh;
+						if (diff == fCurrentDiff ||
+								(fCurrentDiff != null && diff == fCurrentDiff.fParent)) {
+							gc.setLineWidth(2);
+							r.x++;
+							r.y++;
+							r.width--;
+							r.height--;
+						} else {
+							gc.setLineWidth(1);
+						}
+						gc.drawRectangle(r);
+					}
+				}
+				
+				y+= h;
+			}
+		}
+	}
+

@@ -1,0 +1,93 @@
+	private Diff findDiff(char type, int pos) {
+								
+		IDocument aDoc= null;
+		IDocument lDoc= fLeft.getDocument();
+		IDocument rDoc= fRight.getDocument();
+		if (lDoc == null || rDoc == null)
+			return null;
+			
+		Position aRegion= null;
+		Position lRegion= null;
+		Position rRegion= null;
+				
+		boolean threeWay= isThreeWay();
+		
+		if (threeWay && !fIgnoreAncestor)
+			aDoc= fAncestor.getDocument();
+
+		boolean ignoreWhiteSpace= Utilities.getBoolean(getCompareConfiguration(), CompareConfiguration.IGNORE_WHITESPACE, false);		
+		
+		DocLineComparator sright= new DocLineComparator(rDoc, toRegion(rRegion), ignoreWhiteSpace);
+		DocLineComparator sleft= new DocLineComparator(lDoc, toRegion(lRegion), ignoreWhiteSpace);
+		DocLineComparator sancestor= null;
+		if (aDoc != null)
+			sancestor= new DocLineComparator(aDoc, toRegion(aRegion), ignoreWhiteSpace);
+			
+		final ResourceBundle bundle= getResourceBundle();
+			
+		final Object[] result= new Object[1];
+		final DocLineComparator sa= sancestor, sl= sleft, sr= sright;
+		IRunnableWithProgress runnable= new IRunnableWithProgress() {
+			public void run(IProgressMonitor monitor) throws InterruptedException, InvocationTargetException {
+				String progressTitle= Utilities.getString(bundle, "compareProgressTask.title"); //$NON-NLS-1$
+				monitor.beginTask(progressTitle, maxWork(sa, sl, sr));
+				try {
+					result[0]= RangeDifferencer.findRanges(monitor, sa, sl, sr);
+				} catch (OutOfMemoryError ex) {
+					System.gc();
+					throw new InvocationTargetException(ex);
+				}
+				if (monitor.isCanceled())	{ // canceled
+					throw new InterruptedException();
+				}
+				monitor.done();
+			}
+		};
+		IProgressService progressService= PlatformUI.getWorkbench().getProgressService();
+		
+		RangeDifference[] e= null;
+		try {
+			progressService.run(true, true, runnable);
+			e= (RangeDifference[]) result[0];
+		} catch (InvocationTargetException ex) {
+			String title= Utilities.getString(bundle, "tooComplexError.title"); //$NON-NLS-1$
+			String format= Utilities.getString(bundle, "tooComplexError.format"); //$NON-NLS-1$
+			String msg= MessageFormat.format(format, new Object[] { Integer.toString(progressService.getLongOperationTime()/1000) } );
+			MessageDialog.openError(fComposite.getShell(), title, msg);
+			e= null;
+		} catch (InterruptedException ex) {
+			// 
+		}
+					
+		if (e != null) {
+			for (int i= 0; i < e.length; i++) {
+				RangeDifference es= e[i];
+				
+				int kind= es.kind();
+				
+				int ancestorStart= 0;
+				int ancestorEnd= 0;
+				if (sancestor != null) {
+					ancestorStart= sancestor.getTokenStart(es.ancestorStart());
+					ancestorEnd= getTokenEnd2(sancestor, es.ancestorStart(), es.ancestorLength());
+				}
+				
+				int leftStart= sleft.getTokenStart(es.leftStart());
+				int leftEnd= getTokenEnd2(sleft, es.leftStart(), es.leftLength());
+				
+				int rightStart= sright.getTokenStart(es.rightStart());
+				int rightEnd= getTokenEnd2(sright, es.rightStart(), es.rightLength());
+				
+				Diff diff= new Diff(null, kind,
+					aDoc, aRegion, ancestorStart, ancestorEnd,
+					lDoc, lRegion, leftStart, leftEnd,
+					rDoc, rRegion, rightStart, rightEnd);	
+
+				if (diff.isInRange(type, pos))
+					return diff;
+			}
+		}
+		
+		return null;
+	}
+

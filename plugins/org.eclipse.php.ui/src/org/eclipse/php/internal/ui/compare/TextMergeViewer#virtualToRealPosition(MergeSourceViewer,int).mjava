@@ -1,0 +1,33 @@
+	/*
+	 * maps given virtual position into a real view position of this view.
+	 */
+	private int virtualToRealPosition(MergeSourceViewer part, int v) {
+			
+		if (! fSynchronizedScrolling || fAllDiffs == null)
+			return v;
+					
+		int virtualPos= 0;
+		int viewPos= 0;
+		Point region= new Point(0, 0);
+		
+		Iterator e= fAllDiffs.iterator();
+		while (e.hasNext()) {
+			Diff diff= (Diff) e.next();
+			Position pos= diff.getPosition(part);
+			int viewHeight= part.getLineRange(pos, region).y;
+			int virtualHeight= diff.getMaxDiffHeight(fShowAncestor);
+			if (v < (virtualPos + virtualHeight)) {
+				v-= virtualPos;		// make relative to this slot
+				if (viewHeight <= 0) {
+					v= 0;
+				} else {
+					v= (v*viewHeight)/virtualHeight;
+				}
+				return viewPos+v;
+			}
+			virtualPos+= virtualHeight;
+			viewPos+= viewHeight;
+		}
+		return viewPos;
+	}
+

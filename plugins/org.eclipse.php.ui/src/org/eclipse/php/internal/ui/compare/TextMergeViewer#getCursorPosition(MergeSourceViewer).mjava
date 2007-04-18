@@ -1,0 +1,39 @@
+	/*
+	 * Returns a description of the cursor position.
+	 * 
+	 * @return a description of the cursor position
+	 */
+	private String getCursorPosition(MergeSourceViewer v) {
+		if (v != null) {
+			StyledText styledText= v.getTextWidget();
+			
+			IDocument document= v.getDocument();
+			if (document != null) {
+				int offset= v.getVisibleRegion().getOffset();
+				int caret= offset + styledText.getCaretOffset();
+				
+				try {
+					
+					int line=document.getLineOfOffset(caret);
+					
+					int lineOffset= document.getLineOffset(line);
+					int occurrences= 0;
+					for (int i= lineOffset; i < caret; i++)
+						if ('\t' == document.getChar(i))
+							++ occurrences;
+							
+					int tabWidth= styledText.getTabs();
+					int column= caret - lineOffset + (tabWidth -1) * occurrences;
+					
+					String format= CompareMessages.TextMergeViewer_cursorPosition_format;	
+					return MessageFormat.format(format,
+						new String[] { Integer.toString(line + 1), Integer.toString(column + 1) } );
+					
+				} catch (BadLocationException x) {
+					// silently ignored
+				}
+			}
+		}
+		return "";	//$NON-NLS-1$
+	}
+

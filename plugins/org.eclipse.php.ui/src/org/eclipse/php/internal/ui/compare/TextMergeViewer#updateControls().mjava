@@ -1,0 +1,49 @@
+	private void updateControls() {
+		
+		boolean leftToRight= false;
+		boolean rightToLeft= false;
+		
+		updateStatus(fCurrentDiff);
+		updateResolveStatus();
+
+		if (fCurrentDiff != null) {
+			IMergeViewerContentProvider cp= getMergeContentProvider();
+			if (cp != null) {
+				rightToLeft= cp.isLeftEditable(getInput());
+				leftToRight= cp.isRightEditable(getInput());
+			}			
+		}
+		
+		if (fDirectionLabel != null) {
+			if (fHighlightRanges && fCurrentDiff != null && isThreeWay() && !fIgnoreAncestor) {
+				fDirectionLabel.setImage(fCurrentDiff.getImage());
+			} else {
+				fDirectionLabel.setImage(null);
+			}
+		}
+		
+		if (fCopyDiffLeftToRightItem != null)
+			((Action)fCopyDiffLeftToRightItem.getAction()).setEnabled(leftToRight);
+		if (fCopyDiffRightToLeftItem != null)
+			((Action)fCopyDiffRightToLeftItem.getAction()).setEnabled(rightToLeft);
+			
+		boolean enableNavigation= false;
+		if (fCurrentDiff == null && fChangeDiffs != null && fChangeDiffs.size() > 0)
+			enableNavigation= true;
+		else if (fChangeDiffs != null && fChangeDiffs.size() > 1)
+			enableNavigation= true;
+		else if (fCurrentDiff != null && fCurrentDiff.fDiffs != null)
+			enableNavigation= true;
+		else if (fCurrentDiff != null && fCurrentDiff.fIsToken)
+			enableNavigation= true;
+		
+		if (fNextItem != null) {
+			IAction a= fNextItem.getAction();
+			a.setEnabled(enableNavigation);
+		}
+		if (fPreviousItem != null) {
+			IAction a= fPreviousItem.getAction();
+			a.setEnabled(enableNavigation);
+		}	
+	}
+
