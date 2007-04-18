@@ -9,15 +9,15 @@
 		Composite composite = new Composite(parent, SWT.NULL);
 		GridLayout layout = new GridLayout(1, false);
 		layout.marginHeight = 0;
-        layout.marginLeft = convertHorizontalDLUsToPixels(IDialogConstants.HORIZONTAL_MARGIN);
-        layout.horizontalSpacing = convertHorizontalDLUsToPixels(IDialogConstants.HORIZONTAL_SPACING);
-        composite.setLayout(layout);
+		layout.marginLeft = convertHorizontalDLUsToPixels(IDialogConstants.HORIZONTAL_MARGIN);
+		layout.horizontalSpacing = convertHorizontalDLUsToPixels(IDialogConstants.HORIZONTAL_SPACING);
+		composite.setLayout(layout);
 		composite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		composite.setFont(font);
-		
+
 		// Attach the regular dialog area
 		super.createDialogArea(composite);
-		
+
 		// Attach the checkbox
 		fExternalFilesBt = new Button(composite, SWT.CHECK);
 		fExternalFilesBt.setText("Show non-workspace files");
@@ -25,9 +25,25 @@
 		data.grabExcessHorizontalSpace = true;
 		data.horizontalIndent = convertHorizontalDLUsToPixels(IDialogConstants.HORIZONTAL_MARGIN);
 		fExternalFilesBt.setLayoutData(data);
-		// TODO - Take the selection state from the preferences
-		
-		
+
+		// Add a listener
+		fExternalFilesBt.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				updateView(fExternalFilesBt.getSelection());
+			}
+		});
+
+		// Set the current state as saved in the preferences.
+		String shouldShowExternals = fStore.getString(SHOW_EXTERNAL_FILES);
+		if (shouldShowExternals.length() == 0) {
+			fExternalFilesBt.setSelection(true);
+			updateView(true);
+		} else {
+			boolean show = Boolean.parseBoolean(shouldShowExternals);
+			fExternalFilesBt.setSelection(show);
+			updateView(show);
+		}
+
 		return composite;
 	}
 
