@@ -1,0 +1,32 @@
+	/**
+	 * @param scalar
+	 * @return true if the scalar is defines as $GLOBALS call
+	 */
+	private static boolean checkGLOBALS(Scalar scalar) {
+		final String stringValue = scalar.getStringValue();
+		if (scalar.getScalarType() != Scalar.TYPE_STRING || stringValue.length() < 3) {
+			return false;
+		}
+		final char charAtZero = stringValue.charAt(0);
+		final char charAtEnd = stringValue.charAt(stringValue.length() - 1);
+
+		if (!detectString(charAtZero) || !detectString(charAtEnd)) {
+			return false;
+		}
+		
+		if (scalar.getParent().getType() == ASTNode.ARRAY_ACCESS) {
+			ArrayAccess arrayAccess = (ArrayAccess) scalar.getParent();
+			final Expression variableName = arrayAccess.getVariableName();
+			if (variableName.getType() == ASTNode.VARIABLE) {
+				Variable var = (Variable) variableName;
+				if (var.isDollared() && var.getVariableName().getType() == ASTNode.IDENTIFIER) {
+					final Identifier id = (Identifier) var.getVariableName();
+					if (id.getName().equals("GLOBALS")) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+
