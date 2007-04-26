@@ -1,5 +1,14 @@
 	public IFile getFile() {
-		final String filename = getModel().getBaseLocation();
-		return ((IWorkspaceRoot) ResourcesPlugin.getWorkspace().getRoot()).getFile(new Path(filename));
+		IDocument doc = getDocumentProvider().getDocument(getEditorInput());
+		if (doc != null) {
+			IModelManager modelManager = StructuredModelManager.getModelManager();
+			IStructuredModel model = modelManager.getExistingModelForRead(doc);
+			try {
+				return ((IWorkspaceRoot) ResourcesPlugin.getWorkspace().getRoot()).getFile(new Path(model.getBaseLocation()));
+			} finally {
+				model.releaseFromRead();
+			}
+		}
+		return null;
 	}
 

@@ -1,5 +1,14 @@
 	public PHPFileData getPHPFileData() {
-		final String filename = getModel().getBaseLocation();
-		return PHPWorkspaceModelManager.getInstance().getModelForFile(filename);
+		IDocument doc = getDocumentProvider().getDocument(getEditorInput());
+		if (doc != null) {
+			IModelManager modelManager = StructuredModelManager.getModelManager();
+			IStructuredModel model = modelManager.getExistingModelForRead(doc);
+			try {
+				return PHPWorkspaceModelManager.getInstance().getModelForFile(model.getBaseLocation());
+			} finally {
+				model.releaseFromRead();
+			}
+		}
+		return null;
 	}
 
