@@ -41,28 +41,28 @@
 			// if the variable was used inside a function
 			if (parent.getType() == ASTNode.FUNCTION_DECLARATION) {
 				// global declaration detection
-				final int end = parent.getEnd();  
+				final int end = parent.getEnd();
 				class GlobalSeacher extends ApplyAll {
 					public int offset = end;
-					
+
 					public void apply(ASTNode node) {
 						if (offset != end) {
-							return; 
+							return;
 						}
-						
+
 						if (node.getType() == ASTNode.GLOBAL_STATEMENT) {
 							GlobalStatement globalStatement = (GlobalStatement) node;
 							if (checkGlobal(targetIdentifier, variable, globalStatement)) {
 								offset = globalStatement.getStart();
 							}
-						} 
-						
+						}
+
 						node.childrenAccept(this);
 					}
 				}
 				GlobalSeacher searchGlobal = new GlobalSeacher();
 				parent.accept(searchGlobal);
-				return searchGlobal.offset <= targetIdentifier.getStart(); 
+				return searchGlobal.offset <= targetIdentifier.getStart();
 			}
 			parent = parent.getParent();
 		}
