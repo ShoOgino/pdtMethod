@@ -1,14 +1,20 @@
 	private void verifyValidity(IDocument document) {
 		if (fLastDocument != document) {
-			DOMModelForPHP editorModel = (DOMModelForPHP) StructuredModelManager.getModelManager().getExistingModelForRead(document);
-			PHPProjectModel projectModel = editorModel.getProjectModel();
-
-			IProject project = PHPWorkspaceModelManager.getInstance().getProjectForModel(projectModel);
-			if (fLastProject != project) {
-				fLastProject = project;
-				verifyListening();
+			DOMModelForPHP editorModel = null;
+			try {
+				editorModel = (DOMModelForPHP) StructuredModelManager.getModelManager().getExistingModelForRead(document);
+				PHPProjectModel projectModel = editorModel.getProjectModel();
+				if (projectModel == null)
+					return;
+				IProject project = PHPWorkspaceModelManager.getInstance().getProjectForModel(projectModel);
+				if (fLastProject != project) {
+					fLastProject = project;
+					verifyListening();
+				}
+			} finally {
+				if (editorModel != null)
+					editorModel.releaseFromRead();
 			}
-			editorModel.releaseFromRead();
 		}
 
 		if (fLastDocument != document || preferencesChanged) {
