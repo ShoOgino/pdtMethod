@@ -19,6 +19,11 @@
 			// delete old files and directories from this directory
 			if (toDir.exists() && toDir.isDirectory()) {
 				toFiles = toDir.listFiles();
+				if (toFiles == null) {
+					monitor.done();
+					displayPublishError();
+					return false;
+				}
 				int toSize = toFiles.length;
 
 				// check if this exact file exists in the new directory
@@ -47,12 +52,7 @@
 				}
 				if (!toDir.mkdirs()) {
 					monitor.done();
-					Display.getDefault().asyncExec(new Runnable() {
-						public void run() {
-							ErrorDialog.openError(Display.getDefault().getActiveShell(),
-								PHPServerCoreMessages.getString("FileUtil.publishError"), PHPServerCoreMessages.getString("FileUtil.serverPublishError"), new Status(IStatus.ERROR, Activator.PLUGIN_ID, 0, PHPServerCoreMessages.getString("FileUtil.writePermissionError"), null)); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-						}
-					});
+					displayPublishError();
 					return false;
 				}
 			}
