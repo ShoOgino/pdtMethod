@@ -22,7 +22,7 @@
 			// Suppose that it's a remote storage. If something goes wrong in some case - add another "if" above.
 			else {
 				externalPath = storage.getFullPath();
-				resource = new ExternalFileDecorator(((IWorkspaceRoot) ResourcesPlugin.getWorkspace().getRoot()).getFile(externalPath), externalPath.getDevice());
+				resource = ExternalFilesRegistry.getAsIFile(externalPath.toString());
 
 				if (!(input instanceof StorageEditorInput)) {
 					input = new StorageEditorInput(storage) {
@@ -36,8 +36,8 @@
 
 		if (resource instanceof IFile) {
 			if (PHPModelUtil.isPhpFile((IFile) resource)) {
-				if (externalPath != null) {
-					ExternalPhpFilesRegistry.getInstance().addFileEntry(externalPath.toString());
+				if (externalPath != null && (resource instanceof ExternalFileDecorator)) {
+					ExternalFilesRegistry.getInstance().addFileEntry(externalPath.toString(), (ExternalFileDecorator) resource);
 				}
 				PhpSourceParser.editFile.set(resource);
 				super.doSetInput(input);
