@@ -1,10 +1,15 @@
 	public PHPFileData getModelForFile(String filename) {
 		IPath path = Path.fromOSString(filename);
-		IFile file = new ExternalFileDecorator(ResourcesPlugin.getWorkspace().getRoot().getFile(path), path.getDevice());
+		IFile file;
+		if (ExternalFilesRegistry.getInstance().isEntryExist(path.toString())) {
+			file = ExternalFilesRegistry.getInstance().getFileEntry(path.toString());
+		} else {
+			file = ExternalFilesRegistry.getAsIFile(path.toString());
+		}
 		PHPFileData result = null;
 		result = getModelForFile(filename, false);
 		if (result == null && file != null) {
-			if (ExternalPhpFilesRegistry.getInstance().isEntryExist(file.getFullPath().toString())) {
+			if (ExternalFilesRegistry.getInstance().isEntryExist(file.getFullPath().toString())) {
 				result = getModelForExternalFile(file);
 			}
 		}
