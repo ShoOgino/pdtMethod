@@ -1,0 +1,17 @@
+	/**
+	 * Creates and returns an {@link ExternalFileDecorator} for a file that has the given pathString.
+	 * Use this to create NEW instances of the ExternalFileDecorator.
+	 * Note that the created file will not be automatically inserted into the ExternalFilesRegistry.
+	 * @param pathString A full path string. 
+	 * @return An {@link IFile} (new instance of {@link ExternalFileDecorator}).
+	 */
+	public synchronized static IFile createFile(String pathString) {
+		IPath path = Path.fromOSString(pathString);
+		if (path.segmentCount() == 1) {
+			IPath p = new Path(path.getDevice());
+			p = p.append(ExternalFilesRegistry.getInstance().getExternalFilesProject().getFullPath());
+			path = p.append(path.segment(0));
+		}
+		return new ExternalFileDecorator(ResourcesPlugin.getWorkspace().getRoot().getFile(path), path.getDevice());
+	}
+
