@@ -4,12 +4,14 @@
 	public void launch(IEditorPart editor, String mode) {
 		IEditorInput input = editor.getEditorInput();
 		IFile file = (IFile) input.getAdapter(IFile.class);
-		String device = null;
 		if (file == null && input instanceof JavaFileEditorInput) {
 			// It's probably a launch for a file that is not in the workspace.
 			IPath path = ((JavaFileEditorInput) input).getPath();
-			file = ((IWorkspaceRoot) ResourcesPlugin.getWorkspace().getRoot()).getFile(path);
-			file = new ExternalFileDecorator(file, path.getDevice());
+			if (ExternalFilesRegistry.getInstance().isEntryExist(path.toString())) {
+				file = ExternalFilesRegistry.getInstance().getFileEntry(path.toString());
+			} else {
+				file = ExternalFilesRegistry.getAsIFile(path.toString());
+			}
 		}
 		if (file != null) {
 			searchAndLaunch(new Object[] { file }, mode, getPHPExeLaunchConfigType());

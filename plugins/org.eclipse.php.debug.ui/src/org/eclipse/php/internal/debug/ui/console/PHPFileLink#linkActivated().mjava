@@ -7,14 +7,11 @@
 		try {
 			if (fFile instanceof PHPCodeData) {
 				IPath path = Path.fromOSString(((PHPCodeData) fFile).getName());
-				fFile = new ExternalFileDecorator(ResourcesPlugin.getWorkspace().getRoot().getFile(path), path.getDevice()) {
-					/*
-					 * Override the default IFile exists method to allow the retrival of the DOM model.
-					 */
-					public boolean exists() {
-						return true; //getFullPath().toFile().exists();
-					}
-				};
+				if (ExternalFilesRegistry.getInstance().isEntryExist(path.toString())) {
+					fFile = ExternalFilesRegistry.getInstance().getFileEntry(path.toString());
+				} else {
+					fFile = ExternalFilesRegistry.getAsIFile(path.toString());
+				}
 			}
 			if (fFile instanceof IFile) {
 				editorPart = EditorUtility.openInEditor(new FileEditorInput((IFile) fFile), PHPUiConstants.PHP_EDITOR_ID, false);
