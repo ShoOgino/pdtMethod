@@ -10,7 +10,19 @@
 
 		final String type = typedRegion.getType();
 		if (type.equals(IHTMLPartitions.HTML_DEFAULT)) {
-			super.validate(dirtyRegion, helper, reporter);
+			IStructuredModel structuredModel = null;
+			structuredModel = StructuredModelManager.getModelManager().getExistingModelForRead(fDocument);
+			DOMModelForPHP domModelForPHP = (DOMModelForPHP) structuredModel;
+			IFile documentFile = domModelForPHP.getIFile();
+			structuredModel.releaseFromRead();
+			//added a test if external file in order not to get exception
+			//when getting the IFile instance of the document
+			//An exception is thrown when segmentCount == 1 (C:\file.php for example) 
+			if (ExternalFilesRegistry.getInstance().isEntryExist(documentFile.getFullPath().toString())) {
+				validateHTMLForExternalDocument(dirtyRegion, helper, reporter);
+			} else {
+				super.validate(dirtyRegion, helper, reporter);
+			}
 			return;
 		} else if (!isPHPPartition(type)) {
 			return;

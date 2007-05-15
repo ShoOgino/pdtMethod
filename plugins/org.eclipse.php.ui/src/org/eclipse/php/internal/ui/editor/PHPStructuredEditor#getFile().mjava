@@ -1,4 +1,14 @@
 	public IFile getFile() {
-		return ((IWorkspaceRoot) ResourcesPlugin.getWorkspace().getRoot()).getFile(new Path(getModel().getBaseLocation()));
+		IPath path = new Path(getModel().getBaseLocation());
+		if (ExternalFilesRegistry.getInstance().isEntryExist(path.toString())){
+			return ExternalFilesRegistry.getInstance().getFileEntry(path.toString());
+		}
+		//could be that it is an external file BUT was already removed !, check :
+		else if(path.segmentCount() == 1){
+			return ExternalFileDecorator.createFile(path.toString());
+		}
+		
+		//handle case of workspace file AND/OR an external file with more than 1 segment
+		return ((IWorkspaceRoot) ResourcesPlugin.getWorkspace().getRoot()).getFile(path);
 	}
 
