@@ -14,6 +14,15 @@
 			}
 			IContainer container = (IContainer) resource;
 			final IFile file = container.getFile(new Path(fileName));
+
+			// adopt project's/workspace's line delimiter (separator)
+			String lineSeparator = Platform.getPreferencesService().getString(Platform.PI_RUNTIME, Platform.PREF_LINE_SEPARATOR, null, new IScopeContext[] { new ProjectScope(container.getProject()) });
+			if (lineSeparator == null)
+				lineSeparator = Platform.getPreferencesService().getString(Platform.PI_RUNTIME, Platform.PREF_LINE_SEPARATOR, null, new IScopeContext[] { new InstanceScope() });
+			if (lineSeparator == null)
+				lineSeparator = System.getProperty(Platform.PREF_LINE_SEPARATOR);
+			contents = contents.replaceAll("(\n\r?|\r\n?)", lineSeparator); //$NON-NLS-1$ //$NON-NLS-2$
+
 			try {
 				InputStream stream = openContentStream(contents);
 				if (file.exists()) {
@@ -24,10 +33,10 @@
 				stream.close();
 			} catch (IOException e) {
 			}
-			
+
 			// Change file encoding:
 			if (container instanceof IProject) {
-				PHPProjectOptions options = PHPProjectOptions.forProject((IProject)container);
+				PHPProjectOptions options = PHPProjectOptions.forProject((IProject) container);
 				if (options != null) {
 					String defaultEncoding = (String) options.getOption(PHPCoreConstants.PHPOPTION_DEFAULT_ENCODING);
 					if (defaultEncoding == null || defaultEncoding.length() == 0) {
@@ -36,7 +45,7 @@
 					file.setCharset(defaultEncoding, monitor);
 				}
 			}
-			
+
 			monitor.worked(1);
 			monitor.setTaskName(NLS.bind(PHPUIMessages.newPhpFile_openning, fileName));
 			wizard.getShell().getDisplay().asyncExec(new Runnable() {
