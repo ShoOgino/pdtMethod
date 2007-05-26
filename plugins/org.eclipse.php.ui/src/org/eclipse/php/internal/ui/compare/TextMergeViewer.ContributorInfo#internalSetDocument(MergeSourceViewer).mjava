@@ -1,0 +1,81 @@
+		/*
+		 * Returns true if a new Document could be installed.
+		 */
+		private boolean internalSetDocument(MergeSourceViewer tp) {
+
+			if (tp == null)
+				return false;
+
+			IDocument newDocument = null;
+			Position range = null;
+
+			if (fElement instanceof IDocumentRange) {
+				newDocument = ((IDocumentRange) fElement).getDocument();
+				range = ((IDocumentRange) fElement).getRange();
+				connectToSharedDocument();
+
+			} else if (fElement instanceof IDocument) {
+				newDocument = (IDocument) fElement;
+
+			} else if (fElement instanceof IStreamContentAccessor) {
+				newDocument = DocumentManager.get(fElement);
+				if (newDocument == null) {
+					newDocument = createDocument();
+					DocumentManager.put(fElement, newDocument);
+					setupDocument(newDocument);
+				} else if (fDocumentProvider == null) {
+					// Connect to a shared document so we can get the proper save synchronization
+					connectToSharedDocument();
+				}
+			} else if (fElement == null) { // deletion on one side
+
+				ITypedElement parent = this.fViewer.getParent(fLeg); // we try to find an insertion position within the deletion's parent
+
+				if (parent instanceof IDocumentRange) {
+					newDocument = ((IDocumentRange) parent).getDocument();
+					newDocument.addPositionCategory(DIFF_RANGE_CATEGORY);
+					Object input = this.fViewer.getInput();
+					range = this.fViewer.getNewRange(fLeg, input);
+					if (range == null) {
+						int pos = 0;
+						if (input instanceof ICompareInput)
+							pos = this.fViewer.findInsertionPosition(fLeg, (ICompareInput) input);
+						range = new Position(pos, 0);
+						try {
+							newDocument.addPosition(DIFF_RANGE_CATEGORY, range);
+						} catch (BadPositionCategoryException ex) {
+							// silently ignored
+							if (TextMergeViewer.DEBUG)
+								System.out.println("BadPositionCategoryException: " + ex); //$NON-NLS-1$
+						} catch (BadLocationException ex) {
+							// silently ignored
+							if (TextMergeViewer.DEBUG)
+								System.out.println("BadLocationException: " + ex); //$NON-NLS-1$
+						}
+						this.fViewer.addNewRange(fLeg, input, range);
+					}
+				} else if (parent instanceof IDocument) {
+					newDocument = ((IDocumentRange) fElement).getDocument();
+				}
+			}
+
+			boolean enabled = true;
+			if (newDocument == null) {
+				newDocument = new Document(""); //$NON-NLS-1$
+				enabled = false;
+			}
+
+			// Update the viewer document or range
+			IDocument oldDoc = tp.getDocument();
+			if (newDocument != oldDoc) {
+				updateViewerDocument(tp, newDocument, range);
+			} else { // same document but different range
+				updateViewerDocumentRange(tp, range);
+			}
+			newDocument.addDocumentListener(this);
+
+			tp.setEnabled(enabled);
+
+			return enabled;
+		}
+

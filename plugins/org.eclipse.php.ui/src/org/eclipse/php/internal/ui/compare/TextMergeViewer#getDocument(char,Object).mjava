@@ -1,11 +1,12 @@
 	IDocument getDocument(char type, Object input) {
-		ITypedElement te= getLeg(type, input);
-		if (te instanceof IDocument)
-			return (IDocument) te;
-		if (te instanceof IDocumentRange)
-			return ((IDocumentRange) te).getDocument();
-		if (te instanceof IStreamContentAccessor)
-			return DocumentManager.get(te);
+		IDocument doc = getElementDocument(type, input);
+		if (doc != null)
+			return doc;
+
+		if (input instanceof IDiffElement) {
+			IDiffContainer parent = ((IDiffElement) input).getParent();
+			return getElementDocument(type, parent);
+		}
 		return null;
 	}
 

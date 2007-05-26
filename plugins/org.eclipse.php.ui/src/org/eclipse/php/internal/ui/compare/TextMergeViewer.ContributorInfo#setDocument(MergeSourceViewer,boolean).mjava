@@ -1,0 +1,19 @@
+		public void setDocument(MergeSourceViewer viewer, boolean isEditable) {
+			// Ensure that this method is only called once
+			Assert.isTrue(fSourceViewer == null);
+			fSourceViewer = viewer;
+			try {
+				internalSetDocument(viewer);
+			} catch (RuntimeException e) {
+				// The error may be due to a stale entry in the DocumentManager (see bug 184489)
+				clearCachedDocument();
+				throw e;
+			}
+			viewer.setEditable(isEditable);
+			// Verify changes if the document is editable
+			if (isEditable) {
+				fNeedsValidation = true;
+				viewer.getTextWidget().addVerifyListener(this);
+			}
+		}
+

@@ -1,0 +1,25 @@
+	public MergeSourceViewer(Composite parent, int style, ResourceBundle bundle, ICompareContainer container) {
+		super(parent, new CompositeRuler(), null, false, style | SWT.H_SCROLL | SWT.V_SCROLL);
+		
+		fResourceBundle= bundle;
+		
+		MenuManager menu= new MenuManager();
+		menu.setRemoveAllWhenShown(true);
+		menu.addMenuListener(this);
+		StyledText te= getTextWidget();
+		te.setMenu(menu.createContextMenu(te));
+		container.registerContextMenu(menu, this);
+		
+		// for listening to editor show/hide line number preference value
+		fPreferenceChangeListener= new IPropertyChangeListener() {
+			public void propertyChange(PropertyChangeEvent event) {
+				MergeSourceViewer.this.handlePropertyChangeEvent(event);
+			}
+		};
+		EditorsUI.getPreferenceStore().addPropertyChangeListener(fPreferenceChangeListener);
+		fShowLineNumber= EditorsUI.getPreferenceStore().getBoolean(AbstractDecoratedTextEditorPreferenceConstants.EDITOR_LINE_NUMBER_RULER);
+		if(fShowLineNumber){
+			updateLineNumberRuler();
+		}
+	}
+

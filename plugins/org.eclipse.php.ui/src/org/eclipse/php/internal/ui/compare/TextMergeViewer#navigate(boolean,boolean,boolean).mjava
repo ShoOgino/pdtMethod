@@ -2,54 +2,23 @@
 	 * Returns true if end (or beginning) of document reached.
 	 */
 	private boolean navigate(boolean down, boolean wrap, boolean deep) {
-
-		Diff diff= null;
-		
+		Diff diff = null;
+		boolean wrapped = false;
 		for (;;) {
-			
-			if (fChangeDiffs != null) {
-				MergeSourceViewer part= fFocusPart;
-				if (part == null)
-					part= fRight;
-				
-				if (part != null) {
-					Point s= part.getSelectedRange();
-					if (down)
-						diff= findNext(part, fChangeDiffs, s.x, s.x+s.y, deep);
-					else
-						diff= findPrev(part, fChangeDiffs, s.x, s.x+s.y, deep);					
-				}		
+			diff = getNextVisibleDiff(down, deep);
+			if (diff == null && wrap) {
+				if (wrapped)
+					// We've already wrapped once so break out
+					break;
+				wrapped = true;
+				diff = getWrappedDiff(diff, down);
 			}
-		
-			if (diff == null) {	// at end or beginning
-				if (wrap) {
-					if (!fEndOfDocReached) {
-						fEndOfDocReached= true;
-						if (! endOfDocumentReached(down))
-							return true;
-					}
-					fEndOfDocReached= false;
-					if (fChangeDiffs != null && fChangeDiffs.size() > 0) {
-						if (down)
-							diff= (Diff) fChangeDiffs.get(0);
-						else
-							diff= (Diff) fChangeDiffs.get(fChangeDiffs.size()-1);
-					}
-				} else {
-					fEndOfDocReached= false;	
-					return true;
-				}
-			}
-			
-			setCurrentDiff(diff, true);
-			
-			if (diff != null && diff.fDirection == RangeDifference.ANCESTOR
-									&& !getAncestorEnabled())
+			if (diff != null)
+				setCurrentDiff(diff, true, deep);
+			if (diff != null && diff.fDirection == RangeDifference.ANCESTOR && !isAncestorVisible())
 				continue;
-				
 			break;
 		}
-
-		return false;
+		return diff == null;
 	}
 

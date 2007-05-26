@@ -7,76 +7,82 @@
 	 */
 	public TextMergeViewer(Composite parent, int style, CompareConfiguration configuration) {
 		super(style, ResourceBundle.getBundle(BUNDLE_NAME), configuration);
-		
-		int inheritedStyle= parent.getStyle();
+
+		int inheritedStyle = parent.getStyle();
 		if ((inheritedStyle & SWT.LEFT_TO_RIGHT) != 0)
-			fInheritedDirection= SWT.LEFT_TO_RIGHT;
+			fInheritedDirection = SWT.LEFT_TO_RIGHT;
 		else if ((inheritedStyle & SWT.RIGHT_TO_LEFT) != 0)
-			fInheritedDirection= SWT.RIGHT_TO_LEFT;
+			fInheritedDirection = SWT.RIGHT_TO_LEFT;
 		else
-			fInheritedDirection= SWT.NONE;
-		
+			fInheritedDirection = SWT.NONE;
+
 		if ((style & SWT.LEFT_TO_RIGHT) != 0)
-			fTextDirection= SWT.LEFT_TO_RIGHT;
+			fTextDirection = SWT.LEFT_TO_RIGHT;
 		else if ((style & SWT.RIGHT_TO_LEFT) != 0)
-			fTextDirection= SWT.RIGHT_TO_LEFT;
+			fTextDirection = SWT.RIGHT_TO_LEFT;
 		else
-			fTextDirection= SWT.NONE;
-		
-		fSymbolicFontName= getClass().getName();
-		
-		String platform= SWT.getPlatform();
-		fIsMotif= "motif".equals(platform); //$NON-NLS-1$
-		fIsCarbon= "carbon".equals(platform); //$NON-NLS-1$
-		
+			fTextDirection = SWT.NONE;
+
+		fSymbolicFontName = getClass().getName();
+
+		String platform = SWT.getPlatform();
+		fIsMotif = "motif".equals(platform); //$NON-NLS-1$
+		fIsCarbon = "carbon".equals(platform); //$NON-NLS-1$
+
 		if (fIsMotif)
-			fMarginWidth= 0;
-			
-		Display display= parent.getDisplay();
-		
-		fPreferenceChangeListener= new IPropertyChangeListener() {
+			fMarginWidth = 0;
+
+		Display display = parent.getDisplay();
+
+		fPreferenceChangeListener = new IPropertyChangeListener() {
 			public void propertyChange(PropertyChangeEvent event) {
-				TextMergeViewer.this.propertyChange(event);
+				TextMergeViewer.this.handlePropertyChangeEvent(event);
 			}
 		};
 
-		fPreferenceStore= configuration.getPreferenceStore();
+		fPreferenceStore = getCompareConfiguration().getPreferenceStore();
 		if (fPreferenceStore != null) {
 			fPreferenceStore.addPropertyChangeListener(fPreferenceChangeListener);
-			
+
 			checkForColorUpdate(display);
 
-			fLeftIsLocal= Utilities.getBoolean(configuration, "LEFT_IS_LOCAL", false); //$NON-NLS-1$
-			fSynchronizedScrolling= fPreferenceStore.getBoolean(ComparePreferencePage.SYNCHRONIZE_SCROLLING);
-			fShowMoreInfo= fPreferenceStore.getBoolean(ComparePreferencePage.SHOW_MORE_INFO);
-			fShowPseudoConflicts= fPreferenceStore.getBoolean(ComparePreferencePage.SHOW_PSEUDO_CONFLICTS);
+			fLeftIsLocal = Utilities.getBoolean(getCompareConfiguration(), "LEFT_IS_LOCAL", false); //$NON-NLS-1$
+			fSynchronizedScrolling = fPreferenceStore.getBoolean(ComparePreferencePage.SYNCHRONIZE_SCROLLING);
+			fShowMoreInfo = fPreferenceStore.getBoolean(ComparePreferencePage.SHOW_MORE_INFO);
+			fShowPseudoConflicts = fPreferenceStore.getBoolean(ComparePreferencePage.SHOW_PSEUDO_CONFLICTS);
 			//fUseSplines= fPreferenceStore.getBoolean(ComparePreferencePage.USE_SPLINES);
-			fUseSingleLine= fPreferenceStore.getBoolean(ComparePreferencePage.USE_SINGLE_LINE);
+			fUseSingleLine = fPreferenceStore.getBoolean(ComparePreferencePage.USE_SINGLE_LINE);
+			fHighlightTokenChanges = fPreferenceStore.getBoolean(ComparePreferencePage.HIGHLIGHT_TOKEN_CHANGES);
 			//fUseResolveUI= fPreferenceStore.getBoolean(ComparePreferencePage.USE_RESOLVE_UI);
 		}
-		
-		fDocumentListener= new IDocumentListener() {
-			
-			public void documentAboutToBeChanged(DocumentEvent e) {
-				// nothing to do
-			}
-			
-			public void documentChanged(DocumentEvent e) {
-				TextMergeViewer.this.documentChanged(e);
-			}
-		};
-		
+
 		buildControl(parent);
-		
-		INavigatable nav= new INavigatable() {
-			public boolean gotoDifference(boolean next) {
-				return navigate(next, false, false);
+
+		INavigatable nav = new INavigatable() {
+			public boolean selectChange(int flag) {
+				if (flag == INavigatable.FIRST_CHANGE || flag == INavigatable.LAST_CHANGE) {
+					selectFirstDiff(flag == INavigatable.FIRST_CHANGE);
+					return false;
+				}
+				return navigate(flag == INavigatable.NEXT_CHANGE, false, false);
+			}
+
+			public Object getInput() {
+				return TextMergeViewer.this.getInput();
+			}
+
+			public boolean openSelectedChange() {
+				return false;
+			}
+
+			public boolean hasChange(int flag) {
+				return getNextVisibleDiff(flag == INavigatable.NEXT_CHANGE, false) != null;
 			}
 		};
 		fComposite.setData(INavigatable.NAVIGATOR_PROPERTY, nav);
-		
-		fBirdsEyeCursor= new Cursor(parent.getDisplay(), SWT.CURSOR_HAND);
-		
+
+		fBirdsEyeCursor = new Cursor(parent.getDisplay(), SWT.CURSOR_HAND);
+
 		JFaceResources.getFontRegistry().addListener(fPreferenceChangeListener);
 		JFaceResources.getColorRegistry().addListener(fPreferenceChangeListener);
 		updateFont();

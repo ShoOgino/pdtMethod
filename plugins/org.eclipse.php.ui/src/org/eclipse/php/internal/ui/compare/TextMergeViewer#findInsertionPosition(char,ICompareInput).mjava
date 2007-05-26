@@ -11,55 +11,55 @@
 	 * @since 2.0
 	 */
 	protected int findInsertionPosition(char type, ICompareInput input) {
-			
-		ITypedElement other= null;
-		char otherType= 0;
-		
+
+		ITypedElement other = null;
+		char otherType = 0;
+
 		switch (type) {
-		case 'A':
-			other= input.getLeft();
-			otherType= 'L';
-			if (other == null) {
-				other= input.getRight();
-				otherType= 'R';
-			}
-			break;
-		case 'L':
-			other= input.getRight();
-			otherType= 'R';
-			if (other == null) {
-				other= input.getAncestor();
-				otherType= 'A';
-			}
-			break;
-		case 'R':
-			other= input.getLeft();
-			otherType= 'L';
-			if (other == null) {
-				other= input.getAncestor();
-				otherType= 'A';
-			}
-			break;
+			case ANCESTOR_CONTRIBUTOR:
+				other = input.getLeft();
+				otherType = LEFT_CONTRIBUTOR;
+				if (other == null) {
+					other = input.getRight();
+					otherType = RIGHT_CONTRIBUTOR;
+				}
+				break;
+			case LEFT_CONTRIBUTOR:
+				other = input.getRight();
+				otherType = RIGHT_CONTRIBUTOR;
+				if (other == null) {
+					other = input.getAncestor();
+					otherType = ANCESTOR_CONTRIBUTOR;
+				}
+				break;
+			case RIGHT_CONTRIBUTOR:
+				other = input.getLeft();
+				otherType = LEFT_CONTRIBUTOR;
+				if (other == null) {
+					other = input.getAncestor();
+					otherType = ANCESTOR_CONTRIBUTOR;
+				}
+				break;
 		}
-		
+
 		if (other instanceof IDocumentRange) {
-			IDocumentRange dr= (IDocumentRange) other;
-			Position p= dr.getRange();	
-			Diff diff= findDiff(otherType, p.offset);
+			IDocumentRange dr = (IDocumentRange) other;
+			Position p = dr.getRange();
+			Diff diff = findDiff(otherType, p.offset);
 			if (diff != null) {
 				switch (type) {
-				case 'A':
-					if (diff.fAncestorPos != null)
-						return diff.fAncestorPos.offset;
-					break;
-				case 'L':
-					if (diff.fLeftPos != null)
-						return diff.fLeftPos.offset;
-					break;
-				case 'R':
-					if (diff.fRightPos != null)
-						return diff.fRightPos.offset;
-					break;
+					case ANCESTOR_CONTRIBUTOR:
+						if (diff.fAncestorPos != null)
+							return diff.fAncestorPos.offset;
+						break;
+					case LEFT_CONTRIBUTOR:
+						if (diff.fLeftPos != null)
+							return diff.fLeftPos.offset;
+						break;
+					case RIGHT_CONTRIBUTOR:
+						if (diff.fRightPos != null)
+							return diff.fRightPos.offset;
+						break;
 				}
 			}
 		}

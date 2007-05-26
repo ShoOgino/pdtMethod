@@ -1,49 +1,59 @@
 	private void updateControls() {
-		
-		boolean leftToRight= false;
-		boolean rightToLeft= false;
-		
+
+		boolean leftToRight = false;
+		boolean rightToLeft = false;
+
 		updateStatus(fCurrentDiff);
 		updateResolveStatus();
 
 		if (fCurrentDiff != null) {
-			IMergeViewerContentProvider cp= getMergeContentProvider();
+			IMergeViewerContentProvider cp = getMergeContentProvider();
 			if (cp != null) {
-				rightToLeft= cp.isLeftEditable(getInput());
-				leftToRight= cp.isRightEditable(getInput());
-			}			
+				if (!isPatchHunk()) {
+					rightToLeft = cp.isLeftEditable(getInput());
+					leftToRight = cp.isRightEditable(getInput());
+				}
+			}
 		}
-		
+
 		if (fDirectionLabel != null) {
-			if (fHighlightRanges && fCurrentDiff != null && isThreeWay() && !fIgnoreAncestor) {
+			if (fHighlightRanges && fCurrentDiff != null && isThreeWay() && !isIgnoreAncestor()) {
 				fDirectionLabel.setImage(fCurrentDiff.getImage());
 			} else {
 				fDirectionLabel.setImage(null);
 			}
 		}
-		
+
 		if (fCopyDiffLeftToRightItem != null)
-			((Action)fCopyDiffLeftToRightItem.getAction()).setEnabled(leftToRight);
+			((Action) fCopyDiffLeftToRightItem.getAction()).setEnabled(leftToRight);
 		if (fCopyDiffRightToLeftItem != null)
-			((Action)fCopyDiffRightToLeftItem.getAction()).setEnabled(rightToLeft);
-			
-		boolean enableNavigation= false;
+			((Action) fCopyDiffRightToLeftItem.getAction()).setEnabled(rightToLeft);
+
+		boolean enableNavigation = false;
 		if (fCurrentDiff == null && fChangeDiffs != null && fChangeDiffs.size() > 0)
-			enableNavigation= true;
+			enableNavigation = true;
 		else if (fChangeDiffs != null && fChangeDiffs.size() > 1)
-			enableNavigation= true;
+			enableNavigation = true;
 		else if (fCurrentDiff != null && fCurrentDiff.fDiffs != null)
-			enableNavigation= true;
+			enableNavigation = true;
 		else if (fCurrentDiff != null && fCurrentDiff.fIsToken)
-			enableNavigation= true;
-		
-		if (fNextItem != null) {
-			IAction a= fNextItem.getAction();
+			enableNavigation = true;
+
+		if (fNextDiff != null) {
+			IAction a = fNextDiff.getAction();
+			a.setEnabled(enableNavigation || hasNextElement(true));
+		}
+		if (fPreviousDiff != null) {
+			IAction a = fPreviousDiff.getAction();
+			a.setEnabled(enableNavigation || hasNextElement(false));
+		}
+		if (fNextChange != null) {
+			IAction a = fNextChange.getAction();
 			a.setEnabled(enableNavigation);
 		}
-		if (fPreviousItem != null) {
-			IAction a= fPreviousItem.getAction();
+		if (fPreviousChange != null) {
+			IAction a = fPreviousChange.getAction();
 			a.setEnabled(enableNavigation);
-		}	
+		}
 	}
 

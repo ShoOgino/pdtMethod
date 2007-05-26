@@ -1,0 +1,30 @@
+		/**
+		 * Connect to a shared document if possible. Return <code>null</code>
+		 * if the connection was not possible.
+		 * @return the shared document or <code>null</code> if connection to a 
+		 * shared document was not possible
+		 */
+		private IDocument connectToSharedDocument() {
+			IEditorInput key = getDocumentKey();
+			if (key != null) {
+				if (fDocumentProvider != null) {
+					// We've already connected and setup the document
+					return fDocumentProvider.getDocument(key);
+				}
+				IDocumentProvider documentProvider = getDocumentProvider();
+				if (documentProvider != null) {
+					try {
+						connect(documentProvider, key);
+						setCachedDocumentProvider(key, documentProvider);
+						IDocument newDoc = documentProvider.getDocument(key);
+						this.fViewer.updateDirtyState(key, documentProvider, fLeg);
+						return newDoc;
+					} catch (CoreException e) {
+						// Connection failed. Log the error and continue without a shared document
+						CompareUIPlugin.log(e);
+					}
+				}
+			}
+			return null;
+		}
+

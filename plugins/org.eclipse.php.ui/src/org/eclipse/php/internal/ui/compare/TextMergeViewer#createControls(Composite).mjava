@@ -3,121 +3,126 @@
 	 * Clients must not call or override this method.
 	 */
 	protected void createControls(Composite composite) {
-		
+
 		PlatformUI.getWorkbench().getHelpSystem().setHelp(composite, ICompareContextIds.TEXT_MERGE_VIEW);
-		
+
 		// 1st row
 		if (fMarginWidth > 0) {
-			fAncestorCanvas= new BufferedCanvas(composite, SWT.NONE) {
+			fAncestorCanvas = new BufferedCanvas(composite, SWT.NONE) {
 				public void doPaint(GC gc) {
 					paintSides(gc, fAncestor, fAncestorCanvas, false);
 				}
 			};
-			fAncestorCanvas.addMouseListener(
-				new MouseAdapter() {
-					public void mouseDown(MouseEvent e) {
-						setCurrentDiff2(handleMouseInSides(fAncestorCanvas, fAncestor, e.y), false);
-					}
+			fAncestorCanvas.addMouseListener(new MouseAdapter() {
+				public void mouseDown(MouseEvent e) {
+					setCurrentDiff2(handleMouseInSides(fAncestorCanvas, fAncestor, e.y), false);
 				}
-			);
+			});
 		}
-									
-		fAncestor= createPart(composite);
+
+		fAncestor = createPart(composite);
 		fAncestor.setEditable(false);
-		
-		fSummaryHeader= new Canvas(composite, SWT.NONE);
-		fHeaderPainter= new HeaderPainter();
+		fAncestor.getTextWidget().getAccessible().addAccessibleListener(new AccessibleAdapter() {
+			public void getName(AccessibleEvent e) {
+				e.result = NLS.bind(CompareMessages.TextMergeViewer_accessible_ancestor, getCompareConfiguration().getAncestorLabel(getInput()));
+			}
+		});
+		fAncestor.addTextPresentationListener(new ChangeHighlighter(fAncestor));
+
+		fSummaryHeader = new Canvas(composite, SWT.NONE);
+		fHeaderPainter = new HeaderPainter();
 		fSummaryHeader.addPaintListener(fHeaderPainter);
 		updateResolveStatus();
-				
+
 		// 2nd row
 		if (fMarginWidth > 0) {
-			fLeftCanvas= new BufferedCanvas(composite, SWT.NONE) {
+			fLeftCanvas = new BufferedCanvas(composite, SWT.NONE) {
 				public void doPaint(GC gc) {
 					paintSides(gc, fLeft, fLeftCanvas, false);
 				}
 			};
-			fLeftCanvas.addMouseListener(
-				new MouseAdapter() {
-					public void mouseDown(MouseEvent e) {
-						setCurrentDiff2(handleMouseInSides(fLeftCanvas, fLeft, e.y), false);
-					}
+			fLeftCanvas.addMouseListener(new MouseAdapter() {
+				public void mouseDown(MouseEvent e) {
+					setCurrentDiff2(handleMouseInSides(fLeftCanvas, fLeft, e.y), false);
 				}
-			);
+			});
 		}
-		
-		fLeft= createPart(composite);
+
+		fLeft = createPart(composite);
 		fLeft.getTextWidget().getVerticalBar().setVisible(!fSynchronizedScrolling);
 		fLeft.addAction(MergeSourceViewer.SAVE_ID, fLeftSaveAction);
-			
-		fRight= createPart(composite);
+		fLeft.getTextWidget().getAccessible().addAccessibleListener(new AccessibleAdapter() {
+			public void getName(AccessibleEvent e) {
+				e.result = NLS.bind(CompareMessages.TextMergeViewer_accessible_left, getCompareConfiguration().getLeftLabel(getInput()));
+			}
+		});
+		fLeft.addTextPresentationListener(new ChangeHighlighter(fLeft));
+
+		fRight = createPart(composite);
 		fRight.getTextWidget().getVerticalBar().setVisible(!fSynchronizedScrolling);
 		fRight.addAction(MergeSourceViewer.SAVE_ID, fRightSaveAction);
-		
+		fRight.getTextWidget().getAccessible().addAccessibleListener(new AccessibleAdapter() {
+			public void getName(AccessibleEvent e) {
+				e.result = NLS.bind(CompareMessages.TextMergeViewer_accessible_right, getCompareConfiguration().getRightLabel(getInput()));
+			}
+		});
+		fRight.addTextPresentationListener(new ChangeHighlighter(fRight));
+
 		hsynchViewport(fAncestor, fLeft, fRight);
 		hsynchViewport(fLeft, fAncestor, fRight);
 		hsynchViewport(fRight, fAncestor, fLeft);
 
 		if (fMarginWidth > 0) {
-			fRightCanvas= new BufferedCanvas(composite, SWT.NONE) {
+			fRightCanvas = new BufferedCanvas(composite, SWT.NONE) {
 				public void doPaint(GC gc) {
 					paintSides(gc, fRight, fRightCanvas, fSynchronizedScrolling);
 				}
 			};
-			fRightCanvas.addMouseListener(
-				new MouseAdapter() {
-					public void mouseDown(MouseEvent e) {
-						setCurrentDiff2(handleMouseInSides(fRightCanvas, fRight, e.y), false);
-					}
+			fRightCanvas.addMouseListener(new MouseAdapter() {
+				public void mouseDown(MouseEvent e) {
+					setCurrentDiff2(handleMouseInSides(fRightCanvas, fRight, e.y), false);
 				}
-			);
+			});
 		}
-		
-		fScrollCanvas= new Canvas(composite, SWT.V_SCROLL);
-		Rectangle trim= fLeft.getTextWidget().computeTrim(0, 0, 0, 0);
-		fTopInset= trim.y;
-		
-		fVScrollBar= fScrollCanvas.getVerticalBar();
+
+		fScrollCanvas = new Canvas(composite, SWT.V_SCROLL);
+		Rectangle trim = fLeft.getTextWidget().computeTrim(0, 0, 0, 0);
+		fTopInset = trim.y;
+
+		fVScrollBar = fScrollCanvas.getVerticalBar();
 		fVScrollBar.setIncrement(1);
 		fVScrollBar.setVisible(true);
-		fVScrollBar.addListener(SWT.Selection,
-			new Listener() {
-				public void handleEvent(Event e) {
-					int vpos= ((ScrollBar)e.widget).getSelection();
-					scrollVertical(vpos, vpos, vpos, null);
-					workaround65205();
-				}
+		fVScrollBar.addListener(SWT.Selection, new Listener() {
+			public void handleEvent(Event e) {
+				int vpos = ((ScrollBar) e.widget).getSelection();
+				synchronizedScrollVertical(vpos);
 			}
-		);
-		
-		fBirdsEyeCanvas= new BufferedCanvas(composite, SWT.NONE) {
+		});
+
+		fBirdsEyeCanvas = new BufferedCanvas(composite, SWT.NONE) {
 			public void doPaint(GC gc) {
 				paintBirdsEyeView(this, gc);
 			}
 		};
-		fBirdsEyeCanvas.addMouseListener(
-			new MouseAdapter() {
-				public void mouseDown(MouseEvent e) {
-					setCurrentDiff2(handlemouseInBirdsEyeView(fBirdsEyeCanvas, e.y), true);
+		fBirdsEyeCanvas.addMouseListener(new MouseAdapter() {
+			public void mouseDown(MouseEvent e) {
+				setCurrentDiff2(handlemouseInBirdsEyeView(fBirdsEyeCanvas, e.y), true);
+			}
+		});
+		fBirdsEyeCanvas.addMouseMoveListener(new MouseMoveListener() {
+
+			private Cursor fLastCursor;
+
+			public void mouseMove(MouseEvent e) {
+				Cursor cursor = null;
+				Diff diff = handlemouseInBirdsEyeView(fBirdsEyeCanvas, e.y);
+				if (diff != null && diff.fDirection != RangeDifference.NOCHANGE)
+					cursor = fBirdsEyeCursor;
+				if (fLastCursor != cursor) {
+					fBirdsEyeCanvas.setCursor(cursor);
+					fLastCursor = cursor;
 				}
 			}
-		);
-		fBirdsEyeCanvas.addMouseMoveListener(
-			new MouseMoveListener() {
-				
-				private Cursor fLastCursor;
-				
-				public void mouseMove(MouseEvent e) {
-					Cursor cursor= null;
-					Diff diff= handlemouseInBirdsEyeView(fBirdsEyeCanvas, e.y);
-					if (diff != null && diff.fDirection != RangeDifference.NOCHANGE)
-						cursor= fBirdsEyeCursor;
-					if (fLastCursor != cursor) {
-						fBirdsEyeCanvas.setCursor(cursor);
-						fLastCursor= cursor;
-					}
-				}
-			}
-		);
+		});
 	}
 

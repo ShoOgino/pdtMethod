@@ -11,15 +11,29 @@
 	 */
 	protected final void inputChanged(Object input, Object oldInput) {
 		
-		if (input != oldInput)
-			if (oldInput instanceof ICompareInput)
-				((ICompareInput)oldInput).removeCompareInputChangeListener(fCompareInputChangeListener);
+		if (input != oldInput && oldInput != null) {
+			ICompareInputLabelProvider lp = getCompareConfiguration().getLabelProvider();
+			if (lp != null)
+				lp.removeListener(labelChangeListener);
+		}
+		
+		if (input != oldInput && oldInput instanceof ICompareInput) {
+			ICompareContainer container = getCompareConfiguration().getContainer();
+			container.removeCompareInputChangeListener((ICompareInput)oldInput, fCompareInputChangeListener);
+		}
 		
 		boolean success= doSave(input, oldInput);
 		
-		if (input != oldInput)
-			if (input instanceof ICompareInput)
-				((ICompareInput)input).addCompareInputChangeListener(fCompareInputChangeListener);
+		if (input != oldInput && input instanceof ICompareInput) {
+			ICompareContainer container = getCompareConfiguration().getContainer();
+			container.addCompareInputChangeListener((ICompareInput)input, fCompareInputChangeListener);
+		}
+		
+		if (input != oldInput && input != null) {
+			ICompareInputLabelProvider lp = getCompareConfiguration().getLabelProvider();
+			if (lp != null)
+				lp.addListener(labelChangeListener);
+		}
 		
 		if (success) {
 			setLeftDirty(false);

@@ -1,0 +1,54 @@
+	private void handleEndOfDocumentReached(Shell shell, boolean next) {
+		boolean hasNextElement = hasNextElement(next);
+		IPreferenceStore store = CompareUIPlugin.getDefault().getPreferenceStore();
+		String value = store.getString(ICompareUIConstants.PREF_NAVIGATION_END_ACTION);
+		if (!value.equals(ICompareUIConstants.PREF_VALUE_PROMPT)) {
+			// We only want to do the automatic thing if there is something to do
+			if (hasNextElement || store.getString(ICompareUIConstants.PREF_NAVIGATION_END_ACTION).equals(ICompareUIConstants.PREF_VALUE_LOOP)) {
+				performEndOfDocumentAction(shell, store, ICompareUIConstants.PREF_NAVIGATION_END_ACTION, next);
+				return;
+			}
+		}
+		shell.getDisplay().beep();
+		if (hasNextElement) {
+			String loopMessage;
+			String nextMessage;
+			String message;
+			String title;
+			if (next) {
+				title = CompareMessages.TextMergeViewer_0;
+				message = CompareMessages.TextMergeViewer_1;
+				loopMessage = CompareMessages.TextMergeViewer_2;
+				nextMessage = CompareMessages.TextMergeViewer_3;
+			} else {
+				title = CompareMessages.TextMergeViewer_4;
+				message = CompareMessages.TextMergeViewer_5;
+				loopMessage = CompareMessages.TextMergeViewer_6;
+				nextMessage = CompareMessages.TextMergeViewer_7;
+			}
+			String[] localLoopOption = new String[] { loopMessage, ICompareUIConstants.PREF_VALUE_LOOP };
+			String[] nextElementOption = new String[] { nextMessage, ICompareUIConstants.PREF_VALUE_NEXT };
+			NavigationEndDialog dialog = new NavigationEndDialog(shell, title, null, message, new String[][] { localLoopOption, nextElementOption, });
+			int result = dialog.open();
+			if (result == Window.OK) {
+				performEndOfDocumentAction(shell, store, ICompareUIConstants.PREF_NAVIGATION_END_ACTION_LOCAL, next);
+				if (dialog.getToggleState()) {
+					store.putValue(ICompareUIConstants.PREF_NAVIGATION_END_ACTION, store.getString(ICompareUIConstants.PREF_NAVIGATION_END_ACTION_LOCAL));
+				}
+			}
+		} else {
+			String message;
+			String title;
+			if (next) {
+				title = CompareMessages.TextMergeViewer_8;
+				message = CompareMessages.TextMergeViewer_9;
+			} else {
+				title = CompareMessages.TextMergeViewer_10;
+				message = CompareMessages.TextMergeViewer_11;
+			}
+			if (MessageDialog.openQuestion(shell, title, message)) {
+				selectFirstDiff(next);
+			}
+		}
+	}
+

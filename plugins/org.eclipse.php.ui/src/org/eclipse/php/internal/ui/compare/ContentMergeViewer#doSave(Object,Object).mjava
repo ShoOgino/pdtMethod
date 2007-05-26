@@ -16,10 +16,15 @@
 	protected boolean doSave(Object newInput, Object oldInput) {
 		
 		// before setting the new input we have to save the old
-		if (fLeftSaveAction.isEnabled() || fRightSaveAction.isEnabled()) {
+		if (isLeftDirty() || isRightDirty()) {
 			
-			// post alert
-			if (fConfirmSave) {
+			
+			if (Utilities.RUNNING_TESTS) {
+				if (Utilities.TESTING_FLUSH_ON_COMPARE_INPUT_CHANGE) {
+					flushContent(oldInput, null);
+				}
+			} else if (fConfirmSave) {
+				// post alert
 				Shell shell= fComposite.getShell();
 				
 				MessageDialog dialog= new MessageDialog(shell,
@@ -35,7 +40,7 @@
 									
 				switch (dialog.open()) {	// open returns index of pressed button
 				case 0:
-					saveContent(oldInput);
+					flushContent(oldInput, null);
 					break;
 				case 1:
 					setLeftDirty(false);
@@ -45,7 +50,7 @@
 					throw new ViewerSwitchingCancelled();
 				}
 			} else
-				saveContent(oldInput);
+				flushContent(oldInput, null);
 			return true;
 		}
 		return false;

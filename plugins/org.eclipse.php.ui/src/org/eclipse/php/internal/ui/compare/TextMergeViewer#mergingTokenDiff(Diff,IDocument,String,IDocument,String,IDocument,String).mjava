@@ -2,89 +2,83 @@
 	 * Performs a "smart" token based 3-way diff on the character range specified by the given baseDiff.
 	 * It is "smart" because it tries to minimize the number of token diffs by merging them.
 	 */
-	private void mergingTokenDiff(Diff baseDiff, 
-				IDocument ancestorDoc, String a,
-				IDocument rightDoc, String d,
-				IDocument leftDoc, String s) {
-		ITokenComparator sa= null;
-		int ancestorStart= 0;
+	private void mergingTokenDiff(Diff baseDiff, IDocument ancestorDoc, String a, IDocument rightDoc, String d, IDocument leftDoc, String s) {
+		ITokenComparator sa = null;
+		int ancestorStart = 0;
 		if (ancestorDoc != null) {
-			sa= createTokenComparator(a);
-			ancestorStart= baseDiff.fAncestorPos.getOffset();
+			sa = createTokenComparator(a);
+			ancestorStart = baseDiff.fAncestorPos.getOffset();
 		}
-		
-		int rightStart= baseDiff.fRightPos.getOffset();	
-		ITokenComparator sm= createTokenComparator(d);
-		
-		int leftStart= baseDiff.fLeftPos.getOffset();
-		ITokenComparator sy= createTokenComparator(s);
-		
-		RangeDifference[] r= RangeDifferencer.findRanges(sa, sy, sm);
-		for (int i= 0; i < r.length; i++) {
-			RangeDifference  es= r[i];
+
+		int rightStart = baseDiff.fRightPos.getOffset();
+		ITokenComparator sm = createTokenComparator(d);
+
+		int leftStart = baseDiff.fLeftPos.getOffset();
+		ITokenComparator sy = createTokenComparator(s);
+
+		RangeDifference[] r = RangeDifferencer.findRanges(sa, sy, sm);
+		for (int i = 0; i < r.length; i++) {
+			RangeDifference es = r[i];
 			// determine range of diffs in one line
-			int start= i;
-			int leftLine= -1;
-			int rightLine= -1;
+			int start = i;
+			int leftLine = -1;
+			int rightLine = -1;
 			try {
-				leftLine= leftDoc.getLineOfOffset(leftStart+sy.getTokenStart(es.leftStart()));
-				rightLine= rightDoc.getLineOfOffset(rightStart+sm.getTokenStart(es.rightStart()));
+				leftLine = leftDoc.getLineOfOffset(leftStart + sy.getTokenStart(es.leftStart()));
+				rightLine = rightDoc.getLineOfOffset(rightStart + sm.getTokenStart(es.rightStart()));
 			} catch (BadLocationException e) {
 				// silently ignored
 			}
 			i++;
 			for (; i < r.length; i++) {
-				es= r[i];
+				es = r[i];
 				try {
-					if (leftLine != leftDoc.getLineOfOffset(leftStart+sy.getTokenStart(es.leftStart())))
+					if (leftLine != leftDoc.getLineOfOffset(leftStart + sy.getTokenStart(es.leftStart())))
 						break;
-					if (rightLine != rightDoc.getLineOfOffset(rightStart+sm.getTokenStart(es.rightStart())))
+					if (rightLine != rightDoc.getLineOfOffset(rightStart + sm.getTokenStart(es.rightStart())))
 						break;
 				} catch (BadLocationException e) {
 					// silently ignored
 				}
 			}
-			int end= i;
-			
+			int end = i;
+
 			// find first diff from left
-			RangeDifference first= null;
-			for (int ii= start; ii < end; ii++) {
-				es= r[ii];
+			RangeDifference first = null;
+			for (int ii = start; ii < end; ii++) {
+				es = r[ii];
 				if (useChange(es.kind())) {
-					first= es;
+					first = es;
 					break;
 				}
 			}
-			
+
 			// find first diff from mine
-			RangeDifference last= null;
-			for (int ii= end-1; ii >= start; ii--) {
-				es= r[ii];
+			RangeDifference last = null;
+			for (int ii = end - 1; ii >= start; ii--) {
+				es = r[ii];
 				if (useChange(es.kind())) {
-					last= es;
+					last = es;
 					break;
 				}
 			}
-			
+
 			if (first != null && last != null) {
-				
-				int ancestorStart2= 0;
-				int ancestorEnd2= 0;
+
+				int ancestorStart2 = 0;
+				int ancestorEnd2 = 0;
 				if (ancestorDoc != null) {
-					ancestorStart2= ancestorStart+sa.getTokenStart(first.ancestorStart());
-					ancestorEnd2= ancestorStart+getTokenEnd(sa, last.ancestorStart(), last.ancestorLength());
+					ancestorStart2 = ancestorStart + sa.getTokenStart(first.ancestorStart());
+					ancestorEnd2 = ancestorStart + getTokenEnd(sa, last.ancestorStart(), last.ancestorLength());
 				}
-				
-				int leftStart2= leftStart+sy.getTokenStart(first.leftStart());
-				int leftEnd2= leftStart+getTokenEnd(sy, last.leftStart(), last.leftLength());
-				
-				int rightStart2= rightStart+sm.getTokenStart(first.rightStart());
-				int rightEnd2= rightStart+getTokenEnd(sm, last.rightStart(), last.rightLength());
-				Diff diff= new Diff(baseDiff, first.kind(),
-							ancestorDoc, null, ancestorStart2, ancestorEnd2+1,
-							leftDoc, null, leftStart2, leftEnd2+1,
-							rightDoc, null, rightStart2, rightEnd2+1);	
-				diff.fIsToken= true;
+
+				int leftStart2 = leftStart + sy.getTokenStart(first.leftStart());
+				int leftEnd2 = leftStart + getTokenEnd(sy, last.leftStart(), last.leftLength());
+
+				int rightStart2 = rightStart + sm.getTokenStart(first.rightStart());
+				int rightEnd2 = rightStart + getTokenEnd(sm, last.rightStart(), last.rightLength());
+				Diff diff = new Diff(baseDiff, first.kind(), ancestorDoc, null, ancestorStart2, ancestorEnd2, leftDoc, null, leftStart2, leftEnd2, rightDoc, null, rightStart2, rightEnd2);
+				diff.fIsToken = true;
 				baseDiff.add(diff);
 			}
 		}

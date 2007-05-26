@@ -1,0 +1,35 @@
+	/**
+	 * Flush the modified content back to input elements via the content provider.
+	 * The provided input may be the current input of the viewer or it may be
+	 * the previous input (i.e. this method may be called to flush modified content
+	 * during an input change).
+	 * @param input the compare input
+	 * @param monitor a progress monitor or <code>null</code> if the method
+	 * was call from a place where a progress monitor was not available.
+	 * @since 3.3
+	 */
+	protected void flushContent(Object input, IProgressMonitor monitor) {
+				
+		// write back modified contents
+		IMergeViewerContentProvider content= (IMergeViewerContentProvider) getContentProvider();
+		
+		boolean leftEmpty= content.getLeftContent(input) == null;
+		boolean rightEmpty= content.getRightContent(input) == null;
+
+		if (getCompareConfiguration().isLeftEditable() && isLeftDirty()) {
+			byte[] bytes= getContents(true);
+			if (rightEmpty && bytes != null && bytes.length == 0)
+				bytes= null;
+			setLeftDirty(false);
+			content.saveLeftContent(input, bytes);
+		}
+		
+		if (getCompareConfiguration().isRightEditable() && isRightDirty()) {
+			byte[] bytes= getContents(false);
+			if (leftEmpty && bytes != null && bytes.length == 0)
+				bytes= null;
+			setRightDirty(false);
+			content.saveRightContent(input, bytes);
+		}
+	}
+

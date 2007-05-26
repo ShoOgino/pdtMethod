@@ -1,0 +1,33 @@
+		private IDocument createDocument() {
+			// If the content provider is a text content provider, attempt to obtain
+			// a shared document (i.e. file buffer)
+			IDocument newDoc = connectToSharedDocument();
+
+			if (newDoc == null) {
+				IStreamContentAccessor sca = (IStreamContentAccessor) fElement;
+				String s = null;
+
+				try {
+					String encoding = getEncoding();
+					s = Utilities.readString(sca, encoding);
+				} catch (CoreException ex) {
+					this.fViewer.setError(fLeg, ex.getMessage());
+				}
+
+//				newDoc= new Document(s != null ? s : ""); //$NON-NLS-1$
+				newDoc = StructuredDocumentFactory.getNewStructuredDocumentInstance(new PhpSourceParser());
+				newDoc.set(s != null ? s : "");
+				// newDoc= new Document(s != null ? s : ""); //$NON-NLS-1$
+				IDocumentPartitioner partitioner = getDocumentPartitioner();
+				if (partitioner != null) {
+					if (newDoc instanceof JobSafeStructuredDocument) {
+						((JobSafeStructuredDocument) newDoc).setDocumentPartitioner("org.eclipse.wst.sse.core.default_structured_text_partitioning", partitioner);
+					} else {
+						newDoc.setDocumentPartitioner(partitioner);
+					}
+					partitioner.connect(newDoc);
+				}
+			}
+			return newDoc;
+		}
+

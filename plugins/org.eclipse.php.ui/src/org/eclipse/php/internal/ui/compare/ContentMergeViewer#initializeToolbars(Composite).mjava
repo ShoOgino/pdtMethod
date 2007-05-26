@@ -1,0 +1,50 @@
+	private void initializeToolbars(Composite parent) {
+		ToolBarManager tbm= CompareViewerPane.getToolBarManager(parent);
+		if (tbm != null) {
+			tbm.removeAll();
+			
+			// define groups
+			tbm.add(new Separator("modes"));	//$NON-NLS-1$
+			tbm.add(new Separator("merge"));	//$NON-NLS-1$
+			tbm.add(new Separator("navigation"));	//$NON-NLS-1$
+			
+			CompareConfiguration cc= getCompareConfiguration();
+		
+			if (cc.isRightEditable()) {
+				fCopyLeftToRightAction=
+					new Action() {
+						public void run() {
+							copy(true);
+						}
+					};
+				Utilities.initAction(fCopyLeftToRightAction, getResourceBundle(), "action.CopyLeftToRight."); //$NON-NLS-1$
+				tbm.appendToGroup("merge", fCopyLeftToRightAction); //$NON-NLS-1$
+				fHandlerService.registerAction(fCopyLeftToRightAction, "org.eclipse.compare.copyAllLeftToRight"); //$NON-NLS-1$
+			}
+			
+			if (cc.isLeftEditable()) {
+				fCopyRightToLeftAction=
+					new Action() {
+						public void run() {
+							copy(false);
+						}
+					};
+				Utilities.initAction(fCopyRightToLeftAction, getResourceBundle(), "action.CopyRightToLeft."); //$NON-NLS-1$
+				tbm.appendToGroup("merge", fCopyRightToLeftAction); //$NON-NLS-1$
+				fHandlerService.registerAction(fCopyRightToLeftAction, "org.eclipse.compare.copyAllRightToLeft"); //$NON-NLS-1$
+			}
+			
+			final ChangePropertyAction a= new ChangePropertyAction(fBundle, getCompareConfiguration(), "action.EnableAncestor.", ICompareUIConstants.PROP_ANCESTOR_VISIBLE); //$NON-NLS-1$
+			a.setChecked(fAncestorVisible);
+			fAncestorItem= new ActionContributionItem(a);
+			fAncestorItem.setVisible(false);
+			tbm.appendToGroup("modes", fAncestorItem); //$NON-NLS-1$
+			tbm.getControl().addDisposeListener(a);
+			
+			createToolItems(tbm);
+			updateToolItems();
+			
+			tbm.update(true);
+		}
+	}
+

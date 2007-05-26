@@ -1,0 +1,22 @@
+		public boolean flush() throws CoreException {
+			if (fDocumentProvider != null) {
+				IEditorInput input = getDocumentKey();
+				IDocument document = fDocumentProvider.getDocument(input);
+				if (document != null) {
+					final ISharedDocumentAdapter sda = (ISharedDocumentAdapter) Utilities.getAdapter(fElement, ISharedDocumentAdapter.class);
+					if (sda != null) {
+						sda.flushDocument(fDocumentProvider, input, document, false);
+						return true;
+					}
+					try {
+						fDocumentProvider.aboutToChange(input);
+						fDocumentProvider.saveDocument(new NullProgressMonitor(), input, document, false);
+						return true;
+					} finally {
+						fDocumentProvider.changed(input);
+					}
+				}
+			}
+			return false;
+		}
+

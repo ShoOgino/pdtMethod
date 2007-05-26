@@ -1,0 +1,28 @@
+		public void disconnect() {
+			IDocumentProvider provider = null;
+			IEditorInput input = getDocumentKey();
+			synchronized (this) {
+				if (fDocumentProvider != null) {
+					provider = fDocumentProvider;
+					fDocumentProvider = null;
+					fDocumentKey = null;
+				}
+			}
+			if (provider != null) {
+				disconnect(provider, input);
+				provider.removeElementStateListener(this);
+			}
+			// If we have a listener registered with the widget, remove it
+			if (fSourceViewer != null && !fSourceViewer.getTextWidget().isDisposed()) {
+				if (fNeedsValidation) {
+					fSourceViewer.getTextWidget().removeVerifyListener(this);
+					fNeedsValidation = false;
+				}
+				IDocument oldDoc = internalGetDocument(fSourceViewer);
+				if (oldDoc != null) {
+					oldDoc.removeDocumentListener(this);
+				}
+			}
+			clearCachedDocument();
+		}
+

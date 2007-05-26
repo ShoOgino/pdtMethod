@@ -3,32 +3,33 @@
 		IMergeViewerContentProvider content= getMergeContentProvider();
 		if (content != null) {
 			Object ancestor= content.getAncestorContent(input);
-			if (input instanceof ICompareInput)	
+			boolean oldFlag = fIsThreeWay;
+			if (Utilities.isHunk(input)) {
+				fIsThreeWay = true;
+			} else if (input instanceof ICompareInput)	
 				fIsThreeWay= (((ICompareInput)input).getKind() & Differencer.DIRECTION_MASK) != 0;
 			else
 				fIsThreeWay= ancestor != null;
 				
 			if (fAncestorItem != null)
 				fAncestorItem.setVisible(fIsThreeWay);
-				
-			boolean oldFlag= fShowAncestor;
-			fShowAncestor= fIsThreeWay && content.showAncestor(input);
 			
-			if (fAncestorEnabled && oldFlag != fShowAncestor)
+			if (fAncestorVisible && oldFlag != fIsThreeWay)
 				fComposite.layout(true);
 			
+									
+			Object left= content.getLeftContent(input);
+			Object right= content.getRightContent(input);
+			updateContent(ancestor, left, right);
+			
+			updateHeader();
 			ToolBarManager tbm= CompareViewerPane.getToolBarManager(fComposite.getParent());
-			if (tbm != null) {
+			if (tbm != null ) {
 				updateToolItems();
 				tbm.update(true);
 				tbm.getControl().getParent().layout(true);
 			}
 			
-			updateHeader();
-									
-			Object left= content.getLeftContent(input);
-			Object right= content.getRightContent(input);
-			updateContent(ancestor, left, right);
 		}
 	}
 

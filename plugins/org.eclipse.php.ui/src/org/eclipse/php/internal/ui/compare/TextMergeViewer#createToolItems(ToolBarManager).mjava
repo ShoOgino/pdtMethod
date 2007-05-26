@@ -4,73 +4,116 @@
 	 */
 	protected void createToolItems(ToolBarManager tbm) {
 
-		IWorkbenchPartSite ps= Utilities.findSite(fComposite);
-		fKeyBindingService= ps != null ? ps.getKeyBindingService() : null;
-		
-		final String ignoreAncestorActionKey= "action.IgnoreAncestor.";	//$NON-NLS-1$
-		Action ignoreAncestorAction= new Action() {
+		fHandlerService = CompareHandlerService.createFor(getCompareConfiguration().getContainer(), fLeft.getControl().getShell());
+
+		final String ignoreAncestorActionKey = "action.IgnoreAncestor."; //$NON-NLS-1$
+		Action ignoreAncestorAction = new Action() {
 			public void run() {
-				setIgnoreAncestor(! fIgnoreAncestor);
-				Utilities.initToggleAction(this, getResourceBundle(), ignoreAncestorActionKey, fIgnoreAncestor);
+				// First make sure the ancestor is hidden
+				if (!isIgnoreAncestor())
+					getCompareConfiguration().setProperty(ICompareUIConstants.PROP_ANCESTOR_VISIBLE, Boolean.FALSE);
+				// Then set the property to ignore the ancestor
+				getCompareConfiguration().setProperty(ICompareUIConstants.PROP_IGNORE_ANCESTOR, Boolean.valueOf(!isIgnoreAncestor()));
+				Utilities.initToggleAction(this, getResourceBundle(), ignoreAncestorActionKey, isIgnoreAncestor());
 			}
 		};
-		ignoreAncestorAction.setChecked(fIgnoreAncestor);
+		ignoreAncestorAction.setChecked(isIgnoreAncestor());
 		Utilities.initAction(ignoreAncestorAction, getResourceBundle(), ignoreAncestorActionKey);
-		Utilities.initToggleAction(ignoreAncestorAction, getResourceBundle(), ignoreAncestorActionKey, fIgnoreAncestor);
-		
-		fIgnoreAncestorItem= new ActionContributionItem(ignoreAncestorAction);
+		Utilities.initToggleAction(ignoreAncestorAction, getResourceBundle(), ignoreAncestorActionKey, isIgnoreAncestor());
+
+		fIgnoreAncestorItem = new ActionContributionItem(ignoreAncestorAction);
 		fIgnoreAncestorItem.setVisible(false);
 		tbm.appendToGroup("modes", fIgnoreAncestorItem); //$NON-NLS-1$
 
 		tbm.add(new Separator());
-					
-		Action a= new Action() {
+
+		Action a = new Action() {
 			public void run() {
-				navigate(true, true, true);
+				if (navigate(true, false, false)) {
+					endOfDocumentReached(true);
+				}
 			}
 		};
 		Utilities.initAction(a, getResourceBundle(), "action.NextDiff."); //$NON-NLS-1$
-		fNextItem= new ActionContributionItem(a);
-		tbm.appendToGroup("navigation", fNextItem); //$NON-NLS-1$
-		Utilities.registerAction(fKeyBindingService, a, "org.eclipse.compare.selectNextChange");	//$NON-NLS-1$
-		
-		a= new Action() {
+		fNextDiff = new ActionContributionItem(a);
+		tbm.appendToGroup("navigation", fNextDiff); //$NON-NLS-1$
+		// Don't register this action since it is probably registered by the container
+
+		a = new Action() {
 			public void run() {
-				navigate(false, true, true);
+				if (navigate(false, false, false)) {
+					endOfDocumentReached(false);
+				}
 			}
 		};
 		Utilities.initAction(a, getResourceBundle(), "action.PrevDiff."); //$NON-NLS-1$
-		fPreviousItem= new ActionContributionItem(a);
-		tbm.appendToGroup("navigation", fPreviousItem); //$NON-NLS-1$
-		Utilities.registerAction(fKeyBindingService, a, "org.eclipse.compare.selectPreviousChange");	//$NON-NLS-1$
+		fPreviousDiff = new ActionContributionItem(a);
+		tbm.appendToGroup("navigation", fPreviousDiff); //$NON-NLS-1$
+		// Don't register this action since it is probably registered by the container
 
-		
-		CompareConfiguration cc= getCompareConfiguration();
-		
+		a = new Action() {
+			public void run() {
+				if (navigate(true, false, true)) {
+					endOfDocumentReached(true);
+				}
+			}
+		};
+		Utilities.initAction(a, getResourceBundle(), "action.NextChange."); //$NON-NLS-1$
+		fNextChange = new ActionContributionItem(a);
+		tbm.appendToGroup("navigation", fNextChange); //$NON-NLS-1$
+		fHandlerService.registerAction(a, "org.eclipse.compare.selectNextChange"); //$NON-NLS-1$
+
+		a = new Action() {
+			public void run() {
+				if (navigate(false, false, true)) {
+					endOfDocumentReached(false);
+				}
+			}
+		};
+		Utilities.initAction(a, getResourceBundle(), "action.PrevChange."); //$NON-NLS-1$
+		fPreviousChange = new ActionContributionItem(a);
+		tbm.appendToGroup("navigation", fPreviousChange); //$NON-NLS-1$
+		fHandlerService.registerAction(a, "org.eclipse.compare.selectPreviousChange"); //$NON-NLS-1$
+
+		CompareConfiguration cc = getCompareConfiguration();
+
 		if (cc.isRightEditable()) {
-			a= new Action() {
+			a = new Action() {
 				public void run() {
 					copyDiffLeftToRight();
 				}
 			};
 			Utilities.initAction(a, getResourceBundle(), "action.CopyDiffLeftToRight."); //$NON-NLS-1$
-			fCopyDiffLeftToRightItem= new ActionContributionItem(a);
+			fCopyDiffLeftToRightItem = new ActionContributionItem(a);
 			fCopyDiffLeftToRightItem.setVisible(true);
 			tbm.appendToGroup("merge", fCopyDiffLeftToRightItem); //$NON-NLS-1$
-			Utilities.registerAction(fKeyBindingService, a, "org.eclipse.compare.copyLeftToRight");	//$NON-NLS-1$
+			fHandlerService.registerAction(a, "org.eclipse.compare.copyLeftToRight"); //$NON-NLS-1$
 		}
-		
+
 		if (cc.isLeftEditable()) {
-			a= new Action() {
+			a = new Action() {
 				public void run() {
 					copyDiffRightToLeft();
 				}
 			};
 			Utilities.initAction(a, getResourceBundle(), "action.CopyDiffRightToLeft."); //$NON-NLS-1$
-			fCopyDiffRightToLeftItem= new ActionContributionItem(a);
+			fCopyDiffRightToLeftItem = new ActionContributionItem(a);
 			fCopyDiffRightToLeftItem.setVisible(true);
 			tbm.appendToGroup("merge", fCopyDiffRightToLeftItem); //$NON-NLS-1$
-			Utilities.registerAction(fKeyBindingService, a, "org.eclipse.compare.copyRightToLeft");	//$NON-NLS-1$
+			fHandlerService.registerAction(a, "org.eclipse.compare.copyRightToLeft"); //$NON-NLS-1$
 		}
+
+		fIgnoreWhitespace = ChangePropertyAction.createIgnoreWhiteSpaceAction(getResourceBundle(), getCompareConfiguration());
+		fIgnoreWhitespace.setActionDefinitionId(ICompareUIConstants.COMMAND_IGNORE_WHITESPACE);
+		fLeft.addTextAction(fIgnoreWhitespace);
+		fRight.addTextAction(fIgnoreWhitespace);
+		fAncestor.addTextAction(fIgnoreWhitespace);
+		fHandlerService.registerAction(fIgnoreWhitespace, fIgnoreWhitespace.getActionDefinitionId());
+
+		showWhitespaceAction = new ShowWhitespaceAction(new MergeSourceViewer[] { fLeft, fRight, fAncestor });
+		fHandlerService.registerAction(showWhitespaceAction, ITextEditorActionDefinitionIds.SHOW_WHITESPACE_CHARACTERS);
+
+		toggleLineNumbersAction = new TextEditorPropertyAction(CompareMessages.TextMergeViewer_16, new MergeSourceViewer[] { fLeft, fRight, fAncestor }, AbstractDecoratedTextEditorPreferenceConstants.EDITOR_LINE_NUMBER_RULER);
+		fHandlerService.registerAction(toggleLineNumbersAction, ITextEditorActionDefinitionIds.LINENUMBER_TOGGLE);
 	}
 

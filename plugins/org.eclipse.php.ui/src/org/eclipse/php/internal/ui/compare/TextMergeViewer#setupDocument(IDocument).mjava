@@ -1,0 +1,33 @@
+	/**
+	 * Setup the given document for use with this viewer. By default,
+	 * the partitioner returned from {@link #getDocumentPartitioner()}
+	 * is registered as the default partitioner for the document.
+	 * Subclasses that return a partitioner must also override 
+	 * {@link #getDocumentPartitioning()} if they wish to be able to use shared
+	 * documents (i.e. file buffers).
+	 * @param document the document to be set up
+	 * 
+	 * @since 3.3
+	 */
+	protected void setupDocument(IDocument document) {
+		String partitioning = getDocumentPartitioning();
+		if (partitioning == null || !(document instanceof IDocumentExtension3)) {
+			if (document.getDocumentPartitioner() == null) {
+				IDocumentPartitioner partitioner = getDocumentPartitioner();
+				if (partitioner != null) {
+					document.setDocumentPartitioner(partitioner);
+					partitioner.connect(document);
+				}
+			}
+		} else {
+			IDocumentExtension3 ex3 = (IDocumentExtension3) document;
+			if (ex3.getDocumentPartitioner(partitioning) == null) {
+				IDocumentPartitioner partitioner = getDocumentPartitioner();
+				if (partitioner != null) {
+					ex3.setDocumentPartitioner(partitioning, partitioner);
+					partitioner.connect(document);
+				}
+			}
+		}
+	}
+

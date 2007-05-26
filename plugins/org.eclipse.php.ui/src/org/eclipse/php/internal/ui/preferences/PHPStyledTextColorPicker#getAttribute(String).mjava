@@ -5,7 +5,21 @@
 			String prefString = getPreferenceStore().getString(namedStyle);
 			String[] stylePrefs = PHPColorHelper.unpackStylePreferences(prefString);
 			if (stylePrefs != null) {
-				ta = PHPColorHelper.createTextAttribute(stylePrefs);
+				RGB foreground = PHPColorHelper.toRGB(stylePrefs[0]);
+				RGB background = PHPColorHelper.toRGB(stylePrefs[1]);
+
+				int fontModifier = SWT.NORMAL;
+				boolean bold = Boolean.valueOf(stylePrefs[2]).booleanValue();
+				if (bold)
+					fontModifier = fontModifier | SWT.BOLD;
+
+				if (showItalic) {
+					boolean italic = Boolean.valueOf(stylePrefs[3]).booleanValue();
+					if (italic)
+						fontModifier = fontModifier | SWT.ITALIC;
+				}
+
+				ta = new TextAttribute((foreground != null) ? EditorUtility.getColor(foreground) : null, (background != null) ? EditorUtility.getColor(background) : null, fontModifier);
 			}
 		}
 		return ta;
