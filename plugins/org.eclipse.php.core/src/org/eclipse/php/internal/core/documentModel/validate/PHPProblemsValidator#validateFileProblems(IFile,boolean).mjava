@@ -1,0 +1,27 @@
+	/**
+	 * This synchronic method that validate the file problems 
+	 * @param phpFile
+	 * @param validateTasks
+	 */
+	public void validateFileProblems(IFile phpFile, boolean validateTasks) {
+		PHPFileData fileData = getFileModel(phpFile);
+		if (fileData == null) {
+			return;
+		}
+		// we check to see if the file was modified not from the editor and if so,
+		// request a parse operation for it.
+		if (phpFile.getModificationStamp() != fileData.getCreationTimeLastModified()) {
+			PHPWorkspaceModelManager.getInstance().addFileToModel(phpFile);
+			fileData = getFileModel(phpFile);
+		}
+		IPHPMarker[] markers = fileData.getMarkers();
+		try {
+			phpFile.deleteMarkers(PHP_PROBLEM_MARKER_TYPE, false, IResource.DEPTH_INFINITE);
+		} catch (CoreException e) {
+		}
+		if (validateTasks) {
+			validateTasks(phpFile, markers);
+		}
+		validateErrors(phpFile, markers);
+	}
+
