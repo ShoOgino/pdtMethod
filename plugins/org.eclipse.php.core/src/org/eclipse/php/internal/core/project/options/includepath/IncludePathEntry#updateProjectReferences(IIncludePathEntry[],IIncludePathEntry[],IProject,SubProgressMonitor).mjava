@@ -1,7 +1,7 @@
-	public static void updateProjectReferences(IIncludePathEntry[] newEntries, IIncludePathEntry[] oldEntries, IProject project, SubProgressMonitor monitor) {
+	public static void updateProjectReferences(IIncludePathEntry[] newEntries, IIncludePathEntry[] oldEntries, final IProject project, SubProgressMonitor monitor) {
 		try {
 			boolean changedReferences = false;
-			IProjectDescription projectDescription = project.getDescription();
+			final IProjectDescription projectDescription = project.getDescription();
 			ArrayList referenced = new ArrayList();
 			ArrayList referencedNames = new ArrayList();
 			IProject[] referencedProjects = projectDescription.getReferencedProjects();
@@ -42,7 +42,14 @@
 			if (changedReferences) {
 				IProject[] referenceProjects = (IProject[]) referenced.toArray(new IProject[referenced.size()]);
 				projectDescription.setReferencedProjects(referenceProjects);
-				project.setDescription(projectDescription, monitor);	
+				WorkspaceJob job = new WorkspaceJob("updating project description") {
+					public IStatus runInWorkspace(IProgressMonitor monitor) throws CoreException {
+						project.setDescription(projectDescription, monitor);
+						return Status.OK_STATUS;
+					}
+				};
+				job.setRule(project.getParent());
+				job.schedule();
 			}
 		} catch (CoreException e) {
 			// TODO Auto-generated catch block
