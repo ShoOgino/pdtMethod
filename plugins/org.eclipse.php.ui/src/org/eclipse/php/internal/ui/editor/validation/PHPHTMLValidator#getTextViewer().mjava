@@ -1,0 +1,34 @@
+	private StructuredTextViewer getTextViewer() {
+		IWorkbench workbench = PlatformUI.getWorkbench();
+	    IWorkbenchWindow workbenchwindow = workbench.getActiveWorkbenchWindow();
+	    if (workbenchwindow == null) {
+	    	IWorkbenchWindow[] workbenchWindows = workbench.getWorkbenchWindows();
+	    	if (workbenchWindows.length > 0) {
+	    		workbenchwindow = workbenchWindows[0];
+	    	}
+	    }
+	    IWorkbenchPage workbenchpage = workbenchwindow.getActivePage();
+	    IEditorPart editorpart = workbenchpage.getActiveEditor();
+	    if (editorpart instanceof PHPStructuredEditor) {
+	    	PHPStructuredEditor phpStructuredEditor = (PHPStructuredEditor)editorpart;
+	    	StructuredTextViewer textViewer = phpStructuredEditor.getTextViewer();
+	    	if (fDocument == textViewer.getDocument()) {
+	    		return textViewer;
+	    	}
+    		// get right viewer by comparing viewer document
+    		IEditorReference[] editorReferences = workbenchpage.getEditorReferences();
+    		for (int i = 0; i < editorReferences.length; i++) {
+				IEditorReference editorReference = editorReferences[i];
+				editorpart = editorReference.getEditor(false);
+				if (editorpart instanceof PHPStructuredEditor) {
+			    	phpStructuredEditor = (PHPStructuredEditor)editorpart;
+			    	textViewer = phpStructuredEditor.getTextViewer();
+			    	if (fDocument == textViewer.getDocument()) {
+			    		return textViewer;
+			    	}					 
+				}
+			}
+	    }
+		return null;
+	}
+
