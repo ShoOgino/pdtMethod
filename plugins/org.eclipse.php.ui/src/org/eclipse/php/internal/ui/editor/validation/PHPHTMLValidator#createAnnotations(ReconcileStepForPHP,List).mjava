@@ -1,0 +1,36 @@
+	/**
+	 * Converts a map of IValidatorForReconcile to List to annotations based
+	 * on those messages
+	 * 
+	 * @param messages
+	 * @return
+	 */
+	public Map createAnnotations(ReconcileStepForPHP reconcileStepForPHP, List messageList) {
+		Map annotations = new HashMap();
+		for (int i = 0; i < messageList.size(); i++) {
+			IMessage validationMessage = (IMessage) messageList.get(i);
+
+			int offset = validationMessage.getOffset();
+
+			if (offset < 0)
+				continue;
+
+			String messageText = null;
+			try {
+				messageText = validationMessage.getText(validationMessage.getClass().getClassLoader());
+			} catch (Exception t) {
+				Logger.logException("exception reporting message from validator", t); //$NON-NLS-1$
+				continue;
+			}
+
+			int length = validationMessage.getLength();
+			if (length >= 0) {
+				Position p = new Position(offset, length);
+				ReconcileAnnotationKey key = createKey(reconcileStepForPHP);
+				annotations.put(new TemporaryAnnotation(p, TemporaryAnnotation.ANNOT_ERROR, messageText, key), p);
+			}
+		}
+
+		return annotations;
+	}
+
