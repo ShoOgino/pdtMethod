@@ -1,0 +1,31 @@
+	/**
+	 * Returns PHP editor which corresponds to ITextViewer
+	 * @return php editor, or <code>null</code> if no editor found
+	 */
+	public static final PHPStructuredEditor getPHPStructuredEditor(final ITextViewer textViewer) {
+		IWorkbenchPage workbenchpage = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+
+		// Check active editor, first:
+		IEditorPart activeEditorPart = workbenchpage.getActiveEditor();
+		if (activeEditorPart instanceof PHPStructuredEditor) {
+			PHPStructuredEditor phpStructuredEditor = (PHPStructuredEditor) activeEditorPart;
+			if (phpStructuredEditor.getTextViewer().getDocument() == textViewer.getDocument()) {
+				return phpStructuredEditor;
+			}
+		}
+
+		// Check other editors:
+		IEditorReference[] editorReferences = workbenchpage.getEditorReferences();
+		for (int i = 0; i < editorReferences.length; i++) {
+			IEditorReference editorReference = editorReferences[i];
+			IEditorPart editorpart = editorReference.getEditor(false);
+			if (editorpart instanceof PHPStructuredEditor) {
+				PHPStructuredEditor phpStructuredEditor = (PHPStructuredEditor) editorpart;
+				if (phpStructuredEditor.getTextViewer().getDocument() == textViewer.getDocument()) {
+					return phpStructuredEditor;
+				}
+			}
+		}
+		return null;
+	}
+

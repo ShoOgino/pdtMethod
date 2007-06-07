@@ -2,24 +2,25 @@
 		IResource resource = null;
 		IPath externalPath = null;
 
+		// Replace input received from Eclipse platform with WST-compatible:
+		if (input instanceof FileStoreEditorInput) {
+			input = new LocalFileStorageEditorInput(new LocalFileStorage(new File(((FileStoreEditorInput)input).getURI())));
+		}
+
 		if (input instanceof IFileEditorInput) {
 			final IFileEditorInput fileInput = (IFileEditorInput) input;
 			resource = fileInput.getFile();
-		} else if (input instanceof FileStoreEditorInput) {
-			FileStoreEditorInput fileInput = (FileStoreEditorInput) input;
-			externalPath = new Path(fileInput.getURI().getPath());
-			// Wrap this file because it's an external (non workspace) file.
-			resource = ExternalFileDecorator.createFile(externalPath.toString());
 		} else if (input instanceof IStorageEditorInput) {
 			final IStorageEditorInput editorInput = (IStorageEditorInput) input;
 			final IStorage storage = editorInput.getStorage();
 
 			if (storage instanceof ZipEntryStorage) {
 				resource = ((ZipEntryStorage) storage).getProject();
-			} else if (storage instanceof LocalFileStorage) {
+			} else if (storage instanceof LocalFileStorage && ((LocalFileStorage) storage).getProject() != null) {
 				resource = ((LocalFileStorage) storage).getProject();
 			}
-			// Suppose that it's a remote storage. If something goes wrong in some case - add another "if" above.
+			// Suppose that it's a external storage (or remote).
+			// If something goes wrong in some case - add another "if" above.
 			else {
 				externalPath = storage.getFullPath();
 				resource = ExternalFileDecorator.createFile(externalPath.toString());
