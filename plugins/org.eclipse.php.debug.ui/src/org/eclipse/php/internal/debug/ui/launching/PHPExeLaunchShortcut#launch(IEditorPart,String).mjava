@@ -4,13 +4,17 @@
 	public void launch(IEditorPart editor, String mode) {
 		IEditorInput input = editor.getEditorInput();
 		IFile file = (IFile) input.getAdapter(IFile.class);
-		if (file == null && input instanceof FileStoreEditorInput) {
-			// It's probably a launch for a file that is not in the workspace.
-			IPath path = new Path(((FileStoreEditorInput) input).getURI().getPath());
-			if (ExternalFilesRegistry.getInstance().isEntryExist(path.toString())) {
-				file = ExternalFilesRegistry.getInstance().getFileEntry(path.toString());
-			} else {
-				file = ExternalFileDecorator.createFile(path.toString());
+		if (file == null && input instanceof LocalFileStorageEditorInput) {
+			LocalFileStorageEditorInput editorInput = (LocalFileStorageEditorInput)input;
+			LocalFileStorage fileStorage = (LocalFileStorage)editorInput.getStorage();
+			if (fileStorage.getProject() == null) {
+				// It's probably a launch for a file that is not in the workspace.
+				IPath path = fileStorage.getFullPath();
+				if (ExternalFilesRegistry.getInstance().isEntryExist(path.toString())) {
+					file = ExternalFilesRegistry.getInstance().getFileEntry(path.toString());
+				} else {
+					file = ExternalFileDecorator.createFile(path.toString());
+				}
 			}
 		}
 		if (file != null) {
