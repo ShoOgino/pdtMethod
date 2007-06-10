@@ -5,15 +5,14 @@
 		IEditorPart editorPart = null;
 		DOMModelForPHP domModel = null;
 		try {
-			if (fFile instanceof PHPCodeData) {
-				IPath path = Path.fromOSString(((PHPCodeData) fFile).getName());
-				if (ExternalFilesRegistry.getInstance().isEntryExist(path.toString())) {
-					fFile = ExternalFilesRegistry.getInstance().getFileEntry(path.toString());
-				} else {
-					fFile = ExternalFileDecorator.createFile(path.toString());
-				}
-			}
-			if (fFile instanceof IFile) {
+			if (fFile instanceof File) {
+				FileStoreEditorInput editorInput = new FileStoreEditorInput(new LocalFile((File)fFile));
+				editorPart = EditorUtility.openInEditor(editorInput, PHPUiConstants.PHP_EDITOR_ID, false);
+			} else if (fFile instanceof ExternalFileDecorator) {
+				ExternalFileDecorator externalFile = (ExternalFileDecorator)fFile;
+				FileStoreEditorInput editorInput = new FileStoreEditorInput(new LocalFile(new File(externalFile.getFullPath().toString())));
+				editorPart = EditorUtility.openInEditor(editorInput, PHPUiConstants.PHP_EDITOR_ID, false);
+			} else if (fFile instanceof IFile) {
 				editorPart = EditorUtility.openInEditor(new FileEditorInput((IFile) fFile), PHPUiConstants.PHP_EDITOR_ID, false);
 			} else {
 				editorPart = EditorUtility.openInEditor(fFile, false);
