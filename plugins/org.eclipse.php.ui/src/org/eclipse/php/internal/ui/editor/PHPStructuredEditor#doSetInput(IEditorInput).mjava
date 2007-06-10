@@ -2,15 +2,16 @@
 		IResource resource = null;
 		IPath externalPath = null;
 
-		// Replace input received from Eclipse platform with WST-compatible:
-		if (input instanceof FileStoreEditorInput) {
-			input = new LocalFileStorageEditorInput(new LocalFileStorage(new File(((FileStoreEditorInput)input).getURI())));
-		}
-
 		if (input instanceof IFileEditorInput) {
+			// This is the existing workspace file
 			final IFileEditorInput fileInput = (IFileEditorInput) input;
 			resource = fileInput.getFile();
-		} else if (input instanceof IStorageEditorInput) {
+		}
+		else if (input instanceof IStorageEditorInput) {
+			// This kind of editor input usually means non-workspace file, like
+			// PHP file which comes from include path, remote file which comes from
+			// Web server while debugging, file from ZIP archive, etc...
+			
 			final IStorageEditorInput editorInput = (IStorageEditorInput) input;
 			final IStorage storage = editorInput.getStorage();
 
@@ -18,25 +19,21 @@
 				resource = ((ZipEntryStorage) storage).getProject();
 			} else if (storage instanceof LocalFileStorage && ((LocalFileStorage) storage).getProject() != null) {
 				resource = ((LocalFileStorage) storage).getProject();
-			}
-			// Suppose that it's a external storage (or remote).
-			// If something goes wrong in some case - add another "if" above.
-			else {
+			} else {
+				// This is, probably, a remote storage:
 				externalPath = storage.getFullPath();
 				resource = ExternalFileDecorator.createFile(externalPath.toString());
-
-				if (!(input instanceof StorageEditorInput)) {
-					input = new StorageEditorInput(storage) {
-						public boolean exists() {
-							return false;
-						}
-					};
-				}
 			}
+		} else if (input instanceof IURIEditorInput) {
+			// External file editor input. It's usually used when opening PHP file
+			// via "File -> Open File" menu option, or using D&D:
+			externalPath = URIUtil.toPath(((IURIEditorInput)input).getURI());
+			resource = ExternalFileDecorator.createFile(externalPath.toString());
 		}
 
 		if (resource instanceof IFile) {
 			if (PHPModelUtil.isPhpFile((IFile) resource)) {
+				// Add file decorator entry to the list of external files:
 				if (externalPath != null && (resource instanceof ExternalFileDecorator)) {
 					ExternalFilesRegistry.getInstance().addFileEntry(externalPath.toString(), (ExternalFileDecorator) resource);
 				}

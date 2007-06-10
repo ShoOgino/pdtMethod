@@ -6,14 +6,15 @@
 			if (source instanceof File) {
 				File externalSource = (File) source;
 				Path path = new Path(externalSource.getPath());
-
-				final LocalFileStorage fileStorage = new LocalFileStorage((File) source);
 				
-				// If this file isn't external, it's probably from the include path:
-				if (!ExternalFilesRegistry.getInstance().isEntryExist(path.toString())) {
-					fileStorage.setProject(project);
-					fileStorage.setIncBaseDirName(incDir);
+				// If this is external file:
+				if (ExternalFilesRegistry.getInstance().isEntryExist(path.toString())) {
+					return new FileStoreEditorInput(new LocalFile(externalSource));
 				}
+
+				LocalFileStorage fileStorage = new LocalFileStorage((File) source);
+				fileStorage.setProject(project);
+				fileStorage.setIncBaseDirName(incDir);
 				return new LocalFileStorageEditorInput(fileStorage);
 			}
 			if (source instanceof ZipFile)
