@@ -3,51 +3,53 @@
 	 * Subclasses may extend.
 	 */
 	protected void updateContent(Object ancestor, Object left, Object right) {
+		
+		boolean emptyInput= (ancestor == null && left == null && right == null);
 
-		boolean emptyInput = (ancestor == null && left == null && right == null);
+		Object input= getInput();
 
-		Object input = getInput();
-
-		Position leftRange = null;
-		Position rightRange = null;
-
+		Position leftRange= null;
+		Position rightRange= null;
+		
 		// if one side is empty use container
 		if (FIX_47640 && !emptyInput && (left == null || right == null)) {
 			if (input instanceof IDiffElement) {
-				IDiffContainer parent = ((IDiffElement) input).getParent();
+				IDiffContainer parent= ((IDiffElement)input).getParent();
 				if (parent instanceof ICompareInput) {
-					ICompareInput ci = (ICompareInput) parent;
-
-					if (ci.getAncestor() instanceof IDocumentRange || ci.getLeft() instanceof IDocumentRange || ci.getRight() instanceof IDocumentRange) {
-
-						if (left instanceof IDocumentRange)
-							leftRange = ((IDocumentRange) left).getRange();
-						if (right instanceof IDocumentRange)
-							rightRange = ((IDocumentRange) right).getRange();
-
-						ancestor = ci.getAncestor();
-						left = ci.getLeft();
-						right = ci.getRight();
-					}
+				    ICompareInput ci= (ICompareInput) parent;
+				    
+				    if (ci.getAncestor() instanceof IDocumentRange
+				            || ci.getLeft() instanceof IDocumentRange
+				            		|| ci.getRight() instanceof IDocumentRange) {
+				    
+				        	if (left instanceof IDocumentRange)
+				        	    leftRange= ((IDocumentRange)left).getRange();
+				        	if (right instanceof IDocumentRange)
+				        	    rightRange= ((IDocumentRange)right).getRange();
+					    
+					    ancestor= ci.getAncestor();
+					    left= ci.getLeft();
+					    right= ci.getRight();
+				    }
 				}
 			}
 		}
 
-		int n = 0;
+		int n= 0;
 		if (left != null)
 			n++;
 		if (right != null)
 			n++;
-		fHighlightRanges = n > 1;
-
+		fHighlightRanges= n > 1;
+		
 		resetDiffs();
-		fHasErrors = false; // start with no errors
-
-		CompareConfiguration cc = getCompareConfiguration();
-		IMergeViewerContentProvider cp = getMergeContentProvider();
-
+		fHasErrors= false; // start with no errors
+		
+		CompareConfiguration cc= getCompareConfiguration();
+		IMergeViewerContentProvider cp= getMergeContentProvider();
+		
 		if (cp instanceof MergeViewerContentProvider) {
-			MergeViewerContentProvider mcp = (MergeViewerContentProvider) cp;
+			MergeViewerContentProvider mcp= (MergeViewerContentProvider) cp;
 			mcp.setAncestorError(null);
 			mcp.setLeftError(null);
 			mcp.setRightError(null);
@@ -58,45 +60,45 @@
 		ContributorInfo oldLeftContributor = fLeftContributor;
 		ContributorInfo oldRightContributor = fRightContributor;
 		ContributorInfo oldAncestorContributor = fAncestorContributor;
-
+		
 		// Create the new contributor
 		fLeftContributor = createLegInfoFor(left, LEFT_CONTRIBUTOR);
 		fRightContributor = createLegInfoFor(right, RIGHT_CONTRIBUTOR);
 		fAncestorContributor = createLegInfoFor(ancestor, ANCESTOR_CONTRIBUTOR);
-
+		
 		fLeftContributor.transferContributorStateFrom(oldLeftContributor);
 		fRightContributor.transferContributorStateFrom(oldRightContributor);
 		fAncestorContributor.transferContributorStateFrom(oldAncestorContributor);
-
+		
 		// Now disconnect the old ones
 		disconnect(oldLeftContributor);
 		disconnect(oldRightContributor);
 		disconnect(oldAncestorContributor);
-
+		
 		// Get encodings from streams. If an encoding is null, abide by the other one
 		// Defaults to workbench encoding only if both encodings are null
 		fLeftContributor.setEncodingIfAbsent(fRightContributor);
 		fRightContributor.setEncodingIfAbsent(fLeftContributor);
 		fAncestorContributor.setEncodingIfAbsent(fLeftContributor);
-
+		
 		// set new documents
 		fLeftContributor.setDocument(fLeft, cc.isLeftEditable() && cp.isLeftEditable(input));
-		fLeftLineCount = fLeft.getLineCount();
-
+		fLeftLineCount= fLeft.getLineCount();
+		
 		fRightContributor.setDocument(fRight, cc.isRightEditable() && cp.isRightEditable(input));
-		fRightLineCount = fRight.getLineCount();
-
+		fRightLineCount= fRight.getLineCount();
+		
 		fAncestorContributor.setDocument(fAncestor, false);
-
+		
 		//if the input is part of a patch hunk, toggle synchronized scrolling
-		if (isPatchHunk()) {
+		if (isPatchHunk()){
 			setSyncScrolling(false);
 		} else {
 			setSyncScrolling(fPreferenceStore.getBoolean(ComparePreferencePage.SYNCHRONIZE_SCROLLING));
 		}
-
+		
 		update(false);
-
+		
 		if (!fHasErrors && !emptyInput && !fComposite.isDisposed()) {
 			if (isRefreshing()) {
 				fLeftContributor.updateSelection(fLeft, !fSynchronizedScrolling);
@@ -112,12 +114,12 @@
 					else
 						fRight.setTopIndex(getHunkStart());
 				} else {
-					Diff selectDiff = null;
+					Diff selectDiff= null;
 					if (FIX_47640) {
 						if (leftRange != null)
-							selectDiff = findDiff(LEFT_CONTRIBUTOR, leftRange);
+						    selectDiff= findDiff(LEFT_CONTRIBUTOR, leftRange);
 						else if (rightRange != null)
-							selectDiff = findDiff(RIGHT_CONTRIBUTOR, rightRange);
+						    selectDiff= findDiff(RIGHT_CONTRIBUTOR, rightRange);
 					}
 					if (selectDiff != null)
 						setCurrentDiff(selectDiff, true);
@@ -126,6 +128,6 @@
 				}
 			}
 		}
-
+		
 	}
 

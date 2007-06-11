@@ -2,81 +2,81 @@
 	 * Smart determines whether 
 	 */
 	private void revealDiff(Diff d, boolean smart) {
-
-		boolean ancestorIsVisible = false;
-		boolean leftIsVisible = false;
-		boolean rightIsVisible = false;
+		
+		boolean ancestorIsVisible= false;
+		boolean leftIsVisible= false;
+		boolean rightIsVisible= false;
 
 		if (smart) {
-			Point region = new Point(0, 0);
+			Point region= new Point(0, 0);
 			// find the starting line of the diff in all text widgets
-			int ls = fLeft.getLineRange(d.fLeftPos, region).x;
-			int rs = fRight.getLineRange(d.fRightPos, region).x;
-
+			int ls= fLeft.getLineRange(d.fLeftPos, region).x;
+			int rs= fRight.getLineRange(d.fRightPos, region).x;
+			
 			if (isThreeWay() && !isIgnoreAncestor()) {
-				int as = fAncestor.getLineRange(d.fAncestorPos, region).x;
+				int as= fAncestor.getLineRange(d.fAncestorPos, region).x;
 				if (as >= fAncestor.getTopIndex() && as <= fAncestor.getBottomIndex())
-					ancestorIsVisible = true;
+					ancestorIsVisible= true;
 			}
 
 			if (ls >= fLeft.getTopIndex() && ls <= fLeft.getBottomIndex())
-				leftIsVisible = true;
+				leftIsVisible= true;
 
 			if (rs >= fRight.getTopIndex() && rs <= fRight.getBottomIndex())
-				rightIsVisible = true;
+				rightIsVisible= true;
 		}
 
 		// vertical scrolling
 		if (!leftIsVisible || !rightIsVisible) {
-			int avpos = 0, lvpos = 0, rvpos = 0;
-
-			MergeSourceViewer allButThis = null;
+			int avpos= 0, lvpos= 0, rvpos= 0;
+			
+			MergeSourceViewer allButThis= null;
 			if (leftIsVisible) {
-				avpos = lvpos = rvpos = realToVirtualPosition(fLeft, fLeft.getTopIndex());
-				allButThis = fLeft;
+				avpos= lvpos= rvpos= realToVirtualPosition(fLeft, fLeft.getTopIndex());
+				allButThis= fLeft;
 			} else if (rightIsVisible) {
-				avpos = lvpos = rvpos = realToVirtualPosition(fRight, fRight.getTopIndex());
-				allButThis = fRight;
+				avpos= lvpos= rvpos= realToVirtualPosition(fRight, fRight.getTopIndex());
+				allButThis= fRight;
 			} else if (ancestorIsVisible) {
-				avpos = lvpos = rvpos = realToVirtualPosition(fAncestor, fAncestor.getTopIndex());
-				allButThis = fAncestor;
+				avpos= lvpos= rvpos= realToVirtualPosition(fAncestor, fAncestor.getTopIndex());
+				allButThis= fAncestor;
 			} else {
 				if (fAllDiffs != null) {
-					int vpos = 0;
-					Iterator e = fAllDiffs.iterator();
-					for (int i = 0; e.hasNext(); i++) {
-						Diff diff = (Diff) e.next();
+					int vpos= 0;
+					Iterator e= fAllDiffs.iterator();
+					for (int i= 0; e.hasNext(); i++) {
+						Diff diff= (Diff) e.next();
 						if (diff == d)
 							break;
 						if (fSynchronizedScrolling) {
-							vpos += diff.getMaxDiffHeight();
+							vpos+= diff.getMaxDiffHeight();
 						} else {
-							avpos += diff.getAncestorHeight();
-							lvpos += diff.getLeftHeight();
-							rvpos += diff.getRightHeight();
+							avpos+= diff.getAncestorHeight();
+							lvpos+= diff.getLeftHeight();
+							rvpos+= diff.getRightHeight();
 						}
 					}
 					if (fSynchronizedScrolling)
-						avpos = lvpos = rvpos = vpos;
+						avpos= lvpos= rvpos= vpos;
 				}
-				int delta = fRight.getViewportLines() / 4;
-				avpos -= delta;
+				int delta= fRight.getViewportLines()/4;
+				avpos-= delta;
 				if (avpos < 0)
-					avpos = 0;
-				lvpos -= delta;
+					avpos= 0;
+				lvpos-= delta;
 				if (lvpos < 0)
-					lvpos = 0;
-				rvpos -= delta;
+					lvpos= 0;
+				rvpos-= delta;
 				if (rvpos < 0)
-					rvpos = 0;
+					rvpos= 0;
 			}
-
+							
 			scrollVertical(avpos, lvpos, rvpos, allButThis);
-
+			
 			if (fVScrollBar != null)
 				fVScrollBar.setSelection(avpos);
 		}
-
+		
 		// horizontal scrolling
 		if (d.fIsToken) {
 			// we only scroll horizontally for token diffs
