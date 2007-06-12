@@ -1,0 +1,71 @@
+	/**
+	 * Overrides
+	 */
+	protected void performSaveAs(IProgressMonitor progressMonitor) {
+		Shell shell = getSite().getShell();
+		final IEditorInput input = getEditorInput();
+
+		IDocumentProvider provider = getDocumentProvider();
+		final IEditorInput newInput;
+
+		IPath filePath = null;
+
+		SaveUntitledDialog dialog = new SaveUntitledDialog(shell);
+
+		String originalName = ((NonExistingPHPFileEditorInput)input).getPath().lastSegment();
+		dialog.setOriginalName(originalName);
+		dialog.create();
+
+		if (dialog.open() == Window.CANCEL) {
+			if (progressMonitor != null)
+				progressMonitor.setCanceled(true);
+			return;
+		}
+
+		filePath = dialog.getResult();
+		if (filePath == null) {
+			if (progressMonitor != null)
+				progressMonitor.setCanceled(true);
+			return;
+		}
+
+		IWorkspace workspace = ResourcesPlugin.getWorkspace();
+		IFile file = workspace.getRoot().getFile(filePath);
+		newInput = new FileEditorInput(file);
+
+		if (provider == null) {
+			// editor has programmatically been  closed while the dialog was open
+			return;
+		}
+
+		boolean success = false;
+		try {
+			provider.aboutToChange(newInput);
+			provider.saveDocument(progressMonitor, newInput, provider.getDocument(input), true);
+			success = true;
+
+		} catch (CoreException x) {
+			final IStatus status = x.getStatus();
+			if (status == null || status.getSeverity() != IStatus.CANCEL) {
+				String title = "Save Error";
+				String msg = NLSUtility.format("The document cannot be saved", x.getMessage());
+				MessageDialog.openError(shell, title, msg);
+			}
+		} finally {
+			//close the untitled document and open the save one from its target project
+			if (filePath != null) {
+				close(false);
+				try {
+					EditorUtility.openInEditor(filePath.toString(), 0);
+				} catch (CoreException e) {
+					Logger.logException(e);
+				}
+			}
+		}
+
+		if (progressMonitor != null)
+			progressMonitor.setCanceled(!success);
+
+		return;
+	}
+

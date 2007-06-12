@@ -6,7 +6,7 @@
 			if (source instanceof File) {
 				File externalSource = (File) source;
 				Path path = new Path(externalSource.getPath());
-				
+
 				// If this is external file:
 				if (ExternalFilesRegistry.getInstance().isEntryExist(path.toString())) {
 					return new FileStoreEditorInput(new LocalFile(externalSource));
@@ -20,6 +20,18 @@
 			if (source instanceof ZipFile)
 				return createZipEntryStorageEditorInput((ZipFile) source, element, project);
 		}
+
+		//Another test whether this external file test is an UNTITLED DOCUMENT ,i.e the file does not really exist
+		if (resource instanceof ExternalFileDecorator) {
+			File untitledDocumentDummyFile = resource.getFullPath().toFile();
+			//this file should not exist
+			if (untitledDocumentDummyFile.exists()) {
+				return null;
+			}
+
+			return new NonExistingPHPFileEditorInput(resource.getFullPath());
+		}
+
 		if (resource instanceof IFile)
 			return new FileEditorInput((IFile) resource);
 
