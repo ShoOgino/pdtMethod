@@ -1,13 +1,14 @@
-	public IContentAssistant getPHPContentAssistant(ISourceViewer sourceViewer, boolean reCreate) {
-		if (fContentAssistant == null || reCreate) {
+	public IContentAssistant getContentAssistant(ISourceViewer sourceViewer) {
+		if (fContentAssistant == null) {
 			fContentAssistant = getPHPContentAssistantExtension();
 			if (fContentAssistant == null) {
 				fContentAssistant = new StructuredContentAssistant();
 			}
 			// content assistant configurations
 			fContentAssistant.setDocumentPartitioning(getConfiguredDocumentPartitioning(sourceViewer));
-			fContentAssistant.enableAutoActivation(true);
-			fContentAssistant.setAutoActivationDelay(500);
+			fContentAssistant.enableAutoActivation(PreferenceConstants.getPreferenceStore().getBoolean(PreferenceConstants.CODEASSIST_AUTOACTIVATION));
+			fContentAssistant.setAutoActivationDelay(PreferenceConstants.getPreferenceStore().getInt(PreferenceConstants.CODEASSIST_AUTOACTIVATION_DELAY));
+			fContentAssistant.enableAutoInsert(PreferenceConstants.getPreferenceStore().getBoolean(PreferenceConstants.CODEASSIST_AUTOINSERT));
 			fContentAssistant.setProposalPopupOrientation(IContentAssistant.PROPOSAL_OVERLAY);
 			fContentAssistant.setContextInformationPopupOrientation(IContentAssistant.CONTEXT_INFO_ABOVE);
 			fContentAssistant.setInformationControlCreator(getInformationControlCreator(sourceViewer));
@@ -25,6 +26,8 @@
 					}
 				}
 			}
+
+			setupPropertyChangeListener(sourceViewer);
 		}
 		return fContentAssistant;
 	}
