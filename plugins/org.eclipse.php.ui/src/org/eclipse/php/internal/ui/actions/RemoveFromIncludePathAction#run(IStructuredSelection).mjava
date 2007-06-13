@@ -1,0 +1,39 @@
+	/* (non-Javadoc)
+	 * Method declared on SelectionDispatchAction.
+	 */
+	public void run(IStructuredSelection selection) {
+		Object obj = selection.getFirstElement();
+		if (obj instanceof PHPIncludePathModel) {
+			IProject project = null;
+			final PHPIncludePathModel includePathModel = (PHPIncludePathModel) obj;
+			PHPProjectModel[] projectModels = PHPWorkspaceModelManager.getInstance().listModels();
+			for (int i = 0; project == null && i < projectModels.length; ++i) {
+				PHPIncludePathModelManager includePathModelManager = (PHPIncludePathModelManager) projectModels[i].getModel(PHPIncludePathModelManager.COMPOSITE_INCLUDE_PATH_MODEL_ID);
+				IPhpModel[] models = includePathModelManager.listModels();
+				for (int j = 0; project == null && j < models.length; ++j) {
+					if (models[j] == includePathModel) {
+						project = PHPWorkspaceModelManager.getInstance().getProjectForModel(projectModels[i]);
+					}
+				}
+			}
+			if (project != null) {
+				final PHPProjectOptions options = PHPProjectOptions.forProject(project);
+				WorkspaceJob configureIncludePathJob = new WorkspaceJob(PHPUIMessages.RemoveFromIncludePathAction_remove_from_include_path_job) {
+					public IStatus runInWorkspace(IProgressMonitor monitor) throws CoreException {
+						IIncludePathEntry[] includePathEntries = options.readRawIncludePath();
+						List newIncludePathEntries = new LinkedList();
+						for (int i = 0; i < includePathEntries.length; ++i) {
+							if (!includePathEntries[i].getPath().equals(new Path(includePathModel.getID()))) {
+								newIncludePathEntries.add(includePathEntries[i]);
+							}
+						}
+						options.setRawIncludePath((IIncludePathEntry[]) newIncludePathEntries.toArray(new IIncludePathEntry[newIncludePathEntries.size()]), new SubProgressMonitor(monitor, 1));
+						return Status.OK_STATUS;
+					}
+				};
+				configureIncludePathJob.setRule(ResourcesPlugin.getWorkspace().getRuleFactory().modifyRule(project));
+				configureIncludePathJob.schedule();
+			}
+		}
+	}
+
