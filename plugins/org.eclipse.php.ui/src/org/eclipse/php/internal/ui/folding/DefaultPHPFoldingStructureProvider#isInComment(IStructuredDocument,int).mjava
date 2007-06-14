@@ -1,0 +1,54 @@
+	/*
+	 * Returns true if the given offset is inside a PHPDoc comment.
+	 */
+	private boolean isInComment(IStructuredDocument document, int offset) throws BadLocationException {
+		IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(offset);
+		ITextRegion textRegion = sdRegion.getRegionAtCharacterOffset(offset);
+
+		if (textRegion == null)
+			return false;
+
+		ITextRegionCollection container = sdRegion;
+
+		if (textRegion instanceof ITextRegionContainer) {
+			container = (ITextRegionContainer) textRegion;
+			textRegion = container.getRegionAtCharacterOffset(offset);
+		}
+
+		if (textRegion.getType() == PHPRegionContext.PHP_OPEN) {
+			return false;
+		}
+		if (textRegion.getType() == PHPRegionContext.PHP_CLOSE) {
+			if (container.getStartOffset(textRegion) == offset) {
+				ITextRegion regionBefore = container.getRegionAtCharacterOffset(offset - 1);
+				if (regionBefore instanceof PhpScriptRegion) {
+					textRegion = regionBefore;
+				}
+			} else {
+				return false;
+			}
+		}
+
+		PhpScriptRegion phpScriptRegion = null;
+		String partitionType = null;
+		int internalOffset = 0;
+
+		if (textRegion instanceof PhpScriptRegion) {
+			phpScriptRegion = (PhpScriptRegion) textRegion;
+			internalOffset = offset - container.getStartOffset() - phpScriptRegion.getStart();
+
+			partitionType = phpScriptRegion.getPartition(internalOffset);
+			//if we are at the beginning of multi-line comment or docBlock then we should get completion.
+			if (partitionType == PHPPartitionTypes.PHP_MULTI_LINE_COMMENT || partitionType == PHPPartitionTypes.PHP_DOC) {
+				String regionType = phpScriptRegion.getPhpToken(internalOffset).getType();
+				if (regionType == PHPRegionTypes.PHP_COMMENT_START || regionType == PHPRegionTypes.PHPDOC_COMMENT_START) {
+					if (phpScriptRegion.getPhpToken(internalOffset).getStart() == internalOffset) {
+						partitionType = phpScriptRegion.getPartition(internalOffset - 1);
+					}
+				}
+			}
+			return (partitionType == PHPPartitionTypes.PHP_MULTI_LINE_COMMENT || partitionType == PHPPartitionTypes.PHP_DOC);
+		}
+		return false;
+	}
+

@@ -47,9 +47,22 @@
 						// At this stage we have the added map.
 						// All the Annotations that are left in the hash need
 						// to be removed from the model.
-						Iterator annotationsToRemove = exitingHashMap.values().iterator();
+						boolean removeAnyway = false;
+						Iterator annotationsToRemove = exitingHashMap.entrySet().iterator();
 						while (annotationsToRemove.hasNext()) {
-							toRemove.add(annotationsToRemove.next());
+							Entry entry = (Entry) annotationsToRemove.next();
+							AnnotatedPosition position = (AnnotatedPosition) entry.getKey();
+							PHPProjectionAnnotation projectionToRemove = (PHPProjectionAnnotation) entry.getValue();
+							// Check if this annotation should be removed.
+							// Any expanded annotation should be removed.
+							if (removeAnyway || !projectionToRemove.isCollapsed()) {
+								toRemove.add(projectionToRemove);
+							} else if (shouldRemoveAnnotation(projectionToRemove, position.offset)) {
+								toRemove.add(projectionToRemove);
+								// We can assume that any other fold that we have under this fold should be
+								// removed since it's probably under a comment.
+								removeAnyway = true;
+							}
 						}
 						//						List removals = new LinkedList();
 						//						model.getPosition((Annotation)removals.get(0));
@@ -73,11 +86,11 @@
 		} finally {
 			if (sModel != null) {
 				sModel.releaseFromRead();
-				if (fileData != null){
+				if (fileData != null) {
 					allowCollapsing = false;
 				}
 			}
-			
+
 		}
 	}
 
