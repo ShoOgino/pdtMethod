@@ -1,4 +1,4 @@
-	private String getClassName(String className, int position, int lineNumber, PHPClassData[] cls, PHPFunctionData[] func) {
+	private String getClassName(String className, int position, int lineNumber, PHPClassData[] cls, PHPFunctionData[] func, CodeData[] projectClasses, CodeData[] projectFunctions) {
 		String[] classNameParts = className.split(";");
 		String sourceClassName = null;
 		int propertyNamePosition = 1;
@@ -12,7 +12,7 @@
 		}
 		if ((classNameParts[1].equals("function_call"))) {
 			// meaning it's $a = foo();
-			sourceClassName = getFunctionReturnType(classNameParts[2], position, cls, func);
+			sourceClassName = getFunctionReturnType(classNameParts[2], position, cls, func, projectClasses, projectFunctions);
 			propertyNamePosition = 3;
 		} else {
 			propertyNamePosition = 2;
@@ -26,7 +26,7 @@
 		// this loop is for the case there is a nesting: $a = $b->foo()->bar()
 		for (; propertyNamePosition < classNameParts.length; propertyNamePosition++) {
 			if (!classNameParts[propertyNamePosition].equals("null")) {
-				sourceClassName = getPropertyType(sourceClassName, classNameParts[propertyNamePosition], cls, func);
+				sourceClassName = getPropertyType(sourceClassName, classNameParts[propertyNamePosition], cls, func, projectClasses, projectFunctions);
 				// the "-" stands for finding the property but couldn't find
 				// it's type
 				if (sourceClassName != null && sourceClassName.equals("-")) {
