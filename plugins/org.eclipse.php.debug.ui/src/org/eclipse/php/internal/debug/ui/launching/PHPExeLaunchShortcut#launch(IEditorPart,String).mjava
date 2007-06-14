@@ -6,20 +6,42 @@
 		IFile file = (IFile) input.getAdapter(IFile.class);
 		if (file == null) {
 			IPath path = null;
-			
+
 			if (input instanceof IStorageEditorInput) {
-				IStorageEditorInput editorInput = (IStorageEditorInput)input;
+				IStorageEditorInput editorInput = (IStorageEditorInput) input;
 				try {
-					LocalFileStorage fileStorage = (LocalFileStorage)editorInput.getStorage();
+					LocalFileStorage fileStorage = (LocalFileStorage) editorInput.getStorage();
 					path = fileStorage.getFullPath();
 				} catch (CoreException e) {
 					Logger.logException(e);
 				}
 			} else if (input instanceof IURIEditorInput) {
-				IURIEditorInput editorInput = (IURIEditorInput)input;
-				path = URIUtil.toPath(editorInput.getURI());
+				path = URIUtil.toPath(((IURIEditorInput) input).getURI());
+			} else if (input instanceof NonExistingPHPFileEditorInput) {
+				IPath oldPath = ((NonExistingPHPFileEditorInput) input).getPath();//Untitled dummy path
+				IStatusHandler prompter = DebugPlugin.getDefault().getStatusHandler(promptStatus);
+				if (prompter != null) {
+					try {
+						int[] breakpointLines = getBreakpointLines(oldPath);
+
+						// the following line will ask the user to save all unsaved documents
+						// see org.eclipse.debug.core.model.LaunchConfigurationDelegate
+						if (!(Boolean) prompter.handleStatus(saveScopedDirtyEditors, new Object[] {})) {
+							return;//save canceled
+						}
+						//retrieve the new path after save and remove from map
+						path = UntitledPHPEditor.latestSavedUntitled.get(oldPath);
+						UntitledPHPEditor.latestSavedUntitled.remove(oldPath);
+						if (path != null) {
+							copyBreakPoints(path, breakpointLines);
+						}
+					} catch (Exception e) {
+						Logger.logException(e);
+						return;
+					}
+				}
 			}
-			
+
 			if (path != null) {
 				if (ExternalFilesRegistry.getInstance().isEntryExist(path.toString())) {
 					file = ExternalFilesRegistry.getInstance().getFileEntry(path.toString());
