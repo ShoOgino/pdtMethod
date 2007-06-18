@@ -1,0 +1,51 @@
+	/**
+	 * The getModel function was overriden since this validator was also registered as org.eclipse.wst.validation.validator (not only org.eclipse.wst.sse.ui.sourcevalidation)
+	 * The getModel failed since the private method canHandle() were looking for html files.
+	 * In the future if the canHandle() will be changed to protected - this function can be removed.
+	 * (submitted bug for it #193122)
+	 */
+	
+	protected IDOMModel getModel(IProject project, IFile file) {
+		if (project == null || file == null)
+			return null;
+		if (!file.exists())
+			return null;
+		if (!canHandle(file))
+			return null;
+
+		IStructuredModel model = null;
+		IModelManager manager = StructuredModelManager.getModelManager();
+		try {
+			file.refreshLocal(IResource.DEPTH_ZERO, new NullProgressMonitor());
+		}
+		catch (CoreException e) {
+			Logger.logException(e);
+		}
+		try {
+			try {
+				model = manager.getModelForRead(file);
+			}
+			catch (UnsupportedEncodingException ex) {
+				// retry ignoring META charset for invalid META charset
+				// specification
+				// recreate input stream, because it is already partially read
+				model = manager.getModelForRead(file, new String(), null);
+			}
+		}
+		catch (UnsupportedEncodingException ex) {
+		}
+		catch (IOException ex) {
+		}
+		catch (CoreException e) {
+			Logger.logException(e);
+		}
+
+		if (model == null)
+			return null;
+		if (!(model instanceof IDOMModel)) {
+			releaseModel(model);
+			return null;
+		}
+		return (IDOMModel) model;
+	}
+
