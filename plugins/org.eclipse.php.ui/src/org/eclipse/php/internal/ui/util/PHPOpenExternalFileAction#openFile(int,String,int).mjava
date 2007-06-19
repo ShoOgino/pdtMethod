@@ -1,0 +1,27 @@
+	private int openFile(int numberOfFilesNotFound, String currentFilePath, int lineNumber) {
+		IPath path = new Path(currentFilePath);
+		fFilterPath = path.removeLastSegments(1).toOSString();
+		IFileStore fileStore = EFS.getLocalFileSystem().getStore(new Path(fFilterPath));
+		fileStore = fileStore.getChild(path.lastSegment());
+		if (!fileStore.fetchInfo().isDirectory() && fileStore.fetchInfo().exists()) {
+			IEditorInput input = createEditorInput(fileStore);
+			String editorId = getEditorId(fileStore);
+			IWorkbenchPage page = fWindow.getActivePage();
+			IEditorPart editorPart = null;
+			try {
+				editorPart = page.openEditor(input, editorId);
+				// if the open file request has a line number, try to set the cursor on that line				
+				if (lineNumber >= 0) {
+					gotoLine(editorPart, currentFilePath, lineNumber);
+				}
+			} catch (PartInitException e) {
+				Logger.logException("Failed opening file called externally", e);
+			}
+		} else {
+			if (++numberOfFilesNotFound > 1)
+				notFound.append('\n');
+			notFound.append(currentFilePath);
+		}
+		return numberOfFilesNotFound;
+	}
+
