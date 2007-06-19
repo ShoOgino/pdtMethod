@@ -31,25 +31,21 @@
 			}
 
 			if (isDocBlock && TypingPreferences.addDocTags) {
-				//taking off the /** in order to find the closest codeData
-				document.replace(lineStart, lineEnd - lineStart, "");
-				command.offset = lineStart;
-
-				// making sure the new fileData will be created after the deletion
-				DOMModelForPHP editorModel = (DOMModelForPHP) StructuredModelManager.getModelManager().getModelForRead(document);
-				editorModel.updateFileData();
+				//taking off the text after the /** in order to find the closest codeData
+				document.replace(lineStart + 3, lineEnd - lineStart - 3, "");
+				lineEnd = lineStart + 3; //now the end of the line is the end of the comment start
+				command.offset = lineEnd;
 
 				if (lineContent.equals("")) { //this is a patch in order to make PHPDescriptionTool add a default shortDescription
 					lineContent = null;
 				}
 
-				String stub = getDocBlockStub(editorModel, document, lineStart, lineContent);
-
+				DOMModelForPHP editorModel = (DOMModelForPHP) StructuredModelManager.getModelManager().getModelForRead(document);
+				PHPFileData fileData = editorModel.getFileData();
 				editorModel.releaseFromRead();
 
-				// putting back the /** that was taken off
-				command.offset += commentStart.length();
-				document.replace(lineStart, 0, commentStart);
+				fileData = updateFileData(document, lineStart, lineEnd, fileData);
+				String stub = getDocBlockStub(fileData, document, lineStart, lineContent, lineEnd);
 
 				if (stub != null) {
 					command.text = stub.substring(3);
@@ -57,7 +53,7 @@
 						//this means that we added the default shortDescription to the docBlock
 						//now we want to make sure this description will be selected in the editor 
 						//at the end of the command
-						String fileName = editorModel.getFileData().getName();
+						String fileName = fileData.getName();
 						IFile file = PHPUiPlugin.getWorkspace().getRoot().getFile(new Path(fileName));
 						IEditorPart editorPart;
 						try {

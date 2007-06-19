@@ -1,0 +1,39 @@
+		public int read(char[] cbuf, int off, int len) throws IOException {
+			if (document == null)
+				return -1;
+
+			char[] readChars = null;
+			try {
+				if (position >= document.getLength())
+					return -1;
+
+				if (position < skippedPosition) {
+					if (position + len < skippedPosition) {
+						//we try to read before the skipped area - we should do nothing
+					} else {
+						//we need to split the reading since the requested string includes the skipped area.
+						String s1 = document.get(position, skippedPosition - position);
+						String s2 = document.get(skippedPosition + skippedLength, len - (skippedPosition - position));
+						readChars = (s1 + s2).toCharArray();
+					}
+				} else if (position <= skippedPosition + skippedLength) {
+					//the reading starts in the middle of the skipped area - moving the reading index forward
+					position = skippedPosition + skippedLength;
+				}
+				// the IDocument is likely using a GapTextStore, so we can't
+				// retrieve a char[] directly
+				if (readChars == null) {
+					//meaning it wasn't filled already 
+					if (position + len > document.getLength())
+						readChars = document.get(position, document.getLength() - position).toCharArray();
+					else
+						readChars = document.get(position, len).toCharArray();
+				}
+				System.arraycopy(readChars, 0, cbuf, off, readChars.length);
+				position += readChars.length;
+				return readChars.length;
+			} catch (Exception e) {
+				throw new IOException("Exception while reading from IDocument: " + e); //$NON-NLS-1$
+			}
+		}
+

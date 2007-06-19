@@ -7,42 +7,31 @@
 	 */
 
 	private boolean isNoCodeBetween(IStructuredDocument document, int offset, int endOffset) {
-		int index = offset;
-
+		char[] chars = null;
 		try {
-			IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(index);
-
-			ITextRegion tRegion = sdRegion.getRegionAtCharacterOffset(index);
-			// in case the cursor on the beginning of '?>' tag
-			// we decrease the offset to get the PhpScriptRegion 
-			if (tRegion.getType().equals(PHPRegionContext.PHP_CLOSE)) {
-				tRegion = sdRegion.getRegionAtCharacterOffset(index - 1);
-			}
-			int regionStart = sdRegion.getStartOffset(tRegion);
-
-			if (tRegion instanceof ITextRegionContainer) {
-				ITextRegionContainer container = (ITextRegionContainer) tRegion;
-				tRegion = container.getRegionAtCharacterOffset(index);
-				regionStart += tRegion.getStart();
-			}
-
-			// find the specified php token in the PhpScriptRegion
-			if (tRegion instanceof PhpScriptRegion) {
-				PhpScriptRegion scriptRegion = (PhpScriptRegion) tRegion;
-				while (tRegion != null && index < endOffset && index - regionStart > 0) {
-					tRegion = scriptRegion.getPhpToken(index - regionStart);
-
-					if (tRegion != null) {
-						String regionType = tRegion.getType();
-						if (regionType == PHPRegionTypes.PHP_LINE_COMMENT || regionStart + tRegion.getTextEnd() < index) {
-							index = regionStart + tRegion.getEnd() + 1;
-						} else {
-							return false;
-						}
+			chars = document.get(offset, endOffset - offset).toCharArray();
+		} catch (BadLocationException e) {
+			return true;
+		}
+		if (chars == null) {
+			return true;
+		}
+		boolean inLineComment = false;
+		for (int index = 0; index < chars.length; index++) {
+			char curr = chars[index];
+			if (inLineComment) {
+				if (curr == '\n' || curr == '\r') {
+					inLineComment = false;
+				}
+			} else {
+				if (!Character.isWhitespace(curr)) {
+					if (curr == '/' && index + 1 < chars.length && chars[index + 1] == '/') {
+						inLineComment = true;
+					} else {
+						return false;
 					}
 				}
 			}
-		} catch (BadLocationException e) {
 		}
 
 		return true;

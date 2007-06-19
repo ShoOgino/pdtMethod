@@ -1,0 +1,18 @@
+	private PHPFileData updateFileData(IStructuredDocument document, int commentStart, int commentEnd, PHPFileData fileData) {
+		String fileName = fileData.getName();
+
+		Pattern[] tasks = new Pattern[0];
+
+		IFile file = ResourcesPlugin.getWorkspace().getRoot().getFile(new Path(fileName));
+		IProject project = null;
+		if (file != null) {
+			project = file.getProject();
+			tasks = TaskPatternsProvider.getInstance().getPatternsForProject(project);
+		}
+		boolean useAspTags = UseAspTagsHandler.useAspTagsAsPhp(project);
+		String version = preferencesSupport.getPreferencesValue(Keys.PHP_VERSION, PHPVersion.PHP5, project);
+
+		fileData = PHPFileDataUtilities.getFileData(new SkippedTextDocumentReader(document, commentStart, commentEnd - commentStart), fileData.getName(), 0, version, tasks, useAspTags);
+		return fileData;
+	}
+
