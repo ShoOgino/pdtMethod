@@ -27,17 +27,21 @@
 			}
 
 			IDebugResponseMessage response = null;
-			int timeoutCount = 3;
+			int timeoutCount = 20;
 			while (response == null && isConnected()) {
 				synchronized (request) {
 					response = (IDebugResponseMessage) responseTable.remove(theMsg.getID());
 					if (response == null) {
-						// TODO - Display a message that we are waiting for the server response.
-						// In case that the response finally arrives, remove the message.
-						// In case we have a timeout, close the connection and display a different message.
+						if (isDebugMode) {
+							System.out.println("Response is null. Waiting " + ((21 - timeoutCount) * peerResponseTimeout) + " milliseconds");
+						}
+						if (timeoutCount == 15) { // Display a progress dialog after a quarter of the assigned time have passed.
+							// Display a message that we are waiting for the server response.
+							// In case that the response finally arrives, remove the message.
+							// In case we have a timeout, close the connection and display a different message.
+							PHPLaunchUtilities.showWaitForDebuggerMessage(this);
+						}
 						request.wait(peerResponseTimeout);
-					} else if (isDebugMode) {
-						System.out.println("waiting for response " + response.getID());
 					}
 				}
 				if (response == null) {
@@ -58,6 +62,7 @@
 						handlePeerResponseTimeout();
 					} else {
 						closeConnection();
+						PHPLaunchUtilities.hideWaitForDebuggerMessage();
 						PHPLaunchUtilities.showDebuggerErrorMessage();
 					}
 					if (!isConnected())
@@ -65,6 +70,7 @@
 					//System.out.println("rewaiting");
 				}
 			}
+			PHPLaunchUtilities.hideWaitForDebuggerMessage();
 			if (isDebugMode) {
 				System.out.println("response received by client: " + response);
 			}
