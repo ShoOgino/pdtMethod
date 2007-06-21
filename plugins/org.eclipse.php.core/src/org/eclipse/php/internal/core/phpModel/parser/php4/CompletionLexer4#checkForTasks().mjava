@@ -1,38 +1,38 @@
-	private void checkForTasks() {
+    private void checkForTasks(){
 		ArrayList matchers = createMatcherList();
 		int searchStartPosition = 0;
 		int lineCnt = 0;
 		int commentEndIndex = comment.length();
 		//if its a multiline comment or a phpDoc no nead to search the */ in the end 
-		if (comment.charAt(0) == '/' && comment.charAt(1) == '*') {
-			commentEndIndex -= 2;
+		if(comment.charAt(0)=='/' && comment.charAt(1)=='*'){
+			commentEndIndex -=2;
 		}
 		Matcher matcher = getMinimalMatcher(matchers, searchStartPosition);
 		while (matcher != null) {
 			String taskName = matcher.group();
 			int taskStartPositionInComment = matcher.start();
-			int descriptionStartPositionInComment = matcher.end();
+			int descriptionStartPositionInComment = matcher.end();			
 
 			//counting the lines till the begining of the task
-			lineCnt += countNewLines(searchStartPosition, matcher.start());
-
+			lineCnt+= countNewLines(searchStartPosition, matcher.start());
+			
 			//calculating the endPosition of the task
 			searchStartPosition = matcher.end();
 			matcher = getMinimalMatcher(matchers, searchStartPosition);
-
-			int endSearch = (matcher == null) ? commentEndIndex : matcher.start();
+			
+			int endSearch = (matcher == null)? commentEndIndex : matcher.start();
 			int taskEndPositionInComment = descriptionStartPositionInComment;
-			while (taskEndPositionInComment < endSearch) {
+			while(taskEndPositionInComment < endSearch){
 				char ch = comment.charAt(taskEndPositionInComment);
-				if (ch == '\n' || ch == '\r') {
+				if(ch == '\n' || ch == '\r'){
 					break;
 				}
 				taskEndPositionInComment++;
 			}
 
-			String description = comment.substring(descriptionStartPositionInComment, taskEndPositionInComment);
+			String description = comment.substring(descriptionStartPositionInComment,taskEndPositionInComment);
 			description = description.trim();
-			parserClient.handleTask(taskName, description, commentStartPosition - yy_pushbackPos + taskStartPositionInComment, commentStartPosition - yy_pushbackPos + taskEndPositionInComment - 1, commentStartLine + lineCnt);
+			parserClient.handleTask(taskName, description, commentStartPosition  - yy_pushbackPos + taskStartPositionInComment, commentStartPosition  - yy_pushbackPos + taskEndPositionInComment  - 1,commentStartLine + lineCnt);
 		}
-	}
+    }
 
