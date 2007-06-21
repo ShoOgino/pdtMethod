@@ -1,31 +1,37 @@
 	public void run(IAction action) {
-
-		UserData userData = phpCodeData.getUserData();
-		String fileName = userData.getFileName();
-		IFile file = PHPUiPlugin.getWorkspace().getRoot().getFile(new Path(fileName));
-		IEditorPart editorPart;
-		try {
-			editorPart = EditorUtility.openInEditor(file, true);
-		} catch (PartInitException e) {
-			Logger.logException(e);
+		if (phpCodeData == null) {
 			return;
 		}
-		ITextEditor textEditor = EditorUtility.getPHPStructuredEditor(editorPart);
-		IEditorInput editorInput = editorPart.getEditorInput();
-		IDocument document = textEditor.getDocumentProvider().getDocument(editorInput);
-		if (phpCodeData instanceof PHPFileData) {
-			handleFileDocBlock((PHPFileData)phpCodeData, (IStructuredDocument)document);
+		
+		for (int i = 0; i < phpCodeData.length; ++i) {
+			PHPCodeData codeData = phpCodeData[i];
+			UserData userData = codeData.getUserData();
+			String fileName = userData.getFileName();
+			IFile file = PHPUiPlugin.getWorkspace().getRoot().getFile(new Path(fileName));
+			IEditorPart editorPart;
+			try {
+				editorPart = EditorUtility.openInEditor(file, true);
+			} catch (PartInitException e) {
+				Logger.logException(e);
+				return;
+			}
+			ITextEditor textEditor = EditorUtility.getPHPStructuredEditor(editorPart);
+			IEditorInput editorInput = editorPart.getEditorInput();
+			IDocument document = textEditor.getDocumentProvider().getDocument(editorInput);
+			if (codeData instanceof PHPFileData) {
+				handleFileDocBlock((PHPFileData)codeData, (IStructuredDocument)document);
+			}
+			PHPDocBlock docBlock = PHPDocTool.createPhpDoc(codeData, document);
+			int startPosition = getCodeDataOffset(codeData);
+			String dockBlockText = insertDocBlock(codeData, (IStructuredDocument)document, startPosition);
+			if(dockBlockText == null) {
+				return;
+			}
+			String shortDescription = docBlock.getShortDescription();
+			int shortDescriptionInnerOffset = dockBlockText.indexOf(shortDescription);
+			int shortDescriptionStartOffset = startPosition + shortDescriptionInnerOffset;
+	
+			EditorUtility.revealInEditor(textEditor, shortDescriptionStartOffset, shortDescription.length());
 		}
-		PHPDocBlock docBlock = PHPDocTool.createPhpDoc(this.phpCodeData, document);
-		int startPosition = getCodeDataOffset();
-		String dockBlockText = insertDocBlock(phpCodeData, (IStructuredDocument)document, startPosition);
-		if(dockBlockText == null) {
-			return;
-		}
-		String shortDescription = docBlock.getShortDescription();
-		int shortDescriptionInnerOffset = dockBlockText.indexOf(shortDescription);
-		int shortDescriptionStartOffset = startPosition + shortDescriptionInnerOffset;
-
-		EditorUtility.revealInEditor(textEditor, shortDescriptionStartOffset, shortDescription.length());
 	}
 
