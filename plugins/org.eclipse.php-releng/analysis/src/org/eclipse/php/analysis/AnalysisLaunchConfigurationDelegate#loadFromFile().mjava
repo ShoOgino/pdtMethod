@@ -1,0 +1,48 @@
+	private void loadFromFile() {
+		if (rulesFileName == null) {
+			Log.info("rules file name doesn't supplied - all rules are recommendations");
+		}
+		
+		try {
+			BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(rulesFileName)));
+			String id = br.readLine();
+			while (id != null) {
+
+				// Load external data values from the imported data
+				int index = id.indexOf(AnalysisConstants.EXTERNAL_LABEL);
+				if (index != -1) {
+					int commaIndex = id.indexOf(AnalysisConstants.COMMA);
+					String elementId = id.substring(0, index);
+
+					// Skip the id prefix and the last "."
+					String key = id.substring(index + AnalysisConstants.EXTERNAL_LABEL.length() + 1, commaIndex);
+
+					// Get the data after the "," separator
+					String value = id.substring(commaIndex + 1);
+					AbstractAnalysisElement element = AnalysisUtil.getAnalysisElement(elementId);
+					element.getExternalDataMap().put(key, value);
+				}
+
+				// Determine if this is a rule or a variable
+				index = id.indexOf(AnalysisConstants.VARIABLE_LABEL);
+				if (index != -1) {
+					int commaIndex = id.indexOf(AnalysisConstants.COMMA);
+
+					String ruleId = id.substring(0, index);
+					String variable = id.substring(index + AnalysisConstants.VARIABLE_LABEL.length(), commaIndex);
+					String value = id.substring(commaIndex + 1);
+
+					AbstractAnalysisRule rule = (AbstractAnalysisRule) AnalysisUtil.getAnalysisElement(ruleId);
+					if (rule != null) {
+						rule.getParameter(variable).setValue(value);
+					}
+				}
+				id = br.readLine();
+			}
+
+			br.close();
+		} catch (IOException e) {
+			Log.severe(UIMessages.XML_EXPORT_ERROR_, e);
+		}
+	}
+

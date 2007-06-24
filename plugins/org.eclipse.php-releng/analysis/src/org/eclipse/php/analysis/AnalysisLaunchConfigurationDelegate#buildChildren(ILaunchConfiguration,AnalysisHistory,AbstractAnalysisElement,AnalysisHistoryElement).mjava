@@ -1,0 +1,37 @@
+	private void buildChildren(ILaunchConfiguration conf, AnalysisHistory history, AbstractAnalysisElement parent, AnalysisHistoryElement parentNode) {
+		List elements = parent.getOwnedElements();
+		for (Iterator it = elements.iterator(); it.hasNext();) {
+			AbstractAnalysisElement element = (AbstractAnalysisElement) it.next();
+
+			try {
+				// If the configuration says this element is enabled, add it to the selection list
+				if (conf.getAttribute(element.getId(), false)) {
+					AnalysisHistoryElement node = new AnalysisHistoryElement(history, parentNode, element);
+
+					// For rule handle any rule variables
+					if (element.getElementType() == AbstractAnalysisElement.RULE_ELEMENT_TYPE) {
+						AbstractAnalysisRule rule = (AbstractAnalysisRule) element;
+						if (rule.getParameterCount() > 0) {
+							List list = rule.getParameterList();
+							for (Iterator it2 = list.iterator(); it2.hasNext();) {
+								AnalysisParameter rv = (AnalysisParameter) it2.next();
+								StringBuffer sb = new StringBuffer();
+								sb.append(element.getId()).append(AnalysisConstants.VARIABLE_LABEL).append(rv.getName());
+								rv.setValue(conf.getAttribute(sb.toString(), rv.getValue()));
+							}
+
+							node.setAnalysisVariables(list);
+						}
+					}
+
+					// For enabled elements, add their enabled children too
+					if (element.getOwnedElements() != null) {
+						buildChildren(conf, history, element, node);
+					}
+				}
+			} catch (CoreException e) {
+				Log.severe(AnalysisConstants.BLANK, e);
+			}
+		}
+	}
+

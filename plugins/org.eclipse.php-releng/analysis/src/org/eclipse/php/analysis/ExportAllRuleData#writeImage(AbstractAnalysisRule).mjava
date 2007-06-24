@@ -1,0 +1,33 @@
+	public String writeImage( AbstractAnalysisRule rule ) {
+		StringBuffer path = new StringBuffer( AnalysisCorePlugin.getDefault().getStateLocation().toOSString() );
+		path.append( IMAGE_FOLDER ); 
+		
+		// Make sure the folder exists
+		File f = new File( path.toString() );
+		f.mkdir();
+		
+		StringBuffer path2 = new StringBuffer( AnalysisCorePlugin.getDefault().getStateLocation().toOSString() );
+		path2.append( File.separator ).append( rule.getIconName() );
+		
+		f = new File( path2.toString() );
+		if( !f.exists() ) {
+			try {
+				URL url = FileLocator.resolve( AnalysisCorePlugin.getImageUrl( AnalysisCorePlugin.getPluginId(), rule.getIconName() ) );
+				InputStream is = url.openStream();
+				FileOutputStream os = new FileOutputStream( path2.toString() );
+				byte[] b = new byte[32768];
+				int count = is.read(b);
+				while( count >= 0 ) {
+					os.write( b, 0, count );
+					count = is.read(b);
+				}
+				is.close();
+				os.close();
+			} catch( IOException e ) {
+				return AnalysisConstants.BLANK;
+			}
+		}
+		
+		return path2.toString();		
+	}
+

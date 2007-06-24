@@ -1,0 +1,85 @@
+	/* (non-Javadoc)
+	 * @see org.eclipse.debug.core.model.ILaunchConfigurationDelegate#launch(org.eclipse.debug.core.ILaunchConfiguration, java.lang.String, org.eclipse.debug.core.ILaunch, org.eclipse.core.runtime.IProgressMonitor)
+	 */
+	public void launch(final ILaunchConfiguration inputConf, String mode, ILaunch launch, IProgressMonitor parentProgress) throws CoreException {
+
+		if (AnalysisHistoryFactory.instance().isBusy()) {
+			return;
+		} else {
+			// We don't really care about this progress bar since it is just for the launch.
+			parentProgress.beginTask(AnalysisConstants.BLANK, 1);
+			parentProgress.worked(1);
+			parentProgress.done();
+
+//			Display.getDefault().asyncExec(new Runnable() {
+//				public void run() {
+//					try {
+//						PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView(AnalysisConstants.ID_RESULTS_FRAME_VIEW);
+//					} catch (PartInitException e) {
+//						Log.severe(UIMessages.RESULT_VIEW_CREATE_ERROR_, e);
+//					}
+//				}
+//			});
+
+			ILaunchConfiguration conf = inputConf;
+			if (conf == null) {
+				conf = lastLaunch;
+			}
+
+			try {
+				AnalysisHistory history = AnalysisHistoryFactory.instance().createAnalysisHistory(conf.getName());
+				buildSelectionList(conf, history);
+
+				if (history.getSelectAnalysisElements().size() > 0) {
+					// Get the manager and if it is enabled begin processing it
+					AnalysisProviderManager manager = AnalysisUtil.getProviderManager();
+
+					loadFromFile();
+					
+					// Run analysis for the right kind of project selection
+					int scope = conf.getAttribute(AnalysisConstants.CONFIG_PROP_INPUT, AnalysisConstants.ANALYSIS_SCOPE_WORKSPACE);
+
+					// Create a list of all projects in the workspace
+					if (scope == AnalysisConstants.ANALYSIS_SCOPE_WORKSPACE) {
+						analyzeWorkspace(manager, history);
+					} else if (scope == AnalysisConstants.ANALYSIS_SCOPE_WORKINGSET) {
+						analyzeWorkingset(conf, manager, history);
+					} else if (scope == AnalysisConstants.ANALYSIS_SCOPE_PROJECTS) {
+						analyzeProject(conf, manager, history);
+					} else if (scope == AnalysisConstants.ANALYSIS_SCOPE_SINGLE) {
+						analyzeSingle(conf, manager, history);
+					}
+
+					final String historyId = history.getHistoryId();
+
+					final List selectAnalysisElements = history.getSelectAnalysisElements();
+					final CodeReviewProvider provider = (CodeReviewProvider) selectAnalysisElements.get(0);
+
+					ExportResultRuleData exporter = new ExportResultRuleData();
+
+					try {
+						PrintStream output = System.out;
+						PrintStream outputXML = new PrintStream(new File(outputFile));
+						exporter.export(output, new NullProgressMonitor(), history, provider);
+						exporter.exportSuites(outputXML);
+						output.close();
+						outputXML.close();
+
+					} catch (FileNotFoundException e) {
+						e.printStackTrace();
+					}
+
+				} else {
+//					Display.getDefault().asyncExec(new Runnable() {
+//						public void run() {
+//							MessageDialog.openError(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), UIMessages.messagebox_no_selection_title, UIMessages.messagebox_no_selection_message);
+//						}
+//					});
+				}
+			} catch (CoreException e) {
+				Log.severe(CoreMessages.provider_build_error_, e);
+			}
+			lastLaunch = conf;
+		}
+	}
+

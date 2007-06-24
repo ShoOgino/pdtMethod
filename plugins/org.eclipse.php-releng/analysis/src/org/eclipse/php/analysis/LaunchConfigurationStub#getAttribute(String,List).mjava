@@ -1,0 +1,27 @@
+	public List getAttribute(String attributeName, List defaultValue) throws CoreException {
+
+		final IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+
+		if (projectNames == null || projectNames.size() == 0) {
+			throw new IllegalArgumentException("Need to specify project names to load");
+		}
+		
+		for (String name: projectNames) {
+			final IProjectDescription loadProjectDescription = ResourcesPlugin.getWorkspace().loadProjectDescription(new Path(rootPath + "/" + name +  "/.project"));
+			IProject project = root.getProject(name);
+			project.create(loadProjectDescription, null);
+			project.open(null);
+		}
+		
+		List list = new ArrayList(10);
+
+		IProject[] projectArray = root.getProjects();
+		for (int iCtr = 0; iCtr < projectArray.length; iCtr++) {
+			final String name = projectArray[iCtr].getName();
+			if (projectArray[iCtr].isOpen()) {
+				list.add(name);
+			}
+		}
+		return list;
+	}
+

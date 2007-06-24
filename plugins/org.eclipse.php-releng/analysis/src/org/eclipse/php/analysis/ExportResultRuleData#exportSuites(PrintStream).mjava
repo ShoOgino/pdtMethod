@@ -1,0 +1,100 @@
+	public void exportSuites(PrintStream output) {
+		assert files != null && output != null;
+
+		output.print(XML_HEADER);
+		output.println(AnalysisConstants.LINE_SEPARATOR);
+		
+		output.println("<analysissuites>");
+		
+		
+		// <analysissuite results="2" severes="1" warnings="1" recommendations="0" name="org.eclipse.php.ui.pack1.Hello1" package="org.eclipse.php.ui.pack1" >
+		for (Entry<String, List<CodeReviewResult>> element : files.entrySet()) {
+			final String fileName = element.getKey();
+			final List<CodeReviewResult> results = element.getValue();
+
+			// write suite header
+			output.print("<analysissuite name=\"");
+			replaceSlash(output, fileName);
+			output.print("\" ");
+			
+			output.print("package=\"");
+			replaceSlash(output, fileName.substring(0, fileName.lastIndexOf("/")));
+			output.print("\" ");
+
+			output.print("results=\"");
+			output.print(results.size());			
+			output.print("\" ");
+			
+			int severes = 0;
+			int warnings = 0;
+			int recommendations = 0;
+			
+			// write case
+			for (CodeReviewResult codeReviewResult : results) {
+				final AnalysisParameter parameter = codeReviewResult.getOwner().getParameter(AnalysisParameter.SEVERITY);
+				final String value = parameter.getValue() == null ? "0" : parameter.getValue();
+				
+				if (value.equals(AnalysisParameter.SEVERITY_LOW)) {
+					recommendations++;
+				} else if (value.equals(AnalysisParameter.SEVERITY_MEDIUM)) {
+					warnings++;
+				} else {
+					severes++; 
+				}
+			}
+
+			output.print("severes=\"");
+			output.print(severes);			
+			output.print("\" ");
+
+			output.print("warnings=\"");
+			output.print(warnings);			
+			output.print("\" ");
+
+			output.print("recommendations=\"");
+			output.print(recommendations);			
+			output.println("\">");
+			
+			// write analysis cases
+			for (CodeReviewResult codeReviewResult : results) {
+				// <analysiscase classname="org.eclipse.php.ui.pack1.Hello1" line="12">
+				output.print("<analysiscase classname=\"");
+				replaceSlash(output, fileName);
+				output.print("\" ");
+
+				output.print("line=\"");
+				output.print(codeReviewResult.getLineNumber());			
+				output.println("\">");
+				
+				final AnalysisParameter parameter = codeReviewResult.getOwner().getParameter(AnalysisParameter.SEVERITY);
+				String value = parameter.getValue() == null ? "0" : parameter.getValue() ;
+				final String severity = value.equals(AnalysisParameter.SEVERITY_LOW) ? "recommendation" : value.equals(AnalysisParameter.SEVERITY_MEDIUM) ? "warning" : "severe"; 
+				
+	        	// <severe message="should do this not that"> content goes here </severe>
+				output.print("<");
+				output.print(severity);
+				output.print(" type=\"");
+				final String name = codeReviewResult.getOwner().getClass().getName();
+				printClassName(output, name, name.length() - 1);
+				output.print("\" message=\"");
+				output.print(AnalysisCorePlugin.encodeForXML(codeReviewResult.getLabel())); 
+				output.print("\">");
+				
+				final AbstractAnalysisRule rule = (AbstractAnalysisRule) codeReviewResult.getOwner();
+				if (rule.hasQuickFixes()) {
+					final String id = (String) rule.getQuickFixIterator().next();
+					final JavaCodeReviewQuickFix quickFix = (JavaCodeReviewQuickFix) rule.getQuickFix(id);
+				}
+				output.print("</");
+				output.print(severity);
+				output.print(">");
+				
+				// write suite footer
+				output.println("</analysiscase>");
+			}
+			output.println("</analysissuite>");
+		}
+
+		output.println("</analysissuites>");
+	}
+

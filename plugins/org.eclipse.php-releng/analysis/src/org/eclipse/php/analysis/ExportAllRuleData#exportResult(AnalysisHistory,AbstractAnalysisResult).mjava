@@ -1,0 +1,71 @@
+	/**
+	 * Generate a report for this element
+	 * 
+	 * @param history		The analysis history for which the report is being generated 
+	 * @param element	 The analysis provider whose data is being exported
+	 * 
+	 * @return	A String representation of the generated XML report or null if the report type is not available
+	 */
+	public String exportResult( AnalysisHistory history, AbstractAnalysisResult element ) {
+		StringBuffer result = new StringBuffer();
+
+		CodeReviewResult resultElement = (CodeReviewResult)element;
+		if( resultElement.isVisible() ) {
+			AnalysisHistoryElement he = history.getHistoryElement( resultElement.getOwner() );
+			AbstractAnalysisRule rule = (AbstractAnalysisRule)he.getMappedAnalysisElement();
+			
+			String severity = AnalysisParameter.SEVERITY_LOW;
+			int index = 0;
+			AnalysisParameter param = rule.getParameter( AnalysisParameter.SEVERITY );
+			if( param != null ) {
+				String value = rule.getParameter( AnalysisParameter.SEVERITY ).getValue();
+				if (value == null) {
+					value = "0";
+				}
+				index = Integer.parseInt( value );
+				severity = (String)rule.getParameter( AnalysisParameter.SEVERITY ).getComboValues().get( index );			
+			}
+		
+			// Generate prefix data 
+			result.append( Messages.bind( TAG1, new Object[]{ 
+					AnalysisConstants.XML_ELEMENT_TAGS[ resultElement.getElementType()],
+					AnalysisCorePlugin.encodeForXML( resultElement.getLabelWithVariables() ),
+					severity,
+					Integer.toString( index ),
+					writeImage( rule )
+				} ) ).append( AnalysisConstants.LINE_SEPARATOR );
+			
+			// Write the data
+			result.append( AnalysisConstants.TAB  )
+				.append( AnalysisConstants.TAB )
+				.append( AnalysisConstants.TAB )
+				.append( TAG_FILE ) 
+				.append( resultElement.getResourceName() )
+				.append( TAG_FILE_END ) 
+				.append( AnalysisConstants.LINE_SEPARATOR )
+				.append( AnalysisConstants.TAB  )
+				.append( AnalysisConstants.TAB )
+				.append( AnalysisConstants.TAB )
+				.append( TAG_LINE ) 
+				.append( resultElement.getLineNumber() )
+				.append( TAG_LINE_END ) 
+				.append( AnalysisConstants.LINE_SEPARATOR );
+			
+			
+			// Generate postfix data 
+			result.append( getFooter(resultElement) );
+
+			// add the package data
+			final String filename = resultElement.getResourceName().substring(1);
+			
+			// add the file result
+			List<CodeReviewResult> listOfResults = files.get(filename);
+			if (listOfResults == null) {
+				listOfResults = new LinkedList<CodeReviewResult>();
+				files.put(filename, listOfResults);
+			}
+			listOfResults.add(resultElement);
+		}
+		return result.toString();
+	}
+

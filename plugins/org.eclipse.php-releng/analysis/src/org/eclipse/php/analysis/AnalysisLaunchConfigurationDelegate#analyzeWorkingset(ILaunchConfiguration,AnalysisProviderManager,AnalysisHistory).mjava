@@ -1,0 +1,23 @@
+	private void analyzeWorkingset(ILaunchConfiguration conf, AnalysisProviderManager manager, AnalysisHistory history) {
+		List list = new ArrayList(10);
+		try {
+			List projects = conf.getAttribute(AnalysisConstants.CONFIG_PROP_WORKINGSET_LIST, new ArrayList(10));
+			IWorkingSetManager wsMgr = AnalysisUIPlugin.getDefault().getWorkbench().getWorkingSetManager();
+			for (Iterator it2 = projects.iterator(); it2.hasNext();) {
+				IWorkingSet ws = wsMgr.getWorkingSet((String) it2.next());
+				if (ws != null) {
+					IAdaptable[] adapt = ws.getElements();
+					for (int iCtr = 0; iCtr < adapt.length; iCtr++) {
+						if (adapt[iCtr] instanceof IResource) {
+							list.add(adapt[iCtr]);
+						}
+					}
+				}
+			}
+
+			manager.analyze(history, list);
+		} catch (CoreException e) {
+			Log.severe(AnalysisConstants.BLANK, e);
+		}
+	}
+
