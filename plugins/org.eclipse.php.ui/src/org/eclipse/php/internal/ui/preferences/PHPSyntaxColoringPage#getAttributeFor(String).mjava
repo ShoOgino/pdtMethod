@@ -1,0 +1,40 @@
+	private TextAttribute getAttributeFor(String namedStyle) {
+		TextAttribute ta = new TextAttribute(fDefaultForeground, fDefaultBackground, SWT.NORMAL);
+
+		if (namedStyle != null && fOverlayStore != null) {
+			// note: "namedStyle" *is* the preference key
+			String prefString = getOverlayStore().getString(namedStyle);
+			String[] stylePrefs = ColorHelper.unpackStylePreferences(prefString);
+			if (stylePrefs != null) {
+				RGB foreground = ColorHelper.toRGB(stylePrefs[0]);
+				RGB background = ColorHelper.toRGB(stylePrefs[1]);
+
+				int fontModifier = SWT.NORMAL;
+
+				if (stylePrefs.length > 2) {
+					boolean on = Boolean.valueOf(stylePrefs[2]).booleanValue();
+					if (on)
+						fontModifier = fontModifier | SWT.BOLD;
+				}
+				if (stylePrefs.length > 3) {
+					boolean on = Boolean.valueOf(stylePrefs[3]).booleanValue();
+					if (on)
+						fontModifier = fontModifier | SWT.ITALIC;
+				}
+				if (stylePrefs.length > 4) {
+					boolean on = Boolean.valueOf(stylePrefs[4]).booleanValue();
+					if (on)
+						fontModifier = fontModifier | TextAttribute.STRIKETHROUGH;
+				}
+				if (stylePrefs.length > 5) {
+					boolean on = Boolean.valueOf(stylePrefs[5]).booleanValue();
+					if (on)
+						fontModifier = fontModifier | TextAttribute.UNDERLINE;
+				}
+
+				ta = new TextAttribute((foreground != null) ? EditorUtility.getColor(foreground) : null, (background != null) ? EditorUtility.getColor(background) : null, fontModifier);
+			}
+		}
+		return ta;
+	}
+

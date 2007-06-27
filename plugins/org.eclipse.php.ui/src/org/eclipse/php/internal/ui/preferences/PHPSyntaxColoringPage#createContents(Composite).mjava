@@ -1,0 +1,284 @@
+	protected Control createContents(final Composite parent) {
+		initializeDialogUnits(parent);
+
+		fDefaultForeground = parent.getDisplay().getSystemColor(SWT.COLOR_LIST_FOREGROUND);
+		fDefaultBackground = parent.getDisplay().getSystemColor(SWT.COLOR_LIST_BACKGROUND);
+		Composite pageComponent = createComposite(parent, 2);
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(pageComponent, IPHPHelpContextIds.PHP_SYNTAX_COLORING_PAGE);
+
+		Link link = new Link(pageComponent, SWT.WRAP);
+		link.setText(SSEUIMessages.SyntaxColoring_Link);
+		link.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				PreferencesUtil.createPreferenceDialogOn(parent.getShell(), e.text, null, null);
+			}
+		});
+
+		GridData linkData= new GridData(SWT.FILL, SWT.BEGINNING, true, false, 2, 1);
+		linkData.widthHint= 150; // only expand further if anyone else requires it
+		link.setLayoutData(linkData);
+
+		new Label(pageComponent, SWT.NONE).setLayoutData(new GridData());
+		new Label(pageComponent, SWT.NONE).setLayoutData(new GridData());
+
+		SashForm editor = new SashForm(pageComponent, SWT.VERTICAL);
+		GridData gridData2 = new GridData(SWT.FILL, SWT.FILL, true, true);
+		gridData2.horizontalSpan = 2;
+		editor.setLayoutData(gridData2);
+		SashForm top = new SashForm(editor, SWT.HORIZONTAL);
+		Composite styleEditor = createComposite(top, 1);
+		((GridLayout) styleEditor.getLayout()).marginRight = 5;
+		((GridLayout) styleEditor.getLayout()).marginLeft = 0;
+		createLabel(styleEditor, XMLUIMessages.SyntaxColoringPage_0);
+		fStylesViewer = createStylesViewer(styleEditor);
+		GridData gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
+		gridData.horizontalIndent = 0;
+		Iterator iterator = fStyleToDescriptionMap.values().iterator();
+		while (iterator.hasNext()) {
+			gridData.widthHint = Math.max(gridData.widthHint, convertWidthInCharsToPixels(iterator.next().toString().length()));
+		}
+		gridData.heightHint = convertHeightInCharsToPixels(5);
+		fStylesViewer.getControl().setLayoutData(gridData);
+
+		Composite editingComposite = createComposite(top, 1);
+		((GridLayout) styleEditor.getLayout()).marginLeft = 5;
+		createLabel(editingComposite, ""); //$NON-NLS-1$
+		Button enabler = createCheckbox(editingComposite, XMLUIMessages.SyntaxColoringPage_2);
+		enabler.setEnabled(false);
+		enabler.setSelection(true);
+		Composite editControls = createComposite(editingComposite, 2);
+		((GridLayout) editControls.getLayout()).marginLeft = 20;
+
+		fForegroundLabel = createLabel(editControls, SSEUIMessages.Foreground_UI_);
+		((GridData) fForegroundLabel.getLayoutData()).verticalAlignment = SWT.CENTER;
+		fForegroundLabel.setEnabled(false);
+
+		fForegroundColorEditor = new ColorSelector(editControls);
+		Button fForegroundColor = fForegroundColorEditor.getButton();
+		GridData gd = new GridData(SWT.BEGINNING, SWT.FILL, false, false);
+		fForegroundColor.setLayoutData(gd);
+		fForegroundColorEditor.setEnabled(false);
+
+		fBackgroundLabel = createLabel(editControls, SSEUIMessages.Background_UI_);
+		((GridData) fBackgroundLabel.getLayoutData()).verticalAlignment = SWT.CENTER;
+		fBackgroundLabel.setEnabled(false);
+
+		fBackgroundColorEditor = new ColorSelector(editControls);
+		Button fBackgroundColor = fBackgroundColorEditor.getButton();
+		gd = new GridData(SWT.BEGINNING, SWT.FILL, false, false);
+		fBackgroundColor.setLayoutData(gd);
+		fBackgroundColorEditor.setEnabled(false);
+
+		fBold = createCheckbox(editControls, XMLUIMessages.SyntaxColoringPage_3);
+		fBold.setEnabled(false);
+		((GridData) fBold.getLayoutData()).horizontalSpan = 2;
+		fItalic = createCheckbox(editControls, XMLUIMessages.SyntaxColoringPage_4);
+		fItalic.setEnabled(false);
+		((GridData) fItalic.getLayoutData()).horizontalSpan = 2;
+		fStrike = createCheckbox(editControls, XMLUIMessages.SyntaxColoringPage_5);
+		fStrike.setEnabled(false);
+		((GridData) fStrike.getLayoutData()).horizontalSpan = 2;
+		fUnderline = createCheckbox(editControls, XMLUIMessages.SyntaxColoringPage_6);
+		fUnderline.setEnabled(false);
+		((GridData) fUnderline.getLayoutData()).horizontalSpan = 2;
+		fClearStyle = new Button(editingComposite, SWT.PUSH);
+		fClearStyle.setText(SSEUIMessages.Restore_Default_UI_); //$NON-NLS-1$ = "Restore Default"
+		fClearStyle.setLayoutData(new GridData(SWT.BEGINNING));
+		((GridData) fClearStyle.getLayoutData()).horizontalIndent = 20;
+		fClearStyle.setEnabled(false);
+
+		Composite sampleArea = createComposite(editor, 1);
+
+		((GridLayout) sampleArea.getLayout()).marginLeft = 5;
+		((GridLayout) sampleArea.getLayout()).marginTop = 5;
+		createLabel(sampleArea, SSEUIMessages.Sample_text__UI_); //$NON-NLS-1$ = "&Sample text:"
+		SourceViewer viewer = new SourceViewer(sampleArea, null, SWT.BORDER | SWT.LEFT_TO_RIGHT | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.READ_ONLY);
+		fText = viewer.getTextWidget();
+		GridData gridData3 = new GridData(SWT.FILL, SWT.FILL, true, true);
+		gridData3.widthHint = convertWidthInCharsToPixels(20);
+		gridData3.heightHint = convertHeightInCharsToPixels(5);
+		gridData3.horizontalSpan = 2;
+		fText.setLayoutData(gridData3);
+		fText.setEditable(false);
+		fText.setFont(JFaceResources.getFont("org.eclipse.wst.sse.ui.textfont")); //$NON-NLS-1$
+		fText.addKeyListener(getTextKeyListener());
+		fText.addSelectionListener(getTextSelectionListener());
+		fText.addMouseListener(getTextMouseListener());
+		fText.addTraverseListener(getTraverseListener());
+		setAccessible(fText, SSEUIMessages.Sample_text__UI_);
+		fDocument = StructuredModelManager.getModelManager().createStructuredDocumentFor(ContentTypeIdForPHP.ContentTypeID_PHP);
+		fDocument.set(getExampleText());
+		viewer.setDocument(fDocument);
+
+		top.setWeights(new int[]{2, 1});
+		editor.setWeights(new int[]{1, 1});
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(pageComponent, IPHPHelpContextIds.PHP_SYNTAX_COLORING_PAGE);
+
+		fStylesViewer.setInput(getStylePreferenceKeys());
+
+		applyStyles();
+
+		fStylesViewer.addSelectionChangedListener(new ISelectionChangedListener() {
+			public void selectionChanged(SelectionChangedEvent event) {
+				if (!event.getSelection().isEmpty()) {
+					Object o = ((IStructuredSelection) event.getSelection()).getFirstElement();
+					String namedStyle = o.toString();
+					activate(namedStyle);
+					if (namedStyle == null)
+						return;
+				}
+			}
+		});
+
+		fForegroundColorEditor.addListener(new IPropertyChangeListener() {
+			public void propertyChange(PropertyChangeEvent event) {
+				if (event.getProperty().equals(ColorSelector.PROP_COLORCHANGE)) {
+					Object o = ((IStructuredSelection) fStylesViewer.getSelection()).getFirstElement();
+					String namedStyle = o.toString();
+					String prefString = getOverlayStore().getString(namedStyle);
+					String[] stylePrefs = ColorHelper.unpackStylePreferences(prefString);
+					if (stylePrefs != null) {
+						String oldValue = stylePrefs[0];
+						// open color dialog to get new color
+						String newValue = ColorHelper.toRGBString(fForegroundColorEditor.getColorValue());
+
+						if (!newValue.equals(oldValue)) {
+							stylePrefs[0] = newValue;
+							String newPrefString = ColorHelper.packStylePreferences(stylePrefs);
+							getOverlayStore().setValue(namedStyle, newPrefString);
+							applyStyles();
+							fText.redraw();
+						}
+					}
+				}
+			}
+		});
+
+		fBackgroundColorEditor.addListener(new IPropertyChangeListener() {
+			public void propertyChange(PropertyChangeEvent event) {
+				if (event.getProperty().equals(ColorSelector.PROP_COLORCHANGE)) {
+					Object o = ((IStructuredSelection) fStylesViewer.getSelection()).getFirstElement();
+					String namedStyle = o.toString();
+					String prefString = getOverlayStore().getString(namedStyle);
+					String[] stylePrefs = ColorHelper.unpackStylePreferences(prefString);
+					if (stylePrefs != null) {
+						String oldValue = stylePrefs[1];
+						// open color dialog to get new color
+						String newValue = ColorHelper.toRGBString(fBackgroundColorEditor.getColorValue());
+
+						if (!newValue.equals(oldValue)) {
+							stylePrefs[1] = newValue;
+							String newPrefString = ColorHelper.packStylePreferences(stylePrefs);
+							getOverlayStore().setValue(namedStyle, newPrefString);
+							applyStyles();
+							fText.redraw();
+							activate(namedStyle);
+						}
+					}
+				}
+			}
+		});
+
+		fBold.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				super.widgetSelected(e);
+				// get current (newly old) style
+				Object o = ((IStructuredSelection) fStylesViewer.getSelection()).getFirstElement();
+				String namedStyle = o.toString();
+				String prefString = getOverlayStore().getString(namedStyle);
+				String[] stylePrefs = ColorHelper.unpackStylePreferences(prefString);
+				if (stylePrefs != null) {
+					String oldValue = stylePrefs[2];
+					String newValue = String.valueOf(fBold.getSelection());
+					if (!newValue.equals(oldValue)) {
+						stylePrefs[2] = newValue;
+						String newPrefString = ColorHelper.packStylePreferences(stylePrefs);
+						getOverlayStore().setValue(namedStyle, newPrefString);
+						applyStyles();
+						fText.redraw();
+					}
+				}
+			}
+		});
+
+		fItalic.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				super.widgetSelected(e);
+				// get current (newly old) style
+				Object o = ((IStructuredSelection) fStylesViewer.getSelection()).getFirstElement();
+				String namedStyle = o.toString();
+				String prefString = getOverlayStore().getString(namedStyle);
+				String[] stylePrefs = ColorHelper.unpackStylePreferences(prefString);
+				if (stylePrefs != null) {
+					String oldValue = stylePrefs[3];
+					String newValue = String.valueOf(fItalic.getSelection());
+					if (!newValue.equals(oldValue)) {
+						stylePrefs[3] = newValue;
+						String newPrefString = ColorHelper.packStylePreferences(stylePrefs);
+						getOverlayStore().setValue(namedStyle, newPrefString);
+						applyStyles();
+						fText.redraw();
+					}
+				}
+			}
+		});
+
+		fStrike.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				super.widgetSelected(e);
+				// get current (newly old) style
+				Object o = ((IStructuredSelection) fStylesViewer.getSelection()).getFirstElement();
+				String namedStyle = o.toString();
+				String prefString = getOverlayStore().getString(namedStyle);
+				String[] stylePrefs = ColorHelper.unpackStylePreferences(prefString);
+				if (stylePrefs != null) {
+					String oldValue = stylePrefs[4];
+					String newValue = String.valueOf(fStrike.getSelection());
+					if (!newValue.equals(oldValue)) {
+						stylePrefs[4] = newValue;
+						String newPrefString = ColorHelper.packStylePreferences(stylePrefs);
+						getOverlayStore().setValue(namedStyle, newPrefString);
+						applyStyles();
+						fText.redraw();
+					}
+				}
+			}
+		});
+
+		fUnderline.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				super.widgetSelected(e);
+				// get current (newly old) style
+				Object o = ((IStructuredSelection) fStylesViewer.getSelection()).getFirstElement();
+				String namedStyle = o.toString();
+				String prefString = getOverlayStore().getString(namedStyle);
+				String[] stylePrefs = ColorHelper.unpackStylePreferences(prefString);
+				if (stylePrefs != null) {
+					String oldValue = stylePrefs[5];
+					String newValue = String.valueOf(fUnderline.getSelection());
+					if (!newValue.equals(oldValue)) {
+						stylePrefs[5] = newValue;
+						String newPrefString = ColorHelper.packStylePreferences(stylePrefs);
+						getOverlayStore().setValue(namedStyle, newPrefString);
+						applyStyles();
+						fText.redraw();
+					}
+				}
+			}
+		});
+
+		fClearStyle.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				if (fStylesViewer.getSelection().isEmpty())
+					return;
+				String namedStyle = ((IStructuredSelection) fStylesViewer.getSelection()).getFirstElement().toString();
+				getOverlayStore().setToDefault(namedStyle);
+				applyStyles();
+				fText.redraw();
+				activate(namedStyle);
+			}
+		});
+
+		return pageComponent;
+	}
+

@@ -1,0 +1,44 @@
+	/**
+	 * Creates the List viewer where we see the various syntax element display
+	 * names--would it ever be a Tree like JDT's?
+	 * 
+	 * @param parent
+	 * @return
+	 */
+	private StructuredViewer createStylesViewer(Composite parent) {
+		StructuredViewer stylesViewer = new ListViewer(parent, SWT.SINGLE | SWT.V_SCROLL | SWT.H_SCROLL | SWT.BORDER);
+		stylesViewer.setComparator(new ViewerComparator(Collator.getInstance()));
+		stylesViewer.setLabelProvider(new LabelProvider() {
+			public String getText(Object element) {
+				Object description = fStyleToDescriptionMap.get(element);
+				if (description != null)
+					return description.toString();
+				return super.getText(element);
+			}
+		});
+		stylesViewer.setContentProvider(new ITreeContentProvider() {
+			public void dispose() {
+			}
+
+			public Object[] getChildren(Object parentElement) {
+				return getStylePreferenceKeys().toArray();
+			}
+
+			public Object[] getElements(Object inputElement) {
+				return getChildren(inputElement);
+			}
+
+			public Object getParent(Object element) {
+				return getStylePreferenceKeys();
+			}
+
+			public boolean hasChildren(Object element) {
+				return false;
+			}
+
+			public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
+			}
+		});
+		return stylesViewer;
+	}
+

@@ -1,0 +1,46 @@
+	private String getNamedStyleAtOffset(int offset) {
+		// ensure the offset is clean
+		if (offset >= fDocument.getLength())
+			return getNamedStyleAtOffset(fDocument.getLength() - 1);
+		else if (offset < 0)
+			return getNamedStyleAtOffset(0);
+		
+		IStructuredDocumentRegion documentRegion = fDocument.getFirstStructuredDocumentRegion();
+		while (documentRegion != null && !documentRegion.containsOffset(offset)) {
+			documentRegion = documentRegion.getNext();
+		}
+		
+		if (documentRegion != null) {
+			String regionContext;
+			ITextRegion interest = documentRegion.getRegionAtCharacterOffset(offset);
+
+			ITextRegionCollection container = documentRegion;
+			if (interest instanceof ITextRegionContainer) {
+				container = (ITextRegionContainer) interest;
+				interest = container.getRegionAtCharacterOffset(offset);
+			}
+
+			if (interest.getType() == PHPRegionContext.PHP_CONTENT) {
+				PhpScriptRegion phpScript = (PhpScriptRegion) interest;
+				try {
+					regionContext = phpScript.getPhpTokenType(offset - container.getStartOffset() - phpScript.getStart());
+				} catch (BadLocationException e) {
+					assert false;
+					return null;
+				}
+			} else if (interest.getType() == PHPRegionContext.PHP_OPEN) {
+				regionContext = PHPRegionTypes.PHP_OPENTAG;
+			} else if (interest.getType() == PHPRegionContext.PHP_CLOSE) {
+				regionContext = PHPRegionTypes.PHP_CLOSETAG;
+			} else {
+				regionContext = interest.getType();
+			}
+
+			// find the named style (internal/selectable name) for that
+			// context
+			String namedStyle = (String) fContextToStyleMap.get(regionContext);
+			return namedStyle;
+		}
+		return null;
+	}
+
