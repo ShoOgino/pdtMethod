@@ -7,8 +7,18 @@
 		if (textEditor == null)
 			return null;
 		IEditorInput input = textEditor.getEditorInput();
-		if (!(input instanceof IFileEditorInput))
-			return null;
-		return ((IFileEditorInput) input).getFile();
+		if (input instanceof IFileEditorInput) {
+			return ((IFileEditorInput) input).getFile();
+		}
+		if (input instanceof IURIEditorInput) {
+			String filePath = ((IURIEditorInput)input).getURI().getPath();
+			IFile result = ExternalFilesRegistry.getInstance().getFileEntry(filePath);
+			if (result == null && filePath.length() > 0 && filePath.charAt(0) == '/') {
+				return ExternalFilesRegistry.getInstance().getFileEntry(filePath.substring(1));
+			}
+			return result;
+		}
+		return null;
+		
 	}
 
