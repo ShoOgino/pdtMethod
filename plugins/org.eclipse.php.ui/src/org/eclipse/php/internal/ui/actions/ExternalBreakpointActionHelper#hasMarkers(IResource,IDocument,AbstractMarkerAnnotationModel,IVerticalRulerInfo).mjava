@@ -1,5 +1,6 @@
 	/**
 	 * Returns if there are markers which include the ruler's line of activity.
+	 * 
 	 * @param resource
 	 * @param document
 	 * @param annotationModel
@@ -12,15 +13,22 @@
 				IMarker[] allMarkers;
 				if (resource.exists()) {
 					allMarkers = resource.findMarkers(IBreakpoint.LINE_BREAKPOINT_MARKER, true, IResource.DEPTH_ZERO);
-
+					if (allMarkers != null) {
+						for (int i = 0; i < allMarkers.length; i++) {
+							if (includesRulerLine(annotationModel.getMarkerPosition(allMarkers[i]), document, rulerInfo)) {
+								return true;
+							}
+						}
+					}
 				} else {
 					// get it from the workspace root
 					allMarkers = resource.getWorkspace().getRoot().findMarkers(IBreakpoint.LINE_BREAKPOINT_MARKER, true, IResource.DEPTH_ZERO);
-				}
-				if (allMarkers != null) {
-					for (int i = 0; i < allMarkers.length; i++) {
-						if (includesRulerLine(annotationModel.getMarkerPosition(allMarkers[i]), document, rulerInfo)) {
-							return true;
+					IBreakpointManager manager = DebugPlugin.getDefault().getBreakpointManager();
+					if (allMarkers != null) {
+						for (int i = 0; i < allMarkers.length; i++) {
+							if (manager.getBreakpoint(allMarkers[i]) != null && includesRulerLine(annotationModel.getMarkerPosition(allMarkers[i]), document, rulerInfo)) {
+								return true;
+							}
 						}
 					}
 				}

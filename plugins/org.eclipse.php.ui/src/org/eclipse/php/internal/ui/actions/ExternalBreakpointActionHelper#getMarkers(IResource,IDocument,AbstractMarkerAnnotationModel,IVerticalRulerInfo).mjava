@@ -15,16 +15,25 @@
 				IMarker[] allMarkers;
 				if (resource.exists()) {
 					allMarkers = resource.findMarkers(IBreakpoint.BREAKPOINT_MARKER, true, IResource.DEPTH_ZERO);
+					if (allMarkers != null) {
+						for (int i = 0; i < allMarkers.length; i++) {
+							if (includesRulerLine(annotationModel.getMarkerPosition(allMarkers[i]), document, rulerInfo)) {
+								markers.add(allMarkers[i]);
+							}
+						}
+					}
 				} else {
 					allMarkers = resource.getWorkspace().getRoot().findMarkers(IBreakpoint.BREAKPOINT_MARKER, true, IResource.DEPTH_ZERO);
-				}
-				if (allMarkers != null) {
-					for (int i = 0; i < allMarkers.length; i++) {
-						if (includesRulerLine(annotationModel.getMarkerPosition(allMarkers[i]), document, rulerInfo)) {
-							markers.add(allMarkers[i]);
+					if (allMarkers != null) {
+						IBreakpointManager manager = DebugPlugin.getDefault().getBreakpointManager();
+						for (int i = 0; i < allMarkers.length; i++) {
+							if (manager.getBreakpoint(allMarkers[i]) != null && includesRulerLine(annotationModel.getMarkerPosition(allMarkers[i]), document, rulerInfo)) {
+								markers.add(allMarkers[i]);
+							}
 						}
 					}
 				}
+
 			} catch (CoreException x) {
 			}
 		}
