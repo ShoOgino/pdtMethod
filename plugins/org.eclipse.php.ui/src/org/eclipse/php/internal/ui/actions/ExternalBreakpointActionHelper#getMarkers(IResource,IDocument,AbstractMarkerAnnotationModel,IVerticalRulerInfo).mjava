@@ -1,0 +1,33 @@
+	/**
+	 * Returns all markers which include the ruler's line of activity.
+	 * 
+	 * @param resource
+	 * @param document
+	 * @param annotationModel
+	 * @param rulerInfo
+	 * @return
+	 */
+	public static IMarker[] getMarkers(IResource resource, IDocument document, AbstractMarkerAnnotationModel annotationModel, IVerticalRulerInfo rulerInfo) {
+		List<IMarker> markers = new ArrayList<IMarker>();
+		if (resource != null && annotationModel != null) {
+			try {
+
+				IMarker[] allMarkers;
+				if (resource.exists()) {
+					allMarkers = resource.findMarkers(IBreakpoint.BREAKPOINT_MARKER, true, IResource.DEPTH_ZERO);
+				} else {
+					allMarkers = resource.getWorkspace().getRoot().findMarkers(IBreakpoint.BREAKPOINT_MARKER, true, IResource.DEPTH_ZERO);
+				}
+				if (allMarkers != null) {
+					for (int i = 0; i < allMarkers.length; i++) {
+						if (includesRulerLine(annotationModel.getMarkerPosition(allMarkers[i]), document, rulerInfo)) {
+							markers.add(allMarkers[i]);
+						}
+					}
+				}
+			} catch (CoreException x) {
+			}
+		}
+		return (IMarker[]) markers.toArray(new IMarker[0]);
+	}
+

@@ -1,0 +1,32 @@
+	/**
+	 * Returns if there are markers which include the ruler's line of activity.
+	 * @param resource
+	 * @param document
+	 * @param annotationModel
+	 * @param rulerInfo
+	 * @return
+	 */
+	public static boolean hasMarkers(IResource resource, IDocument document, AbstractMarkerAnnotationModel annotationModel, IVerticalRulerInfo rulerInfo) {
+		if (resource != null && annotationModel != null) {
+			try {
+				IMarker[] allMarkers;
+				if (resource.exists()) {
+					allMarkers = resource.findMarkers(IBreakpoint.LINE_BREAKPOINT_MARKER, true, IResource.DEPTH_ZERO);
+
+				} else {
+					// get it from the workspace root
+					allMarkers = resource.getWorkspace().getRoot().findMarkers(IBreakpoint.LINE_BREAKPOINT_MARKER, true, IResource.DEPTH_ZERO);
+				}
+				if (allMarkers != null) {
+					for (int i = 0; i < allMarkers.length; i++) {
+						if (includesRulerLine(annotationModel.getMarkerPosition(allMarkers[i]), document, rulerInfo)) {
+							return true;
+						}
+					}
+				}
+			} catch (CoreException x) {
+			}
+		}
+		return false;
+	}
+
