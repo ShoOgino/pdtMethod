@@ -1,0 +1,34 @@
+	/**
+	 * In case the user selected a text in the document and then hover over it, we would like to evaluate the selected text and not
+	 * only the hover region that is under the mouse pointer. 
+	 * In this case a we check for the selected text area and if the hover region contains in the selection, we evaluate the entire selection.
+	 * In case that we hover over a different code area, the original hover region is used for the evaluation.
+	 * 
+	 * Note that this kind of behavior allows evaluation of arrays content such as $array[0] evaluation.
+	 * 
+	 * @param textViewer
+	 * @param offset The original hover region offset.
+	 * @param length The original hover region length.
+	 * @return An array of integers that contains the offset and the length of the evaluation request.
+	 */
+	protected int[] getVariableRange(final ITextViewer textViewer, final int offset, final int length) {
+		final int[] variableRange = new int[] {offset, length};
+		Display.getDefault().syncExec(new Runnable() {
+			public void run() {
+				TextSelection selection = (TextSelection)textViewer.getSelectionProvider().getSelection();
+				if (selection.isEmpty()) {
+					return;
+				}
+				// Check if the selection contains the hover region
+				int selectionStart = selection.getOffset();
+				int selectionEnd = selectionStart + selection.getLength();
+				int hoverRegionEnd = offset + length;
+				if (offset >= selectionStart && offset < selectionEnd && hoverRegionEnd <= selectionEnd) {
+					variableRange[0] = selection.getOffset();
+					variableRange[1] = selection.getLength();
+				}
+			}
+		});
+		return variableRange;
+	}
+
