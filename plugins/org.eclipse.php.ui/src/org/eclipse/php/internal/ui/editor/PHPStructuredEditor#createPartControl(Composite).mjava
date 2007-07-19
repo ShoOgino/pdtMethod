@@ -10,6 +10,18 @@
 							ExternalFilesRegistry externalRegistry = ExternalFilesRegistry.getInstance();
 							if (file.exists()) {
 								PHPWorkspaceModelManager.getInstance().addFileToModel(getFile());
+								IProject proj = file.getProject();
+								try {
+									//remove the file from project model when it is an RSE project.
+									//this is to prevent display of the completion from this file
+									//when it is closed
+									if (proj.hasNature(PHPUiConstants.RSE_TEMP_PROJECT_NATURE_ID)) {
+										PHPWorkspaceModelManager.getInstance().getModelForProject(proj).removeFileFromModel(file);
+									}
+								} catch (CoreException ce) {
+									Logger.logException(ce);
+									return;
+								}	
 							}
 							//external php file
 							else {
