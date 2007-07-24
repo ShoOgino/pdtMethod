@@ -2,14 +2,20 @@
 		if (fText == null || fText.isDisposed() || fInput == null || fInput.length() == 0) {
 			return;
 		}
-		IStructuredDocumentRegion node = fNodes;
-		final LineStyleProviderForPhp styler = new LineStyleProviderForPhp();
-		final Collection holdResults = new ArrayList();
-		styler.prepareTextRegions(node, 0, fNodes.getEnd(), holdResults);
 		
-		for (Iterator iter = holdResults.iterator(); iter.hasNext();) {
-			StyleRange element = (StyleRange) iter.next();
-			fText.setStyleRange(element);			
+		styleProvider.loadColors();
+		LineStyleProviderForHTML lineStyleProviderForHTML = new LineStyleProviderForHTML();
+		
+		IStructuredDocumentRegion documentRegion = fNodes;
+		while (documentRegion != null) {
+			final Collection holdResults = new ArrayList();
+			styleProvider.prepareTextRegions(documentRegion, 0, documentRegion.getEnd(), holdResults);
+			
+			for (Iterator iter = holdResults.iterator(); iter.hasNext();) {
+				StyleRange element = (StyleRange) iter.next();
+				fText.setStyleRange(element);
+			}
+			documentRegion = documentRegion.getNext();
 		}
 	}
 
