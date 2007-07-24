@@ -1,0 +1,30 @@
+    /**
+     * Returns a <code>boolean</code> indicating whether the specified resource
+     * path represents a valid new resource in the workbench.  An error message
+     * is stored for future reference if the path  does not represent a valid
+     * new resource path.
+     *
+     * @param resourcePath the path to validate
+     * @return <code>boolean</code> indicating validity of the resource path
+     */
+    protected boolean validateFullResourcePath(IPath resourcePath) {
+        IWorkspace workspace = ResourcesPlugin.getWorkspace();
+
+        IStatus result = workspace.validatePath(resourcePath.toString(),
+                IResource.FOLDER);
+        if (!result.isOK()) {
+            problemType = PROBLEM_PATH_INVALID;
+            problemMessage = result.getMessage();
+            return false;
+        }
+
+        if (!allowExistingResources
+                && (workspace.getRoot().getFolder(resourcePath).exists() || workspace
+                        .getRoot().getFile(resourcePath).exists())) {
+            problemType = PROBLEM_RESOURCE_EXIST;
+            problemMessage = NLS.bind(IDEWorkbenchMessages.ResourceGroup_nameExists, getResource());
+            return false;
+        }
+        return true;
+    }
+

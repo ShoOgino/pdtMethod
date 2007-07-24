@@ -1,0 +1,42 @@
+	/**
+	 * Returns whether this page's visual components all contain valid values.
+	 *
+	 * @return <code>true</code> if valid, and <code>false</code> otherwise
+	 */
+	private boolean validatePage() {
+		if (!resourceGroup.areAllValuesValid()) {
+			if (!resourceGroup.getResource().equals("")) { //$NON-NLS-1$
+				setErrorMessage(resourceGroup.getProblemMessage());
+			} else {
+				setErrorMessage(null);
+			}
+			return false;
+		}
+
+		String resourceName = resourceGroup.getResource();
+		IWorkspace workspace = ResourcesPlugin.getWorkspace();
+
+		// Do not allow a closed project to be selected
+		IPath fullPath = resourceGroup.getContainerFullPath();
+		if (fullPath != null) {
+			String projectName = fullPath.segment(0);
+			IStatus isValidProjectName = workspace.validateName(projectName, IResource.PROJECT);
+			if (isValidProjectName.isOK()) {
+				IProject project = workspace.getRoot().getProject(projectName);
+				if (!project.isOpen()) {
+					setErrorMessage("");
+					return false;
+				}
+			}
+		}
+
+		IStatus result = workspace.validateName(resourceName, IResource.FILE);
+		if (!result.isOK()) {
+			setErrorMessage(result.getMessage());
+			return false;
+		}
+
+		setErrorMessage(null);
+		return true;
+	}
+

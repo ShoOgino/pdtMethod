@@ -1,0 +1,38 @@
+	/*
+	 * @see org.eclipse.jface.viewers.ITreeContentProvider#getChildren(java.lang.Object)
+	 */
+	public Object[] getChildren(Object element) {
+		if (element instanceof IWorkspace) {
+			// check if closed projects should be shown
+			IProject[] allProjects = ((IWorkspace) element).getRoot().getProjects();
+			if (showClosedProjects) {
+				return allProjects;
+			}
+
+			ArrayList accessibleProjects = new ArrayList();
+			for (int i = 0; i < allProjects.length; i++) {
+				if (allProjects[i].isOpen()) {
+					accessibleProjects.add(allProjects[i]);
+				}
+			}
+			return accessibleProjects.toArray();
+		} else if (element instanceof IContainer) {
+			IContainer container = (IContainer) element;
+			if (container.isAccessible()) {
+				try {
+					List children = new ArrayList();
+					IResource[] members = container.members();
+					for (int i = 0; i < members.length; i++) {
+						if (members[i].getType() != IResource.FILE) {
+							children.add(members[i]);
+						}
+					}
+					return children.toArray();
+				} catch (CoreException e) {
+					// this should never happen because we call #isAccessible before invoking #members
+				}
+			}
+		}
+		return new Object[0];
+	}
+
