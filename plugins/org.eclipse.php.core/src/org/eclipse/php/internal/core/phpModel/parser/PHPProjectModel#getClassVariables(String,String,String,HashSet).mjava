@@ -1,0 +1,21 @@
+	private CodeData[] getClassVariables(String fileName, String className, String startsWith, HashSet subClasses) {
+		PHPClassData classData = getClass(fileName, className);
+		if (classData == null) {
+			return null;
+		}
+
+		if (startsWith.startsWith("$")) {
+			startsWith = startsWith.substring(1);
+		}
+		CodeData[] variables = ModelSupport.getCodeDataStartingWith(classData.getVars(), startsWith);
+
+		CodeData[] superVariables = null;
+		String superClass = classData.getSuperClassData().getName();
+		if (superClass != null && !subClasses.contains(superClass)) {
+			subClasses.add(className);
+			fileName = (classData.isUserCode()) ? classData.getUserData().getFileName() : "";
+			superVariables = ModelSupport.getFilteredCodeData(getClassVariables(fileName, superClass, startsWith, subClasses), ModelSupport.PROTECTED_ACCESS_LEVEL_FILTER);
+		}
+		return ModelSupport.merge(variables, superVariables);
+	}
+

@@ -1,0 +1,34 @@
+	private CodeData getClassConstsData(String fileName, String className, String constName, HashSet subClasses) {
+		PHPClassData classData = getClass(fileName, className);
+		if (classData == null) {
+			return null;
+		}
+		CodeData[] consts = classData.getConsts();
+		for (int i = 0; i < consts.length; i++) {
+			if (consts[i].getName().equals(constName)) {
+				return consts[i];
+			}
+		}
+		String superClass = classData.getSuperClassData().getName();
+		if (superClass != null && !subClasses.contains(superClass)) {
+			subClasses.add(className);
+			fileName = (classData.isUserCode()) ? classData.getUserData().getFileName() : "";
+			CodeData classConstsData = getClassConstsData(fileName, superClass, constName, subClasses);
+			if (classConstsData != null) {
+				return classConstsData;
+			}
+		}
+
+		final PHPInterfaceNameData[] interfacesNamesData = classData.getInterfacesNamesData();
+		for (int i = 0; i < interfacesNamesData.length; i++) {
+			PHPInterfaceNameData interfaceNameData = interfacesNamesData[i];
+			fileName = (classData.isUserCode()) ? classData.getUserData().getFileName() : "";
+			final CodeData classConstsData = getClassConstsData(fileName, interfaceNameData.getName(), constName);
+			if (classConstsData != null) {
+				return classConstsData;
+			}
+		}
+
+		return null;
+	}
+
