@@ -1,4 +1,7 @@
-	private boolean validAction() {
+	/**
+	 * @return is action valid and can be run
+	 */
+	protected boolean isValid() {
 		ITextEditor editor = getTextEditor();
 		if (editor == null) {
 			return false;
@@ -52,23 +55,13 @@
 		}
 
 		CodeData[] codeDatas = CodeDataResolver.getInstance().resolve(structuredDocument, offset);
-		if (codeDatas.length == 0) {
-			return false;
-		}
-		CodeData codeData = codeDatas[0]; // XXX: handle multiple data!
-		if (codeData.getUserData() != null) {
-			return false;
+
+		fCodeDatas = filterCodeDatas(codeDatas);
+
+		if (fCodeDatas.length > 0) {
+			return true;
 		}
 
-		if (codeData.isUserCode()) {
-			return false;
-		}
-
-		if (!(codeData instanceof PHPFunctionData) && !(codeData instanceof PHPKeywordData)) {
-			return false;
-		}
-
-		this.codeData = (PHPCodeData) codeData;
-		return true;
+		return false;
 	}
 
