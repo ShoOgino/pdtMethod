@@ -1,0 +1,29 @@
+	/**
+	 * @return 	true  - the breakpoint marker updated
+	 * 			false - the breakpoint marker will deleted
+	 */
+	public boolean updateMarker(IMarker marker, IDocument document, Position position) {
+		if (position.isDeleted()) {
+			return false;
+		}
+		try {
+			int newLine = document.getLineOfOffset(position.offset) + 1;
+			int offset = PHPBreakpointProvider.getValidPosition(document, newLine);
+			// offset equals -1 means there is no valid position for this breakpoint marker
+			// and the breakpoint will delete.
+			if (offset != -1) {
+				newLine = document.getLineOfOffset(offset) + 1;
+				marker.setAttribute(IMarker.MESSAGE, MessageFormat.format(PHPDebugCoreMessages.LineBreakPointMessage_1, new Object[] { marker.getResource().getName(), newLine }));
+				if (marker.getAttribute(IMarker.LINE_NUMBER, -1) == newLine) {
+					return true;
+				}
+				marker.setAttribute(IMarker.LINE_NUMBER, newLine);
+				return true;
+			}
+		} catch (Exception e) {
+			Logger.logException(e);
+		}
+
+		return false;
+	}
+
