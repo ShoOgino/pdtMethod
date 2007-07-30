@@ -1,0 +1,23 @@
+	/**
+	 * refresh the file in the tree
+	 * @param fileData
+	 * @param deleted
+	 */
+	private void refreshFile(final PHPFileData fileData, final boolean deleted) {
+		final IPhpModel model = IncludePathTreeContent.findModel(fileData);
+		if (model == null)
+			return;
+
+		final IPath fileLocation = new Path(fileData.getName());
+
+		final IPath includeModelLocation = PHPModelUtil.getIncludeModelLocation(model);
+		final IPath modelPath = IncludePathTreeContent.INCLUDE_PATHS_ROOT_PATH.append(IncludeModelPathRootConverter.toString(model));
+		final IPath fileTreeLocation = modelPath.append(fileLocation.removeFirstSegments(includeModelLocation.segmentCount()));
+		if (IncludePathTreeContent.includePathTree.includes(fileTreeLocation)) {
+			refreshExistingFileNode(fileTreeLocation, deleted);
+			if (!deleted)
+				IncludePathTreeContent.includePathTree.createElement(fileTreeLocation, fileData);
+		} else
+			refreshMissingFileNode(fileTreeLocation, deleted);
+	}
+

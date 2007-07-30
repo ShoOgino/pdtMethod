@@ -1,28 +1,16 @@
-	public String getText(Object element) {
+	/* (non-Javadoc)
+	 * @see org.eclipse.jface.viewers.ILabelProvider#getText(java.lang.Object)
+	 */
+	public String getText(final Object element) {
 		if (element instanceof PHPTreeNode) {
-			PHPTreeNode treeNode = (PHPTreeNode) element;
-			return treeNode.getText();
+			return getNodeText((PHPTreeNode) element);
 		} else if (element instanceof PHPIncludePathModel) {
-			PHPIncludePathModel includePathModel = (PHPIncludePathModel) element;
-			String id = includePathModel.getID();
-			IPath location = IncludePathVariableManager.instance().getIncludePathVariable(includePathModel.getID());
-			if (location != null) {
-				return id + " (" + IncludePathVariableManager.instance().getIncludePathVariable(includePathModel.getID()).toOSString() + ")";
-			}
-			return id;
+			return getIncludeModelText((PHPIncludePathModel) element);
 		} else if (element instanceof PhpModelProxy) {
-			PhpModelProxy proxy = (PhpModelProxy) element;
-			return proxy.getID();
+			final PhpModelProxy proxy = (PhpModelProxy) element;
+			return getProjectModelText(proxy);
 		} else if (element instanceof PHPFileData) {
-			PHPFileData fileData = (PHPFileData) element;
-			IPath[] modelPaths = includePathTree.getChildren(includePathTree.getRoot());
-			for (int i = 0; i < modelPaths.length; ++i) {
-				PHPIncludePathModel includePathModel = (PHPIncludePathModel) includePathTree.getElementData(modelPaths[i]);
-				IPath includePath = PHPModelUtil.getIncludeModelLocation(includePathModel);
-				if (fileData.getName().startsWith(includePath.toOSString())) {
-					return new Path(fileData.getName()).lastSegment();
-				}
-			}
+			return getFileText((PHPFileData) element);
 		}
 		return null;
 	}

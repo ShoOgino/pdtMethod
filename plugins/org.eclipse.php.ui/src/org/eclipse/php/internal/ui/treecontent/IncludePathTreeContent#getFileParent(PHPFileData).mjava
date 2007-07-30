@@ -1,0 +1,24 @@
+	/**
+	 * Get file parent element
+	 * @param fileData
+	 * @return
+	 */
+	private static Object getFileParent(final PHPFileData fileData) {
+		final String fileName = fileData.getName();
+		final IPath fileLocation = new Path(fileName);
+		if (!includePathTree.includes(INCLUDE_PATHS_ROOT_PATH))
+			return null;
+		final IPath[] modelPaths = includePathTree.getChildren(INCLUDE_PATHS_ROOT_PATH);
+		for (int i = 0; i < modelPaths.length; ++i) {
+			final IPath includeLocation = PHPModelUtil.getIncludeModelLocation((PHPIncludePathModel) includePathTree.getElementData(modelPaths[i]));
+			if (!fileName.startsWith(includeLocation.toOSString()))
+				continue;
+			final IPath fileTreeLocation = modelPaths[i].append(fileLocation.removeFirstSegments(includeLocation.segmentCount()));
+			if (includePathTree.includes(fileTreeLocation)) {
+				final IPath parentTreeLocation = fileTreeLocation.removeLastSegments(1);
+				return includePathTree.getElementData(parentTreeLocation);
+			}
+		}
+		return null;
+	}
+

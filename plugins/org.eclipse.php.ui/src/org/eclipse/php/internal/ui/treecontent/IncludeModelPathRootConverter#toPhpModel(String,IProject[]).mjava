@@ -1,0 +1,21 @@
+	// TODO modifier
+	// TODO be consistent toString and toPhpModel
+	static IPhpModel toPhpModel(String pathRoot, IProject[] projectsToFindIn) {
+		String id = pathRoot.replace('?', IPath.SEPARATOR).replace('!', File.separatorChar).replace(';', IPath.DEVICE_SEPARATOR);
+		for (int i = 0; i < projectsToFindIn.length; ++i) {
+			PHPProjectModel projectModel = PHPWorkspaceModelManager.getInstance().getModelForProject(projectsToFindIn[i]);
+			if (projectModel == null) {
+				continue;
+			}
+			PHPIncludePathModelManager includeModelManager = (PHPIncludePathModelManager) projectModel.getModel(PHPIncludePathModelManager.COMPOSITE_INCLUDE_PATH_MODEL_ID);
+			if (includeModelManager == null) {
+				continue;
+			}
+			IPhpModel model = includeModelManager.getModel(id);
+			if (model != null) {
+				return model;
+			}
+		}
+		return null;
+	}
+

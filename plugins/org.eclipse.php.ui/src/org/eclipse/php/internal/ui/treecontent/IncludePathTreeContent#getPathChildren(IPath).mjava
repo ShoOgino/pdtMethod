@@ -1,45 +1,20 @@
-	Object[] getPathChildren(IPath parentPath) {
-		IPath modelPath = parentPath.uptoSegment(2);
-		if (!includePathTree.includes(modelPath)) {
-			return NO_CHILDREN;
-		}
-		Object element = includePathTree.getElementData(modelPath);
-		if (!(element instanceof PHPIncludePathModel) && !(element instanceof PhpModelProxy)) {
-			return NO_CHILDREN;
-		}
-		IPhpModel includePathModel = (IPhpModel) includePathTree.getElementData(modelPath);
-		IPath includeLocation = PHPModelUtil.getIncludeModelLocation(includePathModel);
-		// find and add missing elements:
-		CodeData[] fileDatas = includePathModel.getFileDatas();
-		for (int i = 0; i < fileDatas.length; ++i) {
-			String fileName = fileDatas[i].getName();
-			if (!fileName.startsWith(includeLocation.toOSString()) && !fileName.startsWith(includeLocation.makeAbsolute().toString())) {
-				continue;
-			}
-			IPath fileLocation = new Path(fileName);
-			IPath fileTreeLocation = modelPath.append(fileLocation.removeFirstSegments(includeLocation.segmentCount()));
-			if (includePathTree.includes(fileTreeLocation)) {
-				continue;
-			}
-			// find existing directory:
-			IPath existingDirectoryTreeLocation;
-			for (existingDirectoryTreeLocation = fileTreeLocation.removeLastSegments(1); existingDirectoryTreeLocation.segmentCount() > modelPath.segmentCount() && !includePathTree.includes(existingDirectoryTreeLocation); existingDirectoryTreeLocation = existingDirectoryTreeLocation
-				.removeLastSegments(1)) {
-			}
-			// add missing directories:
-			for (IPath missingDirectoryTreeLocation = existingDirectoryTreeLocation.append(fileTreeLocation.segment(existingDirectoryTreeLocation.segmentCount())); missingDirectoryTreeLocation.segmentCount() < fileTreeLocation.segmentCount(); missingDirectoryTreeLocation = missingDirectoryTreeLocation
-				.append(fileTreeLocation.segment(missingDirectoryTreeLocation.segmentCount()))) {
-				includePathTree.createElement(missingDirectoryTreeLocation, ((Workspace) ResourcesPlugin.getWorkspace()).newResource(missingDirectoryTreeLocation, IResource.FOLDER));
-			}
-			includePathTree.createElement(fileTreeLocation, fileDatas[i]);
+	/**
+	 * @param parentPath
+	 * @return
+	 */
+	private static Object[] getPathChildren(final IPath parentPath) {
 
-		}
-		// getting the children:
-		IPath[] childrenPaths = includePathTree.getChildren(parentPath);
-		ArrayList childrenElements = new ArrayList(childrenPaths.length);
-		for (int i = 0; i < childrenPaths.length; ++i) {
-			childrenElements.add(includePathTree.getElementData(childrenPaths[i]));
-		}
-		return childrenElements.toArray();
+		final IPath modelPath = parentPath.uptoSegment(2);
+
+		if (!includePathTree.includes(modelPath))
+			return NO_CHILDREN;
+
+		final Object model = includePathTree.getElementData(modelPath);
+		if (!(model instanceof PHPIncludePathModel) && !(model instanceof PhpModelProxy))
+			return NO_CHILDREN;
+
+		createIncludePathTree(modelPath, (IPhpModel) model);
+
+		return getTreeChildrenElements(parentPath);
 	}
 

@@ -1,48 +1,15 @@
-	public synchronized Object[] getChildren(Object parentElement) {
-		if (parentElement instanceof IProject) {
-			IProject project = (IProject) parentElement;
-			PHPProjectOptions options = PHPProjectOptions.forProject(project);
-			if (options != null) // only for php projects
-			{
-				Object[] ret = { getTreeNode(project) };
-				return ret;
-			}
-		} else if ((parentElement instanceof PHPTreeNode) && ID_INCLUDES_NODE.equals(((PHPTreeNode) parentElement).getId())) {
-			PHPTreeNode treeNode = (PHPTreeNode) parentElement;
-			PHPProjectModel projectModel = PHPWorkspaceModelManager.getInstance().getModelForProject((IProject) treeNode.getData()/*, true*/);//			PHPIncludePathModel model=PHPIncludePathModelManager
-			// if we force creation of the project model it hangs when creating a new project with heavy predefined include path.
-			// On this stage there is no need to create the model, since we listen for include path changes.
-			if (projectModel == null)
-				return new Object[0];
-			PHPIncludePathModelManager includeModelManager = (PHPIncludePathModelManager) projectModel.getModel(INCLUDE_MODEL_MANAGER_ID);
-			if (includeModelManager == null) {
-				return new Object[0];
-			}
-			IPhpModel[] models = includeModelManager.listModels();
-			ArrayList filteredModels = new ArrayList(models.length);
-			for (int i = 0; i < models.length; ++i) {
-				IPath modelLocation = PHPModelUtil.getIncludeModelLocation(models[i]);
-				if (modelLocation != null) {
-					filteredModels.add(models[i]);
-				}
-			}
-			return filteredModels.toArray();
-		} else if (parentElement instanceof PHPIncludePathModel || parentElement instanceof PhpModelProxy) {
-			IPhpModel includePathModel = (IPhpModel) parentElement;
-			IPath modelPath = INCLUDE_MODELS_PATH_ROOT.append(IncludeModelPathRootConverter.to(includePathModel));
-			System.out.println();
-			if (!includePathTree.includes(modelPath)) {
-				validateRoot();
-				includePathTree.createElement(modelPath, includePathModel);
-			}
-			return getPathChildren(modelPath);
-		} else if (parentElement instanceof IResource) {
-			IPath resourcePath = ((IResource) parentElement).getFullPath();
-			if (includePathTree.includes(((IResource) parentElement).getFullPath())) {
-				return getPathChildren(resourcePath);
-			}
-		}
-
+	/* (non-Javadoc)
+	 * @see org.eclipse.jface.viewers.ITreeContentProvider#getChildren(java.lang.Object)
+	 */
+	public synchronized Object[] getChildren(final Object parentElement) {
+		if (parentElement instanceof IProject)
+			return getProjectChildren((IProject) parentElement);
+		else if (parentElement instanceof PHPTreeNode && INCLUDE_PATHS_NODE_ID.equals(((PHPTreeNode) parentElement).getId()))
+			return getTreeNodeChildren((PHPTreeNode) parentElement);
+		else if (parentElement instanceof PHPIncludePathModel || parentElement instanceof PhpModelProxy)
+			return getIncludeModelChildren((IPhpModel) parentElement);
+		else if (parentElement instanceof IFolder)
+			return getFolderChildren(((IFolder) parentElement));
 		return NO_CHILDREN;
 	}
 

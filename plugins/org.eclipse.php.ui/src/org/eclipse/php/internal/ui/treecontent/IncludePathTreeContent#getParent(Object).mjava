@@ -1,43 +1,16 @@
-	public Object getParent(Object element) {
+	/* (non-Javadoc)
+	 * @see org.eclipse.jface.viewers.ITreeContentProvider#getParent(java.lang.Object)
+	 */
+	public Object getParent(final Object element) {
 		if (includePathTree == null)
 			return null;
 		if (element instanceof PHPFileData) {
-			PHPFileData fileData = (PHPFileData) element;
-			String fileName = fileData.getName();
-			IPath fileLocation = new Path(fileName);
-			if (!includePathTree.includes(INCLUDE_MODELS_PATH_ROOT)) {
-				return null;
-			}
-			IPath[] modelPaths = includePathTree.getChildren(INCLUDE_MODELS_PATH_ROOT);
-			for (int i = 0; i < modelPaths.length; ++i) {
-				IPath includeLocation = PHPModelUtil.getIncludeModelLocation((PHPIncludePathModel) includePathTree.getElementData(modelPaths[i]));
-				if (!fileName.startsWith(includeLocation.toOSString()))
-					continue;
-				IPath fileTreeLocation = modelPaths[i].append(fileLocation.removeFirstSegments(includeLocation.segmentCount()));
-				if (includePathTree.includes(fileTreeLocation)) {
-					IPath parentTreeLocation = fileTreeLocation.removeLastSegments(1);
-					return includePathTree.getElementData(parentTreeLocation);
-				}
-			}
+			return getFileParent((PHPFileData) element);
 		} else if (element instanceof IFolder) {
-			IFolder folder = (IFolder) element;
-			IPath folderPath = folder.getFullPath();
-			if (includePathTree.includes(folderPath)) {
-				return includePathTree.getElementData(folderPath.removeLastSegments(1));
-			}
+			return getFolderParent((IFolder) element);
 		} else if (element instanceof PHPIncludePathModel) {
-			IPath modelPath = INCLUDE_MODELS_PATH_ROOT.append(IncludeModelPathRootConverter.to((PHPIncludePathModel) element));
-			if (includePathTree.includes(modelPath)) {
-				for (Iterator i = projects.values().iterator(); i.hasNext();) {
-					IncludesNode treeNode = (IncludesNode) i.next();
-					Object[] children = getChildren(treeNode);
-					for (int j = 0; j < children.length; ++j) {
-						if (children[j] == element) {
-							return treeNode;
-						}
-					}
-				}
-			}
+			PHPIncludePathModel includeModel = (PHPIncludePathModel) element;
+			return getIncludeModelParent(includeModel);
 		}
 		return null;
 	}

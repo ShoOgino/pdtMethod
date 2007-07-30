@@ -1,23 +1,14 @@
-	IncludesNode getTreeNode(IProject project) {
-		IncludesNode treeNode = (IncludesNode) projects.get(project);
-		if (treeNode == null) {
+	private IncludesNode getTreeNode(final IProject project) {
 
-			Image image = PHPUiPlugin.getImageDescriptorRegistry().get(PHPPluginImages.DESC_OBJS_LIBRARY);
-			treeNode = new IncludesNode("Include Paths", image, ID_INCLUDES_NODE, project, null);
-			PHPWorkspaceModelManager.getInstance().addModelListener(treeNode);
-			projects.put(project, treeNode);
-			PHPProjectModel model = PHPWorkspaceModelManager.getInstance().getModelForProject(project, true); // in order to create include path model manager
-			PHPProjectOptions options = PHPProjectOptions.forProject(project);
-			options.addOptionChangeListener(PHPCoreConstants.PHPOPTION_INCLUDE_PATH, treeNode);
+		IncludesNode treeNode = projectNodes.get(project);
 
-		}
+		if (treeNode == null)
+			treeNode = createIncludePathsNode(project);
 		// generate the tree:
-		Object[] models = getChildren(treeNode);
-		if (models.length > 0) {
-			for (int i = 0; i < models.length; ++i) {
-				getChildren(models[i]);
-			}
-		}
+		final Object[] models = getTreeNodeChildren(treeNode);
+		if (models.length > 0)
+			for (int i = 0; i < models.length; ++i)
+				getIncludeModelChildren((IPhpModel) models[i]);
 		return treeNode;
 	}
 
