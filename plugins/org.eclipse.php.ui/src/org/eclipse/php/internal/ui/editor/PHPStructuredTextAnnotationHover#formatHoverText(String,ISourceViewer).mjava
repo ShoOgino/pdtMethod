@@ -1,0 +1,40 @@
+	/*
+	 * Formats the message of this hover to fit onto the screen.
+	 */
+	private String formatHoverText(String text, ISourceViewer sourceViewer) {
+		String result = null;
+		String lineDelim = new String();
+		try {
+			lineDelim = sourceViewer.getDocument().getLineDelimiter(0);
+		} catch (org.eclipse.jface.text.BadLocationException exception) {
+			// skip, just use default
+		}
+		Display display = sourceViewer.getTextWidget().getDisplay();
+
+		// replace special characters in text with html entity (like <, >, &
+		// to &lt;, &gt;, &&;)
+		text = StringUtils.convertToHTMLContent(text);
+
+		Reader textReader = new StringReader(text);
+		GC gc = new GC(display);
+		try {
+			StringBuffer buf = new StringBuffer();
+
+			StructuredTextLineBreakingReader reader = new StructuredTextLineBreakingReader(textReader, gc, getHoverWidth(display));
+			String line = reader.readLine();
+			while ( line != null ) {
+				if (buf.length() != 0) {
+					buf.append(lineDelim);
+				}
+				buf.append(line);
+				line = reader.readLine();
+			}
+			result = buf.toString();
+		} catch (IOException exception) {
+			Logger.logException(exception);
+		} finally {
+			gc.dispose();
+		}
+		return result;
+	}
+

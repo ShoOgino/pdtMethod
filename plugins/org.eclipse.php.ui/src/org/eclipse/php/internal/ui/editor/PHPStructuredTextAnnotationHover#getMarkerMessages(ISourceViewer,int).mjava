@@ -1,0 +1,31 @@
+	/**
+	 * Returns all marker messages which includes the ruler's line of activity.
+	 */
+	private List<String> getMarkerMessages(ISourceViewer viewer, int line) {
+
+		IDocument document = viewer.getDocument();
+		IAnnotationModel model = viewer.getAnnotationModel();
+
+		List<String> messages = new ArrayList<String>();
+
+		if (model == null) {
+			return messages;
+		}
+
+		Iterator e = model.getAnnotationIterator();
+		while ( e.hasNext() ) {
+			Object o = e.next();
+			if (o instanceof MarkerAnnotation) {
+				MarkerAnnotation a = (MarkerAnnotation) o;
+				if (compareRulerLine(model.getPosition(a), document, line) == 1) {
+					IMarker marker = a.getMarker();
+					String text = marker.getAttribute(IMarker.MESSAGE, (String) null);
+					if (text != null) {
+						messages.add(text);
+					}
+				}
+			}
+		}
+		return messages;
+	}
+

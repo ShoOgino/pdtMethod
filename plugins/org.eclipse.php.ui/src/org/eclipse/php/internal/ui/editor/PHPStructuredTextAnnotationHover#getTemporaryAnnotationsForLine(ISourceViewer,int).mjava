@@ -1,0 +1,31 @@
+	/**
+	 * Returns one marker which includes the ruler's line of activity.
+	 */
+	private List<ITemporaryAnnotation> getTemporaryAnnotationsForLine(ISourceViewer viewer, int line) {
+
+		IDocument document = viewer.getDocument();
+		IAnnotationModel model = viewer.getAnnotationModel();
+
+		if (model == null)
+			return null;
+
+		List<ITemporaryAnnotation> annotations = new ArrayList<ITemporaryAnnotation>();
+
+		Iterator e = model.getAnnotationIterator();
+		while ( e.hasNext() ) {
+			Object o = e.next();
+			if (o instanceof ITemporaryAnnotation) {
+				ITemporaryAnnotation a = (ITemporaryAnnotation) o;
+				Position position = model.getPosition((Annotation) a);
+				if (position == null)
+					continue;
+
+				if (compareRulerLine(position, document, line) == 1) {
+					annotations.add(a);
+				}
+			}
+		}
+
+		return annotations;
+	}
+

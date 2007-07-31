@@ -1,0 +1,27 @@
+	@Override
+	public String getHoverInfo(ISourceViewer sourceViewer, int lineNumber) {
+		// get all the marker messages
+		List<String> messages = getMarkerMessages(sourceViewer, lineNumber);
+
+		List<ITemporaryAnnotation> temporaryAnnotations = getTemporaryAnnotationsForLine(sourceViewer, lineNumber);
+		for (int i = 0; i < temporaryAnnotations.size(); i++) {
+			String message = ((Annotation) temporaryAnnotations.get(i)).getText();
+			if (message != null) {
+				boolean duplicated = false;
+				for (int j = 0; j < messages.size(); j++)
+					duplicated = duplicated || messages.get(j).equals(message);
+				if (!duplicated) {
+					messages.add(message);
+				}
+			} else {
+				messages.add(((ITemporaryAnnotation) temporaryAnnotations.get(i)).toString());
+			}
+		}
+		if (messages.size() > 1)
+			return formatMultipleHoverText(messages);
+		else if (messages.size() > 0)
+			return formatHoverText(messages.get(0).toString(), sourceViewer);
+		else
+			return null;
+	}
+

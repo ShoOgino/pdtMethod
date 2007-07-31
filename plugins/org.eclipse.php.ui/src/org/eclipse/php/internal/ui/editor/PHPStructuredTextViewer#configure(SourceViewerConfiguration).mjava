@@ -1,9 +1,17 @@
 	/**
-	 * We override this function in order to use content assist for php and not use the defualt one dictated by StructuredTextViewerConfiguration
+	 * We override this function in order to use content assist for php and not use the default one dictated by StructuredTextViewerConfiguration
 	 */
 	public void configure(SourceViewerConfiguration configuration) {
 
 		super.configure(configuration);
+		
+		// release old annotation hover before setting new one
+		if (fAnnotationHover instanceof StructuredTextAnnotationHover) {
+			((StructuredTextAnnotationHover) fAnnotationHover).release();
+		}
+		// set PHP fAnnotationHover and initial the AnnotationHoverManager
+		setAnnotationHover(new PHPStructuredTextAnnotationHover());
+		ensureAnnotationHoverManagerInstalled();
 
 		if (!(configuration instanceof PHPStructuredTextViewerConfiguration)) {
 			return;
