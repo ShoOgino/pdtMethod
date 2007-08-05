@@ -1,0 +1,43 @@
+		/**
+		 * Returns an array of regions that should be collapsed when the annotation
+		 * belonging to this position is collapsed. May return null instead of
+		 * an empty array.
+		 *
+		 * @param document the document that this position is attached to
+		 * @return the foldable regions for this position
+		 * @throws BadLocationException if accessing the document fails
+		 */
+		public IRegion[] computeProjectionRegions(IDocument document) throws BadLocationException {
+			int contentStart = findFirstContent(document, getOffset(), getLength());
+
+			int firstLine = document.getLineOfOffset(getOffset());
+			int captionLine = document.getLineOfOffset(getOffset() + contentStart);
+			int lastLine = document.getLineOfOffset(getOffset() + getLength());
+
+			IRegion preRegion;
+			if (firstLine < captionLine) {
+				int preOffset = document.getLineOffset(firstLine);
+				IRegion preEndLineInfo = document.getLineInformation(captionLine);
+				int preEnd = preEndLineInfo.getOffset();
+				preRegion = new Region(preOffset, preEnd - preOffset);
+			} else {
+				preRegion = null;
+			}
+
+			if (captionLine < lastLine) {
+				int postOffset = document.getLineOffset(captionLine + 1);
+				IRegion postRegion = new Region(postOffset, getOffset() + getLength() - postOffset);
+
+				if (preRegion == null)
+					return new IRegion[] { postRegion };
+
+				return new IRegion[] { preRegion, postRegion };
+			}
+
+			if (preRegion != null) {
+				return new IRegion[] { preRegion };
+			}
+
+			return null;
+		}
+
