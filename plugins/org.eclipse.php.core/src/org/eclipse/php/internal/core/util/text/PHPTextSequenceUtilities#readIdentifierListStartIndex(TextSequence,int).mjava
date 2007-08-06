@@ -1,0 +1,31 @@
+	public static int readIdentifierListStartIndex(TextSequence textSequence, int endPosition) {
+		int startPosition = endPosition;
+		int listStartPosition = startPosition;
+		boolean beforeWhitespace = false;
+		boolean beforeComma = false;
+		while (startPosition > 0) {
+			final char ch = textSequence.charAt(startPosition - 1);
+			if (Character.isLetterOrDigit(ch) || ch == '_') {
+				if (beforeWhitespace) {
+					// identifiers delimited by a whitespace are not a list:
+					return --listStartPosition;
+				}
+				listStartPosition = startPosition;
+				beforeComma = false;
+			} else if (ch == ',') {
+				if(beforeComma) {
+					// only one comma may delimit a list
+					return endPosition;
+				}
+				beforeComma = true;
+				beforeWhitespace = false;
+			} else if (Character.isWhitespace(ch) && !beforeComma) {
+				beforeWhitespace = true;
+			} else {
+				return --listStartPosition;
+			}
+			startPosition--;
+		}
+		return listStartPosition;
+	}
+
