@@ -1,0 +1,30 @@
+	/**
+	 * Actually creates an adapter for the parent of target if target is the
+	 * "adapt-able" node
+	 */
+	protected INodeAdapter createAdapter(INodeNotifier target) {
+		if ((isActive()) && (target instanceof Node) && ((Node) target).getNodeType() == Node.ELEMENT_NODE) {
+			Node node = (Node) target;
+			if (isNodeProjectable(node)) {
+
+				// actually work with the parent node to listen for add,
+				// delete events
+				Node parent = node.getParentNode();
+				if (parent instanceof INodeNotifier) {
+					INodeNotifier parentNotifier = (INodeNotifier) parent;
+					ProjectionModelNodeAdapterHTML parentAdapter = (ProjectionModelNodeAdapterHTML) parentNotifier.getExistingAdapter(ProjectionModelNodeAdapterHTML.class);
+					if (parentAdapter == null) {
+						// create a new adapter for parent
+						parentAdapter = new ProjectionModelNodeAdapterHTML(this);
+						parentNotifier.addAdapter(parentAdapter);
+					}
+					// call update on parent because a new node has just been
+					// added
+					parentAdapter.updateAdapter(parent);
+				}
+			}
+		}
+
+		return null;
+	}
+

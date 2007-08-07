@@ -1,0 +1,73 @@
+	/**
+	 * Update the projection annotation of all the nodes that are children of
+	 * node and adds all projection annotations to viewer (for newly added
+	 * viewers)
+	 *
+	 * @param node
+	 * @param viewer
+	 */
+	void updateAdapter(Node node, ProjectionViewer viewer) {
+		long start = System.currentTimeMillis();
+
+		Map additions = new HashMap();
+		Map projectionAnnotations = new HashMap();
+
+		// go through immediate child nodes and figure out projection
+		// model annotations
+		if (node != null) {
+			Node childNode = node.getFirstChild();
+			while (childNode != null) {
+				Position newPos = createProjectionPosition(childNode);
+				if (newPos != null) {
+					TagProjectionAnnotation newAnnotation = new TagProjectionAnnotation(childNode, false);
+					TagProjectionAnnotation existing = getExistingAnnotation(childNode);
+					if (existing == null) {
+						// add to map containing all annotations for this
+						// adapter
+						projectionAnnotations.put(newAnnotation, newPos);
+						// add to map containing annotations to add
+						additions.put(newAnnotation, newPos);
+					}
+					else {
+						// add to map containing all annotations for this
+						// adapter
+						projectionAnnotations.put(existing, newPos);
+						// remove from map containing annotations to delete
+						previousAnnotations.remove(existing);
+					}
+				}
+				childNode = childNode.getNextSibling();
+			}
+
+			// in the end, want to delete anything leftover in old list, add
+			// everything in additions, and update everything in
+			// projectionAnnotations
+			ProjectionAnnotation[] oldList = null;
+			if (!previousAnnotations.isEmpty()) {
+				oldList = previousAnnotations.keySet().toArray(new ProjectionAnnotation[0]);
+			}
+			ProjectionAnnotation[] modifyList = null;
+			if (!projectionAnnotations.isEmpty()) {
+				modifyList = (ProjectionAnnotation[]) projectionAnnotations.keySet().toArray(new ProjectionAnnotation[0]);
+			}
+
+			// specifically add all annotations to viewer
+			if (viewer != null && !projectionAnnotations.isEmpty()) {
+				fAdapterFactory.queueAnnotationModelChanges(node, null, projectionAnnotations, null, viewer);
+			}
+
+			// only update when there is something to update
+			if (oldList != null && oldList.length > 0 || !additions.isEmpty() || modifyList != null && modifyList.length > 0)
+				fAdapterFactory.queueAnnotationModelChanges(node, oldList, additions, modifyList);
+		}
+
+		// save new list of annotations
+		previousAnnotations = projectionAnnotations;
+
+		if (debugProjectionPerf) {
+			long end = System.currentTimeMillis();
+			String nodeName = node != null ? node.getNodeName() : "null"; //$NON-NLS-1$
+			System.out.println("ProjectionModelNodeAdapterHTML.updateAdapter (" + nodeName + "):" + (end - start)); //$NON-NLS-1$ //$NON-NLS-2$
+		}
+	}
+

@@ -1,0 +1,26 @@
+	void updateAdapter(Node node, ProjectionViewer viewer) {
+
+		addedAnnotations.clear();
+		currentAnnotations.clear();
+
+		if (node.getNodeType() == Node.ELEMENT_NODE) {
+			assert node instanceof ElementImplForPhp : "Bad element";
+			ElementImplForPhp element = (ElementImplForPhp) node;
+			if (element.isPhpTag()) {
+				IStructuredDocument structuredDocument = element.getStructuredDocument();
+				assert structuredDocument != null : "Document doesn't exist";
+				IStructuredModel model = StructuredModelManager.getModelManager().getExistingModelForRead(structuredDocument);
+				assert model != null : "Model doesn't exist";
+				DOMModelForPHP phpModel = (DOMModelForPHP) model;
+				PHPFileData fileData = phpModel.getFileData();
+
+				int startOffset = element.getStartOffset();
+				int endOffset = element.getEndOffset();
+
+				createFileAnnotations(fileData, startOffset, endOffset);
+
+			}
+		}
+		super.updateAdapter(node, viewer);
+	}
+
