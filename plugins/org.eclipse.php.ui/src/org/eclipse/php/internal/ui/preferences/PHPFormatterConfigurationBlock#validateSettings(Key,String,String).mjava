@@ -1,15 +1,25 @@
 	protected void validateSettings(Key changedKey, String oldValue, String newValue) {
 		if (changedKey != null) {
 			if (PREF_FORMATTER_INDENTATION_SIZE.equals(changedKey)) {
-				fFormatterStatus = validate();
+				try {
+					fIndentationSize = Integer.valueOf(newValue);
+					if (fIndentationSize < MIN_INDENT_SIZE || fIndentationSize > MAX_INDENT_SIZE) {
+						fFormatterStatus = new StatusInfo(IStatus.ERROR, PHPUIMessages.getString("PHPFormatterConfigurationBlock.indentSizeErrorMessage")); //$NON-NLS-1$
+					} else {
+						setValue(PREF_FORMATTER_INDENTATION_SIZE, String.valueOf(fIndentationSize));
+						fFormatterStatus = new StatusInfo();
+					}
+				} catch (NumberFormatException nfe) {
+					fFormatterStatus = new StatusInfo(IStatus.ERROR, PHPUIMessages.getString("PHPFormatterConfigurationBlock.indentSizeErrorMessage")); //$NON-NLS-1$
+				}
 			} else {
 				return;
 			}
 		} else {
-			fFormatterStatus = validate();
+			fFormatterStatus = new StatusInfo();
 		}
-		IStatus status = fFormatterStatus;
-		fContext.statusChanged(status);
+
+		fContext.statusChanged(fFormatterStatus);
 
 	}
 

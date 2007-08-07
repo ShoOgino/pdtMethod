@@ -1,26 +1,46 @@
 	private Composite createFormaterContent(Composite parent) {
+		Group formattingComposite = createComposite(parent, 2);
+		final String[] tabPolicyLabels = new String[] { PHPUIMessages.getString("PHPFormatterConfigurationBlock.tabsLabel"), PHPUIMessages.getString("PHPFormatterConfigurationBlock.spacesLabel") }; //$NON-NLS-1$ //$NON-NLS-2$
+		Label indentTabsLabel = new Label(formattingComposite, SWT.NULL);
+		indentTabsLabel.setText(PHPUIMessages.getString("PHPFormatterConfigurationBlock.tabPolicyLabel")); //$NON-NLS-1$
+		tabPolicyCombo = new Combo(formattingComposite, SWT.NULL | SWT.READ_ONLY);
+		tabPolicyCombo.setItems(tabPolicyLabels);
+		tabPolicyCombo.select(0);
 
-		Composite formattingComposite = createComposite(parent, 2);
+		GridData gd = new GridData();
+		gd.widthHint = 20;
 
-		fIndentUsingTabs = createRadioButton(formattingComposite, XMLUIMessages.Indent_using_tabs);
-		((GridData) fIndentUsingTabs.getLayoutData()).horizontalSpan = 2;
-		fIndentUsingTabs.addSelectionListener(this);
+		Label indentSizeLabel = new Label(formattingComposite, SWT.NULL);
+		indentSizeLabel.setText(PHPUIMessages.getString("PHPFormatterConfigurationBlock.indentSizeLabel")); //$NON-NLS-1$
+		indentSizeTxt = new Text(formattingComposite, SWT.BORDER);
+		indentSizeTxt.setTextLimit(2);
+		indentSizeTxt.setLayoutData(gd);
 
-		fIndentUsingSpaces = createRadioButton(formattingComposite, XMLUIMessages.Indent_using_spaces);
-		((GridData) fIndentUsingSpaces.getLayoutData()).horizontalSpan = 2;
+		tabPolicyCombo.addSelectionListener(new SelectionListener() {
 
-		createLabel(formattingComposite, XMLUIMessages.Indentation_size);
-		fIndentationSizeSpinner = new Spinner(formattingComposite, SWT.READ_ONLY | SWT.BORDER);
-		GridData gd = new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING);
-		fIndentationSizeSpinner.setLayoutData(gd);
-		fIndentationSizeSpinner.setToolTipText(XMLUIMessages.Indentation_size_tip);
-		fIndentationSizeSpinner.setMinimum(MIN_INDENTATION_SIZE);
-		fIndentationSizeSpinner.setMaximum(MAX_INDENTATION_SIZE);
-		fIndentationSizeSpinner.setIncrement(1);
-		fIndentationSizeSpinner.setPageIncrement(4);
-		fIndentationSizeSpinner.addModifyListener(this);
+			public void widgetDefaultSelected(SelectionEvent e) {
+				// TODO Auto-generated method stub
 
+			}
+
+			public void widgetSelected(SelectionEvent e) {
+				Combo source = (Combo) e.getSource();
+				int selectIndex = source.getSelectionIndex();
+				if (selectIndex == 1) { //select 'Spaces'
+					indentSizeTxt.setEnabled(true);
+				} else {//select 'Tabs'
+					indentSizeTxt.setEnabled(false);
+					indentSizeTxt.setText("1"); //$NON-NLS-1$
+				}
+			}
+		});
+
+		indentSizeTxt.addModifyListener(this);
+		tabPolicyCombo.addSelectionListener(this);
+
+		initValues();
 		updateValues();
+
 		return formattingComposite;
 	}
 
