@@ -3,7 +3,7 @@
 	 * 
 	 * @throws CoreException 
 	 */
-	public static IEditorPart openInEditor(final String fileName, final int lineNumber) throws CoreException {
+	public static IEditorPart openInEditor(final String fileName, int lineNumber) throws CoreException {
 
 		final IWorkspace workspace = ResourcesPlugin.getWorkspace();
 		final IWorkspaceRoot root = workspace.getRoot();
@@ -27,8 +27,51 @@
 			}
 		}
 
-		if (file == null || !file.exists())
+		if (file == null) {
 			return null;
+		}
+
+		if (!file.exists()) {
+			File localFile = new File(fileName);
+			if (localFile.exists()) {
+				IEditorInput editorInput = null;
+
+				// If this is external file:
+				if (ExternalFilesRegistry.getInstance().isEntryExist(path.toString())) {
+					editorInput = new FileStoreEditorInput(new LocalFile(localFile));
+				} else {
+					LocalFileStorage fileStorage = new LocalFileStorage(localFile);
+					fileStorage.setProject(file.getProject());
+					editorInput = new LocalFileStorageEditorInput(fileStorage);
+				}
+
+				if (editorInput != null) {
+					final IWorkbenchPage p = PHPUiPlugin.getActivePage();
+					if (p != null) {
+						IEditorPart part = openInEditor(editorInput, getEditorID(editorInput), true);
+						if (lineNumber > 0) {
+							if (part instanceof ITextEditor) {
+								ITextEditor textEditor = (ITextEditor) part;
+								// If a line number was given, go to it
+								try {
+									lineNumber = lineNumber - 1;
+									IDocument document = textEditor.getDocumentProvider().getDocument(textEditor.getEditorInput());
+									textEditor.selectAndReveal(document.getLineOffset(lineNumber), document.getLineLength(lineNumber));
+								} catch (BadLocationException e) {
+									// invalid text position -> do nothing
+								}
+							}
+						}
+						return part;
+					}
+					return null;
+				}
+			}
+		}
+
+		if (!file.exists()) {
+			return null;
+		}
 
 		final IMarker marker = file.createMarker(IMarker.TEXT);
 		marker.setAttribute(IMarker.LINE_NUMBER, lineNumber);
