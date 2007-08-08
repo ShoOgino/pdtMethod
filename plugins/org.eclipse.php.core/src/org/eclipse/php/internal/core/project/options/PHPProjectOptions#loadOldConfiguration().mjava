@@ -1,19 +1,10 @@
-	private void loadOptions() {
-
-		final IFile optionsFile = project.getFile(FILE_NAME);
-		// fixed bug 169296 - in case type .projectOptions don't exist in the project refresh it from local.
+	private void loadOldConfiguration() {
+		final IFile optionsFile = project.getFile(OLD_FILE_NAME);
 		if (!optionsFile.exists()) {
-			try {
-				optionsFile.refreshLocal(IResource.DEPTH_ZERO, null);
-			} catch (CoreException e) {
-				Logger.logException(e);
-			}
+			return;
 		}
 
-		if (!optionsFile.exists())
-			return;
-
-		final ArrayList paths = new ArrayList();
+		final List<IIncludePathEntry> paths = new ArrayList<IIncludePathEntry>();
 		includePathEntries = EMPTY_INCLUDEPATH;
 		try {
 			Element cpElement;
@@ -22,15 +13,12 @@
 			try {
 				final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 				cpElement = parser.parse(new InputSource(reader)).getDocumentElement();
-			} catch (final SAXException e) {
-				throw new IOException("Bad project options file format");
-			} catch (final ParserConfigurationException e) {
+			} catch (final Exception e) {
 				throw new IOException("Bad project options file format");
 			} finally {
 				reader.close();
 			}
 
-			options = new HashMap();
 			if (!cpElement.getNodeName().equalsIgnoreCase(TAG_OPTIONS))
 				throw new IOException("Bad project options file format");
 			NodeList list = cpElement.getElementsByTagName(TAG_OPTION);
@@ -39,7 +27,7 @@
 				final Element element = (Element) list.item(i);
 				final String key = element.getAttribute("name"); //$NON-NLS-1$
 				final String value = element.getFirstChild().getNodeValue().trim();
-				options.put(key, value);
+				preferences.put(key, value);
 			}
 
 			list = cpElement.getElementsByTagName(IncludePathEntry.TAG_INCLUDEPATH);
@@ -56,15 +44,18 @@
 					}
 				}
 
+				final int pathSize = paths.size();
+				includePathEntries = new IIncludePathEntry[pathSize];
+				paths.toArray(includePathEntries);
 			}
+
+			saveIncludePath();
+
+			optionsFile.delete(true, new NullProgressMonitor());
 		} catch (final IOException e) {
 			PHPCorePlugin.log(e);
 		} catch (final CoreException e) {
 			PHPCorePlugin.log(e);
 		}
-		final int pathSize = paths.size();
-		includePathEntries = new IIncludePathEntry[pathSize];
-		paths.toArray(includePathEntries);
-
 	}
 
