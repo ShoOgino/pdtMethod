@@ -1,5 +1,15 @@
 	protected void formatNode(IDOMNode node, HTMLFormatContraints contraints) {
-		super.formatNode(node, contraints);
+		// fixed bug 198901 - prevent the HTML formatter to format the value of style attribute
+		// skip the format start tag and end tag
+		Attr attr = null;
+		if (node instanceof Element) {
+			attr = ((Element)node).getAttributeNode("style");//$NON-NLS-1$
+		}
+		if (attr == null || attr.getValue().indexOf("<?") == -1) {
+			super.formatNode(node, contraints);	 
+		} else {
+			formatChildNodes(node, contraints);
+		}
 
 		// get over the attribute and look for php attributes
 
