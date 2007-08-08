@@ -1,26 +1,73 @@
-	void updateAdapter(Node node, ProjectionViewer viewer) {
+	/**
+	 * Update the projection annotation of all the nodes that are children of
+	 * node and adds all projection annotations to viewer (for newly added
+	 * viewers)
+	 *
+	 * We run over the PHP elements and add the relevant annotations,
+	 * We don't handle the HTML projections as it is handled in the HTML adapter
+	 * hence don't call the super @see ProjectionModelNodeAdapterHTML#updateAdapter(org.w3c.dom.Node, org.eclipse.jface.text.source.projection.ProjectionViewer)
+	 */
+	public void updateAdapter(Node node, ProjectionViewer viewer) {
 
 		addedAnnotations.clear();
 		currentAnnotations.clear();
 
-		if (node.getNodeType() == Node.ELEMENT_NODE) {
-			assert node instanceof ElementImplForPhp : "Bad element";
-			ElementImplForPhp element = (ElementImplForPhp) node;
-			if (element.isPhpTag()) {
-				IStructuredDocument structuredDocument = element.getStructuredDocument();
-				assert structuredDocument != null : "Document doesn't exist";
-				IStructuredModel model = StructuredModelManager.getModelManager().getExistingModelForRead(structuredDocument);
-				assert model != null : "Model doesn't exist";
-				DOMModelForPHP phpModel = (DOMModelForPHP) model;
-				PHPFileData fileData = phpModel.getFileData();
+		if (node != null && node instanceof NodeImpl) {
+			NodeImpl element = (NodeImpl) node;
+			assert element.getModel() instanceof DOMModelForPHP : "Incompatible model";
+			DOMModelForPHP phpModel = (DOMModelForPHP) element.getModel();
 
-				int startOffset = element.getStartOffset();
-				int endOffset = element.getEndOffset();
+			ProjectionViewerInformation information = getAdapterFactory().findInformation(phpModel);
+			if(information.isDocumentChanging())
+				return;
 
-				createFileAnnotations(fileData, startOffset, endOffset);
+			PHPFileData fileData = phpModel.getFileData();
 
+			if (fileData == null) {
+				return;
 			}
+
+			Node childNode = node.getFirstChild();
+			while (childNode != null) {
+
+				if (childNode.getNodeType() == Node.ELEMENT_NODE) {
+					assert childNode instanceof ElementImplForPhp : "Bad element";
+					ElementImplForPhp childElement = (ElementImplForPhp) childNode;
+					if (childElement.isPhpTag()) {
+						int startOffset = childElement.getStartOffset();
+						int endOffset = childElement.getEndOffset();
+
+						createFileAnnotations(fileData, startOffset, endOffset);
+
+					}
+				}
+				childNode = childNode.getNextSibling();
+			}
+
+			// in the end, want to delete anything leftover in old list, add
+			// everything in additions, and update everything in
+			// projectionAnnotations
+			ProjectionAnnotation[] oldList = null;
+			if (!previousAnnotations.isEmpty()) {
+				oldList = previousAnnotations.keySet().toArray(new ProjectionAnnotation[0]);
+			}
+			ProjectionAnnotation[] modifyList = null;
+			if (!currentAnnotations.isEmpty()) {
+				modifyList = currentAnnotations.keySet().toArray(new ProjectionAnnotation[0]);
+			}
+
+			// specifically add all annotations to viewer
+			if (viewer != null && !currentAnnotations.isEmpty()) {
+				fAdapterFactory.queueAnnotationModelChanges(node, null, currentAnnotations, null, viewer);
+			}
+
+			// only update when there is something to update
+			if (oldList != null && oldList.length > 0 || !addedAnnotations.isEmpty() || modifyList != null && modifyList.length > 0)
+				fAdapterFactory.queueAnnotationModelChanges(node, oldList, addedAnnotations, modifyList);
 		}
-		super.updateAdapter(node, viewer);
+
+		// save new list of annotations
+		previousAnnotations = currentAnnotations;
+
 	}
 

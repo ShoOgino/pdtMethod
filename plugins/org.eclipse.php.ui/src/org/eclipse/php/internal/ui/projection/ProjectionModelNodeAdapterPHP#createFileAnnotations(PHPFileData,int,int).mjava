@@ -1,19 +1,24 @@
 	private void createFileAnnotations(PHPFileData fileData, int startOffset, int endOffset) {
+		assert getAdapterFactory() != null : "provider can't be null - see setProvider()";
 		PHPClassData[] classes = fileData.getClasses();
 		for (PHPClassData classData : classes) {
-			if (structuredTextFoldingProviderPHP.isFoldingClasses()) {
+			if (getAdapterFactory().isFoldingClasses()) {
 				createCodeDataAnnotations(classData, startOffset, endOffset);
+				if (getAdapterFactory().isFoldingPhpDoc()) {
+					createDocBlockAnnotations(classData.getDocBlock(), startOffset, endOffset);
+				}
+
 			}
 			PHPFunctionData[] methods = classData.getFunctions();
 			for (PHPFunctionData methodData : methods) {
-				if (structuredTextFoldingProviderPHP.isFoldingFunctions()) {
+				if (getAdapterFactory().isFoldingFunctions()) {
 					createCodeDataAnnotations(methodData, startOffset, endOffset);
 				}
-				if (structuredTextFoldingProviderPHP.isFoldingPhpDoc()) {
+				if (getAdapterFactory().isFoldingPhpDoc()) {
 					createDocBlockAnnotations(methodData.getDocBlock(), startOffset, endOffset);
 				}
 			}
-			if (structuredTextFoldingProviderPHP.isFoldingPhpDoc()) {
+			if (getAdapterFactory().isFoldingPhpDoc()) {
 				PHPClassVarData[] variables = classData.getVars();
 				for (PHPClassVarData variableData : variables) {
 					createDocBlockAnnotations(variableData.getDocBlock(), startOffset, endOffset);
@@ -28,15 +33,15 @@
 
 		PHPFunctionData[] functions = fileData.getFunctions();
 		for (PHPFunctionData functionData : functions) {
-			if (structuredTextFoldingProviderPHP.isFoldingFunctions()) {
+			if (getAdapterFactory().isFoldingFunctions()) {
 				createCodeDataAnnotations(functionData, startOffset, endOffset);
 			}
-			if (structuredTextFoldingProviderPHP.isFoldingPhpDoc()) {
+			if (getAdapterFactory().isFoldingPhpDoc()) {
 				createDocBlockAnnotations(functionData.getDocBlock(), startOffset, endOffset);
 			}
 		}
 
-		if (structuredTextFoldingProviderPHP.isFoldingPhpDoc()) {
+		if (getAdapterFactory().isFoldingPhpDoc()) {
 			createDocBlockAnnotations(fileData.getDocBlock(), startOffset, endOffset);
 		}
 	}
