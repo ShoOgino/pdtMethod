@@ -1,0 +1,37 @@
+	private void createFileAnnotations(Map<ProjectionAnnotation, Position> currentAnnotations, Map<ProjectionAnnotation, Position> addedAnnotations, PHPFileData fileData, int startOffset, int endOffset) {
+		assert getAdapterFactory() != null : "provider can't be null - see setProvider()";
+		PHPClassData[] classes = fileData.getClasses();
+
+		// set the automatic folding according to preference
+		final boolean foldingPhpDoc = getAdapterFactory().isFoldingPhpDoc();
+		final boolean foldingFunctions = getAdapterFactory().isFoldingFunctions();
+		final boolean foldingClasses = getAdapterFactory().isFoldingClasses();
+
+		for (PHPClassData classData : classes) {
+			createCodeDataAnnotations(currentAnnotations, addedAnnotations, classData, startOffset, endOffset, foldingClasses);
+			createDocBlockAnnotations(currentAnnotations, addedAnnotations, classData.getDocBlock(), startOffset, endOffset, foldingPhpDoc);
+			PHPFunctionData[] methods = classData.getFunctions();
+			for (PHPFunctionData methodData : methods) {
+				createCodeDataAnnotations(currentAnnotations, addedAnnotations, methodData, startOffset, endOffset, foldingFunctions);
+				createDocBlockAnnotations(currentAnnotations, addedAnnotations, methodData.getDocBlock(), startOffset, endOffset, foldingPhpDoc);
+			}
+			PHPClassVarData[] variables = classData.getVars();
+			for (PHPClassVarData variableData : variables) {
+				createDocBlockAnnotations(currentAnnotations, addedAnnotations, variableData.getDocBlock(), startOffset, endOffset, foldingPhpDoc);
+			}
+
+			PHPClassConstData[] constants = classData.getConsts();
+			for (PHPClassConstData variableData : constants) {
+				createDocBlockAnnotations(currentAnnotations, addedAnnotations, variableData.getDocBlock(), startOffset, endOffset, foldingPhpDoc);
+			}
+		}
+
+		PHPFunctionData[] functions = fileData.getFunctions();
+		for (PHPFunctionData functionData : functions) {
+			createCodeDataAnnotations(currentAnnotations, addedAnnotations, functionData, startOffset, endOffset, foldingFunctions);
+			createDocBlockAnnotations(currentAnnotations, addedAnnotations, functionData.getDocBlock(), startOffset, endOffset, foldingPhpDoc);
+		}
+
+		createDocBlockAnnotations(currentAnnotations, addedAnnotations, fileData.getDocBlock(), startOffset, endOffset, foldingPhpDoc);
+	}
+

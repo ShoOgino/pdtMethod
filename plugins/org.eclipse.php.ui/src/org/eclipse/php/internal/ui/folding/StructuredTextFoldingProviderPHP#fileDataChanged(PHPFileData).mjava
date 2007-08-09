@@ -1,0 +1,21 @@
+	/** (non-Javadoc)
+	 * @see org.eclipse.php.internal.core.phpModel.parser.ModelListener#fileDataChanged(org.eclipse.php.internal.core.phpModel.phpElementData.PHPFileData)
+	 */
+	public void fileDataChanged(final PHPFileData fileData) {
+		final IResource file = PHPModelUtil.getResource(fileData);
+		final IDocument document = fViewer.getDocument();
+		final IStructuredModel model = StructuredModelManager.getModelManager().getExistingModelForRead(document);
+		assert model instanceof DOMModelForPHP : "Incompatible model (or null)";
+		try {
+			final DOMModelForPHP viewerModel = (DOMModelForPHP) model;
+			if (viewerModel != null && viewerModel.getFileData() == fileData) {
+				// Update all the annotations in the document:
+				addAllAdapters();
+			}
+		} finally {
+			if (model != null) {
+				model.releaseFromRead();
+			}
+		}
+	}
+

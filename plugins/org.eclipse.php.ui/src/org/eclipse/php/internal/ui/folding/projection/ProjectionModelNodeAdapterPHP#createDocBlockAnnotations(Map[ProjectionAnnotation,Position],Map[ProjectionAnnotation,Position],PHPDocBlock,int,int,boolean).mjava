@@ -1,0 +1,35 @@
+	/**
+	 * Computes current annotations on given CodeDatas.
+	 *
+	 * @param codeDatas
+	 * @param startOffset
+	 * @param endOffset
+	 * @param collapse
+	 */
+	private void createDocBlockAnnotations(Map<ProjectionAnnotation, Position> currentAnnotations, Map<ProjectionAnnotation, Position> addedAnnotations, PHPDocBlock docBlock, int startOffset, int endOffset, boolean collapse) {
+		if (docBlock == null) {
+			return;
+		}
+
+		int codeStartOffset = docBlock.getStartPosition();
+		if (codeStartOffset > startOffset && codeStartOffset < endOffset) {
+			// element may start in one PHP block and end in another.
+			Position newPosition = createPosition(codeStartOffset, docBlock.getEndPosition());
+			ProjectionAnnotation newAnnotation = new ProjectionAnnotation(collapse);
+			ProjectionAnnotation existingAnnotation = getExistingAnnotation(newPosition);
+			if (existingAnnotation == null) {
+				// add to map containing all annotations for this
+				// adapter
+				currentAnnotations.put(newAnnotation, newPosition);
+				// add to map containing annotations to add
+				addedAnnotations.put(newAnnotation, newPosition);
+			} else {
+				// add to map containing all annotations for this
+				// adapter
+				currentAnnotations.put(existingAnnotation, newPosition);
+				// remove from map containing annotations to delete
+				previousAnnotations.remove(existingAnnotation);
+			}
+		}
+	}
+

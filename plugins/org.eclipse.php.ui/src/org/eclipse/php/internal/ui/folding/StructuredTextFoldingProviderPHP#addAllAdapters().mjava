@@ -1,0 +1,34 @@
+	/**
+	 * Goes through every node and adds an adapter onto each for tracking
+	 * purposes
+	 */
+	private void addAllAdapters() {
+		final long start = System.currentTimeMillis();
+
+		if (fDocument != null) {
+			IStructuredModel sModel = null;
+			try {
+				sModel = StructuredModelManager.getModelManager().getExistingModelForRead(fDocument);
+				if (sModel != null) {
+					final int startOffset = 0;
+					final IndexedRegion startNode = sModel.getIndexedRegion(startOffset);
+					if (startNode instanceof Node) {
+						int siblingLevel = 0;
+						Node nextSibling = (Node) startNode;
+						while (nextSibling != null && siblingLevel < MAX_SIBLINGS) {
+							final Node currentNode = nextSibling;
+							nextSibling = currentNode.getNextSibling();
+
+							addAdapterToNodeAndChildren(currentNode, 0);
+							++siblingLevel;
+						}
+					}
+				}
+			} finally {
+				if (sModel != null) {
+					sModel.releaseFromRead();
+				}
+			}
+		}
+	}
+

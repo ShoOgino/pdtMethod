@@ -1,0 +1,33 @@
+	/**
+	 * Goes through every node and removes adapter from each for cleanup
+	 * purposes
+	 */
+	private void removeAllAdapters() {
+		final long start = System.currentTimeMillis();
+
+		if (fDocument != null) {
+			IStructuredModel sModel = null;
+			try {
+				sModel = StructuredModelManager.getModelManager().getExistingModelForRead(fDocument);
+				if (sModel != null) {
+					final int startOffset = 0;
+					final IndexedRegion startNode = sModel.getIndexedRegion(startOffset);
+					if (startNode instanceof Node) {
+						Node nextSibling = (Node) startNode;
+						while (nextSibling != null) {
+							final Node currentNode = nextSibling;
+							nextSibling = currentNode.getNextSibling();
+
+							removeAdapterFromNodeAndChildren(currentNode, 0);
+						}
+					}
+				}
+			} finally {
+				if (sModel != null) {
+					sModel.releaseFromRead();
+				}
+			}
+		}
+
+	}
+
