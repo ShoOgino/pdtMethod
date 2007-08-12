@@ -18,14 +18,18 @@
 			DOMModelForPHP phpModel = (DOMModelForPHP) element.getModel();
 			document = phpModel.getStructuredDocument();
 
+			// resolve the viewer
 			ProjectionViewer modelViewer = getAdapterFactory().findViewer(phpModel);
-			ProjectionViewerInformation information = getAdapterFactory().getInformation(modelViewer);
-
-			// ignore editor changes when the php model isn't ready.
-			if (information.isDocumentChanging()) {
+			if (modelViewer == null) {
 				return;
 			}
 
+			// ignore editor changes when the php model isn't ready.
+			ProjectionViewerInformation information = getAdapterFactory().getInformation(modelViewer);
+			if (information.isDocumentChanging()) {
+				return;
+			}
+			
 			PHPFileData fileData = phpModel.getFileData();
 
 			if (fileData == null) {
@@ -70,6 +74,8 @@
 			if (oldList != null && oldList.length > 0 || !addedAnnotations.isEmpty() || modifyList != null && modifyList.length > 0) {
 				fAdapterFactory.queueAnnotationModelChanges(node, oldList, addedAnnotations, modifyList);
 			}
+			
+			information.applyAnnotationModelChanges();
 		}
 
 		// save new list of annotations
