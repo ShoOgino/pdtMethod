@@ -1,4 +1,30 @@
 	public void connect(IDocument document) {
+		if (document == null) {
+			throw new IllegalStateException("Document is set to null");
+		}
+
+		this.document = document;
+
+		final IStructuredModel model = StructuredModelManager.getModelManager().getExistingModelForRead(document);
+		if (model == null) {
+			throw new IllegalStateException("Error reading structure model in PhpValidator#validator()");
+		}
+
+		try {
+			// get the 
+			assert model instanceof DOMModelForPHP;
+			final DOMModelForPHP phpDomModel = (DOMModelForPHP) model;
+
+			this.file = phpDomModel.getIFile();
+			if (file == null) {
+				throw new IllegalStateException("File not found for php model, named: " + phpDomModel.getBaseLocation());
+			}
+
+		} finally {
+			if (model != null) {
+				model.releaseFromRead();
+			}
+		}
 
 	}
 

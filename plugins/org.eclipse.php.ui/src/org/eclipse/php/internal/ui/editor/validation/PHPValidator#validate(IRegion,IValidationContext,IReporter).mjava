@@ -1,7 +1,84 @@
 	public void validate(IRegion dirtyRegion, IValidationContext helper, IReporter reporter) {
-		// TODO Auto-generated method stub
-		return;
-		
+		if (helper == null || document == null || file == null) {
+			return;
+		}
+		if ((reporter != null) && (reporter.isCancelled() == true)) {
+			throw new OperationCanceledException();
+		}
 
+		// get project model (or external one)
+		PHPProjectModel projectModel = PHPWorkspaceModelManager.getInstance().getModelForProject(file.getProject());
+		if (ExternalFilesRegistry.getInstance().isEntryExist(file.getFullPath().toString())) {
+			projectModel = PHPWorkspaceModelManager.getDefaultPHPProjectModel();
+		}
+
+		// update model
+		if (projectModel != null) {
+			projectModel.fileWasChanged(file, document);
+		}
+
+		// now after the file data is updated - update the annotations
+		String fileName = ""; //$NON-NLS-1$
+		IPath filePath = file.getFullPath();
+		if (filePath != null) {
+			fileName = filePath.toString();
+		}
+		final PHPFileData fileData = projectModel.getFileData(file.getFullPath().toString());
+		if (fileData == null) {
+			return;
+		}
+
+		final IPHPMarker[] markers = fileData.getMarkers();
+		if (markers == null) {
+			return;
+		}
+
+		IStructuredModel model = StructuredModelManager.getModelManager().getExistingModelForRead(document);
+		if (model == null)
+			return; // error
+
+		try {
+
+			// get the PHP node
+			final IndexedRegion ir = getNode(dirtyRegion, model);
+
+			if (ir instanceof INodeNotifier) {
+
+				INodeAdapterFactory factory = HTMLValidationAdapterFactory.getInstance();
+				ValidationAdapter adapter = (ValidationAdapter) factory.adapt((INodeNotifier) ir);
+				if (adapter == null)
+					return; // error
+
+				if (reporter != null) {
+					HTMLValidationReporter validationReporter = null;
+
+					validationReporter = getReporter(reporter, file, (IDOMModel) model);
+					validationReporter.clear();
+					adapter.setReporter(validationReporter);
+
+					String args[] = new String[] { fileName };
+
+					for (IPHPMarker marker : markers) {
+						if (marker.getType().equals(IPHPMarker.TASK)) {
+							continue;
+						}
+
+						// get the error information
+						final UserData userData = marker.getUserData();
+						final String description = marker.getDescription();
+						final int offset = userData.getStartPosition();
+						final int length = userData.getEndPosition() - offset;
+						final ValidationMessage message = new ValidationMessage(description, offset, length, ValidationMessage.ERROR);
+
+						validationReporter.report(message);
+					}
+				}
+			}
+
+		} finally {
+			if (model != null) {
+				model.releaseFromRead();
+			}
+		}
 	}
 
