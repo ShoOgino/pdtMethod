@@ -3,10 +3,13 @@
 	 */
 	public void fileDataChanged(final PHPFileData fileData) {
 
-		final IResource file = PHPModelUtil.getResource(fileData);
-		final IDocument document = fViewer.getDocument();
-		final IStructuredModel model = StructuredModelManager.getModelManager().getExistingModelForRead(document);
-		assert model instanceof DOMModelForPHP : "Incompatible model (or null)";
+		// don't refresh for uninitialized viewers
+		if (fDocument == null) {
+			return;
+		}
+
+		final IStructuredModel model = StructuredModelManager.getModelManager().getExistingModelForRead(fDocument);
+		assert model instanceof DOMModelForPHP : "Incompatible model or null";
 		try {
 			final DOMModelForPHP viewerModel = (DOMModelForPHP) model;
 			if (viewerModel != null && viewerModel.getFileData() == fileData) {
