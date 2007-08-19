@@ -47,8 +47,16 @@
 		});
 
 		final TableColumn column2 = new TableColumn(table, SWT.NULL);
-		column2.setText(PHPDebugUIMessages.InstalledPHPsBlock_1);
+		column2.setText(PHPDebugUIMessages.InstalledPHPsBlock_17);
 		column2.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(final SelectionEvent e) {
+				sortByDebugger();
+			}
+		});
+
+		final TableColumn column3 = new TableColumn(table, SWT.NULL);
+		column3.setText(PHPDebugUIMessages.InstalledPHPsBlock_1);
+		column3.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(final SelectionEvent e) {
 				sortByLocation();
 			}
@@ -57,9 +65,6 @@
 		fPHPExeList = new CheckboxTableViewer(table);
 		fPHPExeList.setLabelProvider(new PHPExeLabelProvider());
 		fPHPExeList.setContentProvider(new PHPsContentProvider());
-		// by default, sort by name
-		sortByName();
-
 		fPHPExeList.addSelectionChangedListener(new ISelectionChangedListener() {
 			public void selectionChanged(final SelectionChangedEvent evt) {
 				enableButtons();
@@ -109,19 +114,14 @@
 		});
 
 		fSetDefaultButton = createPushButton(buttons, PHPDebugUIMessages.InstalledPHPsBlock_setDefault);
-		fSetDefaultButton.addSelectionListener(new SelectionListener() {
-			public void widgetDefaultSelected(SelectionEvent e) {
-				// TODO Auto-generated method stub
-
-			}
-
+		fSetDefaultButton.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
 				PHPexeItem defaultItem = (PHPexeItem) ((IStructuredSelection) fPHPExeList.getSelection()).getFirstElement();
 				phpExes.setDefaultItem(defaultItem);
 				commitChanges();
-				setPHPs(phpExes.getItems());
-				Preferences prefs = PHPProjectPreferences.getModelPreferences();
-				prefs.setValue(PHPDebugCorePreferenceNames.DEFAULT_PHP, defaultItem.getName());
+				setPHPs(phpExes.getAllItems());
+				//				Preferences prefs = PHPProjectPreferences.getModelPreferences();
+				//				prefs.setValue(PHPDebugCorePreferenceNames.DEFAULT_PHP, defaultItem.getName());
 			}
 		});
 
@@ -141,9 +141,11 @@
 			}
 		});
 
-		configureTableResizing(parent, buttons, table, column1, column2);
+		configureTableResizing(parent, buttons, table, column1, column2, column3);
 
 		fillWithWorkspacePHPs();
+		// by default, sort by the debugger type
+		sortByDebugger();
 		enableButtons();
 	}
 

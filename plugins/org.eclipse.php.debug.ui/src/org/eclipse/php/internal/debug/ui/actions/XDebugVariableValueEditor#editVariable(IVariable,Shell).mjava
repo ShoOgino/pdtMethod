@@ -1,0 +1,25 @@
+	/* (non-Javadoc)
+	 * @see org.eclipse.debug.ui.actions.IVariableValueEditor#editVariable(org.eclipse.debug.core.model.IVariable, org.eclipse.swt.widgets.Shell)
+	 */
+	public boolean editVariable(IVariable variable, Shell shell) {
+		try {
+			String name = variable.getName();
+			String title = "Change Value"; // PHPDebugUIMessages.PHPPrimitiveValueEditor_0
+			// PHPDebugUIMessages.PHPPrimitiveValueEditor_1
+			String message = MessageFormat.format("Enter a new value for {0}:", new String[] { name }); //$NON-NLS-1$
+			IValue value = variable.getValue();
+			String initialValue = value.getValueString();
+			PrimitiveValidator validator = new PrimitiveValidator(variable);
+			InputDialog dialog = new InputDialog(shell, title, message, initialValue, validator);
+			if (dialog.open() == Window.OK) {
+				String stringValue = dialog.getValue();
+				variable.setValue(stringValue);
+			}
+		} catch (DebugException e) {
+			IStatus status = e.getStatus();
+			//         PHPDebugUIMessages.PHPPrimitiveValueEditor_2, // PHPDebugUIMessages.PHPPrimitiveValueEditor_3           
+			ErrorDialog.openError(shell, "Error Changing Value", "An exception occurred attempting to change the variable value.", status);
+		}
+		return true;
+	}
+

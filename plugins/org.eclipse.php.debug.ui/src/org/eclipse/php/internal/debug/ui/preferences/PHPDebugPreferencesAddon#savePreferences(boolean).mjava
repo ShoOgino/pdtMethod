@@ -1,10 +1,9 @@
 	private void savePreferences(boolean isProjectSpecific) {
 		String phpExe = fDefaultPHPExe.getText();
-		// Check if it's still valide, since this method can be called after removing a php executable from another preferences page (PHP Executables)
-		PHPexes exes = new PHPexes();
-		exes.load(PHPProjectPreferences.getModelPreferences());
-		if (exes.getItem(phpExe) == null) {
-			PHPexeItem item = exes.getDefaultItem();
+		// Check if it's still valid, since this method can be called after removing a php executable from another preferences page (PHP Executables)
+		PHPexes exes = PHPexes.getInstance();
+		if (exes.getItem(getSelectedDebuggerId(), phpExe) == null) {
+			PHPexeItem item = exes.getDefaultItem(getSelectedDebuggerId());
 			if (item != null) {
 				phpExe = item.getName();
 			} else {
@@ -21,27 +20,33 @@
 			debugUINode.put(PHPDebugCorePreferenceNames.DEFAULT_PHP, phpExe);
 			debugUINode.put(PHPDebugCorePreferenceNames.TRANSFER_ENCODING, fDebugEncodingSettings.getIANATag());
 			debugUINode.put(PHPDebugCorePreferenceNames.OUTPUT_ENCODING, fOutputEncodingSettings.getIANATag());
+			debugUINode.put(PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID, getSelectedDebuggerId());
 			ServersManager.setDefaultServer(project, fDefaultServer.getText());
 		} else {
 			if (project == null) {
+				// Workspace settings
 				prefs.setValue(PHPDebugCorePreferenceNames.STOP_AT_FIRST_LINE, fStopAtFirstLine.getSelection());
-				prefs.setValue(PHPDebugCorePreferenceNames.DEFAULT_PHP, phpExe);
 				prefs.setValue(PHPDebugCorePreferenceNames.TRANSFER_ENCODING, fDebugEncodingSettings.getIANATag());
 				prefs.setValue(PHPDebugCorePreferenceNames.OUTPUT_ENCODING, fOutputEncodingSettings.getIANATag());
+				prefs.setValue(PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID, getSelectedDebuggerId());
+				exes.setDefaultItem(getSelectedDebuggerId(), phpExe);
 				ServersManager.setDefaultServer(null, fDefaultServer.getText());
 			} else {
 				if (debugUINode != null) {
+					// Removed a project specific
 					debugUINode.remove(PHPDebugCorePreferenceNames.STOP_AT_FIRST_LINE);
-					debugUINode.remove(PHPDebugCorePreferenceNames.DEBUG_PORT);
+					//					debugUINode.remove(PHPDebugCorePreferenceNames.ZEND_DEBUG_PORT); // No need
 					debugUINode.remove(PHPDebugCorePreferenceNames.DEFAULT_PHP);
 					ServersManager.setDefaultServer(project, (Server) null);
 					debugUINode.remove(PHPDebugCorePreferenceNames.TRANSFER_ENCODING);
 					debugUINode.remove(PHPDebugCorePreferenceNames.OUTPUT_ENCODING);
+					debugUINode.remove(PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID);
 				}
 			}
 		}
 		try {
 			debugUINode.flush();
+			exes.save();
 			PHPDebugPlugin.getDefault().savePluginPreferences();
 		} catch (BackingStoreException e) {
 			Logger.logException(e);

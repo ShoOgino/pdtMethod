@@ -15,27 +15,71 @@
 		} else {
 			composite = new Composite(ancestor, SWT.NULL);
 		}
-		GridLayout layout = new GridLayout(4, true);
+		GridLayout layout = new GridLayout(2, false);
 		composite.setLayout(layout);
 		composite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		composite.setFont(font);
 		fControl = composite;
 
 		GridData data;
-		fCombo = new Combo(composite, SWT.DROP_DOWN | SWT.READ_ONLY);
-		fCombo.setFont(font);
+		// Add a top-left composite that will hold the label and the combo of the php debuggers
+		Composite topLeft = new Composite(composite, SWT.NONE);
+		layout = new GridLayout(2, false);
+		topLeft.setLayout(layout);
+		topLeft.setFont(font);
+		// Add the label
+		Label debuggerLabel = new Label(topLeft, SWT.WRAP);
+		debuggerLabel.setText(PHPDebugUIMessages.PhpDebugPreferencePage_phpDebugger);
+		data = new GridData(GridData.BEGINNING);
+		data.widthHint = 100;
+		debuggerLabel.setLayoutData(data);
+		// Add the debuggers combo
+		fDebuggersCombo = new Combo(topLeft, SWT.DROP_DOWN | SWT.READ_ONLY);
+		fDebuggersCombo.setFont(font);
 		data = new GridData(GridData.FILL_HORIZONTAL);
-		data.horizontalSpan = 3;
-		fCombo.setLayoutData(data);
-		fCombo.addSelectionListener(new SelectionAdapter() {
+
+		fDebuggersCombo.setLayoutData(data);
+		fDebuggersCombo.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(final SelectionEvent e) {
+				String selectedDebuggerID = getSelectedDebuggerId();
+				PHPexeItem[] items = exes.getItems(selectedDebuggerID);
+				List<PHPexeItem> itemsList = Arrays.asList(items);
+				setPHPexes(itemsList);
+				fireSelectionChanged();
+				signalExecutablesCombo();
+			}
+		});
+
+		// add a dummy label to fill in the missing column
+		Label dummy = new Label(composite, SWT.NONE);
+		dummy.setLayoutData(new GridData(GridData.GRAB_HORIZONTAL));
+
+		// Add a bottom-left composite that will hold the label and the combo of the php executables
+		Composite bottomLeft = new Composite(composite, SWT.NONE);
+		layout = new GridLayout(2, false);
+		bottomLeft.setLayout(layout);
+		bottomLeft.setFont(font);
+		data = new GridData(GridData.FILL_HORIZONTAL);
+		bottomLeft.setLayoutData(data);
+		// Add the label
+		Label executableLabel = new Label(bottomLeft, SWT.WRAP);
+		executableLabel.setText("PHP Executable:");
+		data = new GridData(GridData.BEGINNING);
+		data.widthHint = 100;
+		executableLabel.setLayoutData(data);
+		fExecutablesCombo = new Combo(bottomLeft, SWT.DROP_DOWN | SWT.READ_ONLY);
+		fExecutablesCombo.setFont(font);
+		data = new GridData(GridData.FILL_HORIZONTAL);
+		fExecutablesCombo.setLayoutData(data);
+		fExecutablesCombo.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(final SelectionEvent e) {
 				setPHPexe(getPHPexe());
 			}
 		});
-
+		// Add the php executables link to the right side of the composite
 		link = new Link(composite, SWT.NONE);
 		link.setFont(font);
-		data = new GridData(SWT.BEGINNING, SWT.BOTTOM, true, false);
+		data = new GridData(SWT.BEGINNING, SWT.CENTER, true, false);
 		data.horizontalSpan = 1;
 		link.setLayoutData(data);
 		link.setText(PHPDebugUIMessages.PhpDebugPreferencePage_installedPHPsLink);
@@ -46,15 +90,16 @@
 				fillWithWorkspacePHPexes();
 				if (phpExecutables.contains(selected)) {
 					String name = selected.getName() + " (" + selected.getPhpEXE().toString() + ")"; //$NON-NLS-1$ //$NON-NLS-2$
-					fCombo.select(fCombo.indexOf(name));
+					fExecutablesCombo.select(fExecutablesCombo.indexOf(name));
 				}
 			}
 		});
 
-		if (getPHPs(true).getDefaultItem() == null) {
+		if (exes.getDefaultItem(PHPDebugPlugin.getCurrentDebuggerId()) == null) {
 			MessageDialog.openInformation(getShell(), PHPDebugUIMessages.PHPsComboBlock_NoPHPsTitle, PHPDebugUIMessages.PHPsComboBlock_noPHPsMessage);
 			new ShowPHPsPreferences().run(null);
 		}
+		fillDebuggers();
 		fillWithWorkspacePHPexes();
 	}
 

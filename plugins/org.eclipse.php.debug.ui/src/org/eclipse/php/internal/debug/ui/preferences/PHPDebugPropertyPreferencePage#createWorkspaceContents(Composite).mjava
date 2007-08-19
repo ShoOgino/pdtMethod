@@ -1,0 +1,23 @@
+	/**
+	 * Override the default creation on the workspace content to add a fixed debuggers table that will display all the
+	 * supported debuggers and will allow their preferences modification.
+	 */
+	protected Control createWorkspaceContents(Composite composite) {
+		ScrolledCompositeImpl scrolledCompositeImpl = new ScrolledCompositeImpl(composite, SWT.V_SCROLL | SWT.H_SCROLL);
+		Composite group = new Composite(scrolledCompositeImpl, SWT.NONE);
+		group.setLayout(new GridLayout());
+		// Add the debuggers table
+		createDebuggersTable(group);
+		try {
+			workspaceAddons = PHPPreferencePageBlocksRegistry.getPHPPreferencePageBlock(getPreferencePageID());
+			for (int i = 0; i < workspaceAddons.length; i++) {
+				workspaceAddons[i].setCompositeAddon(group);
+				workspaceAddons[i].initializeValues(this);
+			}
+		} catch (Exception e) {
+			PHPUiPlugin.log(e);
+		}
+		scrolledCompositeImpl.setContent(group);
+		return scrolledCompositeImpl;
+	}
+

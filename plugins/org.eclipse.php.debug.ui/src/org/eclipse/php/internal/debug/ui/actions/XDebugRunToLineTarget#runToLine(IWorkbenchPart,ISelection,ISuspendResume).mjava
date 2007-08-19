@@ -1,0 +1,70 @@
+	/*
+	 * (non-Javadoc)
+	 * @see org.eclipse.php.debug.ui.breakpoint.adapter.PHPRunToLineAdapter#runToLine(org.eclipse.ui.IWorkbenchPart, org.eclipse.jface.viewers.ISelection, org.eclipse.debug.core.model.ISuspendResume)
+	 */
+	public void runToLine(IWorkbenchPart part, ISelection selection, ISuspendResume target) throws CoreException {
+		IEditorPart editorPart = (IEditorPart) part;
+		IEditorInput input = editorPart.getEditorInput();
+		String errorMessage = null;
+		if (input == null) {
+			//PHPDebugUIMessages.PHPRunToLineAdapter_0         
+			errorMessage = "Empty editor";
+		} else {
+			ITextEditor textEditor = (ITextEditor) editorPart;
+			IDocument document = textEditor.getDocumentProvider().getDocument(input);
+			if (document == null) {
+				//PHPDebugUIMessages.PHPRunToLineAdapter_1            
+				errorMessage = "Missing document";
+			} else {
+				ITextSelection textSelection = (ITextSelection) selection;
+
+				int lineNumber = 0;
+				try {
+					lineNumber = document.getLineOfOffset(textSelection.getOffset()) + 1;
+				} catch (BadLocationException e) {
+				}
+				// Figure out if the selected line is a valid line to place a temporary breakpoint for the run-to-line
+				int validLinePosition = PHPBreakpointProvider.getValidPosition(document, lineNumber);
+				if (validLinePosition < 0) {
+					// PHPDebugUIMessages.CannotRunToLine
+					StatusLineMessageTimerManager.setErrorMessage("Cannot run to the specified line.", 1000, true); // hide message after 1 second  
+					return;
+				} else {
+					int validLineNumber = 0;
+					try {
+						validLineNumber = document.getLineOfOffset(validLinePosition) + 1;
+						if (validLineNumber != lineNumber) {
+							// PHPDebugUIMessages.CannotRunToLine                     
+							StatusLineMessageTimerManager.setErrorMessage("Cannot run to the specified line.", 1000, true); // hide message after 1 second
+							return;
+						}
+					} catch (BadLocationException ble) {
+						// PHPDebugUIMessages.CannotRunToLine                  
+						StatusLineMessageTimerManager.setErrorMessage("Cannot run to the specified line.", 1000, true); // hide message after 1 second
+						return;
+					}
+				}
+				if (lineNumber > 0) {
+					if (getValidPosition(document, lineNumber) != -1) {
+						if (target instanceof IAdaptable) {
+							IDebugTarget debugTarget = (IDebugTarget) ((IAdaptable) target).getAdapter(IDebugTarget.class);
+							if (debugTarget != null) {
+								IFile file = getFile(textEditor);
+								DBGpTarget t = (DBGpTarget) debugTarget;
+								t.runToLine(file, lineNumber);
+								// here we need to set a temporary breakpoint and resume the debugTarget
+								return;
+							}
+						}
+					} else {
+						errorMessage = "Selected line is not a valid location to run to"; //PHPDebugUIMessages.PHPRunToLineAdapter_2
+					}
+				} else {
+					errorMessage = "Selected line is not a valid location to run to"; //PHPDebugUIMessages.PHPRunToLineAdapter_2
+				}
+			}
+		}
+		throw new CoreException(new Status(IStatus.ERROR, PHPDebugUIPlugin.ID, IPHPConstants.INTERNAL_ERROR, errorMessage, null));
+
+	}
+

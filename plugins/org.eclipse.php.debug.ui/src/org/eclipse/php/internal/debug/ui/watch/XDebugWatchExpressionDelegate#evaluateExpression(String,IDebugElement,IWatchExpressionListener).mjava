@@ -1,0 +1,19 @@
+	/**
+	 * @see org.eclipse.debug.core.model.IWatchExpressionDelegate#getValue(java.lang.String, org.eclipse.debug.core.model.IDebugElement)
+	 */
+	public void evaluateExpression(String expression, IDebugElement context, IWatchExpressionListener listener) {
+		expressionText = expression;
+		watchListener = listener;
+		IDebugTarget target = context.getDebugTarget();
+		if (target instanceof DBGpTarget) {
+			debugTarget = (DBGpTarget) target;
+			if (!debugTarget.isSuspended()) {
+				// can't evaluate unless suspended
+				watchListener.watchEvaluationFinished(null);
+			} else {
+				evalJob = new EvaluationRunnable();
+				evalJob.schedule();
+			}
+		}
+	}
+

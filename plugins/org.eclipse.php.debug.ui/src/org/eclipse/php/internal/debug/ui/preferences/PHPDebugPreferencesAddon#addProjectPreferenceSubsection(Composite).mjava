@@ -1,9 +1,11 @@
 	private void addProjectPreferenceSubsection(Composite composite) {
 		// Set a height hint for the group.
 		GridData gd = (GridData) composite.getLayoutData();
-		gd.heightHint = 220;
+		gd.heightHint = 240;
 		composite.setLayoutData(gd);
-
+		addLabelControl(composite, PHPDebugUIMessages.PhpDebugPreferencePage_phpDebugger, PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID);
+		fDefaultDebugger = addCombo(composite, 2);
+		new Label(composite, SWT.NONE); // dummy label
 		addLabelControl(composite, PHPDebugUIMessages.PhpDebugPreferencePage_9, ServersManager.DEFAULT_SERVER_PREFERENCES_KEY);
 		fDefaultServer = addCombo(composite, 2);
 		addLink(composite, PHPDebugUIMessages.PhpDebugPreferencePage_serversLink, SERVERS_PAGE_ID);
@@ -48,6 +50,16 @@
 				Point p = spc.getSize();
 				spc.setSize(p.x, 70);
 				spc.getParent().layout();
+			}
+		});
+
+		// Add a default debugger listener that will update the possible executables 
+		// and, maybe, servers that can work with this debugger.
+		fDefaultDebugger.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				String selectedDebugger = getSelectedDebuggerId();
+				PHPexeItem[] items = PHPexes.getInstance().getItems(selectedDebugger);
+				loadPHPExes(fDefaultPHPExe, items);
 			}
 		});
 	}

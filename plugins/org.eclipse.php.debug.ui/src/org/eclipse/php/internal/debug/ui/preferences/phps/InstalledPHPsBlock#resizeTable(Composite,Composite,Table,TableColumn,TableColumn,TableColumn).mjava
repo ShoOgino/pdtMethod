@@ -1,0 +1,43 @@
+	private void resizeTable(final Composite parent, final Composite buttons, final Table table, final TableColumn column1, final TableColumn column2, final TableColumn column3) {
+		fResizingTable = true;
+		int parentWidth = -1;
+		int parentHeight = -1;
+		if (parent.isVisible()) {
+			final Rectangle area = parent.getClientArea();
+			parentWidth = area.width;
+			parentHeight = area.height;
+		} else {
+			final Point parentSize = parent.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+			parentWidth = parentSize.x;
+			parentHeight = parentSize.y;
+		}
+		final Point preferredSize = table.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+		int width = parentWidth - 2 * table.getBorderWidth();
+		if (preferredSize.y > parentHeight) {
+			// Subtract the scrollbar width from the total column width
+			// if a vertical scrollbar will be required
+			final Point vBarSize = table.getVerticalBar().getSize();
+			width -= vBarSize.x;
+		}
+		width -= buttons.getSize().x;
+		final Point oldSize = table.getSize();
+		if (oldSize.x > width) {
+			// table is getting smaller so make the columns
+			// smaller first and then resize the table to
+			// match the client area width
+			column1.setWidth(Math.round(width * fWeight1));
+			column2.setWidth(Math.round(width * fWeight2));
+			column3.setWidth(Math.round(width * fWeight3));
+			table.setSize(width, parentHeight);
+		} else {
+			// table is getting bigger so make the table
+			// bigger first and then make the columns wider
+			// to match the client area width
+			table.setSize(width, parentHeight);
+			column1.setWidth(Math.round(width * fWeight1));
+			column2.setWidth(Math.round(width * fWeight2));
+			column3.setWidth(Math.round(width * fWeight3));
+		}
+		fResizingTable = false;
+	}
+

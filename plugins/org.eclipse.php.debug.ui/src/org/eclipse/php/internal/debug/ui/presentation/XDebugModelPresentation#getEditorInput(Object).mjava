@@ -1,0 +1,61 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.eclipse.debug.ui.ISourcePresentation#getEditorInput(java.lang.Object)
+	 */
+	public IEditorInput getEditorInput(Object element) {
+		if (element instanceof IFile) {
+			return new FileEditorInput((IFile) element);
+		}
+		if (element instanceof PHPLineBreakpoint) {
+			PHPLineBreakpoint breakpoint = (PHPLineBreakpoint) element;
+			IMarker marker = breakpoint.getMarker();
+			IResource resource = marker.getResource();
+
+			if (resource instanceof IFile) {
+				return new FileEditorInput((IFile) resource);
+			}
+			// Breakpoints for external files are stored in workspace root:
+			else if (resource instanceof IWorkspaceRoot) {
+				try {
+					String filename = (String) marker.getAttribute(IPHPConstants.STORAGE_FILE);
+					String type = (String) marker.getAttribute(IPHPConstants.STORAGE_TYPE);
+
+					if (IPHPConstants.STORAGE_TYPE_INCLUDE.equals(type)) {
+						String projectName = (String) marker.getAttribute(IPHPConstants.STORAGE_PROJECT, "");
+						IProject project = PHPDebugUIPlugin.getProject(projectName);
+						String includeBaseDir = (String) marker.getAttribute(IPHPConstants.STORAGE_INC_BASEDIR, "");
+						filename = marker.getAttribute(StructuredResourceMarkerAnnotationModel.SECONDARY_ID_KEY, filename);
+
+						File file = new File(filename);
+						LocalFileStorage lfs = new LocalFileStorage(file);
+						lfs.setProject(project);
+						lfs.setIncBaseDirName(includeBaseDir);
+						return new LocalFileStorageEditorInput(lfs);
+					} else if (IPHPConstants.STORAGE_TYPE_EXTERNAL.equals(type)) {
+						File file = new File(filename);
+						LocalFile store = new LocalFile(file);
+						return new FileStoreEditorInput(store);
+					}
+				} catch (CoreException e) {
+					Logger.logException("Unexpected error in PHPModelPresentation", e);
+				}
+			}
+		}
+		if (element instanceof ZipEntryStorage) {
+			return new ZipEntryStorageEditorInput((ZipEntryStorage) element);
+		}
+		if (element instanceof LocalFileStorage) {
+			return new LocalFileStorageEditorInput((LocalFileStorage) element);
+		}
+		if (element instanceof PHPSourceNotFoundInput) {
+			return new PHPSourceNotFoundEditorInput((PHPSourceNotFoundInput) element);
+		}
+		if (element instanceof IFileStore) {
+			return new FileStoreEditorInput((IFileStore) element);
+		}
+
+		Logger.log(IStatus.WARNING, "Unknown editor input type: " + element.getClass().getName());
+		return null;
+	}
+

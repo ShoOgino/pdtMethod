@@ -1,0 +1,33 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.eclipse.jface.viewers.ILabelProvider#getText(java.lang.Object)
+	 */
+	public String getText(Object element) {
+		if (element instanceof DBGpTarget) {
+			return getTargetText((DBGpTarget) element);
+		} else if (element instanceof DBGpThread) {
+			return getThreadText((DBGpThread) element);
+		} else if (element instanceof DBGpStackFrame) {
+			//return getStackFrameText((DBGpStackFrame) element);
+			return null;
+		} else if (element instanceof PHPLineBreakpoint) {
+			PHPLineBreakpoint breakpoint = (PHPLineBreakpoint) element;
+			IMarker marker = breakpoint.getMarker();
+			IResource resource = marker.getResource();
+			if (resource instanceof IFile) {
+				return null;
+			} else if (resource instanceof IWorkspaceRoot) {
+				try {
+					String filename = (String) marker.getAttribute(IPHPConstants.STORAGE_FILE);
+					Integer lineNumber = (Integer) marker.getAttribute(IMarker.LINE_NUMBER);
+					return filename + " [line: " + lineNumber.toString() + "]";
+				} catch (CoreException e) {
+					Logger.logException("Unexpected error in XDebugModelPresentation", e);
+				}
+			}
+		}
+		return null;
+
+	}
+

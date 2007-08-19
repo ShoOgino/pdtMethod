@@ -1,0 +1,27 @@
+	protected String getPropertyValue(DBGpStackFrame context, String variable) {
+		String value = null;
+		DBGpTarget debugTarget = (DBGpTarget) context.getDebugTarget();
+		Node resp = debugTarget.getProperty(variable, context.getStackLevel(), 0);
+		IVariable tempVar = new DBGpVariable(debugTarget, resp, "-2");
+
+		IValue val = null;
+
+		try {
+			val = tempVar.getValue();
+			if (val != null) {
+				value = val.getValueString();
+			}
+		} catch (DebugException e) {
+		}
+
+		if (value != null && value.length() == 0) {
+			value = "Empty";
+			return value;
+		}
+
+		if (value != null) {
+			tab.matcher(value).replaceAll("    ");
+		}
+		return value;
+	}
+

@@ -4,26 +4,36 @@
 		IScopeContext[] preferenceScopes = createPreferenceScopes(propertyPage);
 
 		boolean stopAtFirstLine = prefs.getBoolean(PHPDebugCorePreferenceNames.STOP_AT_FIRST_LINE);
+		String debuggerName = PHPDebuggersRegistry.getDebuggerName(prefs.getString(PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID));
 		String serverName = ServersManager.getDefaultServer(null).getName();
-		String phpExe = prefs.getString(PHPDebugCorePreferenceNames.DEFAULT_PHP);
+		String phpExe = PHPexes.getInstance().getDefaultItem(PHPDebugPlugin.getCurrentDebuggerId()).getName();
 		String transferEncoding = prefs.getString(PHPDebugCorePreferenceNames.TRANSFER_ENCODING);
 		String outputEncoding = prefs.getString(PHPDebugCorePreferenceNames.OUTPUT_ENCODING);
+		loadDebuggers(fDefaultDebugger);
 		loadServers(fDefaultServer);
-		loadPHPExes(fDefaultPHPExe);
+		boolean exeLoaded = false;
+		// Update the values in case we have a project-specific settings.
 		if (preferenceScopes[0] instanceof ProjectScope) {
 			IEclipsePreferences node = preferenceScopes[0].getNode(getPreferenceNodeQualifier());
 			if (node != null && getProject(propertyPage) != null) {
 				String projectServerName = ServersManager.getDefaultServer(getProject(propertyPage)).getName();
 				if (!projectServerName.equals("")) { //$NON-NLS-1$
+					debuggerName = PHPDebuggersRegistry.getDebuggerName(node.get(PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID, DebuggerCommunicationDaemon.ZEND_DEBUGGER_ID));
 					serverName = projectServerName;
 					stopAtFirstLine = node.getBoolean(PHPDebugCorePreferenceNames.STOP_AT_FIRST_LINE, stopAtFirstLine);
 					transferEncoding = node.get(PHPDebugCorePreferenceNames.TRANSFER_ENCODING, ""); //$NON-NLS-1$
 					outputEncoding = node.get(PHPDebugCorePreferenceNames.OUTPUT_ENCODING, ""); //$NON-NLS-1$
 					phpExe = node.get(PHPDebugCorePreferenceNames.DEFAULT_PHP, phpExe);
+					loadPHPExes(fDefaultPHPExe, PHPexes.getInstance().getItems(node.get(PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID, PHPDebugPlugin.getCurrentDebuggerId())));
+					exeLoaded = true;
 				}
 			}
 		}
+		if (!exeLoaded) {
+			loadPHPExes(fDefaultPHPExe, PHPexes.getInstance().getItems(PHPDebugPlugin.getCurrentDebuggerId()));
+		}
 		fStopAtFirstLine.setSelection(stopAtFirstLine);
+		fDefaultDebugger.select(fDefaultDebugger.indexOf(debuggerName));
 		fDefaultServer.select(fDefaultServer.indexOf(serverName));
 		fDefaultPHPExe.select(fDefaultPHPExe.indexOf(phpExe));
 		fDebugEncodingSettings.setIANATag(transferEncoding);

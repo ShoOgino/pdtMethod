@@ -1,7 +1,15 @@
 	private void enableButtons() {
-		final int selectionCount = ((IStructuredSelection) fPHPExeList.getSelection()).size();
-		fEditButton.setEnabled(selectionCount == 1);
-		fRemoveButton.setEnabled(selectionCount > 0);
-		fSetDefaultButton.setEnabled(selectionCount == 1 && !((IStructuredSelection) fPHPExeList.getSelection()).getFirstElement().equals(phpExes.getDefaultItem()));
+		IStructuredSelection selection = (IStructuredSelection) fPHPExeList.getSelection();
+		Object[] elements = selection.toArray();
+		boolean canRemoveOrEdit = true;
+		for (int i = 0; canRemoveOrEdit && i < elements.length; i++) {
+			PHPexeItem item = (PHPexeItem) elements[i];
+			canRemoveOrEdit &= item.isEditable();
+		}
+		final int selectionCount = selection.size();
+		fEditButton.setEnabled(canRemoveOrEdit && selectionCount == 1);
+		fRemoveButton.setEnabled(canRemoveOrEdit && selectionCount > 0);
+		PHPexeItem selectedItem = (PHPexeItem) ((IStructuredSelection) fPHPExeList.getSelection()).getFirstElement();
+		fSetDefaultButton.setEnabled(selectionCount == 1 && selectedItem != null && !selectedItem.isDefault());
 	}
 

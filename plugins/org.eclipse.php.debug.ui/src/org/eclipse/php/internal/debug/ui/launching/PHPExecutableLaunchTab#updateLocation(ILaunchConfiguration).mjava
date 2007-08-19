@@ -4,18 +4,26 @@
 	 */
 	protected void updateLocation(final ILaunchConfiguration configuration) {
 		String location = ""; //$NON-NLS-1$
+		String debuggerID = ""; //$NON-NLS-1$
 		try {
 			location = configuration.getAttribute(PHPCoreConstants.ATTR_LOCATION, ""); //$NON-NLS-1$
+			debuggerID = configuration.getAttribute(PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID, PHPDebugPlugin.getCurrentDebuggerId());
 		} catch (final CoreException ce) {
 			Logger.log(Logger.ERROR, "Error reading configuration", ce); //$NON-NLS-1$
 		}
-		//		locationField.setText(location);
-		final PHPexes exes = phpsComboBlock.getPHPs(true);
+		final PHPexes exes = PHPexes.getInstance();
 		PHPexeItem phpexe;
-		if (location != null && location.length() > 0)
+		if (location != null && location.length() > 0) {
 			phpexe = exes.getItemForFile(location);
-		else
-			phpexe = exes.getDefaultItem();
+		} else {
+			phpexe = exes.getDefaultItem(PHPDebugPlugin.getCurrentDebuggerId());
+		}
+		// Check that this debugger still exists. If not, take the defaults.
+		if (!PHPDebuggersRegistry.getDebuggersIds().contains(debuggerID)) {
+			debuggerID = PHPDebugPlugin.getCurrentDebuggerId();
+			phpexe = exes.getDefaultItem(debuggerID);
+		}
+		phpsComboBlock.setDebugger(debuggerID);
 		phpsComboBlock.setPHPexe(phpexe);
 	}
 
