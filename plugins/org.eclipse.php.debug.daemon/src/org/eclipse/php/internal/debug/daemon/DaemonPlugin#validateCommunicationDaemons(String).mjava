@@ -6,14 +6,21 @@
 	 * The method goes over the registered daemons and reset the socket for any communication 
 	 * daemon that is not listening.
 	 * 
+	 * The validation will be made on the daemons that have the given debuggerID or on all
+	 * the daemons in case the id is null.
+	 * 
+	 * @param debuggerID The debugger id, or null.
 	 * @return True, if all the communication daemons passed the validation; False, otherwise.
+	 * @since PDT 1.0
 	 */
-	public boolean validateCommunicationDaemons() {
+	public boolean validateCommunicationDaemons(String debuggerID) {
 		boolean validated = true;
 		if (daemons != null) {
 			for (int i = 0; i < daemons.length; i++) {
-				if (!daemons[i].isListening()) {
-					validated &= daemons[i].resetSocket();
+				if (debuggerID == null || (daemons[i].isDebuggerDaemon() && debuggerID.equals(daemons[i].getDebuggerID()))) {
+					if (!daemons[i].isListening()) {
+						validated &= daemons[i].resetSocket();
+					}
 				}
 			}
 		}
