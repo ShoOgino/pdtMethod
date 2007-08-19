@@ -1,0 +1,29 @@
+	public void customizeDocumentCommand(IDocument document, DocumentCommand command) {
+		Object textEditor = getActiveTextEditor();
+		if (!(textEditor instanceof ITextEditorExtension3 && ((ITextEditorExtension3) textEditor).getInsertMode() == ITextEditorExtension3.SMART_INSERT))
+			return;
+
+		IStructuredModel model = null;
+		try {
+			model = StructuredModelManager.getModelManager().getExistingModelForRead(document);
+
+			if (model != null) {
+				if (command.text != null) {
+					if (command.text.equals("?")) { //$NON-NLS-1$
+						// scriptlet - add end %>
+						IDOMNode node = (IDOMNode) model.getIndexedRegion(command.offset - 1);
+						if (node != null && prefixedWith(document, command.offset, "<") && !node.getSource().endsWith("?>")) { //$NON-NLS-1$ //$NON-NLS-2$
+							command.text += "php ?>"; //$NON-NLS-1$
+							command.shiftsCaret = false;
+							command.caretOffset = command.offset + 5;
+							command.doit = false;
+						}
+					}
+				}
+			}
+		} finally {
+			if (model != null)
+				model.releaseFromRead();
+		}
+	}
+
