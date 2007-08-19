@@ -1,0 +1,95 @@
+	protected void createServerSelectionControl(Composite parent) {
+		Font font = parent.getFont();
+		GridData data = new GridData(GridData.HORIZONTAL_ALIGN_FILL);
+		Composite composite = new Composite(parent, SWT.NONE);
+		GridLayout layout = new GridLayout();
+		layout.marginWidth = 5;
+		layout.marginHeight = 5;
+		layout.numColumns = 2;
+		composite.setLayout(layout);
+		composite.setLayoutData(data);
+
+		Group group = new Group(composite, SWT.NONE);
+		group.setText(PHPServerUIMessages.getString("ServerTab.server")); //$NON-NLS-1$
+		GridLayout ly = new GridLayout();
+		ly.numColumns = 1;
+		GridData gridData = new GridData(GridData.FILL_HORIZONTAL);
+		group.setLayout(ly);
+		group.setLayoutData(gridData);
+
+		Composite topComposite = new Composite(group, SWT.NONE);
+		layout = new GridLayout(2, false);
+		topComposite.setLayout(layout);
+		topComposite.setFont(font);
+
+		// Add the debuggers combo
+		Label label = new Label(topComposite, SWT.WRAP);
+		data = new GridData(GridData.BEGINNING);
+		data.widthHint = 100;
+		label.setLayoutData(data);
+		label.setFont(font);
+		label.setText("Server Debugger:");
+
+		fDebuggersCombo = new Combo(topComposite, SWT.DROP_DOWN | SWT.READ_ONLY);
+		fDebuggersCombo.setFont(font);
+		data = new GridData(GridData.FILL_HORIZONTAL);
+		data.widthHint = 100;
+		fDebuggersCombo.setLayoutData(data);
+		fDebuggersCombo.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(final SelectionEvent e) {
+				updateLaunchConfigurationDialog();
+			}
+		});
+
+		Composite bottomComposite = new Composite(group, SWT.NONE);
+		layout = new GridLayout(4, false);
+		bottomComposite.setLayout(layout);
+		data = new GridData(GridData.FILL_HORIZONTAL);
+		bottomComposite.setLayoutData(data);
+		bottomComposite.setFont(font);
+
+		label = new Label(bottomComposite, SWT.WRAP);
+		data = new GridData(GridData.BEGINNING);
+		data.widthHint = 100;
+		label.setLayoutData(data);
+		label.setFont(font);
+		label.setText("PHP Server:");
+
+		serverCombo = new Combo(bottomComposite, SWT.SINGLE | SWT.BORDER | SWT.READ_ONLY);
+		data = new GridData(GridData.FILL_HORIZONTAL);
+		data.widthHint = 250;
+		serverCombo.setLayoutData(data);
+		serverCombo.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				handleServerSelection();
+			}
+		});
+
+		createNewServer = createPushButton(bottomComposite, PHPServerUIMessages.getString("ServerTab.new"), null); //$NON-NLS-1$
+		createNewServer.addSelectionListener(fListener);
+
+		configureServers = createPushButton(bottomComposite, PHPServerUIMessages.getString("ServerTab.configure"), null); //$NON-NLS-1$
+		configureServers.addSelectionListener(fListener);
+
+		servers = new ArrayList<Server>();
+		populateServerList(servers);
+
+		// initialize the servers list
+		if (!servers.isEmpty()) {
+			for (int i = 0; i < servers.size(); i++) {
+				Server svr = servers.get(i);
+				serverCombo.add(svr.getName());
+			}
+		}
+
+		// select first item in list
+		if (serverCombo.getItemCount() > 0) {
+			serverCombo.select(0);
+		}
+
+		// initialize the debuggers list
+		fillDebuggers();
+
+		serverCombo.forceFocus();
+	}
+
