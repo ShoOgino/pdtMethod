@@ -1,0 +1,43 @@
+	/**
+	 * Hook a server debug session
+	 * 
+	 * @param launch An {@link ILaunch}
+	 * @param startedNotification	A DebugSessionStartedNotification
+	 */
+	protected void hookServerDebug(final ILaunch launch, DebugSessionStartedNotification startedNotification) throws CoreException {
+		ILaunchConfiguration launchConfiguration = launch.getLaunchConfiguration();
+		PHPServerLaunchDecorator launchDecorator;
+		if (launch instanceof PHPServerLaunchDecorator) {
+			launchDecorator = (PHPServerLaunchDecorator) launch;
+		} else {
+			// Get the project by its name
+			String projectName = launchConfiguration.getAttribute(IPHPConstants.PHP_Project, (String) null);
+			IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
+			launchDecorator = new PHPServerLaunchDecorator(launch, project);
+		}
+		inputManager.setTransferEncoding(launchConfiguration.getAttribute(IDebugParametersKeys.TRANSFER_ENCODING, ""));
+		inputManager.setOutputEncoding(launchConfiguration.getAttribute(IDebugParametersKeys.OUTPUT_ENCODING, ""));
+		String URL = launchConfiguration.getAttribute(Server.BASE_URL, "");
+		String contextRoot = launchConfiguration.getAttribute(Server.CONTEXT_ROOT, "");
+		boolean stopAtFirstLine = PHPProjectPreferences.getStopAtFirstLine(launchDecorator.getProject());
+		int requestPort = PHPProjectPreferences.getDebugPort(DebuggerCommunicationDaemon.ZEND_DEBUGGER_ID);
+		boolean runWithDebug = launchConfiguration.getAttribute(IPHPConstants.RUN_WITH_DEBUG_INFO, true);
+		if (launch.getLaunchMode().equals(ILaunchManager.DEBUG_MODE)) {
+			runWithDebug = false;
+		}
+		PHPProcess process = new PHPProcess(launch, URL);
+		debugTarget = (PHPDebugTarget) createDebugTraget(this, launch, URL, requestPort, process, contextRoot, runWithDebug, stopAtFirstLine, launchDecorator.getProject());
+		launch.addDebugTarget(debugTarget);
+		// A fix for Linux display problem.
+		// This code will auto-expand the debugger view tree.
+		Display.getDefault().asyncExec(new Runnable() {
+			public void run() {
+				LaunchManager manager = (LaunchManager) DebugPlugin.getDefault().getLaunchManager();
+				manager.fireUpdate(new ILaunch[] { launch }, LaunchManager.ADDED);
+				// Added to fix a problem while migrating to 3.3.
+				// The stack tree was not updated.
+				manager.fireUpdate(new ILaunch[] { launch }, LaunchManager.CHANGED);
+			}
+		});
+	}
+

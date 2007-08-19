@@ -1,0 +1,36 @@
+	/**
+	 * Creates and returns a command line invocation string for the execution of the PHP script.
+	 * 
+	 * @param configuration
+	 * @param phpExe
+	 * @param phpConfigDir
+	 * @param scriptPath
+	 * @param phpIniLocation 
+	 * @return
+	 * @throws CoreException
+	 */
+	public static String[] getCommandLine(ILaunchConfiguration configuration, String phpExe, String phpConfigDir, String scriptPath, String phpIniLocation) throws CoreException {
+		String[] cmdLine = null;
+		String[] splitArgs = getProgramArguments(configuration);
+		if (!"".equals(phpIniLocation)) {
+			phpConfigDir = phpIniLocation;
+		}
+
+		// Important!!! 
+		// Note that php executable -c parameter (for php 4) must get the path to the directory that contains the php.ini file.
+		// We cannot use a full path to the php.ini file nor modify the file name! (for example php.temp.ini).
+		phpConfigDir = (new File(phpConfigDir)).getParentFile().getAbsolutePath();
+
+		if (splitArgs.length == 0) {
+			cmdLine = new String[] { phpExe, "-c", phpConfigDir, scriptPath };
+		} else {
+			cmdLine = new String[splitArgs.length + 4];
+			cmdLine[0] = phpExe;
+			cmdLine[1] = "-c";
+			cmdLine[2] = phpConfigDir;
+			cmdLine[3] = scriptPath;
+			System.arraycopy(splitArgs, 0, cmdLine, 4, splitArgs.length);
+		}
+		return cmdLine;
+	}
+

@@ -1,0 +1,38 @@
+	private void parseProperty(Node property) {
+
+		// we could have a property which has no name, fullname or type
+		// as a result of an expression evaluation
+		name = DBGpResponse.getAttribute(property, "name");
+		setFullName(DBGpResponse.getAttribute(property, "fullname"));
+
+		// hopefully this will put the $ at appropriate point in the variable name
+		if (getFullName().length() > 1 && name.equals(getFullName().substring(1))) {
+			name = getFullName();
+		}
+
+		address = DBGpResponse.getAttribute(property, "address");
+		type = DBGpResponse.getAttribute(property, "type");
+
+		if (type.equals(PHP_BOOL)) {
+			value = new DBGpBoolValue(this, property);
+		} else if (type.equals(PHP_INT)) {
+			value = new DBGpNumValue(this, property, PHP_INT);
+		} else if (type.equals(PHP_FLOAT)) {
+			value = new DBGpNumValue(this, property, PHP_FLOAT);
+		} else if (type.equals(PHP_STRING)) {
+			// TODO: strings support a size attribute which could be used in future
+			value = new DBGpStringValue(this, property);
+		} else if (type.equals(PHP_RESOURCE)) {
+			value = new DBGpResourceValue(this, property);
+		} else if (type.equals(PHP_NULL)) {
+			value = new DBGpNullValue(this, property);
+		} else if (type.equals(PHP_UNINIT)) {
+			value = new DBGpUnInitValue(this);
+		} else if (type.equals(PHP_ARRAY) || type.equals(PHP_OBJECT)) {
+			value = new DBGpContainerValue(this, property);
+		} else {
+			// The default which is an uninitialised variable
+			value = new DBGpUnInitValue(this);
+		}
+	}
+

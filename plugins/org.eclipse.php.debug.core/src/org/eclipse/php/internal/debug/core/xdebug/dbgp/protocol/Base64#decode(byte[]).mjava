@@ -1,0 +1,52 @@
+	public static byte[] decode(byte[] input) {
+		int outsize = input.length;
+		outsize = outsize / 4 * 3;
+
+		if (input[input.length - 1] == valToBase64CharTable[64]) {
+			outsize--;
+		}
+		if (input[input.length - 2] == valToBase64CharTable[64]) {
+			outsize--;
+		}
+
+		// note that if there are 2 pads at the end, reduce outsize by 2
+		// if there is 1 pad at end, reduce outsize by 1. Also need to handle
+		// situation where we have added crlfs to the output.
+
+		if (input.length % 4 != 0) {
+			// error, but need to handle 76 character lines where crlfs have been added
+		}
+
+		byte[] decoded = new byte[outsize];
+		for (int j = 0; j < outsize; j++) {
+			decoded[j] = '?';
+		}
+		int[] base64set = new int[4];
+
+		int pos = 0;
+		int decodepos = 0;
+
+		for (int i = 0; i < input.length; i++) {
+			if (base64ToValTable[input[i]] == -1) {
+				continue;
+			} else {
+				base64set[decodepos] = base64ToValTable[input[i]];
+				decodepos++;
+
+				// check to see if we have 4 entries now
+				if (decodepos == 4) {
+					decodepos = 0;
+					decoded[pos] = (byte) ((base64set[0] << 2) | ((base64set[1] & 0x30) >>> 4));
+					if (base64set[2] != 64) {
+						decoded[pos + 1] = (byte) (((base64set[1] & 0x0f) << 4) | ((base64set[2] & 0x3c) >>> 2));
+						if (base64set[3] != 64) {
+							decoded[pos + 2] = (byte) (((base64set[2] & 0x03) << 6 | base64set[3]));
+						}
+					}
+					pos += 3;
+				}
+			}
+		}
+		return decoded;
+	}
+

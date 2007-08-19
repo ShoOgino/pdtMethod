@@ -1,0 +1,164 @@
+	public void launch(ILaunchConfiguration configuration, String mode, ILaunch launch, IProgressMonitor monitor) throws CoreException {
+
+		if (!mode.equals(ILaunchManager.DEBUG_MODE)) {
+			DebugPlugin.getDefault().getLaunchManager().removeLaunch(launch);
+			return;
+		}
+
+		if (monitor.isCanceled()) {
+			DebugPlugin.getDefault().getLaunchManager().removeLaunch(launch);
+			return;
+		}
+
+		IDELayer idelayer = IDELayerFactory.getIDELayer();
+
+		// get the exe, project name, file name
+		final String phpExeString = configuration.getAttribute(idelayer.getEXELocationAttrName(), (String) null);
+		final String phpScriptString = configuration.getAttribute(idelayer.getEXEFileAttrName(), (String) null);
+		if (phpScriptString == null || phpScriptString.trim().length() == 0) {
+			DebugPlugin.getDefault().getLaunchManager().removeLaunch(launch);
+			displayErrorMessage("No script specified");
+			return;
+		}
+
+		if (monitor.isCanceled()) {
+			DebugPlugin.getDefault().getLaunchManager().removeLaunch(launch);
+			return;
+		}
+
+		// locate the project and absolute path of the file
+		final IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
+		final IPath filePath = new Path(phpScriptString);
+		final IResource res = workspaceRoot.findMember(filePath);
+		if (res == null) {
+			DebugPlugin.getDefault().getLaunchManager().removeLaunch(launch);
+			displayErrorMessage("Specified script cannot be found");
+			return;
+		}
+		IProject project = res.getProject();
+
+		// check the launch for stop at first line, if not there go to project specifics
+		boolean stopAtFirstLine = false;
+		if (configuration.getAttribute(idelayer.getEXEOverrideFirstLineAttrName(), false)) {
+			stopAtFirstLine = configuration.getAttribute(idelayer.getEXEFirstLineAttrName(), false);
+		} else {
+			stopAtFirstLine = idelayer.getStopAtFirstLine(project);
+		}
+
+		// cannot support project level properties with regard to port.
+		// final int requestPort = PHPProjectPreferences.getDebugPort(project);
+
+		// Set Project Name as this is required by the source lookup computer delegate
+		final String projectString = project.getFullPath().toString();
+		ILaunchConfigurationWorkingCopy wc;
+		if (configuration.isWorkingCopy()) {
+			wc = (ILaunchConfigurationWorkingCopy) configuration;
+		} else {
+			wc = configuration.getWorkingCopy();
+		}
+		wc.setAttribute(IPHPConstants.PHP_Project, projectString);
+
+		if (monitor.isCanceled()) {
+			DebugPlugin.getDefault().getLaunchManager().removeLaunch(launch);
+			return;
+		}
+
+		// resolve php exe location
+		final IPath phpExe = new Path(phpExeString);
+
+		// resolve working directory
+		IPath projectLocation = project.getRawLocation();
+		if (projectLocation == null)
+			projectLocation = project.getLocation();
+		final String location = projectLocation.toOSString();
+		final IPath p1 = new Path(location);
+		final File projectDir = p1.toFile();
+
+		// resolve the php script
+		IPath phpFile = new Path(phpScriptString);
+		if (phpScriptString.startsWith("/"))
+			phpFile = phpFile.removeFirstSegments(1);
+
+		if (monitor.isCanceled()) {
+			DebugPlugin.getDefault().getLaunchManager().removeLaunch(launch);
+			return;
+		}
+
+		// Resolve the PHP ini location
+		File phpIni = IniModifier.findPHPIni(phpExeString);
+		if (/*project != dummyProject &&*/project.hasNature(PHPNature.ID)) {
+			if (phpIni != null) {
+				File tempIni = IniModifier.addIncludePath(phpIni, project);
+				if (tempIni != null) {
+					wc.setAttribute(IDebugParametersKeys.PHP_INI_LOCATION, tempIni.getAbsolutePath());
+				}
+			}
+		} else {
+			if (phpIni != null) {
+				wc.setAttribute(IDebugParametersKeys.PHP_INI_LOCATION, phpIni.getAbsolutePath());
+			}
+		}
+		wc.doSave();
+
+		String sessionID = DBGpSessionHandler.getInstance().generateSessionId();
+		String ideKey = DBGpSessionHandler.getInstance().getIDEKey();
+
+		// create any environment variables, and build the command line  
+		String[] envVarString = createLaunchEnvironment(configuration, sessionID, ideKey);
+		String[] cmdLine = createCommandLine(configuration, projectDir.toString(), phpExe.toOSString(), phpFile.toOSString());
+
+		// add process type to process attributes, basically the name of the exe that was launched
+		final Map<String, String> processAttributes = new HashMap<String, String>();
+		String programName = phpExe.lastSegment();
+		final String extension = phpExe.getFileExtension();
+		if (extension != null) {
+			programName = programName.substring(0, programName.length() - (extension.length() + 1));
+		}
+		programName = programName.toLowerCase();
+
+		// used by the console colorer extension to determine what class to use
+		// should allow the console color providers and line trackers to work
+		//process.setAttribute(IProcess.ATTR_PROCESS_TYPE, IPHPConstants.PHPProcessType);
+
+		processAttributes.put(IProcess.ATTR_PROCESS_TYPE, programName);
+		// used by the Console to give that console a name
+		processAttributes.put(IProcess.ATTR_CMDLINE, phpScriptString);
+
+		if (monitor.isCanceled()) {
+			DebugPlugin.getDefault().getLaunchManager().removeLaunch(launch);
+			return;
+		}
+
+		DBGpTarget target = new DBGpTarget(launch, null, phpFile.toOSString(), ideKey, sessionID, stopAtFirstLine);
+		DBGpSessionHandler.getInstance().addSessionListener(target);
+
+		// launch PHP with a working directory of the project directory + environment vars
+		IProgressMonitor subMonitor = new SubProgressMonitor(monitor, 30);
+		subMonitor.beginTask("Launching script", 10);
+
+		final Process phpExeProcess = DebugPlugin.exec(cmdLine, projectDir, envVarString);
+		IProcess eclipseProcessWrapper = null;
+		if (phpExeProcess != null) {
+			subMonitor.worked(10);
+			eclipseProcessWrapper = DebugPlugin.newProcess(launch, phpExeProcess, phpExe.toOSString(), processAttributes);
+			if (eclipseProcessWrapper == null) {
+
+				// another error so we stop everything somehow
+				phpExeProcess.destroy();
+				subMonitor.done();
+				DebugPlugin.getDefault().getLaunchManager().removeLaunch(launch);
+				throw new CoreException(new Status(IStatus.ERROR, PHPDebugPlugin.ID, 0, null, null));
+			}
+			target.setProcess(eclipseProcessWrapper);
+			launch.addDebugTarget(target);
+			subMonitor.subTask("waiting for XDebug session");
+			target.waitForInitialSession((DBGpBreakpointFacade) IDELayerFactory.getIDELayer(), GeneralUtils.createSessionPreferences(), monitor);
+
+		} else {
+			// we did not launch
+			DBGpSessionHandler.getInstance().removeSessionListener(target);
+			DebugPlugin.getDefault().getLaunchManager().removeLaunch(launch);
+		}
+		subMonitor.done();
+	}
+

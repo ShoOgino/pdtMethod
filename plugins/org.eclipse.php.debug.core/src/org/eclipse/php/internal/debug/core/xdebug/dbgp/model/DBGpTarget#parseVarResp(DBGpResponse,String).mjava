@@ -1,0 +1,24 @@
+   /**
+    * parse each variable request response, never returns null (IVariable[0])
+    * @param resp
+    * @param reportedLevel
+    * @return
+    */
+   private IVariable[] parseVarResp(DBGpResponse resp, String reportedLevel) {
+      IVariable[] variables = new IVariable[0];
+
+      // If you cannot get a property, then a single variable is created with
+      // no information as their is a child node, if there are no variables
+      // this method creates a 0 size array which is good.
+      if (resp.getErrorCode() == DBGpResponse.ERROR_OK) {
+         Node parent = resp.getParentNode();
+         NodeList properties = parent.getChildNodes();
+         variables = new DBGpVariable[properties.getLength()];
+         for (int i = 0; i < properties.getLength(); i++) {
+            Node property = properties.item(i);
+            variables[i] = new DBGpVariable((DBGpTarget)getDebugTarget(), property, reportedLevel);
+         }
+      }
+      return variables;
+   }
+

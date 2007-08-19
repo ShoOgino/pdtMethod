@@ -1,0 +1,80 @@
+   /**
+    * create and send the breakpoint add command
+    * @param bp
+    * @param onResponseThread
+    */
+   private void sendBreakpointAddCmd(DBGpBreakpoint bp, boolean onResponseThread) {
+      bp.resetConditionChanged();
+      String fileName = bp.getFileName();
+      int lineNumber = bp.getLineNumber();
+
+      // create the add breakpoint command
+      String debugMsg = null;
+      if (DBGpLogger.debugBP()) {
+         debugMsg = "adding breakpoint to file:" + fileName + ", at Line Number: " + lineNumber;
+      }
+      DBGpBreakpointCondition condition = new DBGpBreakpointCondition(bp);
+
+      // if it is a weblaunch, see if we have an active mapper to map the workspace
+      // file to the absolute path of the remote script.
+      if (webLaunch) {
+         IFileMapper mapper = FilenameMapperRegistry.getRegistry().getActiveMapper();
+         if (mapper != null) {
+            try {
+               String mappedFileName = mapper.mapWorkspaceFileToExternal(bp.getIFile(), launch
+                     .getLaunchConfiguration());
+               if (mappedFileName != null) {
+                  fileName = mappedFileName;
+               }
+            }
+            catch (Exception e) {
+               // protect against any exceptions in the user API.
+            }
+         }
+      }
+
+      String args = "-t line -f " + DBGpUtils.getFileURIString(fileName) + " -n " + lineNumber;
+      if (condition.getType() == DBGpBreakpointCondition.EXPR) {
+         if (debugMsg != null) {
+            debugMsg += " with expression:" + condition.getExpression();
+         }
+         args += " -- " + new String(Base64.encode(condition.getExpression().getBytes()));
+      }
+      else if (condition.getType() == DBGpBreakpointCondition.HIT) {
+         if (debugMsg != null) {
+            debugMsg += " with hit :" + condition.getHitCondition() + condition.getHitValue();
+         }
+         args += " -h " + condition.getHitValue() + " -o " + condition.hitCondition;
+      }
+      if (debugMsg != null) {
+         DBGpLogger.debug(debugMsg);
+      }
+
+      DBGpResponse resp;
+      if (onResponseThread) {
+         resp = session.sendSyncCmdOnResponseThread(DBGpCommand.breakPointSet, args);
+      }
+      else {
+         resp = session.sendSyncCmd(DBGpCommand.breakPointSet, args);
+      }
+      if (DBGpUtils.isGoodDBGpResponse(this, resp)) {
+         /*
+          * <response command="breakpoint_set"
+          * transaction_id="TRANSACTION_ID" state="STATE"
+          * id="BREAKPOINT_ID"/>
+          */
+         // TODO: note that you don't get state from XDebug even though the
+         // document says so, assume optional and if not provided, it is enabled.
+         String bpId = resp.getTopAttribute("id");
+         // luckily even though it is a string, the XDebug implementation
+         // defines the id as being a c int.
+         bp.setID(Integer.parseInt(bpId));
+         if (DBGpLogger.debugBP()) {
+            DBGpLogger.debug("Breakpoint installed with id: " + bpId);
+         }
+      }
+      else {
+         // we have already logged the issue as an error
+      }
+   }
+

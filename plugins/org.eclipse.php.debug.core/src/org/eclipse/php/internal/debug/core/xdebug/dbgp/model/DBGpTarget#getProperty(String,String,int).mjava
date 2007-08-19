@@ -1,0 +1,20 @@
+   /**
+    * get a variable at a particular stack level and page number
+    * @param fullName
+    * @param stackLevel
+    * @param page
+    * @return
+    */
+   public Node getProperty(String fullName, String stackLevel, int page) {
+      String args = "-n " + fullName + " -d " + stackLevel + " -p " + page;
+      if (stackLevel.equals("-1")) {
+         // the following line should work but doesn't in 2.0.0rc1 of XDebug
+         // args = "-n " + fullName + " -c 1 -p " + page;
+         // but the following works for both rc1 and beyond so will keep it
+         // like this for now.
+         args = "-n " + fullName + " -d " + getCurrentStackLevel() + " -p " + page;
+      }
+      DBGpResponse resp = session.sendSyncCmd(DBGpCommand.propGet, args);
+      return resp.getParentNode().getFirstChild();
+   }
+

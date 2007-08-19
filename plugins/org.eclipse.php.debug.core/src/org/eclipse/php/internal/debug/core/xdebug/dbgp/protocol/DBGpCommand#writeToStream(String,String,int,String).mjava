@@ -1,0 +1,37 @@
+	private int writeToStream(String command, String args, int cmdId, String encoding) throws IOException {
+		String fullCmd = command + id + cmdId;
+		if (args != null) {
+			fullCmd = fullCmd + " " + args;
+		}
+		if (DBGpLogger.debugCmd()) {
+			DBGpLogger.debug("cmd: " + fullCmd);
+		}
+
+		synchronized (socket) {
+			OutputStream os = socket.getOutputStream();
+			os.write(fullCmd.getBytes(encoding));
+			os.write(0);
+			os.flush();
+
+			/*
+			System.out.print("streamed:");
+			System.out.write(fullCmd.getBytes(encoding));
+			System.out.write(0);
+			System.out.flush();
+			System.out.println();
+			
+			outStream.write(command);
+			outStream.write(id);
+			outStream.write(Integer.toString(cmdId));
+			if (args != null) {
+			   outStream.write(" " + args);
+			}
+			outStream.write(0);
+			outStream.flush();
+			*/
+		}
+		lastIdSent = cmdId;
+		lastCmdSent = fullCmd;
+		return cmdId;
+	}
+

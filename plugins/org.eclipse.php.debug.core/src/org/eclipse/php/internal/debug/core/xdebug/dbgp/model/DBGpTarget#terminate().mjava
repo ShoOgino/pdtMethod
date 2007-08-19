@@ -1,0 +1,43 @@
+   /*
+    * (non-Javadoc)
+    * 
+    * @see org.eclipse.debug.core.model.ITerminate#terminate()
+    */
+   public void terminate() throws DebugException {
+      if (isTerminating()) {
+         // just in case we had some problem sending the stop command, allow
+         // terminate to still work.
+         if (session == null && STATE_TERMINATING == targetState) {
+            terminateDebugTarget(true);
+         }
+         return;
+      }
+
+      // we won't accept any more sessions, so stop listening
+      DBGpSessionHandler.getInstance().removeSessionListener(this);
+
+      if (STATE_STARTED_SUSPENDED == targetState) {
+         // we are suspended, so we can send the stop request to do a clean
+         // termination
+         synchronized (sessionMutex) {
+            if (session != null) {
+               setState(STATE_TERMINATING);
+               session.sendAsyncCmd(DBGpCommand.stop);
+               // we don't terminateDebugTarget here, we wait for the
+               // response from the program under debug
+            }
+            else {
+               terminateDebugTarget(true);
+            }
+         }
+      }
+      else {
+         // we cannot terminate cleanly so we terminate as best we can
+         terminateDebugTarget(true);
+         if (isWebLaunch()) {
+            // We were a web launch so we must now send the stop url
+            sendStopDebugURL();
+         }
+      }
+   }
+

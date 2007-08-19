@@ -1,0 +1,24 @@
+	/*
+	 * (non-Javadoc)
+	 * @see org.eclipse.debug.core.model.IValueModification#setValue(java.lang.String)
+	 */
+	public void setValue(String expression) throws DebugException {
+		// assume never called unless supportsValueModification is true
+		// also assume that will only be called if been verified
+		// BUG in eclipse 3.2: Cell modification doesn't call verify Value and it should. 
+		// It does if you use the editor pane.
+		if (!verifyValue(expression)) {
+			Status stat = new Status(Status.WARNING, PHPDebugPlugin.ID, "setValue called, but verifyValue failed");
+			throw new DebugException(stat);
+			//DebugUIPlugin.errorDialog(Display.getDefault().getActiveShell(), ActionMessages.AssignValueAction_2, MessageFormat.format(ActionMessages.AssignValueAction_3, new String[] {expression, name}), new StatusInfo(IStatus.ERROR, ActionMessages.AssignValueAction_4));  //           
+		} else {
+			// attempt to set the property
+			if (((DBGpTarget) getDebugTarget()).setProperty(this, expression)) {
+				value.setValue(expression);
+				fireEvent(new DebugEvent(this, DebugEvent.CHANGE, DebugEvent.CONTENT));
+			} else {
+				throw new DebugException(new Status(IStatus.ERROR, PHPDebugPlugin.ID, DebugException.TARGET_REQUEST_FAILED, "program under debug rejected value change", null));
+			}
+		}
+	}
+

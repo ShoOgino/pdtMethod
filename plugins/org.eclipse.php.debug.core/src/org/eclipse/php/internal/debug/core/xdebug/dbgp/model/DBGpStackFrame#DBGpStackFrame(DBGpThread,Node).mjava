@@ -1,0 +1,49 @@
+	public DBGpStackFrame(DBGpThread threadOwner, Node stackData) {
+		super(threadOwner.getDebugTarget());
+		owningThread = threadOwner;
+
+		// parse the xml information about a stack
+
+		/*
+		    <stack level="{NUM}"
+		           type="file|eval|?"
+		           filename="..."
+		           lineno="{NUM}"
+		           where=""
+		           cmdbegin="line_number:offset"
+		           cmdend="line_number:offset"/>
+		    <stack level="{NUM}"
+		           type="file|eval|?"
+		           filename="..."
+		           lineno="{NUM}">
+		        <input level="{NUM}"
+		               type="file|eval|?"
+		               filename="..."
+		               lineno="{NUM}"/>
+		    </stack>
+		</response>       
+		       */
+
+		String line = DBGpResponse.getAttribute(stackData, "lineno");
+		stackLevel = DBGpResponse.getAttribute(stackData, "level");
+		lineNo = Integer.parseInt(line);
+		qualifiedFile = DBGpUtils.getFilenameFromURIString(DBGpResponse.getAttribute(stackData, "filename"));
+		qualifiedFile = ((DBGpTarget) getDebugTarget()).mapInboundFileIfRequired(qualifiedFile);
+		// check to see if the file exists in the workspace
+		IFile file = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(qualifiedFile));//             findFilesForLocation(new Path(fileName));
+		if (file != null) {
+
+			// file is in the workspace, need to locate it 
+
+			//BUG 2: debugger doesn't distinguish between files of the same name in a different project
+			//       however, because we are returning info relative to a project, if another project has 
+			//       the same structure the lookup may go to the wrong one.
+			//fileName = file.getFullPath().toString();  // to have multiple project granularity, but doesn't work with PHP IDE 
+			fileName = file.getProjectRelativePath().toString();
+			name = fileName + "." + DBGpResponse.getAttribute(stackData, "where") + " : lineno " + lineNo;
+		} else {
+			fileName = null;
+			name = qualifiedFile + "." + DBGpResponse.getAttribute(stackData, "where") + " : lineno " + lineNo;
+		}
+	}
+

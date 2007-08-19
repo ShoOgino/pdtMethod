@@ -1,0 +1,63 @@
+	/**
+	 * DBGp protocol is as follows
+	 * "xxx\0" where xxx is the length of the message to follow
+	 * "message\0" where message is the data we are interested in.
+	 * @return
+	 */
+	private byte[] readResponse() {
+		byte byteArray[];
+		byte receivedByte;
+		int remainingBytesToRead = 0;
+
+		try {
+
+			// the first part of the DBGp protocol is the length
+			// as a string, so we read it and convert it to an int
+			while ((receivedByte = DBGpReader.readByte()) != 0) {
+				remainingBytesToRead = remainingBytesToRead * 10 + receivedByte - 48;
+			}
+
+			byteArray = new byte[remainingBytesToRead];
+			int totalBytesSoFar = 0;
+			while ((remainingBytesToRead > 0)) {
+
+				// need to handle situation where we could block still waiting for more info ?
+				int bytesReceived = DBGpReader.read(byteArray, totalBytesSoFar, remainingBytesToRead);
+				remainingBytesToRead -= bytesReceived;
+				totalBytesSoFar += bytesReceived;
+			}
+
+			// final part of the protocol is a null value
+			if ((DBGpReader.readByte()) != 0) {
+				//unexpected message so the message is not valid, end the session as things
+				//could become very confused.
+				endSession();
+				return null;
+			}
+		} catch (IOException e) {
+			// the exception could be caused by the user terminating or disconnecting
+			// however due to the nature of the debug framework, a termination request
+			// may not be sent to the debug target or may be sent after it terminates
+			// the process, so we cannot rely on testing the debug target for it's
+			// state to determine if there has been any user activity that may
+			// have caused this. 
+			// we could have tested and even check the type of exception but on windows
+			// you get SocketException: Connection Reset and on Linux you get
+			// EOFException, so for other platforms you don't know what to expect as an
+			// exception. So it is better to ignore the information
+			endSession();
+			return null;
+		}
+
+		try {
+			if (DBGpLogger.debugResp()) {
+				DBGpLogger.debug("Response: " + new String(byteArray, sessionEncoding));
+			}
+			return byteArray;
+		} catch (UnsupportedEncodingException e) {
+			DBGpLogger.logException("UnsupportedEncodingException - 2", this, e);
+			endSession();
+		}
+		return null;
+	}
+

@@ -1,0 +1,35 @@
+	public DBGpSession(Socket connection) {
+		creationTime = System.currentTimeMillis();
+		DBGpSocket = connection;
+		sessionEncoding = DEFAULT_SESSION_ENCODING;
+
+		boolean isGood = false;
+		try {
+			DBGpCmd = new DBGpCommand(DBGpSocket);
+			DBGpReader = new DataInputStream(DBGpSocket.getInputStream());
+			socketClosed = false;
+			byte[] response = readResponse();
+			if (response != null) {
+				DBGpResponse parsedResponse = new DBGpResponse();
+				parsedResponse.parseResponse(response);
+				if (DBGpResponse.INIT == parsedResponse.getType()) {
+					ideKey = parsedResponse.getIdekey();
+					sessionId = parsedResponse.getSession();
+					initialScript = DBGpUtils.getFilenameFromURIString(parsedResponse.getFileUri());
+					isGood = true;
+				}
+			}
+
+			if (!isGood) {
+				endSession();
+			}
+
+		} catch (UnsupportedEncodingException e) {
+			DBGpLogger.logException("UnsupportedEncodingException - 1", this, e);
+			endSession();
+		} catch (IOException e) {
+			DBGpLogger.logException("IOException - 1", this, e);
+			endSession();
+		}
+	}
+

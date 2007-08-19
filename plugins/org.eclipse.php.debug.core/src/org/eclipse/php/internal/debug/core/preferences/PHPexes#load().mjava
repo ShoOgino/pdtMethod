@@ -1,0 +1,44 @@
+	// Load executables from the preferences.
+	private void load() {
+		Preferences prefs = PHPProjectPreferences.getModelPreferences();
+		items = new HashMap<String, HashMap<String, PHPexeItem>>();
+		loadExtensions();
+		String namesString = prefs.getString(PHPDebugCorePreferenceNames.INSTALLED_PHP_NAMES);
+		if (namesString == null) {
+			namesString = "";
+		}
+		final String[] names = namesString.length() > 0 ? namesString.split(SEPARATOR) : new String[0];
+		String locationsString = prefs.getString(PHPDebugCorePreferenceNames.INSTALLED_PHP_LOCATIONS);
+		if (locationsString == null) {
+			locationsString = "";
+		}
+		final String[] locations = locationsString.length() > 0 ? locationsString.split(SEPARATOR) : new String[0];
+		String debuggersString = prefs.getString(PHPDebugCorePreferenceNames.INSTALLED_PHP_DEBUGGERS);
+		if (debuggersString == null) {
+			debuggersString = "";
+		}
+		final String[] debuggers = debuggersString.length() > 0 ? debuggersString.split(SEPARATOR) : new String[0];
+		String defaultsString = prefs.getString(PHPDebugCorePreferenceNames.INSTALLED_PHP_DEFAULTS);
+		if (defaultsString == null) {
+			defaultsString = "";
+		}
+		final String[] defaults = defaultsString.length() > 0 ? debuggersString.split(SEPARATOR) : new String[0];
+
+		assert names.length == locations.length;
+		for (int i = 0; i < locations.length; i++) {
+			final PHPexeItem item = new PHPexeItem(names[i], locations[i], debuggers[i]);
+			if (item.getPhpEXE() != null) {
+				addItem(item);
+			}
+			// Set the default item.
+			if (Boolean.parseBoolean(defaults[i])) {
+				setDefaultItem(item);
+			}
+		}
+		//		final String defaultLocationString = prefs.getString(PHPDebugCorePreferenceNames.DEFAULT_PHP);
+		//		if (defaultLocationString != null && defaultLocationString.length() > 0)
+		//			defaultItem = (PHPexeItem) items.get(defaultLocationString);
+		//		if (defaultItem == null && items.size() > 0)
+		//			defaultItem = getItems()[0];
+	}
+

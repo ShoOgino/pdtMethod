@@ -1,3 +1,6 @@
+	/*
+	 * Load the PHP executables that were defined in the extensions.
+	 */
 	private void loadExtensions() {
 		final IExtensionRegistry registry = Platform.getExtensionRegistry();
 		final IConfigurationElement[] elements = registry.getConfigurationElementsFor(PHPDebugPlugin.getID(), EXTENSION_POINT_NAME);
@@ -10,6 +13,11 @@
 				final String name = element.getAttribute(NAME_ATTRIBUTE);
 				String location = element.getAttribute(LOCATION_ATTRIBUTE);
 				final String version = element.getAttribute(VERSION_ATTRIBUTE);
+				String debuggerID = element.getAttribute(DEBUGGER_ID_ATTRIBUTE);
+				if (debuggerID == null || debuggerID.equals("")) {
+					// The debugger id is an optional field, so in case that none was entered assign the debugger to Zend. 
+					debuggerID = DebuggerCommunicationDaemon.ZEND_DEBUGGER_ID;
+				}
 				final boolean isDefault = "true".equalsIgnoreCase(element.getAttribute(DEFAULT_ATTRIBUTE));
 
 				if (isWindows)
@@ -24,11 +32,12 @@
 						final String filename = url.getFile();
 						final File file = new File(filename);
 						if (file.exists()) {
-							final PHPexeItem newItem = new PHPexeItem(name, file, false);
+							final PHPexeItem newItem = new PHPexeItem(name, file, debuggerID, false);
 							newItem.setVersion(version);
-							items.put(name, newItem);
-							if (isDefault)
-								defaultItem = newItem;
+							addItem(newItem);
+							if (isDefault) {
+								setDefaultItem(newItem);
+							}
 							itemFound = true;
 							if (!isWindows)
 								// Try to setup permissions of this file:

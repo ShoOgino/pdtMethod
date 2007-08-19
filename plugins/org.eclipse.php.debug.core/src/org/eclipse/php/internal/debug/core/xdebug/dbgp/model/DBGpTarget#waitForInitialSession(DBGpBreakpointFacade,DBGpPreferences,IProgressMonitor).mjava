@@ -1,0 +1,47 @@
+   /**
+    * wait for the initial dbgp session to be established
+    * 
+    * @param launchMonitor
+    */
+   public void waitForInitialSession(DBGpBreakpointFacade facade, DBGpPreferences sessionPrefs,
+         IProgressMonitor launchMonitor) {
+      bpFacade = facade;
+      sessionPreferences = sessionPrefs;
+      setState(STATE_INIT_SESSION_WAIT);
+
+      try {
+         while (session == null && !launch.isTerminated() && !isTerminating()
+               && !launchMonitor.isCanceled()) {
+
+            // if we got here then session has not been updated
+            // by the other thread yet, so wait. We wait for
+            // an event or a timeout. Even if we timeout we could
+            // still get the session before we re-enter the loop.
+//            te.waitForEvent(DBGpSessionHandler.getInstance().getTimeout());
+            te.waitForEvent(XDebugPreferenceInit.getTimeoutDefault());
+         }
+
+         if (session != null && session.isActive()) {
+            if (!isTerminating() && !launch.isTerminated() && !launchMonitor.isCanceled()) {
+               langThread = new DBGpThread(this);
+               allThreads = new IThread[] {langThread};
+               langThread.fireCreationEvent();
+               DebugPlugin.getDefault().getBreakpointManager().addBreakpointListener(this);
+               initiateSession();
+            }
+            else {
+               session.endSession();
+               terminateDebugTarget(true);
+            }
+         }
+         else {
+            terminateDebugTarget(true);
+         }
+      }
+      catch (Exception e) {
+         // cannot proceed any further as we will never be able to get a
+         // session. The exception doesn't need logging.
+         terminateDebugTarget(true);
+      }
+   }
+

@@ -1,0 +1,119 @@
+	public void launch(ILaunchConfiguration configuration, String mode, ILaunch launch, IProgressMonitor monitor) throws CoreException {
+		if (!DaemonPlugin.getDefault().validateCommunicationDaemons(DebuggerCommunicationDaemon.ZEND_DEBUGGER_ID)) {
+			monitor.setCanceled(true);
+			monitor.done();
+			return;
+		}
+		if (!mode.equals(ILaunchManager.DEBUG_MODE)) {
+			DebugPlugin.getDefault().getLaunchManager().removeLaunch(launch);
+			return;
+		}
+
+		if (XDebugLaunchListener.getInstance().isWebLaunchActive()) {
+			displayErrorMessage("Web Launch Already Running");
+			DebugPlugin.getDefault().getLaunchManager().removeLaunch(launch);
+			return;
+		}
+		PHPLaunchUtilities.showDebugView();
+
+		// Resolve the Server
+		Server server = ServersManager.getServer(configuration.getAttribute(Server.NAME, ""));
+		if (server == null) {
+			Logger.log(Logger.ERROR, "Launch configuration could not find server");
+			displayErrorMessage("Could not launch.\nInvalid server configuration.");
+			DebugPlugin.getDefault().getLaunchManager().removeLaunch(launch);
+			return;
+		}
+
+		// Get the project from the file name      
+		String fileName = configuration.getAttribute(Server.FILE_NAME, (String) null);
+		IPath filePath = new Path(fileName);
+		IProject proj = null;
+		try {
+			proj = ResourcesPlugin.getWorkspace().getRoot().getProject(filePath.segment(0));
+		} catch (Throwable t) {
+			if (proj == null) {
+				Logger.logException("Could not execute the debug (Project is null).", t);
+				return;
+			}
+		}
+
+		// Publish the files if specified.
+		boolean publish = configuration.getAttribute(Server.PUBLISH, false);
+		if (publish) {
+			if (!FileUtil.publish(server, proj, configuration, DeployFilter.getFilterMap(), monitor)) {
+				// Return if the publish failed.
+				displayErrorMessage(PHPServerCoreMessages.getString("FileUtil.serverPublishError"));
+				DebugPlugin.getDefault().getLaunchManager().removeLaunch(launch);
+				return;
+			}
+		}
+
+		// save the project name for source lookup
+		ILaunchConfigurationWorkingCopy wc = configuration.getWorkingCopy();
+		String project = proj.getFullPath().toString();
+		wc.setAttribute(IPHPConstants.PHP_Project, project);
+		wc.doSave();
+
+		// determine stop at first line (first calc the default and then try to extract the configuration attribute).
+		IDELayer ide = IDELayerFactory.getIDELayer();
+		boolean stopAtFirstLine = ide.getStopAtFirstLine(proj);
+		stopAtFirstLine = wc.getAttribute(IDebugParametersKeys.FIRST_LINE_BREAKPOINT, stopAtFirstLine);
+
+		// determine from eclipse config whether we use an internal browser or
+		// an external browser.
+		final boolean openExternal = openExternal();
+		final Exception[] exception = new Exception[1];
+		final IWebBrowser[] browser = new IWebBrowser[1];
+		if (openExternal) {
+			browser[0] = PlatformUI.getWorkbench().getBrowserSupport().getExternalBrowser();
+		}
+
+		// Generate a session id for this launch and start the listener
+		// then create the start and stop debug URLs
+		String ideKey = DBGpSessionHandler.getInstance().getIDEKey();
+		String sessionId = DBGpSessionHandler.getInstance().generateSessionId();
+		//		String baseURL = configuration.getAttribute(XDebugUIAttributeConstants.SERVER_CONFIG_URL, "");
+		String baseURL = new String(configuration.getAttribute(Server.BASE_URL, "").getBytes());
+		String[] startStopURLs = generateStartStopURLs(baseURL, sessionId, ideKey);
+		final String startDebugURL = startStopURLs[0];
+		final String stopDebugURL = startStopURLs[1];
+
+		// create the debug target and launch 
+		DBGpTarget target = new DBGpTarget(launch, null, stopDebugURL, ideKey, null, stopAtFirstLine, browser[0]);
+		DBGpSessionHandler.getInstance().addSessionListener(target);
+
+		IProgressMonitor subMonitor = new SubProgressMonitor(monitor, 30);
+		subMonitor.beginTask("Launching browser", 10);
+
+		Display.getDefault().syncExec(new Runnable() {
+			public void run() {
+				try {
+					if (openExternal) {
+						browser[0].openURL(new URL(startDebugURL));
+					} else {
+						DBGpUtils.openInternalBrowserView(startDebugURL);
+					}
+				} catch (Exception t) {
+					Logger.logException("Error initializing the web browser.", t);
+					exception[0] = t;
+				}
+			}
+		});
+
+		subMonitor.worked(10);
+
+		// did the external browser start ok ?
+		if (exception[0] == null) {
+			launch.addDebugTarget(target);
+			subMonitor.subTask("waiting for XDebug session");
+			target.waitForInitialSession((DBGpBreakpointFacade) IDELayerFactory.getIDELayer(), GeneralUtils.createSessionPreferences(), monitor);
+		} else {
+			// display an error about not being able to launch a browser
+			Logger.logException("we have an exception on the browser", exception[0]);
+			DBGpSessionHandler.getInstance().removeSessionListener(target);
+			DebugPlugin.getDefault().getLaunchManager().removeLaunch(launch);
+		}
+		subMonitor.done();
+	}
+

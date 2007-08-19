@@ -1,0 +1,61 @@
+   /*
+    * (non-Javadoc)
+    * 
+    * @see org.eclipse.debug.core.IBreakpointListener#breakpointChanged(org.eclipse.debug.core.model.IBreakpoint,
+    *      org.eclipse.core.resources.IMarkerDelta)
+    */
+   public void breakpointChanged(IBreakpoint breakpoint, IMarkerDelta delta) {
+      IBreakpointManager bmgr = DebugPlugin.getDefault().getBreakpointManager();
+      if (!bmgr.isEnabled()) {
+         return;
+      }
+      int deltaLNumber = delta.getAttribute(IMarker.LINE_NUMBER, 0);
+      IMarker marker = breakpoint.getMarker();
+      int lineNumber = marker.getAttribute(IMarker.LINE_NUMBER, 0);
+      if (supportsBreakpoint(breakpoint)) {
+         try {
+
+            // did the condition change ?
+            DBGpBreakpoint bp = bpFacade.createDBGpBreakpoint(breakpoint);
+            if (bp.hasConditionChanged()) {
+               if (DBGpLogger.debugBP()) {
+                  DBGpLogger.debug("condition changed for breakpoint with ID: " + bp.getID());
+               }
+               bp.resetConditionChanged();
+               if (breakpoint.isEnabled()) {
+                  breakpointRemoved(breakpoint, null);
+               }
+               else {
+                  return;
+               }
+            }
+
+            // did the line number change ?
+            if (lineNumber != deltaLNumber) {
+               if (DBGpLogger.debugBP()) {
+                  DBGpLogger.debug("line number changed for breakpoint with ID: " + bp.getID());
+               }
+
+               if (breakpoint.isEnabled()) {
+                  breakpointRemoved(breakpoint, null);
+               }
+               else {
+                  return;
+               }
+            }
+
+            // add or remove the break point depending on whether it was
+            // enabled or not
+            if (breakpoint.isEnabled()) {
+               breakpointAdded(breakpoint);
+            }
+            else {
+               breakpointRemoved(breakpoint, null);
+            }
+         }
+         catch (CoreException e) {
+            DBGpLogger.logException("Exception Changing Breakpoint", this, e);
+         }
+      }
+   }
+

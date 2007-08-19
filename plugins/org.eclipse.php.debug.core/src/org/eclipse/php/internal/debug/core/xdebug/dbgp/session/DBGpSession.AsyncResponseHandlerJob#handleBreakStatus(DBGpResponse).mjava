@@ -1,0 +1,32 @@
+		/**
+		 * script has suspended
+		 * @param parsedResponse
+		 */
+		private void handleBreakStatus(DBGpResponse parsedResponse) {
+			// Handle the break status response information. 
+			// this occurs when 
+			// 1. a break point is hit
+			// 2. a step command ends and we are suspended
+			// 3. a command has failed, you get the status = break, reason=ok, then you get the error information
+			if (parsedResponse.getStatus().equals(DBGpResponse.STATUS_BREAK)) {
+				// we have suspended, so now we can go off and handle outstanding breakpoint requests
+				//debugTarget.processDBGpQueuedCmds();
+				if (parsedResponse.getReason().equals(DBGpResponse.REASON_OK)) {
+					// we have hit a breakpoint, or completed a step
+					String cmd = parsedResponse.getCommand();
+
+					if (cmd.equals(DBGpCommand.run)) {
+						// breakpoint hit, cannot fire the suspended event until stack is created, thread info
+						// setup.
+						processBreakpointHit();
+					} else if (cmd.equals(DBGpCommand.stepInto) || cmd.equals(DBGpCommand.StepOut) || cmd.equals(DBGpCommand.stepOver)) {
+						// step hit
+						// no need to setup any information ? 
+						debugTarget.suspended(DebugEvent.STEP_END);
+					} else {
+						// we got another status response, probably due to cannot get property error
+					}
+				}
+			}
+		}
+

@@ -1,0 +1,33 @@
+   /**
+    * set a variable to a particular value
+    * @param fullName
+    * @param stackLevel
+    * @param data
+    * @return
+    */
+   public boolean setProperty(DBGpVariable var, String data) {
+
+      // XDebug expects all data to be base64 encoded.
+      String encoded = new String(Base64.encode(data.getBytes()));
+      String fullName = var.getFullName();
+      String stackLevel = var.getStackLevel();
+      String args = "-n " + fullName + " -d " + stackLevel + " -l " + encoded.length() + " -- "
+            + encoded;
+      try {
+         if (var.getReferenceTypeName().equals(DBGpVariable.PHP_STRING)) {
+            // this ensures XDebug doesn't use eval
+            args = "-t string " + args;
+         }
+      }
+      catch (DebugException e) {
+
+      }
+      DBGpResponse resp = session.sendSyncCmd(DBGpCommand.propSet, args);
+      if (resp.getTopAttribute("success").equals("1")) {
+         return true;
+      }
+      else {
+         return false;
+      }
+   }
+

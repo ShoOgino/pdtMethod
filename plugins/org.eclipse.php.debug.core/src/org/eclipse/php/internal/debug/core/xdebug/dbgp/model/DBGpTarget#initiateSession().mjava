@@ -1,0 +1,39 @@
+   /**
+    * initiate the session, this cannot be called from the DBGpSession
+    * response handler thread as we install breakpoints synchronously and block
+    * waiting for the response thread to pick them up, so we will deadlock
+    * 
+    */
+   private void initiateSession() {
+      if (targetState != STATE_INIT_SESSION_WAIT && targetState != STATE_STARTED_SESSION_WAIT) {
+         DBGpLogger.logWarning("initiateSession in Wrong State: " + targetState, this, null);
+      }
+      refreshStackFrames = true;
+      superGlobalVars = null;
+      session.startSession();
+      // we are effectively suspended once the session has handshaked until we
+      // run
+      setState(STATE_STARTED_SUSPENDED);
+
+      try {
+         loadPredefinedBreakpoints();
+         negotiateDBGpFeatures();
+         if (!stopAtStart) {
+            //resume();
+
+            if (session != null) {
+               session.sendAsyncCmd(DBGpCommand.run);
+               setState(STATE_STARTED_RUNNING);
+            }
+
+         }
+         else {
+            // try to say we have suspended, then do a step_into
+            suspended(DebugEvent.BREAKPOINT);
+            stepInto();
+         }
+      }
+      catch (DebugException e) {
+      }
+   }
+

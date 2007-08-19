@@ -1,0 +1,21 @@
+	/**
+	 * Update the "org.eclipse.php.debug.ui.activeDebugging" system property. 
+	 * This method is important for any action that is defined to be visible when a debug session is 
+	 * active (such as the Run to Line action).
+	 * 
+	 * @param launches
+	 */
+	public void updateStatus(ILaunch[] launches, boolean added) {
+		boolean hasActiveLaunch = false;
+		for (int i = 0; i < launches.length; i++) {
+			ILaunch launch = launches[i];
+			IDebugTarget target = launch.getDebugTarget();
+			if (target instanceof DBGpTarget && ((DBGpTarget) target).isWebLaunch()) {
+				// this is a web launch
+				webLaunchActive = added;
+			}
+			hasActiveLaunch |= !launch.isTerminated();
+		}
+		System.setProperty(SYSTEM_DEBUG_PROPERTY, hasActiveLaunch ? "true" : "false");
+	}
+

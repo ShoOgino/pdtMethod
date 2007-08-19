@@ -1,0 +1,34 @@
+		/**
+		 * process a suspend from a breakpoint
+		 *
+		 */
+		private void processBreakpointHit() {
+			// ok we hit a break point somewhere, we need to get the stack information
+			// to find out which breakpoint we hit as no info is provided in the
+			// response. We cannot use the DBGpTarget version here as we do
+			// an async call. Plus we need to handle the possibility of STATUS_STOPPED
+			// being returned.
+
+			//Todo: Improvement: update DBGpTarget with the latest stack information         
+			DBGpResponse parsedResponse = sendSyncCmdOnResponseThread(DBGpCommand.stackGet, null);
+			if (parsedResponse != null) {
+
+				// we could have received a stop here so we need to check for this
+				if (parsedResponse.getStatus().equals(DBGpResponse.STATUS_STOPPED)) {
+					handleStopStatus();
+				} else {
+					Node stackData = parsedResponse.getParentNode().getFirstChild(); // get the first stack entry
+					String line = DBGpResponse.getAttribute(stackData, "lineno");
+					int lineno = 0;
+					try {
+						lineno = Integer.parseInt(line);
+						String filename = DBGpUtils.getFilenameFromURIString(DBGpResponse.getAttribute(stackData, "filename"));
+						filename = debugTarget.mapInboundFileIfRequired(filename);
+						debugTarget.breakpointHit(filename, lineno);
+					} catch (NumberFormatException nfe) {
+						DBGpLogger.logException("Unexpected number format exception", this, nfe);
+					}
+				}
+			}
+		}
+

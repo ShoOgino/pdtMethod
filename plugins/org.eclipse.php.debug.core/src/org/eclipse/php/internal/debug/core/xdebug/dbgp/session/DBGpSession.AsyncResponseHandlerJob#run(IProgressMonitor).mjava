@@ -1,0 +1,46 @@
+		protected IStatus run(IProgressMonitor monitor) {
+			byte[] response = null;
+			while (!socketClosed) {
+				// here we need to block waiting for a reponse
+				// then process that response
+				response = readResponse();
+				if (response != null) {
+					DBGpResponse parsedResponse = new DBGpResponse();
+					parsedResponse.parseResponse(response);
+					// allow cannot get property error as this is allowed.
+					if (parsedResponse.getErrorCode() == DBGpResponse.ERROR_OK || parsedResponse.getErrorCode() == DBGpResponse.ERROR_CANT_GET_PROPERTY) {
+
+						if (DBGpResponse.RESPONSE == parsedResponse.getType()) {
+
+							// The response handler only processes stop and break
+							// status responses, all others are ignored or returned
+							// to a sync caller.
+							if (parsedResponse.getStatus().equals(DBGpResponse.STATUS_STOPPED)) {
+								handleStopStatus();
+							} else if (parsedResponse.getStatus().equals(DBGpResponse.STATUS_BREAK)) {
+								handleBreakStatus(parsedResponse);
+							}
+						} else if (DBGpResponse.STREAM == parsedResponse.getType()) {
+							handleStreamData(parsedResponse);
+						} else {
+							DBGpLogger.logWarning("Unknown type of XML: " + response, DBGpSession.this, null);
+						}
+					}
+					unblockSyncCaller(parsedResponse);
+				}
+			}
+
+			// if the socket is closed or the session terminated then we inform the debug target
+			try {
+				// wait a very brief period to ensure console
+				// displays everything before stating the debug
+				// session has ended.
+				Thread.sleep(50);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			debugTarget.sessionEnded();
+			return Status.OK_STATUS;
+		}
+

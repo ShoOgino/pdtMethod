@@ -1,0 +1,50 @@
+   /*
+    * (non-Javadoc)
+    * 
+    * @see org.eclipse.debug.core.IBreakpointListener#breakpointAdded(org.eclipse.debug.core.model.IBreakpoint)
+    */
+   public void breakpointAdded(IBreakpoint breakpoint) {
+      if (!DebugPlugin.getDefault().getBreakpointManager().isEnabled()) {
+         return;
+      }
+
+      if (supportsBreakpoint(breakpoint)) {
+         try {
+            if (breakpoint.isEnabled()) {
+               DBGpBreakpoint bp = bpFacade.createDBGpBreakpoint(breakpoint);
+               if (asyncSupported || isSuspended()) {
+                  // we are suspended or async mode is supported so send the
+                  // breakpoint
+                  if (DBGpLogger.debugBP()) {
+                     DBGpLogger.debug("Breakpoint Add requested immediately");
+                  }
+                  sendBreakpointAddCmd(bp, false);
+               }
+               else {
+
+                  // we are not suspended and async mode is not supported
+                  // so if we send a breakpoint command we may not get a
+                  // response at all or may get a response when the script
+                  // suspends on another breakpoint which will hang the 
+                  // gui if we send it synchronously.
+                  // Async would require the read thread to handle
+                  // the response, locate the breakpoint from the txn_id
+                  // and add the id to the runtimeBreakpoint. 
+                  // We cannot guarantee that the debug server will hold
+                  // the request until the script suspends and even queue
+                  // multiple requests, so the best bet is to 
+                  // queue the requests until we suspend. 
+                  if (DBGpLogger.debugBP()) {
+                     DBGpLogger.debug("Breakpoint Add deferred until suspended");
+                  }
+                  DBGpBreakpointCmd bpSet = new DBGpBreakpointCmd(DBGpCommand.breakPointSet, bp);
+                  queueBpCmd(bpSet);
+               }
+            }
+         }
+         catch (CoreException e) {
+            DBGpLogger.logException("Exception adding breakpoint", this, e);
+         }
+      }
+   }
+

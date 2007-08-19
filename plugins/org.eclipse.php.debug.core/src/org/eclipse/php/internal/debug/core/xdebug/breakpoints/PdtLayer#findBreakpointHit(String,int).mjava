@@ -1,0 +1,38 @@
+	public IBreakpoint findBreakpointHit(String filename, int lineno) {
+		IBreakpoint bpFound = null;
+		IBreakpoint[] breakpoints = DebugPlugin.getDefault().getBreakpointManager().getBreakpoints(getBreakpointModelID());
+		for (int i = 0; i < breakpoints.length; i++) {
+			IBreakpoint breakpoint = breakpoints[i];
+			if (supportsBreakpoint(breakpoint)) {
+				if (breakpoint instanceof PHPLineBreakpoint) {
+					PHPLineBreakpoint lineBreakpoint = (PHPLineBreakpoint) breakpoint;
+					Breakpoint zBP = lineBreakpoint.getRuntimeBreakpoint();
+					String bFileName = zBP.getFileName();
+					int bLineNumber = zBP.getLineNumber();
+					if (bLineNumber == lineno && bFileName.equals(filename)) {
+						bpFound = breakpoint;
+						if (Logger.isDebugging()) {
+							Logger.debugMSG("breakpoint at " + filename + "(" + lineno + ") found");
+						}
+
+					}
+
+					// remove all RunToLine breakpoints while we search through the
+					// list of all our breakpoints looking for the one that was hit
+					if (breakpoint instanceof PHPRunToLineBreakpoint) {
+						IBreakpointManager bmgr = DebugPlugin.getDefault().getBreakpointManager();
+						try {
+							if (Logger.isDebugging()) {
+								Logger.debugMSG("removing runtoline breakpoint");
+							}
+							bmgr.removeBreakpoint(breakpoint, true);
+						} catch (CoreException e) {
+							Logger.logException("Exception trying to remove a runtoline breakpoint", e);
+						}
+					}
+				}
+			}
+		}
+		return bpFound;
+	}
+

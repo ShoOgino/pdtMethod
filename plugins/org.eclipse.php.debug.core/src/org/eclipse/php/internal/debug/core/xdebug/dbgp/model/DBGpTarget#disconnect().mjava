@@ -1,0 +1,30 @@
+   /*
+    * (non-Javadoc)
+    * 
+    * @see org.eclipse.debug.core.model.IDisconnect#disconnect()
+    */
+   public void disconnect() throws DebugException {
+      if (isTerminating()) {
+         return;
+      }
+      if (STATE_STARTED_RUNNING == targetState || STATE_STARTED_SUSPENDED == targetState) {
+         // we are in the middle of a debug session, single or multi
+         // makes no difference, we should stop it
+         setState(STATE_DISCONNECTED);
+         if (session != null) {
+            if (process != null) {
+               session.sendAsyncCmd(DBGpCommand.detach);
+               terminateDebugTarget(false);
+            }
+            else {
+               // try this first
+               session.sendSyncCmd(DBGpCommand.stop);
+               stepping = false;
+               langThread.setBreakpoints(null);
+               setState(STATE_STARTED_SESSION_WAIT);
+               resumed(DebugEvent.RESUME);
+            }
+         }
+      }
+   }
+

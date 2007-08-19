@@ -1,0 +1,52 @@
+   /**
+    * queue a breakpoint command to be actioned once the script suspends
+    * @param bpCmd
+    */
+   private void queueBpCmd(DBGpBreakpointCmd bpCmd) {
+      // Rules are
+      // 1. a remove can delete a previous add and not be queued
+      // 2. all other removes must be honoured
+      // 3. all adds must be honoured (they cannot delete a remove)
+      // 4. problem with the sequence of add/remove is that the remove
+      // cannot work because the add has not been done yet so a
+      // remove must always rebuild the the argument set.
+      // I hope that if we have removed a breakpoint so long as we
+      // hold the reference we can still use the information such as
+      // marker information ?
+      // the queue must only ever have a single remove, add or remove/add (not
+      // add/remove)
+      // for a specific file and line
+      if (bpCmd.getCmd().equals(DBGpCommand.breakPointRemove)) {
+         // search vector in reverse to see if there is an add that matches
+         // and remove it
+         boolean foundAdd = false;
+         if (DBGpCmdQueue.size() > 0) {
+
+            for (int i = DBGpCmdQueue.size() - 1; i >= 0 && !foundAdd; i--) {
+               DBGpBreakpointCmd entry = (DBGpBreakpointCmd)DBGpCmdQueue.get(i);
+               if (entry.getCmd().equals(DBGpCommand.breakPointSet)) {
+                  if (bpCmd.getBp().getFileName().equals(entry.getBp().getFileName())
+                        && bpCmd.getBp().getLineNumber() == entry.getBp().getLineNumber()) {
+
+                     // ok we have an entry that is an Add, the filename and lineNumber are
+                     // the same so we found the entry so let's remove it.
+                     foundAdd = true;
+                     DBGpCmdQueue.remove(i);
+                     if (DBGpLogger.debugBP()) {
+                        DBGpLogger.debug("removed a breakpoint command: " + entry);
+                     }
+                  }
+               }
+            }
+         }
+         if (!foundAdd) {
+            // add the remove as no add found
+            DBGpCmdQueue.add(bpCmd);
+         }
+      }
+      else {
+         // always add an add
+         DBGpCmdQueue.add(bpCmd);
+      }
+   }
+

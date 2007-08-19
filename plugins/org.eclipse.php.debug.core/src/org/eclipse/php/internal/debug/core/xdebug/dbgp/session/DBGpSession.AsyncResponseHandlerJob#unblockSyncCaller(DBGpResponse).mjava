@@ -1,0 +1,25 @@
+		/**
+		 * unblock a sync caller 
+		 * @param parsedResponse
+		 */
+		private void unblockSyncCaller(DBGpResponse parsedResponse) {
+			// look to see if another thread is waiting for this response, if not then
+			// the response is lost
+			// must protect if the response doesn't include a txn id
+			Integer idObj = null;
+			try {
+				idObj = new Integer(parsedResponse.getId());
+			} catch (NumberFormatException nfe) {
+				idObj = new Integer(DBGpCmd.getLastIdSent());
+			}
+			if (savedResponses.containsKey(idObj)) {
+				Event idev = (Event) savedResponses.get(idObj);
+				savedResponses.put(idObj, parsedResponse);
+				idev.signalEvent();
+			} else {
+				// no one waiting for the response, so we need to check the response was
+				// ok and generate log info
+				DBGpUtils.isGoodDBGpResponse(this, parsedResponse);
+			}
+		}
+

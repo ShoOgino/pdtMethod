@@ -1,0 +1,34 @@
+	// Load the debuggers into the map.
+	// Do this only once.
+	private void loadDebuggers() {
+		final IExtensionRegistry registry = Platform.getExtensionRegistry();
+		final IConfigurationElement[] elements = registry.getConfigurationElementsFor(PHPDebugPlugin.getID(), EXTENSION_POINT_NAME);
+		for (IConfigurationElement element : elements) {
+			if (DEBUGGER_TAG.equals(element.getName())) {
+				final String name = element.getAttribute(NAME_ATTRIBUTE);
+				final String id = element.getAttribute(ID_ATTRIBUTE);
+				debuggers.put(id, name);
+				try {
+					AbstractDebuggerConfiguration configuration = (AbstractDebuggerConfiguration) element.createExecutableExtension(CONFIGURATION_CLASS_ATTRIBUTE);
+					configuration.setDebuggerId(id);
+					configuration.setName(name);
+					try {
+						ICommunicationDaemon[] daemons = CommunicationDaemonRegistry.getBestMatchCommunicationDaemons();
+						// find the daemon that fits this configuration (match by debugger-id)
+						for (ICommunicationDaemon daemon : daemons) {
+							if (daemon.isDebuggerDaemon() && id.equals(daemon.getDebuggerID())) {
+								configuration.setCommunicationDaemon(daemon); // Attach the daemon reference to the configuration.
+								break;
+							}
+						}
+					} catch (Exception e) {
+						configuration.setPort(-1);
+					}
+					configurations.put(id, configuration);
+				} catch (CoreException e) {
+					Logger.logException(e);
+				}
+			}
+		}
+	}
+

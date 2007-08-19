@@ -1,0 +1,44 @@
+   /**
+    * Terminate this debug target, either because we
+    * are terminating the thing being debugged or we
+    * are disconnecting
+    * @param isTerminate if we are terminating
+    */
+   public void terminateDebugTarget(boolean isTerminate) {
+      // check we haven't already terminated
+      if (STATE_TERMINATED != targetState) {
+         DBGpSessionHandler.getInstance().removeSessionListener(this);
+         DebugPlugin.getDefault().getBreakpointManager().removeBreakpointListener(this);
+
+         if (isTerminate && STATE_STARTED_RUNNING == targetState) {
+            setState(STATE_TERMINATING);
+            if (process != null) {
+               try {
+
+                  // terminate the process even if Eclipse may also
+                  // attempt this depending on what the user selected
+                  // to terminate.
+                  process.terminate();
+               }
+               catch (DebugException e) {
+                  // ignore any exceptions here
+               }
+            }
+            else {
+               if (session != null) {
+                  session.endSession();
+               }
+            }
+         }
+
+         setState(STATE_TERMINATED);
+         if (session != null) {
+            session.endSession();
+         }
+         if (langThread != null) {
+            langThread.fireTerminateEvent();
+         }
+         fireTerminateEvent();
+      }
+   }
+

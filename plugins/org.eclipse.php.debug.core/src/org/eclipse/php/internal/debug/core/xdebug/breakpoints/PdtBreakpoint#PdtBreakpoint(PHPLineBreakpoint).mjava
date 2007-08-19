@@ -1,0 +1,58 @@
+	/**
+	 * 
+	 * @param breakpoint
+	 */
+	public PdtBreakpoint(PHPLineBreakpoint breakpoint) {
+		bp = breakpoint;
+		IMarker marker = bp.getMarker();
+
+		IResource resource;
+		int lineNumber = 0;
+		if (breakpoint instanceof PHPRunToLineBreakpoint) {
+			resource = ((PHPRunToLineBreakpoint) breakpoint).getSourceFile();
+			lineNumber = bp.getRuntimeBreakpoint().getLineNumber();
+		} else {
+			resource = marker.getResource();
+			lineNumber = marker.getAttribute(IMarker.LINE_NUMBER, 0);
+		}
+
+		String fileName = "";
+		if (resource instanceof IWorkspaceRoot) {
+			//TODO: Improvement: Breakpoint: we need to handle this because PHPBreakpoint can be setup with this situation
+			try {
+				//String storageType = (String)marker.getAttribute(IPHPConstants.Include_Storage_type);
+				// storage types include
+				// IPHPConstants.Include_Storage_zip   - don't know how to handle this one
+				// IPHPConstants.Include_Storage_LFile - should be able to support
+				// IPHPConstants.Include_Storage_RFile - doubt if this one is ever used in current PHP IDE.
+				//
+				// Include_Storage_Project contains the project it is found in.
+				fileName = (String) marker.getAttribute(IPHPConstants.STORAGE_TYPE_INCLUDE);
+				fileName = marker.getAttribute(StructuredResourceMarkerAnnotationModel.SECONDARY_ID_KEY, fileName); // gets the full path.
+
+				// adding bps to these include files has strange affects. If one fails to add the first time it is because it removes one
+				// from elsewhere, then you find you can add it. Multiple breakpoints in multiple files is possible but you experience this
+				// problem. Will need to raise a defect on this at some point.
+
+				IResource res = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(fileName));
+				if (res instanceof IFile) {
+					workspaceFile = (IFile) res;
+				}
+
+			} catch (CoreException e) {
+			}
+
+		} else {
+
+			// a file in the workspace, handles included projects
+			fileName = (resource.getRawLocation()).toString();
+			if (resource instanceof IFile) {
+				workspaceFile = (IFile) resource;
+			}
+		}
+
+		// do we need to update the runtimeBreakpoint information ?
+		bp.getRuntimeBreakpoint().setFileName(fileName);
+		bp.getRuntimeBreakpoint().setLineNumber(lineNumber);
+	}
+

@@ -1,0 +1,56 @@
+	/**
+	 * Initialize the php executable debugger.
+	 * 
+	 * @param phpExe
+	 * @param fileName
+	 * @param query
+	 * @param envVariables
+	 * @param phpIniLocation
+	 */
+	public void initializeDebug(String phpExe, String fileName, String query, Map<String, String> envVariables, String phpIniLocation) {
+		try {
+			IPath phpExePath = new Path(phpExe);
+			File workingDir = new File(phpExePath.removeLastSegments(1).toString());
+			String phpConfigDir = workingDir.getAbsolutePath();
+			if (phpIniLocation != null && !phpIniLocation.equals("")) {
+				phpConfigDir = phpIniLocation;
+			}
+			String originalPHPConfigDir = phpConfigDir;
+
+			// Important!!! 
+			// Note that php executable -c parameter (for php 4) must get the path to the directory that contains the php.ini file.
+			// We cannot use a full path to the php.ini file nor modify the file name! (for example php.temp.ini).
+			phpConfigDir = (new File(phpConfigDir)).getParentFile().getAbsolutePath();
+
+			// Prepare the environment
+			if (envVariables == null) {
+				envVariables = getAdditionalLaunchEnvironment(fileName, query, phpConfigDir, workingDir.getAbsolutePath());
+			} else {
+				Map<String, String> additionalLaunchEnvironment = getAdditionalLaunchEnvironment(fileName, query, phpConfigDir, workingDir.getAbsolutePath());
+				additionalLaunchEnvironment.putAll(envVariables);
+				envVariables = additionalLaunchEnvironment;
+			}
+			String[] environmetVars = PHPLaunchUtilities.getEnvironment(launch.getLaunchConfiguration(), asAttributesArray(envVariables));
+
+			// Prepare the command line.
+			String[] phpCmdArray = PHPLaunchUtilities.getCommandLine(launch.getLaunchConfiguration(), phpExe, originalPHPConfigDir, fileName, phpIniLocation);
+
+			// Execute the command line.
+			Process p = Runtime.getRuntime().exec(phpCmdArray, environmetVars, workingDir);
+
+			Runnable reader = new ProcessOutputReader(p);
+			new Thread(reader).start();
+
+		} catch (final Exception e) {
+			final Display display = Display.getDefault();
+			display.asyncExec(new Runnable() {
+				public void run() {
+					String message = e.getLocalizedMessage();
+					message = message.replaceFirst(e.getClass().getName() + ": ", "");
+					MessageDialog.openError(display.getActiveShell(), "Error", NLS.bind("Error running PHP executable:\n\n{0}", message));
+				}
+			});
+			DebugPlugin.log(e);
+		}
+	}
+

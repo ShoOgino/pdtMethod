@@ -1,4 +1,25 @@
-	public void removeItem(final PHPexeItem item) {
-		items.remove(item.getName());
+	/**
+	 * Removes an item. 
+	 * In case the removed item was the default one, a different random item will be picked to be the 
+	 * new default one for the specific debugger.
+	 * 
+	 * @param debuggerID 
+	 * @param item
+	 */
+	public void removeItem(PHPexeItem item) {
+		String debuggerID = item.getDebuggerID();
+		HashMap<String, PHPexeItem> exes = items.get(debuggerID);
+		PHPexeItem removedItem = null;
+		if (exes != null) {
+			removedItem = exes.remove(item.getName());
+		}
+		if (removedItem != null && removedItem.isDefault()) {
+			defaultItems.remove(debuggerID);
+			// Pick the next item from the exes list for this debugger to be the default one.
+			Iterator<PHPexeItem> iterator = exes.values().iterator();
+			if (iterator.hasNext()) {
+				setDefaultItem(iterator.next());
+			}
+		}
 	}
 

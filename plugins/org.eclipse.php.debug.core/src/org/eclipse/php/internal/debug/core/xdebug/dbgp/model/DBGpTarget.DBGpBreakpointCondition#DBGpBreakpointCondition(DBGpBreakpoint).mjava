@@ -1,0 +1,55 @@
+      public DBGpBreakpointCondition(DBGpBreakpoint bp) {
+         type = NONE;
+         if (bp.isConditional() && bp.isConditionEnabled()) {
+
+            // supported
+            // - expression
+            // - hit(condition value)
+            String bpExpression = bp.getExpression().trim();
+            if (bpExpression.endsWith(")")
+                  && (bpExpression.startsWith("hit(") || bpExpression.startsWith("HIT("))) {
+               if (bpExpression.length() > 5) {
+                  // support the following formats
+                  // - >= x, >=x
+                  // - ==x == x
+                  // - %x % x
+                  type = HIT;
+                  String internal = bpExpression.substring(4, bpExpression.length() - 1).trim();
+                  if (internal.startsWith("%")) {
+                     hitCondition = "%";
+                     hitValue = internal.substring(1).trim();
+                  }
+                  else {
+                     hitCondition = internal.substring(0, 2);
+                     if (hitCondition.equals("==") || hitCondition.equals(">=")) {
+                        hitValue = internal.substring(2).trim();
+                     }
+                     else {
+                        type = INVALID;
+                     }
+                  }
+
+                  if (type != INVALID) {
+                     try {
+                        Integer.parseInt(hitValue);
+                     }
+                     catch (NumberFormatException nfe) {
+                        type = INVALID;
+                     }
+                  }
+               }
+               else {
+                  type = INVALID;
+               }
+            }
+            else if (bpExpression.length() == 0) {
+               type = NONE;
+               expression = bpExpression;
+            }
+            else {
+               type = EXPR;
+               expression = bpExpression;
+            }
+         }
+      }
+
