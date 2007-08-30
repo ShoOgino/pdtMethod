@@ -1,0 +1,57 @@
+	/**
+	 *  Returns whether or not the user wishes to switch to the specified
+	 *  perspective when a launch occurs.
+	 * 
+	 * @param window
+	 * @param perspectiveId
+
+	 * @return whether or not the user wishes to switch to the specified perspective
+	 *  automatically
+	 */
+	public static boolean shouldSwitchPerspective(IWorkbenchWindow window, String perspectiveId) {
+
+		String perspectiveName = getPerspectiveLabel(perspectiveId);
+		String message = NLS.bind(PHPUIMessages.getString("PerspectiveManager_Switch_Dialog_Message"), perspectiveName);
+
+		final String preferenceKey = perspectiveId + ".switch_to_perspective";
+
+		if (isCurrentPerspective(window, perspectiveId)) {
+			return false;
+		}
+
+		if (perspectiveName == null) {
+			return false;
+		}
+
+		String switchPerspective = PHPUiPlugin.getDefault().getPreferenceStore().getString(preferenceKey);
+		if (MessageDialogWithToggle.ALWAYS.equals(switchPerspective)) {
+			return true;
+		} else if (MessageDialogWithToggle.NEVER.equals(switchPerspective)) {
+			return false;
+		}
+
+		Shell shell = window.getShell();
+		if (shell == null || fPrompting) {
+			return false;
+		}
+		fPrompting = true;
+		// Activate the shell if necessary so the prompt is visible
+		if (shell.getMinimized()) {
+			shell.setMinimized(false);
+		}
+
+		MessageDialogWithToggle dialog = MessageDialogWithToggle.openYesNoQuestion(shell, PHPUIMessages.getString("PerspectiveManager_Switch_Dialog_Title"), message, null, false, PHPUiPlugin.getDefault().getPreferenceStore(), preferenceKey);
+		boolean answer = (dialog.getReturnCode() == IDialogConstants.YES_ID);
+		synchronized (PerspectiveManager.class) {
+			fPrompting = false;
+			PerspectiveManager.class.notifyAll();
+		}
+		if (isCurrentPerspective(window, perspectiveId)) {
+			// While prompting in response to one event (say, a launch),
+			// another event can occur which changes the perspective.
+			// Double-check that we're not in the right perspective.
+			answer = false;
+		}
+		return answer;
+	}
+
