@@ -5,11 +5,10 @@
 			public void perspectiveChanged(IWorkbenchPage page, IPerspectiveDescriptor perspective, IWorkbenchPartReference partRef, String changeId) {
 				if (changeId == IWorkbenchPage.CHANGE_EDITOR_CLOSE) {
 					if (partRef.getPart(false) == getEditorPart()) {
-						IFile file = getFile();
+						final IFile file = getFile();
 						if (file != null) {
 							ExternalFilesRegistry externalRegistry = ExternalFilesRegistry.getInstance();
 							if (file.exists()) {
-								PHPWorkspaceModelManager.getInstance().addFileToModel(getFile());
 								IProject proj = file.getProject();
 								try {
 									//remove the file from project model when it is an RSE project.
@@ -17,7 +16,22 @@
 									//when it is closed
 									if (proj.hasNature(PHPUiConstants.RSE_TEMP_PROJECT_NATURE_ID)) {
 										PHPWorkspaceModelManager.getInstance().getModelForProject(proj).removeFileFromModel(file);
+									} else {
+										//parse the file in case the editor was closed without saving
+
+										// making sure the project model exists (in case the editor closing is during PDT startup) 
+										if (PHPWorkspaceModelManager.getInstance().getModelForProject(proj) != null) {
+											WorkspaceJob job = new WorkspaceJob("") {
+												public IStatus runInWorkspace(IProgressMonitor monitor) throws CoreException {
+													PHPWorkspaceModelManager.getInstance().addFileToModel(file);
+													return Status.OK_STATUS;
+												}
+											};
+											job.setRule(ResourcesPlugin.getWorkspace().getRuleFactory().buildRule());
+											job.schedule();
+										}
 									}
+
 								} catch (CoreException ce) {
 									Logger.logException(ce);
 									return;
