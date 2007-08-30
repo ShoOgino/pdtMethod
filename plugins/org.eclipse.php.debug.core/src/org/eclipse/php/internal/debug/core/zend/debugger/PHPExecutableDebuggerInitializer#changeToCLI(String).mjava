@@ -1,0 +1,26 @@
+	/*
+	 * Take the given PHP CGI executable path and change it to PHP CLI path.
+	 * We assume that there is a php-cli file in the same location. If we cannot find one, 
+	 * we return the given executable path.
+	 */
+	private String changeToCLI(String phpCGIPath) {
+		File cgi = new File(phpCGIPath);
+		File parentFile = cgi.getParentFile();
+		File cli = null;
+		if (Platform.getOS().equals(Platform.OS_WIN32)) {
+			cli = new File(parentFile, "php-cli.exe");
+		} else {
+			// Check the case of the name
+			String name = cgi.getName();
+			if (Character.isUpperCase(name.charAt(0))) {
+				cli = new File(parentFile, name + "-CLI");
+			} else {
+				cli = new File(parentFile, name + "-cli");
+			}
+		}
+		if (cli.exists()) {
+			return cli.getAbsolutePath();
+		}
+		return phpCGIPath;
+	}
+
