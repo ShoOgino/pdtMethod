@@ -1,0 +1,37 @@
+	/**
+	 * can assume that the externalFile has been properly decoded need to check
+	 * on the slash format though, we will assume it is "/" for now
+	 */
+	public String mapExternalFileToWorkspace(String externalFile,
+			ILaunchConfiguration configuration) {
+
+		String result = externalFile;
+		if (externalLocPreAppend != null) {
+			externalFile = externalFile.replace('\\', '/');
+
+			if (startsWith(externalFile, externalLocPreAppend)) {
+				// remove the base dir from the external file
+				String projectFile = externalFile
+						.substring(externalLocPreAppend.length());
+				IFile file = null;
+				if (!workspaceRemap) {
+
+					// we are mapping to a specific project so we need to
+					// include the project. a workspace mapping already includes
+					// the project.
+					projectFile = launchProject + projectFile;
+				}
+				file = ResourcesPlugin.getWorkspace().getRoot().getFile(
+						new Path(projectFile));
+
+				if (file != null) {
+					result = file.getRawLocation().toString();
+				}
+			}
+		}
+
+		// even if we cannot remap it, there is still a chance the source
+		// locater will find something
+		return result;
+	}
+
