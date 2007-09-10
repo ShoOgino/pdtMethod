@@ -3,10 +3,22 @@
 	private void loadDebuggers() {
 		final IExtensionRegistry registry = Platform.getExtensionRegistry();
 		final IConfigurationElement[] elements = registry.getConfigurationElementsFor(PHPDebugPlugin.getID(), EXTENSION_POINT_NAME);
-		for (IConfigurationElement element : elements) {
+		for (final IConfigurationElement element : elements) {
+			
 			if (DEBUGGER_TAG.equals(element.getName())) {
 				final String name = element.getAttribute(NAME_ATTRIBUTE);
 				final String id = element.getAttribute(ID_ATTRIBUTE);
+				boolean filter = WorkbenchActivityHelper.filterItem(new IPluginContribution() {
+					public String getLocalId() {
+						return id;
+					}
+					public String getPluginId() {
+						return element.getNamespaceIdentifier();
+					}
+				});
+				if (filter) {
+					continue;
+				}
 				debuggers.put(id, name);
 				try {
 					AbstractDebuggerConfiguration configuration = (AbstractDebuggerConfiguration) element.createExecutableExtension(CONFIGURATION_CLASS_ATTRIBUTE);
