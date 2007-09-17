@@ -5,10 +5,17 @@
 
 		this.document = document;
 
-		if(!(document instanceof IStructuredDocument)){
-			throw new IllegalStateException("Document is set not structured");			
+		if (!(document instanceof IStructuredDocument)) {
+			throw new IllegalStateException("Document is set not structured");
 		}
-		final IStructuredModel model = StructuredModelManager.getModelManager().getModelForRead((IStructuredDocument)document);
+
+		// check for read only files (such as include path files, etc.)
+		if (FileBufferModelManager.getInstance().calculateId(document) == null) {
+			this.document = null;
+			return;
+		}
+
+		final IStructuredModel model = StructuredModelManager.getModelManager().getModelForRead((IStructuredDocument) document);
 		if (model == null) {
 			throw new IllegalStateException("Error reading structure model in PhpValidator#validator()");
 		}
