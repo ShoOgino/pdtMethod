@@ -9,6 +9,16 @@
 		treeNode = new IncludesNode(INCLUDE_PATHS_NODE_NAME, image, INCLUDE_PATHS_NODE_ID, project, this);
 		PHPWorkspaceModelManager.getInstance().addModelListener(treeNode);
 		projectNodes.put(project, treeNode);
+
+		// tree nodes to listen for include model events
+		final PHPProjectModel projectModel = PHPWorkspaceModelManager.getInstance().getModelForProject(project);
+		if (projectModel != null) {
+			final PHPIncludePathModelManager includeModelManager = (PHPIncludePathModelManager) projectModel.getModel(PHPIncludePathModelManager.COMPOSITE_INCLUDE_PATH_MODEL_ID);
+			if (includeModelManager != null) {
+				includeModelManager.addIncludePathModelListener(treeNode);
+			}
+		}
+
 		final PHPProjectOptions options = PHPProjectOptions.forProject(project);
 		options.addOptionChangeListener(PHPCoreConstants.PHPOPTION_INCLUDE_PATH, treeNode);
 		return treeNode;
