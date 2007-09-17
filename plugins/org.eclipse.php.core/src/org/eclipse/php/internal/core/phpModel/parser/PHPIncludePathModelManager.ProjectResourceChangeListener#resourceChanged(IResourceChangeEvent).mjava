@@ -1,13 +1,13 @@
 		public void resourceChanged(IResourceChangeEvent event) {
 			if (event.getType() == IResourceChangeEvent.POST_CHANGE && event.getSource() instanceof IWorkspace) {
 				IResourceDelta[] affectedChildren = event.getDelta().getAffectedChildren();
-				for (int i = 0; i < affectedChildren.length; i++) {
-					if ((affectedChildren[i].getFlags() & IResourceDelta.MOVED_TO) != 0) {
-						IProject projectMovedFrom = (IProject) affectedChildren[i].getResource();
-						IProject projectMovedTo = ResourcesPlugin.getWorkspace().getRoot().getProject(affectedChildren[i].getMovedToPath().lastSegment());
+				for (IResourceDelta element : affectedChildren) {
+					if ((element.getFlags() & IResourceDelta.MOVED_TO) != 0) {
+						IProject projectMovedFrom = (IProject) element.getResource();
+						IProject projectMovedTo = ResourcesPlugin.getWorkspace().getRoot().getProject(element.getMovedToPath().lastSegment());
 						handleProjectRename(projectMovedFrom, projectMovedTo);
-					} else if (affectedChildren[i].getKind() == IResourceDelta.REMOVED) {
-						IProject removedProject = (IProject) affectedChildren[i].getResource();
+					} else if (element.getKind() == IResourceDelta.REMOVED) {
+						IProject removedProject = (IProject) element.getResource();
 						handleProjectDeletion(removedProject);
 					}
 
