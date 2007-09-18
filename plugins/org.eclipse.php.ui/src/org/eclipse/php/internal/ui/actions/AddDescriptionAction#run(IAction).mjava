@@ -8,9 +8,14 @@
 			UserData userData = codeData.getUserData();
 			String fileName = userData.getFileName();
 			IFile file = PHPUiPlugin.getWorkspace().getRoot().getFile(new Path(fileName));
+			if (!file.exists() && ExternalFilesRegistry.getInstance().isEntryExist(fileName)){
+				file = ExternalFilesRegistry.getInstance().getFileEntry(fileName);
+			}
 			IEditorPart editorPart;
+			IEditorInput input = EditorUtility.getEditorInput(codeData);
+			IWorkbenchPage page = PHPUiPlugin.getActivePage();
 			try {
-				editorPart = EditorUtility.openInEditor(file, true);
+				editorPart = IDE.openEditor(page, input, PHPUiConstants.PHP_EDITOR_ID);
 			} catch (PartInitException e) {
 				Logger.logException(e);
 				return;
