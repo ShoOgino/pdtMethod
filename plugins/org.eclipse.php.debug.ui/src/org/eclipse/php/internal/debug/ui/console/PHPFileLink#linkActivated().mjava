@@ -10,8 +10,14 @@
 				editorPart = EditorUtility.openInEditor(editorInput, PHPUiConstants.PHP_EDITOR_ID, false);
 			} else if (fFile instanceof ExternalFileWrapper) {
 				ExternalFileWrapper externalFile = (ExternalFileWrapper) fFile;
-				FileStoreEditorInput editorInput = new FileStoreEditorInput(FileStoreFactory.createFileStore(new File(externalFile.getFullPath().toString())));
-				editorPart = EditorUtility.openInEditor(editorInput, PHPUiConstants.PHP_EDITOR_ID, false);
+				IPath externalPath = externalFile.getFullPath();
+				if (externalPath.segmentCount() > 1 && externalPath.segment(externalPath.segmentCount() - 2).equalsIgnoreCase("Untitled_Documents")) {
+					NonExistingPHPFileEditorInput editorInput = new NonExistingPHPFileEditorInput(externalPath);
+					editorPart = EditorUtility.openInEditor(editorInput, PHPUiConstants.PHP_UNTITLED_EDITOR_ID, false);
+				} else {
+					FileStoreEditorInput editorInput = new FileStoreEditorInput(FileStoreFactory.createFileStore(new File(externalFile.getFullPath().toString())));
+					editorPart = EditorUtility.openInEditor(editorInput, PHPUiConstants.PHP_EDITOR_ID, false);
+				}
 			} else if (fFile instanceof IFile) {
 				editorPart = EditorUtility.openInEditor(new FileEditorInput((IFile) fFile), PHPUiConstants.PHP_EDITOR_ID, false);
 			} else {
