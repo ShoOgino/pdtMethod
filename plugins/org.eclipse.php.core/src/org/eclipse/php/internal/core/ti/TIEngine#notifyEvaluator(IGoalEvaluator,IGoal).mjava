@@ -1,0 +1,43 @@
+	private void notifyEvaluator(IGoalEvaluator evaluator, IGoal subGoal) {
+		long t = 0;
+
+		GoalEvaluationState subGoalState = (GoalEvaluationState) goalStates.get(subGoal);
+		Object result = subGoalState.result;
+		IGoal.State state = subGoalState.state;
+
+		if (state == IGoal.State.WAITING) {
+			state = IGoal.State.RECURSIVE;
+		}
+
+		t = System.currentTimeMillis();
+		IGoal[] newGoals = evaluator.subGoalDone(subGoal, result, state);
+		statisticsListener.evaluatorReceivedResult(evaluator, subGoal, newGoals, System.currentTimeMillis() - t);
+		if (newGoals == null) {
+			newGoals = IGoal.NO_GOALS;
+		}
+		for (int i = 0; i < newGoals.length; i++) {
+			workingQueue.add(new WorkingPair(newGoals[i], evaluator));
+		}
+		
+		EvaluatorState ev = evaluatorStates.get(evaluator);
+		ev.subgoalsLeft--;
+		ev.subgoalsLeft += newGoals.length;
+		ev.totalSubgoals += newGoals.length;
+		ev.subgoals.addAll(Arrays.asList(newGoals));
+		if (state == IGoal.State.DONE && result != null) {
+			ev.successfulSubgoals++;
+		}
+		if (ev.subgoalsLeft == 0) {
+			t = System.currentTimeMillis();
+			Object newRes = evaluator.produceResult();
+			statisticsListener.evaluatorProducedResult(evaluator, result, System.currentTimeMillis() - t);
+			GoalEvaluationState st = (GoalEvaluationState) goalStates.get(evaluator.getGoal());
+			Assert.isNotNull(st);
+			st.state = IGoal.State.DONE;
+			st.result = newRes;
+			if (st.creator != null) {
+				notifyEvaluator(st.creator, evaluator.getGoal());
+			}
+		}
+	}
+
