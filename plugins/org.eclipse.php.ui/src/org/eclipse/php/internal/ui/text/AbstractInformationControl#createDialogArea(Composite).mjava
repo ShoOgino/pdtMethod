@@ -1,0 +1,90 @@
+	/**
+	 * Create the main content for this information control.
+	 * 
+	 * @param parent The parent composite
+	 * @return The control representing the main content.
+	 * @since 3.2
+	 */
+	protected Control createDialogArea(Composite parent) {
+		fTreeViewer = createTreeViewer(parent, fTreeStyle);
+
+		fCustomFiltersActionGroup = new CustomFiltersActionGroup(getId(), fTreeViewer);
+
+		final Tree tree = fTreeViewer.getTree();
+		tree.addKeyListener(new KeyListener() {
+			public void keyPressed(KeyEvent e) {
+				if (e.character == 0x1B) // ESC
+					dispose();
+			}
+
+			public void keyReleased(KeyEvent e) {
+				// do nothing
+			}
+		});
+
+		tree.addSelectionListener(new SelectionListener() {
+			public void widgetSelected(SelectionEvent e) {
+				// do nothing
+			}
+
+			public void widgetDefaultSelected(SelectionEvent e) {
+				gotoSelectedElement();
+			}
+		});
+
+		tree.addMouseMoveListener(new MouseMoveListener() {
+			TreeItem fLastItem = null;
+
+			public void mouseMove(MouseEvent e) {
+				if (tree.equals(e.getSource())) {
+					Object o = tree.getItem(new Point(e.x, e.y));
+					if (o instanceof TreeItem) {
+						if (!o.equals(fLastItem)) {
+							fLastItem = (TreeItem) o;
+							tree.setSelection(new TreeItem[] { fLastItem });
+						} else if (e.y < tree.getItemHeight() / 4) {
+							// Scroll up
+							Point p = tree.toDisplay(e.x, e.y);
+							Item item = fTreeViewer.scrollUp(p.x, p.y);
+							if (item instanceof TreeItem) {
+								fLastItem = (TreeItem) item;
+								tree.setSelection(new TreeItem[] { fLastItem });
+							}
+						} else if (e.y > tree.getBounds().height - tree.getItemHeight() / 4) {
+							// Scroll down
+							Point p = tree.toDisplay(e.x, e.y);
+							Item item = fTreeViewer.scrollDown(p.x, p.y);
+							if (item instanceof TreeItem) {
+								fLastItem = (TreeItem) item;
+								tree.setSelection(new TreeItem[] { fLastItem });
+							}
+						}
+					}
+				}
+			}
+		});
+
+		tree.addMouseListener(new MouseAdapter() {
+			public void mouseUp(MouseEvent e) {
+
+				if (tree.getSelectionCount() < 1)
+					return;
+
+				if (e.button != 1)
+					return;
+
+				if (tree.equals(e.getSource())) {
+					Object o = tree.getItem(new Point(e.x, e.y));
+					TreeItem selection = tree.getSelection()[0];
+					if (selection.equals(o))
+						gotoSelectedElement();
+				}
+			}
+		});
+
+		installFilter();
+
+		addDisposeListener(this);
+		return fTreeViewer.getControl();
+	}
+

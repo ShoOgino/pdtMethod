@@ -1,0 +1,34 @@
+	/**
+	 * Creates a tree information control with the given shell as parent. The given
+	 * styles are applied to the shell and the tree widget.
+	 *
+	 * @param parent the parent shell
+	 * @param shellStyle the additional styles for the shell
+	 * @param treeStyle the additional styles for the tree widget
+	 * @param invokingCommandId the id of the command that invoked this control or <code>null</code>
+	 * @param showStatusField <code>true</code> iff the control has a status field at the bottom
+	 */
+	public AbstractInformationControl(Shell parent, int shellStyle, int treeStyle, String invokingCommandId, boolean showStatusField) {
+		super(parent, shellStyle, true, true, true, true, null, null);
+		if (invokingCommandId != null) {
+			ICommandManager commandManager = PlatformUI.getWorkbench().getCommandSupport().getCommandManager();
+			fInvokingCommand = commandManager.getCommand(invokingCommandId);
+			if (fInvokingCommand != null && !fInvokingCommand.isDefined())
+				fInvokingCommand = null;
+			else
+				// Pre-fetch key sequence - do not change because scope will change later.
+				getInvokingCommandKeySequences();
+		}
+		fTreeStyle = treeStyle;
+		// Title and status text must be set to get the title label created, so force empty values here. 
+		if (hasHeader())
+			setTitleText(""); //$NON-NLS-1$
+		setInfoText(""); //  //$NON-NLS-1$
+
+		// Create all controls early to preserve the life cycle of the original implementation.
+		create();
+
+		// Status field text can only be computed after widgets are created.
+		setInfoText(getStatusFieldText());
+	}
+
