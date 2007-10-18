@@ -2,63 +2,17 @@
 		 * The worker method. It will find the container, create the
 		 * file if missing or just replace its contents, and open
 		 * the editor on the newly created file.
-		 * @param contents 
+		 * This method does not take an editor id to use when opening the file.
+		 * 
+		 * @param wizard
+		 * @param containerName
+		 * @param fileName
+		 * @param monitor
+		 * @param contents
+		 * @throws CoreException
+		 * @see {@link #createFile(Wizard, String, String, IProgressMonitor, String, String)}
 		 */
 		public static void createFile(Wizard wizard, String containerName, String fileName, IProgressMonitor monitor, String contents) throws CoreException {
-			// create a sample file
-			monitor.beginTask(NLS.bind(PHPUIMessages.getString("newPhpFile_create"), fileName), 2);
-			IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-			IResource resource = root.findMember(new Path(containerName));
-			if (!resource.exists() || !(resource instanceof IContainer)) {
-				throwCoreException(PHPUIMessages.getString("PHPFileCreationWizard.1") + containerName + PHPUIMessages.getString("PHPFileCreationWizard.2")); //$NON-NLS-1$ //$NON-NLS-2$
-			}
-			IContainer container = (IContainer) resource;
-			final IFile file = container.getFile(new Path(fileName));
-
-			// adopt project's/workspace's line delimiter (separator)
-			String lineSeparator = Platform.getPreferencesService().getString(Platform.PI_RUNTIME, Platform.PREF_LINE_SEPARATOR, null, new IScopeContext[] { new ProjectScope(container.getProject()) });
-			if (lineSeparator == null)
-				lineSeparator = Platform.getPreferencesService().getString(Platform.PI_RUNTIME, Platform.PREF_LINE_SEPARATOR, null, new IScopeContext[] { new InstanceScope() });
-			if (lineSeparator == null)
-				lineSeparator = System.getProperty(Platform.PREF_LINE_SEPARATOR);
-			if (contents != null) {
-				contents = contents.replaceAll("(\n\r?|\r\n?)", lineSeparator); //$NON-NLS-1$ //$NON-NLS-2$	
-			}
-
-			try {
-				InputStream stream = openContentStream(contents);
-				if (file.exists()) {
-					file.setContents(stream, true, true, monitor);
-				} else {
-					file.create(stream, true, monitor);
-				}
-				stream.close();
-			} catch (IOException e) {
-			}
-
-			// Change file encoding:
-			/*if (container instanceof IProject) {
-				PHPProjectOptions options = PHPProjectOptions.forProject((IProject) container);
-				if (options != null) {
-					String defaultEncoding = (String) options.getOption(PHPCoreConstants.PHPOPTION_DEFAULT_ENCODING);
-					if (defaultEncoding == null || defaultEncoding.length() == 0) {
-						defaultEncoding = container.getDefaultCharset();
-					}
-					file.setCharset(defaultEncoding, monitor);
-				}
-			}*/
-
-			monitor.worked(1);
-			monitor.setTaskName(NLS.bind(PHPUIMessages.getString("newPhpFile_openning"), fileName));
-			wizard.getShell().getDisplay().asyncExec(new Runnable() {
-				public void run() {
-					IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
-					try {
-						IDE.openEditor(page, file, true);
-					} catch (PartInitException e) {
-					}
-				}
-			});
-			monitor.worked(1);
+			createFile(wizard, containerName, fileName, monitor, null);
 		}
 
