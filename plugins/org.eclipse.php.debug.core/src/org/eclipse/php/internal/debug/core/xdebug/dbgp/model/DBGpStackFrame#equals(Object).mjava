@@ -5,14 +5,22 @@
 		if (obj instanceof DBGpStackFrame) {
 			DBGpStackFrame sf = (DBGpStackFrame) obj;
 			try {
-
-				// must check variables as a stackframe could
-				// be on the same line as a previous one (eg looping
-				// breakpoint, but they are essentially different
-				// if the variable entries are both null, assume they are equal               
-				boolean isEqual = sf.getQualifiedFile().equals(getQualifiedFile()) && sf.getLineNumber() == getLineNumber() && sf.stackLevel.equals(stackLevel) && variables == sf.variables;
+				// a stack frame is equal if they are at the same level and for the same file
+				//
+				// if a stack frame is equal then eclipse doesn't refresh the variables pane
+				// but subsequent new stackframes created at the same level (but on different
+				// line numbers are not used to get the variables, the first one at the level
+				// is used (eg a stackframe for line 2 is used to get variables for all other
+				// lines at the same stack level, even though a stack level for one at say line
+				// 4 exists). 
+				//
+				// so to stop the refresh of the variables pane, stack frames at the same
+				// level should report as equal, but because of this a stack frame cannot
+				// cache the variables at that line as eclipse goes to the stack frame of
+				// another line number to get the stack variables. 
+				boolean isEqual = sf.getQualifiedFile().equals(getQualifiedFile()) && sf.stackLevel.equals(stackLevel);
 				return isEqual;
-			} catch (DebugException e) {
+			} catch (Exception e) {
 			}
 		}
 		return false;

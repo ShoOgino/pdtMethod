@@ -1,32 +1,45 @@
 		protected IStatus run(IProgressMonitor monitor) {
 			byte[] response = null;
 			while (!socketClosed) {
-				// here we need to block waiting for a reponse
+				// here we need to block waiting for a response
 				// then process that response
-				response = readResponse();
-				if (response != null) {
-					DBGpResponse parsedResponse = new DBGpResponse();
-					parsedResponse.parseResponse(response);
-					// allow cannot get property error as this is allowed.
-					if (parsedResponse.getErrorCode() == DBGpResponse.ERROR_OK || parsedResponse.getErrorCode() == DBGpResponse.ERROR_CANT_GET_PROPERTY) {
-
-						if (DBGpResponse.RESPONSE == parsedResponse.getType()) {
-
-							// The response handler only processes stop and break
-							// status responses, all others are ignored or returned
-							// to a sync caller.
-							if (parsedResponse.getStatus().equals(DBGpResponse.STATUS_STOPPED)) {
-								handleStopStatus();
-							} else if (parsedResponse.getStatus().equals(DBGpResponse.STATUS_BREAK)) {
-								handleBreakStatus(parsedResponse);
+				
+				try {
+					response = readResponse();
+					if (response != null) {
+						DBGpResponse parsedResponse = new DBGpResponse();
+						parsedResponse.parseResponse(response);
+						// allow cannot get property error as this is allowed.
+						if (parsedResponse.getErrorCode() == DBGpResponse.ERROR_OK || parsedResponse.getErrorCode() == DBGpResponse.ERROR_CANT_GET_PROPERTY) {
+	
+							if (DBGpResponse.RESPONSE == parsedResponse.getType()) {
+	
+								// The response handler only processes stop and break
+								// status responses, all others are ignored or returned
+								// to a sync caller.
+								if (parsedResponse.getStatus().equals(DBGpResponse.STATUS_STOPPED)) {
+									handleStopStatus();
+								} else if (parsedResponse.getStatus().equals(DBGpResponse.STATUS_BREAK)) {
+									handleBreakStatus(parsedResponse);
+								}
+							} else if (DBGpResponse.STREAM == parsedResponse.getType()) {
+								handleStreamData(parsedResponse);
+							} else {
+								DBGpLogger.logWarning("Unknown type of XML: " + response, DBGpSession.this, null);
 							}
-						} else if (DBGpResponse.STREAM == parsedResponse.getType()) {
-							handleStreamData(parsedResponse);
-						} else {
-							DBGpLogger.logWarning("Unknown type of XML: " + response, DBGpSession.this, null);
 						}
+						unblockSyncCaller(parsedResponse);
 					}
-					unblockSyncCaller(parsedResponse);
+				}
+				catch (Throwable t) {
+					DBGpLogger.logException("Unexpected exception. Terminating the debug session", this, t);
+					endSession(); // end the session to exit the response loop.
+					
+					// send a dummy response back to unblock the target. It will know that the session has
+					// ended, but the dummy response will allow it to exit its current method.
+					DBGpResponse dummy = new DBGpResponse();
+					dummy.parseResponse(null);
+					unblockSyncCaller(dummy);
 				}
 			}
 
@@ -40,7 +53,9 @@
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			debugTarget.sessionEnded();
+			// end the session here as we most likely terminated cleanly. It doesn't matter if 
+			// endSession is called multiple times.
+			endSession();
 			return Status.OK_STATUS;
 		}
 

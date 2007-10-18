@@ -1,23 +1,29 @@
-	public void parseResponse(InputStream is) {
+	private void parseResponse(InputStream is) {
 		id = null;
 		command = null;
+		type = UNKNOWN_TYPE;		
+		errorCode = ERROR_UNKNOWN_TYPE;
+		
 		try {
 			doc = db.parse(is);
 			parent = doc.getFirstChild();
 			String nodeName = parent.getNodeName();
 			if (nodeName.equals("response")) {
-				parseResponse();
+				parseResponseType();
 			} else if (nodeName.equals("init")) {
-				parseInit();
+				parseInitType();
 			} else if (nodeName.equals("stream")) {
-				parseStream();
-			}
+				parseStreamType();
+			} 
+			
 		} catch (SAXException e) {
 			DBGpLogger.logException(null, this, e);
 			type = PARSE_FAILURE;
+			errorCode = ERROR_PARSE_FAILURE;						
 		} catch (IOException e) {
 			DBGpLogger.logException(null, this, e);
 			type = PARSE_FAILURE;
+			errorCode = ERROR_PARSE_FAILURE;						
 		}
 		//System.out.println("wait for me");
 	}

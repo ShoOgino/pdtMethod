@@ -1,3 +1,7 @@
+	/**
+	 * create a DBGpSession. This waits for the initial INIT response to be sent
+	 * @param connection the socket connection.
+	 */
 	public DBGpSession(Socket connection) {
 		creationTime = System.currentTimeMillis();
 		DBGpSocket = connection;
@@ -8,6 +12,8 @@
 			DBGpCmd = new DBGpCommand(DBGpSocket);
 			DBGpReader = new DataInputStream(DBGpSocket.getInputStream());
 			socketClosed = false;
+			
+			//TODO: Could look at supporting a timeout here.
 			byte[] response = readResponse();
 			if (response != null) {
 				DBGpResponse parsedResponse = new DBGpResponse();
@@ -18,8 +24,14 @@
 					initialScript = DBGpUtils.getFilenameFromURIString(parsedResponse.getFileUri());
 					isGood = true;
 				}
+				else {
+					DBGpLogger.logError("Init response not received. XML=" + parsedResponse.getRawXML(), this, null);				
+					//TODO: dialog box up					
+				}
 			}
-
+			else {
+				DBGpLogger.logError("Unexpected null from readResponse waiting for Init", this, null);								
+			}
 			if (!isGood) {
 				endSession();
 			}

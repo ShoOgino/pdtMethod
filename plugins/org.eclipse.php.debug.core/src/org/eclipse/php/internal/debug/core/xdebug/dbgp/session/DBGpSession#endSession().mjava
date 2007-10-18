@@ -2,16 +2,34 @@
 	 * end this session
 	 *
 	 */
-	public void endSession() {
-		try {
-			DBGpSocket.close();
-			socketClosed = true;
-			if (debugTarget != null) {
-				debugTarget.sessionEnded();
+	public synchronized void endSession() {
+		if (!socketClosed) {
+			try {
+				DBGpSocket.shutdownInput();
 			}
-		} catch (IOException e) {
-			// Ignore the exception except for debug purposes
-			DBGpLogger.debugException(e);
+			catch (IOException e) {
+				
+			}
+			try {
+				DBGpSocket.shutdownOutput();
+			}
+			catch (IOException e) {
+				
+			}
+			
+	   		try {
+				socketClosed = true;	   			
+				DBGpSocket.close();
+				
+			} catch (IOException e) {
+				// Ignore the exception except for debug purposes
+				DBGpLogger.debugException(e);
+			}
 		}
+		if (debugTarget != null) {
+			debugTarget.sessionEnded();
+			debugTarget = null;
+		}
+		
 	}
 
