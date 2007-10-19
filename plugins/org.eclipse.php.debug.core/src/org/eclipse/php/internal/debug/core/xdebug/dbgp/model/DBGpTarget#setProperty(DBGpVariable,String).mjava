@@ -20,21 +20,22 @@
          }
       }
       catch (DebugException e) {
-
       }
+      
       DBGpResponse resp = session.sendSyncCmd(DBGpCommand.propSet, args);
-      if (resp.getTopAttribute("success").equals("1")) {
-    	 if (!stackLevel.equals("0")) {
-    		 // a variable has been changed on a previous stack
-    		 // the gui won't have updated the current stack
-    		 // level view, so we invalidate the cache to reload
-    		 // the data.
-    		 currentVariables = null;
-    	 }
-         return true;
+      boolean success = false;
+      if (DBGpUtils.isGoodDBGpResponse(this, resp)) {
+	      if (resp.getTopAttribute("success").equals("1")) {
+	    	 if (!stackLevel.equals("0")) {
+	    		 // a variable has been changed on a previous stack
+	    		 // the gui won't have updated the current stack
+	    		 // level view, so we invalidate the cache to reload
+	    		 // the data.
+	    		 currentVariables = null;
+	    	 }
+	    	 success = true;
+	      }
       }
-      else {
-         return false;
-      }
+      return success;
    }
 
