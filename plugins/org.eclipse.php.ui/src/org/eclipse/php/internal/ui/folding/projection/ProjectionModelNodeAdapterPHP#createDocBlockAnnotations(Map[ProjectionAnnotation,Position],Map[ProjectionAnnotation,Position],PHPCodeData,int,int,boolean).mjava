@@ -9,13 +9,17 @@
 	 */
 	private void createDocBlockAnnotations(Map<ProjectionAnnotation, Position> currentAnnotations, Map<ProjectionAnnotation, Position> addedAnnotations, PHPCodeData codeData, int startOffset, int endOffset, boolean collapse) {
 		final PHPDocBlock docBlock = codeData.getDocBlock();
-
 		// no need to add an empty doc block
 		if (docBlock == null) {
 			return;
 		}
 
 		int codeStartOffset = docBlock.getStartPosition();
+		int codeEndOffset = docBlock.getEndPosition();
+		if (document.getLineOfOffset(codeStartOffset) >= document.getLineOfOffset(codeEndOffset)) {
+			return;
+		}
+
 		if (codeStartOffset > startOffset && codeStartOffset < endOffset) {
 			// element may start in one PHP block and end in another.
 			// false - when adding new annotation - don't fold

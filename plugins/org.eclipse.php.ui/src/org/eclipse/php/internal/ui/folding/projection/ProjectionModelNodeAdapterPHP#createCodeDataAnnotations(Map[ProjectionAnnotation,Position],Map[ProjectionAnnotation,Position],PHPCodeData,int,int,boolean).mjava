@@ -8,6 +8,11 @@
 	private void createCodeDataAnnotations(Map<ProjectionAnnotation, Position> currentAnnotations, Map<ProjectionAnnotation, Position> addedAnnotations, PHPCodeData codeData, int startOffset, int endOffset, boolean collapse) {
 		UserData userData = codeData.getUserData();
 		int codeStartOffset = userData.getStartPosition();
+		int codeEndOffset = userData.getEndPosition();
+		if (document.getLineOfOffset(codeStartOffset) >= document.getLineOfOffset(codeEndOffset)) {
+			return;
+		}
+
 		if (codeStartOffset > startOffset && codeStartOffset < endOffset) {
 			// element may start in one PHP block and end in another.
 			// false - when adding new annotation - don't fold
@@ -16,15 +21,12 @@
 			Position newPosition = createPosition(codeStartOffset, userData.getEndPosition(), document);
 
 			if (existingAnnotation == null) {
-				// add to map containing all annotations for this
-				// adapter
+				// add to map containing all annotations for this adapter
 				currentAnnotations.put(newAnnotation, newPosition);
 				// add to map containing annotations to add
 				addedAnnotations.put(newAnnotation, newPosition);
-
 			} else {
-				// add to map containing all annotations for this
-				// adapter
+				// add to map containing all annotations for this adapter
 				currentAnnotations.put(existingAnnotation, newPosition);
 				// remove from map containing annotations to delete
 				previousAnnotations.remove(existingAnnotation);
