@@ -19,7 +19,7 @@
 									} else {
 										//parse the file in case the editor was closed without saving
 
-										// making sure the project model exists (in case the editor closing is during PDT startup) 
+										// making sure the project model exists (in case the editor closing is during PDT startup)
 										if (PHPWorkspaceModelManager.getInstance().getModelForProject(proj) != null) {
 											WorkspaceJob job = new WorkspaceJob("") { //$NON-NLS-1$
 												public IStatus runInWorkspace(IProgressMonitor monitor) throws CoreException {
@@ -39,20 +39,22 @@
 							}
 							//external php file
 							else {
-								String fileName = getModel().getBaseLocation();
-								if (externalRegistry.isEntryExist(fileName)) {
-									//if there are more than one editor opening the external file using "New Editor", do not remove it from model and registry
-									IEditorReference[] existingEditors = ((WorkbenchPage) PHPStructuredEditor.this.getSite().getWorkbenchWindow().getActivePage()).getEditorManager().findEditors(getEditorInput(), null, IWorkbenchPage.MATCH_INPUT);
+								IStructuredModel model = getModel();
+								if (model != null) {
+									String fileName = model.getBaseLocation();
+									if (externalRegistry.isEntryExist(fileName)) {
+										//if there are more than one editor opening the external file using "New Editor", do not remove it from model and registry
+										IEditorReference[] existingEditors = ((WorkbenchPage) PHPStructuredEditor.this.getSite().getWorkbenchWindow().getActivePage()).getEditorManager().findEditors(getEditorInput(), null, IWorkbenchPage.MATCH_INPUT);
 
-									// Make sure that the file has a full path before we try to remove it from the model.
-									if (existingEditors.length == 1) { //a single editor
-										IFile fileDecorator = ExternalFilesRegistry.getInstance().getFileEntry(fileName);
-										PHPWorkspaceModelManager.getInstance().removeFileFromModel(fileDecorator);
-										externalRegistry.removeFileEntry(fileName);
+										// Make sure that the file has a full path before we try to remove it from the model.
+										if (existingEditors.length == 1) { //a single editor
+											IFile fileDecorator = ExternalFilesRegistry.getInstance().getFileEntry(fileName);
+											PHPWorkspaceModelManager.getInstance().removeFileFromModel(fileDecorator);
+											externalRegistry.removeFileEntry(fileName);
+										}
 									}
 								}
 							}
-
 						}
 						getSite().getWorkbenchWindow().removePerspectiveListener(this);
 					}
@@ -76,7 +78,7 @@
 		fInformationPresenter = new InformationPresenter(informationControlCreator);
 		fInformationPresenter.setSizeConstraints(60, 10, true, true);
 		fInformationPresenter.install(getSourceViewer());
-		
+
 		// bug fix - #154817
 		StyledText styledText = getTextViewer().getTextWidget();
 		styledText.getContent().addTextChangeListener(new TextChangeListener() {
