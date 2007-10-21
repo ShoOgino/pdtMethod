@@ -1,17 +1,15 @@
 	private Object[] getElements() {
 
-		Object[] elements = initialElements;
+		CodeData[] elements = initialElements;
 
 		if (elements == null) {
-			ArrayList arrayList = new ArrayList();
+			LinkedHashSet<CodeData> arrayList = new LinkedHashSet<CodeData>();
 			// traverse over all the php projects and get the model for each
 			// one.
 			IProject[] projects = PHPUiPlugin.getWorkspace().getRoot().getProjects();
-			for (int i = 0; i < projects.length; i++) {
-				IProject project = projects[i];
+			for (IProject project : projects) {
 				try {
-					if (!project.exists() || !project.isOpen()
-						|| !project.hasNature(PHPNature.ID)) {
+					if (!project.exists() || !project.isOpen() || !project.hasNature(PHPNature.ID)) {
 						continue;
 					}
 				} catch (CoreException ce) {
@@ -30,14 +28,15 @@
 					}
 				}
 			}
-			elements = arrayList.toArray();
+			elements = arrayList.toArray(new CodeData[arrayList.size()]);
 		}
 
-		Arrays.sort(elements, new Comparator() {
-			public int compare(Object arg0, Object arg1) {
+		Comparator<CodeData> comparator = new Comparator<CodeData>() {
+			public int compare(CodeData arg0, CodeData arg1) {
 				return arg0.toString().compareToIgnoreCase(arg1.toString());
 			}
-		});
+		};
+		Arrays.sort(elements, comparator);
 
 		return elements;
 	}
