@@ -2,6 +2,8 @@
 		int rv = startPosition;
 		int bracketsNum = 0;
 		char inStringMode = 0;
+		boolean inWhiteSpaceBeforeLiteral = false;
+		boolean inLiteral = false;
 		for (; rv > 0; rv--) {
 			char currChar = textSequence.charAt(rv - 1);
 			if (currChar == '\'' || currChar == '"') {
@@ -11,7 +13,24 @@
 				continue;
 			}
 
-			if (!Character.isLetterOrDigit(currChar) && currChar != '_' && currChar != '$' && !(Character.isWhitespace(currChar) && currChar != '\n')) {
+			// The next block solves bug #205034:
+			// store state for whitespace before literals and if another literal comes before it - return 'not found'
+			if (Character.isLetterOrDigit(currChar) || currChar == '$') {
+				if (inWhiteSpaceBeforeLiteral) {
+					return -1;
+				}
+				inLiteral = true;
+			} else {
+				if (inLiteral && Character.isWhitespace(currChar)) {
+					inWhiteSpaceBeforeLiteral = true;
+				}
+				if (!Character.isWhitespace(currChar)) {
+					inWhiteSpaceBeforeLiteral = false;
+				}
+				inLiteral = false;
+			}
+
+			if (!Character.isLetterOrDigit(currChar) && currChar != '_' && currChar != '$' && !Character.isWhitespace(currChar)) {
 				switch (currChar) {
 					case '(':
 					case '[':
@@ -40,8 +59,6 @@
 							}
 						}
 						break;
-					case '\n':
-						return -1;
 					default:
 						if (bracketsNum == 0) {
 							return -1;
