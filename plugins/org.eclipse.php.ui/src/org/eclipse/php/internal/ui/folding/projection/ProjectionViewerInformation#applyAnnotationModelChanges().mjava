@@ -4,27 +4,74 @@
 	 */
 	void applyAnnotationModelChanges() {
 		List<ProjectionAnnotationModelChanges> queuedChanges = getQueuedAnnotationChanges();
-		// go through all the pending annotation changes and apply
-		// them to
-		// the projection annotation model
+		// go through all the pending annotation changes and apply:
 		while (!queuedChanges.isEmpty()) {
 			ProjectionAnnotationModelChanges changes = queuedChanges.remove(0);
 			try {
-				fProjectionAnnotationModel.modifyAnnotations(changes.getDeletions(), changes.getAdditions(), null);
-				Map modifications = changes.getModifications();
-				for (Object object : modifications.entrySet()) {
-					Map.Entry<ProjectionAnnotation, Position> entry = (Map.Entry<ProjectionAnnotation, Position>) object;
-					Position position = fProjectionAnnotationModel.getPosition(entry.getKey());
+
+				// 1. Collect annotations and their positions and store collapsed ones:
+				Set<Position> collapsedPositions = new HashSet<Position>();
+				Map<Position, ProjectionAnnotation> positionAnnotations = new HashMap<Position, ProjectionAnnotation>();
+				for (Iterator<ProjectionAnnotation> i = fProjectionAnnotationModel.getAnnotationIterator(); i.hasNext();) {
+					ProjectionAnnotation existingAnnotation = i.next();
+					Position position = fProjectionAnnotationModel.getPosition(existingAnnotation);
+					if (existingAnnotation.isCollapsed() && inScript(position.offset)) {
+						collapsedPositions.add(position);
+					}
+					positionAnnotations.put(position, existingAnnotation);
+				}
+
+				// 2. Delete the annotations marked as deleted, if they are not collapsed:
+				Annotation[] deletions = changes.getDeletions();
+				if (deletions == null) {
+					deletions = EMPTY_ANNOTATIONS;
+				}
+				Set<Position> persistentPositions = new HashSet<Position>(deletions.length);
+				for (Annotation deletion : deletions) {
+					Position position = fProjectionAnnotationModel.getPosition(deletion);
+					if (!collapsedPositions.contains(position)) {
+						fProjectionAnnotationModel.removeAnnotation(deletion);
+					} else {
+						persistentPositions.add(position);
+					}
+				}
+
+				// 3. Add missing annotations or replace existing ones with same persistent position:
+				Map<ProjectionAnnotation, Position> additions = changes.getAdditions();
+				for (Map.Entry<ProjectionAnnotation, Position> addition : additions.entrySet()) {
+					Position position = addition.getValue();
+					ProjectionAnnotation newAnnotation = addition.getKey();
+					if (!persistentPositions.contains(position)) {
+						fProjectionAnnotationModel.addAnnotation(newAnnotation, position);
+					} else {
+						ProjectionAnnotation existingAnnotation = positionAnnotations.get(position);
+						if (existingAnnotation.isCollapsed()) {
+							newAnnotation.markCollapsed();
+						} else {
+							newAnnotation.markExpanded();
+						}
+						fProjectionAnnotationModel.removeAnnotation(existingAnnotation);
+						fProjectionAnnotationModel.addAnnotation(newAnnotation, position);
+					}
+				}
+
+				//4. Replace positions for modified annotations or add if missing and not persistent:
+				Map<ProjectionAnnotation, Position> modifications = changes.getModifications();
+				for (Map.Entry<ProjectionAnnotation, Position> modification : modifications.entrySet()) {
+					ProjectionAnnotation modifiedAnnotation = modification.getKey();
+					Position modifiedPosition = modification.getValue();
+					Position position = fProjectionAnnotationModel.getPosition(modifiedAnnotation);
 					if (position == null) {
-						fProjectionAnnotationModel.addAnnotation(entry.getKey(),entry.getValue());
-					} else if (!position.equals(entry.getValue())) {
-						fProjectionAnnotationModel.modifyAnnotationPosition(entry.getKey(), entry.getValue());
+						if (!persistentPositions.contains(modifiedPosition)) {
+							fProjectionAnnotationModel.addAnnotation(modifiedAnnotation, modifiedPosition);
+						}
+					} else if (!modifiedPosition.equals(position)) {
+						fProjectionAnnotationModel.modifyAnnotationPosition(modifiedAnnotation, modifiedPosition);
 					}
 				}
 
 			} catch (RuntimeException e) {
-				// if anything goes wrong, log it be continue
-				Logger.log(Logger.WARNING_DEBUG, e.getMessage(), e);
+				Logger.logException(e);
 			}
 		}
 	}

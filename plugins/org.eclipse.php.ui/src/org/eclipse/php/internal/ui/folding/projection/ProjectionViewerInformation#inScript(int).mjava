@@ -1,0 +1,37 @@
+	/**
+	 * @param offset
+	 * @return true, if the offset is in script region (not string, comment, html or heredoc)
+	 */
+	private boolean inScript(int offset) {
+		IStructuredDocument document = (IStructuredDocument) fDocument;
+		IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(offset);
+		ITextRegion textRegion = sdRegion.getRegionAtCharacterOffset(offset);
+
+		if (textRegion == null)
+			return false;
+
+		ITextRegionCollection container = sdRegion;
+
+		if (textRegion instanceof ITextRegionContainer) {
+			container = (ITextRegionContainer) textRegion;
+			textRegion = container.getRegionAtCharacterOffset(offset);
+		}
+		if (!(textRegion instanceof PhpScriptRegion)) {
+			return false;
+		}
+
+		PhpScriptRegion phpScriptRegion = (PhpScriptRegion) textRegion;
+
+		int internalOffset = offset - container.getStartOffset() - phpScriptRegion.getStart();
+
+		try {
+			if (phpScriptRegion.getPartition(internalOffset) != PHPPartitionTypes.PHP_DEFAULT) {
+				return false;
+			}
+			return true;
+		} catch (BadLocationException e) {
+			Logger.logException(e);
+		}
+		return false;
+	}
+
