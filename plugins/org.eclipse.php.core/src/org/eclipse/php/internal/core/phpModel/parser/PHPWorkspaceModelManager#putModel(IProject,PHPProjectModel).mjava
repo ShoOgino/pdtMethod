@@ -1,4 +1,4 @@
-	private void putModel(IProject project, PHPProjectModel projectModel) {
+	private void putModel(final IProject project, PHPProjectModel projectModel) {
 		PHPProjectModel oldPhpProjectModel = (PHPProjectModel) models.get(project);
 		models.put(project, projectModel);
 		projectModel.initialize(project);
@@ -8,5 +8,31 @@
 			this.copyUserModelListeners(projectModel.getPHPUserModel(), oldPhpProjectModel.getPHPUserModel().getModelListenerList());
 		}
 		fireProjectModelAdded(project);
+		if(projectModel.isBuildNeeded()){
+			//checking if we are currently at a job with build scheduling rule 
+			//because the build must run in such a job
+			boolean newJobNeeded = (Job.getJobManager().currentJob().getRule() != ResourcesPlugin.getWorkspace().getRuleFactory().buildRule());
+			if (newJobNeeded) {
+				WorkspaceJob buildJob = new WorkspaceJob(NLS.bind(CoreMessages.getString("PHPWorkspaceModelManager_4"), project.getName())) {
+					@Override
+					public IStatus runInWorkspace(IProgressMonitor monitor) throws CoreException {
+						buildModel(monitor, project);
+						return Status.OK_STATUS;
+					}
+				};
+				buildJob.setRule(ResourcesPlugin.getWorkspace().getRuleFactory().buildRule());
+				buildJob.setUser(false);
+				buildJob.schedule();
+
+			} else {
+				IProgressMonitor monitor = new NullProgressMonitor();
+				buildModel(monitor, project);
+			}
+		} else {
+			if(project.exists()){//the event should not be lunched if we're dealing with the defaultPHPProjectModel
+				fireProjectModelChanged(project);
+			}
+		}
+		
 	}
 

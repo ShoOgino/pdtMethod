@@ -1,13 +1,19 @@
-	PHPUserModelManager(IProject project, PHPUserModel userModel) {
+	PHPUserModelManager(final IProject project, PHPUserModel userModel) {
 		this.project = project;
 		this.userModel = userModel;
-		
 		parserClientFactory = new UserModelParserClientFactoryVersionDependent(this);
-		
+
 		GlobalParsingManager.getInstance().addParserClient(parserClientFactory, project);
-		
-		// Create a cached user model without initialization
-		cachedUserModel = new PHPUserModel();
-		DefaultCacheManager.instance().load(project, cachedUserModel, false);
+
+		//loading model from cache
+
+		if (project.exists()) {//the project exist test is for the case we're dealing with the dummy project for external files.
+			boolean modelLoaded = DefaultCacheManager.instance().load(project, this.userModel, false);
+
+			//if the model was not loaded from the cache then a build is needed 
+			if (!modelLoaded) {
+				buildNeeded = true;
+			}
+		}
 	}
 
