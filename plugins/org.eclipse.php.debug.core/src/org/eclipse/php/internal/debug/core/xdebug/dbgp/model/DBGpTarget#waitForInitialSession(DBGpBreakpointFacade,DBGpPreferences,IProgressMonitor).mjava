@@ -10,19 +10,26 @@
       setState(STATE_INIT_SESSION_WAIT);
 
       try {
+    	 boolean launchIsCanceled = false;
+    	 if (launchMonitor != null) {
+    		 launchIsCanceled = launchMonitor.isCanceled();
+    	 }
          while (session == null && !launch.isTerminated() && !isTerminating()
-               && !launchMonitor.isCanceled()) {
+               && !launchIsCanceled) {
 
             // if we got here then session has not been updated
             // by the other thread yet, so wait. We wait for
             // an event or a timeout. Even if we timeout we could
             // still get the session before we re-enter the loop.
-//            te.waitForEvent(DBGpSessionHandler.getInstance().getTimeout());
             te.waitForEvent(XDebugPreferenceInit.getTimeoutDefault());
          }
 
          if (session != null && session.isActive()) {
-            if (!isTerminating() && !launch.isTerminated() && !launchMonitor.isCanceled()) {
+        	 if (launchMonitor != null) {
+        		 launchIsCanceled = launchMonitor.isCanceled();
+        	 }
+        	 
+            if (!isTerminating() && !launch.isTerminated() && !launchIsCanceled) {
                langThread = new DBGpThread(this);
                allThreads = new IThread[] {langThread};
                langThread.fireCreationEvent();

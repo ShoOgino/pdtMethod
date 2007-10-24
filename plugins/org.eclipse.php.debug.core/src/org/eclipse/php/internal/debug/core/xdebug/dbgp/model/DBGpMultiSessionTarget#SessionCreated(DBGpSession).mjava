@@ -1,0 +1,25 @@
+	public boolean SessionCreated(DBGpSession session) {
+		synchronized (debugTargets) {
+
+            //we need to use single shot debug targets to ensure that
+			//they terminate when complete and don't hang around waiting for
+			//another session they won't receive.
+			DBGpTarget target = new DBGpTarget(this.launch, this.scriptName,
+					this.ideKey, this.sessionID, this.stopAtStart);
+			target.SessionCreated(session);
+			// need to make sure bpFacade is thread safe.
+			// cannot provide a launch monitor here, unless this is the first
+			// launch, but it doesn't matter.
+			target.waitForInitialSession(bpFacade, sessionPreferences, null);
+			if (!target.isTerminated()) {
+				if (targetState == STATE_INIT_SESSION_WAIT) {
+					targetState = STATE_STARTED;
+					te.signalEvent();
+				}
+				debugTargets.add(target);
+				launch.addDebugTarget(target);
+			}
+		}
+		return true;
+	}
+

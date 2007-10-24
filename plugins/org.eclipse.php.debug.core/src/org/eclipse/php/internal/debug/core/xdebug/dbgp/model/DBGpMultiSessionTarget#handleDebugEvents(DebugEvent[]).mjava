@@ -1,0 +1,22 @@
+	public void handleDebugEvents(DebugEvent[] events) {
+		synchronized (debugTargets) {
+			for (int i=0; i < events.length; i++) {
+				DebugEvent evt = events[i];
+				Object src = evt.getSource();
+				if (src instanceof DBGpTarget) {
+					if (debugTargets.contains(src)) {
+						// ok it is one of ours, what is the event
+						int kind = evt.getKind();
+						if (kind == DebugEvent.TERMINATE) {
+							launch.removeDebugTarget((IDebugTarget)src);
+							debugTargets.remove(src);
+						}
+					}
+				}
+			}
+			if (targetState == STATE_TERMINATING && debugTargets.size() == 0) {
+				terminateMultiSessionDebugTarget();
+			}
+		}
+	}
+
