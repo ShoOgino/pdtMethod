@@ -25,10 +25,19 @@
 		int internalOffset = offset - container.getStartOffset() - phpScriptRegion.getStart();
 
 		try {
-			if (phpScriptRegion.getPartition(internalOffset) != PHPPartitionTypes.PHP_DEFAULT) {
-				return false;
+			String partitionType = phpScriptRegion.getPartition(internalOffset);
+			if (partitionType == PHPPartitionTypes.PHP_DEFAULT) {
+				return true;
 			}
-			return true;
+
+			if (partitionType == PHPPartitionTypes.PHP_DOC || partitionType == PHPPartitionTypes.PHP_MULTI_LINE_COMMENT) {
+				ITextRegion phpToken = phpScriptRegion.getPhpToken(internalOffset);
+				if (phpToken.getStart() == internalOffset) {
+					return true;
+				}
+			}
+
+			return false;
 		} catch (BadLocationException e) {
 			Logger.logException(e);
 		}
