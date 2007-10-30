@@ -7,22 +7,22 @@
 	 * @param document The IStructuredDocument that we are working on
 	 */
 	private void handleFileDocBlock(PHPFileData data, IStructuredDocument document) {
-		
+
 		// Find the first PHP script region:
 		IStructuredDocumentRegion sdRegion = document.getFirstStructuredDocumentRegion();
-		PhpScriptRegion phpScriptRegion = null;
+		IPhpScriptRegion phpScriptRegion = null;
 		while (sdRegion != null) {
 			ITextRegion region = sdRegion.getFirstRegion();
 			if (region.getType() == PHPRegionContext.PHP_OPEN) {
 				region = sdRegion.getRegionAtCharacterOffset(region.getEnd());
 				if (region != null && region.getType() == PHPRegionContext.PHP_CONTENT) {
-					phpScriptRegion = (PhpScriptRegion)region;
+					phpScriptRegion = (IPhpScriptRegion) region;
 					break;
 				}
 			}
 			sdRegion = sdRegion.getNext();
 		}
-		
+
 		if (phpScriptRegion != null) {
 			try {
 				ITextRegion textRegion = phpScriptRegion.getPhpToken(0);
@@ -30,7 +30,7 @@
 				if (textRegion.getType() == PHPRegionTypes.PHP_CLASS) {
 					// add a class doc at textRegion.getStart() + sdRegion.getStartOffset()
 					addClassBlock(document, data, offset);
-				} else if (textRegion.getType() == PHPRegionTypes.PHP_FUNCTION){
+				} else if (textRegion.getType() == PHPRegionTypes.PHP_FUNCTION) {
 					addFunctionBlock(document, data, offset);
 				} else if (textRegion.getType() == PHPRegionTypes.PHP_STRING && document.get(offset, textRegion.getLength()).trim().equalsIgnoreCase("define")) { //$NON-NLS-1$
 					addConstantBlock(document, data, offset);

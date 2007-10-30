@@ -1,7 +1,8 @@
+	@Override
 	protected void runInternal(ITextSelection selection, IDocumentExtension3 docExtension) throws BadLocationException, BadPartitioningException {
-		
+
 		MultiTextEdit multiEdit = new MultiTextEdit();
-		
+
 		int selectionOffset = selection.getOffset();
 		int selectionEndOffset = selectionOffset + selection.getLength();
 
@@ -9,16 +10,16 @@
 			IStructuredDocument sDoc = (IStructuredDocument) docExtension;
 			IStructuredDocumentRegion sdRegion = sDoc.getRegionAtCharacterOffset(selectionOffset);
 			ITextRegion textRegion = sdRegion.getRegionAtCharacterOffset(selectionOffset);
-			
+
 			ITextRegionCollection container = sdRegion;
-			
-			if(textRegion instanceof ITextRegionContainer){
-				container = (ITextRegionContainer)textRegion;
+
+			if (textRegion instanceof ITextRegionContainer) {
+				container = (ITextRegionContainer) textRegion;
 				textRegion = container.getRegionAtCharacterOffset(selectionOffset);
 			}
 
 			if (textRegion.getType() == PHPRegionContext.PHP_CONTENT) {
-				PhpScriptRegion phpScriptRegion = (PhpScriptRegion) textRegion;
+				IPhpScriptRegion phpScriptRegion = (IPhpScriptRegion) textRegion;
 				ITypedRegion partition = PHPPartitionTypes.getPartition(phpScriptRegion, selectionOffset - container.getStartOffset() - phpScriptRegion.getStart());
 
 				int phpRegionStart = container.getStartOffset(phpScriptRegion);
@@ -30,12 +31,12 @@
 					lastPartition = partition;
 					partition = handleInteriorPartition(partition, multiEdit, docExtension, phpRegionStart);
 				}
-				if(partition == null){
+				if (partition == null) {
 					partition = lastPartition;
 				}
 				handleLastPartition(partition, multiEdit, selectionEndOffset, phpRegionStart);
 			}
-			
+
 			IStructuredTextUndoManager undoManager = sDoc.getUndoManager();
 			undoManager.beginRecording(this);
 			multiEdit.apply(sDoc);
