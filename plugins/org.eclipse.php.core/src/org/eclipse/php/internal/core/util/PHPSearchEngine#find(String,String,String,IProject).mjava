@@ -2,8 +2,8 @@
 	 * Searches for the given path using internal PHP mechanism
 	 *
 	 * @param path File path to resolve
-	 * @param currentWorkingDir local Current working directory (usually: CWD of PHP process)
-	 * @param currentScriptDir Directory of current script (which is interpreted by the PHP at this time)
+	 * @param currentWorkingDir Current working directory (usually: CWD of PHP process), absolute (workspace of file system)
+	 * @param currentScriptDir Absolute (workspace of file system) directory of current script (which is interpreted by the PHP at this time)
 	 * @param currentProject Current project to which current script belongs
 	 * @return resolved path, or <code>null</code> in case of failure
 	 */
@@ -18,8 +18,7 @@
 			return searchExternalOrWorkspaceFile(file);
 		}
 		if (path.matches("\\.\\.?[/\\\\].*")) { // check whether the path starts with ./ or ../
-			file = new File(currentWorkingDir, path);
-			return searchExternalOrWorkspaceFile(file);
+			return searchExternalOrWorkspaceFile(currentWorkingDir, path);
 		}
 
 		// look into include path:
@@ -62,7 +61,6 @@
 		}
 
 		// look at current script directory:
-		file = new File(currentScriptDir, path);
-		return searchExternalOrWorkspaceFile(file);
+		return searchExternalOrWorkspaceFile(currentScriptDir, path);
 	}
 
