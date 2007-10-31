@@ -1,0 +1,22 @@
+		public String getText(Object element) {
+			if (!(element instanceof PathEntry)) {
+				return super.getText(element);
+			}
+			PathEntry pathEntry = (PathEntry) element;
+			if (pathEntry.getType() == Type.EXTERNAL) {
+				return ((File) pathEntry.getContainer()).getPath();
+			}
+			if (pathEntry.getContainer() instanceof IncludePathEntry) {
+				IncludePathEntry entry = (IncludePathEntry) pathEntry.getContainer();
+				return entry.getPath().toOSString();
+			}
+			if (pathEntry.getContainer() instanceof IResource) {
+				String path = ((IResource) pathEntry.getContainer()).getFullPath().toPortableString();
+				if (path.startsWith("/")) {
+					path = path.substring(1);
+				}
+				return path;
+			}
+			return phpLabelProvider.getText(pathEntry.getContainer());
+		}
+

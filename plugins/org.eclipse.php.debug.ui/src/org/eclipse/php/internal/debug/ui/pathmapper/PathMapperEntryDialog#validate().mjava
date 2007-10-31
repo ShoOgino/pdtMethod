@@ -1,0 +1,64 @@
+	protected void validate() {
+		Mapping mapping = new Mapping();
+
+		String remotePathStr = fRemotePathText.getText().trim();
+		if (remotePathStr.length() == 0) {
+			setError("Path on server must not be empty!");
+			return;
+		}
+		try {
+			mapping.remotePath = new AbstractPath(remotePathStr);
+		} catch (IllegalArgumentException e) {
+			setError("Path on server is illegal or not absolute!");
+			return;
+		}
+
+		// Workspace file:
+		if (fWorkspacePathBtn.getSelection()) {
+			String workspacePath = fWorkspacePathText.getText().trim();
+			if (workspacePath.length() == 0) {
+				setError("Path in workspace must not be empty!");
+				return;
+			}
+
+			boolean pathExistsInWorkspace = false;
+			mapping.type = (Type) fWorkspacePathText.getData();
+			if (mapping.type == Type.INCLUDE_FOLDER  || mapping.type == Type.INCLUDE_VAR) {
+				pathExistsInWorkspace = new File(workspacePath).exists();
+			} else {
+				pathExistsInWorkspace = (ResourcesPlugin.getWorkspace().getRoot().findMember(workspacePath) != null);
+			}
+			if (!pathExistsInWorkspace) {
+				setError(NLS.bind("Path ''{0}'' doesn't exist in workspace!", workspacePath));
+				return;
+			}
+			try {
+				mapping.localPath = new AbstractPath(workspacePath);
+			} catch (IllegalArgumentException e) {
+				setError("Path in workspace is illegal or not absolute!");
+				return;
+			}
+		} else { // External file:
+			String externalPath = fExternalPathText.getText().trim();
+			if (externalPath.length() == 0) {
+				setError("Path in file system must not be empty!");
+				return;
+			}
+			if (!new File(externalPath).exists()) {
+				setError(NLS.bind("Path ''{0}'' doesn't exist in file system!", externalPath));
+				return;
+			}
+			try {
+				mapping.type = Type.EXTERNAL;
+				mapping.localPath = new AbstractPath(externalPath);
+			} catch (IllegalArgumentException e) {
+				setError("Path in file system is illegal or not absolute!");
+				return;
+			}
+		}
+
+		fEditData = mapping;
+
+		updateStatus(Status.OK_STATUS);
+	}
+

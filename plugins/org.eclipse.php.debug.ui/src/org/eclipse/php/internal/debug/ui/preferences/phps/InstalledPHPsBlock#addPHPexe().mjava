@@ -2,10 +2,18 @@
 	 * Bring up a dialog that lets the user create a new VM definition.
 	 */
 	private void addPHPexe() {
-		final AddPHPexeDialog dialog = new AddPHPexeDialog(this, getShell(), phpExes, null);
-		dialog.setTitle(PHPDebugUIMessages.InstalledPHPsBlock_7);
-		if (dialog.open() != Window.OK)
+		Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
+		NullProgressMonitor monitor = new NullProgressMonitor();
+		PHPexeItem phpExeItem = null;
+		PHPExeWizard wizard = new PHPExeWizard(phpExes.getAllItems());
+		ClosableWizardDialog dialog = new ClosableWizardDialog(shell, wizard);
+		if (dialog.open() == Window.CANCEL) {
+			monitor.setCanceled(true);
 			return;
+		}
+		phpExeItem = (PHPexeItem) wizard.getRootFragment().getWizardModel().getObject(PHPExeWizard.MODEL);
+		fPHPexes.add(phpExeItem);
+		phpExes.addItem(phpExeItem);
 		fPHPExeList.refresh();
 		commitChanges();
 	}

@@ -1,0 +1,128 @@
+	protected Control createDialogArea(Composite parent) {
+		parent = (Composite) super.createDialogArea(parent);
+		PixelConverter pixelConverter = new PixelConverter(parent);
+
+		// Remote path text field:
+		Label label = new Label(parent, SWT.NONE);
+		label.setText("Path on Server:");
+
+		fRemotePathText = new Text(parent, SWT.BORDER);
+		fRemotePathText.addModifyListener(new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+				validate();
+			}
+		});
+		GridData layoutData = new GridData(GridData.FILL_HORIZONTAL);
+		layoutData.widthHint = pixelConverter.convertWidthInCharsToPixels(50);
+		fRemotePathText.setLayoutData(layoutData);
+
+		// Radio buttons group:
+		Composite typeSelectionGroup = new Composite(parent, SWT.NONE);
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 2;
+		typeSelectionGroup.setLayout(layout);
+		typeSelectionGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+		// Workspace file:
+		fWorkspacePathBtn = new Button(typeSelectionGroup, SWT.RADIO);
+		layoutData = new GridData(GridData.FILL_HORIZONTAL);
+		layoutData.horizontalSpan = 2;
+		fWorkspacePathBtn.setLayoutData(layoutData);
+		fWorkspacePathBtn.setText("Path in &Workspace");
+		fWorkspacePathBtn.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				boolean enabled = fWorkspacePathBtn.getSelection();
+				fWorkspacePathText.setEnabled(enabled);
+				fWorkspacePathBrowseBtn.setEnabled(enabled);
+				fExternalPathText.setEnabled(!enabled);
+				fExternalPathBrowseBtn.setEnabled(!enabled);
+			}
+		});
+
+		fWorkspacePathText = new Text(typeSelectionGroup, SWT.BORDER);
+		layoutData = new GridData(GridData.FILL_HORIZONTAL);
+		layoutData.horizontalIndent = pixelConverter.convertWidthInCharsToPixels(1);
+		fWorkspacePathText.setLayoutData(layoutData);
+		fWorkspacePathText.addModifyListener(new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+				validate();
+			}
+		});
+
+		fWorkspacePathBrowseBtn = new Button(typeSelectionGroup, SWT.NONE);
+		fWorkspacePathBrowseBtn.setText("&Browse");
+		fWorkspacePathBrowseBtn.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				WorkspaceBrowseDialog dialog = new WorkspaceBrowseDialog(getShell());
+				if (dialog.open() == Window.OK) {
+					Object selectedElement = dialog.getSelectedElement();
+					fWorkspacePathText.setData(null);
+					if (selectedElement instanceof IResource) {
+						IResource resource = (IResource) selectedElement;
+						fWorkspacePathText.setData(Type.WORKSPACE);
+						fWorkspacePathText.setText(resource.getFullPath().toString());
+					} else if (selectedElement instanceof IIncludePathEntry) {
+						IIncludePathEntry includePathEntry = (IIncludePathEntry) selectedElement;
+						fWorkspacePathText.setData(includePathEntry.getEntryKind() == IIncludePathEntry.IPE_VARIABLE ? Type.INCLUDE_VAR : Type.INCLUDE_FOLDER);
+						if (includePathEntry.getEntryKind() == IIncludePathEntry.IPE_VARIABLE) {
+							IPath incPath = IncludePathVariableManager.instance().resolveVariablePath(includePathEntry.getPath().toString());
+							if (incPath != null) {
+								fWorkspacePathText.setText(incPath.toOSString());
+							}
+						} else {
+							fWorkspacePathText.setText(includePathEntry.getPath().toOSString());
+						}
+					} else if (selectedElement instanceof IPFile) {
+						IPFile ipFile = (IPFile) selectedElement;
+						IIncludePathEntry includePathEntry = ipFile.includePathEntry;
+						fWorkspacePathText.setData(includePathEntry.getEntryKind() == IIncludePathEntry.IPE_VARIABLE ? Type.INCLUDE_VAR : Type.INCLUDE_FOLDER);
+						fWorkspacePathText.setText(ipFile.file.getAbsolutePath());
+					}
+				}
+			}
+		});
+
+		// External file:
+		fExternalPathBtn = new Button(typeSelectionGroup, SWT.RADIO);
+		layoutData = new GridData(GridData.FILL_HORIZONTAL);
+		layoutData.horizontalSpan = 2;
+		fExternalPathBtn.setLayoutData(layoutData);
+		fExternalPathBtn.setText("Path in &File System");
+		fExternalPathBtn.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				boolean enabled = fExternalPathBtn.getSelection();
+				fExternalPathText.setEnabled(enabled);
+				fExternalPathBrowseBtn.setEnabled(enabled);
+				fWorkspacePathText.setEnabled(!enabled);
+				fWorkspacePathBrowseBtn.setEnabled(!enabled);
+			}
+		});
+
+		fExternalPathText = new Text(typeSelectionGroup, SWT.BORDER);
+		layoutData = new GridData(GridData.FILL_HORIZONTAL);
+		layoutData.horizontalIndent = pixelConverter.convertWidthInCharsToPixels(1);
+		fExternalPathText.setLayoutData(layoutData);
+		fExternalPathText.addModifyListener(new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+				validate();
+			}
+		});
+
+		fExternalPathBrowseBtn = new Button(typeSelectionGroup, SWT.NONE);
+		fExternalPathBrowseBtn.setText("&Browse");
+		fExternalPathBrowseBtn.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				DirectoryDialog dialog = new DirectoryDialog(getShell());
+				String path = dialog.open();
+				if (path != null) {
+					fExternalPathText.setText(path);
+				}
+			}
+		});
+
+		applyDialogFont(parent);
+		initializeValues();
+
+		return parent;
+	}
+

@@ -1,0 +1,60 @@
+	protected void createControl() {
+		PixelConverter pixelConverter = new PixelConverter(this);
+
+		GridLayout layout = new GridLayout(1, true);
+		setLayout(layout);
+		setLayoutData(new GridData(GridData.FILL_BOTH));
+
+		Composite parent = new Composite(this, SWT.NONE);
+		layout = new GridLayout();
+		layout.numColumns = 3;
+		parent.setLayout(layout);
+		parent.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+		fPHPexeName = new StringDialogField();
+		fPHPexeName.setLabelText(PHPDebugUIMessages.addPHPexeDialog_phpName);
+
+		fPHPRoot = new StringButtonDialogField(new IStringButtonAdapter() {
+			public void changeControlPressed(DialogField field) {
+				DirectoryDialog dialog = new DirectoryDialog(getShell());
+				dialog.setFilterPath(fPHPRoot.getText());
+				dialog.setMessage(PHPDebugUIMessages.addPHPexeDialog_pickPHPRootDialog_message);
+				String newPath = dialog.open();
+				if (newPath != null) {
+					fPHPRoot.setText(newPath);
+				}
+			}
+		});
+		fPHPRoot.setLabelText(PHPDebugUIMessages.addPHPexeDialog_phpHome);
+		fPHPRoot.setButtonLabel(PHPDebugUIMessages.addPHPexeDialog_browse1);
+
+		fPHPexeName.doFillIntoGrid(parent, 3);
+		fPHPRoot.doFillIntoGrid(parent, 3);
+		((GridData) fPHPRoot.getTextControl(parent).getLayoutData()).widthHint = pixelConverter.convertWidthInCharsToPixels(50);
+
+		fDebuggersLabel = new Label(parent, SWT.LEFT | SWT.WRAP);
+		fDebuggersLabel.setFont(parent.getFont());
+		fDebuggersLabel.setText(PHPDebugUIMessages.addPHPexeDialog_phpDebugger);
+		GridData data = new GridData();
+		data.horizontalSpan = 1;
+		fDebuggersLabel.setLayoutData(data);
+
+		fDebuggers = new Combo(parent, SWT.DROP_DOWN | SWT.READ_ONLY);
+		data = new GridData();
+		data.horizontalSpan = 1;
+		data.grabExcessHorizontalSpace = true;
+		fDebuggers.setLayoutData(data);
+
+		for (int i = 0; i < debuggersIds.size(); ++i) {
+			String id = debuggersIds.get(i);
+			String debuggerName = PHPDebuggersRegistry.getDebuggerName(id);
+			fDebuggers.add(debuggerName, i);
+		}
+
+		init();
+		createFieldListeners();
+		validate();
+
+		Dialog.applyDialogFont(this);
+	}
+

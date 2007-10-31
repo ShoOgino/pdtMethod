@@ -1,0 +1,59 @@
+	protected void validate() {
+		PHPexeItem phpExeItem = getPHPExeItem();
+
+		// Check whether we can edit this item
+		if (phpExeItem != null && !phpExeItem.isEditable()) {
+			setMessage(PHPDebugUIMessages.addPHPexeDialog_readOnlyPHPExe, IStatus.INFO);
+			return;
+		}
+
+		String name = fPHPexeName.getText();
+		if (name == null || name.trim().length() == 0) {
+			setMessage(PHPDebugUIMessages.addPHPexeDialog_enterName, IStatus.INFO);
+			return;
+		}
+
+		// Check whether the name already exists:
+		if (existingItems != null) {
+			for (PHPexeItem item : existingItems) {
+				if (item.getName().equals(name)) {
+					setMessage(PHPDebugUIMessages.addPHPexeDialog_duplicateName, IStatus.ERROR);
+					return;
+				}
+			}
+		}
+
+		String locationName = fPHPRoot.getText();
+		if (locationName.length() == 0) {
+			setMessage(PHPDebugUIMessages.addPHPexeDialog_enterLocation, IStatus.INFO);
+			return;
+		}
+		File file = new File(locationName);
+		if (!file.exists()) {
+			setMessage(PHPDebugUIMessages.addPHPexeDialog_locationNotExists, IStatus.ERROR);
+		}
+
+		final boolean[] error = new boolean[1];
+		final File phpHome = file;
+		Runnable r = new Runnable() {
+			public void run() {
+				File phpExecutable = PHPexeItem.findPHPExecutable(phpHome);
+				if (phpExecutable == null) {
+					setMessage(PHPDebugUIMessages.PHPexe_executable_was_not_found_1, IStatus.ERROR);
+					error[0] = true;
+				}
+			}
+		};
+		BusyIndicator.showWhile(getShell().getDisplay(), r);
+		if (error[0]) {
+			return;
+		}
+
+		phpExeItem.setName(name);
+		phpExeItem.setLocation(file);
+		phpExeItem.setDebuggerID(debuggersIds.get(fDebuggers.getSelectionIndex()));
+
+		setMessage(getDescription(), IMessageProvider.NONE);
+		controlHandler.update();
+	}
+
