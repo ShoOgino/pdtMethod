@@ -7,33 +7,71 @@
 		final boolean foldingFunctions = adapterFactory.isFoldingFunctions();
 		final boolean foldingClasses = adapterFactory.isFoldingClasses();
 
+		Element fileElement = ElementFactory.createFileElement(fileData);
 		// adds the file doc block
-		createDocBlockAnnotations(currentAnnotations, addedAnnotations, fileData, startOffset, endOffset, foldingPhpDoc);
+		createDocBlockAnnotations(fileElement, fileData, currentAnnotations, addedAnnotations, startOffset, endOffset, foldingPhpDoc);
 
 		PHPClassData[] classes = fileData.getClasses();
+		Map<String, Integer> classIndices = new HashMap<String, Integer>();
 		for (PHPClassData classData : classes) {
-			createCodeDataAnnotations(currentAnnotations, addedAnnotations, classData, startOffset, endOffset, foldingClasses);
-			createDocBlockAnnotations(currentAnnotations, addedAnnotations, classData, startOffset, endOffset, foldingPhpDoc);
+			Integer classIndex = classIndices.get(classData.getName());
+			if (classIndex == null) {
+				classIndex = new Integer(0);
+			} else {
+				classIndex++;
+			}
+			classIndices.put(classData.getName(), classIndex);
+			Element classElement = createCodeDataAnnotations(fileElement, classData, currentAnnotations, addedAnnotations, classIndex, startOffset, endOffset, foldingClasses, foldingPhpDoc);
 			PHPFunctionData[] methods = classData.getFunctions();
+			Map<String, Integer> methodIndices = new HashMap<String, Integer>();
 			for (PHPFunctionData methodData : methods) {
-				createCodeDataAnnotations(currentAnnotations, addedAnnotations, methodData, startOffset, endOffset, foldingFunctions);
-				createDocBlockAnnotations(currentAnnotations, addedAnnotations, methodData, startOffset, endOffset, foldingPhpDoc);
+				Integer methodIndex = methodIndices.get(methodData.getName());
+				if (methodIndex == null) {
+					methodIndex = new Integer(0);
+				} else {
+					methodIndex++;
+				}
+				methodIndices.put(methodData.getName(), methodIndex);
+				createCodeDataAnnotations(classElement, methodData, currentAnnotations, addedAnnotations, methodIndex, startOffset, endOffset, foldingFunctions, foldingPhpDoc);
 			}
 			PHPClassVarData[] variables = classData.getVars();
+			Map<String, Integer> variableIndices = new HashMap<String, Integer>();
 			for (PHPClassVarData variableData : variables) {
-				createDocBlockAnnotations(currentAnnotations, addedAnnotations, variableData, startOffset, endOffset, foldingPhpDoc);
+				Integer variableIndex = variableIndices.get(variableData.getName());
+				if (variableIndex == null) {
+					variableIndex = new Integer(0);
+				} else {
+					variableIndex++;
+				}
+				variableIndices.put(variableData.getName(), variableIndex);
+				createCodeDataAnnotations(classElement, variableData, currentAnnotations, addedAnnotations, variableIndex, startOffset, endOffset, false, foldingPhpDoc);
 			}
 
 			PHPClassConstData[] constants = classData.getConsts();
-			for (PHPClassConstData variableData : constants) {
-				createDocBlockAnnotations(currentAnnotations, addedAnnotations, variableData, startOffset, endOffset, foldingPhpDoc);
+			Map<String, Integer> constantIndices = new HashMap<String, Integer>();
+			for (PHPClassConstData constantData : constants) {
+				Integer constantIndex = constantIndices.get(constantData.getName());
+				if (constantIndex == null) {
+					constantIndex = new Integer(0);
+				} else {
+					constantIndex++;
+				}
+				constantIndices.put(constantData.getName(), constantIndex);
+				createCodeDataAnnotations(classElement, constantData, currentAnnotations, addedAnnotations, constantIndex, startOffset, endOffset, false, foldingPhpDoc);
 			}
 		}
 
 		PHPFunctionData[] functions = fileData.getFunctions();
+		Map<String, Integer> functionIndices = new HashMap<String, Integer>();
 		for (PHPFunctionData functionData : functions) {
-			createCodeDataAnnotations(currentAnnotations, addedAnnotations, functionData, startOffset, endOffset, foldingFunctions);
-			createDocBlockAnnotations(currentAnnotations, addedAnnotations, functionData, startOffset, endOffset, foldingPhpDoc);
+			Integer functionIndex = functionIndices.get(functionData.getName());
+			if (functionIndex == null) {
+				functionIndex = new Integer(0);
+			} else {
+				functionIndex++;
+			}
+			functionIndices.put(functionData.getName(), functionIndex);
+			createCodeDataAnnotations(fileElement, functionData, currentAnnotations, addedAnnotations, functionIndex, startOffset, endOffset, foldingFunctions, foldingPhpDoc);
 		}
 	}
 

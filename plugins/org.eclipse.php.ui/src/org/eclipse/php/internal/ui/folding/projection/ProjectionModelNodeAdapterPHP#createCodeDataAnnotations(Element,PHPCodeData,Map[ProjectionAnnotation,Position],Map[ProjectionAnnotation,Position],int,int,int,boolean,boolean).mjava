@@ -1,36 +1,40 @@
 	/**
 	 * Computes current annotations on given CodeDatas.
-	 *
-	 * @param codeDatas
 	 * @param startOffset
 	 * @param endOffset
+	 * @param codeDatas
 	 */
-	private void createCodeDataAnnotations(Map<ProjectionAnnotation, Position> currentAnnotations, Map<ProjectionAnnotation, Position> addedAnnotations, PHPCodeData codeData, int startOffset, int endOffset, boolean collapse) {
+	private Element createCodeDataAnnotations(Element parentElement, PHPCodeData codeData, Map<ProjectionAnnotation, Position> currentAnnotations, Map<ProjectionAnnotation, Position> addedAnnotations, int index, int startOffset, int endOffset, boolean collapse, boolean collapseDoc) {
 		UserData userData = codeData.getUserData();
 		int codeStartOffset = userData.getStartPosition();
 		int codeEndOffset = userData.getEndPosition();
 		if (document.getLineOfOffset(codeStartOffset) >= document.getLineOfOffset(codeEndOffset)) {
-			return;
+			return null;
 		}
 
 		if (codeStartOffset > startOffset && codeStartOffset < endOffset) {
 			// element may start in one PHP block and end in another.
 			// false - when adding new annotation - don't fold
-			ProjectionAnnotation newAnnotation = new ElementProjectionAnnotation(codeData, false, shouldAutoCollapseAnnotations ? collapse : false);
-			ProjectionAnnotation existingAnnotation = getExistingAnnotation(newAnnotation);
+			ElementProjectionAnnotation newAnnotation = new ElementProjectionAnnotation(parentElement, codeData, index, shouldAutoCollapseAnnotations ? collapse : false);
+			ElementProjectionAnnotation existingAnnotation = getExistingAnnotation(newAnnotation);
 			Position newPosition = createPosition(codeStartOffset, userData.getEndPosition(), document);
-
+			final Element element;
 			if (existingAnnotation == null) {
 				// add to map containing all annotations for this adapter
 				currentAnnotations.put(newAnnotation, newPosition);
 				// add to map containing annotations to add
 				addedAnnotations.put(newAnnotation, newPosition);
+				element = newAnnotation.element;
 			} else {
 				// add to map containing all annotations for this adapter
 				currentAnnotations.put(existingAnnotation, newPosition);
 				// remove from map containing annotations to delete
 				previousAnnotations.remove(existingAnnotation);
+				element = newAnnotation.element;
 			}
+			createDocBlockAnnotations(element, codeData, currentAnnotations, addedAnnotations, startOffset, endOffset, collapseDoc);
+			return element;
 		}
+		return null;
 	}
 
