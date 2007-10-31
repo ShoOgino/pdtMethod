@@ -1,0 +1,25 @@
+	/**
+	 * Searches for the path in the given IO file
+	 *
+	 * @param file File to start search from
+	 * @param path Abstract path of the remote file
+	 * @param container Include path entry container
+	 * @param results List of results to return
+	 * @throws InterruptedException
+	 */
+	private static void find(final File file, final AbstractPath path, final IIncludePathEntry container, final List<PathEntry> results) {
+		if (!file.isDirectory() && file.getName().equals(path.getLastSegment())) {
+			Type type = (container.getEntryKind() == IncludePathEntry.IPE_VARIABLE) ? Type.INCLUDE_VAR : Type.INCLUDE_FOLDER;
+			PathEntry pathEntry = new PathEntry(file.getAbsolutePath(), type, container);
+			results.add(pathEntry);
+			return;
+		} else {
+			File[] files = file.listFiles(PHP_FILTER);
+			if (files != null) {
+				for (int i = 0; i < files.length; ++i) {
+					find(files[i], path, container, results);
+				}
+			}
+		}
+	}
+

@@ -1,0 +1,23 @@
+	public PathEntry getLocalFile(String remoteFile) {
+		AbstractPath path = getPath(remoteToLocalMap, new AbstractPath(remoteFile));
+		if (path != null) {
+			String localFile = path.toString();
+			Type type = getPathType(path);
+			if (type == Type.WORKSPACE) {
+				IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(localFile);
+				if (resource != null) {
+					return new PathEntry(path, type, resource.getParent());
+				}
+			} else {
+				File file = new File(localFile);
+				if (file.exists()) {
+					if (type == Type.INCLUDE_FOLDER || type == Type.INCLUDE_VAR) {
+						return new PathEntry(path, type, null);
+					}
+					return new PathEntry(path, type, file.getParentFile());
+				}
+			}
+		}
+		return null;
+	}
+

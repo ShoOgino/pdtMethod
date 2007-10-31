@@ -1,0 +1,29 @@
+	/**
+	 * Searches for the path in the given resource
+	 * @param resource Resource to start the search from
+	 * @param path Abstract path of the remote file
+	 * @param results List of results to return
+	 * @throws InterruptedException
+	 */
+	private static void find(final IResource resource, final AbstractPath path, final List<PathEntry> results) throws InterruptedException {
+		if (resource == null || !resource.exists() || !resource.isAccessible()) {
+			return;
+		}
+		WorkspaceJob findJob = new WorkspaceJob("") {
+			public IStatus runInWorkspace(IProgressMonitor monitor) throws CoreException {
+				resource.accept(new IResourceVisitor() {
+					public boolean visit(IResource resource) throws CoreException {
+						if (resource.getName().equals(path.getLastSegment())) {
+							PathEntry pathEntry = new PathEntry(resource.getFullPath().toString(), Type.WORKSPACE, resource.getParent());
+							results.add(pathEntry);
+						}
+						return true;
+					}
+				});
+				return Status.OK_STATUS;
+			}
+		};
+		findJob.schedule();
+		findJob.join();
+	}
+

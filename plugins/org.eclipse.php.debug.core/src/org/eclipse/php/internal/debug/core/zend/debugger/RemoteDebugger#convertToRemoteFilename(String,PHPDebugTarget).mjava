@@ -1,0 +1,21 @@
+	/**
+	 * Returns remote file name corresponding to the given local path
+	 * @param localFile
+	 * @return remote file path, or localFile in case it couldn't be resolved
+	 */
+	public static String convertToRemoteFilename(String localFile, PHPDebugTarget debugTarget) {
+		IFile wsFile = ResourcesPlugin.getWorkspace().getRoot().getFile(new Path(localFile));
+		if (debugTarget.isPHPCGI() && wsFile.exists() && wsFile.getLocation() != null) {
+			File fsFile = wsFile.getLocation().toFile();
+			if (fsFile.exists()) {
+				return fsFile.getAbsolutePath();
+			}
+		}
+		PathMapper pathMapper = PathMapperRegistry.getByLaunchConfiguration(debugTarget.getLaunch().getLaunchConfiguration());
+		String remoteFile = pathMapper.getRemoteFile(localFile);
+		if (remoteFile != null) {
+			return remoteFile;
+		}
+		return localFile;
+	}
+

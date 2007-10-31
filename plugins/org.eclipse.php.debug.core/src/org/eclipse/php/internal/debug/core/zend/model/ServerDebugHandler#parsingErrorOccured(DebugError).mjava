@@ -1,42 +1,15 @@
 	public void parsingErrorOccured(DebugError debugError) {
 		super.parsingErrorOccured(debugError);
-		String sName = debugError.getFullPathName();
-		int length;
-		String rName;
-		if (!fDebugTarget.isPHPCGI()) {
-			length = fDebugTarget.getHTDocs().length() + fDebugTarget.getContextRoot().length();
-			rName = sName.substring(length);
-			// Check if the name exists in the workspace. 
-			// If not, keep the original name.
-			try {
-				if (!ResourcesPlugin.getWorkspace().getRoot().getFile(Path.fromOSString(rName)).exists()) {
-					rName = sName;
-				}
-			} catch (Exception e) {
-				rName = sName;
-			}
-		} else {
-			length = fDebugTarget.getWorkspacePath().length() + fDebugTarget.getProjectName().length();
-			IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-			IFile file = root.getFileForLocation(new Path(sName));
-			if (file != null) {
-				if (root.getProject(fDebugTarget.getProjectName()).equals(file.getProject())) {
-					rName = file.getProjectRelativePath().toOSString();
-				} else {
-					rName = ".." + file.getFullPath().toOSString();
-				}
-			} else {
-				rName = sName;
-			}
-		}
-		String dFileName = RemoteDebugger.convertToSystemIndependentFileName(rName);
-		debugError.setFileName(dFileName);
+
+		// resolve path
+		String localFileName = RemoteDebugger.convertToLocalFilename(debugError.getFullPathName(), fDebugTarget);
+		debugError.setFileName(localFileName);
+
 		fDebugTarget.getDebugErrors().add(debugError);
 
 		Object[] listeners = fDebugTarget.getConsoleEventListeners().toArray();
-		for (int i = 0; i < listeners.length; i++) {
-			((IPHPConsoleEventListener) listeners[i]).handleEvent(debugError);
+		for (Object element : listeners) {
+			((IPHPConsoleEventListener) element).handleEvent(debugError);
 		}
-
 	}
 

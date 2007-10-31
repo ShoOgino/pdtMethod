@@ -1,0 +1,36 @@
+	public IStackFrame[] getStackFrames() throws DebugException {
+		// check to see if eclipse is getting the same stack frames again.
+		PHPstack stack = fDebugger.getCallStack();
+		PHPThread thread = (PHPThread) fTarget.getThreads()[0];
+		StackLayer[] layers = stack.getLayers();
+		boolean main = false;
+		if (layers.length == 1)
+			main = true;
+
+		if (fPreviousFrames == null) {
+			fPreviousFrames = createNewFrames(layers, thread);
+			fVariables = createVariables(main, false, true);
+			createStackVariables(layers);
+			fSuspendCount = fTarget.getSuspendCount();
+			return fPreviousFrames;
+		}
+
+		if (fSuspendCount == fTarget.getSuspendCount()) {
+			return fPreviousFrames;
+		}
+
+		// check to see if layers are the same as the previous thread
+		fSuspendCount = fTarget.getSuspendCount();
+		boolean layersSame = compareLayers(layers, fPreviousLayers);
+		if (layersSame) {
+			fVariables = createVariables(main, false, false);
+		} else {
+			fPreviousFrames = createNewFrames(layers, thread);
+			fVariables = createVariables(main, false, true);
+		}
+		int topID = fPreviousFrames[0] instanceof PHPStackFrame ? ((PHPStackFrame) fPreviousFrames[0]).getIdentifier() : 0;
+		fPreviousFrames[0] = new PHPStackFrame(thread, fTarget.getLastFileName(), (main) ? "" : fPreviousFrames[1].getName(), fTarget.getLastStop(), topID, resolveRemoteFile(fTarget.getLastFileName()));
+		createStackVariables(layers);
+		return fPreviousFrames;
+	}
+

@@ -1,0 +1,23 @@
+	/**
+	 * Returns path mapper associated with the given launch configuration
+	 * @param launchConfiguration Launch configuration
+	 * @return path mapper
+	 */
+	public static PathMapper getByLaunchConfiguration(ILaunchConfiguration launchConfiguration) {
+		PathMapper pathMapper = null;
+		try {
+			String serverName = launchConfiguration.getAttribute(Server.NAME, (String) null);
+			if (serverName != null) {
+				pathMapper = getByServer(ServersManager.getServer(serverName));
+			} else {
+				String phpExe = launchConfiguration.getAttribute(PHPCoreConstants.ATTR_LOCATION, (String) null);
+				if (phpExe != null) {
+					pathMapper = getByPHPExe(PHPexes.getInstance().getItemForFile(phpExe));
+				}
+			}
+		} catch (CoreException e) {
+			PHPDebugPlugin.log(e);
+		}
+		return pathMapper;
+	}
+

@@ -1,0 +1,33 @@
+	@SuppressWarnings("unchecked")
+	public synchronized void restoreFromMap(HashMap map) {
+		if (map == null) {
+			return;
+		}
+		serverPathMapper.clear();
+		phpExePathMapper.clear();
+
+		map = (HashMap)map.get("pathMappers"); //$NON-NLS-1$
+		if (map == null) {
+			return;
+		}
+		Iterator i = map.keySet().iterator();
+		while (i.hasNext()) {
+			HashMap entryMap = (HashMap) map.get(i.next());
+			String serverName = (String) entryMap.get("server"); //$NON-NLS-1$
+			String phpExeFile = (String) entryMap.get("phpExe"); //$NON-NLS-1$
+			PathMapper pathMapper = new PathMapper();
+			pathMapper.restoreFromMap((HashMap) entryMap.get("mapper")); //$NON-NLS-1$
+			if (serverName != null) {
+				Server server = ServersManager.getServer(serverName);
+				if (server != null) {
+					serverPathMapper.put(server, pathMapper);
+				}
+			} else if (phpExeFile != null) {
+				PHPexeItem phpExeItem = PHPexes.getInstance().getItemForFile(phpExeFile);
+				if (phpExeItem != null) {
+					phpExePathMapper.put(phpExeItem, pathMapper);
+				}
+			}
+		}
+	}
+

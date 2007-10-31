@@ -1,38 +1,50 @@
 	public void handleNotification(Object msg) {
 		if (msg instanceof OutputNotification) {
+
 			String output = ((OutputNotification) msg).getOutput();
 			debugHandler.newOutput(output);
+
 		} else if (msg instanceof ReadyNotification) {
+
 			ReadyNotification readyNotification = (ReadyNotification) msg;
 			String currentFile = readyNotification.getFileName();
 			int currentLine = readyNotification.getLineNumber();
-			debugHandler.ready(convertToSystemDependentFileName(currentFile), currentLine);
+			debugHandler.ready(currentFile, currentLine);
+
 		} else if (msg instanceof DebugSessionStartedNotification) {
+
 			DebugSessionStartedNotification debugSessionStartedNotification = (DebugSessionStartedNotification) msg;
 			String fileName = debugSessionStartedNotification.getFileName();
 			String uri = debugSessionStartedNotification.getUri();
 			String query = debugSessionStartedNotification.getQuery();
 			String options = debugSessionStartedNotification.getOptions();
 			debugHandler.sessionStarted(fileName, uri, query, options);
+
 		} else if (msg instanceof HeaderOutputNotification) {
+
 			debugHandler.newHeaderOutput(((HeaderOutputNotification) msg).getOutput());
+
 		} else if (msg instanceof ParsingErrorNotification) {
+
 			ParsingErrorNotification parseError = (ParsingErrorNotification) msg;
 			String errorText = parseError.getErrorText();
-			String fileName = "";
+
+			String fileName;
 			Path errorFilePath = new Path(parseError.getFileName());
 			if ((errorFilePath.segmentCount() > 1) && errorFilePath.segment(errorFilePath.segmentCount() - 2).equalsIgnoreCase("Untitled_Documents")) {
 				fileName = errorFilePath.lastSegment();
 			} else {
-				fileName = convertToSystemDependentFileName(parseError.getFileName());
+				fileName = parseError.getFileName();
 			}
 
 			int lineNumber = parseError.getLineNumber();
 			int errorLevel = parseError.getErrorLevel();
 
-			DebugError debugError = new DebugError(errorLevel, convertToSystemDependentFileName(parseError.getFileName()), lineNumber, errorText);
+			DebugError debugError = new DebugError(errorLevel, fileName, lineNumber, errorText);
 			debugHandler.parsingErrorOccured(debugError);
+
 		} else if (msg instanceof DebuggerErrorNotification) {
+
 			DebuggerErrorNotification parseError = (DebuggerErrorNotification) msg;
 			int errorLevel = parseError.getErrorLevel();
 			DebugError debugError = new DebugError();
@@ -43,7 +55,9 @@
 
 			debugError.setCode(errorLevel);
 			debugHandler.debuggerErrorOccured(debugError);
+
 		} else if (msg instanceof DebugScriptEndedNotification) {
+
 			debugHandler.handleScriptEnded(); // 2 options: close message or // XXX - uncomment
 			// start profile
 		}

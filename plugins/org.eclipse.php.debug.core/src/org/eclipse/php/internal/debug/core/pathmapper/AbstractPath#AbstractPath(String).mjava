@@ -1,0 +1,43 @@
+	/**
+	 * Constructs new abstract path instance
+	 * @param path Full path
+	 */
+	public AbstractPath(String path) {
+		if (path == null) {
+			throw new NullPointerException();
+		}
+		if (path.startsWith("\\\\")) { // Network path
+			sepChar = '\\';
+			device = "\\\\";
+			path = path.substring(2);
+		} else {
+			Matcher m = VOLNAME.matcher(path);
+			if (m.matches()) { // Windows path
+				sepChar = '\\';
+				device = m.group(1) + "\\"; // correct path from C:/ to C:\
+				path = m.group(2);
+			} else if (path.startsWith("/")) { // Unix path
+				sepChar = '/';
+				device = "/";
+			} else {
+				m = PROTOCOL.matcher(path);
+				if (m.matches()) { // URL
+					sepChar = '/';
+					device = m.group(1);
+					path = m.group(2);
+				} else {
+					throw new IllegalArgumentException("Illegal or not full path: " + path);
+				}
+			}
+		}
+
+		StringTokenizer st = new StringTokenizer(path, "/\\");
+		segments = new LinkedList<String>();
+		while (st.hasMoreTokens()) {
+			String segment = st.nextToken();
+			if (segment.length() > 0) {
+				segments.add(segment);
+			}
+		}
+	}
+

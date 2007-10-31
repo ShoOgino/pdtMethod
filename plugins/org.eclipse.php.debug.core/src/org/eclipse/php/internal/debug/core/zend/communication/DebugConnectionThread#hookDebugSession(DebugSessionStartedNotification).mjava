@@ -1,8 +1,8 @@
 	/**
-	 * Hook the debug session to the correct ILaunch that started it. 
+	 * Hook the debug session to the correct ILaunch that started it.
 	 * In case there is no such launch, the user will have to fill in some of the details needed to start a debug
 	 * session correctly.
-	 *  
+	 *
 	 * @param debugSessionStartedNotification
 	 * @return True, if the debug session hook was successful; False, otherwise.
 	 */
@@ -12,7 +12,7 @@
 		if (sessionID == 0) {
 			sessionID = getSessionID(debugSessionStartedNotification.getOptions());
 		}
-		// Get the launch, but keep it in the mapper for any other debug requests that are 
+		// Get the launch, but keep it in the mapper for any other debug requests that are
 		// related to the debug session id.
 		// The launch is mapped until the launches are cleared.
 		ILaunch launch = PHPSessionLaunchMapper.get(sessionID);
@@ -20,8 +20,7 @@
 			// We cannot find a launch the we can associate to the given session id (if any)
 			// Try to take the first launch that is terminated and has a 'Debug all Pages' attribute.
 			ILaunch[] launchs = DebugPlugin.getDefault().getLaunchManager().getLaunches();
-			for (int i = 0; i < launchs.length; i++) {
-				ILaunch aLaunch = launchs[i];
+			for (ILaunch aLaunch : launchs) {
 				String debugType = aLaunch.getAttribute(IPHPConstants.DEBUGGING_PAGES);
 				if (aLaunch.isTerminated() && (IPHPConstants.DEBUGGING_ALL_PAGES.equals(debugType) || IPHPConstants.DEBUGGING_START_FROM.equals(debugType))) {
 					launch = aLaunch;
@@ -33,17 +32,17 @@
 			// Remove any debug targets and processes that were terminated.
 			IDebugTarget[] debugTargets = launch.getDebugTargets();
 			IProcess[] processes = launch.getProcesses();
-			for (int i = 0; i < debugTargets.length; i++) {
-				if (debugTargets[i].isTerminated()) {
-					launch.removeDebugTarget(debugTargets[i]);
+			for (IDebugTarget element : debugTargets) {
+				if (element.isTerminated()) {
+					launch.removeDebugTarget(element);
 				} else {
 					// Do not allow any other targets or processes when an active debug target exists
 					return true;
 				}
 			}
-			for (int i = 0; i < processes.length; i++) {
-				if (processes[i].isTerminated()) {
-					launch.removeProcess(processes[i]);
+			for (IProcess element : processes) {
+				if (element.isTerminated()) {
+					launch.removeProcess(element);
 				}
 			}
 

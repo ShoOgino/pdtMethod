@@ -1,0 +1,31 @@
+	private static synchronized IPathEntryFilter[] initializePathEntryFilters() {
+		if (filters == null) {
+			Map<String, IPathEntryFilter> filtersMap = new HashMap<String, IPathEntryFilter>();
+			IExtensionRegistry registry = Platform.getExtensionRegistry();
+			IConfigurationElement[] elements = registry.getConfigurationElementsFor(PHPDebugPlugin.getID(), "pathEntryFilters"); //$NON-NLS-1$
+			for (IConfigurationElement element : elements) {
+				if ("filter".equals(element.getName())) { //$NON-NLS-1$
+					String id = element.getAttribute("id"); //$NON-NLS-1$
+					if (!filtersMap.containsKey(id)) {
+						String overridesIds = element.getAttribute("overridesId");
+						if (overridesIds != null) {
+							StringTokenizer st = new StringTokenizer(overridesIds, ", "); //$NON-NLS-1$
+							while (st.hasMoreTokens()) {
+								filtersMap.put(st.nextToken(), null);
+							}
+						}
+						try {
+							filtersMap.put(id, (IPathEntryFilter) element.createExecutableExtension("class")); //$NON-NLS-1$
+						} catch (CoreException e) {
+							PHPDebugPlugin.log(e);
+						}
+					}
+				}
+			}
+			Collection<IPathEntryFilter> l = filtersMap.values();
+			l.remove(null); // remove null elements
+			filters = l.toArray(new IPathEntryFilter[filtersMap.size()]);
+		}
+		return filters;
+	}
+

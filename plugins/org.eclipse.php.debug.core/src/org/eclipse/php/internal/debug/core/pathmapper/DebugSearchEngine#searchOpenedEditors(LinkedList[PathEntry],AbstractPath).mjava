@@ -1,0 +1,30 @@
+	private static void searchOpenedEditors(LinkedList<PathEntry> results, AbstractPath remotePath) {
+		// Collect open editor references:
+		List<IEditorReference> editors = new ArrayList<IEditorReference>(0);
+		IWorkbench workbench= PlatformUI.getWorkbench();
+		IWorkbenchWindow[] windows= workbench.getWorkbenchWindows();
+		for (IWorkbenchWindow element : windows) {
+			IWorkbenchPage[] pages= element.getPages();
+			for (IWorkbenchPage element2 : pages) {
+				IEditorReference[] references= element2.getEditorReferences();
+				editors.addAll(Arrays.asList(references));
+			}
+		}
+
+		// Collect external files opened in editors:
+		for (IEditorReference editor : editors) {
+			IEditorInput editorInput = null;
+			try {
+				editorInput = editor.getEditorInput();
+			} catch (PartInitException e) {
+				continue;
+			}
+			if (editorInput instanceof FileStoreEditorInput) {
+				File file = new File(((IURIEditorInput)editorInput).getURI());
+				if (file.exists() && file.getName().equals(remotePath.getLastSegment())) {
+					results.add(new PathEntry(file.getAbsolutePath(), PathEntry.Type.EXTERNAL, file.getParentFile()));
+				}
+			}
+		}
+	}
+

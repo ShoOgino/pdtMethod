@@ -1,11 +1,46 @@
-	public void sessionStarted(String fileName, String uri, String query, String options) {
-		super.sessionStarted(fileName, uri, query, options);
-		String sFileName = RemoteDebugger.convertToSystemIndependentFileName(fileName);
+	public void sessionStarted(String remoteFile, String uri, String query, String options) {
+		super.sessionStarted(remoteFile, uri, query, options);
 
-		fDebugTarget.setLastFileName(sFileName);
+		try {
+			PathEntry pathEntry = null;
+			ILaunchConfiguration launchConfiguration = fDebugTarget.getLaunch().getLaunchConfiguration();
+			String debugFileName = launchConfiguration.getAttribute(Server.FILE_NAME, (String) null);
+			if (debugFileName == null) {
+				debugFileName = launchConfiguration.getAttribute(PHPCoreConstants.ATTR_FILE, (String) null);
+			}
+			if (debugFileName != null) {
+				IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(debugFileName);
+				if (resource instanceof IFile) {
+					pathEntry = new PathEntry(debugFileName, Type.WORKSPACE, resource.getParent());
+				} else if (resource instanceof IProject) {
+					IProject project = (IProject) resource;
+					int idx = remoteFile.lastIndexOf('/');
+					if (idx == -1) {
+						idx = remoteFile.lastIndexOf('\\');
+					}
+					String lastSegment;
+					if (idx != -1) {
+						lastSegment = remoteFile.substring(idx+1);
+					} else {
+						lastSegment = remoteFile;
+					}
+					IFile file = project.getFile(lastSegment);
+					if (file != null) {
+						pathEntry = new PathEntry(file.getFullPath().toString(), Type.WORKSPACE, project);
+					}
+				}
+			}
+			if (pathEntry != null) {
+				PathMapperRegistry.getByLaunchConfiguration(launchConfiguration).addEntry(remoteFile, pathEntry);
+			} else {
+				DebugSearchEngine.find(remoteFile, launchConfiguration);
+			}
+		} catch (Exception e) {
+		}
+
+		fDebugTarget.setLastFileName(remoteFile);
 		if (!fDebugTarget.isPHPCGI()) {
 			fDebugTarget.setServerWindows(false);
-			fDebugTarget.setHTDocs(getHTDocs(fileName, sFileName, uri));
 		}
 
 		StartLock startLock = fDebugTarget.getStartLock();
