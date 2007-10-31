@@ -2,56 +2,56 @@
 
 		Assert.isTrue((increments.length() != 0 || decrements.length() != 0) && !increments.equals(decrements));
 
-		int nestingLevel= 0;
-		int charCount= 0;
+		int nestingLevel = 0;
+		int charCount = 0;
 		while (start < end) {
-			char curr= document.getChar(start++);
+			char curr = document.getChar(start++);
 			switch (curr) {
 				case '/':
 					if (start < end) {
-						char next= document.getChar(start);
+						char next = document.getChar(start);
 						if (next == '*') {
 							// a comment starts, advance to the comment end
-							start= getCommentEnd(document, start + 1, end);
+							start = getCommentEnd(document, start + 1, end);
 						} else if (next == '/') {
 							// '//'-comment: nothing to do anymore on this line
-							start= end;
+							start = end;
 						}
 					}
 					break;
 				case '*':
 					if (start < end) {
-						char next= document.getChar(start);
+						char next = document.getChar(start);
 						if (next == '/') {
 							// we have been in a comment: forget what we read before
-							charCount= 0;
-							++ start;
+							charCount = 0;
+							++start;
 						}
 					}
 					break;
 				case '"':
 				case '\'':
-					start= getStringEnd(document, start, end, curr);
+					start = getStringEnd(document, start, end, curr);
 					break;
 				default:
 
 					if (considerNesting) {
 
 						if ('(' == curr)
-							++ nestingLevel;
+							++nestingLevel;
 						else if (')' == curr)
-							-- nestingLevel;
+							--nestingLevel;
 
 						if (nestingLevel != 0)
 							break;
 					}
 
 					if (increments.indexOf(curr) >= 0) {
-						++ charCount;
+						++charCount;
 					}
 
 					if (decrements.indexOf(curr) >= 0) {
-						-- charCount;
+						--charCount;
 					}
 			}
 		}
