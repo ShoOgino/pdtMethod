@@ -1,6 +1,6 @@
 	public static String getRelativeLocation(IPhpModel model, String location) {
 		PHPFileData fileData = model.getFileData(location);
-		
+
 		if (fileData != null) {
 			// deterministic
 			IResource resource = getResource(fileData);
@@ -10,7 +10,7 @@
 					return new Path(location).removeFirstSegments(1).toString();
 				}
 			} else if (model instanceof PHPProjectModel) { // file is in an include file
-				IPhpModel includeModel = getIncludeModelForFile((PHPProjectModel)model, fileData);
+				IPhpModel includeModel = getIncludeModelForFile((PHPProjectModel) model, fileData);
 				IPath path = getIncludeModelLocation(includeModel);
 				if (includeModel.getFileData(location) == fileData) {
 					return new Path(location).setDevice("").removeFirstSegments(path.segmentCount()).toString(); //$NON-NLS-1$
@@ -19,14 +19,14 @@
 		} else {
 			// heuristic
 			IPath pathLocation = new Path(location);
-			if(model instanceof PHPProjectModel) {
+			if (model instanceof PHPProjectModel) {
 				String projectName = pathLocation.segment(0);
-				if(projectName.equals(((PHPProjectModel)model).getProject().getName()))
+				if (projectName.equals(((PHPProjectModel) model).getProject().getName()))
 					return pathLocation.removeFirstSegments(1).makeRelative().toString();
-				PHPIncludePathModelManager includeManager = (PHPIncludePathModelManager) ((PHPProjectModel)model).getModel(PHPIncludePathModelManager.COMPOSITE_INCLUDE_PATH_MODEL_ID);
-				if(includeManager.getModel(projectName) != null)
+				PHPIncludePathModelManager includeManager = (PHPIncludePathModelManager) ((PHPProjectModel) model).getModel(PHPIncludePathModelManager.COMPOSITE_INCLUDE_PATH_MODEL_ID);
+				if (includeManager.getModel(projectName) != null)
 					return pathLocation.removeFirstSegments(1).makeRelative().toString();
-				if(ResourcesPlugin.getWorkspace().getRoot().getProject(projectName) != null)
+				if (ResourcesPlugin.getWorkspace().getRoot().getProject(projectName) != null)
 					return pathLocation.removeFirstSegments(1).makeRelative().toString();
 				// TODO include variables/directories
 			}
