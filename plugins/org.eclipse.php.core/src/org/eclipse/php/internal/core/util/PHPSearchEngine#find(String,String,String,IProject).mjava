@@ -41,20 +41,20 @@
 							return new IncludedFileResult(entry, file);
 						}
 					}
-				} else if (entry.getEntryKind() == IIncludePathEntry.IPE_PROJECT) {
-					IProject project = (IProject) entry.getResource();
-					if (project.isAccessible()) {
-						IResource resource = project.findMember(path);
-						if (resource != null) {
-							return new IncludedFileResult(entry, file);
-						}
-					}
 				} else if (entry.getEntryKind() == IIncludePathEntry.IPE_VARIABLE) {
 					entryPath = IncludePathVariableManager.instance().resolveVariablePath(entryPath.toString());
 					File entryDir = entryPath.toFile();
 					file = new File(entryDir, path);
 					if (file.exists()) {
 						return new IncludedFileResult(entry, file);
+					}
+				} else if (entry.getEntryKind() == IIncludePathEntry.IPE_PROJECT) {
+					IProject project = (IProject) entry.getResource();
+					if (project.isAccessible()) {
+						IResource resource = project.findMember(path);
+						if (resource instanceof IFile) {
+							return new ResourceResult((IFile)resource);
+						}
 					}
 				}
 			}
