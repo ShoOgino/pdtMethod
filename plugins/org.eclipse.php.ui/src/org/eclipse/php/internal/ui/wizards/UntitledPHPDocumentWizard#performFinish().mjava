@@ -10,8 +10,38 @@
 		f.deleteOnExit();
 		IWorkbenchPage page = fWindow.getActivePage();
 		try {
-			page.openEditor(input, UNTITLED_EDITOR_ID);
+			IEditorPart editor = page.openEditor(input, UNTITLED_EDITOR_ID);
+			ITextEditor textEditor = null;
+			if (editor instanceof ITextEditor) {
+				textEditor = (ITextEditor) editor;
+			}
+			PHPFileData fileData = PHPWorkspaceModelManager.getInstance().getModelForFile(f.getAbsolutePath());
+			if (fileData == null || textEditor == null) {
+				return true;
+			}
+			//find first php block
+			if ((fileData.getPHPBlocks() != null) && (fileData.getPHPBlocks().length > 0)) {
+				// calculate length of the start tag
+				UserData startTag = fileData.getPHPBlocks()[0].getPHPStartTag();
+				int startTagEndPosition = startTag.getEndPosition() - startTag.getStartPosition();
+				// handle short tag - '<?'
+				if (startTagEndPosition == 2) {
+					int startTagLineNum = startTag.getStopLine();
+					IEditorInput editorInput = textEditor.getEditorInput();
+					IDocument document = textEditor.getDocumentProvider().getDocument(editorInput);
+					// calculate the length of the line delimiter for the start tag line
+					int lineDelimLength = document.getLineDelimiter(startTagLineNum).length();
+					// add to the tag length, so we jump to the next line
+					startTagEndPosition += lineDelimLength;
+					
+				}
+				// position the cursor at the end of the start tag
+				textEditor.selectAndReveal(startTagEndPosition, 0);
+			}
 		} catch (PartInitException e) {
+			Logger.logException(e);
+			return false;
+		} catch (BadLocationException e) {
 			Logger.logException(e);
 			return false;
 		}
