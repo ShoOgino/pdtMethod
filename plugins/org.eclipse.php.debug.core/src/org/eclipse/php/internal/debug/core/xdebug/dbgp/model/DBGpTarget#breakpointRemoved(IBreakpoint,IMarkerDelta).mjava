@@ -1,30 +1,29 @@
-   /*
-    * (non-Javadoc)
-    * 
-    * @see org.eclipse.debug.core.IBreakpointListener#breakpointRemoved(org.eclipse.debug.core.model.IBreakpoint,
-    *      org.eclipse.core.resources.IMarkerDelta)
-    */
-   public void breakpointRemoved(IBreakpoint breakpoint, IMarkerDelta delta) {
-      if (supportsBreakpoint(breakpoint)) {
-         DBGpBreakpoint bp = bpFacade.createDBGpBreakpoint(breakpoint);
-         if (asyncSupported || isSuspended()) {
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.eclipse.debug.core.IBreakpointListener#breakpointRemoved(org.eclipse.debug.core.model.IBreakpoint,
+	 *      org.eclipse.core.resources.IMarkerDelta)
+	 */
+	public void breakpointRemoved(IBreakpoint breakpoint, IMarkerDelta delta) {
+		if (supportsBreakpoint(breakpoint)) {
+			DBGpBreakpoint bp = bpFacade.createDBGpBreakpoint(breakpoint);
+			if (asyncSupported || isSuspended()) {
 
-            // aysnc mode or we are suspended so send the remove request
-            if (DBGpLogger.debugBP()) {
-               DBGpLogger.debug("Immediately removing of breakpoint with ID: " + bp.getID());
-            }
-            sendBreakpointRemoveCmd(bp, false);
-         }
-         else {
+				// aysnc mode or we are suspended so send the remove request
+				if (DBGpLogger.debugBP()) {
+					DBGpLogger.debug("Immediately removing of breakpoint with ID: " + bp.getID());
+				}
+				sendBreakpointRemoveCmd(bp, false);
+			} else {
 
-            // no async mode and not suspended so queue the request.
-            if (DBGpLogger.debugBP()) {
-               DBGpLogger.debug("Deferring Removing of breakpoint with ID: " + bp.getID());
-            }
-            DBGpBreakpointCmd bpRemove = new DBGpBreakpointCmd(DBGpCommand.breakPointRemove, bp);
-            queueBpCmd(bpRemove);
-         }
+				// no async mode and not suspended so queue the request.
+				if (DBGpLogger.debugBP()) {
+					DBGpLogger.debug("Deferring Removing of breakpoint with ID: " + bp.getID());
+				}
+				DBGpBreakpointCmd bpRemove = new DBGpBreakpointCmd(DBGpCommand.breakPointRemove, bp);
+				queueBpCmd(bpRemove);
+			}
 
-      }
-   }
+		}
+	}
 

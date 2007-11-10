@@ -1,0 +1,47 @@
+	/**
+	 * map a decoded external absolute file to an absolute one the workspace
+	 * will hopefully recognise. rules to decide if mapping is required:
+	 * 
+	 * 1. if the file does exist
+	 *  a) if it mapping found -> remap
+	 *  b) otherwise don't remap
+	 * 2. if the file does not exit -> remap
+	 * 
+	 * @param decodedFile
+	 * @return absolute path to a workspace registered file.
+	 */
+	public String mapToWorkspaceFileIfRequired(String decodedFile) {
+		String mappedFile = null;
+		PathEntry mappedPathEntry = null;
+		// check to see if the file exists on the file system
+		java.io.File fileSystemFile = new java.io.File(decodedFile);
+		if (fileSystemFile.exists() && pathMapper != null) {
+			mappedPathEntry = pathMapper.getLocalFile(decodedFile);
+		} else {
+
+			// file doesn't exist so we must remap it, using the PDT path mapper
+			// which could end up prompting the user to create a mapping
+			try {
+				mappedPathEntry = DebugSearchEngine.find(decodedFile, this);
+			} catch (Exception e1) {
+			}
+		}
+
+		// do we now have a remapped file ?
+		if (mappedPathEntry == null) {
+			DBGpLogger.debug("inbound File '" + decodedFile + "' Not remapped");
+			mappedFile = decodedFile;
+		} else {
+			mappedFile = mappedPathEntry.getResolvedPath();
+			IResource file = ResourcesPlugin.getWorkspace().getRoot().findMember(new Path(mappedFile));
+			if (file != null) {
+				mappedFile = file.getRawLocation().toString();
+			}
+			if (DBGpLogger.debugResp()) {
+				String mapMsg = "mapped inbound file '" + decodedFile + "' to '" + mappedFile + "'";
+				DBGpLogger.debug(mapMsg);
+			}
+		}
+		return mappedFile;
+	}
+

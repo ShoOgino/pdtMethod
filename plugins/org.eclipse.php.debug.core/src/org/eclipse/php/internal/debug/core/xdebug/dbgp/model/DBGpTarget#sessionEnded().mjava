@@ -1,36 +1,34 @@
-   /**
-    * Called by DBGpSession when the session terminates. The session
-    * terminates if we explicitly stop the session, or the script completes
-    * process then it will be a remote server version, so we don't want to
-    * terminate the debug target, but the session will have ended. This target
-    * needs to either be terminated manually or wait for another debug session
-    * to be attached.
-    */
-   public void sessionEnded() {
-      synchronized (sessionMutex) {
-         session = null;
-      }
-      if (STATE_TERMINATING == targetState) {
-         // we are terminating, if we are a web launch, we need to issue the
-         // stop URL
-         if (isWebLaunch()) {
-            sendStopDebugURL();
-         }
-         terminateDebugTarget(true);
-      }
-      else {
+	/**
+	 * Called by DBGpSession when the session terminates. The session terminates
+	 * if we explicitly stop the session, or the script completes process then
+	 * it will be a remote server version, so we don't want to terminate the
+	 * debug target, but the session will have ended. This target needs to
+	 * either be terminated manually or wait for another debug session to be
+	 * attached.
+	 */
+	public void sessionEnded() {
+		synchronized (sessionMutex) {
+			session = null;
+		}
+		if (STATE_TERMINATING == targetState) {
+			// we are terminating, if we are a web launch, we need to issue the
+			// stop URL
+			if (isWebLaunch()) {
+				sendStopDebugURL();
+			}
+			terminateDebugTarget(true);
+		} else {
 
-         // ok, the session ended and we are not terminating, if we are a web
-         // launch the we wait for the next session, otherwise terminate the
-         // debugtarget
-         if (isWebLaunch()) {
-            setState(STATE_STARTED_SESSION_WAIT);
-            stepping = false;
-            langThread.setBreakpoints(null);
-         }
-         else {
-            terminateDebugTarget(true);
-         }
-      }
-   }
+			// ok, the session ended and we are not terminating, if we are a web
+			// launch the we wait for the next session, otherwise terminate the
+			// debugtarget
+			if (isWebLaunch()) {
+				setState(STATE_STARTED_SESSION_WAIT);
+				stepping = false;
+				langThread.setBreakpoints(null);
+			} else {
+				terminateDebugTarget(true);
+			}
+		}
+	}
 

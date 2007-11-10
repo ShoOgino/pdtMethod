@@ -1,0 +1,47 @@
+	/**
+	 * test the initial script to see if we can locate it. 
+	 * If the script is within the workspace, then we don't need to
+	 * do anything. If it isn't check to see if there is a path mapper
+	 * for it. If not, see if we can create a path map entry based on
+	 * the launch information. If we still cannot do this, prompt the 
+	 * user as we may need info in order to set breakpoints correctly.
+	 * TODO: XDebug seemed to accept relative paths as well as absolute
+	 * paths, need to investigate further.
+	 */
+	private void testInitialScriptLocating() {
+		String initScript = session.getInitialScript();
+		if (initScript != null) {
+			//see if the file is in the workspace.
+			IFile file = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(initScript));
+			if (file == null) {
+				// ok initial script is not in the workspace
+				// we could do a search or do an automatic path mapping
+				if (pathMapper != null ) {
+					if (pathMapper.getLocalFile(initScript) == null) {
+						VirtualPath vpScr = new VirtualPath(scriptName);
+						VirtualPath vpInit = new VirtualPath(initScript);
+						//TODO: What happens if there is a difference in case ?
+						if (vpScr.getLastSegment().equals(vpInit.getLastSegment())) {
+							PathEntry pe = new PathEntry(scriptName, PathEntry.Type.WORKSPACE, ResourcesPlugin.getWorkspace().getRoot());
+							pathMapper.addEntry(initScript, pe);
+						}
+						else {
+							// ok, the initial script doesn't match what was passed into
+							// the launch, need to locate the required script.
+							// it may be possible to determine it from the project name
+							// so long as the project name is part of the web server file
+							// structure, so we could try this.
+							//TODO see if the scriptName is part of the init structure, if
+							//so we could workout the local file.
+							try {
+								DebugSearchEngine.find(initScript, this);
+							} catch (Exception e) {
+							}
+						}
+					}
+				}
+			}
+			
+		}
+	}
+

@@ -1,0 +1,45 @@
+	/**
+	 * map the file on this file system to the external one expected by xdebug
+	 * 1. file is in the workspace
+	 *   a) use PDT Path mapper 
+	 *   b) if no mapping use Internal Path mapper
+	 *   c) send as is
+	 * 2. file is outside of the workspace
+	 *   a) use PDT Path mapper
+	 *   b) send as is (cannot use Internal Path mapper here)
+	 * 
+	 * 
+	 * @param bp
+	 *            the breakpoint which references the file to be mapped to an
+	 *            external file
+	 * @return a string representing the external file in absolute format.
+	 */
+	private String mapToExternalFileIfRequired(DBGpBreakpoint bp) {
+		String internalFile = "";
+		
+		if (bp.getIFile() == null) {
+			// file is not part of the workspace, so get fully qualified file
+			internalFile = bp.getFileName();
+		} else {
+			// get file relative to the workspace.
+			internalFile = bp.getIFile().getFullPath().toString();
+		}
+		
+		String mappedFileName = null;
+		if (pathMapper != null) {
+			mappedFileName = pathMapper.getRemoteFile(internalFile);
+		}
+		
+		if (mappedFileName == null) {
+			DBGpLogger.debug("outbound File '" + internalFile + "' Not remapped");
+			mappedFileName = internalFile;			
+		} else {
+			if (DBGpLogger.debugBP()) {
+				String mapMsg = "remapped eclipse file: '" + internalFile + "' to '" + mappedFileName + "'";
+				DBGpLogger.debug(mapMsg);
+			}			
+		}
+
+		return mappedFileName;
+	}
+

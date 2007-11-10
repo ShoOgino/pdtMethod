@@ -1,44 +1,43 @@
-   /**
-    * Returns the current stack frames in the target.
-    * 
-    * @return the current stack frames in the target
-    * @throws DebugException
-    *             if unable to perform the request
-    */
-   protected synchronized IStackFrame[] getCurrentStackFrames() throws DebugException {
-      /*
-       * <response command="stack_get" transaction_id="transaction_id"> <stack
-       * level="{NUM}" type="file|eval|?" filename="..." lineno="{NUM}"
-       * where="" cmdbegin="line_number:offset" cmdend="line_number:offset"/>
-       * <stack level="{NUM}" type="file|eval|?" filename="..."
-       * lineno="{NUM}"> <input level="{NUM}" type="file|eval|?"
-       * filename="..." lineno="{NUM}"/> </stack> </response>
-       */
+	/**
+	 * Returns the current stack frames in the target.
+	 * 
+	 * @return the current stack frames in the target
+	 * @throws DebugException
+	 *             if unable to perform the request
+	 */
+	protected synchronized IStackFrame[] getCurrentStackFrames() throws DebugException {
+		/*
+		 * <response command="stack_get" transaction_id="transaction_id"> <stack
+		 * level="{NUM}" type="file|eval|?" filename="..." lineno="{NUM}"
+		 * where="" cmdbegin="line_number:offset" cmdend="line_number:offset"/>
+		 * <stack level="{NUM}" type="file|eval|?" filename="..."
+		 * lineno="{NUM}"> <input level="{NUM}" type="file|eval|?"
+		 * filename="..." lineno="{NUM}"/> </stack> </response>
+		 */
 
-      // this can be called from multiple threads, as the data it manages
-      // is global across the debug target, you could end up with 2 threads
-      // doing this at the same time on will be getting the data and the other
-      // will not and returning null as the data is not yet ready.
-      //if (refreshStackFrames) {
-         //refreshStackFrames = false;
-	   if (stackFrames == null) {
-         DBGpResponse resp = session.sendSyncCmd(DBGpCommand.stackGet);
-         if (DBGpUtils.isGoodDBGpResponse(this, resp)) {
-            Node parent = resp.getParentNode();
-            NodeList stackNodes = parent.getChildNodes(); // <stack>
-            // entries
-            stackFrames = new IStackFrame[stackNodes.getLength()];
-            for (int i = 0; i < stackNodes.getLength(); i++) {
-               Node stackNode = stackNodes.item(i);
-               stackFrames[i] = new DBGpStackFrame(langThread, stackNode);
-            }
-            currentStackLevel = stackNodes.getLength() - 1;
-         }
-         else {
-            currentStackLevel = 0;
-            stackFrames = new IStackFrame[0];
-         }
-      }
-      return stackFrames;
-   }
+		// this can be called from multiple threads, as the data it manages
+		// is global across the debug target, you could end up with 2 threads
+		// doing this at the same time on will be getting the data and the other
+		// will not and returning null as the data is not yet ready.
+		// if (refreshStackFrames) {
+		// refreshStackFrames = false;
+		if (stackFrames == null) {
+			DBGpResponse resp = session.sendSyncCmd(DBGpCommand.stackGet);
+			if (DBGpUtils.isGoodDBGpResponse(this, resp)) {
+				Node parent = resp.getParentNode();
+				NodeList stackNodes = parent.getChildNodes(); // <stack>
+				// entries
+				stackFrames = new IStackFrame[stackNodes.getLength()];
+				for (int i = 0; i < stackNodes.getLength(); i++) {
+					Node stackNode = stackNodes.item(i);
+					stackFrames[i] = new DBGpStackFrame(langThread, stackNode);
+				}
+				currentStackLevel = stackNodes.getLength() - 1;
+			} else {
+				currentStackLevel = 0;
+				stackFrames = new IStackFrame[0];
+			}
+		}
+		return stackFrames;
+	}
 

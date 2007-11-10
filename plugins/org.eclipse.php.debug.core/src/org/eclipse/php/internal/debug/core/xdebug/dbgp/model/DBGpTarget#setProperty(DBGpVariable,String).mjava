@@ -1,41 +1,40 @@
-   /**
-    * set a variable to a particular value
-    * @param fullName
-    * @param stackLevel
-    * @param data
-    * @return
-    */
-   public boolean setProperty(DBGpVariable var, String data) {
+	/**
+	 * set a variable to a particular value
+	 * 
+	 * @param fullName
+	 * @param stackLevel
+	 * @param data
+	 * @return
+	 */
+	public boolean setProperty(DBGpVariable var, String data) {
 
-      // XDebug expects all data to be base64 encoded.
-      String encoded = Base64.encode(data, session.getSessionEncoding());		
-      String fullName = var.getFullName();
-      String stackLevel = var.getStackLevel();
-      String args = "-n " + fullName + " -d " + stackLevel + " -l " + encoded.length() + " -- "
-            + encoded;
-      try {
-         if (var.getReferenceTypeName().equals(DBGpVariable.PHP_STRING)) {
-            // this ensures XDebug doesn't use eval
-            args = "-t string " + args;
-         }
-      }
-      catch (DebugException e) {
-      }
-      
-      DBGpResponse resp = session.sendSyncCmd(DBGpCommand.propSet, args);
-      boolean success = false;
-      if (DBGpUtils.isGoodDBGpResponse(this, resp)) {
-	      if (resp.getTopAttribute("success").equals("1")) {
-	    	 if (!stackLevel.equals("0")) {
-	    		 // a variable has been changed on a previous stack
-	    		 // the gui won't have updated the current stack
-	    		 // level view, so we invalidate the cache to reload
-	    		 // the data.
-	    		 currentVariables = null;
-	    	 }
-	    	 success = true;
-	      }
-      }
-      return success;
-   }
+		// XDebug expects all data to be base64 encoded.
+		String encoded = Base64.encode(data, session.getSessionEncoding());
+		String fullName = var.getFullName();
+		String stackLevel = var.getStackLevel();
+		String args = "-n " + fullName + " -d " + stackLevel + " -l " + encoded.length() + " -- " + encoded;
+		try {
+			if (var.getReferenceTypeName().equals(DBGpVariable.PHP_STRING)) {
+				// this ensures XDebug doesn't use eval
+				args = "-t string " + args;
+			}
+		} catch (DebugException e) {
+		}
+
+		DBGpResponse resp = session.sendSyncCmd(DBGpCommand.propSet, args);
+		boolean success = false;
+		if (DBGpUtils.isGoodDBGpResponse(this, resp)) {
+			if (resp.getTopAttribute("success").equals("1")) {
+				if (!stackLevel.equals("0")) {
+					// a variable has been changed on a previous stack
+					// the gui won't have updated the current stack
+					// level view, so we invalidate the cache to reload
+					// the data.
+					currentVariables = null;
+				}
+				success = true;
+			}
+		}
+		return success;
+	}
 

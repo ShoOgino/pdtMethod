@@ -1,55 +1,53 @@
-   /**
-    * setup DBGp specific features, or get information about environment
-    */
-   private void negotiateDBGpFeatures() {
-      DBGpResponse resp;
-      resp = session.sendSyncCmd(DBGpCommand.featureSet, "-n show_hidden -v 1");
-      // check the responses, but keep going.
-      DBGpUtils.isGoodDBGpResponse(this, resp);
-      resp = session.sendSyncCmd(DBGpCommand.featureSet, "-n max_depth -v " + getMaxDepth());
-      DBGpUtils.isGoodDBGpResponse(this, resp);
-      resp = session.sendSyncCmd(DBGpCommand.featureGet, "-n max_children");
-      if (DBGpUtils.isGoodDBGpResponse(this, resp)) {
-         Node child = resp.getParentNode().getFirstChild();
-         if (child != null) {
-            String data = child.getNodeValue();
-            try {
-               maxChildren = Integer.parseInt(data);
-            }
-            catch (NumberFormatException nfe) {
-               maxChildren = -1;
-            }
-         }
-      }
-      resp = session.sendSyncCmd(DBGpCommand.featureGet, "-n encoding");
-      if (DBGpUtils.isGoodDBGpResponse(this, resp)) {
-         Node child = resp.getParentNode().getFirstChild();
-         if (child != null) {
-            String data = child.getNodeValue();
-            try {
-               "abcdefg".getBytes(data);
-               session.setSessionEncoding(data);
-            }
-            catch (UnsupportedEncodingException uee) {
-               DBGpLogger.logWarning("encoding from debug engine invalid", this, uee);
-            }
-         }
-      }
+	/**
+	 * setup DBGp specific features, or get information about environment
+	 */
+	private void negotiateDBGpFeatures() {
+		DBGpResponse resp;
+		resp = session.sendSyncCmd(DBGpCommand.featureSet, "-n show_hidden -v 1");
+		// check the responses, but keep going.
+		DBGpUtils.isGoodDBGpResponse(this, resp);
+		resp = session.sendSyncCmd(DBGpCommand.featureSet, "-n max_depth -v " + getMaxDepth());
+		DBGpUtils.isGoodDBGpResponse(this, resp);
+		resp = session.sendSyncCmd(DBGpCommand.featureGet, "-n max_children");
+		if (DBGpUtils.isGoodDBGpResponse(this, resp)) {
+			Node child = resp.getParentNode().getFirstChild();
+			if (child != null) {
+				String data = child.getNodeValue();
+				try {
+					maxChildren = Integer.parseInt(data);
+				} catch (NumberFormatException nfe) {
+					maxChildren = -1;
+				}
+			}
+		}
+		resp = session.sendSyncCmd(DBGpCommand.featureGet, "-n encoding");
+		if (DBGpUtils.isGoodDBGpResponse(this, resp)) {
+			Node child = resp.getParentNode().getFirstChild();
+			if (child != null) {
+				String data = child.getNodeValue();
+				try {
+					"abcdefg".getBytes(data);
+					session.setSessionEncoding(data);
+				} catch (UnsupportedEncodingException uee) {
+					DBGpLogger.logWarning("encoding from debug engine invalid", this, uee);
+				}
+			}
+		}
 
-      asyncSupported = false;
-      resp = session.sendSyncCmd(DBGpCommand.featureGet, "-n supports_async");
-      if (DBGpUtils.isGoodDBGpResponse(this, resp)) {
-         Node child = resp.getParentNode().getFirstChild();
-         String supported = DBGpResponse.getAttribute(child, "supported");
-         if (supported != null && supported.equals("1")) {
-            asyncSupported = true;
-         }
-      }
+		asyncSupported = false;
+		resp = session.sendSyncCmd(DBGpCommand.featureGet, "-n supports_async");
+		if (DBGpUtils.isGoodDBGpResponse(this, resp)) {
+			Node child = resp.getParentNode().getFirstChild();
+			String supported = DBGpResponse.getAttribute(child, "supported");
+			if (supported != null && supported.equals("1")) {
+				asyncSupported = true;
+			}
+		}
 
-      // TODO: Improvement: add debug output support for remote debugging
-      /*
-       * if (multiSession) { resp = session.sendSyncCmd(DBGpCommand.stdout,
-       * "-c 1"); DBGpUtils.isGoodDBGpResponse(this, resp); }
-       */
-   }
+		// TODO: Improvement: add debug output support for remote debugging
+		/*
+		 * if (multiSession) { resp = session.sendSyncCmd(DBGpCommand.stdout,
+		 * "-c 1"); DBGpUtils.isGoodDBGpResponse(this, resp); }
+		 */
+	}
 

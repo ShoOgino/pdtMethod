@@ -1,56 +1,52 @@
-   /**
-    * wait for the initial dbgp session to be established
-    * 
-    * @param launchMonitor
-    */
-   public void waitForInitialSession(DBGpBreakpointFacade facade, DBGpPreferences sessionPrefs,
-         IProgressMonitor launchMonitor) {
-      bpFacade = facade;
-      sessionPreferences = sessionPrefs;
-      setState(STATE_INIT_SESSION_WAIT);
+	/**
+	 * wait for the initial dbgp session to be established
+	 * 
+	 * @param launchMonitor
+	 */
+	public void waitForInitialSession(DBGpBreakpointFacade facade, DBGpPreferences sessionPrefs, IProgressMonitor launchMonitor) {
+		bpFacade = facade;
+		sessionPreferences = sessionPrefs;
+		setState(STATE_INIT_SESSION_WAIT);
 
-      try {
-    	 boolean launchIsCanceled = false;
-    	 if (launchMonitor != null) {
-    		 launchIsCanceled = launchMonitor.isCanceled();
-    	 }
-         while (session == null && !launch.isTerminated() && !isTerminating()
-               && !launchIsCanceled) {
+		try {
+			boolean launchIsCanceled = false;
+			if (launchMonitor != null) {
+				launchIsCanceled = launchMonitor.isCanceled();
+			}
+			while (session == null && !launch.isTerminated() && !isTerminating() && !launchIsCanceled) {
 
-            // if we got here then session has not been updated
-            // by the other thread yet, so wait. We wait for
-            // an event or a timeout. Even if we timeout we could
-            // still get the session before we re-enter the loop.
-            te.waitForEvent(XDebugPreferenceInit.getTimeoutDefault());
-         }
+				// if we got here then session has not been updated
+				// by the other thread yet, so wait. We wait for
+				// an event or a timeout. Even if we timeout we could
+				// still get the session before we re-enter the loop.
+				te.waitForEvent(XDebugPreferenceInit.getTimeoutDefault());
+			}
 
-         if (session != null && session.isActive()) {
-        	 if (launchMonitor != null) {
-        		 launchIsCanceled = launchMonitor.isCanceled();
-        	 }
-        	 
-            if (!isTerminating() && !launch.isTerminated() && !launchIsCanceled) {
-               langThread = new DBGpThread(this);
-               allThreads = new IThread[] {langThread};
-               langThread.fireCreationEvent();
-               DebugPlugin.getDefault().getBreakpointManager().addBreakpointListener(this);
-               autoMapper = new AutoPathMapper();
-               autoMapper.init(scriptName, session.getInitialScript());
-               initiateSession();
-            }
-            else {
-               session.endSession();
-               terminateDebugTarget(true);
-            }
-         }
-         else {
-            terminateDebugTarget(true);
-         }
-      }
-      catch (Exception e) {
-         // cannot proceed any further as we will never be able to get a
-         // session. The exception doesn't need logging.
-         terminateDebugTarget(true);
-      }
-   }
+			if (session != null && session.isActive()) {
+				if (launchMonitor != null) {
+					launchIsCanceled = launchMonitor.isCanceled();
+				}
+
+				if (!isTerminating() && !launch.isTerminated() && !launchIsCanceled) {
+					langThread = new DBGpThread(this);
+					allThreads = new IThread[] { langThread };
+					langThread.fireCreationEvent();
+					DebugPlugin.getDefault().getBreakpointManager().addBreakpointListener(this);
+					
+					//Determine something about the initial script and path mapping
+					testInitialScriptLocating();
+					initiateSession();
+				} else {
+					session.endSession();
+					terminateDebugTarget(true);
+				}
+			} else {
+				terminateDebugTarget(true);
+			}
+		} catch (Exception e) {
+			// cannot proceed any further as we will never be able to get a
+			// session. The exception doesn't need logging.
+			terminateDebugTarget(true);
+		}
+	}
 

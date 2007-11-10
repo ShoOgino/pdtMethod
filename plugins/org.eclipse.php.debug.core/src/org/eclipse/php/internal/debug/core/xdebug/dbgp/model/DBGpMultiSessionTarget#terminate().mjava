@@ -1,36 +1,35 @@
 	public void terminate() throws DebugException {
 		if (targetState == STATE_TERMINATING) {
 			// we attempt a sledge hammer termination.
-			synchronized(debugTargets) {
+			synchronized (debugTargets) {
 				if (debugTargets.size() > 0) {
-					for (int i=0; i < debugTargets.size(); i++) {
+					for (int i = 0; i < debugTargets.size(); i++) {
 						IDebugTarget target = debugTargets.get(i);
 						try {
 							target.terminate();
-						}
-						catch(Exception e) {
-							
+						} catch (Exception e) {
+
 						}
 					}
 				}
+				// session listening will already have been removed
 				terminateMultiSessionDebugTarget();
 			}
 			return;
 		}
-		
-		synchronized(debugTargets) {
+
+		synchronized (debugTargets) {
 			// remove myself as a session listener.
-			DBGpSessionHandler.getInstance().removeSessionListener(this);			
-			targetState = STATE_TERMINATING;	
+			DBGpSessionHandler.getInstance().removeSessionListener(this);
+			targetState = STATE_TERMINATING;
 			if (debugTargets.size() > 0) {
-				for (int i=0; i < debugTargets.size(); i++) {
-					IDebugTarget target = debugTargets.get(i); 
+				for (int i = 0; i < debugTargets.size(); i++) {
+					IDebugTarget target = debugTargets.get(i);
 					if (target.canTerminate()) {
 						target.terminate();
 					}
 				}
-			}
-			else {
+			} else {
 				terminateMultiSessionDebugTarget();
 			}
 		}
