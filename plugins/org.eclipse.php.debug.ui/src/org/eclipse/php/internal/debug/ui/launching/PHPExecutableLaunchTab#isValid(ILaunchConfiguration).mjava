@@ -4,7 +4,7 @@
 	public boolean isValid(final ILaunchConfiguration launchConfig) {
 		setErrorMessage(null);
 		try {
-			final String phpExe = launchConfig.getAttribute(PHPCoreConstants.ATTR_LOCATION, "");
+			final String phpExe = launchConfig.getAttribute(PHPCoreConstants.ATTR_LOCATION, ""); //$NON-NLS-1$
 			boolean phpExeExists = true;
 			try {
 				final File file = new File(phpExe);
@@ -19,14 +19,32 @@
 			}
 
 			if (enableFileSelection) {
-				final String phpFile = launchConfig.getAttribute(PHPCoreConstants.ATTR_FILE, "");
-				if (!fileExists(phpFile)) {
+				final String phpFile = launchConfig.getAttribute(PHPCoreConstants.ATTR_FILE, ""); //$NON-NLS-1$
+				if (!FileUtils.resourceExists(phpFile)) {
 					if (ExternalFilesRegistry.getInstance().isEntryExist(phpFile)) {
 						// Allow external files that are open in the editor.
 						return true;
 					}
 					setErrorMessage(PHPDebugUIMessages.PHP_File_Not_Exist);
 					return false;
+				} else {//resource DOES exist
+					IResource fileToData = ResourcesPlugin.getWorkspace().getRoot().findMember(phpFile);
+					//check if not a file (project, folder etc.)
+					if ((fileToData.getType() != IResource.FILE) || !PHPModelUtil.hasPhpExtention((IFile) fileToData)) {
+						setErrorMessage(phpFile + PHPDebugUIMessages.PHPExecutableLaunchTab_isNotPHPFile);
+						return false;
+					}
+
+					//if valid PHP file, update text field data
+					else {
+						String dataLocation = ""; //$NON-NLS-1$
+						if (fileToData.getLocation() == null) {
+							dataLocation = fileToData.getLocationURI().toString();
+						} else {
+							dataLocation = fileToData.getLocation().toString();
+						}
+						debugFileTextField.setData(dataLocation);
+					}
 				}
 			}
 		} catch (final CoreException e) {
