@@ -8,7 +8,8 @@
 		IDELayer idelayer = IDELayerFactory.getIDELayer();
 
 		// get the exe, project name, file name
-		final String phpExeString = configuration.getAttribute(PHPCoreConstants.ATTR_LOCATION, (String) null);
+		final String phpExeString = configuration.getAttribute(PHPCoreConstants.ATTR_EXECUTABLE_LOCATION, (String) null);
+		final String phpIniPath = configuration.getAttribute(PHPCoreConstants.ATTR_INI_LOCATION, (String) null);
 		final String phpScriptString = configuration.getAttribute(PHPCoreConstants.ATTR_FILE, (String) null);
 		if (phpScriptString == null || phpScriptString.trim().length() == 0) {
 			DebugPlugin.getDefault().getLaunchManager().removeLaunch(launch);
@@ -74,7 +75,8 @@
 		}
 
 		// Resolve the PHP ini location
-		File phpIni = IniModifier.findPHPIni(phpExeString);
+		// Locate the php ini by using the attribute. If the attribute was null, try to locate an ini that exists next to the executable.
+		File phpIni = (phpIniPath != null) ? new File(phpIniPath) : IniModifier.findPHPIni(phpExeString);
 		if (/*project != dummyProject &&*/project.hasNature(PHPNature.ID)) {
 			if (phpIni != null) {
 				File tempIni = IniModifier.addIncludePath(phpIni, project);

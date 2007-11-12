@@ -1,0 +1,36 @@
+	public static File addIncludePath(final File phpIni, final IPath[] includePaths) {
+		if (includePaths.length < 0) {
+			return phpIni;
+		}
+		try {
+			final File tempFile = createTempFile();
+			if (tempFile == null)
+				return null;
+			final Ini parameters = new Ini();
+			parameters.load(new FileInputStream(phpIni), Ini.IGNORE_ESCAPE);
+			String sectionName = PHP_SECTION_NAME;
+			String includePath = getParameter(parameters, PHP_SECTION_NAME, PARAM_INCLUDE_PATH);
+			if (includePath == null) {
+				includePath = getParameter(parameters, sectionName = IniParser.DEFAULT_SECTION_NAME, PARAM_INCLUDE_PATH);
+			}
+			final StringBuffer includePathBuffer;
+
+			if (includePath != null) {
+				includePathBuffer = new StringBuffer(includePath.replaceAll("\"", "")); //$NON-NLS-1$ //$NON-NLS-2$
+			} else
+				includePathBuffer = new StringBuffer("."); //$NON-NLS-1$
+			includePathBuffer.append(PATH_SEPARATOR);
+
+			for (int i = 0; i < includePaths.length; ++i)
+				includePathBuffer.append(includePaths[i].toOSString()).append(PATH_SEPARATOR);
+			includePathBuffer.insert(0, "\""); //$NON-NLS-1$
+			includePathBuffer.append("\""); //$NON-NLS-1$
+			setParameter(parameters, sectionName, PARAM_INCLUDE_PATH, includePathBuffer.toString());
+			parameters.store(new FileOutputStream(tempFile), Ini.IGNORE_ESCAPE);
+			return tempFile;
+		} catch (final IOException e) {
+			// do nothing
+		}
+		return null;
+	}
+
