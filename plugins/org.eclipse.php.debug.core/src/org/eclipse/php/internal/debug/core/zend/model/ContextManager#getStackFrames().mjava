@@ -24,12 +24,28 @@
 		boolean layersSame = compareLayers(layers, fPreviousLayers);
 		if (layersSame) {
 			fVariables = createVariables(main, false, false);
+
+			// Update top of the stack frame:
+			int topID = fPreviousFrames[0] instanceof PHPStackFrame ? ((PHPStackFrame) fPreviousFrames[0]).getIdentifier() : 0;
+
+			RemoteDebugger remoteDebugger = (RemoteDebugger) fDebugger;
+			String cwd = remoteDebugger.getCurrentWorkingDirectory();
+			String currentScript = null;
+			for (int i = 1, frameCt = ((layers.length - 1) * 2 + 1); i < layers.length; ++i, frameCt -= 2) {
+				if (!layers[i].getCalledFileName().equals(fTarget.getLastFileName())) {
+					PHPStackFrame stackFrame = (PHPStackFrame) fPreviousFrames[frameCt - 1];
+					currentScript = (stackFrame).getSourceName();
+					break;
+				}
+			}
+			String resolvedFile = remoteDebugger.convertToLocalFilename(fTarget.getLastFileName(), cwd, currentScript);
+			fPreviousFrames[0] = new PHPStackFrame(thread, fTarget.getLastFileName(), (main) ? "" : fPreviousFrames[1].getName(), fTarget.getLastStop(), topID, resolvedFile);
+
 		} else {
 			fPreviousFrames = createNewFrames(layers, thread);
 			fVariables = createVariables(main, false, true);
 		}
-		int topID = fPreviousFrames[0] instanceof PHPStackFrame ? ((PHPStackFrame) fPreviousFrames[0]).getIdentifier() : 0;
-		fPreviousFrames[0] = new PHPStackFrame(thread, fTarget.getLastFileName(), (main) ? "" : fPreviousFrames[1].getName(), fTarget.getLastStop(), topID, resolveRemoteFile(fTarget.getLastFileName()));
+
 		createStackVariables(layers);
 		return fPreviousFrames;
 	}

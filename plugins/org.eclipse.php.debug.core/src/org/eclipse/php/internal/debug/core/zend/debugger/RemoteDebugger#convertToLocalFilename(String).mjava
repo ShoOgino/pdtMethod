@@ -1,0 +1,26 @@
+	/**
+	 *  Returns local file name corresponding to the given remote path.
+	 *  This method asks debugger for the current working directory before resolving.
+	 *
+	 * @param remoteFile File to resolve
+	 * @return local file, or remoteFile in case of resolving failure
+	 */
+	public String convertToLocalFilename(String remoteFile) {
+		PHPDebugTarget debugTarget = debugHandler.getDebugTarget();
+
+		String currentScript = null;
+		// detect current script:
+		try {
+			IStackFrame[] stackFrames = debugTarget.getContextManager().getStackFrames();
+			if (stackFrames.length > 0) {
+				if (stackFrames[0] instanceof PHPStackFrame) {
+					PHPStackFrame phpLastFrame = (PHPStackFrame) stackFrames[0];
+					currentScript = phpLastFrame.getSourceName();
+				}
+			}
+		} catch (DebugException e) {
+			Logger.logException(e);
+		}
+		return convertToLocalFilename(remoteFile, getCurrentWorkingDirectory(), currentScript);
+	}
+

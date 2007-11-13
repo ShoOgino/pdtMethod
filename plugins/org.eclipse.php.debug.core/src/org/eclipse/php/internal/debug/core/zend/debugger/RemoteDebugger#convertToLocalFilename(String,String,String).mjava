@@ -1,0 +1,39 @@
+	/**
+	 * Returns local file name corresponding to the given remote path
+	 * @param remoteFile File to resolve
+	 * @param cwd Current working directory received from the debugger
+	 * @param currentScript Script that is on the top of the debug stack currently
+	 * @return local file, or remoteFile in case of resolving failure
+	 */
+	public String convertToLocalFilename(String remoteFile, String cwd, String currentScript) {
+		PHPDebugTarget debugTarget = debugHandler.getDebugTarget();
+		if (debugTarget.getContextManager().isResolveBlacklisted(remoteFile)) {
+			return remoteFile;
+		}
+
+		// If we are running local debugger, check if "remote" file exists and return it if it does
+		if (debugTarget.isPHPCGI() && new File(remoteFile).exists()) {
+			IFile wsFile = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(remoteFile));
+			if (wsFile != null) {
+				return wsFile.getFullPath().toString();
+			}
+			return remoteFile;
+		}
+
+		try {
+			String currentScriptDir = null;
+			if (currentScript != null) {
+				currentScriptDir = new Path(currentScript).removeLastSegments(1).toString();
+			}
+
+			PathEntry pathEntry = DebugSearchEngine.find(remoteFile, debugTarget, cwd, currentScriptDir);
+			if (pathEntry != null) {
+				return pathEntry.getResolvedPath();
+			}
+		} catch (InterruptedException e) {
+		} catch (CoreException e) {
+			Logger.logException(e);
+		}
+		return remoteFile; // in case of failure
+	}
+
