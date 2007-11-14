@@ -58,7 +58,7 @@
 			IStructuredDocumentRegion preSdRegion = null;
 			if (preTextRegion != null || (preSdRegion = sdRegion.getPrevious()) != null && (preTextRegion = preSdRegion.getRegionAtCharacterOffset(offset - 1)) != null) {
 				if (preTextRegion.getType() == "") { //$NON-NLS-1$
-					// TODO needs to be fixed. The problem is what to do if the cursor is exatly between problematic regions, e.g. single line comment and quoted string??
+					// FIXME needs to be fixed. The problem is what to do if the cursor is exatly between problematic regions, e.g. single line comment and quoted string??
 				}
 			}
 			startOffset = sdRegion.getStartOffset(textRegion);
@@ -97,10 +97,10 @@
 			return;
 		}
 
-		TextSequence statmentText = PHPTextSequenceUtilities.getStatment(offset, sdRegion, true);
+		TextSequence statementText = PHPTextSequenceUtilities.getStatement(offset, sdRegion, true);
 
 		String type = internalPHPRegion.getType();
-		if (isInArrayOptionQuotes(projectModel, fileName, type, offset, selectionLength, statmentText)) {
+		if (isInArrayOptionQuotes(projectModel, fileName, type, offset, selectionLength, statementText)) {
 			// the current position is inside quotes as a parameter for an array.
 			return;
 		}
@@ -110,45 +110,40 @@
 			return;
 		}
 
-		if (isInFunctionDeclaretion(projectModel, fileName, statmentText, offset, selectionLength, explicit)) {
-			// the current position is inside function declaretion.
+		if (isInFunctionDeclaration(projectModel, fileName, statementText, offset, selectionLength, explicit)) {
+			// the current position is inside function declaration.
 			return;
 		}
 
-		if (isInClassDeclaretion(projectModel, statmentText, offset, selectionLength, explicit)) {
-			// the current position is inside class declaretion.
+		if (isInCatchStatement(projectModel, statementText, offset, selectionLength, explicit)) {
+			// the current position is inside catch statement.
 			return;
 		}
 
-		if (isInCatchStatment(projectModel, statmentText, offset, selectionLength, explicit)) {
-			// the current position is inside catch statment.
-			return;
-		}
+		int totalLength = statementText.length();
 
-		int totalLength = statmentText.length();
-
-		int endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statmentText, totalLength); // read whitespace
-		int startPosition = PHPTextSequenceUtilities.readIdentifiarStartIndex(statmentText, endPosition, true);
-		String lastWord = statmentText.subSequence(startPosition, endPosition).toString();
+		int endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statementText, totalLength); // read whitespace
+		int startPosition = PHPTextSequenceUtilities.readIdentifiarStartIndex(statementText, endPosition, true);
+		String lastWord = statementText.subSequence(startPosition, endPosition).toString();
 		boolean haveSpacesAtEnd = totalLength != endPosition;
 
-		if (haveSpacesAtEnd && isNewOrInstanceofStatment(projectModel, lastWord, "", offset, selectionLength, explicit, type)) { //$NON-NLS-1$
-			// the current position is inside new or instanceof statment.
+		if (haveSpacesAtEnd && isNewOrInstanceofStatement(projectModel, lastWord, "", offset, selectionLength, explicit, type)) { //$NON-NLS-1$
+			// the current position is inside new or instanceof statement.
 			return;
 		}
 
 		int line = document.getLineOfOffset(offset);
-		if (isClassFunctionCompletion(projectModel, fileName, statmentText, offset, line, selectionLength, lastWord, startPosition, haveSpacesAtEnd, explicit, isStrict)) {
+		if (isClassFunctionCompletion(projectModel, fileName, statementText, offset, line, selectionLength, lastWord, startPosition, haveSpacesAtEnd, explicit, isStrict)) {
 			// the current position is in class function.
 			return;
 		}
 
-		endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statmentText, startPosition); // read whitespace
-		startPosition = PHPTextSequenceUtilities.readIdentifiarStartIndex(statmentText, endPosition, true);
-		String firstWord = statmentText.subSequence(startPosition, endPosition).toString();
+		endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statementText, startPosition); // read whitespace
+		startPosition = PHPTextSequenceUtilities.readIdentifiarStartIndex(statementText, endPosition, true);
+		String firstWord = statementText.subSequence(startPosition, endPosition).toString();
 
-		if (!haveSpacesAtEnd && isNewOrInstanceofStatment(projectModel, firstWord, lastWord, offset, selectionLength, explicit, type)) {
-			// the current position is inside new or instanceof statment.
+		if (!haveSpacesAtEnd && isNewOrInstanceofStatement(projectModel, firstWord, lastWord, offset, selectionLength, explicit, type)) {
+			// the current position is inside new or instanceof statement.
 			if (lastWord.startsWith("$")) {
 				if (haveSpacesAtEnd) {
 					getRegularCompletion(viewer, projectModel, fileName, "", offset, selectionLength, explicit, container, phpScriptRegion, internalPHPRegion, document, isStrict); //$NON-NLS-1$
@@ -164,8 +159,13 @@
 			return;
 		}
 
-		if (isInArrayOption(projectModel, fileName, haveSpacesAtEnd, firstWord, lastWord, startPosition, offset, selectionLength, statmentText, type)) {
+		if (isInArrayOption(projectModel, fileName, haveSpacesAtEnd, firstWord, lastWord, startPosition, offset, selectionLength, statementText, type)) {
 			// the current position is after '[' sign show special completion.
+			return;
+		}
+
+		if (isInClassDeclaration(projectModel, statementText, offset, selectionLength, explicit)) {
+			// the current position is inside class declaration.
 			return;
 		}
 

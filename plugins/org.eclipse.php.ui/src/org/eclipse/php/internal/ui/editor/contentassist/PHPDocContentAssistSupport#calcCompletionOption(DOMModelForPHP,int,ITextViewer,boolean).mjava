@@ -47,15 +47,15 @@
 		// find the start String for completion
 		int startOffset = container.getStartOffset(textRegion);
 
-		//in case we are standing at the beginning of a word and asking for completion 
+		//in case we are standing at the beginning of a word and asking for completion
 		//should not take into account the found region
 		//find the previous region and update the start offset
 		if (startOffset == offset) {
 			ITextRegion preTextRegion = container.getRegionAtCharacterOffset(offset - 1);
 			IStructuredDocumentRegion preSdRegion = null;
-			if (preTextRegion != null || ((preSdRegion = sdRegion.getPrevious()) != null && (preTextRegion = preSdRegion.getRegionAtCharacterOffset(offset - 1)) != null)) {
+			if (preTextRegion != null || (preSdRegion = sdRegion.getPrevious()) != null && (preTextRegion = preSdRegion.getRegionAtCharacterOffset(offset - 1)) != null) {
 				if (preTextRegion.getType() == "") { //$NON-NLS-1$
-					// TODO needs to be fixed. The problem is what to do if the cursor is exatly between problematic regions, e.g. single line comment and quoted string?? 
+					// TODO needs to be fixed. The problem is what to do if the cursor is exatly between problematic regions, e.g. single line comment and quoted string??
 				}
 			}
 			startOffset = sdRegion.getStartOffset(textRegion);
@@ -78,22 +78,22 @@
 					}
 				}
 			}
-			if ((!partitionType.equals(PHPPartitionTypes.PHP_DOC))) {
+			if (!partitionType.equals(PHPPartitionTypes.PHP_DOC)) {
 				return;
 			}
 		} else {
 			return;
 		}
 
-		TextSequence statmentText = PHPTextSequenceUtilities.getStatment(offset, sdRegion, false);
+		TextSequence statementText = PHPTextSequenceUtilities.getStatement(offset, sdRegion, false);
 
-		int totalLength = statmentText.length();
-		int endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statmentText, totalLength); // read whitespace
-		int startPosition = PHPTextSequenceUtilities.readIdentifiarStartIndex(statmentText, endPosition, true);
-		String lastWord = statmentText.subSequence(startPosition, endPosition).toString();
+		int totalLength = statementText.length();
+		int endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statementText, totalLength); // read whitespace
+		int startPosition = PHPTextSequenceUtilities.readIdentifiarStartIndex(statementText, endPosition, true);
+		String lastWord = statementText.subSequence(startPosition, endPosition).toString();
 		boolean haveSpacesAtEnd = totalLength != endPosition;
 
-		if (isInPhpDocCompletion(viewer, statmentText, offset, lastWord, selectionLength, haveSpacesAtEnd, explicit)) {
+		if (isInPhpDocCompletion(viewer, statementText, offset, lastWord, selectionLength, haveSpacesAtEnd, explicit)) {
 			// the current position is php doc block.
 			return;
 		}
