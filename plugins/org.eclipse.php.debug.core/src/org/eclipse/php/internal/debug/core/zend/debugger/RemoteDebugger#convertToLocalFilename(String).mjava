@@ -6,20 +6,10 @@
 	 * @return local file, or remoteFile in case of resolving failure
 	 */
 	public String convertToLocalFilename(String remoteFile) {
-		PHPDebugTarget debugTarget = debugHandler.getDebugTarget();
-
 		String currentScript = null;
-		// detect current script:
-		try {
-			IStackFrame[] stackFrames = debugTarget.getContextManager().getStackFrames();
-			if (stackFrames.length > 0) {
-				if (stackFrames[0] instanceof PHPStackFrame) {
-					PHPStackFrame phpLastFrame = (PHPStackFrame) stackFrames[0];
-					currentScript = phpLastFrame.getSourceName();
-				}
-			}
-		} catch (DebugException e) {
-			Logger.logException(e);
+		PHPstack callStack = getCallStack();
+		if (callStack.getSize() > 0) {
+			currentScript = callStack.getLayer(callStack.getSize() - 1).getResolvedCalledFileName();
 		}
 		return convertToLocalFilename(remoteFile, getCurrentWorkingDirectory(), currentScript);
 	}

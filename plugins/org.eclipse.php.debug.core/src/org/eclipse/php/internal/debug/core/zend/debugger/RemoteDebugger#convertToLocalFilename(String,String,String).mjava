@@ -11,29 +11,39 @@
 			return remoteFile;
 		}
 
-		// If we are running local debugger, check if "remote" file exists and return it if it does
-		if (debugTarget.isPHPCGI() && new File(remoteFile).exists()) {
-			IFile wsFile = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(remoteFile));
-			if (wsFile != null) {
-				return wsFile.getFullPath().toString();
+		String resolvedFileKey = new StringBuilder(remoteFile).append(cwd).append(currentScript).toString();
+		if (!resolvedFiles.containsKey(resolvedFileKey)) {
+			String resolvedFile = null;
+			// If we are running local debugger, check if "remote" file exists and return it if it does
+			if (debugTarget.isPHPCGI() && new File(remoteFile).exists()) {
+				IFile wsFile = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(remoteFile));
+				if (wsFile != null) {
+					resolvedFile = wsFile.getFullPath().toString();
+				} else {
+					resolvedFile = remoteFile;
+				}
 			}
-			return remoteFile;
-		}
+			if (resolvedFile == null) {
+				try {
+					String currentScriptDir = null;
+					if (currentScript != null) {
+						currentScriptDir = new Path(currentScript).removeLastSegments(1).toString();
+					}
 
-		try {
-			String currentScriptDir = null;
-			if (currentScript != null) {
-				currentScriptDir = new Path(currentScript).removeLastSegments(1).toString();
+					PathEntry pathEntry = DebugSearchEngine.find(remoteFile, debugTarget, cwd, currentScriptDir);
+					if (pathEntry != null) {
+						resolvedFile = pathEntry.getResolvedPath();
+					}
+				} catch (InterruptedException e) {
+				} catch (CoreException e) {
+					Logger.logException(e);
+				}
 			}
-
-			PathEntry pathEntry = DebugSearchEngine.find(remoteFile, debugTarget, cwd, currentScriptDir);
-			if (pathEntry != null) {
-				return pathEntry.getResolvedPath();
+			if (resolvedFile == null) {
+				resolvedFile = remoteFile; // in case of failure
 			}
-		} catch (InterruptedException e) {
-		} catch (CoreException e) {
-			Logger.logException(e);
+			resolvedFiles.put(resolvedFileKey, resolvedFile);
 		}
-		return remoteFile; // in case of failure
+		return resolvedFiles.get(resolvedFileKey);
 	}
 
