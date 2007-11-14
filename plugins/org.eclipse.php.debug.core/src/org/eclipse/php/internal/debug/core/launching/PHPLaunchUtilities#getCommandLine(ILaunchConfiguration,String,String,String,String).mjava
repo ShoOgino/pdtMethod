@@ -15,6 +15,8 @@
 		if (!"".equals(phpIniLocation) && phpIniLocation != null) {
 			phpConfigDir = phpIniLocation;
 		}
+		// Check if we should treat ASP tags as PHP tags
+		String aspTags = isUsingASPTags(getProject(configuration)) ? "on" : "off";
 
 		// Important!!! 
 		// Note that php executable -c parameter (for php 4) must get the path to the directory that contains the php.ini file.
@@ -25,13 +27,15 @@
 		}
 
 		if (splitArgs.length == 0) {
-			cmdLine = new String[] { phpExe, "-c", phpConfigDir, scriptPath };
+			cmdLine = new String[] { phpExe, "-c", phpConfigDir, "-d", "asp_tags=" + aspTags, scriptPath };
 		} else {
-			cmdLine = new String[splitArgs.length + 4];
+			cmdLine = new String[splitArgs.length + 6];
 			cmdLine[0] = phpExe;
 			cmdLine[1] = "-c";
 			cmdLine[2] = phpConfigDir;
-			cmdLine[3] = scriptPath;
+			cmdLine[3] = "-d";
+			cmdLine[4] = "asp_tags=" + aspTags;
+			cmdLine[5] = scriptPath;
 			System.arraycopy(splitArgs, 0, cmdLine, 4, splitArgs.length);
 		}
 		return cmdLine;
