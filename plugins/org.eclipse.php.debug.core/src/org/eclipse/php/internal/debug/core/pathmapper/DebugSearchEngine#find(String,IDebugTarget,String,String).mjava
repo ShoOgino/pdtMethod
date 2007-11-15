@@ -5,10 +5,8 @@
 	 * @param currentWorkingDir Current working directory of PHP process
 	 * @param currentScriptDir Directory of current PHP file
 	 * @return path entry or <code>null</code> in case it could not be found
-	 * @throws InterruptedException
-	 * @throws CoreException
 	 */
-	public static PathEntry find(String remoteFile, IDebugTarget debugTarget, String currentWorkingDir, String currentScriptDir) throws InterruptedException, CoreException {
+	public static PathEntry find(String remoteFile, IDebugTarget debugTarget, String currentWorkingDir, String currentScriptDir) {
 		if (remoteFile == null) {
 			throw new NullPointerException();
 		}
@@ -24,9 +22,14 @@
 			}
 		}
 		if (project == null) {
-			String projectName = launchConfiguration.getAttribute(IPHPConstants.PHP_Project, (String) null);
-			if (projectName != null) {
-				project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
+			String projectName;
+			try {
+				projectName = launchConfiguration.getAttribute(IPHPConstants.PHP_Project, (String) null);
+				if (projectName != null) {
+					project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
+				}
+			} catch (CoreException e) {
+				PHPDebugPlugin.log(e);
 			}
 		}
 
@@ -57,7 +60,7 @@
 
 		PathMapper pathMapper = PathMapperRegistry.getByLaunchConfiguration(launchConfiguration);
 		if (pathMapper != null) {
-			pathEntry = find(pathMapper, remoteFile, project, currentWorkingDir, currentScriptDir, debugTarget);
+			pathEntry = find(pathMapper, remoteFile, project, debugTarget);
 		}
 		return pathEntry;
 	}
