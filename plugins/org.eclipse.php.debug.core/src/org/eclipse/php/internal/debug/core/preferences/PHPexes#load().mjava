@@ -38,13 +38,6 @@
 		}
 		final String[] debuggers = debuggersString.length() > 0 ? debuggersString.split(SEPARATOR) : new String[0];
 
-		// Load the defaults array
-		String defaultsString = prefs.getString(PHPDebugCorePreferenceNames.INSTALLED_PHP_DEFAULTS);
-		if (defaultsString == null) {
-			defaultsString = "";
-		}
-		final String[] defaults = defaultsString.length() > 0 ? debuggersString.split(SEPARATOR) : new String[0];
-
 		// Add the executable items
 		assert names.length == phpExecutablesLocations.length;
 		for (int i = 0; i < phpExecutablesLocations.length; i++) {
@@ -64,15 +57,21 @@
 					addItem(item);
 				}
 			}
-			// Set the default item.
-			if (Boolean.parseBoolean(defaults[i])) {
-				setDefaultItem(item);
+		}
+
+		// Load the defaults
+		String defaultsString = prefs.getString(PHPDebugCorePreferenceNames.INSTALLED_PHP_DEFAULTS);
+		if (defaultsString == null) {
+			defaultsString = "";
+		}
+		// Apply the default items
+		final String[] defaults = defaultsString.length() > 0 ? defaultsString.split(SEPARATOR) : new String[0];
+		for (String defaultExe : defaults) {
+			// Get a pair of a debugger id and its default executable
+			String[] debuggerDefault = defaultExe.split("=");
+			if (debuggerDefault.length == 2) {
+				setDefaultItem(debuggerDefault[0], debuggerDefault[1]);
 			}
 		}
-		//		final String defaultLocationString = prefs.getString(PHPDebugCorePreferenceNames.DEFAULT_PHP);
-		//		if (defaultLocationString != null && defaultLocationString.length() > 0)
-		//			defaultItem = (PHPexeItem) items.get(defaultLocationString);
-		//		if (defaultItem == null && items.size() > 0)
-		//			defaultItem = getItems()[0];
 	}
 
