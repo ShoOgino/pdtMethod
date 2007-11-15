@@ -3,10 +3,22 @@
 		if (!explicit && startsWith.length() == 0)
 			return;
 
+		boolean inClass = false;
+
+		PHPCodeData codeData = Utils.getCodeData(projectModel.getFileData(fileName), offset);
+
+		if (codeData.getUserData().getStopPosition() > offset) {
+			codeData = codeData.getContainer();
+		}
+
+		if (codeData instanceof PHPClassData) {
+			inClass = true;
+		}
+
 		if (internalPhpRegion != null) {
 			final String type = internalPhpRegion.getType();
 
-			if (startsWith.startsWith("$")) { //$NON-NLS-1$
+			if (startsWith.startsWith("$") && !inClass) { //$NON-NLS-1$
 				if (!explicit && !autoShowVariables)
 					return;
 				try {
@@ -46,7 +58,7 @@
 		CodeData[] constants = null;
 		CodeData[] keywords = null;
 
-		if (explicit || autoShowFunctionsKeywordsConstants) {
+		if ((explicit || autoShowFunctionsKeywordsConstants) && !inClass) {
 			if (startsWith.length() == 0)
 				functions = projectModel.getFunctions();
 			else {
@@ -59,15 +71,20 @@
 				else {
 					constants = projectModel.getConstants(startsWith, constantCaseSensitive);
 				}
+		}
 
-			keywords = projectModel.getKeywordData();
+		keywords = projectModel.getKeywordData();
+		if (inClass) {
+			keywords = filterClassKeywords(keywords);
 		}
 
 		CodeData[] classes = null;
-		if (showClassNamesInGlobalList)
-			if (explicit || autoShowClassNames)
-				classes = projectModel.getClasses();
+		if (!inClass) {
+			if (showClassNamesInGlobalList)
+				if (explicit || autoShowClassNames)
+					classes = projectModel.getClasses();
 
+		}
 		CodeData[] mergeData = null;
 		if (shouldAddPHPTag(document, offset, startsWith))
 			mergeData = phpTagDataArray;
