@@ -10,8 +10,7 @@
 		String arg = see.getValue();
 		String[] args = arg.split(","); //$NON-NLS-1$
 
-		for (int i = 0; i < args.length; i++) {
-			String ref = args[i];
+		for (String ref : args) {
 			// find a file:
 			if (projectModel.getFileData(ref) != null) {
 				helpBuffer.append(ref);
@@ -29,24 +28,22 @@
 			}
 			boolean shouldBreak = false;
 			if (phpCodeData instanceof PHPFunctionData && phpCodeData.getContainer() != null && phpCodeData.getContainer() instanceof PHPClassData) {
-				String ref_orig = ref;
 				if (ref.indexOf('(') != -1) {
-					ref_orig = ref.substring(0, ref.indexOf('('));
+					ref = ref.substring(0, ref.indexOf('('));
 				}
-				if (fileName != null && projectModel.getClassFunctionData(fileName, phpCodeData.getContainer().getName(), ref_orig) != null) {
+				if (fileName != null && projectModel.getClassFunctionData(fileName, phpCodeData.getContainer().getName(), ref) != null) {
 					helpBuffer.append(ref);
 					break;
 				}
 				if (fileName != null) {
 					PHPCodeContext context = ModelSupport.createContext(phpCodeData);
-					ref_orig = ref;
+					ref = ref;
 					if (ref.startsWith("$")) { //$NON-NLS-1$
-						ref_orig = ref.substring(1);
+						ref = ref.substring(1);
 					}
-					CodeData[] data = projectModel.getVariables(fileName, context, ref_orig, true);
-					for (int j = 0; j < data.length; j++) {
-						CodeData codeData = data[j];
-						if (((PHPCodeData) codeData).getName().equals(ref_orig)) {
+					CodeData[] data = projectModel.getVariables(fileName, context, ref, true);
+					for (CodeData codeData : data) {
+						if (((PHPCodeData) codeData).getName().equals(ref)) {
 							helpBuffer.append(ref);
 							shouldBreak = true;
 							break;
