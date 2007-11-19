@@ -12,14 +12,14 @@
 			return;
 
 		// ignore installed locations
-		final Set exstingLocations = new HashSet();
-		Iterator iter = fPHPexes.iterator();
+		final Set<File> exstingLocations = new HashSet<File>();
+		Iterator<PHPexeItem> iter = fPHPexes.iterator();
 		while (iter.hasNext())
-			exstingLocations.add(((PHPexeItem) iter.next()).getPhpExecutable().getParentFile());
+			exstingLocations.add(iter.next().getExecutable().getParentFile());
 
 		// search
 		final File rootDir = new File(path);
-		final List locations = new ArrayList();
+		final List<File> locations = new ArrayList<File>();
 
 		final IRunnableWithProgress r = new IRunnableWithProgress() {
 			public void run(IProgressMonitor monitor) {
@@ -40,21 +40,20 @@
 		}
 
 		if (locations.isEmpty())
-			MessageDialog.openInformation(getShell(), PHPDebugUIMessages.InstalledPHPsBlock_12, MessageFormat.format(PHPDebugUIMessages.InstalledPHPsBlock_13, new String[] { path }));
+			MessageDialog.openInformation(getShell(), PHPDebugUIMessages.InstalledPHPsBlock_12, MessageFormat.format(PHPDebugUIMessages.InstalledPHPsBlock_13, new Object[] { path }));
 		else {
-			iter = locations.iterator();
-			while (iter.hasNext()) {
-				final File location = (File) iter.next();
-				final String name = PHPDebugUIMessages.InstalledPHPsBlock_16;
-				String nameCopy = new String(name);
+			Iterator<File> iter2 = locations.iterator();
+			while (iter2.hasNext()) {
+				File location = iter2.next();
+				PHPexeItem phpExe = new PHPexeItem(null, location, null, PHPDebuggersRegistry.getDefaultDebuggerId(), true);
+				String nameCopy = new String(phpExe.getName());
 				int i = 1;
 				while (isDuplicateName(nameCopy)) {
-					nameCopy = name + '(' + i++ + ')';
+					nameCopy = phpExe.getName() + '[' + i++ + ']';
 				}
 				// Since the search for PHP exe option does not 'know' the debugger id it should assign to the PHPexeItem,
 				// we call for PHPexes.getDefaultDebuggerId() - which can also return null in some cases.
-				final PHPexeItem phpExe = new PHPexeItem(nameCopy, location, null, PHPDebuggersRegistry.getDefaultDebuggerId(), true);
-				if (phpExe.getPhpExecutable() != null) {
+				if (phpExe.getExecutable() != null) {
 					fPHPexes.add(phpExe);
 					phpExes.addItem(phpExe);
 					fPHPExeList.refresh();

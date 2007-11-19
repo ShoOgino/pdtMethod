@@ -8,13 +8,13 @@
 	 * @param types
 	 * @param ignore
 	 */
-	protected void search(final File directory, final List found, final Set ignore, final IProgressMonitor monitor) {
+	protected void search(final File directory, final List<File> found, final Set<File> ignore, final IProgressMonitor monitor) {
 		if (monitor.isCanceled())
 			return;
 
 		// Search the root directory
 		if (!ignore.contains(directory)) {
-			final File foundExe = PHPexeItem.findPHPExecutable(directory);
+			final File foundExe = findPHPExecutable(directory);
 			if (foundExe != null)
 				found.add(foundExe);
 		}
@@ -22,7 +22,7 @@
 		final String[] names = directory.list();
 		if (names == null)
 			return;
-		final List subDirs = new ArrayList();
+		final List<File> subDirs = new ArrayList<File>();
 		for (String element : names) {
 			if (monitor.isCanceled())
 				return;
@@ -30,13 +30,13 @@
 			//			PHPexeItem[] vmTypes = phpExes.getEditableItems();
 			if (file.isDirectory()) {
 				try {
-					monitor.subTask(MessageFormat.format(PHPDebugUIMessages.InstalledPHPsBlock_14, new String[] { Integer.toString(found.size()), file.getCanonicalPath() }));
+					monitor.subTask(MessageFormat.format(PHPDebugUIMessages.InstalledPHPsBlock_14, new Object[] { Integer.toString(found.size()), file.getCanonicalPath() }));
 				} catch (final IOException e) {
 				}
 				if (!ignore.contains(file)) {
 					if (monitor.isCanceled())
 						return;
-					final File foundExe = PHPexeItem.findPHPExecutable(file);
+					final File foundExe = findPHPExecutable(file);
 					if (foundExe != null) {
 						found.add(foundExe);
 						ignore.add(file);
@@ -46,11 +46,10 @@
 			}
 		}
 		while (!subDirs.isEmpty()) {
-			final File subDir = (File) subDirs.remove(0);
+			final File subDir = subDirs.remove(0);
 			search(subDir, found, ignore, monitor);
 			if (monitor.isCanceled())
 				return;
 		}
-
 	}
 
