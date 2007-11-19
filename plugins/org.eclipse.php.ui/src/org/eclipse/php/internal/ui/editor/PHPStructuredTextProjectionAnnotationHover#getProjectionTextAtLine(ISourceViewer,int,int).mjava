@@ -1,0 +1,36 @@
+	private String getProjectionTextAtLine(ISourceViewer viewer, int line, int visibleLines) {
+
+		IAnnotationModel model = null;
+		if (viewer instanceof ISourceViewerExtension2) {
+			ISourceViewerExtension2 viewerExtension = (ISourceViewerExtension2) viewer;
+			IAnnotationModel visual = viewerExtension.getVisualAnnotationModel();
+			if (visual instanceof IAnnotationModelExtension) {
+				IAnnotationModelExtension modelExtension = (IAnnotationModelExtension) visual;
+				model = modelExtension.getAnnotationModel(ProjectionSupport.PROJECTION);
+			}
+		}
+
+		if (model != null) {
+			try {
+				IDocument document = viewer.getDocument();
+				Iterator e = model.getAnnotationIterator();
+				while (e.hasNext()) {
+					ProjectionAnnotation annotation = (ProjectionAnnotation) e.next();
+					if (!annotation.isCollapsed())
+						continue;
+
+					Position position = model.getPosition(annotation);
+					if (position == null)
+						continue;
+
+					if (isCaptionLine(annotation, position, document, line))
+						return getText(document, position.getOffset(), position.getLength(), visibleLines);
+
+				}
+			} catch (BadLocationException x) {
+			}
+		}
+
+		return null;
+	}
+
