@@ -1,0 +1,47 @@
+	/**
+	 * Make some preparations before debug session:
+	 * <ul>
+	 * 	<li>Adds include path
+	 * 	<li>Modifies Zend Debugger path in the PHP configuration file
+	 * </ul>
+	 *
+	 * @param phpIniFile PHP configuration file instance
+	 * @param phpExePath Path to the PHP executable
+	 * @param project Current project
+	 */
+	public static void prepareBeforeDebug(File phpIniFile, String phpExePath, IProject project) {
+		// Modify include path:
+		if (project != null) {
+			Object[] path = PHPSearchEngine.buildIncludePath(project);
+			List<String> includePath = new ArrayList<String>(path.length);
+			for (Object pathObject : path) {
+				if (pathObject instanceof IIncludePathEntry) {
+					IIncludePathEntry entry = (IIncludePathEntry) pathObject;
+					IPath entryPath = entry.getPath();
+					if (entry.getEntryKind() == IIncludePathEntry.IPE_VARIABLE) {
+						entryPath = IncludePathVariableManager.instance().resolveVariablePath(entryPath.toString());
+					}
+					includePath.add(entryPath.toFile().getAbsolutePath());
+				} else if (pathObject instanceof IContainer) {
+					IContainer container = (IContainer) pathObject;
+					IPath location = container.getLocation();
+					if (location != null) {
+						includePath.add(location.toOSString());
+					}
+				} else {
+					includePath.add(pathObject.toString());
+				}
+			}
+			modifyIncludePath(phpIniFile, includePath.toArray(new String[includePath.size()]));
+		}
+
+		// Modify Zend Debugger extension entry:
+		File phpExeDir = new File(phpExePath).getParentFile();
+		if (phpExeDir != null) {
+			File debuggerFile = new File(phpExeDir, Platform.OS_WIN32.equals(Platform.getOS()) ? "ZendDebugger.dll" : "ZendDebugger.so"); //$NON-NLS-1$ //$NON-NLS-2$
+			if (debuggerFile.exists()) {
+				modifyDebuggerExtensionPath(phpIniFile, debuggerFile.getAbsolutePath());
+			}
+		}
+	}
+

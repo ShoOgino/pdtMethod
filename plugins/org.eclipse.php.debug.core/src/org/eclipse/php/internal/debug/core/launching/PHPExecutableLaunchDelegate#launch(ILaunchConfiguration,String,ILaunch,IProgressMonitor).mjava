@@ -90,13 +90,12 @@
 		subMonitor = new SubProgressMonitor(monitor, 10); // 10 of 100
 
 		// Locate the php ini by using the attribute. If the attribute was null, try to locate an ini that exists next to the executable.
-		File phpIni = (phpIniPath != null) ? new File(phpIniPath) : IniModifier.findPHPIni(phpExeString);
+		File phpIni = (phpIniPath != null && new File(phpIniPath).exists()) ? new File(phpIniPath) : PHPINIUtil.findPHPIni(phpExeString);
 		if (project != dummyProject && project.hasNature(PHPNature.ID)) {
-			if (phpIni != null) {
-				File tempIni = IniModifier.addIncludePath(phpIni, project);
-				if (tempIni != null) {
-					launch.setAttribute(IDebugParametersKeys.PHP_INI_LOCATION, tempIni.getAbsolutePath());
-				}
+			File tempIni = PHPINIUtil.createTemporaryPHPINIFile(phpIni);
+			if (tempIni != null) {
+				PHPINIUtil.prepareBeforeDebug(tempIni, phpExeString, project);
+				launch.setAttribute(IDebugParametersKeys.PHP_INI_LOCATION, tempIni.getAbsolutePath());
 			}
 		} else {
 			if (phpIni != null) {
@@ -173,7 +172,6 @@
 				return;
 			}
 
-			File workingDir = new File(phpExe.removeLastSegments(1).toString());
 			File phpExeFile = new File(phpExeString);
 
 			String phpIniLocation = launch.getAttribute(IDebugParametersKeys.PHP_INI_LOCATION);
@@ -214,7 +212,7 @@
 					buf.append("LD_LIBRARY_PATH"); //$NON-NLS-1$
 				}
 				buf.append('=');
-				buf.append(workingDir.getAbsolutePath());
+				buf.append(phpExeFile.getParent());
 				String[] envpNew = new String[envp == null ? 1 : envp.length + 1];
 				if (envp != null) {
 					System.arraycopy(envp, 0, envpNew, 0, envp.length);
@@ -223,6 +221,7 @@
 				envp = envpNew;
 			}
 
+			File workingDir = new File(fileName).getParentFile();
 			Process p = DebugPlugin.exec(cmdLine, workingDir, envp);
 
 			// Attach a crash detector

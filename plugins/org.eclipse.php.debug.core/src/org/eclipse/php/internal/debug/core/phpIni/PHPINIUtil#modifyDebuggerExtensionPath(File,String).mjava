@@ -1,0 +1,18 @@
+	private static void modifyDebuggerExtensionPath(File phpIniFile, String extensionPath) {
+		try {
+			INIFileModifier m = new INIFileModifier(phpIniFile);
+			if (Platform.OS_WIN32.equals(Platform.getOS())) {
+				if (m.removeAllEntries(ZEND_EXTENSION_TS, ".*\\.\\\\ZendDebugger\\.dll.*")) { //$NON-NLS-1$
+					m.addEntry(ZEND_EXTENSION_TS, extensionPath);
+				}
+			} else {
+				if (m.removeAllEntries(ZEND_EXTENSION, ".*\\./ZendDebugger\\.so.*")) { //$NON-NLS-1$
+					m.addEntry(ZEND_EXTENSION, extensionPath);
+				}
+			}
+			m.close();
+		} catch (IOException e) {
+			PHPDebugPlugin.log(e);
+		}
+	}
+

@@ -1,0 +1,37 @@
+	/**
+	 * Removes entry from the INI file from the given section.
+	 *
+	 * @param sectionName Section name.
+	 * 	If <code>sectionName</code> is <code>null</code>, matching entries from all sections will be removed.
+	 *
+	 * @param name Entry name
+	 * @param removePattern Pattern to check against existing entry value, before removing it.
+	 * 	If <code>removePattern</code> is <code>null</code> every entry that matches the given name will be removed.
+	 * @return <code>true</code> if some entry was removed, otherwise - false
+	 */
+	public boolean removeEntry(String sectionName, String name, String removePattern) {
+		if (name == null) {
+			throw new NullPointerException();
+		}
+		boolean removed = false;
+		for (INIFileSection section : sections) {
+			if (sectionName == null || section.name.equals(sectionName)) {
+				for (int i = 0; i < section.lines.size(); ++i) {
+					Matcher m = NAME_VAL_PATTERN.matcher(section.lines.get(i));
+					if (m.matches()) {
+						String oldName = m.group(1);
+						String oldValue = m.group(2);
+						if (oldName.equals(name) && (removePattern == null || oldValue.matches(removePattern))) {
+							section.lines.remove(i--);
+							removed = true;
+						}
+					}
+				}
+				if (sectionName != null) {
+					break;
+				}
+			}
+		}
+		return removed;
+	}
+
