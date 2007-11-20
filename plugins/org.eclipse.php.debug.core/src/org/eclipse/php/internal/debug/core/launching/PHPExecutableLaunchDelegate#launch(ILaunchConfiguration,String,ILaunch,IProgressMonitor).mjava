@@ -14,8 +14,9 @@
 		}
 		PHPLaunchUtilities.showDebugView();
 		IProgressMonitor subMonitor; // the total of monitor is 100
-		if (monitor.isCanceled())
+		if (monitor.isCanceled()) {
 			return;
+		}
 
 		String phpExeString = configuration.getAttribute(PHPCoreConstants.ATTR_EXECUTABLE_LOCATION, (String) null);
 		String phpIniPath = configuration.getAttribute(PHPCoreConstants.ATTR_INI_LOCATION, (String) null);
@@ -23,8 +24,9 @@
 		String fileNameString = configuration.getAttribute(PHPCoreConstants.ATTR_FILE, (String) null);
 		boolean runWithDebugInfo = configuration.getAttribute(IPHPConstants.RUN_WITH_DEBUG_INFO, true);
 
-		if (monitor.isCanceled())
+		if (monitor.isCanceled()) {
 			return;
+		}
 
 		if (fileNameString == null || fileNameString.equals("")) {
 			displayErrorMessage("Please set a valid PHP file for this launch.");
@@ -110,19 +112,22 @@
 			String projectString = project.getFullPath().toString();
 
 			ILaunchConfigurationWorkingCopy wc;
-			if (configuration.isWorkingCopy())
+			if (configuration.isWorkingCopy()) {
 				wc = (ILaunchConfigurationWorkingCopy) configuration;
-			else
+			} else {
 				wc = configuration.getWorkingCopy();
+			}
 			wc.setAttribute(IPHPConstants.PHP_Project, projectString);
 
 			// Set transfer encoding:
 			wc.setAttribute(IDebugParametersKeys.TRANSFER_ENCODING, PHPProjectPreferences.getTransferEncoding(project));
 			wc.setAttribute(IDebugParametersKeys.OUTPUT_ENCODING, PHPProjectPreferences.getOutputEncoding(project));
+			wc.setAttribute(IDebugParametersKeys.PHP_DEBUG_TYPE, IDebugParametersKeys.PHP_EXE_SCRIPT_DEBUG);
 			wc.doSave();
 
-			if (monitor.isCanceled())
+			if (monitor.isCanceled()) {
 				return;
+			}
 
 			// Generate a session id for this launch and put it in the map
 			int sessionID = DebugSessionIdGenerator.generateSessionID();
@@ -140,27 +145,33 @@
 			// resolve location
 			IPath phpExe = new Path(phpExeString);
 
-			if (monitor.isCanceled())
+			if (monitor.isCanceled()) {
 				return;
+			}
 
 			IPath projectLocation = project.getRawLocation();
-			if (projectLocation == null)
+			if (projectLocation == null) {
 				projectLocation = project.getLocation();
+			}
 
-			if (monitor.isCanceled())
+			if (monitor.isCanceled()) {
 				return;
+			}
 
 			IPath phpFile = new Path(fileNameString);
-			if (fileNameString.startsWith("/"))
+			if (fileNameString.startsWith("/")) {
 				phpFile = phpFile.removeFirstSegments(1);
+			}
 
-			if (monitor.isCanceled())
+			if (monitor.isCanceled()) {
 				return;
+			}
 
 			String[] envp = DebugPlugin.getDefault().getLaunchManager().getEnvironment(configuration);
 
-			if (monitor.isCanceled())
+			if (monitor.isCanceled()) {
 				return;
+			}
 
 			File workingDir = new File(phpExe.removeLastSegments(1).toString());
 			File phpExeFile = new File(phpExeString);
@@ -253,7 +264,7 @@
 				 */
 			} else {
 				// wait for process to exit
-				while (!process.isTerminated())
+				while (!process.isTerminated()) {
 					try {
 						if (monitor.isCanceled()) {
 							process.terminate();
@@ -262,6 +273,7 @@
 						Thread.sleep(50);
 					} catch (InterruptedException e) {
 					}
+				}
 
 				// refresh resources
 				subMonitor = new SubProgressMonitor(monitor, 10); // 10+80+10 of 100;
