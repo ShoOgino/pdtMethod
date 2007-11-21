@@ -30,22 +30,6 @@
 							IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(debugFileName);
 							if (resource instanceof IFile) {
 								pathEntry = new PathEntry(debugFileName, Type.WORKSPACE, resource.getParent());
-							} else if (resource instanceof IProject) {
-								IProject project = (IProject) resource;
-								int idx = remoteFile.lastIndexOf('/');
-								if (idx == -1) {
-									idx = remoteFile.lastIndexOf('\\');
-								}
-								String lastSegment;
-								if (idx != -1) {
-									lastSegment = remoteFile.substring(idx + 1);
-								} else {
-									lastSegment = remoteFile;
-								}
-								IFile file = project.getFile(lastSegment);
-								if (file != null && file.exists()) {
-									pathEntry = new PathEntry(file.getFullPath().toString(), Type.WORKSPACE, project);
-								}
 							} else if (new File(debugFileName).exists()) {
 								pathEntry = new PathEntry(debugFileName, Type.EXTERNAL, new File(debugFileName).getParentFile());
 							}
@@ -56,7 +40,21 @@
 							PathMapperRegistry.storeToPreferences();
 						} else {
 							// Find the local file, and map it:
-							DebugSearchEngine.find(remoteFile, fDebugTarget);
+							pathEntry = DebugSearchEngine.find(remoteFile, fDebugTarget);
+						}
+					}
+
+					// Assign this project to Debug Target:
+					if (fDebugTarget.getProject() == null && pathEntry != null && pathEntry.getType() == Type.WORKSPACE) {
+						IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(pathEntry.getPath());
+						IProject project = resource.getProject();
+						fDebugTarget.setProject(project);
+						try {
+							ILaunchConfigurationWorkingCopy wc = launchConfiguration.getWorkingCopy();
+							wc.getAttribute(IPHPConstants.PHP_Project, project.getName());
+							wc.doSave();
+						} catch (CoreException e) {
+							PHPDebugPlugin.log(e);
 						}
 					}
 				}
