@@ -1,0 +1,24 @@
+	/**
+	 * When the user double click on a variable in a comment, include the preceding $ sign in the selection
+	 * (bug#201079)
+	 * @param textViewer
+	 * @param structuredTextViewer
+	 * @return whether the user double clicked on a variable or not
+	 * @throws BadLocationException
+	 */
+	private boolean resetVariableSelectionRangeInComments(ITextViewer textViewer, StructuredTextViewer structuredTextViewer) throws BadLocationException {
+		super.doubleClicked(textViewer);
+		Point selectedRange = structuredTextViewer.getSelectedRange();
+		int offset = selectedRange.x;
+
+		if (offset > 0) {
+			IDocument document = structuredTextViewer.getDocument();
+			char previousChar = document.getChar(offset - 1);
+			if (previousChar == '$') {
+				structuredTextViewer.setSelectedRange(offset - 1, selectedRange.y+1);		
+				return true;
+			}
+		}
+		return false;
+	}
+
