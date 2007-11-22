@@ -1,17 +1,23 @@
-	public String sendCWDRequest() {
+	/**
+	 * Sets current working directory on the debugger side
+	 *
+	 * @param cwd Current working directory to set
+	 * @return <code>true</code> if success, <code>false</code> - otherwise
+	 */
+	public boolean setCurrentWorkingDirectory(String cwd) {
 		try {
 			EvalRequest request = new EvalRequest();
-			request.setCommand("getcwd()"); //$NON-NLS-1$
+			request.setCommand(String.format("chdir('%1$s')", cwd));
 			IDebugResponseMessage response = sendCustomRequest(request);
 			if (response != null && response instanceof EvalResponse) {
 				String result = ((EvalResponse) response).getResult();
 				if (!EVAL_ERROR.equals(result)) {
-					return result;
+					return true;
 				}
 			}
 		} catch (Exception e) {
 			Logger.logException(e);
 		}
-		return null;
+		return false;
 	}
 
