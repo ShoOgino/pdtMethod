@@ -22,10 +22,7 @@
 
 					Object newInputMessage = inputMessageQueue.queueOut();
 
-					//System.out.println("InputMessageHandler handle: " + newInputMessage);
-
 					// do not stop until the message is processed.
-
 					synchronized (this) {
 						try {
 							if (newInputMessage instanceof DebugSessionStartedNotification) {
@@ -36,24 +33,15 @@
 									handleConnectionClosed();
 								}
 							} else if (newInputMessage instanceof IDebugNotificationMessage) {
-								//System.out.println("Processing notification:"+ newInputMessage);
 								getCommunicationClient().handleNotification(newInputMessage);
 							} else if (newInputMessage instanceof IDebugRequestMessage) {
 
-								//								int reqId = ((IDebugRequestMessage) newInputMessage).getID();
-								IDebugMessageHandler requestHandler = DebugMessagesRegistry.getHandler((IDebugRequestMessage) newInputMessage);
+								IDebugMessageHandler requestHandler = createRequestHandler((IDebugRequestMessage) newInputMessage);
 
 								if (requestHandler instanceof IDebugRequestHandler) {
-									if (isFirstTimeRequestHandler) {
-										((IDebugRequestHandler) requestHandler).init();
-										isFirstTimeRequestHandler = false;
-									}
 									requestHandler.handle((IDebugRequestMessage) newInputMessage, debugTarget);
 									IDebugResponseMessage response = ((IDebugRequestHandler) requestHandler).getResponseMessage();
 
-									//Log.writeLog("Client Sending response: " +response);
-									//ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
-									//DataOutputStream outArray = new DataOutputStream (byteArray );
 									byteArray.reset();
 									response.serialize(outArray);
 									if (isDebugMode) {
@@ -69,10 +57,9 @@
 								}
 							} else if (newInputMessage instanceof IDebugResponseMessage) {
 								IDebugResponseMessage r = (IDebugResponseMessage) newInputMessage;
-								//                                Object requestId = new Integer(r.getID()); // take the req id from the response.
-								int requestId = r.getID(); // take the req id from the response.
+								int requestId = r.getID(); // take the request ID from the response.
 								IDebugRequestMessage req = (IDebugRequestMessage) requestsTable.remove(requestId); // find the request.
-								ResponseHandler handler = (ResponseHandler) responseHandlers.remove(new Integer(requestId)); // find the handler.
+								ResponseHandler handler = responseHandlers.remove(new Integer(requestId)); // find the handler.
 								handler.handleResponse(req, r);
 							} else if (newInputMessage == STOP_MSG) {
 								synchronized (STOP_MSG) {
