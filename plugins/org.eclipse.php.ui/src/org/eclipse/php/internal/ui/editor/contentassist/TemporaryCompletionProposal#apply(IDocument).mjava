@@ -1,0 +1,27 @@
+	/** (non-Javadoc)
+	 * @see org.eclipse.jface.text.contentassist.ICompletionProposal#apply(org.eclipse.jface.text.IDocument)
+	 */
+	public void apply(IDocument document) {
+		final IWorkbenchPage page = PHPUiPlugin.getActivePage();
+		final StructuredTextViewer textViewer;
+		if (page != null) {
+			final IEditorPart editor = page.getActiveEditor();
+			if (editor instanceof PHPStructuredEditor) {
+				textViewer = ((PHPStructuredEditor) editor).getTextViewer();
+			} else {
+				textViewer = null;
+			}
+		} else {
+			textViewer = null;
+		}
+		if (textViewer != null && textViewer.getDocument() == document) {
+			textViewer.addSelectionChangedListener(new ISelectionChangedListener() {
+				public void selectionChanged(SelectionChangedEvent event) {
+					textViewer.removeSelectionChangedListener(this);
+					textViewer.doOperation(ISourceViewer.CONTENTASSIST_PROPOSALS);
+				}
+			});
+		}
+		proposal.apply(document);
+	}
+
