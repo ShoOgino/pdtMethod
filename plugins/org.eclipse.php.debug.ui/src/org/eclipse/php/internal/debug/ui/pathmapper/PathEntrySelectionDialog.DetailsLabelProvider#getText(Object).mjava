@@ -7,8 +7,20 @@
 				return ((File) pathEntry.getContainer()).getPath();
 			}
 			if (pathEntry.getContainer() instanceof IncludePathEntry) {
+				String parentFolder = new File(pathEntry.getPath()).getParentFile().getAbsolutePath();
 				IncludePathEntry entry = (IncludePathEntry) pathEntry.getContainer();
-				return entry.getPath().toOSString();
+				if (entry.getEntryKind() == IIncludePathEntry.IPE_VARIABLE) {
+					IPath resolvedVar = IncludePathVariableManager.instance().getIncludePathVariable(entry.getPath().toString());
+					String varPath = resolvedVar.toFile().getAbsolutePath();
+					if (parentFolder.startsWith(varPath)) {
+						String suffix = parentFolder.substring(varPath.length());
+						if (suffix.startsWith("/")) {
+							suffix = suffix.substring(1);
+						}
+						return entry.getPath().toString() + '/' + suffix;
+					}
+				}
+				return parentFolder;
 			}
 			if (pathEntry.getContainer() instanceof IResource) {
 				String path = ((IResource) pathEntry.getContainer()).getFullPath().toPortableString();
