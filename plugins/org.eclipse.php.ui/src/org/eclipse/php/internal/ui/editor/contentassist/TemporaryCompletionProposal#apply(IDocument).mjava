@@ -18,11 +18,21 @@
 			textViewer.addSelectionChangedListener(new ISelectionChangedListener() {
 				public void selectionChanged(SelectionChangedEvent event) {
 					textViewer.removeSelectionChangedListener(this);
-					BusyIndicator.showWhile(textViewer.getControl().getDisplay(), new Runnable() {
+					final long delay = PreferenceConstants.getPreferenceStore().getInt(PreferenceConstants.CODEASSIST_AUTOACTIVATION_DELAY);
+					new Timer("Temporary Completion delay").schedule(new TimerTask() {
+						@Override
 						public void run() {
-							textViewer.doOperation(ISourceViewer.CONTENTASSIST_PROPOSALS);
+							textViewer.getControl().getDisplay().asyncExec(new Runnable() {
+								public void run() {
+									BusyIndicator.showWhile(textViewer.getControl().getDisplay(), new Runnable() {
+										public void run() {
+											textViewer.doOperation(ISourceViewer.CONTENTASSIST_PROPOSALS);
+										}
+									});
+								}
+							});
 						}
-					});
+					}, delay);
 				}
 			});
 		}
