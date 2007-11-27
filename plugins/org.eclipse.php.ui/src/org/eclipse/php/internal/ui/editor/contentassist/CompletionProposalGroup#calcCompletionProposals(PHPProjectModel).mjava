@@ -12,7 +12,7 @@
 			// this is the default option - just create proposals for each code data and return the array
 			ICompletionProposal[] results = new ICompletionProposal[codeDatas.length];
 			for (int i = 0; i < results.length; ++i) {
-				results[i] = createProposal(projectModel, codeDatas[i]);
+				results[i] = createElementProposal(projectModel, codeDatas[i]);
 			}
 			return results;
 		}
@@ -26,20 +26,16 @@
 			final Path root = COMPLETION_TREE_ROOT;
 			// 2. Extract only the relevant element and group paths from the tree:
 			final Collection<IPath> completionProposalPaths = calculateProposalPaths(completionTree, root, false);
-			IPath keyPath = elementNameToPath(key);
 			for (final IPath completionProposalPath : completionProposalPaths) {
 				Object elementData = completionTree.getElementData(completionProposalPath);
 				if (elementData != null) {
-					proposals.add(new PartialProposal(createProposal(projectModel, (CodeData) elementData), matchingSegments));
+					proposals.add(createElementProposal(projectModel, elementData));
 				} else {
-					int matchingFirstSegments = keyPath.segmentCount();
 
 					// show directories even if matched:
-					if (matchingFirstSegments > 0 && !keyPath.hasTrailingSeparator())
-						--matchingFirstSegments;
 					IPath replacementPath = completionProposalPath.removeFirstSegments(1);
 					String replacement = elementPathToName(replacementPath) + ELEMENT_NAME_SEPARATOR;
-					proposals.add(createGroupProposal(completionProposalPath, matchingFirstSegments, replacement));
+					proposals.add(createGroupProposal(completionProposalPath, replacement));
 				}
 			}
 		}
