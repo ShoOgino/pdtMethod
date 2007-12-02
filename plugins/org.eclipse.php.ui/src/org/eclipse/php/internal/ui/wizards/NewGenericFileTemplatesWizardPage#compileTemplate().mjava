@@ -1,11 +1,11 @@
 	/**
 	 * Returns template string to insert.
-	 * 
+	 *
 	 * @return String to insert or null if none is to be inserted
 	 */
-	public String getTemplateString() {
-		String templateString = null;
-
+	public CompiledTemplate compileTemplate() {
+		String string = null;
+		int offset = 0;
 		Template template = getSelectedTemplate();
 		if (template != null) {
 			TemplateContextType contextType = getTemplatesContextTypeRegistry().getContextType(getTemplateContextTypeId());
@@ -13,12 +13,21 @@
 			TemplateContext context = new DocumentTemplateContext(contextType, document, 0, 0);
 			try {
 				TemplateBuffer buffer = context.evaluate(template);
-				templateString = buffer.getString();
+				string = buffer.getString();
+				TemplateVariable[] variables = buffer.getVariables();
+				boolean hasPositions = false;
+				for (int i = 0; i != variables.length; i++) {
+					TemplateVariable variable = variables[i];
+					if ("cursor".equals(variable.getName())) {
+						offset = variable.getOffsets()[0];
+					}
+				}
+
 			} catch (Exception e) {
 				Logger.log(Logger.WARNING_DEBUG, "Could not create template for new PHP", e); //$NON-NLS-1$
 			}
 		}
 
-		return templateString;
+		return new CompiledTemplate(string, offset);
 	}
 

@@ -11,7 +11,7 @@
 		 * @param editorID An optional editor ID to use when opening the file (can be null).
 		 * @throws CoreException
 		 */
-		public void createFile(Wizard wizard, String containerName, String fileName, IProgressMonitor monitor, String contents, final String editorID) throws CoreException {
+		public void createFile(Wizard wizard, String containerName, String fileName, IProgressMonitor monitor, String contents, final int offset, final String editorID) throws CoreException {
 			// create a sample file
 			monitor.beginTask(NLS.bind(PHPUIMessages.getString("newPhpFile_create"), fileName), 2);
 			IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
@@ -45,8 +45,6 @@
 				return;
 			}
 
-			normalizeFile(file);
-
 			// Change file encoding:
 			/*if (container instanceof IProject) {
 				PHPProjectOptions options = PHPProjectOptions.forProject((IProject) container);
@@ -65,11 +63,17 @@
 				public void run() {
 					IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
 					try {
+						IEditorPart editor;
 						if (editorID == null) {
-							IDE.openEditor(page, file, true);
+							editor = IDE.openEditor(page, file, true);
 						} else {
-							IDE.openEditor(page, file, editorID, true);
+							editor = IDE.openEditor(page, file, editorID, true);
 						}
+						if (editor instanceof PHPStructuredEditor) {
+							StructuredTextViewer textViewer = ((PHPStructuredEditor) editor).getTextViewer();
+							textViewer.setSelectedRange(offset, 0);
+						}
+						normalizeFile(file);
 					} catch (PartInitException e) {
 					}
 				}
