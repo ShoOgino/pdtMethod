@@ -1,0 +1,22 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.eclipse.ui.texteditor.AbstractMarkerAnnotationModel#isAcceptable(org.eclipse.core.resources.IMarker)
+	 */
+	protected boolean isAcceptable(IMarker marker) {
+		try {
+			Object attr = marker.getAttribute(IBreakpointConstants.ATTR_HIDDEN);
+			if (attr != null && ((Boolean) attr).equals(Boolean.TRUE))
+				return false;
+		} catch (CoreException e) {
+			// ignore
+		}
+
+		if (fSecondaryMarkerAttributeValue == null)
+			return super.isAcceptable(marker);
+		String markerSecondaryMarkerAttributeValue = marker.getAttribute(SECONDARY_ID_KEY, ""); //$NON-NLS-1$
+		boolean isSameFile = new Path(fSecondaryMarkerAttributeValue).equals(new Path(markerSecondaryMarkerAttributeValue));
+
+		return marker != null && getResource().equals(marker.getResource()) && isSameFile;
+	}
+
