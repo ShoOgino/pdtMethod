@@ -2,7 +2,7 @@
 
 		// check if it is an external file
 		if (!file.exists()) {
-			final File ioFile = new File(file.getFullPath().toString());
+			final File ioFile = new File(file.getFullPath().toOSString());
 			// if it is an external file that doesn't exist - out
 			if (!ioFile.exists()) {
 				return;
@@ -19,7 +19,7 @@
 			InputStream is = null;
 			if (!file.exists()) {
 				try {
-					is = new FileInputStream(file.getFullPath().toString());
+					is = new FileInputStream(file.getFullPath().toOSString());
 				} catch (IOException ioe) {
 				}
 			} else {
@@ -35,8 +35,12 @@
 		}
 
 		Pattern[] tasksPatterns = TaskPatternsProvider.getInstance().getPatternsForProject(file.getProject());
+		String fileNameToParse = file.getFullPath().toString();
+		if (new File(fileNameToParse).exists()){
+			fileNameToParse = file.getFullPath().toOSString();
+		}
 		try {
-			parserManager.parseNow(inputStreamReader, file.getFullPath().toString(), file.getModificationStamp(), parserClient, tasksPatterns, UseAspTagsHandler.useAspTagsAsPhp(project));
+			parserManager.parseNow(inputStreamReader, fileNameToParse, file.getModificationStamp(), parserClient, tasksPatterns, UseAspTagsHandler.useAspTagsAsPhp(project));
 		} catch (Exception e) {
 			PHPCorePlugin.log(e);
 			return;
