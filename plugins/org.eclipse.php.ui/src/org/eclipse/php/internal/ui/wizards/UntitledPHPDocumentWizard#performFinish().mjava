@@ -11,37 +11,36 @@
 		IWorkbenchPage page = fWindow.getActivePage();
 		try {
 			IEditorPart editor = page.openEditor(input, UNTITLED_EDITOR_ID);
-			ITextEditor textEditor = null;
-			if (editor instanceof ITextEditor) {
-				textEditor = (ITextEditor) editor;
+			UntitledPHPEditor textEditor = null;
+			if (editor instanceof UntitledPHPEditor) {
+				textEditor = (UntitledPHPEditor) editor;
 			}
-			PHPFileData fileData = PHPWorkspaceModelManager.getInstance().getModelForFile(f.getAbsolutePath());
-			if (fileData == null || textEditor == null) {
+			PHPWorkspaceModelManager.getInstance().getModelForFile(f.getAbsolutePath());
+			if (textEditor == null) {
 				return true;
 			}
-			//find first php block
-			if ((fileData.getPHPBlocks() != null) && (fileData.getPHPBlocks().length > 0)) {
-				// calculate length of the start tag
-				UserData startTag = fileData.getPHPBlocks()[0].getPHPStartTag();
-				int startTagEndPosition = startTag.getEndPosition() - startTag.getStartPosition();
-				// handle short tag - '<?'
-				if (startTagEndPosition == 2) {
-					int startTagLineNum = startTag.getStopLine();
-					IEditorInput editorInput = textEditor.getEditorInput();
-					IDocument document = textEditor.getDocumentProvider().getDocument(editorInput);
-					// calculate the length of the line delimiter for the start tag line
-					int lineDelimLength = document.getLineDelimiter(startTagLineNum).length();
-					// add to the tag length, so we jump to the next line
-					startTagEndPosition += lineDelimLength;
-					
-				}
-				// position the cursor at the end of the start tag
-				textEditor.selectAndReveal(startTagEndPosition, 0);
+
+			//Load the last template name used in New PHP File wizard.
+			String templateName = PHPUiPlugin.getDefault().getPreferenceStore().getString(PreferenceConstants.NEW_PHP_FILE_TEMPLATE);
+			if (templateName == null || templateName.length() == 0) {
+				return true;
 			}
+
+			TemplateStore templateStore = PHPUiPlugin.getDefault().getTemplateStore();
+			Template template = templateStore.findTemplate(templateName);
+			if (template == null) {
+				return true;
+			}
+			CompiledTemplate compiledTemplate = PHPTemplateStore.compileTemplate(PHPUiPlugin.getDefault().getTemplateContextRegistry(), template);
+			IDocumentProvider documentProvider = textEditor.getDocumentProvider();
+			IDocument document = textEditor.getDocument();
+			document.set(compiledTemplate.string);
+			documentProvider.saveDocument(null, textEditor.getEditorInput(), document, true);
+			textEditor.selectAndReveal(compiledTemplate.offset, 0);
 		} catch (PartInitException e) {
 			Logger.logException(e);
 			return false;
-		} catch (BadLocationException e) {
+		} catch (CoreException e) {
 			Logger.logException(e);
 			return false;
 		}
