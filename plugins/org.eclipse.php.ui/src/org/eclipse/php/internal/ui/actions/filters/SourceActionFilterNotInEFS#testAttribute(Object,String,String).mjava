@@ -1,0 +1,34 @@
+	public boolean testAttribute(Object target, String name, String value) {
+		String fileName = null;
+		if (target instanceof NodeImpl) {
+			IStructuredDocument structuredDocument = ((NodeImpl) target).getStructuredDocument();
+			IStructuredModel existingModelForRead = StructuredModelManager.getModelManager().getExistingModelForRead(structuredDocument);
+			try {
+				if (existingModelForRead instanceof DOMModelForPHP) {
+					PHPFileData fileData = ((DOMModelForPHP) existingModelForRead).getFileData();
+					if (fileData == null) {
+						return false;
+					}
+					fileName = fileData.getName();
+				}
+			} finally {
+				if (existingModelForRead != null) {
+					existingModelForRead.releaseFromRead();
+				}
+			}
+		}
+		if (target instanceof PHPCodeData) {
+			PHPCodeData codeData = (PHPCodeData) target;
+			if (!codeData.isUserCode()) {
+				return false;
+			}
+			fileName = (codeData).getUserData().getFileName();
+		}
+		// file is not in EFS, e.g include path
+		IFile checkFile = ResourcesPlugin.getWorkspace().getRoot().getFile(new Path(fileName));
+		if (checkFile.exists()) {
+			return true;
+		}
+		return false;
+	}
+
