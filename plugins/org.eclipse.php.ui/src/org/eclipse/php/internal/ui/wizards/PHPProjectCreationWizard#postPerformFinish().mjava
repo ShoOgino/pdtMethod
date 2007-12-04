@@ -1,13 +1,20 @@
 	protected void postPerformFinish() throws InvocationTargetException {
-		BasicNewProjectResourceWizard.updatePerspective(configElement);
-
 		if (createdProject != null) {
-			//			 Save any project-specific data (Fix Bug# 143406)
+			// Save any project-specific data (Fix Bug# 143406)
 			try {
 				new ProjectScope(createdProject).getNode(PHPCorePlugin.ID).flush();
 			} catch (BackingStoreException e) {
 				Logger.logException(e);
 			}
 		}
+
+		UIJob j = new UIJob("") { //$NON-NLS-1$
+			public IStatus runInUIThread(IProgressMonitor monitor) {
+				BasicNewProjectResourceWizard.updatePerspective(configElement);
+				return Status.OK_STATUS;
+			}
+		};
+		j.setUser(false);
+		j.schedule();
 	}
 
