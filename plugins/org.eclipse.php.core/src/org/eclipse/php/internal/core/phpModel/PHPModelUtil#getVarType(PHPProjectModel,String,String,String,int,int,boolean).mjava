@@ -1,8 +1,8 @@
 	/**
 	 * finding the type of the class variable.
 	 */
-	private String getVarType(PHPProjectModel projectModel, String fileName, String className, String varName, int statementStart, int line) {
-		String tempType = PHPFileDataUtilities.getVariableType(fileName, "this;*" + varName, statementStart, line, projectModel.getPHPUserModel(), true); //$NON-NLS-1$
+	public static String getVarType(PHPProjectModel projectModel, String fileName, String className, String varName, int statementStart, int line, boolean determineObjectTypeFromOtherFile) {
+		String tempType = PHPFileDataUtilities.getVariableType(fileName, "this;*" + varName, statementStart, line, projectModel.getPHPUserModel(), determineObjectTypeFromOtherFile); //$NON-NLS-1$
 		if (tempType != null) {
 			return tempType;
 		}
@@ -29,19 +29,11 @@
 			if (superClassNameData == null) {
 				continue;
 			}
-			String classVarClassName = getVarType(projectModel, fileName, superClassNameData.getName(), varName, statementStart, line);
+			String classVarClassName = getVarType(projectModel, fileName, superClassNameData.getName(), varName, statementStart, line, determineObjectTypeFromOtherFile);
 			if (classVarClassName != null) {
 				varClassNames.add(classVarClassName);
 			}
 		}
-		StringBuffer compositeVarClassName = new StringBuffer();
-		for (Iterator<String> i = varClassNames.iterator(); i.hasNext();) {
-			String varClassName = i.next();
-			compositeVarClassName.append(varClassName);
-			if (i.hasNext()) {
-				compositeVarClassName.append("|"); //$NON-NLS-1$
-			}
-		}
-		return compositeVarClassName.toString();
+		return StringUtils.implodeStrings(varClassNames, "|"); //$NON-NLS-1$
 	}
 
