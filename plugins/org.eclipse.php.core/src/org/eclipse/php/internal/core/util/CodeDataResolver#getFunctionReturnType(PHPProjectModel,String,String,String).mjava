@@ -1,0 +1,57 @@
+	/**
+	 * finding the return type of the function.
+	 */
+	private String getFunctionReturnType(PHPProjectModel projectModel, String fileName, String className, String functionName) {
+		String[] realClassNames = className.split(PHPDOC_CLASS_NAME_SEPARATOR);
+		Set<String> functionReturnClassNames = new LinkedHashSet<String>();
+		for (String realClassName : realClassNames) {
+			realClassName = realClassName.trim();
+			CodeData classFunction = projectModel.getClassFunctionData(fileName, realClassName, functionName);
+			if (classFunction != null) {
+				if (classFunction instanceof PHPFunctionData) {
+					functionReturnClassNames.add(((PHPFunctionData) classFunction).getReturnType());
+				}
+				continue;
+			}
+
+			// checking if the function belongs to one of the class's ancestor
+			PHPClassData classData = projectModel.getClass(fileName, realClassName);
+
+			if (classData == null) {
+				continue;
+			}
+			String functionReturnClassName = null;
+			PHPClassData.PHPSuperClassNameData superClassNameData = classData.getSuperClassData();
+			if (superClassNameData != null) {
+				functionReturnClassName = getFunctionReturnType(projectModel, fileName, superClassNameData.getName(), functionName);
+			}
+
+			// checking if its a non-class function from within the file
+			if (functionReturnClassName == null) {
+				PHPFileData fileData = projectModel.getFileData(fileName);
+				CodeData[] functions = fileData.getFunctions();
+				for (CodeData function : functions) {
+					if (function.getName().equals(functionName)) {
+						if (function instanceof PHPFunctionData) {
+							functionReturnClassName = ((PHPFunctionData) function).getReturnType();
+						}
+					}
+				}
+			}
+
+			// checking if its a non-class function from within the project
+			if (functionReturnClassName == null) {
+				CodeData[] functions = projectModel.getFunctions();
+				for (CodeData function : functions) {
+					if (function.getName().equals(functionName)) {
+						if (function instanceof PHPFunctionData) {
+							functionReturnClassName = ((PHPFunctionData) function).getReturnType();
+						}
+					}
+				}
+			}
+			functionReturnClassNames.add(functionReturnClassName);
+		}
+		return StringUtils.implodeStrings(functionReturnClassNames, "|"); //$NON-NLS-1$
+	}
+
