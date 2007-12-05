@@ -1,0 +1,47 @@
+	/**
+	 * finding the type of the class variable.
+	 */
+	private String getVarType(PHPProjectModel projectModel, String fileName, String className, String varName, int statementStart, int line) {
+		String tempType = PHPFileDataUtilities.getVariableType(fileName, "this;*" + varName, statementStart, line, projectModel.getPHPUserModel(), true); //$NON-NLS-1$
+		if (tempType != null) {
+			return tempType;
+		}
+
+		// process multiple classes variables and compile their types for recursive multiple resolution
+		String[] realClassNames = className.split(PHPDOC_CLASS_NAME_SEPARATOR);
+		Set<String> varClassNames = new LinkedHashSet<String>();
+		for (String realClassName : realClassNames) {
+			realClassName = realClassName.trim();
+			CodeData classVar = projectModel.getClassVariablesData(fileName, realClassName, varName);
+			if (classVar != null) {
+				if (classVar instanceof PHPClassVarData) {
+					varClassNames.add(((PHPClassVarData) classVar).getClassType());
+				}
+				continue;
+			}
+			// checking if the variable belongs to one of the class's ancestor
+			PHPClassData classData = projectModel.getClass(fileName, realClassName);
+
+			if (classData == null) {
+				continue;
+			}
+			PHPClassData.PHPSuperClassNameData superClassNameData = classData.getSuperClassData();
+			if (superClassNameData == null) {
+				continue;
+			}
+			String classVarClassName = getVarType(projectModel, fileName, superClassNameData.getName(), varName, statementStart, line);
+			if (classVarClassName != null) {
+				varClassNames.add(classVarClassName);
+			}
+		}
+		StringBuffer compositeVarClassName = new StringBuffer();
+		for (Iterator<String> i = varClassNames.iterator(); i.hasNext();) {
+			String varClassName = i.next();
+			compositeVarClassName.append(varClassName);
+			if (i.hasNext()) {
+				compositeVarClassName.append("|"); //$NON-NLS-1$
+			}
+		}
+		return compositeVarClassName.toString();
+	}
+
