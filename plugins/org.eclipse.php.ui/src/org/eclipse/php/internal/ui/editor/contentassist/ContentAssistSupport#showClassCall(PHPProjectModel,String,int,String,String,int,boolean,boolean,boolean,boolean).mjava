@@ -2,24 +2,17 @@
 		CodeData[] allFunctions = null;
 		CodeData[] allClassVariables = null;
 
-		String[] classNames = className.split("\\|");
+		// collecting for multiple classes in case class name has string separated by "|", which may be used in doc-block
+		String[] classNames = className.split(PHPDOC_CLASS_NAME_SEPARATOR);
 		for (String realClassName : classNames) {
 			realClassName = realClassName.trim();
 			if (explicit || autoShowFunctionsKeywordsConstants) {
 				CodeData[] functions = projectModel.getClassFunctions(fileName, realClassName, startWith.length() == 0 ? "" : startWith); //$NON-NLS-1$
-				if (allFunctions == null) {
-					allFunctions = functions;
-				} else {
-					allFunctions = ModelSupport.merge(allFunctions, functions);
-				}
+				allFunctions = ModelSupport.merge(allFunctions, functions);
 			}
 			if (explicit || autoShowVariables) {
 				CodeData[] classVariables = ModelSupport.getFilteredCodeData(projectModel.getClassVariables(fileName, realClassName, ""), ModelSupport.NOT_STATIC_VARIABLES_FILTER); //$NON-NLS-1$
-				if (allClassVariables == null) {
-					allClassVariables = classVariables;
-				} else {
-					allClassVariables = ModelSupport.merge(allClassVariables, classVariables);
-				}
+				allClassVariables = ModelSupport.merge(allClassVariables, classVariables);
 			}
 		}
 		CodeData[] result = ModelSupport.getFilteredCodeData(ModelSupport.merge(allFunctions, allClassVariables), getAccessLevelFilter(projectModel, fileName, className, offset, isInstanceOf));
