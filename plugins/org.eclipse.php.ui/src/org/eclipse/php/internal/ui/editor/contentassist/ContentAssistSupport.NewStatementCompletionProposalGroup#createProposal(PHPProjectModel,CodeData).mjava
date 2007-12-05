@@ -1,9 +1,13 @@
 		@Override
 		protected CodeDataCompletionProposal createProposal(PHPProjectModel projectModel, CodeData codeData) {
-			PHPClassData classData = (PHPClassData) codeData;
-			PHPFunctionData constructor = classData.getUserData() != null ? PHPModelUtil.getRealConstructor(projectModel, classData.getUserData().getFileName(), classData) : null;
-			int suffixOffset = constructor != null && constructor.getParameters().length > 0 ? 1 : 2;
-
-			return new CodeDataCompletionProposal(projectModel, classData, getOffset() - key.length(), key.length(), selectionLength, "", "()", suffixOffset, true); //$NON-NLS-1$ //$NON-NLS-2$
+			PHPCodeData phpCodeData = (PHPCodeData) codeData;
+			if (phpCodeData instanceof PHPClassData) {
+				PHPClassData classData = (PHPClassData) phpCodeData;
+				PHPFunctionData constructor = classData.getUserData() != null ? PHPModelUtil.getRealConstructor(projectModel, classData.getUserData().getFileName(), classData) : null;
+				int suffixOffset = constructor != null && constructor.getParameters().length > 0 ? 1 : 2;
+				return new CodeDataCompletionProposal(projectModel, classData, getOffset() - key.length(), key.length(), selectionLength, "", "()", suffixOffset, true); //$NON-NLS-1$ //$NON-NLS-2$
+			} else {
+				return new CodeDataCompletionProposal(projectModel, phpCodeData, getOffset() - key.length(), key.length(), selectionLength, "", "()", 2, true); //$NON-NLS-1$ //$NON-NLS-2$
+			}
 		}
 

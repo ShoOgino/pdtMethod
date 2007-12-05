@@ -1,0 +1,29 @@
+	protected void showClassList(PHPProjectModel projectModel, PHPFileData fileData, String startWith, int offset, int selectionLength, States state, boolean explicit) {
+		if (!explicit && !autoShowClassNames) {
+			return;
+		}
+
+		CodeData[] classes = null;
+
+		switch (state) {
+			case NEW:
+				completionProposalGroup = newStatementCompletionProposalGroup;
+				classes = getOnlyClasses(projectModel);
+				classes = addSelfKeywordToProposals(classes);
+				break;
+			case INSTANCEOF:
+				completionProposalGroup = phpCompletionProposalGroup;
+				classes = projectModel.getClasses();
+				classes = addSelfKeywordToProposals(classes);
+				break;
+			case CATCH:
+				completionProposalGroup = phpCompletionProposalGroup;
+				classes = projectModel.getClasses();
+				break;
+			default:
+				break;
+		}
+
+		completionProposalGroup.setData(offset, classes, startWith, selectionLength);
+	}
+
