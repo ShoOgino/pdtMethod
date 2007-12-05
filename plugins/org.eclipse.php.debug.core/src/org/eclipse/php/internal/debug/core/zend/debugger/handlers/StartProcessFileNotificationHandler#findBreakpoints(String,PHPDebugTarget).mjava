@@ -1,0 +1,23 @@
+	protected IBreakpoint[] findBreakpoints (String localPath, PHPDebugTarget debugTarget) {
+		IBreakpointManager breakpointManager = debugTarget.getBreakpointManager();
+		IBreakpoint[] breakpoints = breakpointManager.getBreakpoints(IPHPConstants.ID_PHP_DEBUG_CORE);
+		List<IBreakpoint> l = new LinkedList<IBreakpoint>();
+		for (IBreakpoint bp : breakpoints) {
+			IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(localPath);
+			if (bp.getMarker().getResource().equals(resource)) {
+				l.add(bp);
+			}
+			try {
+				Object secondaryId = bp.getMarker().getAttribute(StructuredResourceMarkerAnnotationModel.SECONDARY_ID_KEY);
+				if (secondaryId != null) {
+					if (new VirtualPath(localPath).equals(new VirtualPath((String)secondaryId))) {
+						l.add(bp);
+					}
+				}
+			} catch (CoreException e) {
+				PHPDebugPlugin.log(e);
+			}
+		}
+		return l.toArray(new IBreakpoint[l.size()]);
+	}
+

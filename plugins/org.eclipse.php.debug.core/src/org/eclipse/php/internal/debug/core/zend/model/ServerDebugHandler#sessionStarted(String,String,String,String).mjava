@@ -12,55 +12,7 @@
 			} catch (Exception e) {
 			}
 
-			try {
-				ILaunchConfiguration launchConfiguration = fDebugTarget.getLaunch().getLaunchConfiguration();
-				PathMapper pathMapper = PathMapperRegistry.getByLaunchConfiguration(launchConfiguration);
-
-				if (pathMapper != null) {
-					PathEntry pathEntry = pathMapper.getLocalFile(remoteFile);
-
-					// If such file doesn't exist in path mapper yet, add it:
-					if (pathEntry == null) {
-						// Try to find a map point:
-						String debugFileName = launchConfiguration.getAttribute(Server.FILE_NAME, (String) null);
-						if (debugFileName == null) {
-							debugFileName = launchConfiguration.getAttribute(PHPCoreConstants.ATTR_FILE, (String) null);
-						}
-						if (debugFileName != null) {
-							IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(debugFileName);
-							if (resource instanceof IFile) {
-								pathEntry = new PathEntry(debugFileName, Type.WORKSPACE, resource.getParent());
-							} else if (new File(debugFileName).exists()) {
-								pathEntry = new PathEntry(debugFileName, Type.EXTERNAL, new File(debugFileName).getParentFile());
-							}
-						}
-						if (pathEntry != null) {
-							// Map remote file to the map point:
-							pathMapper.addEntry(remoteFile, pathEntry);
-							PathMapperRegistry.storeToPreferences();
-						} else {
-							// Find the local file, and map it:
-							pathEntry = DebugSearchEngine.find(remoteFile, fDebugTarget);
-						}
-					}
-
-					// Assign this project to Debug Target:
-					if (fDebugTarget.getProject() == null && pathEntry != null && pathEntry.getType() == Type.WORKSPACE) {
-						IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(pathEntry.getPath());
-						IProject project = resource.getProject();
-						fDebugTarget.setProject(project);
-						try {
-							ILaunchConfigurationWorkingCopy wc = launchConfiguration.getWorkingCopy();
-							wc.getAttribute(IPHPConstants.PHP_Project, project.getName());
-							wc.doSave();
-						} catch (CoreException e) {
-							PHPDebugPlugin.log(e);
-						}
-					}
-				}
-			} catch (Exception e) {
-				PHPDebugPlugin.log(e);
-			}
+			fDebugTarget.mapFirstDebugFile(remoteFile);
 		}
 
 		fDebugTarget.setLastFileName(remoteFile);

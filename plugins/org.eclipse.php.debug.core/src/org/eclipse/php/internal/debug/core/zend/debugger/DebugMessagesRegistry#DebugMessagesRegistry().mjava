@@ -3,24 +3,39 @@
 		IExtensionRegistry registry = Platform.getExtensionRegistry();
 		IConfigurationElement[] elements = registry.getConfigurationElementsFor(PHPDebugPlugin.getID(), EXTENSION_POINT_NAME);
 
+		Map<String, IConfigurationElement> configElementsMap = new HashMap<String, IConfigurationElement>();
 		for (final IConfigurationElement element : elements) {
 			if (MESSAGE_TAG.equals(element.getName())) {
-				final IDebugMessage messages[] = new IDebugMessage[1];
+				String messageId = element.getAttribute(ID_ATTRIBUTE);
+				if (!configElementsMap.containsKey(messageId)) {
+					configElementsMap.put(messageId, element);
+				}
+				String overridesId = element.getAttribute(OVERRIDES_ATTRIBUTE);
+				if (overridesId != null) {
+					configElementsMap.put(overridesId, null);
+				}
+			}
+		}
 
-				SafeRunnable.run(new SafeRunnable("Error creation extension for extension-point org.eclipse.php.internal.debug.core.phpDebugMessages") {
-					public void run() throws Exception {
-						messages[0] = (IDebugMessage) element.createExecutableExtension(CLASS_ATTRIBUTE);
-					}
-				});
+		Collection<IConfigurationElement> configElements = configElementsMap.values();
+		configElements.remove(null);
 
-				if (messages[0] != null && !this.messagesHash.containsKey(messages[0].getType())) {
-					this.messagesHash.put(messages[0].getType(), messages[0]);
-					messagesTypes.put(element.getAttribute(ID_ATTRIBUTE), new Integer(messages[0].getType()));
+		for (final IConfigurationElement element : configElements) {
+			final IDebugMessage messages[] = new IDebugMessage[1];
 
-					String handlerClass = element.getAttribute(HANDLER_ATTRIBUTE);
-					if (handlerClass != null && !handlers.containsKey(messages[0].getType())) {
-						handlers.put(messages[0].getType(), new DebugMessageHandlerFactory(element));
-					}
+			SafeRunnable.run(new SafeRunnable("Error creation extension for extension-point org.eclipse.php.internal.debug.core.phpDebugMessages") {
+				public void run() throws Exception {
+					messages[0] = (IDebugMessage) element.createExecutableExtension(CLASS_ATTRIBUTE);
+				}
+			});
+
+			if (messages[0] != null && !this.messagesHash.containsKey(messages[0].getType())) {
+				messagesHash.put(messages[0].getType(), messages[0]);
+				messagesTypes.put(element.getAttribute(ID_ATTRIBUTE), new Integer(messages[0].getType()));
+
+				String handlerClass = element.getAttribute(HANDLER_ATTRIBUTE);
+				if (handlerClass != null && !handlers.containsKey(messages[0].getType())) {
+					handlers.put(messages[0].getType(), new DebugMessageHandlerFactory(element));
 				}
 			}
 		}

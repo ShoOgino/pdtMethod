@@ -1,0 +1,51 @@
+	protected void prepareForProcessing(String remoteFileName, PHPDebugTarget debugTarget) {
+
+		RemoteDebugger remoteDebugger = (RemoteDebugger) debugTarget.getRemoteDebugger();
+		ILaunchConfiguration launchConfiguration = debugTarget.getLaunch().getLaunchConfiguration();
+
+		debugTarget.setLastFileName(remoteFileName);
+
+		boolean isWebServerDebugger = Boolean.toString(true).equals(debugTarget.getLaunch().getAttribute(IDebugParametersKeys.WEB_SERVER_DEBUGGER));
+		String debugType = ""; //$NON-NLS-1$
+		try {
+			debugType = launchConfiguration.getAttribute(IDebugParametersKeys.PHP_DEBUG_TYPE, ""); //$NON-NLS-1$
+		} catch (CoreException e) {
+			PHPDebugPlugin.log(e);
+		}
+
+		String localPath = null;
+		if (isFirstFileToDebug) { // we suppose that we always get full path here
+			if (isWebServerDebugger) {
+				PathEntry pathEntry = debugTarget.mapFirstDebugFile(remoteFileName);
+				if (pathEntry != null) {
+					localPath = pathEntry.getResolvedPath();
+				}
+
+				// set current working directory to the current script directory on debugger side
+				if (debugType.equals(IDebugParametersKeys.PHP_WEB_SCRIPT_DEBUG)) {
+					VirtualPath remotePath = new VirtualPath(remoteFileName);
+					remotePath.removeLastSegment();
+					remoteDebugger.setCurrentWorkingDirectory(remotePath.toString());
+				}
+			}
+		} else {
+			localPath = remoteDebugger.convertToLocalFilename(remoteFileName);
+		}
+
+		// send found breakpoints with remote file name
+		if (localPath != null && ILaunchManager.DEBUG_MODE.equals(debugTarget.getLaunch().getLaunchMode())) {
+			IBreakpoint[] breakPoints = findBreakpoints (localPath, debugTarget);
+
+			for (IBreakpoint bp : breakPoints) {
+				try {
+					int lineNumber = (Integer) bp.getMarker().getAttribute(IMarker.LINE_NUMBER);
+					debugTarget.getRemoteDebugger().addBreakpoint(new Breakpoint(remoteFileName, lineNumber));
+				} catch (CoreException e) {
+					PHPDebugPlugin.log(e);
+				}
+			}
+		}
+
+		isFirstFileToDebug = false;
+	}
+
