@@ -1,0 +1,24 @@
+	protected IAnnotationModel createAnnotationModel(Object element) throws CoreException {
+		IAnnotationModel model = null;
+		if (element instanceof IStorageEditorInput) {
+			IStorageEditorInput input = (IStorageEditorInput) element;
+			String contentType = (getModel(input) != null ? getModel(input).getContentTypeIdentifier() : null);
+			String ext = BreakpointRulerAction.getFileExtension((IEditorInput) element);
+			IResource res = BreakpointProviderBuilder.getInstance().getResource(input, contentType, ext);
+			String id = input.getName();
+			if (input.getStorage() != null && input.getStorage().getFullPath() != null) {
+				id = input.getStorage().getFullPath().toOSString();
+			}
+			// we can only create a resource marker annotationmodel off of a
+			// valid resource
+			if (res != null)
+				model = new PHPResourceMarkerAnnotationModel(res, id);
+			else
+				model = new AnnotationModel();
+		}
+		if (model == null) {
+			model = super.createAnnotationModel(element);
+		}
+		return model;
+	}
+

@@ -1,0 +1,36 @@
+	/**
+	 * This method simply overrides org.eclipse.wst.sse.ui.internal.StorageModelProvider.calculateBaseLocation()
+	 * @param input
+	 * @return
+	 */
+	String calculateBaseLocation(IStorageEditorInput input) {
+		String location = null;
+		try {
+			IStorage storage = input.getStorage();
+			if (storage != null) {
+				IPath storagePath = storage.getFullPath();
+				String name = storage.getName();
+				if (storagePath != null) {
+					// If they are different, the IStorage contract is not
+					// being honored
+					// (https://bugs.eclipse.org/bugs/show_bug.cgi?id=73098).
+					// Favor the name.
+					if (!storagePath.lastSegment().equals(name)) {
+						IPath workingPath = storagePath.addTrailingSeparator();
+						location = workingPath.append(name).toOSString();
+					} else {
+						location = storagePath.makeAbsolute().toOSString();
+					}
+				}
+				if (location == null)
+					location = name;
+			}
+		} catch (CoreException e) {
+			Logger.logException(e);
+		} finally {
+			if (location == null)
+				location = input.getName();
+		}
+		return location;
+	}
+

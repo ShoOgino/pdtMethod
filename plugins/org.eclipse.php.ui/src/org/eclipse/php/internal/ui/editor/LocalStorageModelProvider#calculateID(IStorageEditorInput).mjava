@@ -1,0 +1,50 @@
+	/**
+	 * This method simply overrides org.eclipse.wst.sse.ui.internal.StorageModelProvider.calculateID()
+	 * @param input
+	 * @return
+	 */
+	String calculateID(IStorageEditorInput input) {
+		/**
+		 * Typically CVS will return a path of "filename.ext" and the input's
+		 * name will be "filename.ext version". The path must be used to load
+		 * the model so that the suffix will be available to compute the
+		 * contentType properly. The editor input name can then be set as the
+		 * base location for display on the editor title bar.
+		 * 
+		 */
+		String path = null;
+		boolean addHash = false;
+		try {
+			IStorage storage = input.getStorage();
+			if (storage != null) {
+				IPath storagePath = storage.getFullPath();
+				String name = storage.getName();
+				// if either the name or storage path are null or they are
+				// identical, add a hash to it to guarantee uniqueness
+				addHash = storagePath == null || storagePath.toOSString().equals(name);
+				if (storagePath != null) {
+					// If they are different, the IStorage contract is not
+					// being honored
+					// (https://bugs.eclipse.org/bugs/show_bug.cgi?id=73098).
+					// Favor the name.
+					if (!storagePath.lastSegment().equals(name)) {
+						IPath workingPath = storagePath.addTrailingSeparator();
+						path = workingPath.append(name).toOSString();
+					} else {
+						path = storagePath.makeAbsolute().toOSString();
+					}
+				}
+				if (path == null)
+					path = name;
+			}
+		} catch (CoreException e) {
+			Logger.logException(e);
+		} finally {
+			if (path == null)
+				path = ""; //$NON-NLS-1$
+		}
+		if (addHash)
+			path = input.hashCode() + path;
+		return path;
+	}
+

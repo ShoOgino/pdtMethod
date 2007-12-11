@@ -1,0 +1,66 @@
+		public void elementContentReplaced(Object element) {
+			StorageInfo info = (StorageInfo) getElementInfo(element);
+
+			/**
+			 * Force a reload of the markers into annotations since their
+			 * previous Positions have been deleted. Disconnecting and
+			 * reconnecting forces a call to the private catchupWithMarkers
+			 * method.
+			 */
+			if (info != null && info.fModel != null) {
+				info.fModel.disconnect(info.fDocument);
+			}
+
+			Reader reader = null;
+			IStructuredDocument innerdocument = null;
+			try {
+				// update document from input's contents
+				CodedReaderCreator codedReaderCreator = new CodedReaderCreator(calculateID((IStorageEditorInput) element), Utilities.getMarkSupportedStream(((IStorageEditorInput) element).getStorage().getContents()));
+				reader = codedReaderCreator.getCodedReader();
+
+				innerdocument = (IStructuredDocument) info.fDocument;
+
+				int originalLengthToReplace = innerdocument.getLength();
+
+				StringBuffer stringBuffer = new StringBuffer();
+				int bufferSize = 2048;
+				char[] buffer = new char[bufferSize];
+				int nRead = 0;
+				boolean eof = false;
+				while (!eof) {
+					nRead = reader.read(buffer, 0, bufferSize);
+					if (nRead == -1) {
+						eof = true;
+					} else {
+						stringBuffer.append(buffer, 0, nRead);
+					}
+				}
+				innerdocument.replaceText(this, 0, originalLengthToReplace, stringBuffer.toString(), true);
+			} catch (CoreException e) {
+				Logger.logException(e);
+			} catch (IOException e) {
+				Logger.logException(e);
+			} finally {
+				if (reader != null) {
+					try {
+						reader.close();
+					} catch (IOException e1) {
+						// would be highly unusual
+						Logger.logException(e1);
+					}
+				}
+			}
+
+			// forward the event
+			if (info.fCanBeSaved) {
+				info.fCanBeSaved = false;
+				addUnchangedElementListeners(element, info);
+			}
+			fireElementContentReplaced(element);
+			fireElementDirtyStateChanged(element, false);
+
+			if (info != null && info.fModel != null) {
+				info.fModel.connect(info.fDocument);
+			}
+		}
+

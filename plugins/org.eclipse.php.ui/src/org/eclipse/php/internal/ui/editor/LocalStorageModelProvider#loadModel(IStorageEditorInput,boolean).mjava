@@ -1,0 +1,42 @@
+	/**
+	 * Method loadModel.
+	 * @param input
+	 * @param logExceptions
+	 * @return IStructuredModel
+	 */
+	public IStructuredModel loadModel(IStorageEditorInput input, boolean logExceptions) {
+		String id = calculateID(input);
+		if (id == null) {
+			return null;
+		}
+
+		InputStream contents = null;
+		try {
+			contents = input.getStorage().getContents();
+		} catch (CoreException noStorageExc) {
+			if (logExceptions)
+				Logger.logException(noStorageExc);
+		}
+
+		IStructuredModel model = null;
+		try {
+			// first parameter must be unique
+			model = StructuredModelManager.getModelManager().getModelForEdit(id, contents, null);
+			model.setBaseLocation(calculateBaseLocation(input));
+		} catch (IOException e) {
+			if (logExceptions)
+				Logger.logException(e);
+		} finally {
+			if (contents != null) {
+				try {
+					contents.close();
+				} catch (IOException e) {
+					// nothing
+				} catch (Exception e) {
+					Logger.logException(e);
+				}
+			}
+		}
+		return model;
+	}
+

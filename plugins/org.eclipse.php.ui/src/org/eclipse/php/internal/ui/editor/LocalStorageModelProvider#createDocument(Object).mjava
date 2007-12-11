@@ -1,0 +1,85 @@
+	protected IDocument createDocument(Object element) {
+		// The following is largely copied from FileModelProvider
+		IDocument document = null;
+		if (element instanceof IEditorInput) {
+			// create a new IDocument for the element; should always reflect
+			// the contents of the resource
+			ModelInfo info = getModelInfoFor((IEditorInput) element);
+			if (info == null) {
+				throw new IllegalArgumentException("no corresponding model info found"); //$NON-NLS-1$
+			}
+			IStructuredModel model = info.fStructuredModel;
+			if (model != null) {
+				if (!fReuseModelDocument && element instanceof IStorageEditorInput) {
+					Reader reader = null;
+					IStructuredDocument innerdocument = null;
+					try {
+						// update document from input's contents
+
+						CodedReaderCreator codedReaderCreator = new CodedReaderCreator(calculateID((IStorageEditorInput) element), Utilities.getMarkSupportedStream(((IStorageEditorInput) element).getStorage().getContents()));
+						reader = codedReaderCreator.getCodedReader();
+
+						innerdocument = model.getStructuredDocument();
+
+						int originalLengthToReplace = innerdocument.getLength();
+
+						/*
+						 * TODO_future: we could implement with sequential
+						 * rewrite, if we don't pickup automatically from
+						 * FileBuffer support, so not so much has to be pulled
+						 * into memory (as an extra big string), but we need
+						 * to carry that API through so that StructuredModel
+						 * is not notified until done.
+						 */
+
+						// innerdocument.startSequentialRewrite(true);
+						// innerdocument.replaceText(this, 0,
+						// innerdocument.getLength(), "");
+						StringBuffer stringBuffer = new StringBuffer();
+						int bufferSize = 2048;
+						char[] buffer = new char[bufferSize];
+						int nRead = 0;
+						boolean eof = false;
+						while (!eof) {
+							nRead = reader.read(buffer, 0, bufferSize);
+							if (nRead == -1) {
+								eof = true;
+							} else {
+								stringBuffer.append(buffer, 0, nRead);
+								// innerdocument.replaceText(this,
+								// innerdocument.getLength(), 0, new
+								// String(buffer, 0, nRead));
+							}
+						}
+						// ignore read-only settings if reverting whole
+						// document
+						innerdocument.replaceText(this, 0, originalLengthToReplace, stringBuffer.toString(), true);
+						model.setDirtyState(false);
+
+					} catch (CoreException e) {
+						Logger.logException(e);
+					} catch (IOException e) {
+						Logger.logException(e);
+					} finally {
+						if (reader != null) {
+							try {
+								reader.close();
+							} catch (IOException e1) {
+								// would be highly unusual
+								Logger.logException(e1);
+							}
+						}
+						// if (innerdocument != null) {
+						// innerdocument.stopSequentialRewrite();
+						// }
+					}
+
+				}
+				if (document == null) {
+					document = model.getStructuredDocument();
+				}
+			}
+		}
+		return document;
+	}
+

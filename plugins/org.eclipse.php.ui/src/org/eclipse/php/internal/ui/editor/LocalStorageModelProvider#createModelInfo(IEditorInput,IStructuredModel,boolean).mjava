@@ -1,0 +1,21 @@
+	/**
+	 * To be used when model is provided to us, ensures that when setInput is
+	 * used on this input, the given model will be used.
+	 */
+	public void createModelInfo(IEditorInput input, IStructuredModel structuredModel, boolean releaseModelOnDisconnect) {
+		// we have to make sure factories are added, whether we created or
+		// not.
+		if (getModelInfoFor(input) != null || getModelInfoFor(structuredModel) != null) {
+			return;
+		}
+
+		if (input instanceof IExtendedStorageEditorInput) {
+			((IExtendedStorageEditorInput) input).addElementStateListener(fInternalListener);
+		}
+
+		EditorModelUtil.addFactoriesTo(structuredModel);
+
+		ModelInfo modelInfo = new ModelInfo(structuredModel, input, releaseModelOnDisconnect);
+		fModelInfoMap.put(input, modelInfo);
+	}
+
