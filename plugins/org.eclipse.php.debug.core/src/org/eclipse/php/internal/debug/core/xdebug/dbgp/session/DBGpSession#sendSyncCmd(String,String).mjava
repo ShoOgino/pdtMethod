@@ -5,23 +5,26 @@
 	 * @return the response
 	 */
 	public DBGpResponse sendSyncCmd(String cmd, String arguments) {
-		// this must be done before the command is sent because
-		// the savedResponses must have the id and event in the
-		// table so that the response handler can locate it.
-		int id = DBGpCommand.getNextId();
-		Event idev = new Event();
-		Integer idObj = new Integer(id);
-		savedResponses.put(idObj, idev);
-
-		try {
-			DBGpCmd.send(cmd, arguments, id, sessionEncoding);
-			idev.waitForEvent(); // wait forever
-			return (DBGpResponse) savedResponses.remove(idObj);
-		} catch (InterruptedException e) {
-			return null;
-		} catch (IOException e) {
-			endSession();
-			return null;
+		if (sessionActive) {
+			// this must be done before the command is sent because
+			// the savedResponses must have the id and event in the
+			// table so that the response handler can locate it.
+			int id = DBGpCommand.getNextId();
+			Event idev = new Event();
+			Integer idObj = new Integer(id);
+			savedResponses.put(idObj, idev);
+	
+			try {
+				DBGpCmd.send(cmd, arguments, id, sessionEncoding);
+				idev.waitForEvent(); // wait forever
+				return (DBGpResponse) savedResponses.remove(idObj);
+			} catch (InterruptedException e) {
+				return null;
+			} catch (IOException e) {
+				endSession();
+				return null;
+			}
 		}
+		return null;
 	}
 

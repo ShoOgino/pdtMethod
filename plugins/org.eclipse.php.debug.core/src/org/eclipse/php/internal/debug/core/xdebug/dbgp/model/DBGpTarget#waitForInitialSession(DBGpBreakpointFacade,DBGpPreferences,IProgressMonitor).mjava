@@ -9,11 +9,7 @@
 		setState(STATE_INIT_SESSION_WAIT);
 
 		try {
-			boolean launchIsCanceled = false;
-			if (launchMonitor != null) {
-				launchIsCanceled = launchMonitor.isCanceled();
-			}
-			while (session == null && !launch.isTerminated() && !isTerminating() && !launchIsCanceled) {
+			while (session == null && !launch.isTerminated() && !isTerminating() && (launchMonitor != null && !launchMonitor.isCanceled())) {
 
 				// if we got here then session has not been updated
 				// by the other thread yet, so wait. We wait for
@@ -22,6 +18,7 @@
 				te.waitForEvent(XDebugPreferenceInit.getTimeoutDefault());
 			}
 
+			boolean launchIsCanceled = false;
 			if (session != null && session.isActive()) {
 				if (launchMonitor != null) {
 					launchIsCanceled = launchMonitor.isCanceled();
