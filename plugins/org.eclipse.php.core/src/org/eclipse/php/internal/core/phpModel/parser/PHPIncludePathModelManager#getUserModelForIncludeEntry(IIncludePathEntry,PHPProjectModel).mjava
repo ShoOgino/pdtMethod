@@ -1,21 +1,22 @@
 	/**
 	 * @param entry
 	 * @param projectModel
-	 * @return
 	 */
-	public static PHPUserModel getUserModelForIncludeEntry(IIncludePathEntry entry, PHPProjectModel projectModel) {
-		PHPUserModel userModel = null;
+	public static IPHPUserModel getUserModelForIncludeEntry(IIncludePathEntry entry, PHPProjectModel projectModel) {
+		IPHPUserModel userModel = null;
 		PHPIncludePathModelManager includeManager = (PHPIncludePathModelManager) projectModel.getModel(COMPOSITE_INCLUDE_PATH_MODEL_ID);
 		if (includeManager == null)
 			return null;
 		if (entry.getEntryKind() == IIncludePathEntry.IPE_VARIABLE) {
-			userModel = (PHPUserModel) includeManager.getModel(entry.getPath().toString());
+			userModel = (IPHPUserModel) includeManager.getModel(entry.getPath().toString());
 		} else if (entry.getEntryKind() == IIncludePathEntry.IPE_LIBRARY) {
-			userModel = (PHPUserModel) includeManager.getModel(entry.getPath().toOSString());
+			userModel = (IPHPUserModel) includeManager.getModel(entry.getPath().toOSString());
 		} else if (entry.getEntryKind() == IIncludePathEntry.IPE_PROJECT) {
-			PHPProjectModel modelForProject = PHPWorkspaceModelManager.getInstance().getModelForProject((IProject) entry.getResource());
-			if (modelForProject != null)
-				userModel = modelForProject.getPHPUserModel();
+			IResource resource = entry.getResource();
+			if (resource == null) {
+				return null;
+			}
+			userModel = (IPHPUserModel) includeManager.getModel(resource.getFullPath().toString());
 		}
 		return userModel;
 	}

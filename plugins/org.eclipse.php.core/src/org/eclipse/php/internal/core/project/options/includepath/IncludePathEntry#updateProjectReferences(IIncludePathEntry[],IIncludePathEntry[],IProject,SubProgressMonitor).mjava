@@ -1,20 +1,26 @@
 	public static void updateProjectReferences(IIncludePathEntry[] newEntries, IIncludePathEntry[] oldEntries, final IProject project, SubProgressMonitor monitor) {
 		try {
 			boolean changedReferences = false;
+			if (!project.isAccessible()) {
+				return;
+			}
 			final IProjectDescription projectDescription = project.getDescription();
-			ArrayList referenced = new ArrayList();
-			ArrayList referencedNames = new ArrayList();
+			List<IProject> referenced = new ArrayList<IProject>();
+			List<String> referencedNames = new ArrayList<String>();
 			IProject[] referencedProjects = projectDescription.getReferencedProjects();
-			for (int i = 0; i < referencedProjects.length; i++) {
-				referenced.add(referencedProjects[i]);
-				referencedNames.add(referencedProjects[i].getName());
+			for (IProject element : referencedProjects) {
+				referenced.add(element);
+				referencedNames.add(element.getName());
 			}
 
-			for (int i = 0; i < oldEntries.length; i++) {
-				if (oldEntries[i].getEntryKind() == IIncludePathEntry.IPE_PROJECT) {
-					String projectName = oldEntries[i].getPath().lastSegment();
+			for (IIncludePathEntry element : oldEntries) {
+				if (element.getEntryKind() == IIncludePathEntry.IPE_PROJECT) {
+					String projectName = element.getPath().segment(0);
+					if (projectName.equals(project.getName())) {
+						continue;
+					}
 					if (!containsProject(newEntries, projectName)) {
-						if (((IncludePathEntry) oldEntries[i]).createdReference) {
+						if (((IncludePathEntry) element).createdReference) {
 							int index = referencedNames.indexOf(projectName);
 							if (index >= 0) {
 								changedReferences = true;
@@ -28,7 +34,10 @@
 
 			for (int i = 0; i < newEntries.length; i++) {
 				if (newEntries[i].getEntryKind() == IIncludePathEntry.IPE_PROJECT) {
-					String projectName = newEntries[i].getPath().lastSegment();
+					String projectName = newEntries[i].getPath().segment(0);
+					if (projectName.equals(project.getName())) {
+						continue;
+					}
 					if (!containsProject(oldEntries, projectName)) {
 						if (!referencedNames.contains(projectName)) {
 							changedReferences = true;
@@ -40,7 +49,7 @@
 				}
 			}
 			if (changedReferences) {
-				IProject[] referenceProjects = (IProject[]) referenced.toArray(new IProject[referenced.size()]);
+				IProject[] referenceProjects = referenced.toArray(new IProject[referenced.size()]);
 				projectDescription.setReferencedProjects(referenceProjects);
 				WorkspaceJob job = new WorkspaceJob(CoreMessages.getString("IncludePathEntry_2")) {
 					public IStatus runInWorkspace(IProgressMonitor monitor) throws CoreException {

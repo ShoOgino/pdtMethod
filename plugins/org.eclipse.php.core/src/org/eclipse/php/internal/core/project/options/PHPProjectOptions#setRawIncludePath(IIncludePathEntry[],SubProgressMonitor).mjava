@@ -2,8 +2,15 @@
 		final IIncludePathEntry[] oldValue = includePathEntries;
 		includePathEntries = newIncludePathEntries;
 		IncludePathEntry.updateProjectReferences(includePathEntries, oldValue, project, subProgressMonitor);
-
-		saveIncludePath();
+		WorkspaceJob save = new WorkspaceJob("Saving include paths") {
+			public IStatus runInWorkspace(IProgressMonitor monitor) {
+				if (project.isAccessible()) {
+					saveIncludePath();
+				}
+				return Status.OK_STATUS;
+			}
+		};
+		save.schedule();
 		notifyOptionChangeListeners(PHPCoreConstants.PHPOPTION_INCLUDE_PATH, oldValue, newIncludePathEntries);
 	}
 

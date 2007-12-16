@@ -1,16 +1,25 @@
 		public void resourceChanged(IResourceChangeEvent event) {
-			if (event.getType() == IResourceChangeEvent.POST_CHANGE && event.getSource() instanceof IWorkspace) {
-				IResourceDelta[] affectedChildren = event.getDelta().getAffectedChildren();
-				for (IResourceDelta element : affectedChildren) {
-					if ((element.getFlags() & IResourceDelta.MOVED_TO) != 0) {
-						IProject projectMovedFrom = (IProject) element.getResource();
-						IProject projectMovedTo = ResourcesPlugin.getWorkspace().getRoot().getProject(element.getMovedToPath().lastSegment());
-						handleProjectRename(projectMovedFrom, projectMovedTo);
-					} else if (element.getKind() == IResourceDelta.REMOVED) {
-						IProject removedProject = (IProject) element.getResource();
-						handleProjectDeletion(removedProject);
-					}
-
+			if (event.getType() == IResourceChangeEvent.POST_CHANGE) {
+				IResourceDelta delta = event.getDelta();
+				try {
+					delta.accept(new IResourceDeltaVisitor() {
+						public boolean visit(IResourceDelta delta) {
+							if ((delta.getFlags() & IResourceDelta.MOVED_TO) != 0 && delta.getResource() instanceof IContainer) {
+								IContainer containerMovedFrom = (IContainer) delta.getResource();
+								IContainer containerMovedTo = (IContainer) ResourcesPlugin.getWorkspace().getRoot().findMember(delta.getMovedToPath());
+								handleContainerRename(containerMovedFrom, containerMovedTo);
+								return false;
+							} else if (delta.getKind() == IResourceDelta.REMOVED && delta.getResource() instanceof IContainer) {
+								IContainer removedContainer = (IContainer) delta.getResource();
+								handleContainerDeletion(removedContainer);
+								return false;
+							}
+							return true;
+						}
+					});
+				} catch (CoreException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
 			}
 		}

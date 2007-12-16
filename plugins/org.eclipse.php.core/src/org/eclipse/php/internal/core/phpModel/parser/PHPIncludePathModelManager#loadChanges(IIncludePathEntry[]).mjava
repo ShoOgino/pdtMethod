@@ -1,18 +1,18 @@
-	private void loadChanges(IIncludePathEntry[] entries) {
-		ArrayList liberaries = new ArrayList();
-		ArrayList projectsList = new ArrayList();
-		ArrayList variablesList = new ArrayList();
+	public void loadChanges(IIncludePathEntry[] entries) {
+		List<IIncludePathEntry> liberaries = new ArrayList<IIncludePathEntry>();
+		List<IIncludePathEntry> containersList = new ArrayList<IIncludePathEntry>();
+		List<IIncludePathEntry> variablesList = new ArrayList<IIncludePathEntry>();
 
 		for (IIncludePathEntry element : entries) {
 			if (element.getEntryKind() == IIncludePathEntry.IPE_LIBRARY) {
 				if (element.getContentKind() == IIncludePathEntry.K_BINARY) {
-					// do nothing, support for zips was removed
+					// do nothing, support for archives was removed
 				} else {
 					liberaries.add(element);
 				}
 			} else if (element.getEntryKind() == IIncludePathEntry.IPE_PROJECT) {
 				if (element.getResource() != null) { // if project exists
-					projectsList.add(element);
+					containersList.add(element);
 				}
 			} else if (element.getEntryKind() == IIncludePathEntry.IPE_VARIABLE) {
 				variablesList.add(element);
@@ -20,23 +20,25 @@
 		}
 		IPath[] paths = new IPath[liberaries.size()];
 		for (int i = 0; i < liberaries.size(); i++) {
-			paths[i] = ((IIncludePathEntry) liberaries.get(i)).getPath();
+			paths[i] = liberaries.get(i).getPath();
 		}
 
 		includePathChanged(paths);
 
-		IResource[] projects = new IResource[projectsList.size()];
-		for (int i = 0; i < projectsList.size(); i++) {
-			projects[i] = ((IIncludePathEntry) projectsList.get(i)).getResource();
+		IContainer[] containers = new IContainer[containersList.size()];
+		for (int i = 0; i < containersList.size(); i++) {
+			containers[i] = (IContainer) containersList.get(i).getResource();
 		}
 
-		projectListChanged(projects);
+		containersListChanged(containers);
 
 		IPath[] variablespaths = new IPath[variablesList.size()];
 		for (int i = 0; i < variablesList.size(); i++) {
-			variablespaths[i] = ((IIncludePathEntry) variablesList.get(i)).getPath();
+			variablespaths[i] = variablesList.get(i).getPath();
 		}
 
 		variablesListChanged(variablespaths);
+
+		updateOrder(entries);
 	}
 

@@ -11,25 +11,32 @@
 		if (!project.isAccessible() || !project.isOpen()) {
 			return;
 		}
+
 		// Collect include paths:
 		PHPProjectOptions projectOptions = PHPProjectOptions.forProject(project);
 		if (projectOptions != null) {
 			IIncludePathEntry[] includePath = projectOptions.readRawIncludePath();
 			for (IIncludePathEntry entry : includePath) {
-				if (entry.getEntryKind() != IIncludePathEntry.IPE_PROJECT) { // we add this project later as a referenced project
-					results.add(entry);
+				// if (entry.getEntryKind() != IIncludePathEntry.IPE_PROJECT) { // we add this project later as a referenced project
+				// FIXME recursion seems less reasonable now.
+				results.add(entry);
+				// }
+			}
+		}
+		// Seva: This is not correct any more:
+		/*
+				// Collect referenced projects and their include paths:
+				try {
+					IProject[] referencedProjects = project.getReferencedProjects();
+					for (IProject referencedProject : referencedProjects) {
+						if (referencedProject != project) {
+							buildIncludePath(referencedProject, results);
+						}
+					}
+				} catch (CoreException e) {
 				}
-			}
-		}
-		// Collect referenced projects and their include paths:
-		try {
-			IProject[] referencedProjects = project.getReferencedProjects();
-			for (IProject referencedProject : referencedProjects) {
-				buildIncludePath(referencedProject, results);
-			}
-		} catch (CoreException e) {
-		}
-		// Add current project:
-		results.add(project);
+				// Add current project:
+				results.add(project);
+		*/
 	}
 
