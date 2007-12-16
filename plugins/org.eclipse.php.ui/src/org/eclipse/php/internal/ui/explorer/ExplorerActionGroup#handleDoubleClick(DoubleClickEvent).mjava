@@ -1,7 +1,15 @@
 	void handleDoubleClick(DoubleClickEvent event) {
 		TreeViewer viewer = fPart.getViewer();
 		Object element = ((IStructuredSelection) event.getSelection()).getFirstElement();
-		if (viewer.isExpandable(element))
+		if (element instanceof FolderFilteredUserModel) {
+			String modelId = ((IPhpModel) element).getID();
+			IPath modelPath = new Path(modelId);
+			IResource resource = PHPUiPlugin.getWorkspace().getRoot().findMember(modelPath);
+			if (resource != null) {
+				viewer.setSelection(new StructuredSelection(resource));
+			}
+		}
+		if (viewer.isExpandable(element)) {
 			if (doubleClickGoesInto()) {
 				// don't zoom into compilation units and class files
 				if (element instanceof PHPFileData)
@@ -14,5 +22,6 @@
 					return;
 				viewer.setExpandedState(element, !viewer.getExpandedState(element));
 			}
+		}
 	}
 

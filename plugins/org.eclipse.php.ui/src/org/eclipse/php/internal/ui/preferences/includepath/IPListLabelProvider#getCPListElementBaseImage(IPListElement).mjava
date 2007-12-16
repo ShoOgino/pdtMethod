@@ -1,27 +1,32 @@
-	private ImageDescriptor getCPListElementBaseImage(IPListElement cpentry) {
-		switch (cpentry.getEntryKind()) {
+	private ImageDescriptor getCPListElementBaseImage(IPListElement entry) {
+		switch (entry.getEntryKind()) {
 			case IIncludePathEntry.IPE_SOURCE:
-				if (cpentry.getPath().segmentCount() == 1) {
+				if (entry.getPath().segmentCount() == 1) {
 					return fProjectImage;
-				} else {
-					return fFolderImage;
 				}
+				return fFolderImage;
 			case IIncludePathEntry.IPE_LIBRARY:
 			case IIncludePathEntry.IPE_JRE:
-				IResource res = cpentry.getResource();
+				IResource res = entry.getResource();
 				if (res == null) {
-					if(cpentry.getContentKind() == IIncludePathEntry.K_BINARY){
+					if (entry.getContentKind() == IIncludePathEntry.K_BINARY) {
 						return fExtZipIcon;
-					} else {
-						return fContainerImage;
 					}
+					return fContainerImage;
 				} else if (res instanceof IFile) {
 					return fZipIcon;
 				} else {
 					return fFolderImage;
 				}
 			case IIncludePathEntry.IPE_PROJECT:
-				return fProjectImage;
+				IResource container = entry.getResource();
+				if (container != null) {
+					if (imageProvider == null) {
+						imageProvider = new PHPElementImageProvider();
+					}
+					return imageProvider.getWorkbenchImageDescriptor(container, 0);
+				}
+				return null;
 			case IIncludePathEntry.IPE_VARIABLE:
 				return fVariableImage;
 			case IIncludePathEntry.IPE_CONTAINER:
