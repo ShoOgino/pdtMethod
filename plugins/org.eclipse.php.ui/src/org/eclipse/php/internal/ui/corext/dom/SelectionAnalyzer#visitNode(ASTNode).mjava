@@ -1,0 +1,22 @@
+	protected boolean visitNode(ASTNode node) {
+		// The selection lies behind the node.
+		if (fSelection.liesOutside(node)) {
+			return false;
+		} else if (fSelection.covers(node)) {
+			if (isFirstNode()) {
+				handleFirstSelectedNode(node);
+			} else {
+				handleNextSelectedNode(node);
+			}
+			return fTraverseSelectedNode;
+		} else if (fSelection.coveredBy(node)) {
+			fLastCoveringNode= node;
+			return true;
+		} else if (fSelection.endsIn(node)) {
+			return handleSelectionEndsIn(node);
+		}
+		// There is a possibility that the user has selected trailing semicolons that don't belong
+		// to the statement. So dive into it to check if sub nodes are fully covered.
+		return true;
+	}
+
