@@ -1,0 +1,25 @@
+			public Image getImage(Object element) {
+				Integer segmentNum = (Integer) element;
+				if (segmentNum < path.getSegmentsCount()) {
+					return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_FOLDER);
+				}
+				String lastSegment = path.getLastSegment();
+				int idx = lastSegment.lastIndexOf('.');
+				if (idx != -1) {
+					String extension = lastSegment.substring(idx);
+					if (images.containsKey(extension)) {
+						return images.get(extension);
+					}
+					Program p = Program.findProgram(extension);
+					if (p != null) {
+						ImageData data = p.getImageData();
+						if (data != null) {
+							Image image = new Image(Display.getDefault(), data);
+							images.put(extension, image);
+							return image;
+						}
+					}
+				}
+				return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_FILE);
+			}
+

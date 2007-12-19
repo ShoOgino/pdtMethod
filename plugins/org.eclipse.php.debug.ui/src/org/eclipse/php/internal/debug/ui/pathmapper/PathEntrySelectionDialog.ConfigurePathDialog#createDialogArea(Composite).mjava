@@ -1,0 +1,41 @@
+		protected Control createDialogArea(Composite parent) {
+			parent = (Composite) super.createDialogArea(parent);
+
+			initializeDialogUnits(parent);
+
+			getShell().setText("Select the Path");
+			getShell().setImage(PHPDebugUIImages.get(PHPDebugUIImages.IMG_OBJ_PATH_MAPPING));
+
+			TreeViewer treeViewer = new TreeViewer(parent, SWT.SINGLE | SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER);
+			GridData layoutData = new GridData(GridData.FILL_BOTH);
+			layoutData.heightHint = convertHeightInCharsToPixels(15);
+			layoutData.widthHint = convertWidthInCharsToPixels(60);
+			treeViewer.getControl().setLayoutData(layoutData);
+
+			treeViewer.setContentProvider(new ContentProvider());
+			treeViewer.setLabelProvider(new LabelProvider());
+			treeViewer.setInput(Integer.valueOf(0));
+			treeViewer.addSelectionChangedListener(new ISelectionChangedListener() {
+				public void selectionChanged(SelectionChangedEvent event) {
+					Integer segmentNum = (Integer) ((IStructuredSelection) event.getSelection()).getFirstElement();
+					if (segmentNum != null) {
+						result = path.clone();
+						for (int i = path.getSegmentsCount(); i > segmentNum; --i) {
+							result.removeLastSegment();
+						}
+						pathText.setText(getIgnorePathString(result));
+					}
+				}
+			});
+
+			pathText = new Text(parent, SWT.BORDER | SWT.READ_ONLY);
+			layoutData = new GridData(GridData.FILL_HORIZONTAL);
+			pathText.setLayoutData(layoutData);
+
+			treeViewer.setSelection(new StructuredSelection(result.getSegmentsCount()));
+
+			treeViewer.expandAll();
+
+			return parent;
+		}
+

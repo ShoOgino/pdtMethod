@@ -1,0 +1,33 @@
+		public Object[] getChildren(Object parentElement) {
+
+			if (parentElement == PathEntrySelectionDialog.this) {
+				Set<Object> containers = new HashSet<Object>();
+				for (PathEntry entry : pathEntries) {
+					if (entry.getType() == Type.EXTERNAL) {
+						containers.add(EXTERNAL_CONTAINER);
+					} else if (entry.getType() == Type.INCLUDE_VAR || entry.getType() == Type.INCLUDE_FOLDER) {
+						containers.add(entry.getContainer());
+					} else if (entry.getType() == Type.WORKSPACE) {
+						containers.add(((IResource) entry.getContainer()).getProject());
+					}
+				}
+				return containers.toArray();
+			}
+
+			if (parentElement instanceof PathEntry) {
+				return EMPTY;
+			}
+
+			Set<PathEntry> entries = new HashSet<PathEntry>();
+			for (PathEntry entry : pathEntries) {
+				if (entry.getType() == Type.EXTERNAL && parentElement == EXTERNAL_CONTAINER) {
+					entries.add(entry);
+				} else if ((entry.getType() == Type.INCLUDE_VAR || entry.getType() == Type.INCLUDE_FOLDER) && entry.getContainer() == parentElement) {
+					entries.add(entry);
+				} else if (entry.getType() == Type.WORKSPACE && ((IResource) entry.getContainer()).getProject() == parentElement) {
+					entries.add(entry);
+				}
+			}
+			return entries.toArray();
+		}
+

@@ -1,8 +1,42 @@
 		public String getText(Object element) {
+			if (element == EXTERNAL_CONTAINER) {
+				return "External Files";
+			}
+
+			if (element instanceof IIncludePathEntry) {
+				IIncludePathEntry includePathEntry = (IIncludePathEntry) element;
+				return includePathEntry.getPath().toOSString();
+			}
+
 			if (!(element instanceof PathEntry)) {
 				return super.getText(element);
 			}
-			PathEntry pathEntry = (PathEntry) element;
-			return NLS.bind("{0} - {1}", pathEntry.getAbstractPath().getLastSegment(), createDetailsLabelProvider().getText(element));
+
+			PathEntry entry = (PathEntry) element;
+			String path = entry.getResolvedPath();
+
+			if (entry.getType() == Type.WORKSPACE) {
+				VirtualPath tmpPath = entry.getAbstractPath().clone();
+				tmpPath.removeFirstSegment();
+				path = tmpPath.toString();
+				if (path.startsWith("/")) {
+					path = path.substring(1);
+				}
+			}
+			if (entry.getType() == Type.INCLUDE_FOLDER || entry.getType() == Type.INCLUDE_VAR) {
+				IIncludePathEntry includePathEntry = (IIncludePathEntry) entry.getContainer();
+				String includePath = includePathEntry.getPath().toString();
+				if (includePathEntry.getEntryKind() == IIncludePathEntry.IPE_VARIABLE) {
+					IPath p = IncludePathVariableManager.instance().resolveVariablePath(includePath);
+					includePath = p.toOSString();
+				}
+				if (path.startsWith(includePath)) {
+					path = path.substring(includePath.length());
+				}
+				if (path.startsWith("/")) {
+					path = path.substring(1);
+				}
+			}
+			return path;
 		}
 

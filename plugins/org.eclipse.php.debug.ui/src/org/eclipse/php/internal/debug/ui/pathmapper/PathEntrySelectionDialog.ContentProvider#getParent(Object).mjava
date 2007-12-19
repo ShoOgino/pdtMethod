@@ -1,0 +1,31 @@
+		public Object getParent(Object element) {
+
+			if (element == PathEntrySelectionDialog.this) {
+				return null;
+			}
+
+			if (element instanceof PathEntry) {
+				PathEntry entry = (PathEntry) element;
+
+				if (entry.getType() == Type.EXTERNAL) {
+					return EXTERNAL_CONTAINER;
+				} else if (entry.getType() == Type.INCLUDE_VAR || entry.getType() == Type.INCLUDE_FOLDER) {
+					return entry.getContainer();
+				} else if (entry.getType() == Type.WORKSPACE) {
+					return ((IResource) entry.getContainer()).getProject();
+				}
+			}
+
+			for (PathEntry entry : pathEntries) {
+				if (entry.getType() == Type.EXTERNAL && element == EXTERNAL_CONTAINER) {
+					return entry;
+				} else if (entry.getType() == Type.INCLUDE_VAR || entry.getType() == Type.INCLUDE_FOLDER && entry.getContainer() == element) {
+					return entry;
+				} else if (entry.getType() == Type.WORKSPACE && ((IResource) entry.getContainer()).getProject() == element) {
+					return entry;
+				}
+			}
+
+			return null;
+		}
+

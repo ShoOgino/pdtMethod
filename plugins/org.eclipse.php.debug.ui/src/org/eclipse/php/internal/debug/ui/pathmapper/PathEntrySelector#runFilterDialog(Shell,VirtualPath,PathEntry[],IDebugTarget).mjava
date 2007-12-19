@@ -1,7 +1,23 @@
 	protected PathEntry runFilterDialog(Shell shell, VirtualPath remotePath, PathEntry[] entries, IDebugTarget debugTarget) {
-		PathEntrySelectionDialog selectDialog = new PathEntrySelectionDialog(shell, remotePath, entries);
+		PathEntrySelectionDialog selectDialog = createSelectionDialog(shell, remotePath, entries);
 		if (selectDialog.open() == Window.OK) {
-			return (PathEntry) selectDialog.getFirstResult();
+			// Path entry was chosen:
+			PathEntry result = selectDialog.getResult();
+			if (result != null) {
+				return result;
+			}
+
+			// Ignore path was chosen:
+			VirtualPath ignorePath = selectDialog.getIgnoreResult();
+			if (debugTarget instanceof PHPDebugTarget) {
+				PHPDebugTarget phpDebugTarget = (PHPDebugTarget) debugTarget;
+				phpDebugTarget.getContextManager().addToResolveBlacklist(ignorePath, Type.RECURSIVE);
+			}
+		} else {
+			try {
+				debugTarget.terminate();
+			} catch (DebugException e) {
+			}
 		}
 		return null;
 	}

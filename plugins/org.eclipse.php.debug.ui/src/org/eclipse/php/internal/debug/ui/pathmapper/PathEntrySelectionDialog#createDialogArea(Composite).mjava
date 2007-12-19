@@ -1,0 +1,99 @@
+	protected Control createDialogArea(Composite parent) {
+		parent = (Composite) super.createDialogArea(parent);
+		GridLayout layout = (GridLayout) parent.getLayout();
+		layout.numColumns = 2;
+
+		initializeDialogUnits(parent);
+
+		FontData[] fontData = parent.getFont().getFontData();
+		for (FontData d : fontData) {
+			d.setStyle(SWT.BOLD);
+		}
+		boldFont = new Font(parent.getFont().getDevice(), fontData);
+
+		selectMappingBtn = new Button(parent, SWT.RADIO);
+		selectMappingBtn.setSelection(true);
+		selectMappingBtn.setText("Select the local resource that matches the following server path:");
+		GridData layoutData = new GridData();
+		layoutData.horizontalSpan = 2;
+		selectMappingBtn.setLayoutData(layoutData);
+		selectMappingBtn.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				boolean enabled = selectMappingBtn.getSelection();
+				entriesViewer.getControl().setEnabled(enabled);
+				ignorePathText.setEnabled(!enabled);
+				configurePathBtn.setEnabled(!enabled);
+				validate();
+			}
+		});
+
+		Label label = new Label(parent, SWT.NONE);
+		layoutData = new GridData();
+		layoutData.horizontalSpan = 2;
+		layoutData.horizontalIndent = convertWidthInCharsToPixels(4);
+		layoutData.verticalAlignment = SWT.BEGINNING;
+		label.setLayoutData(layoutData);
+
+		label.setFont(boldFont);
+		label.setText(path.toString());
+
+		entriesViewer = new TreeViewer(parent, SWT.SINGLE | SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER);
+		layoutData = new GridData(GridData.FILL_BOTH);
+		layoutData.horizontalSpan = 2;
+		layoutData.verticalIndent = convertHeightInCharsToPixels(1);
+		layoutData.horizontalIndent = convertWidthInCharsToPixels(2);
+		layoutData.heightHint = convertHeightInCharsToPixels(20);
+		layoutData.widthHint = convertWidthInCharsToPixels(70);
+		entriesViewer.getControl().setLayoutData(layoutData);
+		entriesViewer.setContentProvider(new ContentProvider());
+		entriesViewer.setLabelProvider(new LabelProvider());
+		entriesViewer.setSorter(new Sorter());
+		entriesViewer.setInput(this);
+		entriesViewer.addSelectionChangedListener(new ISelectionChangedListener() {
+			public void selectionChanged(SelectionChangedEvent event) {
+				validate();
+			}
+		});
+		entriesViewer.expandAll();
+
+		ignoreMappingBtn = new Button(parent, SWT.RADIO);
+		ignoreMappingBtn.setText("Do not map the following server path to a local resource:");
+		layoutData = new GridData();
+		layoutData.horizontalSpan = 2;
+		ignoreMappingBtn.setLayoutData(layoutData);
+		ignoreMappingBtn.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				boolean enabled = ignoreMappingBtn.getSelection();
+				entriesViewer.getControl().setEnabled(!enabled);
+				ignorePathText.setEnabled(enabled);
+				configurePathBtn.setEnabled(enabled);
+				validate();
+			}
+		});
+
+		ignorePathText = new Text(parent, SWT.BORDER | SWT.READ_ONLY);
+		ignorePathText.setEnabled(false);
+		layoutData = new GridData(GridData.FILL_HORIZONTAL);
+		layoutData.horizontalIndent = convertWidthInCharsToPixels(2);
+		layoutData.widthHint = convertWidthInCharsToPixels(70);
+		ignorePathText.setLayoutData(layoutData);
+		ignorePathResult = path.clone();
+		ignorePathText.setText(getIgnorePathString(ignorePathResult));
+
+		configurePathBtn = new Button(parent, SWT.PUSH);
+		configurePathBtn.setEnabled(false);
+		configurePathBtn.setText("&Configure...");
+		configurePathBtn.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				ConfigurePathDialog dialog = new ConfigurePathDialog(ignorePathResult);
+				if (dialog.open() == Window.OK) {
+					ignorePathResult = dialog.getResult();
+					ignorePathText.setText(getIgnorePathString(ignorePathResult));
+					validate();
+				}
+			}
+		});
+
+		return parent;
+	}
+
