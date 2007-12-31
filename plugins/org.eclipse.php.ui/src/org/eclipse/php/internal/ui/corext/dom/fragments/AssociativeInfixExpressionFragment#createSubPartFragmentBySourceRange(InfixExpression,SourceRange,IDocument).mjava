@@ -1,0 +1,20 @@
+	public static IExpressionFragment createSubPartFragmentBySourceRange(InfixExpression node, SourceRange range, IDocument document) throws BadLocationException {
+		Assert.isNotNull(node);
+		Assert.isNotNull(range);
+		Assert.isTrue(!range.covers(node));
+		//Assert.isTrue(new SourceRange(node).covers(range));
+
+		if (!isAssociativeInfix(node))
+			return null;
+
+		InfixExpression groupRoot = findGroupRoot(node);
+		Assert.isTrue(isAGroupRoot(groupRoot));
+
+		List<Expression> groupMembers = AssociativeInfixExpressionFragment.findGroupMembersInOrderFor(groupRoot);
+		List<Expression> subGroup = findSubGroupForSourceRange(groupMembers, range);
+		if (subGroup.isEmpty() || rangeIncludesExtraNonWhitespace(range, subGroup, document, node))
+			return null;
+
+		return new AssociativeInfixExpressionFragment(groupRoot, subGroup);
+	}
+

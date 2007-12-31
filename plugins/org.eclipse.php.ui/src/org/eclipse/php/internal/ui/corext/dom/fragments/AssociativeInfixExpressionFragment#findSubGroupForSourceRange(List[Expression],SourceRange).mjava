@@ -1,0 +1,35 @@
+	private static List findSubGroupForSourceRange(List<Expression> group, SourceRange range) {
+		Assert.isTrue(!group.isEmpty());
+
+		List subGroup = new ArrayList();
+
+		boolean entered = false, exited = false;
+		if (range.getOffset() == ((ASTNode) group.get(0)).getStart())
+			entered = true;
+		for (int i = 0; i < group.size() - 1; i++) {
+			ASTNode member = (ASTNode) group.get(i);
+			ASTNode nextMember = (ASTNode) group.get(i + 1);
+
+			if (entered) {
+				subGroup.add(member);
+				if (rangeEndsBetween(range, member, nextMember)) {
+					exited = true;
+					break;
+				}
+
+			} else {
+				if (rangeStartsBetween(range, member, nextMember))
+					entered = true;
+			}
+		}
+		ASTNode lastGroupMember = (ASTNode) group.get(group.size() - 1);
+		if (range.getEndExclusive() == new SourceRange(lastGroupMember).getEndExclusive()) {
+			subGroup.add(lastGroupMember);
+			exited = true;
+		}
+
+		if (!exited)
+			return new ArrayList(0);
+		return subGroup;
+	}
+

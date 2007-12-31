@@ -1,0 +1,26 @@
+	/**
+	 * If possible, this method creates a fragment whose source code
+	 * range is <code>range</code> within compilation unit <code>cu</code>,
+	 * and which resides somewhere within the subtree identified by
+	 * <code>scope</code>.
+	 * 
+	 * XXX: more doc (current assertions about input vs. output)
+	 * 
+	 * @param range	The source range which the create fragment must have.
+	 * @param scope	A node identifying the AST subtree in which the fragment must lie.
+	 * @param cu		The compilation unit to which the source range applies, and to which the AST corresponds.
+	 * @return IASTFragment	A fragment whose source range is <code>range</code> within
+	 * 							compilation unit <code>cu</code>, residing somewhere within the
+	 * 							AST subtree identified by <code>scope</code>.
+	 * @throws JavaModelException
+	 */
+	public static IASTFragment createFragmentForSourceRange(SourceRange range, ASTNode scope, IDocument document) throws Exception {
+		SelectionAnalyzer sa= new SelectionAnalyzer(Selection.createFromStartLength(range.getOffset(), range.getLength()), false);
+		scope.accept(sa);
+		if (isSingleNodeSelected(sa, range, document, scope))
+			return ASTFragmentFactory.createFragmentForFullSubtree(sa.getFirstSelectedNode());
+		if (isEmptySelectionCoveredByANode(range, sa))
+			return ASTFragmentFactory.createFragmentForFullSubtree(sa.getLastCoveringNode());
+		return ASTFragmentFactory.createFragmentForSubPartBySourceRange(sa.getLastCoveringNode(), range, scope, document);
+	}
+
