@@ -1,0 +1,54 @@
+	private boolean versionCheckLT(String engineVersion, String requiredVersion) {
+		boolean isLessThan = true;
+		boolean isEqual = true;
+		StringTokenizer stEngine = new StringTokenizer(engineVersion, ".");
+		StringTokenizer stCheck = new StringTokenizer(requiredVersion, ".");
+		while (stEngine.hasMoreTokens()) {
+			String engineValStr = stEngine.nextToken();
+			if (stCheck.hasMoreTokens()) {
+				String checkValStr = stCheck.nextToken();
+				try {
+					int engineVal = Integer.parseInt(engineValStr);
+					try {
+						int checkVal = Integer.parseInt(checkValStr);
+						if (engineVal > checkVal) {
+							isLessThan = false;
+							isEqual = false;
+						}
+						if (engineVal != checkVal) {
+							isEqual = false;
+						}
+					}
+					catch (NumberFormatException nfe) {
+						// we are comparing a number to a number followed by characters
+						// NOT REQUIRED TO BE SUPPORTED
+					}
+					
+				}
+				catch (NumberFormatException nfe) {
+					// we are comparing a number followed by characters with a number
+					int engineVal = getNumber(engineValStr);
+					isEqual = false;
+					try {
+						int checkVal = Integer.parseInt(checkValStr);
+						if (engineVal > checkVal) {
+							isLessThan = false;
+							isEqual = false;
+						}
+					}
+					catch (NumberFormatException nfe2) {
+						// we are comparing a number to a number followed by characters
+						// NOT REQUIRED TO BE SUPPORTED
+					}	
+				}			
+			}
+		}
+		if (stCheck.hasMoreTokens()) {
+			// check has more tokens so if equal so far then 2.0 2.0.(anything) means 
+			// we must be less than
+			isEqual = false;
+		}
+		
+		return isLessThan && !isEqual;
+	}
+

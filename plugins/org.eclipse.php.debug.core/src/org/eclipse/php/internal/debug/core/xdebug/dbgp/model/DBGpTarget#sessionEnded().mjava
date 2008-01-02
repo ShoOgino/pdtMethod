@@ -18,7 +18,11 @@
 			}
 			terminateDebugTarget(true);
 		} else {
-
+			
+			//need to save the suspended state as state is changed in the 
+			//next section of code.
+			boolean savedSuspended = isSuspended();
+			
 			// we were not terminating and the session ended. If we are a web
 			// launch, then we need to wait for the next session. Otherwise we
 			// terminate the debug target.
@@ -36,6 +40,21 @@
 			} else {
 				terminateDebugTarget(true);
 			}
+			if (savedSuspended) {
+				// we were suspended at the time and not terminating so we have
+				// received an unexpected termination from the server side
+				final String errorMessage = "Unexpected termination of script, debugging ended.";
+				Status status = new Status(IStatus.ERROR, PHPDebugPlugin.getID(), IPHPConstants.INTERNAL_ERROR, errorMessage, null);
+				DebugPlugin.log(status);
+				Display.getDefault().asyncExec(new Runnable() {
+					public void run() {
+						MessageDialog.openError(Display.getDefault().getActiveShell(), "Debugger Error", errorMessage); //$NON-NLS-1$
+					}
+				});
+				
+			}
+			
+			
 		}
 	}
 

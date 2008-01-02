@@ -12,19 +12,28 @@
 			// makes no difference, we should stop it
 			setState(STATE_DISCONNECTED);
 			if (session != null) {
-				if (process != null) {
-					// can only detach a process, detaching on a web server
-					// stops xdebug
-					// from establishing any more sessions.
+				if (!webLaunch) {
+					// not a web launch, we can just detach.
 					session.sendAsyncCmd(DBGpCommand.detach);
 					terminateDebugTarget(false);
 				} else {
-					// try this first
-					session.sendSyncCmd(DBGpCommand.stop);
+					// detaching xdebug on apache prior to version 2.0.2
+					// causes debug to stop working on the server.
+					if (session.getEngineType() == EngineTypes.Xdebug && 
+						versionCheckLT(session.getEngineVersion(), "2.0.2")) {
+					
+						// we have to do a stop if xdebug and < 2.0.2
+						session.sendSyncCmd(DBGpCommand.stop);
+					}
+					else {
+						session.sendAsyncCmd(DBGpCommand.detach);						
+					}
 					stepping = false;
 					langThread.setBreakpoints(null);
 					setState(STATE_STARTED_SESSION_WAIT);
 					resumed(DebugEvent.RESUME);
+					
+					
 				}
 			}
 		}
