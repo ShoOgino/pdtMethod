@@ -1,0 +1,27 @@
+	private String getValueString(IVariable variable) throws DebugException {
+		IValue value = variable.getValue();
+		String initialValue = value.getValueString();
+		
+		if (value instanceof DBGpStringValue) {
+			DBGpStringValue strValue = (DBGpStringValue)value;
+			if (strValue.isComplete() == false) {
+				DBGpTarget target = (DBGpTarget)value.getDebugTarget();
+				DBGpVariable dbgpVar = (DBGpVariable)variable;
+				String stackLevel = dbgpVar.getStackLevel();
+				Node result = target.getCompleteString(dbgpVar.getFullName(), stackLevel, strValue.getRequiredBytes());
+				if (result != null) {
+					IVariable tempVar = new DBGpVariable(target, result, stackLevel);
+					IValue valRes = null;
+					try {
+						valRes = tempVar.getValue();
+						if (valRes != null) {
+							initialValue = valRes.getValueString();
+						}
+					} catch (Exception e) {
+					}
+				}
+			}
+		}
+		return initialValue;
+	}
+
