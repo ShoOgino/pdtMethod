@@ -1,0 +1,22 @@
+	//Returns ONLY active filters
+	private DebugStepFilter[] getAllActiveFilters() {
+		IPreferenceStore store = PHPUiPlugin.getDefault().getPreferenceStore();
+		String[] parsedFilters = parseList(store.getString(IPHPDebugConstants.PREF_STEP_FILTERS_LIST));
+
+		ArrayList<DebugStepFilter> list = new ArrayList<DebugStepFilter>();
+		for (int i = 0; i < parsedFilters.length; i++) {
+			String[] tokens = parsedFilters[i].split(";");
+			if (tokens.length < 3) {
+				return new DebugStepFilter[0];
+			}
+			DebugStepFilter tempFilter = new DebugStepFilter(tokens[0], Boolean.parseBoolean(tokens[1]), Boolean.parseBoolean(tokens[2]), tokens[3]);
+			if (tempFilter.isActive()) {
+				list.add(tempFilter);
+			}
+		}
+
+		DebugStepFilter[] result = new DebugStepFilter[list.size()];
+		list.toArray(result);
+		return result;
+	}
+

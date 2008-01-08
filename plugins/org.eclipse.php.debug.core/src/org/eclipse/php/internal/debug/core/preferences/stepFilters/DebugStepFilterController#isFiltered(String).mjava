@@ -1,0 +1,34 @@
+	public boolean isFiltered(String path) {
+		if (activeFilters == null) {
+			activeFilters = getAllActiveFilters();
+		}
+
+		for (DebugStepFilter currentFilter : activeFilters) {
+			String filterPath = currentFilter.getPath();
+			if (filterPath.startsWith("*") && filterPath.endsWith("*")) {//*...*
+				if (path.contains(filterPath.substring(1, filterPath.length() - 1))) {
+					return true;
+				}
+			} else if (filterPath.startsWith("*")) {//*...
+				if (path.endsWith(filterPath.substring(1))) {
+					return true;
+				}
+			} else if (filterPath.endsWith("*")) {//...*
+				if (path.startsWith(filterPath.substring(0, filterPath.length() - 1))) {
+					return true;
+				}
+			} else {//no '*'
+				//check if they have same container (project or project_folder
+				if (currentFilter.getType().equals(IStepFilterTypes.PHP_PROJECT) || currentFilter.getType().equals(IStepFilterTypes.PHP_PROJECT_FOLDER)) {
+					if (path.toLowerCase().startsWith(currentFilter.getPath().toLowerCase())) {
+						return true;
+					}
+					//check if simple path pattern
+				} else if (path.equalsIgnoreCase(filterPath)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
