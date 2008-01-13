@@ -1,34 +1,57 @@
+	/**
+	 * Checks whether the given file path is filtered in the Debug Step Filters list
+	 * @param path - a file path
+	 */
 	public boolean isFiltered(String path) {
-		if (activeFilters == null) {
-			activeFilters = getAllActiveFilters();
+		Boolean cachedFilterResult = filtersCheckCache.get(path);
+		if (cachedFilterResult != null) {
+			return cachedFilterResult;
 		}
 
-		for (DebugStepFilter currentFilter : activeFilters) {
+		if (enabledFilters == null) {
+			enabledFilters = getAllEnabledFilters();
+		}
+
+		boolean filterResult = false;
+		for (DebugStepFilter currentFilter : enabledFilters) {
 			String filterPath = currentFilter.getPath();
-			if (filterPath.startsWith("*") && filterPath.endsWith("*")) {//*...*
-				if (path.contains(filterPath.substring(1, filterPath.length() - 1))) {
-					return true;
-				}
-			} else if (filterPath.startsWith("*")) {//*...
-				if (path.endsWith(filterPath.substring(1))) {
-					return true;
-				}
-			} else if (filterPath.endsWith("*")) {//...*
-				if (path.startsWith(filterPath.substring(0, filterPath.length() - 1))) {
-					return true;
-				}
-			} else {//no '*'
-				//check if they have same container (project or project_folder
-				if (currentFilter.getType().equals(IStepFilterTypes.PHP_PROJECT) || currentFilter.getType().equals(IStepFilterTypes.PHP_PROJECT_FOLDER)) {
-					if (path.toLowerCase().startsWith(currentFilter.getPath().toLowerCase())) {
-						return true;
+			if (currentFilter.getType() == IStepFilterTypes.PATH_PATTERN) {
+				if (filterPath.startsWith("*") && filterPath.endsWith("*")) {//*...* //$NON-NLS-1$ //$NON-NLS-2$
+					if (path.contains(filterPath.substring(1, filterPath.length() - 1))) {
+						filterResult = true;
+						break;
 					}
-					//check if simple path pattern
-				} else if (path.equalsIgnoreCase(filterPath)) {
-					return true;
+				} else if (filterPath.startsWith("*")) {//*... //$NON-NLS-1$
+					if (path.endsWith(filterPath.substring(1))) {
+						filterResult = true;
+						break;
+					}
+				} else if (filterPath.endsWith("*")) {//...* //$NON-NLS-1$
+					if (path.startsWith(filterPath.substring(0, filterPath.length() - 1))) {
+						filterResult = true;
+						break;
+					}
+				}//else, simply compare the exact path string
+				else {//check if simple path pattern
+					filterResult = FileUtils.checkIfEqualFilePaths(path, currentFilter.getPath());
+					break;
+				}
+			} else {//no '*' in filter
+				//check if the given path is inside a filtered container (folder, project etc..) 
+				if ((currentFilter.getType() == IStepFilterTypes.PHP_PROJECT) || (currentFilter.getType() == IStepFilterTypes.PHP_PROJECT_FOLDER) || (currentFilter.getType() == IStepFilterTypes.PHP_INCLUDE_PATH_LIBRARY_FOLDER)
+					|| (currentFilter.getType() == IStepFilterTypes.PHP_INCLUDE_PATH_LIBRARY)) {
+					filterResult = FileUtils.checkIfContainerOfFile(currentFilter.getPath(), path);
+					break;
+				}
+				//check if the given path is inside an include path variable container
+				else if ((currentFilter.getType() == IStepFilterTypes.PHP_INCLUDE_PATH_VAR) || currentFilter.getType() == IStepFilterTypes.PHP_INCLUDE_PATH_VAR_FOLDER) {
+					String includePathVarPath = PHPProjectOptions.getIncludePathVariable(currentFilter.getPath()).toOSString();
+					filterResult = FileUtils.checkIfContainerOfFile(includePathVarPath, path);
+					break;
 				}
 			}
 		}
-		return false;
+		addToCache(path, filterResult);
+		return filterResult;
 	}
 

@@ -1,24 +1,23 @@
 	private void readExtensionsList() {
-		IStepFiltersExtender extender = null;
 		ArrayList<DebugStepFilter> listToAdd = new ArrayList<DebugStepFilter>();
 		String stepFilterExtensionName = "org.eclipse.php.debug.core.phpDebugStepFilters"; //$NON-NLS-1$
 		IConfigurationElement[] elements = Platform.getExtensionRegistry().getConfigurationElementsFor(stepFilterExtensionName);
 		for (IConfigurationElement element : elements) {
-			if (element.getName().equals("step_filter")) { //$NON-NLS-1$
-				ElementCreationProxy ecProxy = new ElementCreationProxy(element, stepFilterExtensionName);
-				extender = (IStepFiltersExtender) ecProxy.getObject();
+			if (element.getName().equals("stepFilter")) { //$NON-NLS-1$
+				Boolean isEnabled = null;
+				String path = null;
+				int filterType = 0;
+				try {
+					isEnabled = Boolean.parseBoolean(element.getAttribute("enabled")); //$NON-NLS-1$
+					path = element.getAttribute("path"); //$NON-NLS-1$
+					filterType = getFilterTypeId(element.getAttribute("type")); //$NON-NLS-1$
+				} catch (InvalidRegistryObjectException ire) {
+					PHPDebugPlugin.log(ire);
+					return;
+				}
+				listToAdd.add(new DebugStepFilter(filterType, isEnabled, true, path));
 			}
 
-			String[] pathsToFilter = extender.getStepFiltersToAdd();
-			if (pathsToFilter == null) {
-				return;
-			}
-			
-			for (String pathToAdd : pathsToFilter) {
-				if ((pathToAdd != null) && pathToAdd.length() > 0) {
-					listToAdd.add(new DebugStepFilter(IStepFilterTypes.PATH_PATTERN, true, true, pathToAdd));
-				}
-			}
 		}
 		extendedFilters = new DebugStepFilter[listToAdd.size()];
 		listToAdd.toArray(extendedFilters);
