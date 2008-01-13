@@ -1,0 +1,45 @@
+	public Object[] getChildren(Object parentElement) {
+		try {
+			if (parentElement instanceof IContainer) {
+				List<Object> r = new LinkedList<Object>();
+				// Add all members:
+				IContainer container = (IContainer) parentElement;
+				IResource[] members = container.members();
+				for (IResource member : members) {
+					if (member.isAccessible() && !isResourceFiltered(member)) {
+						r.add(member);
+					}
+				}
+				return r.toArray();
+			} else if (parentElement instanceof IncludePathEntry) {
+				IncludePathEntry includePathEntry = (IncludePathEntry) parentElement;
+				IPath path = includePathEntry.getPath();
+				File file = null;
+				if (includePathEntry.getEntryKind() == IIncludePathEntry.IPE_LIBRARY) {
+					file = path.toFile();
+				} else if (includePathEntry.getEntryKind() == IIncludePathEntry.IPE_VARIABLE) {
+					path = IncludePathVariableManager.instance().resolveVariablePath(path.toString());
+					if (path != null) {
+						file = path.toFile();
+					}
+				}
+				if (file != null) {
+					return getChildren(new IncPathFile(includePathEntry, file));
+				}
+			} else if (parentElement instanceof IncPathFile) {
+				IncPathFile ipFile = (IncPathFile) parentElement;
+				File file = ipFile.file;
+				if (file.isDirectory()) {
+					File files[] = file.listFiles();
+					List<Object> r = new ArrayList<Object>(files.length);
+					for (File currentFile : files) {
+						r.add(new IncPathFile(ipFile.includePathEntry, currentFile));
+					}
+					return r.toArray();
+				}
+			}
+		} catch (CoreException e) {
+		}
+		return new Object[0];
+	}
+

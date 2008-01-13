@@ -1,0 +1,54 @@
+	/**
+	 * Create a group to contain the step filter related widgetry
+	 */
+	private void createStepFilterPreferences(Composite parent) {
+		Composite container = SWTFactory.createComposite(parent, parent.getFont(), 2, 1, GridData.FILL_BOTH, 0, 0);
+		fUseStepFiltersButton = SWTFactory.createCheckButton(container, PHPDebugUIMessages.PHPDebugStepFilterPreferencePage_useStepFilters, null, DebugUITools.isUseStepFilters(), 2);
+		fUseStepFiltersButton.addSelectionListener(new SelectionListener() {
+			public void widgetSelected(SelectionEvent e) {
+				setPageEnablement(fUseStepFiltersButton.getSelection());
+			}
+
+			public void widgetDefaultSelected(SelectionEvent e) {
+			}
+		});
+		SWTFactory.createLabel(container, PHPDebugUIMessages.PHPDebugStepFilterPreferencePage_definedStepFilters, 2);
+		fTableViewer = CheckboxTableViewer.newCheckList(container, SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER | SWT.MULTI | SWT.FULL_SELECTION);
+		fTableViewer.getTable().setFont(container.getFont());
+		fTableViewer.setLabelProvider(new FilterLabelProvider());
+		fTableViewer.setComparator(new FilterViewerComparator());
+		fTableViewer.setContentProvider(new StepFilterContentProvider());
+
+		fTableViewer.setInput(getAllPersistedFilters(false));
+		fTableViewer.getTable().setLayoutData(new GridData(GridData.FILL_BOTH));
+		fTableViewer.addCheckStateListener(new ICheckStateListener() {
+			public void checkStateChanged(CheckStateChangedEvent event) {
+				((DebugStepFilter) event.getElement()).setEnabled(event.getChecked());
+			}
+		});
+		fTableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
+			public void selectionChanged(SelectionChangedEvent event) {
+				ISelection selection = event.getSelection();
+				if (selection.isEmpty()) {
+					fRemoveFilterButton.setEnabled(false);
+				} else {
+					DebugStepFilter filter = (DebugStepFilter) ((StructuredSelection) selection).getFirstElement();
+					if (filter.isReadOnly()) {
+						fRemoveFilterButton.setEnabled(false);
+					} else {
+						fRemoveFilterButton.setEnabled(true);
+					}
+				}
+			}
+		});
+		fTableViewer.getControl().addKeyListener(new KeyAdapter() {
+			public void keyPressed(KeyEvent event) {
+				handleFilterViewerKeyPress(event);
+			}
+		});
+
+		createStepFilterButtons(container);
+		fUseStepFiltersButton.setSelection(DebugPlugin.isUseStepFilters());
+		setPageEnablement(fUseStepFiltersButton.getSelection());
+	}
+

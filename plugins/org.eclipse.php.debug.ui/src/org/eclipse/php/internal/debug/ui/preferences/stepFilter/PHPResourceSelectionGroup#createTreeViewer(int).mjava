@@ -1,0 +1,49 @@
+	/**
+	 * Returns a new drill down viewer for this dialog.
+	 * 
+	 * @param heightHint
+	 *            height hint for the drill down composite
+	 */
+	protected void createTreeViewer(int heightHint) {
+		// Create drill down.
+		DrillDownComposite drillDown = new DrillDownComposite(this, SWT.BORDER);
+		GridData spec = new GridData(SWT.FILL, SWT.FILL, true, true);
+		spec.widthHint = SIZING_SELECTION_PANE_WIDTH;
+		spec.heightHint = heightHint;
+		drillDown.setLayoutData(spec);
+
+		// Create tree viewer inside drill down.
+		treeViewer = new TreeViewer(drillDown, SWT.NONE);
+		drillDown.setChildTree(treeViewer);
+		cp = new PHPResourceContentProvider();
+		treeViewer.setContentProvider(cp);
+		treeViewer.setLabelProvider(new PHPResLabelProvider());
+		treeViewer.setComparator(new ResourceViewerComparator());
+		treeViewer.setUseHashlookup(true);
+		treeViewer.addSelectionChangedListener(new ISelectionChangedListener() {
+			public void selectionChanged(SelectionChangedEvent event) {
+				IStructuredSelection selection = (IStructuredSelection) event.getSelection();
+				resourceSelectionChanged(selection.getFirstElement()); // allow null
+			}
+		});
+		treeViewer.addDoubleClickListener(new IDoubleClickListener() {
+			public void doubleClick(DoubleClickEvent event) {
+				ISelection selection = event.getSelection();
+				if (selection instanceof IStructuredSelection) {
+					Object item = ((IStructuredSelection) selection).getFirstElement();
+					if (item == null) {
+						return;
+					}
+					if (treeViewer.getExpandedState(item)) {
+						treeViewer.collapseToLevel(item, 1);
+					} else {
+						treeViewer.expandToLevel(item, 1);
+					}
+				}
+			}
+		});
+
+		// This has to be done after the viewer has been laid out
+		treeViewer.setInput(ResourcesPlugin.getWorkspace().getRoot());
+	}
+

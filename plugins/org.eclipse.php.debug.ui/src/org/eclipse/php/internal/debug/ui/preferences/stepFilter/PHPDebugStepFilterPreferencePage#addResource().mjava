@@ -1,0 +1,51 @@
+	/**
+	 * add a new type to the listing of available filters 
+	 */
+	private void addResource() {
+		PHPResourceSelectionDialog dialog = new PHPResourceSelectionDialog(getShell(), ResourcesPlugin.getWorkspace().getRoot(), true, PHPDebugUIMessages.PHPDebugStepFilterPreferencePage_selectResourceToFilter);
+		dialog.setValidator(new FilterSelectionValidator(getAllFiltersFromTable()));
+		dialog.open();
+		Object[] result = dialog.getResult();
+		if (result != null && result.length > 0) {
+			Object resourceToFilter = result[0];
+			String filteredPath = ""; //$NON-NLS-1$
+			if (resourceToFilter instanceof IResource) {
+				filteredPath = ((IResource) resourceToFilter).getFullPath().toString();
+				if (resourceToFilter instanceof IProject) {
+					addFilter(filteredPath, true, IStepFilterTypes.PHP_PROJECT);
+				} else if (resourceToFilter instanceof IFolder) {
+					addFilter(filteredPath, true, IStepFilterTypes.PHP_PROJECT_FOLDER);
+				} else if (resourceToFilter instanceof IFile) {
+					addFilter(filteredPath, true, IStepFilterTypes.PHP_PROJECT_FILE);
+				}
+			} else if (resourceToFilter instanceof IncludePathEntry) {
+				IncludePathEntry entry = (IncludePathEntry) resourceToFilter;
+				filteredPath = entry.getPath().toOSString();
+				if (entry.getEntryKind() == IncludePathEntry.IPE_VARIABLE) {//variable
+					addFilter(filteredPath, true, IStepFilterTypes.PHP_INCLUDE_PATH_VAR);
+				} else if (entry.getEntryKind() == IncludePathEntry.IPE_LIBRARY) {//library = folder
+					addFilter(filteredPath, true, IStepFilterTypes.PHP_INCLUDE_PATH_LIBRARY);
+				}
+
+			} else if (resourceToFilter instanceof IncPathFile) {
+				IncludePathEntry entry = ((IncPathFile) resourceToFilter).getIncludePathEntry();
+				File file = ((IncPathFile) resourceToFilter).file;
+				filteredPath = file.getAbsolutePath();
+				if (file.isDirectory()) {
+					if (entry.getEntryKind() == IIncludePathEntry.IPE_VARIABLE) {
+						addFilter(filteredPath, true, IStepFilterTypes.PHP_INCLUDE_PATH_VAR_FOLDER);
+					} else if (entry.getEntryKind() == IIncludePathEntry.IPE_LIBRARY) {
+						addFilter(filteredPath, true, IStepFilterTypes.PHP_INCLUDE_PATH_LIBRARY_FOLDER);
+					}
+				} else {
+					if (entry.getEntryKind() == IIncludePathEntry.IPE_VARIABLE) {
+						addFilter(filteredPath, true, IStepFilterTypes.PHP_INCLUDE_PATH_VAR_FILE);
+					} else if (entry.getEntryKind() == IIncludePathEntry.IPE_LIBRARY) {
+						addFilter(filteredPath, true, IStepFilterTypes.PHP_INCLUDE_PATH_LIBRARY_FILE);
+					}
+				}
+
+			}
+		}
+	}
+
