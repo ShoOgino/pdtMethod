@@ -1,0 +1,67 @@
+	/*
+	 * Initialize leading and trailing comments tables in whole nodes hierarchy of a compilation
+	 * unit.
+	 * Scanner is necessary to scan between nodes and comments and verify if there's
+	 * nothing else than white spaces.
+	 */
+	void initialize(Program unit, AstLexer sc, IDocument document) {
+
+		if (document == null) {
+			throw new IllegalArgumentException();
+		}
+		this.document = document;
+
+		// Init array pointers
+		this.leadingPtr = -1;
+		this.trailingPtr = -1;
+
+		// Init comments
+		final Collection commentsCollection = unit.getComments();
+		if (this.comments == null) {
+			return;
+		}
+		this.comments = (Comment[]) commentsCollection.toArray(new Comment[commentsCollection.size()]);
+		int size = this.comments.length;
+		if (size == 0) {
+			return;
+		}
+
+		// Init scanner and start ranges computing
+		this.scanner = sc;
+		// TODO : this.scanner.tokenizeWhiteSpace = true;
+
+		// Start unit visit
+		AbstractVisitor commentVisitor = new CommentMapperVisitor();
+		unit.accept(commentVisitor);
+
+		// Reduce leading arrays if necessary
+		int leadingCount = this.leadingPtr + 1;
+		if (leadingCount > 0 && leadingCount < this.leadingIndexes.length) {
+			System.arraycopy(this.leadingNodes, 0, this.leadingNodes = new ASTNode[leadingCount], 0, leadingCount);
+			System.arraycopy(this.leadingIndexes, 0, this.leadingIndexes = new long[leadingCount], 0, leadingCount);
+		}
+
+		// Reduce trailing arrays if necessary
+		if (this.trailingPtr >= 0) {
+			// remove last remaining unresolved nodes
+			while (this.trailingIndexes[this.trailingPtr] == -1) {
+				this.trailingPtr--;
+				if (this.trailingPtr < 0) {
+					this.trailingIndexes = null;
+					this.trailingNodes = null;
+					break;
+				}
+			}
+
+			// reduce array size
+			int trailingCount = this.trailingPtr + 1;
+			if (trailingCount > 0 && trailingCount < this.trailingIndexes.length) {
+				System.arraycopy(this.trailingNodes, 0, this.trailingNodes = new ASTNode[trailingCount], 0, trailingCount);
+				System.arraycopy(this.trailingIndexes, 0, this.trailingIndexes = new long[trailingCount], 0, trailingCount);
+			}
+		}
+
+		// Release scanner as it's only used during unit visit
+		this.scanner = null;
+	}
+

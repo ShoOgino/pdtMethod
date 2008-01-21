@@ -1,0 +1,91 @@
+	/**
+	 * Search and store node leading comments. Comments are searched in position range
+	 * from previous extended position to node start position. If one or several comment are found,
+	 * returns first comment start position, otherwise returns node start position.
+	 * <p>
+	 * Starts to search for first comment before node start position and return if none was found...
+	 *</p><p>
+	 * When first comment is found before node, goes up in comment list until one of
+	 * following conditions becomes true:
+	 * <ol>
+	 * 	<li>comment end is before previous end</li>
+	 * 	<li>comment start and previous end is on the same line but not on same line of node start</li>
+	 * 	<li>there's other than white characters between current node and comment</li>
+	 * 	<li>TODO : there's more than 1 line between current node and comment</li>
+	 * </ol>
+	 * If some comment have been found, then no token should be on
+	 * on the same line before, so remove all comments which do not verify this assumption.
+	 * </p><p>
+	 * If finally there's leading still comments, then stores indexes of the first and last one
+	 * in leading comments table.
+	 */
+	int storeLeadingComments(ASTNode node, int previousEnd, int[] parentLineRange) {
+		// Init extended position
+		int nodeStart = node.getStart();
+		int extended = nodeStart;
+
+		// Get line of node start position
+		int previousEndLine = getLineNumber(previousEnd, parentLineRange);
+		int nodeStartLine = getLineNumber(nodeStart, parentLineRange);
+
+		// Find first comment index
+		int idx = getCommentIndex(0, nodeStart, -1);
+		if (idx == -1) {
+			return nodeStart;
+		}
+
+		// Look after potential comments
+		int startIdx = -1;
+		int endIdx = idx;
+		int previousStart = nodeStart;
+		while (idx >= 0 && previousStart >= previousEnd) {
+			// Verify for each comment that there's only white spaces between end and start of {following comment|node}
+			Comment comment = this.comments[idx];
+			int commentStart = comment.getStart();
+			int end = commentStart + comment.getLength() - 1;
+			int commentLine = getLineNumber(commentStart, parentLineRange);
+			if (end <= previousEnd || (commentLine == previousEndLine && commentLine != nodeStartLine)) {
+				// stop search on condition 1) and 2)
+				break;
+			} else if ((end + 1) < previousStart) { // may be equals => then no scan is necessary
+				try {
+					resetTo(end + 1, previousStart);
+					this.scanner.next_token();
+					String token = this.scanner.yytext();
+					if (token != null && token.trim().length() > 0) {
+						// stop search on condition 3)
+						// if first comment fails, then there's no extended position in fact
+						if (idx == endIdx) {
+							return nodeStart;
+						}
+						break;
+					}
+				} catch (Exception e) {
+					// Should not happen, but return no extended position...
+					assert false;
+					return nodeStart;
+				}
+			}
+			// Store previous infos
+			previousStart = commentStart;
+			startIdx = idx--;
+		}
+		if (startIdx != -1) {
+			// Store leading comments indexes
+			if (startIdx <= endIdx) {
+				if (++this.leadingPtr == 0) {
+					this.leadingNodes = new ASTNode[STORAGE_INCREMENT];
+					this.leadingIndexes = new long[STORAGE_INCREMENT];
+				} else if (this.leadingPtr == this.leadingNodes.length) {
+					int newLength = (this.leadingPtr * 3 / 2) + STORAGE_INCREMENT;
+					System.arraycopy(this.leadingNodes, 0, this.leadingNodes = new ASTNode[newLength], 0, this.leadingPtr);
+					System.arraycopy(this.leadingIndexes, 0, this.leadingIndexes = new long[newLength], 0, this.leadingPtr);
+				}
+				this.leadingNodes[this.leadingPtr] = node;
+				this.leadingIndexes[this.leadingPtr] = (((long) startIdx) << 32) + endIdx;
+				extended = this.comments[endIdx].getStart();
+			}
+		}
+		return extended;
+	}
+
