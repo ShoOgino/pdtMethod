@@ -1,19 +1,28 @@
 	/*
 	 * (non-Javadoc)
+	 * 
 	 * @see org.eclipse.ui.plugin.AbstractUIPlugin#start(org.osgi.framework.BundleContext)
 	 */
 	public void start(BundleContext context) throws Exception {
 		super.start(context);
-		IWorkbench workbench = getWorkbench();
-		IWorkbenchWindow iww = workbench.getActiveWorkbenchWindow();
-		ISelectionService iss = iww.getSelectionService();
+		final IWorkbench workbench = getWorkbench();
 
-		ISelection s = iss.getSelection();
+		// make sure this is called only via the UI thread
+		workbench.getDisplay().asyncExec(new Runnable() {
+			public void run() {
+				IWorkbenchWindow iww = workbench.getActiveWorkbenchWindow();
+				if (iww == null) {
+					System.out.println();
+				}
+				ISelectionService iss = iww.getSelectionService();
 
-		if (s instanceof IStructuredSelection)
-			currentSelection = ((IStructuredSelection) s);
+				ISelection s = iss.getSelection();
+				if (s instanceof IStructuredSelection)
+					currentSelection = ((IStructuredSelection) s);
 
-		iss.addSelectionListener(this);
+				iss.addSelectionListener(Activator.this);
+			}
 
+		});
 	}
 
