@@ -1,0 +1,34 @@
+	/**
+	 * configure the Proxy Handler from the preferences.
+	 */
+	public void configure() {
+		IDELayer layer = IDELayerFactory.getIDELayer();
+		Preferences prefs = layer.getPrefs();
+		
+		useProxy = prefs.getBoolean(XDebugUIAttributeConstants.XDEBUG_PREF_USEPROXY);
+		if (useProxy == false) {
+			unregister();
+		}
+		else {
+			int idePort = prefs.getInt(XDebugUIAttributeConstants.XDEBUG_PREF_PORT);			
+			String ideKey = prefs.getString(XDebugUIAttributeConstants.XDEBUG_PREF_IDEKEY);
+			boolean multisession = prefs.getBoolean(XDebugUIAttributeConstants.XDEBUG_PREF_MULTISESSION); 
+			String proxy = prefs.getString(XDebugUIAttributeConstants.XDEBUG_PREF_PROXY);
+			String proxyHost = proxy;
+			int proxyPort = -1;
+			int split = proxy.indexOf(':');
+			if (split != -1) {
+				proxyHost = proxy.substring(0, split);
+				if (split + 1 < proxy.length()) {
+					String portStr = proxy.substring(split + 1);
+					try {
+						proxyPort = Integer.parseInt(portStr);
+					} catch (NumberFormatException e) {
+					}
+				}
+			}
+			
+			setProxyInfo(proxyHost, proxyPort, ideKey, idePort, multisession);
+		}
+	}
+

@@ -1,0 +1,37 @@
+	/**
+	 * Register with the proxy if we are not already registered. 
+	 * @return true if registration successful
+	 */
+	public boolean registerWithProxy() {
+		
+		
+		//proxyinit -a ip:port -k ide_key -m [0|1]
+		//
+		//-p 	the port that the IDE listens for debugging on. The address is retrieved from the connection information.
+		//-k 	a IDE key, which the debugger engine will also use in it's debugging init command. this allows the proxy to match request to IDE. Typically the user will provide the session key as a configuration item.
+		//		-m 	this tells the demon that the IDE supports (or doesn't) multiple debugger sessions. if -m is missing, zero or no support is default.
+		
+		//		response
+		//	<proxyinit success="[0|1]"
+		//	           idekey="{ID}"
+		//	           address="{IP_ADDRESS}"
+		//	           port="{NUM}>
+		//	    <error id="app_specific_error_code">
+		//	        <message>UI Usable Message</message>
+		//	    </error>
+		//	</proxyinit>
+		if (!registered) {
+			DBGpResponse resp = sendcmd("proxyinit -p " + idePort + " -k " + currentIdeKey + " -m " + (multisession ? "1" : "0"));
+			if (resp != null) {
+				if (resp.getType() == DBGpResponse.PROXY_INIT && resp.getErrorCode() == DBGpResponse.ERROR_OK) {
+					registered = true;
+				}
+				else {
+					errorCode = resp.getErrorCode();
+					errorMsg = resp.getErrorMessage();
+				}
+			}
+		}
+		return registered;
+	}
+

@@ -1,0 +1,42 @@
+	/**
+	 * send a command to the proxy and get a response.
+	 * @param cmd the command to send
+	 * @return the response.
+	 */
+	private DBGpResponse sendcmd(String cmd) {
+		DBGpResponse dbgpResp = null;
+		try {
+			Socket s = new Socket(proxyHost, proxyPort);
+			InputStream is = s.getInputStream();
+			OutputStream os = s.getOutputStream();
+			if (DBGpLogger.debugCmd()) {
+				DBGpLogger.debug("cmd: " + cmd);
+			}
+			os.write(cmd.getBytes("ASCII")); //command will always be ASCII
+			os.flush();
+			byte[] resp = readResponse(is);
+			dbgpResp = new DBGpResponse();
+			dbgpResp.parseResponse(resp);
+			s.shutdownInput();
+			s.shutdownOutput();
+			s.close();
+			return dbgpResp;
+		}
+		catch(IOException ioe) {
+			if (dbgpResp == null) {
+				errorCode = 9999;
+				if (ioe instanceof EOFException) {
+					errorMsg = "invalid response from proxy.";
+				}
+				else {
+					errorMsg = ioe.getMessage();
+					if (errorMsg == null) {
+						errorMsg = ioe.getClass().getName();
+					}
+				}
+			}
+		}
+		return dbgpResp;
+		
+	}
+
