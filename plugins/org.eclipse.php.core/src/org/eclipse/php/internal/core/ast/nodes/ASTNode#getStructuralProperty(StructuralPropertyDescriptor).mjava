@@ -1,0 +1,37 @@
+	/**
+	 * Returns the value of the given structural property for this node. The value
+	 * returned depends on the kind of property:
+	 * <ul>
+	 * <li>{@link SimplePropertyDescriptor} - the value of the given simple property,
+	 * or <code>null</code> if none; primitive values are "boxed"</li>
+	 * <li>{@link ChildPropertyDescriptor} - the child node (type <code>ASTNode</code>),
+	 * or <code>null</code> if none</li>
+	 * <li>{@link ChildListPropertyDescriptor} - the list (element type: {@link ASTNode})</li>
+	 * </ul>
+	 * 
+	 * @param property the property
+	 * @return the value, or <code>null</code> if none
+	 * @exception RuntimeException if this node does not have the given property
+	 */
+	public final Object getStructuralProperty(StructuralPropertyDescriptor property) {
+		if (property instanceof SimplePropertyDescriptor) {
+			SimplePropertyDescriptor p = (SimplePropertyDescriptor) property;
+			if (p.getValueType() == int.class) {
+				int result = internalGetSetIntProperty(p, true, 0);
+				return new Integer(result);
+			} else if (p.getValueType() == boolean.class) {
+				boolean result = internalGetSetBooleanProperty(p, true, false);
+				return Boolean.valueOf(result);
+			} else {
+				return internalGetSetObjectProperty(p, true, null);
+			}
+		}
+		if (property instanceof ChildPropertyDescriptor) {
+			return internalGetSetChildProperty((ChildPropertyDescriptor) property, true, null);
+		}
+		if (property instanceof ChildListPropertyDescriptor) {
+			return internalGetChildListProperty((ChildListPropertyDescriptor) property);
+		}
+		throw new IllegalArgumentException();
+	}
+

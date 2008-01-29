@@ -1,0 +1,82 @@
+	/**
+	 * Sets the named property of this node to the given value,
+	 * or to <code>null</code> to clear it.
+	 * <p>
+	 * Clients should employ property names that are sufficiently unique
+	 * to avoid inadvertent conflicts with other clients that might also be
+	 * setting properties on the same node.
+	 * </p>
+	 * <p>
+	 * Note that modifying a property is not considered a modification to the 
+	 * AST itself. This is to allow clients to decorate existing nodes with 
+	 * their own properties without jeopardizing certain things (like the 
+	 * validity of bindings), which rely on the underlying tree remaining static.
+	 * </p>
+	 * 
+	 * @param propertyName the property name
+	 * @param data the new property value, or <code>null</code> if none
+	 * @see #getProperty(String)
+	 */
+	public final void setProperty(String propertyName, Object data) {
+		if (propertyName == null) {
+			throw new IllegalArgumentException();
+		}
+		// N.B. DO NOT CALL ast.modifying();
+
+		if (this.property1 == null) {
+			// node has no properties at all
+			if (data == null) {
+				// we already know this
+				return;
+			}
+			// node gets its fist property
+			this.property1 = propertyName;
+			this.property2 = data;
+			return;
+		}
+
+		if (this.property1 instanceof String) {
+			// node has only a single property
+			if (propertyName.equals(this.property1)) {
+				// we're in luck
+				this.property2 = data;
+				if (data == null) {
+					// just deleted last property
+					this.property1 = null;
+					this.property2 = null;
+				}
+				return;
+			}
+			if (data == null) {
+				// we already know this
+				return;
+			}
+			// node already has one property - getting its second
+			// convert to more flexible representation
+			HashMap m = new HashMap(2);
+			m.put(this.property1, this.property2);
+			m.put(propertyName, data);
+			this.property1 = m;
+			this.property2 = null;
+			return;
+		}
+			
+		// node has two or more properties
+		HashMap m = (HashMap) this.property1;
+		if (data == null) {
+			m.remove(propertyName);
+			// check for just one property left
+			if (m.size() == 1) {
+				// convert to more efficient representation
+				Map.Entry[] entries = (Map.Entry[]) m.entrySet().toArray(new Map.Entry[1]);
+				this.property1 = entries[0].getKey();
+				this.property2 = entries[0].getValue();
+			}
+			return;
+		} else {
+			m.put(propertyName, data);
+			// still has two or more properties
+			return;
+		}
+	}
+

@@ -1,0 +1,49 @@
+	/**
+	 * Sets the value of the given structural property for this node. The value
+	 * passed depends on the kind of property:
+	 * <ul>
+	 * <li>{@link SimplePropertyDescriptor} - the new value of the given simple property,
+	 * or <code>null</code> if none; primitive values are "boxed"</li>
+	 * <li>{@link ChildPropertyDescriptor} - the new child node (type <code>ASTNode</code>),
+	 * or <code>null</code> if none</li>
+	 * <li>{@link ChildListPropertyDescriptor} - not allowed</li>
+	 * </ul>
+	 * 
+	 * @param property the property
+	 * @param value the property value
+	 * @exception RuntimeException if this node does not have the
+	 * given property, or if the given property cannot be set
+	 */
+	public final void setStructuralProperty(StructuralPropertyDescriptor property, Object value) {
+		if (property instanceof SimplePropertyDescriptor) {
+			SimplePropertyDescriptor p = (SimplePropertyDescriptor) property;
+			if (p.getValueType() == int.class) {
+				int arg = ((Integer) value).intValue();
+				internalGetSetIntProperty(p, false, arg);
+				return;
+			} else if (p.getValueType() == boolean.class) {
+				boolean arg = ((Boolean) value).booleanValue();
+				internalGetSetBooleanProperty(p, false, arg);
+				return;
+			} else {
+				if (value == null && p.isMandatory()) {
+					throw new IllegalArgumentException();
+				}
+				internalGetSetObjectProperty(p, false, value);
+				return;
+			}
+		}
+		if (property instanceof ChildPropertyDescriptor) {
+			ChildPropertyDescriptor p = (ChildPropertyDescriptor) property;
+			ASTNode child = (ASTNode) value;
+			if (child == null && p.isMandatory()) {
+				throw new IllegalArgumentException();
+			}
+			internalGetSetChildProperty(p, false, child);
+			return;
+		}
+		if (property instanceof ChildListPropertyDescriptor) {
+			throw new IllegalArgumentException("Cannot set the list of child list property");  //$NON-NLS-1$
+		}
+	}
+
