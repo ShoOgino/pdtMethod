@@ -1,0 +1,35 @@
+/**
+ * Scans the given string for a type argument signature starting at the given
+ * index and appends it to the given buffer, and returns the index of the last
+ * character.
+ * 
+ * @param string the signature string
+ * @param start the 0-based character index of the first character
+ * @param fullyQualifyTypeNames <code>true</code> if type names should be fully
+ *   qualified, and <code>false</code> to use only simple names
+ * @param buffer the string buffer to append to
+ * @return the 0-based character index of the last character
+ * @exception IllegalArgumentException if this is not a type argument signature
+ * @see Util#scanTypeArgumentSignature(char[], int)
+ */
+private static int appendTypeArgumentSignature(char[] string, int start, boolean fullyQualifyTypeNames, StringBuffer buffer) {
+	// need a minimum 1 char
+	if (start >= string.length) {
+		throw new IllegalArgumentException();
+	}
+	char c = string[start];
+	switch(c) {
+		case C_STAR :
+			buffer.append('?');
+			return start;
+		case C_EXTENDS :
+			buffer.append("? extends "); //$NON-NLS-1$
+			return appendTypeSignature(string, start + 1, fullyQualifyTypeNames, buffer);
+		case C_SUPER :
+			buffer.append("? super "); //$NON-NLS-1$
+			return appendTypeSignature(string, start + 1, fullyQualifyTypeNames, buffer);
+		default :
+			return appendTypeSignature(string, start, fullyQualifyTypeNames, buffer);
+	}
+}
+

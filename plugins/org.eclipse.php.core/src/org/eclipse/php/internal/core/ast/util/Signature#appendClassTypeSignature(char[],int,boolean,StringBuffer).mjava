@@ -1,0 +1,95 @@
+/**
+ * Scans the given string for a class type signature starting at the given
+ * index and appends it to the given buffer, and returns the index of the last
+ * character.
+ * 
+ * @param string the signature string
+ * @param start the 0-based character index of the first character
+ * @param fullyQualifyTypeNames <code>true</code> if type names should be fully
+ *   qualified, and <code>false</code> to use only simple names
+ * @param buffer the string buffer to append to
+ * @return the 0-based character index of the last character
+ * @exception IllegalArgumentException if this is not a class type signature
+ * @see Util#scanClassTypeSignature(char[], int)
+ */
+private static int appendClassTypeSignature(char[] string, int start, boolean fullyQualifyTypeNames, StringBuffer buffer) {
+	// need a minimum 3 chars "Lx;"
+	if (start >= string.length - 2) { 
+		throw new IllegalArgumentException();
+	}
+	// must start in "L" or "Q"
+	char c = string[start];
+	if (c != C_RESOLVED && c != C_UNRESOLVED) {
+		throw new IllegalArgumentException();
+	}
+	boolean resolved = (c == C_RESOLVED);
+	boolean removePackageQualifiers = !fullyQualifyTypeNames;
+	if (!resolved) {
+		// keep everything in an unresolved name
+		removePackageQualifiers = false;
+	}
+	int p = start + 1;
+	int checkpoint = buffer.length();
+	int innerTypeStart = -1;
+	boolean inAnonymousType = false;
+	while (true) {
+		if (p >= string.length) {
+			throw new IllegalArgumentException();
+		}
+		c = string[p];
+		switch(c) {
+			case C_SEMICOLON :
+				// all done
+				return p;
+			case C_GENERIC_START :
+				int e = appendTypeArgumentSignatures(string, p, fullyQualifyTypeNames, buffer);
+				// once we hit type arguments there are no more package prefixes
+				removePackageQualifiers = false;
+				p = e;
+				break;
+			case C_DOT :
+				if (removePackageQualifiers) {
+					// erase package prefix
+					buffer.setLength(checkpoint);
+				} else {
+					buffer.append('.');
+				}
+				break;
+			 case '/' :
+				if (removePackageQualifiers) {
+					// erase package prefix
+					buffer.setLength(checkpoint);
+				} else {
+					buffer.append('/');
+				}
+				break;
+			 case C_DOLLAR :
+			 	innerTypeStart = buffer.length();
+			 	inAnonymousType = false;
+			 	if (resolved) {
+					// once we hit "$" there are no more package prefixes
+					removePackageQualifiers = false;
+					/**
+					 * Convert '$' in resolved type signatures into '.'.
+					 * NOTE: This assumes that the type signature is an inner type
+					 * signature. This is true in most cases, but someone can define a
+					 * non-inner type name containing a '$'.
+					 */
+					buffer.append('.');
+			 	}
+			 	break;
+			 default :
+				if (innerTypeStart != -1 && !inAnonymousType && Character.isDigit(c)) {
+					inAnonymousType = true;
+					buffer.setLength(innerTypeStart); // remove '.'
+					buffer.insert(checkpoint, "new "); //$NON-NLS-1$
+					buffer.append("(){}"); //$NON-NLS-1$
+				}
+			 	if (!inAnonymousType)
+					buffer.append(c);
+				innerTypeStart = -1;
+		}
+		p++;
+	}
+}
+

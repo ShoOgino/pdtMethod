@@ -1,5 +1,30 @@
-	public void postReplaceChildEvent(ASTNode node, ASTNode oldChild, ASTNode newChild, StructuralPropertyDescriptor property) {
-		// TODO Auto-generated method stub
-		
+	/**
+	 * Reports that the given node has just had a child replaced.
+	 *
+	 * @param node the node modified
+	 * @param child the child removed
+	 * @param newChild the replacement child
+	 * @param property the child or child list property descriptor
+	 * @since 3.0
+	 */
+	void postReplaceChildEvent(ASTNode node, ASTNode child, ASTNode newChild, StructuralPropertyDescriptor property) {
+		// IMPORTANT: this method is called by readers during lazy init
+		synchronized (this.internalASTLock) {
+			// guard against concurrent access by a reader doing lazy init
+			if (this.disableEvents > 0) {
+				// doing lazy init OR already processing an event
+				// System.out.println("[BOUNCE REP]");
+				return;
+			} else {
+				disableEvents();
+			}
+		}
+		try {
+			this.eventHandler.postReplaceChildEvent(node, child, newChild, property);
+			// N.B. even if event handler blows up, the AST is not
+			// corrupted since node has not been changed yet
+		} finally {
+			reenableEvents();
+		}
 	}
 

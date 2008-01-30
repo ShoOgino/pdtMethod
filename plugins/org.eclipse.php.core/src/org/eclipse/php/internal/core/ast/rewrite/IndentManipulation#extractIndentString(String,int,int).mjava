@@ -1,0 +1,53 @@
+	/**
+	 * Returns the leading indentation string of the given line. Note that the returned string
+	 * need not be equal to the leading whitespace as odd spaces are not considered part of the
+	 * indentation.
+	 * 
+	 * @param line the line to scan
+	 * @param tabWidth the size of one tab in space equivalents
+	 * @param indentWidth the width of one indentation unit in space equivalents
+	 * @return the indent part of <code>line</code>, but no odd spaces
+	 * @exception IllegalArgumentException if:
+	 * <ul>
+	 * <li>the given <code>indentWidth</code> is lower or equals to zero</li>
+	 * <li>the given <code>tabWidth</code> is lower than zero</li>
+	 * <li>the given <code>line</code> is null</li>
+	 * </ul>
+	 */
+	public static String extractIndentString(String line, int tabWidth, int indentWidth) {
+		if (tabWidth < 0 || indentWidth <= 0 || line == null) {
+			throw new IllegalArgumentException();
+		}
+		
+		int size= line.length();
+		int end= 0;
+		
+		int spaceEquivs= 0;
+		int characters= 0;
+		for (int i= 0; i < size; i++) {
+			char c= line.charAt(i);
+			if (c == '\t') {
+				int remainder= spaceEquivs % tabWidth;
+				spaceEquivs += tabWidth - remainder;
+				characters++;
+			} else if (isIndentChar(c)) {
+				spaceEquivs++;
+				characters++;
+			} else {
+				break;
+			}
+			if (spaceEquivs >= indentWidth) {
+				end += characters;
+				characters= 0;
+				spaceEquivs= spaceEquivs % indentWidth;
+			}
+		}
+		if (end == 0) {
+			return "";
+		} else if (end == size) {
+			return line;
+		} else {
+			return line.substring(0, end);
+		}
+	}
+

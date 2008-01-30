@@ -1,0 +1,71 @@
+/*	public static ClassFileReader newClassFileReader(IResource resource) throws CoreException, ClassFormatException, IOException {
+		InputStream in = null;
+		try {
+			in = ((IFile) resource).getContents(true);
+			return ClassFileReader.read(in, resource.getFullPath().toString());
+		} finally {
+			if (in != null)
+				in.close();
+		}
+	}
+*/
+	/**
+	 * Normalizes the cariage returns in the given text.
+	 * They are all changed  to use the given buffer's line separator.
+	 */
+	public static char[] normalizeCRs(char[] text, char[] buffer) {
+		CharArrayBuffer result = new CharArrayBuffer();
+		int lineStart = 0;
+		int length = text.length;
+		if (length == 0) return text;
+		String lineSeparator = getLineSeparator(text, buffer);
+		char nextChar = text[0];
+		for (int i = 0; i < length; i++) {
+			char currentChar = nextChar;
+			nextChar = i < length-1 ? text[i+1] : ' ';
+			switch (currentChar) {
+				case '\n':
+					int lineLength = i-lineStart;
+					char[] line = new char[lineLength];
+					System.arraycopy(text, lineStart, line, 0, lineLength);
+					result.append(line);
+					result.append(lineSeparator);
+					lineStart = i+1;
+					break;
+				case '\r':
+					lineLength = i-lineStart;
+					if (lineLength >= 0) {
+						line = new char[lineLength];
+						System.arraycopy(text, lineStart, line, 0, lineLength);
+						result.append(line);
+						result.append(lineSeparator);
+						if (nextChar == '\n') {
+							nextChar = ' ';
+							lineStart = i+2;
+						} else {
+							// when line separator are mixed in the same file
+							// \r might not be followed by a \n. If not, we should increment
+							// lineStart by one and not by two.
+							lineStart = i+1;
+						}
+					} else {
+						// when line separator are mixed in the same file
+						// we need to prevent NegativeArraySizeException
+						lineStart = i+1;
+					}
+					break;
+			}
+		}
+		char[] lastLine;
+		if (lineStart > 0) {
+			int lastLineLength = length-lineStart;
+			if (lastLineLength > 0) {
+				lastLine = new char[lastLineLength];
+				System.arraycopy(text, lineStart, lastLine, 0, lastLineLength);
+				result.append(lastLine);
+			}
+			return result.getContents();
+		}
+		return text;
+	}
+

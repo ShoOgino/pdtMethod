@@ -1,0 +1,51 @@
+	private RewriteEvent[] processListWithRanges(List rangeInfos, RewriteEvent[] childEvents, TargetSourceRangeComputer sourceRangeComputer) {
+		List newChildEvents= new ArrayList(childEvents.length);
+		NodeRangeInfo topInfo= null;
+		Stack newChildrenStack= new Stack();
+		Stack topInfoStack= new Stack();
+
+		Iterator rangeInfoIterator= rangeInfos.iterator();
+		NodeRangeInfo nextInfo= (NodeRangeInfo) rangeInfoIterator.next();
+		
+		for (int k= 0; k < childEvents.length; k++) {
+			RewriteEvent event= childEvents[k];
+			ASTNode node= (ASTNode) event.getOriginalValue();
+			// check for ranges and add a placeholder for them
+			while (nextInfo != null && node == nextInfo.getStartNode()) { // is this child the beginning of a range?
+				nextInfo.updatePlaceholderSourceRanges(sourceRangeComputer);
+				
+				Block internalPlaceholder= nextInfo.getInternalPlaceholder();
+				RewriteEvent newEvent;
+				if (nextInfo.isMove()) {
+					newEvent= new NodeRewriteEvent(internalPlaceholder, nextInfo.replacingNode); // remove or replace
+				} else {
+					newEvent= new NodeRewriteEvent(internalPlaceholder, internalPlaceholder); // unchanged
+				}
+				newChildEvents.add(newEvent);
+				if (nextInfo.editGroup != null) {
+					setEventEditGroup(newEvent, nextInfo.editGroup);
+				}
+				
+				newChildrenStack.push(newChildEvents);
+				topInfoStack.push(topInfo);
+				
+				newChildEvents= new ArrayList(childEvents.length);
+				topInfo= nextInfo;
+				
+				nextInfo= rangeInfoIterator.hasNext() ? (NodeRangeInfo) rangeInfoIterator.next() : null;
+			}
+			
+			newChildEvents.add(event);
+
+			while (topInfo != null && node == topInfo.getEndNode()) {
+				RewriteEvent[] placeholderChildEvents= (RewriteEvent[]) newChildEvents.toArray(new RewriteEvent[newChildEvents.size()]);
+				Block internalPlaceholder= topInfo.getInternalPlaceholder();
+				addEvent(internalPlaceholder, Block.STATEMENTS_PROPERTY, new ListRewriteEvent(placeholderChildEvents));
+				
+				newChildEvents= (List) newChildrenStack.pop();
+				topInfo= (NodeRangeInfo) topInfoStack.pop();
+			}
+		}
+		return (RewriteEvent[]) newChildEvents.toArray(new RewriteEvent[newChildEvents.size()]);
+	}
+

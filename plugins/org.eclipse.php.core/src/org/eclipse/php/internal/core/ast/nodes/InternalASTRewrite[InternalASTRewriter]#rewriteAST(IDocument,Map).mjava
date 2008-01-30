@@ -1,0 +1,39 @@
+	/**
+	 * Performs the rewrite: The rewrite events are translated to the corresponding in text changes.
+	 * @param document Document which describes the code of the AST that is passed in in the
+	 * constructor. This document is accessed read-only.
+	 * @param options options
+	 * @throws IllegalArgumentException if the rewrite fails
+	 * @return Returns the edit describing the text changes.
+	 */
+	public TextEdit rewriteAST(IDocument document, Map options) {
+		TextEdit result = new MultiTextEdit();
+		
+		final Program rootNode = getRootNode();
+		if (rootNode != null) {
+			TargetSourceRangeComputer xsrComputer = new TargetSourceRangeComputer() {
+				/** 
+				 * This implementation of
+				 * {@link TargetSourceRangeComputer#computeSourceRange(ASTNode)}
+				 * is specialized to work in the case of internal AST rewriting, where the
+				 * original AST has been modified from its original form. This means that
+				 * one cannot trust that the root of the given node is the compilation unit.
+				 */
+				public SourceRange computeSourceRange(ASTNode node) {
+					int extendedStartPosition = rootNode.getExtendedStartPosition(node);
+					int extendedLength = rootNode.getExtendedLength(node);
+					return new SourceRange(extendedStartPosition, extendedLength);
+				}
+			};
+			char[] content= document.get().toCharArray();
+			LineInformation lineInfo= LineInformation.create(document);
+			String lineDelim= TextUtilities.getDefaultLineDelimiter(document);
+			List comments= rootNode.comments();
+			
+			// TODO: write our ASTRewriteAnalayzer
+			// ASTRewriteAnalyzer visitor = new ASTRewriteAnalyzer(content, lineInfo, lineDelim, result, this.eventStore, this.nodeStore, comments, options, xsrComputer);
+			// rootNode.accept(visitor);
+		}
+		return result;
+	}
+

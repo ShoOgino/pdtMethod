@@ -1,0 +1,42 @@
+/**
+ * Converts the given type signature to a readable string. The signature is expected to
+ * be dot-based.
+ * 
+ * <p>
+ * For example:
+ * <pre>
+ * <code>
+ * toString({'[', 'L', 'j', 'a', 'v', 'a', '.', 'l', 'a', 'n', 'g', '.', 'S', 't', 'r', 'i', 'n', 'g', ';'}) -> {'j', 'a', 'v', 'a', '.', 'l', 'a', 'n', 'g', '.', 'S', 't', 'r', 'i', 'n', 'g', '[', ']'}
+ * toString({'I'}) -> {'i', 'n', 't'}
+ * toString({'+', 'L', 'O', 'b', 'j', 'e', 'c', 't', ';'}) -> {'?', ' ', 'e', 'x', 't', 'e', 'n', 'd', 's', ' ', 'O', 'b', 'j', 'e', 'c', 't'}
+ * </code>
+ * </pre>
+ * </p>
+ * <p>
+ * Note: This method assumes that a type signature containing a <code>'$'</code>
+ * is an inner type signature. While this is correct in most cases, someone could 
+ * define a non-inner type name containing a <code>'$'</code>. Handling this 
+ * correctly in all cases would have required resolving the signature, which 
+ * generally not feasible.
+ * </p>
+ *
+ * @param signature the type signature
+ * @return the string representation of the type
+ * @exception IllegalArgumentException if the signature is not syntactically
+ *   correct
+ * 
+ * @since 2.0
+ */
+public static char[] toCharArray(char[] signature) throws IllegalArgumentException {
+		int sigLength = signature.length;
+		if (sigLength == 0 || signature[0] == C_PARAM_START || signature[0] == C_GENERIC_START) {
+			return toCharArray(signature, CharOperation.NO_CHAR, null, true, true);
+		}
+		
+		StringBuffer buffer = new StringBuffer(signature.length + 10);
+		appendTypeSignature(signature, 0, true, buffer);
+		char[] result = new char[buffer.length()];
+		buffer.getChars(0, buffer.length(), result, 0);
+		return result;
+}
+

@@ -1,0 +1,56 @@
+	/**
+	 * Scans the given string for a type bound signature starting at the given
+	 * index and returns the index of the last character.
+	 * <pre>
+	 * TypeBoundSignature:
+	 *     <b>[-+]</b> TypeSignature <b>;</b>
+	 *     <b>*</b></b>
+	 * </pre>
+	 * 
+	 * @param string the signature string
+	 * @param start the 0-based character index of the first character
+	 * @return the 0-based character index of the last character
+	 * @exception IllegalArgumentException if this is not a type variable signature
+	 */
+	public static int scanTypeBoundSignature(char[] string, int start) {
+		// need a minimum 1 char for wildcard
+		if (start >= string.length) {
+			throw new IllegalArgumentException();
+		}
+		char c = string[start];
+		switch (c) {
+			case Signature.C_STAR :
+				return start;
+			case Signature.C_SUPER :
+			case Signature.C_EXTENDS :
+				// need a minimum 3 chars "+[I"
+				if (start >= string.length - 2) {
+					throw new IllegalArgumentException();
+				}
+				break;
+			default :
+				// must start in "+/-"
+					throw new IllegalArgumentException();
+				
+		}
+		c = string[++start];
+		switch (c) {
+			case Signature.C_CAPTURE :
+				return scanCaptureTypeSignature(string, start);
+			case Signature.C_SUPER :
+			case Signature.C_EXTENDS :
+				return scanTypeBoundSignature(string, start);
+			case Signature.C_RESOLVED :
+			case Signature.C_UNRESOLVED :
+				return scanClassTypeSignature(string, start);
+			case Signature.C_TYPE_VARIABLE :
+				return scanTypeVariableSignature(string, start);
+			case Signature.C_ARRAY :
+				return scanArrayTypeSignature(string, start);
+			case Signature.C_STAR:
+				return start;
+			default:
+				throw new IllegalArgumentException();
+		}
+	}
+

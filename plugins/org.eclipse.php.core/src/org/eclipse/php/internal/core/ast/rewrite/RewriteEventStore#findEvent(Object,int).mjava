@@ -1,0 +1,27 @@
+	/**
+	 * Kind is either ORIGINAL, NEW, or BOTH
+	 * @param value
+	 * @param kind
+	 * @return Returns the event with the given value of <code>null</code>.
+	 */
+	public RewriteEvent findEvent(Object value, int kind) {
+		for (Iterator iter= this.eventLookup.values().iterator(); iter.hasNext();) {
+			List events= (List) iter.next();
+			for (int i= 0; i < events.size(); i++) {
+				RewriteEvent event= ((EventHolder) events.get(i)).event;
+				if (isNodeInEvent(event, value, kind)) {
+					return event;
+				}
+				if (event.isListRewrite()) {
+					RewriteEvent[] children= event.getChildren();
+					for (int k= 0; k < children.length; k++) {
+						if (isNodeInEvent(children[k], value, kind)) {
+							return children[k];
+						}
+					}
+				}
+			}
+		}
+		return null;
+	}
+

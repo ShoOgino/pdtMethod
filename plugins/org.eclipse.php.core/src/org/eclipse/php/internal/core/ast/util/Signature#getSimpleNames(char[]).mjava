@@ -1,0 +1,54 @@
+/**
+ * Returns all segments of the given dot-separated qualified name.
+ * Returns an array with only the given name if it is not qualified.
+ * Returns an empty array if the name is empty.
+ * <p>
+ * For example:
+ * <pre>
+ * <code>
+ * getSimpleNames({'j', 'a', 'v', 'a', '.', 'l', 'a', 'n', 'g', '.', 'O', 'b', 'j', 'e', 'c', 't'}) -> {{'j', 'a', 'v', 'a'}, {'l', 'a', 'n', 'g'}, {'O', 'b', 'j', 'e', 'c', 't'}}
+ * getSimpleNames({'O', 'b', 'j', 'e', 'c', 't'}) -> {{'O', 'b', 'j', 'e', 'c', 't'}}
+ * getSimpleNames({}) -> {}
+ * getSimpleNames({'j', 'a', 'v', 'a', '.', 'u', 't', 'i', 'l', '.', 'L', 'i', 's', 't', '<', 'j', 'a', 'v', 'a', '.', 'l', 'a', 'n', 'g', '.', 'S', 't', 'r', 'i', 'n', 'g', '>'}) -> {{'j', 'a', 'v', 'a'}, {'l', 'a', 'n', 'g'}, {'L', 'i', 's', 't', '<', 'j', 'a', 'v', 'a', '.', 'l', 'a', 'n', 'g', '.', 'S', 't', 'r', 'i', 'n', 'g'}}
+ * </code>
+ * </pre>
+ *
+ * @param name the name
+ * @return the list of simple names, possibly empty
+ * @exception NullPointerException if name is null
+ * @since 2.0
+ */
+public static char[][] getSimpleNames(char[] name) {
+	int length = name == null ? 0 : name.length;
+	if (length == 0)
+		return CharOperation.NO_CHAR_CHAR;
+	
+	int wordCount = 1;
+	countingWords: for (int i = 0; i < length; i++)
+		switch(name[i]) {
+			case C_DOT:
+				wordCount++;
+				break;
+			case C_GENERIC_START:
+				break countingWords;
+		}
+	char[][] split = new char[wordCount][];
+	int last = 0, currentWord = 0;
+	for (int i = 0; i < length; i++) {
+		if (name[i] == C_GENERIC_START) break;
+		if (name[i] == C_DOT) {
+			split[currentWord] = new char[i - last];
+			System.arraycopy(
+				name,
+				last,
+				split[currentWord++],
+				0,
+				i - last);
+			last = i + 1;
+		}
+	}
+	split[currentWord] = new char[length - last];
+	System.arraycopy(name, last, split[currentWord], 0, length - last);
+	return split;
+}
+

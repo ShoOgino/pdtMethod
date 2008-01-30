@@ -1,0 +1,48 @@
+/**
+ * Extracts the type argument signatures from the given type signature.
+ * Returns an empty array if the type signature is not a parameterized type signature.
+ *
+ * @param parameterizedTypeSignature the parameterized type signature
+ * @return the signatures of the type arguments
+ * @exception IllegalArgumentException if the signature is syntactically incorrect
+ * 
+ * @since 3.1
+ */
+public static char[][] getTypeArguments(char[] parameterizedTypeSignature) throws IllegalArgumentException {
+	int length = parameterizedTypeSignature.length;
+	if (length < 2 || parameterizedTypeSignature[length-2] != C_GENERIC_END)
+		// cannot have type arguments otherwise signature would end by ">;"
+		return CharOperation.NO_CHAR_CHAR;
+	int count = 1; // start to count generic end/start peers
+	int start = length - 2;
+	while (start >= 0 && count > 0) {
+		switch (parameterizedTypeSignature[--start]) {
+			case C_GENERIC_START:
+				count--;
+				break;
+			case C_GENERIC_END:
+				count++;
+				break;
+		}
+	}
+	if (start < 0) // invalid number of generic start/end
+		throw new IllegalArgumentException();
+	ArrayList args = new ArrayList();
+	int p = start + 1;
+	while (true) {
+		if (p >= parameterizedTypeSignature.length) {
+			throw new IllegalArgumentException();
+		}
+		char c = parameterizedTypeSignature[p];
+		if (c == C_GENERIC_END) {
+			int size = args.size();
+			char[][] result = new char[size][];
+			args.toArray(result);
+			return result;
+		}
+		int e = Util.scanTypeArgumentSignature(parameterizedTypeSignature, p);
+		args.add(CharOperation.subarray(parameterizedTypeSignature, p, e+1));
+		p = e + 1;
+	}
+}
+

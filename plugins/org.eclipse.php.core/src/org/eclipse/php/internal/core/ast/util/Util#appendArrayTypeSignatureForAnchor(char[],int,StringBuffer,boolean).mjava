@@ -1,0 +1,35 @@
+	private static int appendArrayTypeSignatureForAnchor(char[] string, int start, StringBuffer buffer, boolean isVarArgs) {
+		int length = string.length;
+		// need a minimum 2 char
+		if (start >= length - 1) {
+			throw new IllegalArgumentException();
+		}
+		char c = string[start];
+		if (c != Signature.C_ARRAY) {
+			throw new IllegalArgumentException();
+		}
+		
+		int index = start;
+		c = string[++index];
+		while(c == Signature.C_ARRAY) {
+			// need a minimum 2 char
+			if (index >= length - 1) {
+				throw new IllegalArgumentException();
+			}
+			c = string[++index];
+		}
+		
+		int e = appendTypeSignatureForAnchor(string, index, buffer, false);
+		
+		for(int i = 1, dims = index - start; i < dims; i++) {
+			buffer.append('[').append(']');
+		}
+		
+		if (isVarArgs) {
+			buffer.append('.').append('.').append('.');
+		} else {
+			buffer.append('[').append(']');
+		}
+		return e;
+	}
+

@@ -3,6 +3,8 @@
 		if (dispatcher.getType() == ASTNode.FIELD_ACCESS) {
 			FieldAccess fieldAccess = (FieldAccess)dispatcher;
 			VariableBase var = constructStaticMember(className, fieldAccess.getDispatcher());
+			var.setParent(null, null);
+			fieldAccess.getField().setParent(null, null);
 			FieldAccess newFieldAccess = new FieldAccess(var.getStart(), fieldAccess.getField().getEnd(), ast ,var, fieldAccess.getField());
 			result = newFieldAccess;
 		} else if (dispatcher.getType() == ASTNode.METHOD_INVOCATION) {
@@ -11,6 +13,8 @@
 			MethodInvocation newMethodInvocation =  new MethodInvocation(var.getStart(), methodInvocation.getMethod().getEnd(), ast ,dispatcher, methodInvocation.getMethod());
 			result = newMethodInvocation;
 		} else {
+			dispatcher.setParent(null, null);
+			className.setParent(null, null);
 			result = new StaticFieldAccess(className.getStart(), dispatcher.getEnd(), ast, className, (Variable)dispatcher);
 		}
 		return result;

@@ -1,0 +1,44 @@
+private static int encodeQualifiedName(char[] typeName, int pos, int length, StringBuffer buffer) {
+    int count = 0;
+    char lastAppendedChar = 0;
+    nameLoop: while (pos < length) {
+	    char currentChar = typeName[pos];
+		switch (currentChar) {
+		    case '<' :
+		    case '>' :
+		    case '[' :
+		    case ',' :
+		        break nameLoop;
+			case '.' :
+			    buffer.append(C_DOT);
+				lastAppendedChar = C_DOT;
+			    count++;
+			    break;
+			default:
+			    if (currentChar == ' ' || ScannerHelper.isWhitespace(currentChar)) {
+			        if (lastAppendedChar == C_DOT) { // allow spaces after a dot
+			            pos = consumeWhitespace(typeName, pos, length) - 1; // will be incremented
+			            break; 
+			        }
+			        // allow spaces before a dot
+				    int checkPos = checkNextChar(typeName, '.', pos, length, true);
+				    if (checkPos > 0) {
+				        buffer.append(C_DOT);			// process dot immediately to avoid one iteration
+				        lastAppendedChar = C_DOT;
+				        count++;
+				        pos = checkPos;
+				        break;
+				    }
+				    break nameLoop;
+			    }
+			    buffer.append(currentChar);
+			    lastAppendedChar = currentChar;
+				count++;
+			    break;
+		}
+	    pos++;
+    }
+    if (count == 0) throw new IllegalArgumentException(new String(typeName));
+	return pos;
+}
+

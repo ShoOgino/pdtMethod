@@ -1,0 +1,35 @@
+// <x.y.z, a.b<c>.d<e.f>> --> <z,d<f>>
+private static void appendArgumentSimpleNames(char[] name, int start, int end, StringBuffer buffer) {
+	buffer.append('<');
+	int depth = 0;
+	int argumentStart = -1;
+	int argumentCount = 0;
+	for (int i = start; i <= end; i++) {
+		switch(name[i]) {
+			case '<' :
+				depth++;
+				if (depth == 1) {
+					argumentStart = i+1;
+				}
+				break;
+			case '>' : 
+				if (depth == 1) {
+					if (argumentCount > 0) buffer.append(',');
+					appendSimpleName(name, argumentStart, i-1, buffer);
+					argumentCount++;
+				}
+				depth--;
+				break;
+			case ',' :
+				if (depth == 1) {
+					if (argumentCount > 0) buffer.append(',');
+					appendSimpleName(name, argumentStart, i-1, buffer);
+					argumentCount++;
+					argumentStart = i+1;					
+				}
+				break;
+		}
+	}
+	buffer.append('>');
+}
+

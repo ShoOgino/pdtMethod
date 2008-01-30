@@ -1,0 +1,38 @@
+	public final CopySourceInfo createRangeCopy(ASTNode parent, StructuralPropertyDescriptor childProperty, ASTNode first, ASTNode last, boolean isMove, ASTNode internalPlaceholder, ASTNode replacingNode, TextEditGroup editGroup) {
+		CopySourceInfo copyInfo= createCopySourceInfo(null, internalPlaceholder, isMove);
+		internalPlaceholder.setProperty(INTERNAL_PLACEHOLDER_PROPERTY, internalPlaceholder);
+		
+		NodeRangeInfo copyRangeInfo= new NodeRangeInfo(parent, childProperty, first, last, copyInfo, replacingNode, editGroup);
+		
+		ListRewriteEvent listEvent= getListEvent(parent, childProperty, true);
+		
+		int indexFirst= listEvent.getIndex(first, ListRewriteEvent.OLD);
+		if (indexFirst == -1) {
+			throw new IllegalArgumentException("Start node is not a original child of the given list"); //$NON-NLS-1$
+		}
+		int indexLast= listEvent.getIndex(last, ListRewriteEvent.OLD);
+		if (indexLast == -1) {
+			throw new IllegalArgumentException("End node is not a original child of the given list"); //$NON-NLS-1$
+		}
+
+		if (indexFirst > indexLast) {
+			throw new IllegalArgumentException("Start node must be before end node"); //$NON-NLS-1$
+		}
+		
+		if (this.nodeRangeInfos == null) {
+			this.nodeRangeInfos= new HashMap();
+		}
+		PropertyLocation loc= new PropertyLocation(parent, childProperty);
+		List innerList= (List) this.nodeRangeInfos.get(loc);
+		if (innerList == null) {
+			innerList= new ArrayList(2);
+			this.nodeRangeInfos.put(loc, innerList);
+		} else {
+			assertNoOverlap(listEvent, indexFirst, indexLast, innerList);
+		}
+		innerList.add(copyRangeInfo);
+		
+		
+		return copyInfo;
+	}
+

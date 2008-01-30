@@ -1,0 +1,48 @@
+	/**
+	 * Scans the given string for a class type signature starting at the given
+	 * index and returns the index of the last character.
+	 * <pre>
+	 * ClassTypeSignature:
+	 *     { <b>L</b> | <b>Q</b> } Identifier
+	 *           { { <b>/</b> | <b>.</b> Identifier [ <b>&lt;</b> TypeArgumentSignature* <b>&gt;</b> ] }
+	 *           <b>;</b>
+	 * </pre>
+	 * Note that although all "/"-identifiers most come before "."-identifiers,
+	 * there is no syntactic ambiguity. This method will accept them without
+	 * complaint.
+	 * 
+	 * @param string the signature string
+	 * @param start the 0-based character index of the first character
+	 * @return the 0-based character index of the last character
+	 * @exception IllegalArgumentException if this is not a class type signature
+	 */
+	public static int scanClassTypeSignature(char[] string, int start) {
+		// need a minimum 3 chars "Lx;"
+		if (start >= string.length - 2) { 
+			throw new IllegalArgumentException();
+		}
+		// must start in "L" or "Q"
+		char c = string[start];
+		if (c != Signature.C_RESOLVED && c != Signature.C_UNRESOLVED) {
+			return -1;
+		}
+		int p = start + 1;
+		while (true) {
+			if (p >= string.length) {
+				throw new IllegalArgumentException();
+			}
+			c = string[p];
+			if (c == Signature.C_SEMICOLON) {
+				// all done
+				return p;
+			} else if (c == Signature.C_GENERIC_START) {
+				int e = scanTypeArgumentSignatures(string, p);
+				p = e;
+			} else if (c == Signature.C_DOT || c == '/') {
+				int id = scanIdentifier(string, p + 1);
+				p = id;
+			}
+			p++;
+		}
+	}
+

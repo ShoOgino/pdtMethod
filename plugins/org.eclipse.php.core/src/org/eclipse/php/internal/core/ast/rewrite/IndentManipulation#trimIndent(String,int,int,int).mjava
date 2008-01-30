@@ -1,0 +1,68 @@
+	/**
+	 * Removes the given number of indentation units from a given line. If the line 
+	 * has less than the given indent, all the available indentation is removed.
+	 * If <code>indentsToRemove <= 0</code> the line is returned.
+	 *
+	 * @param line the line to trim
+	 * @param tabWidth the width of one tab in space equivalents
+	 * @param indentWidth the width of one indentation unit in space equivalents
+	 * @return the trimmed string
+	 * @exception IllegalArgumentException if:
+	 * <ul>
+	 * <li>the given <code>indentWidth</code> is lower or equals to zero</li>
+	 * <li>the given <code>tabWidth</code> is lower than zero</li>
+	 * <li>the given <code>line</code> is null</li>
+	 * </ul>
+	 */
+	public static String trimIndent(String line, int indentUnitsToRemove, int tabWidth, int indentWidth) {
+		if (tabWidth < 0 || indentWidth <= 0 || line == null) {
+			throw new IllegalArgumentException();
+		}
+		
+		if (indentUnitsToRemove <= 0)
+			return line;
+
+		final int spaceEquivalentsToRemove= indentUnitsToRemove * indentWidth;
+		
+		int start= 0;
+		int spaceEquivalents= 0;
+		int size= line.length();
+		String prefix= null;
+		for (int i= 0; i < size; i++) {
+			char c= line.charAt(i);
+			if (c == '\t') {
+				int remainder= spaceEquivalents % tabWidth;
+				spaceEquivalents += tabWidth - remainder;
+			} else if (isIndentChar(c)) {
+				spaceEquivalents++;
+			} else {
+				// Assert.isTrue(false, "Line does not have requested number of indents");
+				start= i;
+				break; 
+			}
+			if (spaceEquivalents == spaceEquivalentsToRemove) {
+				start= i + 1;
+				break;
+			}
+			if (spaceEquivalents > spaceEquivalentsToRemove) {
+				// can happen if tabSize > indentSize, e.g tabsize==8, indent==4, indentsToRemove==1, line prefixed with one tab
+				// this implements the third option
+				start= i + 1; // remove the tab
+				// and add the missing spaces
+				char[] missing= new char[spaceEquivalents - spaceEquivalentsToRemove];
+				Arrays.fill(missing, ' ');
+				prefix= new String(missing);
+				break;
+			}
+		}
+		String trimmed;
+		if (start == size)
+			trimmed= "";
+		else
+			trimmed= line.substring(start);
+		
+		if (prefix == null)
+			return trimmed;
+		return prefix + trimmed;
+	}
+

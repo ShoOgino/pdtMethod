@@ -1,5 +1,26 @@
-	public void preCloneNodeEvent(ASTNode node) {
-		// TODO Auto-generated method stub
-		
+	/**
+	 * Reports that the given node is about to be cloned.
+	 *
+	 * @param node the node to be cloned
+	 * @since 3.0
+	 */
+	void preCloneNodeEvent(ASTNode node) {
+		synchronized (this.internalASTLock) {
+			// guard against concurrent access by a reader doing lazy init
+			if (this.disableEvents > 0) {
+				// doing lazy init OR already processing an event
+				// System.out.println("[BOUNCE CLONE]");
+				return;
+			} else {
+				disableEvents();
+			}
+		}
+		try {
+			this.eventHandler.preCloneNodeEvent(node);
+			// N.B. even if event handler blows up, the AST is not
+			// corrupted since node has already been changed
+		} finally {
+			reenableEvents();
+		}
 	}
 

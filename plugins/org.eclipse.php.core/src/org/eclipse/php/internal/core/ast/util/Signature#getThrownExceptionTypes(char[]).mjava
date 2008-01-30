@@ -1,0 +1,44 @@
+/**
+ * Extracts the thrown exception type signatures from the given method signature if any
+ * The method signature is expected to be dot-based.
+ *
+ * @param methodSignature the method signature
+ * @return the list of thrown exception type signatures
+ * @exception IllegalArgumentException if the signature is syntactically
+ *   incorrect
+ *
+ * @since 3.1
+ */
+public static char[][] getThrownExceptionTypes(char[] methodSignature) throws IllegalArgumentException {
+	// skip type parameters
+	int exceptionStart = CharOperation.indexOf(C_EXCEPTION_START, methodSignature);
+	if (exceptionStart == -1) {
+		int paren = CharOperation.lastIndexOf(C_PARAM_END, methodSignature);
+		if (paren == -1) {
+			throw new IllegalArgumentException();
+		}
+		// ignore return type
+		exceptionStart = Util.scanTypeSignature(methodSignature, paren+1) + 1;
+		int length = methodSignature.length;
+		if (exceptionStart == length) return CharOperation.NO_CHAR_CHAR;
+		throw new IllegalArgumentException();
+	}
+	int length = methodSignature.length;
+	int i = exceptionStart;
+	ArrayList exceptionList = new ArrayList(1);
+	while (i < length) {
+		if (methodSignature[i] == C_EXCEPTION_START) {
+			exceptionStart++;
+			i++;
+		} else {
+			throw new IllegalArgumentException();			
+		}
+		i = Util.scanTypeSignature(methodSignature, i) + 1;
+		exceptionList.add(CharOperation.subarray(methodSignature, exceptionStart,i));	
+		exceptionStart = i;
+	}
+	char[][] result;
+	exceptionList.toArray(result = new char[exceptionList.size()][]);
+	return result;
+}
+

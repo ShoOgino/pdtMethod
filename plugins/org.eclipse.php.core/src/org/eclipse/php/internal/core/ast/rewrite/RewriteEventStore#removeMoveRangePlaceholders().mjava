@@ -1,0 +1,19 @@
+	private void removeMoveRangePlaceholders() {
+		for (Iterator iter= this.nodeRangeInfos.entrySet().iterator(); iter.hasNext();) {
+			Map.Entry entry= (Map.Entry) iter.next();
+			Set placeholders= new HashSet(); // collect all placeholders
+			List rangeInfos= (List) entry.getValue(); // list of CopySourceRange
+			for (int i= 0; i < rangeInfos.size(); i++) {
+				placeholders.add(((NodeRangeInfo) rangeInfos.get(i)).getInternalPlaceholder());
+			}
+			
+			PropertyLocation loc= (PropertyLocation) entry.getKey();
+			
+			RewriteEvent[] children= getListEvent(loc.getParent(), loc.getProperty(), true).getChildren();
+			List revertedChildren= new ArrayList();
+			revertListWithRanges(children, placeholders, revertedChildren);
+			RewriteEvent[] revertedChildrenArr= (RewriteEvent[]) revertedChildren.toArray(new RewriteEvent[revertedChildren.size()]);
+			addEvent(loc.getParent(), loc.getProperty(), new ListRewriteEvent(revertedChildrenArr)); // replace the current edits
+		}	
+	}
+

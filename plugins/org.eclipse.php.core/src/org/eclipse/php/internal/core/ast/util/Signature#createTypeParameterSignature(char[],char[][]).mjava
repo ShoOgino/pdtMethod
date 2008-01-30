@@ -1,0 +1,31 @@
+/**
+ * Creates a new type parameter signature with the given name and bounds.
+ *
+ * @param typeParameterName the type parameter name
+ * @param boundSignatures the signatures of associated bounds or empty array if none
+ * @return the encoded type parameter signature
+ * 
+ * @since 3.1
+ */
+public static char[] createTypeParameterSignature(char[] typeParameterName, char[][] boundSignatures) {
+	int length = boundSignatures.length;
+	if (length == 0) {
+		return CharOperation.append(typeParameterName, C_COLON); // param signature with no bounds still gets trailing colon
+	}
+	int boundsSize = 0;
+	for (int i = 0; i < length; i++) {
+		boundsSize += boundSignatures[i].length + 1;
+	}
+	int nameLength = typeParameterName.length;
+	char[] result = new char[nameLength + boundsSize];
+	System.arraycopy(typeParameterName, 0, result, 0, nameLength);
+	int index = nameLength;
+	for (int i = 0; i < length; i++) {
+		result[index++] = C_COLON;
+		int boundLength = boundSignatures[i].length;
+		System.arraycopy(boundSignatures[i], 0, result, index, boundLength);
+		index += boundLength;
+	}
+	return result;
+}
+

@@ -1,0 +1,37 @@
+	public static char[] getResourceContentsAsCharArray(IFile file, String encoding) throws ModelException {		
+		// Get file length
+		// workaround https://bugs.eclipse.org/bugs/show_bug.cgi?id=130736 by using java.io.File if possible
+		IPath location = file.getLocation();
+		long length;
+		if (location == null) {
+			// non local file
+			try {
+				length = EFS.getStore(file.getLocationURI()).fetchInfo().getLength();
+			} catch (CoreException e) {
+				throw new ModelException(e);
+			}
+		} else {
+			// local file
+			length = location.toFile().length();
+		}
+		
+		// Get resource contents
+		InputStream stream= null;
+		try {
+			stream = file.getContents(true);
+		} catch (CoreException e) {
+			throw new ModelException(e, IModelStatusConstants.ELEMENT_DOES_NOT_EXIST);
+		}
+		try {
+			return org.eclipse.dltk.compiler.util.Util.getInputStreamAsCharArray(stream, (int) length, encoding);
+		} catch (IOException e) {
+			throw new ModelException(e, IModelStatusConstants.IO_EXCEPTION);
+		} finally {
+			try {
+				stream.close();
+			} catch (IOException e) {
+				// ignore
+			}
+		}
+	}
+

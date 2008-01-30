@@ -1,0 +1,35 @@
+	/**
+	 * Extracts the parameter types from a method signature.
+	 */
+	public static String[] extractParameterTypes(char[] sig) {
+		int count = getParameterCount(sig);
+		String[] result = new String[count];
+		if (count == 0)
+			return result;
+		int i = CharOperation.indexOf('(', sig) + 1;
+		count = 0;
+		int len = sig.length;
+		int start = i;
+		for (;;) {
+			if (i == len)
+				break;
+			char c = sig[i];
+			if (c == ')')
+				break;
+			if (c == '[') {
+				++i;
+			} else
+				if (c == 'L') {
+					i = CharOperation.indexOf(';', sig, i + 1) + 1;
+					Assert.isTrue(i != 0);
+					result[count++] = convertTypeSignature(sig, start, i - start);
+					start = i;
+				} else {
+					++i;
+					result[count++] = convertTypeSignature(sig, start, i - start);
+					start = i;
+				}
+		}
+		return result;
+	}
+

@@ -1,0 +1,31 @@
+/**
+ * Creates a new type signature from the given type name encoded as a character
+ * array. The type name may contain primitive types or array types or parameterized types.
+ * This method is equivalent to
+ * <code>createTypeSignature(new String(typeName),isResolved).toCharArray()</code>,
+ * although more efficient for callers with character arrays rather than strings.
+ * If the type name is qualified, then it is expected to be dot-based.
+ *
+ * @param typeName the possibly qualified type name
+ * @param isResolved <code>true</code> if the type name is to be considered
+ *   resolved (for example, a type name from a binary class file), and 
+ *   <code>false</code> if the type name is to be considered unresolved
+ *   (for example, a type name found in source code)
+ * @return the encoded type signature
+ * @see #createTypeSignature(java.lang.String,boolean)
+ * 
+ * @since 2.0
+ */
+public static char[] createCharArrayTypeSignature(char[] typeName, boolean isResolved) {
+	if (typeName == null) throw new IllegalArgumentException("null"); //$NON-NLS-1$
+	int length = typeName.length;
+	if (length == 0) throw new IllegalArgumentException(new String(typeName));
+	StringBuffer buffer = new StringBuffer(5);
+	int pos = encodeTypeSignature(typeName, 0, isResolved, length, buffer);
+	pos = consumeWhitespace(typeName, pos, length);
+	if (pos < length) throw new IllegalArgumentException(new String(typeName));
+	char[] result = new char[length = buffer.length()];
+	buffer.getChars(0, length, result, 0);
+	return result;	
+}
+

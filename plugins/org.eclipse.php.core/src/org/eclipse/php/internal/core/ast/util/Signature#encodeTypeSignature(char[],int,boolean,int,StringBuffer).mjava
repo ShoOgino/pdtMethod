@@ -1,0 +1,141 @@
+private static int encodeTypeSignature(char[] typeName, int start, boolean isResolved, int length, StringBuffer buffer) {
+    int pos = start;
+    pos = consumeWhitespace(typeName, pos, length);
+    if (pos >= length) throw new IllegalArgumentException(new String(typeName));
+    int checkPos;
+    char currentChar = typeName[pos];
+    switch (currentChar) {
+		// primitive type?
+		case 'b' :
+		    checkPos = checkName(BOOLEAN, typeName, pos, length);
+		    if (checkPos > 0) {
+		        pos = encodeArrayDimension(typeName, checkPos, length, buffer);
+			    buffer.append(C_BOOLEAN);
+			    return pos;
+			} 
+		    checkPos = checkName(BYTE, typeName, pos, length);
+		    if (checkPos > 0) {
+		        pos = encodeArrayDimension(typeName, checkPos, length, buffer);
+			    buffer.append(C_BYTE);
+			    return pos;
+			}
+		    break;
+		case 'd':
+		    checkPos = checkName(DOUBLE, typeName, pos, length);
+		    if (checkPos > 0) {
+		        pos = encodeArrayDimension(typeName, checkPos, length, buffer);
+			    buffer.append(C_DOUBLE);
+			    return pos;
+			} 
+		    break;
+		case 'f':
+		    checkPos = checkName(FLOAT, typeName, pos, length);
+		    if (checkPos > 0) {
+		        pos = encodeArrayDimension(typeName, checkPos, length, buffer);
+			    buffer.append(C_FLOAT);
+			    return pos;
+			} 
+		    break;
+		case 'i':
+		    checkPos = checkName(INT, typeName, pos, length);
+		    if (checkPos > 0) {
+		        pos = encodeArrayDimension(typeName, checkPos, length, buffer);
+			    buffer.append(C_INT);
+			    return pos;
+			} 
+		    break;
+		case 'l':
+		    checkPos = checkName(LONG, typeName, pos, length);
+		    if (checkPos > 0) {
+		        pos = encodeArrayDimension(typeName, checkPos, length, buffer);
+			    buffer.append(C_LONG);
+			    return pos;
+			} 
+		    break;
+		case 's':
+		    checkPos = checkName(SHORT, typeName, pos, length);
+		    if (checkPos > 0) {
+		        pos = encodeArrayDimension(typeName, checkPos, length, buffer);
+			    buffer.append(C_SHORT);
+			    return pos;
+			} 
+		    break;
+		case 'v':
+		    checkPos = checkName(VOID, typeName, pos, length);
+		    if (checkPos > 0) {
+		        pos = encodeArrayDimension(typeName, checkPos, length, buffer);
+			    buffer.append(C_VOID);
+			    return pos;
+			}
+		    break;
+		case 'c':
+		    checkPos = checkName(CHAR, typeName, pos, length);
+		    if (checkPos > 0) {
+		        pos = encodeArrayDimension(typeName, checkPos, length, buffer);
+			    buffer.append(C_CHAR);
+			    return pos;
+			} else {
+				checkPos = checkName(CAPTURE, typeName, pos, length);
+				if (checkPos > 0) {
+					pos = consumeWhitespace(typeName, checkPos, length);
+					if (typeName[pos] != '?') {
+						break;
+					}
+				} else {
+					break;
+				}
+			}
+			buffer.append(C_CAPTURE);
+			// fall-thru for wildcard part of capture typecheckPos
+		case '?':
+			// wildcard
+			pos = consumeWhitespace(typeName, pos+1, length);
+			checkPos = checkName(EXTENDS, typeName, pos, length);
+			if (checkPos > 0) {
+				buffer.append(C_EXTENDS);
+				pos = encodeTypeSignature(typeName, checkPos, isResolved, length, buffer);
+				return pos;
+			}
+			checkPos = checkName(SUPER, typeName, pos, length);
+			if (checkPos > 0) {
+				buffer.append(C_SUPER);
+				pos = encodeTypeSignature(typeName, checkPos, isResolved, length, buffer);
+				return pos;
+			}
+			buffer.append(C_STAR);
+			return pos;
+    }		    
+    // non primitive type
+    checkPos = checkArrayDimension(typeName, pos, length);
+	int end;
+	if (checkPos > 0) {
+	    end = encodeArrayDimension(typeName, checkPos, length, buffer);
+	} else {
+	    end = -1;
+	}
+	buffer.append(isResolved ? C_RESOLVED : C_UNRESOLVED);
+	while (true) { // loop on qualifiedName[<args>][.qualifiedName[<args>]*
+	    pos = encodeQualifiedName(typeName, pos, length, buffer);
+		checkPos = checkNextChar(typeName, '<', pos, length, true);
+		if (checkPos > 0) {
+			buffer.append(C_GENERIC_START);
+		    pos = encodeTypeSignature(typeName, checkPos, isResolved, length, buffer);
+		    while ((checkPos = checkNextChar(typeName, ',', pos, length, true)) > 0) {
+			    pos = encodeTypeSignature(typeName, checkPos, isResolved, length, buffer);
+		    }
+		    pos = checkNextChar(typeName, '>', pos, length, false);
+			buffer.append(C_GENERIC_END);
+		}
+		checkPos = checkNextChar(typeName, '.', pos, length, true);
+		if (checkPos > 0) {
+			buffer.append(C_DOT);
+			pos = checkPos;
+		} else {
+			break;
+		}
+	}
+	buffer.append(C_NAME_END);
+	if (end > 0) pos = end; // skip array dimension which were preprocessed
+    return pos;
+}
+

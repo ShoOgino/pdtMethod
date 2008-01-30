@@ -1,0 +1,45 @@
+/**
+ * Extracts the type erasure signature from the given parameterized type signature.
+ * Returns the given type signature if it is not parameterized.
+ * 
+ * @param parameterizedTypeSignature the parameterized type signature
+ * @return the signature of the type erasure
+ * @exception IllegalArgumentException if the signature is syntactically
+ *   incorrect
+ * 
+ * @since 3.1
+ */
+public static char[] getTypeErasure(char[] parameterizedTypeSignature) throws IllegalArgumentException {
+	int end = CharOperation.indexOf(C_GENERIC_START, parameterizedTypeSignature);
+	if (end == -1) return parameterizedTypeSignature;
+	int length = parameterizedTypeSignature.length;
+	char[] result = new char[length];
+	int pos = 0;
+	int start = 0;
+	int deep= 0;
+	for (int idx=end; idx<length; idx++) {
+		switch (parameterizedTypeSignature[idx]) {
+			case C_GENERIC_START:
+				if (deep == 0) {
+					int size = idx-start;
+					System.arraycopy(parameterizedTypeSignature, start, result, pos, size);
+					end = idx;
+					pos += size;
+				}
+				deep++;
+				break;
+			case C_GENERIC_END:
+				deep--;
+				if (deep < 0) throw new IllegalArgumentException();
+				if (deep == 0) start = idx+1;
+				break;
+		}
+	}
+	if (deep > 0) throw new IllegalArgumentException();
+	int size = pos+length-start;
+	char[] resized = new char[size];
+	System.arraycopy(result, 0, resized, 0, pos);
+	System.arraycopy(parameterizedTypeSignature, start, resized, pos, length-start);
+	return resized;
+}
+

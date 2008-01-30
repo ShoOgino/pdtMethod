@@ -1,0 +1,14 @@
+	private void prepareNodeRangeCopies(TargetSourceRangeComputer sourceRangeComputer) {
+		for (Iterator iter= this.nodeRangeInfos.entrySet().iterator(); iter.hasNext();) {
+			Map.Entry entry= (Map.Entry) iter.next();
+			List rangeInfos= (List) entry.getValue(); // list of CopySourceRange
+			Collections.sort(rangeInfos); // sort by start index, length, move or copy
+			
+			PropertyLocation loc= (PropertyLocation) entry.getKey();
+			RewriteEvent[] children= getListEvent(loc.getParent(), loc.getProperty(), true).getChildren();
+			
+			RewriteEvent[] newChildren= processListWithRanges(rangeInfos, children, sourceRangeComputer);
+			addEvent(loc.getParent(), loc.getProperty(), new ListRewriteEvent(newChildren)); // replace the current edits
+		}		
+	}
+

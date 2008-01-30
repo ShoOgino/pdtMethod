@@ -1,0 +1,36 @@
+	/**
+	 * Returns the string accumulated in the visit formatted using the default formatter.
+	 * Updates the existing node's positions.
+	 *
+	 * @param node The node to flatten.
+	 * @param initialIndentationLevel The initial indentation level.
+	 * @param resultingMarkers Resulting the updated NodeMarkers.
+	 * @return Returns the serialized and formatted code.
+	 */	
+	public String getFormattedResult(ASTNode node, int initialIndentationLevel, Collection resultingMarkers) {
+		
+		ExtendedFlattener flattener= new ExtendedFlattener(this.eventStore);
+		node.accept(flattener);
+
+		NodeMarker[] markers= flattener.getMarkers();
+		for (int i= 0; i < markers.length; i++) {
+			resultingMarkers.add(markers[i]); // add to result
+		}		
+		
+		String unformatted= flattener.getResult();
+		TextEdit edit= formatNode(node, unformatted, initialIndentationLevel);
+		if (edit == null) {
+		    if (initialIndentationLevel > 0) {
+		        // at least correct the indent
+		        String indentString = createIndentString(initialIndentationLevel);
+				ReplaceEdit[] edits = IndentManipulation.getChangeIndentEdits(unformatted, 0, this.tabWidth, this.indentWidth, indentString);
+				edit= new MultiTextEdit();
+				edit.addChild(new InsertEdit(0, indentString));
+				edit.addChildren(edits);
+		    } else {
+		       return unformatted;
+		    }
+		}
+		return evaluateFormatterEdit(unformatted, edit, markers);
+	}
+

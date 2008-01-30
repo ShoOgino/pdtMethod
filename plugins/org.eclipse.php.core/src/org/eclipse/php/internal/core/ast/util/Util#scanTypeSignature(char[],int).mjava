@@ -1,0 +1,51 @@
+	/**
+	 * Scans the given string for a type signature starting at the given index
+	 * and returns the index of the last character.
+	 * <pre>
+	 * TypeSignature:
+	 *  |  BaseTypeSignature
+	 *  |  ArrayTypeSignature
+	 *  |  ClassTypeSignature
+	 *  |  TypeVariableSignature
+	 * </pre>
+	 * 
+	 * @param string the signature string
+	 * @param start the 0-based character index of the first character
+	 * @return the 0-based character index of the last character
+	 * @exception IllegalArgumentException if this is not a type signature
+	 */
+	public static int scanTypeSignature(char[] string, int start) {
+		// need a minimum 1 char
+		if (start >= string.length) {
+			throw new IllegalArgumentException();
+		}
+		char c = string[start];
+		switch (c) {
+			case Signature.C_ARRAY :
+				return scanArrayTypeSignature(string, start);
+			case Signature.C_RESOLVED :
+			case Signature.C_UNRESOLVED :
+				return scanClassTypeSignature(string, start);
+			case Signature.C_TYPE_VARIABLE :
+				return scanTypeVariableSignature(string, start);
+			case Signature.C_BOOLEAN :
+			case Signature.C_BYTE :
+			case Signature.C_CHAR :
+			case Signature.C_DOUBLE :
+			case Signature.C_FLOAT :
+			case Signature.C_INT :
+			case Signature.C_LONG :
+			case Signature.C_SHORT :
+			case Signature.C_VOID :
+				return scanBaseTypeSignature(string, start);
+			case Signature.C_CAPTURE :
+				return scanCaptureTypeSignature(string, start);
+			case Signature.C_EXTENDS:
+			case Signature.C_SUPER:
+			case Signature.C_STAR:
+				return scanTypeBoundSignature(string, start);
+			default :
+				throw new IllegalArgumentException();
+		}
+	}
+

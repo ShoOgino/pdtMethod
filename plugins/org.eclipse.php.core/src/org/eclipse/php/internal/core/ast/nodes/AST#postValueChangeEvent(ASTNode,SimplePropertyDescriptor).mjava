@@ -1,5 +1,29 @@
-	public void postValueChangeEvent(ASTNode node, SimplePropertyDescriptor property) {
-		// TODO Auto-generated method stub
-		
+	/**
+	 * Reports that the given node has just changed the value of a
+	 * non-child property.
+	 *
+	 * @param node the node that was modified
+	 * @param property the property descriptor
+	 * @since 3.0
+	 */
+	void postValueChangeEvent(ASTNode node, SimplePropertyDescriptor property) {
+		// IMPORTANT: this method is called by readers during lazy init
+		synchronized (this.internalASTLock) {
+			// guard against concurrent access by a reader doing lazy init
+			if (this.disableEvents > 0) {
+				// doing lazy init OR already processing an event
+				// System.out.println("[BOUNCE CHANGE]");
+				return;
+			} else {
+				disableEvents();
+			}
+		}
+		try {
+			this.eventHandler.postValueChangeEvent(node, property);
+			// N.B. even if event handler blows up, the AST is not
+			// corrupted since node has already been changed
+		} finally {
+			reenableEvents();
+		}
 	}
 

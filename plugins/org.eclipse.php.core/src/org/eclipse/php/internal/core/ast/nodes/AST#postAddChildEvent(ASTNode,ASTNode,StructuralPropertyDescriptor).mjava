@@ -1,5 +1,29 @@
-	public void postAddChildEvent(ASTNode node, ASTNode newChild, StructuralPropertyDescriptor property) {
-		// TODO Auto-generated method stub
-		
+	/**
+	 * Reports that the given node has just gained a child.
+	 *
+	 * @param node the node that was modified
+	 * @param child the node that was added as a child
+	 * @param property the child or child list property descriptor
+	 * @since 3.0
+	 */
+	void postAddChildEvent(ASTNode node, ASTNode child, StructuralPropertyDescriptor property) {
+		// IMPORTANT: this method is called by readers during lazy init
+		synchronized (this.internalASTLock) {
+			// guard against concurrent access by a reader doing lazy init
+			if (this.disableEvents > 0) {
+				// doing lazy init OR already processing an event
+				// System.out.println("[BOUNCE ADD]");
+				return;
+			} else {
+				disableEvents();
+			}
+		}
+		try {
+			this.eventHandler.postAddChildEvent(node, child, property);
+			// N.B. even if event handler blows up, the AST is not
+			// corrupted since node has already been changed
+		} finally {
+			reenableEvents();
+		}
 	}
 

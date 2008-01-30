@@ -1,0 +1,26 @@
+	/**
+	 * Evaluates the edit on the given string.
+	 * @param string The string to format
+	 * @param edit The edit resulted from the code formatter
+	 * @param positions Positions to update or <code>null</code>.
+	 * @return The formatted string
+	 * @throws IllegalArgumentException If the positions are not inside the string, a
+	 *  IllegalArgumentException is thrown.
+	 */
+	public static String evaluateFormatterEdit(String string, TextEdit edit, Position[] positions) {
+		try {
+			Document doc= createDocument(string, positions);
+			edit.apply(doc, 0);
+			if (positions != null) {
+				for (int i= 0; i < positions.length; i++) {
+					Assert.isTrue(!positions[i].isDeleted, "Position got deleted"); //$NON-NLS-1$
+				}
+			}
+			return doc.get();
+		} catch (BadLocationException e) {
+			//JavaPlugin.log(e); // bug in the formatter
+			Assert.isTrue(false, "Fromatter created edits with wrong positions: " + e.getMessage()); //$NON-NLS-1$
+		}
+		return null;
+	}
+

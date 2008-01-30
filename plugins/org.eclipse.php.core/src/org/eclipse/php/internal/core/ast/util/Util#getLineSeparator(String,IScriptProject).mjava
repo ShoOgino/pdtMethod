@@ -1,0 +1,35 @@
+	/**
+	 * Returns the line separator found in the given text.
+	 * If it is null, or not found return the line delimitor for the given project.
+	 * If the project is null, returns the line separator for the workspace.
+	 * If still null, return the system line separator.
+	 */
+	public static String getLineSeparator(String text, IScriptProject project) {
+		String lineSeparator = null;
+		
+		// line delimiter in given text
+		if (text != null && text.length() != 0) {
+			lineSeparator = findLineSeparator(text.toCharArray());
+			if (lineSeparator != null)
+				return lineSeparator;
+		}
+		
+		// line delimiter in project preference
+		IScopeContext[] scopeContext;
+		if (project != null) {
+			scopeContext= new IScopeContext[] { new ProjectScope(project.getProject()) };
+			lineSeparator= Platform.getPreferencesService().getString(Platform.PI_RUNTIME, Platform.PREF_LINE_SEPARATOR, null, scopeContext);
+			if (lineSeparator != null)
+				return lineSeparator;
+		}
+		
+		// line delimiter in workspace preference
+		scopeContext= new IScopeContext[] { new InstanceScope() };
+		lineSeparator = Platform.getPreferencesService().getString(Platform.PI_RUNTIME, Platform.PREF_LINE_SEPARATOR, null, scopeContext);
+		if (lineSeparator != null)
+			return lineSeparator;
+		
+		// system line delimiter
+		return org.eclipse.dltk.compiler.util.Util.LINE_SEPARATOR;
+	}
+

@@ -1,0 +1,77 @@
+	private static int appendTypeSignatureForAnchor(char[] string, int start, StringBuffer buffer, boolean isVarArgs) {
+		// need a minimum 1 char
+		if (start >= string.length) {
+			throw new IllegalArgumentException();
+		}
+		char c = string[start];
+		if (isVarArgs) {
+			switch (c) {
+				case Signature.C_ARRAY :
+					return appendArrayTypeSignatureForAnchor(string, start, buffer, true);
+				case Signature.C_RESOLVED :
+				case Signature.C_TYPE_VARIABLE :
+				case Signature.C_BOOLEAN :
+				case Signature.C_BYTE :
+				case Signature.C_CHAR :
+				case Signature.C_DOUBLE :
+				case Signature.C_FLOAT :
+				case Signature.C_INT :
+				case Signature.C_LONG :
+				case Signature.C_SHORT :
+				case Signature.C_VOID :
+				case Signature.C_STAR:
+				case Signature.C_EXTENDS:
+				case Signature.C_SUPER:
+				case Signature.C_CAPTURE:
+				default:
+					throw new IllegalArgumentException(); // a var args is an array type
+			}
+		} else {
+			switch (c) {
+				case Signature.C_ARRAY :
+					return appendArrayTypeSignatureForAnchor(string, start, buffer, false);
+				case Signature.C_RESOLVED :
+					return appendClassTypeSignatureForAnchor(string, start, buffer);
+				case Signature.C_TYPE_VARIABLE :
+					int e = Util.scanTypeVariableSignature(string, start);
+					buffer.append(string, start + 1, e - start - 1);
+					return e;
+				case Signature.C_BOOLEAN :
+					buffer.append(BOOLEAN);
+					return start;
+				case Signature.C_BYTE :
+					buffer.append(BYTE);
+					return start;
+				case Signature.C_CHAR :
+					buffer.append(CHAR);
+					return start;
+				case Signature.C_DOUBLE :
+					buffer.append(DOUBLE);
+					return start;
+				case Signature.C_FLOAT :
+					buffer.append(FLOAT);
+					return start;
+				case Signature.C_INT :
+					buffer.append(INT);
+					return start;
+				case Signature.C_LONG :
+					buffer.append(LONG);
+					return start;
+				case Signature.C_SHORT :
+					buffer.append(SHORT);
+					return start;
+				case Signature.C_VOID :
+					buffer.append(VOID);
+					return start;
+				case Signature.C_CAPTURE :
+					return appendCaptureTypeSignatureForAnchor(string, start, buffer);
+				case Signature.C_STAR:
+				case Signature.C_EXTENDS:
+				case Signature.C_SUPER:
+					return appendTypeArgumentSignatureForAnchor(string, start, buffer);
+				default :
+					throw new IllegalArgumentException();
+			}
+		}
+	}
+

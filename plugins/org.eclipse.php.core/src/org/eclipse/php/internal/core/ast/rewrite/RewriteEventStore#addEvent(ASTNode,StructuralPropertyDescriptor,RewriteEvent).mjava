@@ -1,0 +1,26 @@
+	public void addEvent(ASTNode parent, StructuralPropertyDescriptor childProperty, RewriteEvent event) {
+		validateHasChildProperty(parent, childProperty);
+		
+		if (event.isListRewrite()) {
+			validateIsListProperty(childProperty);
+		}
+		
+		EventHolder holder= new EventHolder(parent, childProperty, event);
+		
+		List entriesList = (List) this.eventLookup.get(parent);
+		if (entriesList != null) {
+			for (int i= 0; i < entriesList.size(); i++) {
+				EventHolder curr= (EventHolder) entriesList.get(i);
+				if (curr.childProperty == childProperty) {
+					entriesList.set(i, holder);
+					this.lastEvent= null;
+					return;
+				}
+			}
+		} else {
+			entriesList= new ArrayList(3);
+			this.eventLookup.put(parent, entriesList);
+		}
+		entriesList.add(holder);
+	}
+

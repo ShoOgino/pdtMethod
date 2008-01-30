@@ -1,0 +1,45 @@
+/**
+ * Scans the given string for a list of type arguments signature starting at the
+ * given index and appends it to the given buffer, and returns the index of the
+ * last character.
+ * 
+ * @param string the signature string
+ * @param start the 0-based character index of the first character
+ * @param fullyQualifyTypeNames <code>true</code> if type names should be fully
+ *   qualified, and <code>false</code> to use only simple names
+ * @param buffer the string buffer to append to
+ * @return the 0-based character index of the last character
+ * @exception IllegalArgumentException if this is not a list of type argument
+ * signatures
+ * @see Util#scanTypeArgumentSignatures(char[], int)
+ */
+private static int appendTypeArgumentSignatures(char[] string, int start, boolean fullyQualifyTypeNames, StringBuffer buffer) {
+	// need a minimum 2 char "<>"
+	if (start >= string.length - 1) {
+		throw new IllegalArgumentException();
+	}
+	char c = string[start];
+	if (c != C_GENERIC_START) {
+		throw new IllegalArgumentException();
+	}
+	buffer.append('<');
+	int p = start + 1;
+	int count = 0;
+	while (true) {
+		if (p >= string.length) {
+			throw new IllegalArgumentException();
+		}
+		c = string[p];
+		if (c == C_GENERIC_END) {
+			buffer.append('>');
+			return p;
+		}
+		if (count != 0) {
+			buffer.append(',');
+		}
+		int e = appendTypeArgumentSignature(string, p, fullyQualifyTypeNames, buffer);
+		count++;
+		p = e + 1;
+	}
+}
+

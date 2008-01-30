@@ -1,0 +1,33 @@
+	private static char[] toAnchor(char[] methodSignature, char[] methodName, boolean isVargArgs) {
+		int firstParen = CharOperation.indexOf(Signature.C_PARAM_START, methodSignature);
+		if (firstParen == -1) {
+			throw new IllegalArgumentException();
+		}
+		
+		StringBuffer buffer = new StringBuffer(methodSignature.length + 10);
+
+		// selector
+		if (methodName != null) {
+			buffer.append(methodName);
+		}
+		
+		// parameters
+		buffer.append('(');
+		char[][] pts = Signature.getParameterTypes(methodSignature);
+		for (int i = 0, max = pts.length; i < max; i++) {
+			if (i == max - 1) {
+				appendTypeSignatureForAnchor(pts[i], 0 , buffer, isVargArgs);
+			} else {
+				appendTypeSignatureForAnchor(pts[i], 0 , buffer, false);
+			}
+			if (i != pts.length - 1) {
+				buffer.append(',');
+				buffer.append(' ');
+			}
+		}
+		buffer.append(')');
+		char[] result = new char[buffer.length()];
+		buffer.getChars(0, buffer.length(), result, 0);
+		return result;
+	}
+
