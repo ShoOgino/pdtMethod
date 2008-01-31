@@ -1,0 +1,18 @@
+	private ASTNode createTargetNode(ASTNode first, ASTNode last, boolean isMove, ASTNode replacingNode, TextEditGroup editGroup) {
+		if (first == null || last == null) {
+			throw new IllegalArgumentException();
+		}
+
+		NodeInfoStore nodeStore= this.rewriter.getNodeStore();
+		ASTNode placeholder= nodeStore.newPlaceholderNode(first.getType()); // revisit: could use list type
+		if (placeholder == null) {
+			throw new IllegalArgumentException("Creating a target node is not supported for nodes of type" + first.getClass().getName()); //$NON-NLS-1$
+		}
+		
+		Block internalPlaceHolder= nodeStore.createCollapsePlaceholder();
+		CopySourceInfo info= getRewriteStore().createRangeCopy(this.parent, this.childProperty, first, last, isMove, internalPlaceHolder, replacingNode, editGroup);
+		nodeStore.markAsCopyTarget(placeholder, info);
+		
+		return placeholder;		
+	}
+

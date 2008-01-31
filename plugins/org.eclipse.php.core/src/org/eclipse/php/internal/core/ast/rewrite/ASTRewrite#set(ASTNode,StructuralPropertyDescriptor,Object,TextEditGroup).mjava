@@ -1,0 +1,35 @@
+	/**
+	 * Sets the given property of the given node. If the given property is a child
+     * property, the value must be a replacement node that is either be brand new
+     * (not part of the original AST) or a placeholder node (for example, one
+     * created by {@link #createCopyTarget(ASTNode)}
+	 * or {@link #createStringPlaceholder(String, int)}); or it must be
+	 * <code>null</code>, indicating that the child should be deleted.
+	 * If the given property is a simple property, the value must be the new
+	 * value (primitive types must be boxed) or <code>null</code>.
+     * The AST itself is not actually modified in any way; rather, the rewriter
+     * just records a note that this node has been changed in the specified way.
+	 * 
+	 * @param node the node
+	 * @param property the node's property; either a simple property or a child property
+	 * @param value the replacement child or new value, or <code>null</code> if none
+	 * @param editGroup the edit group in which to collect the corresponding
+	 * text edits, or <code>null</code> if ungrouped
+	 * @throws IllegalArgumentException if the node or property is null, or if the node
+	 * is not part of this rewriter's AST, or if the property is not a node property,
+	 * or if the described modification is invalid
+	 */
+	public final void set(ASTNode node, StructuralPropertyDescriptor property, Object value, TextEditGroup editGroup) {
+		if (node == null || property == null) {
+			throw new IllegalArgumentException();
+		}
+		validateIsCorrectAST(node);
+		validatePropertyType(property, value);
+
+		NodeRewriteEvent nodeEvent= this.eventStore.getNodeEvent(node, property, true);
+		nodeEvent.setNewValue(value);
+		if (editGroup != null) {
+			this.eventStore.setEventEditGroup(nodeEvent, editGroup);
+		}
+	}
+

@@ -1,0 +1,24 @@
+	/**
+	 * Removes the given node from its parent in this rewriter. The AST itself
+     * is not actually modified in any way; rather, the rewriter just records
+     * a note that this node should not be there.
+	 * 
+	 * @param node the node being removed
+	 * @param editGroup the edit group in which to collect the corresponding
+	 * text edits, or <code>null</code> if ungrouped
+	 * @throws IllegalArgumentException if the node is null, or if the node is not
+	 * part of this rewriter's AST, or if the described modification is invalid
+	 * (such as removing a required node)
+	 */
+	public final void remove(ASTNode node, TextEditGroup editGroup) {
+		if (node == null) {
+			throw new IllegalArgumentException();
+		}
+		StructuralPropertyDescriptor property= node.getLocationInParent();
+		if (property.isChildListProperty()) {
+			getListRewrite(node.getParent(), (ChildListPropertyDescriptor) property).remove(node, editGroup);
+		} else {
+			set(node.getParent(), property, null, editGroup);
+		}
+	}
+
