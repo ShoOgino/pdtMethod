@@ -1,0 +1,23 @@
+	/**
+	 * This operation creates an abstract syntax tree for the given AST Factory
+	 * 
+	 * @param progressMonitor
+	 * @return Program that represents the equivalent AST 
+	 * @throws Exception - for exception occurs on the parsing step
+	 */
+	public Program createAST(IProgressMonitor progressMonitor) throws Exception {
+		if (progressMonitor == null) {
+			progressMonitor = new NullProgressMonitor();
+		}
+		
+		progressMonitor.beginTask("Creating Abstract Syntax Tree for source...", 3);
+		final Scanner lexer = this.ast.lexer();
+		final lr_parser phpParser = this.ast.parser();
+		progressMonitor.worked(1);
+		phpParser.setScanner(lexer);
+		progressMonitor.worked(2);
+		final Symbol symbol = phpParser.parse();
+		progressMonitor.done();
+		return symbol == null ? null : (Program) symbol.value;
+	}
+
