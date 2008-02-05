@@ -3,11 +3,19 @@
 		IContentAssistProcessor[] processors = null;
 
 		if (partitionType == PHPPartitionTypes.PHP_DEFAULT) {
-			ArrayList processorsList = getPHPDefaultProcessors();
+			ArrayList processorsList = getPHPProcessors(partitionType);
 			processors = new IContentAssistProcessor[processorsList.size()];
 			processorsList.toArray(processors);
 		} else {
-			processors = super.getContentAssistProcessors(sourceViewer, partitionType);
+			ArrayList<IContentAssistProcessor> phpDocProcessors = getPHPProcessors(partitionType);
+			IContentAssistProcessor[] superProcessors = super.getContentAssistProcessors(sourceViewer, partitionType);
+			if (superProcessors != null) {
+				for (IContentAssistProcessor processor : superProcessors) {
+					phpDocProcessors.add(processor);
+				}
+			}
+			processors = new IContentAssistProcessor[phpDocProcessors.size()];
+			phpDocProcessors.toArray(processors);
 		}
 		return processors;
 	}
