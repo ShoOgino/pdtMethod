@@ -1,6 +1,22 @@
 	public boolean visit(IfStatement s) throws Exception {
 		Map<String, String> parameters = createInitialParameters(s);
 		xmlWriter.startTag("IfStatement", parameters);
-		return true;
+
+		xmlWriter.startTag("Condition", new HashMap<String, String>());
+		s.getCondition().traverse(this);
+		xmlWriter.endTag("Condition");
+
+		xmlWriter.startTag("TrueStatement", new HashMap<String, String>());
+		s.getTrueStatement().traverse(this);
+		xmlWriter.endTag("TrueStatement");
+
+		Statement falseStatement = s.getFalseStatement();
+		if (falseStatement != null) {
+			xmlWriter.startTag("FalseStatement", new HashMap<String, String>());
+			falseStatement.traverse(this);
+			xmlWriter.endTag("FalseStatement");
+		}
+
+		return false;
 	}
 

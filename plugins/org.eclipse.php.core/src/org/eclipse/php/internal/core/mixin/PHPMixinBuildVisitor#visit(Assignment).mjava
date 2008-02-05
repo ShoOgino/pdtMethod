@@ -1,0 +1,17 @@
+	public boolean visit(Assignment assignment) throws Exception {
+		Expression left = assignment.getVariable();
+		if (left instanceof VariableReference) { // local variable ($a = ...)
+			reportVariableDeclaration((VariableReference) left);
+		} else if (left instanceof FieldAccess) { // class variable ($this->a)
+			FieldAccess fieldAccess = (FieldAccess) left;
+			Expression dispatcher = fieldAccess.getDispatcher();
+			if (dispatcher instanceof VariableReference && "$this".equals(((VariableReference) dispatcher).getName())) { //$NON-NLS-1$
+				Expression field = fieldAccess.getField();
+				if (field instanceof SimpleReference) {
+					reportVariableDeclaration((SimpleReference) field);
+				}
+			}
+		}
+		return true;
+	}
+

@@ -1,0 +1,26 @@
+	private void processStatement(ASTNode node) {
+		if (node instanceof FieldDeclaration) {
+			getPatternLocator().match((FieldDeclaration) node, getNodeSet());
+		} else if (node instanceof ClassConstantDeclaration) {
+			ClassConstantDeclaration constDecl = (ClassConstantDeclaration) node;
+			ConstantReference constantName = constDecl.getConstantName();
+			FieldDeclaration decl = new FieldDeclaration(constantName.getName(), constantName.sourceStart(), constantName.sourceEnd(), constDecl.sourceStart(), constDecl.sourceEnd());
+			decl.setModifiers(Modifiers.AccConstant);
+			getPatternLocator().match(decl, getNodeSet());
+		} else if(node instanceof Assignment){
+			Expression left = ((Assignment)node).getVariable();
+			if (left instanceof FieldAccess) { // class variable ($this->a = .)
+				FieldAccess fieldAccess = (FieldAccess) left;
+				Expression dispatcher = fieldAccess.getDispatcher();
+				if (dispatcher instanceof VariableReference && "$this".equals(((VariableReference) dispatcher).getName())) { //$NON-NLS-1$
+					Expression field = fieldAccess.getField();
+					if (field instanceof SimpleReference) {
+						SimpleReference ref = (SimpleReference) field;
+						FieldDeclaration decl = new FieldDeclaration(ref.getName(), ref.sourceStart(), ref.sourceEnd(), node.sourceStart(), node.sourceEnd());
+						getPatternLocator().match(decl, getNodeSet());
+					}
+				}
+			}
+		}
+	}
+

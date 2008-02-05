@@ -1,0 +1,23 @@
+	public boolean visit(Assignment assignment) throws Exception {
+		Expression left = assignment.getVariable();
+		if (left instanceof FieldAccess) { // class variable ($this->a = .)
+			FieldAccess fieldAccess = (FieldAccess) left;
+			Expression dispatcher = fieldAccess.getDispatcher();
+			if (dispatcher instanceof VariableReference && "$this".equals(((VariableReference) dispatcher).getName())) { //$NON-NLS-1$
+				Expression field = fieldAccess.getField();
+				if (field instanceof SimpleReference) {
+					SimpleReference ref = (SimpleReference) field;
+					ISourceElementRequestor.FieldInfo info = new ISourceElementRequestor.FieldInfo();
+					info.modifiers = Modifiers.AccDefault;
+					info.name = ref.getName();
+					info.nameSourceEnd = ref.sourceEnd() - 1;
+					info.nameSourceStart = ref.sourceStart();
+					info.declarationStart = assignment.sourceStart();
+					fRequestor.enterField(info);
+					fNodes.push(assignment);
+				}
+			}
+		}
+		return true;
+	}
+

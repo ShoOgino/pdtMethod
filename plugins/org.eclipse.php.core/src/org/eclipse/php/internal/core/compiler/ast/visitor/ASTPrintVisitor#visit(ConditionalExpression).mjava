@@ -1,6 +1,22 @@
 	public boolean visit(ConditionalExpression s) throws Exception {
 		Map<String, String> parameters = createInitialParameters(s);
 		xmlWriter.startTag("ConditionalExpression", parameters);
-		return true;
+
+		xmlWriter.startTag("Condition", new HashMap<String, String>());
+		s.getCondition().traverse(this);
+		xmlWriter.endTag("Condition");
+
+		xmlWriter.startTag("IfTrue", new HashMap<String, String>());
+		s.getIfTrue().traverse(this);
+		xmlWriter.endTag("IfTrue");
+
+		Expression falseExp = s.getIfFalse();
+		if (falseExp != null) {
+			xmlWriter.startTag("IfFalse", new HashMap<String, String>());
+			falseExp.traverse(this);
+			xmlWriter.endTag("IfFalse");
+		}
+
+		return false;
 	}
 
