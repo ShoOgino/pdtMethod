@@ -1,0 +1,45 @@
+	private int rewriteOptionalTypeParameters(ASTNode parent, StructuralPropertyDescriptor property, int offset, String keyword, boolean adjustOnNext, boolean needsSpaceOnRemoveAll) {
+		int pos = offset;
+		RewriteEvent event = getEvent(parent, property);
+		if (event != null && event.getChangeKind() != RewriteEvent.UNCHANGED) {
+			RewriteEvent[] children = event.getChildren();
+			try {
+				boolean isAllInserted = isAllOfKind(children, RewriteEvent.INSERTED);
+				if (isAllInserted && adjustOnNext) {
+					pos = getScanner().getNextStartOffset(pos/*, false*/); // adjust on next element
+				}
+				boolean isAllRemoved = !isAllInserted && isAllOfKind(children, RewriteEvent.REMOVED);
+				if (isAllRemoved) { // all removed: set start to left bracket
+					int posBeforeOpenBracket = getScanner().getTokenStartOffset(SymbolsProvider.getSymbol(SymbolsProvider.LESS_ID, scanner.getPHPVersion()), pos);
+					if (posBeforeOpenBracket != pos) {
+						needsSpaceOnRemoveAll = false;
+					}
+					pos = posBeforeOpenBracket;
+				}
+				pos = new ListRewriter().rewriteList(parent, property, pos, String.valueOf('<'), ", "); //$NON-NLS-1$
+				if (isAllRemoved) { // all removed: remove right and space up to next element
+					int endPos = getScanner().getTokenEndOffset(SymbolsProvider.getSymbol(SymbolsProvider.GREATER_ID, scanner.getPHPVersion()), pos); // set pos to '>'
+					endPos = getScanner().getNextStartOffset(endPos/*, false*/);
+					String replacement = needsSpaceOnRemoveAll ? String.valueOf(' ') : new String();
+					doTextReplace(pos, endPos - pos, replacement, getEditGroup(children[children.length - 1]));
+					return endPos;
+				} else if (isAllInserted) {
+					doTextInsert(pos, String.valueOf('>' + keyword), getEditGroup(children[children.length - 1]));
+					return pos;
+				}
+			} catch (CoreException e) {
+				handleException(e);
+			}
+		} else {
+			pos = doVisit(parent, property, pos);
+		}
+		if (pos != offset) { // list contained some type -> parse after closing bracket
+			try {
+				return getScanner().getTokenEndOffset(SymbolsProvider.getSymbol(SymbolsProvider.GREATER_ID, scanner.getPHPVersion()), pos);
+			} catch (CoreException e) {
+				handleException(e);
+			}
+		}
+		return pos;
+	}
+

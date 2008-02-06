@@ -1,0 +1,47 @@
+	/* (non-Javadoc)
+	 * @see org.eclipse.jdt.core.dom.ASTVisitor#visit(ForStatement)
+	 */
+	public boolean visit(ForStatement node) {
+		if (!hasChildrenChanges(node)) {
+			return doVisitUnchangedChildren(node);
+		}
+
+		try {
+			int pos = node.getStart();
+
+			if (isChanged(node, ForStatement.INITIALIZERS_PROPERTY)) {
+				// position after opening parent
+				int startOffset = getScanner().getTokenEndOffset(SymbolsProvider.getSymbol(SymbolsProvider.LPAREN_ID, scanner.getPHPVersion()), pos);
+				pos = rewriteNodeList(node, ForStatement.INITIALIZERS_PROPERTY, startOffset, "", ", "); //$NON-NLS-1$ //$NON-NLS-2$
+			} else {
+				pos = doVisit(node, ForStatement.INITIALIZERS_PROPERTY, pos);
+			}
+
+			// position after first semicolon
+			Symbol semicolonSym = SymbolsProvider.getSymbol(SymbolsProvider.SEMICOLON_ID, scanner.getPHPVersion());
+			pos = getScanner().getTokenEndOffset(semicolonSym, pos);
+
+			pos = rewriteNode(node, ForStatement.EXPRESSION_PROPERTY, pos, ASTRewriteFormatter.NONE);
+
+			if (isChanged(node, ForStatement.UPDATERS_PROPERTY)) {
+				int startOffset = getScanner().getTokenEndOffset(semicolonSym, pos);
+				pos = rewriteNodeList(node, ForStatement.UPDATERS_PROPERTY, startOffset, "", ", "); //$NON-NLS-1$ //$NON-NLS-2$
+			} else {
+				pos = doVisit(node, ForStatement.UPDATERS_PROPERTY, pos);
+			}
+
+			RewriteEvent bodyEvent = getEvent(node, ForStatement.BODY_PROPERTY);
+			if (bodyEvent != null && bodyEvent.getChangeKind() == RewriteEvent.REPLACED) {
+				int startOffset = getScanner().getTokenEndOffset(SymbolsProvider.getSymbol(SymbolsProvider.RPAREN_ID, scanner.getPHPVersion()), pos);
+				rewriteBodyNode(node, ForStatement.BODY_PROPERTY, startOffset, -1, getIndent(node.getStart()), this.formatter.FOR_BLOCK); // body
+			} else {
+				voidVisit(node, ForStatement.BODY_PROPERTY);
+			}
+
+		} catch (CoreException e) {
+			handleException(e);
+		}
+
+		return false;
+	}
+

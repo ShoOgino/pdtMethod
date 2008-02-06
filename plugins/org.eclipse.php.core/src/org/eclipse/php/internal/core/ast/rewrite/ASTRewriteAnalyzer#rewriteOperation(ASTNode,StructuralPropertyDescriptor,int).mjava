@@ -1,0 +1,14 @@
+	private void rewriteOperation(ASTNode parent, StructuralPropertyDescriptor property, int posBeforeOperation) {
+		RewriteEvent event = getEvent(parent, property);
+		if (event != null && event.getChangeKind() != RewriteEvent.UNCHANGED) {
+			try {
+				String newOperation = event.getNewValue().toString();
+				TextEditGroup editGroup = getEditGroup(event);
+				getScanner().readNext(posBeforeOperation/*, true*/);
+				doTextReplace(getScanner().getCurrentStartOffset(), getScanner().getCurrentLength(), newOperation, editGroup);
+			} catch (CoreException e) {
+				handleException(e);
+			}
+		}
+	}
+

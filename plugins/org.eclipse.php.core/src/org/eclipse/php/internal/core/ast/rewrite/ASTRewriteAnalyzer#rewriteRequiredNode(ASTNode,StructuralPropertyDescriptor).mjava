@@ -1,0 +1,15 @@
+	private int rewriteRequiredNode(ASTNode parent, StructuralPropertyDescriptor property) {
+		RewriteEvent event = getEvent(parent, property);
+		if (event != null && event.getChangeKind() == RewriteEvent.REPLACED) {
+			ASTNode node = (ASTNode) event.getOriginalValue();
+			TextEditGroup editGroup = getEditGroup(event);
+			SourceRange range = getExtendedRange(node);
+			int offset = range.getStartPosition();
+			int length = range.getLength();
+			doTextRemoveAndVisit(offset, length, node, editGroup);
+			doTextInsert(offset, (ASTNode) event.getNewValue(), getIndent(offset), true, editGroup);
+			return offset + length;
+		}
+		return doVisit(parent, property, 0);
+	}
+

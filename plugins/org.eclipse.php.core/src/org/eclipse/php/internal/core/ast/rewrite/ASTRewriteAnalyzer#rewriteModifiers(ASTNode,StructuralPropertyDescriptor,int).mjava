@@ -1,0 +1,65 @@
+	private void rewriteModifiers(ASTNode parent, StructuralPropertyDescriptor property, int offset) {
+		RewriteEvent event = getEvent(parent, property);
+		if (event == null || event.getChangeKind() != RewriteEvent.REPLACED) {
+			return;
+		}
+		try {
+			int oldModifiers = ((Integer) event.getOriginalValue()).intValue();
+			int newModifiers = ((Integer) event.getNewValue()).intValue();
+			TextEditGroup editGroup = getEditGroup(event);
+
+			TokenScanner scanner = getScanner();
+
+			Symbol tok = scanner.readNext(offset/*, false*/);
+			int startPos = scanner.getCurrentStartOffset();
+			int nextStart = startPos;
+			loop: while (true) {
+				if (TokenScanner.isComment(tok)) {
+					tok = scanner.readNext(/*true*/); // next non-comment token
+				}
+				boolean keep = true;
+				if (tok == null || tok.value == null) {
+					break loop;
+				}
+				if (tok.value.equals("public")) {
+					keep = Modifier.isPublic(newModifiers);
+				} else if (tok.value.equals("private")) {
+					keep = Modifier.isPrivate(newModifiers);
+				} else if (tok.value.equals("protected")) {
+					keep = Modifier.isProtected(newModifiers);
+				} else if (tok.value.equals("static")) {
+					keep = Modifier.isStatic(newModifiers);
+				} else if (tok.value.equals("abstract")) {
+					keep = Modifier.isAbstract(newModifiers);
+				} else if (tok.value.equals("final")) {
+					keep = Modifier.isFinal(newModifiers);
+				} else {
+					break loop;
+				}
+				tok = getScanner().readNext(/*false*/); // include comments
+				int currPos = nextStart;
+				nextStart = getScanner().getCurrentStartOffset();
+				if (!keep) {
+					doTextRemove(currPos, nextStart - currPos, editGroup);
+				}
+			}
+			int addedModifiers = newModifiers & ~oldModifiers;
+			if (addedModifiers != 0) {
+				if (startPos != nextStart) {
+					int visibilityModifiers = addedModifiers & (Modifier.PUBLIC | Modifier.PRIVATE | Modifier.PROTECTED);
+					if (visibilityModifiers != 0) {
+						StringBuffer buf = new StringBuffer();
+						ASTRewriteFlattener.printModifiers(visibilityModifiers, buf);
+						doTextInsert(startPos, buf.toString(), editGroup);
+						addedModifiers &= ~visibilityModifiers;
+					}
+				}
+				StringBuffer buf = new StringBuffer();
+				ASTRewriteFlattener.printModifiers(addedModifiers, buf);
+				doTextInsert(nextStart, buf.toString(), editGroup);
+			}
+		} catch (CoreException e) {
+			handleException(e);
+		}
+	}
+

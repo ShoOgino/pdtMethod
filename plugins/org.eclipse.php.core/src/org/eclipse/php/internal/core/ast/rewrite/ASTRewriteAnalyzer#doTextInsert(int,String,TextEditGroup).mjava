@@ -1,0 +1,21 @@
+	final void doTextInsert(int offset, String insertString, TextEditGroup editGroup) {
+		if (insertString.length() > 0) {
+			// bug fix for 95839: problem with inserting at the end of a line comment
+			if (this.lineCommentEndOffsets.isEndOfLineComment(offset, this.content)) {
+				if (!insertString.startsWith(getLineDelimiter())) {
+					TextEdit edit = new InsertEdit(offset, getLineDelimiter()); // add a line delimiter
+					addEdit(edit);
+					if (editGroup != null) {
+						addEditGroup(editGroup, edit);
+					}
+				}
+				this.lineCommentEndOffsets.remove(offset); // only one line delimiter per line comment required
+			}
+			TextEdit edit = new InsertEdit(offset, insertString);
+			addEdit(edit);
+			if (editGroup != null) {
+				addEditGroup(editGroup, edit);
+			}
+		}
+	}
+

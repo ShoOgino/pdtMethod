@@ -1,0 +1,30 @@
+	/* (non-Javadoc)
+	 * @see org.eclipse.jdt.core.dom.ASTVisitor#visit(DoStatement)
+	 */
+	public boolean visit(DoStatement node) { // do statement while expression
+		if (!hasChildrenChanges(node)) {
+			return doVisitUnchangedChildren(node);
+		}
+
+		int pos = node.getStart();
+		try {
+			RewriteEvent event = getEvent(node, DoStatement.BODY_PROPERTY);
+			if (event != null && event.getChangeKind() == RewriteEvent.REPLACED) {
+				int startOffset = getScanner().getTokenEndOffset(SymbolsProvider.getSymbol(SymbolsProvider.DO_ID, scanner.getPHPVersion()), pos);
+				ASTNode body = (ASTNode) event.getOriginalValue();
+				int bodyEnd = body.getStart() + body.getLength();
+				int endPos = getScanner().getTokenStartOffset(SymbolsProvider.getSymbol(SymbolsProvider.WHILE_ID, scanner.getPHPVersion()), bodyEnd);
+				rewriteBodyNode(node, DoStatement.BODY_PROPERTY, startOffset, endPos, getIndent(node.getStart()), this.formatter.DO_BLOCK); // body
+			} else {
+				voidVisit(node, DoStatement.BODY_PROPERTY);
+			}
+		} catch (CoreException e) {
+			handleException(e);
+		}
+
+		// TODO ??
+		rewriteRequiredNode(node, DoStatement.CONDITION_PROPERTY);
+		//		rewriteRequiredNode(node, DoStatement.EXPRESSION_PROPERTY);
+		return false;
+	}
+

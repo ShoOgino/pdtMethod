@@ -1,0 +1,55 @@
+	private int rewriteOptionalQualifier(ASTNode parent, StructuralPropertyDescriptor property, int startPos) {
+		RewriteEvent event = getEvent(parent, property);
+		if (event != null) {
+			switch (event.getChangeKind()) {
+				case RewriteEvent.INSERTED: {
+					ASTNode node = (ASTNode) event.getNewValue();
+					TextEditGroup editGroup = getEditGroup(event);
+					doTextInsert(startPos, node, getIndent(startPos), true, editGroup);
+					doTextInsert(startPos, ".", editGroup); //$NON-NLS-1$
+					return startPos;
+				}
+				case RewriteEvent.REMOVED: {
+					try {
+						ASTNode node = (ASTNode) event.getOriginalValue();
+						TextEditGroup editGroup = getEditGroup(event);
+						int dotEnd = getScanner().getTokenEndOffset(SymbolsProvider.getSymbol(SymbolsProvider.DOT_SYMBOL_ID, scanner.getPHPVersion()), node.getStart() + node.getLength());
+						doTextRemoveAndVisit(startPos, dotEnd - startPos, node, editGroup);
+						return dotEnd;
+					} catch (CoreException e) {
+						handleException(e);
+					}
+					break;
+				}
+				case RewriteEvent.REPLACED: {
+					ASTNode node = (ASTNode) event.getOriginalValue();
+					TextEditGroup editGroup = getEditGroup(event);
+					SourceRange range = getExtendedRange(node);
+					int offset = range.getStartPosition();
+					int length = range.getLength();
+
+					doTextRemoveAndVisit(offset, length, node, editGroup);
+					doTextInsert(offset, (ASTNode) event.getNewValue(), getIndent(startPos), true, editGroup);
+					try {
+						return getScanner().getTokenEndOffset(SymbolsProvider.getSymbol(SymbolsProvider.DOT_SYMBOL_ID, scanner.getPHPVersion()), offset + length);
+					} catch (CoreException e) {
+						handleException(e);
+					}
+					break;
+				}
+			}
+		}
+		Object node = getOriginalValue(parent, property);
+		if (node == null) {
+			return startPos;
+		}
+		ASTNode astNode = (ASTNode) node;
+		int pos = doVisit(astNode);
+		try {
+			return getScanner().getTokenEndOffset(SymbolsProvider.getSymbol(SymbolsProvider.DOT_SYMBOL_ID, scanner.getPHPVersion()), pos);
+		} catch (CoreException e) {
+			handleException(e);
+		}
+		return pos;
+	}
+

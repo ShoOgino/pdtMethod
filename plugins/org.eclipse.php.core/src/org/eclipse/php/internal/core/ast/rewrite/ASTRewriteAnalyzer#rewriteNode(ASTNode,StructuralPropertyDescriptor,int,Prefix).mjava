@@ -1,0 +1,37 @@
+	private int rewriteNode(ASTNode parent, StructuralPropertyDescriptor property, int offset, Prefix prefix) {
+		RewriteEvent event = getEvent(parent, property);
+		if (event != null) {
+			switch (event.getChangeKind()) {
+				case RewriteEvent.INSERTED: {
+					ASTNode node = (ASTNode) event.getNewValue();
+					TextEditGroup editGroup = getEditGroup(event);
+					int indent = getIndent(offset);
+					doTextInsert(offset, prefix.getPrefix(indent), editGroup);
+					doTextInsert(offset, node, indent, true, editGroup);
+					return offset;
+				}
+				case RewriteEvent.REMOVED: {
+					ASTNode node = (ASTNode) event.getOriginalValue();
+					TextEditGroup editGroup = getEditGroup(event);
+
+					int nodeEnd = getExtendedEnd(node);
+					// if there is a prefix, remove the prefix as well
+					int len = nodeEnd - offset;
+					doTextRemoveAndVisit(offset, len, node, editGroup);
+					return nodeEnd;
+				}
+				case RewriteEvent.REPLACED: {
+					ASTNode node = (ASTNode) event.getOriginalValue();
+					TextEditGroup editGroup = getEditGroup(event);
+					SourceRange range = getExtendedRange(node);
+					int nodeOffset = range.getStartPosition();
+					int nodeLen = range.getLength();
+					doTextRemoveAndVisit(nodeOffset, nodeLen, node, editGroup);
+					doTextInsert(nodeOffset, (ASTNode) event.getNewValue(), getIndent(offset), true, editGroup);
+					return nodeOffset + nodeLen;
+				}
+			}
+		}
+		return doVisit(parent, property, offset);
+	}
+

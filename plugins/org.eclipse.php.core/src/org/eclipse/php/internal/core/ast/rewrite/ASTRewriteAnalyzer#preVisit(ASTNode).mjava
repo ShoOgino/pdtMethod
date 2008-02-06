@@ -1,0 +1,21 @@
+	/* (non-Javadoc)
+	 * @see org.eclipse.jdt.core.dom.ASTVisitor#preVisit(ASTNode)
+	 */
+	public void preVisit(ASTNode node) {
+		// copies, then range marker
+
+		CopySourceInfo[] infos = this.eventStore.getNodeCopySources(node);
+		doCopySourcePreVisit(infos, this.sourceCopyEndNodes);
+
+		TextEditGroup editGroup = this.eventStore.getTrackedNodeData(node);
+		if (editGroup != null) {
+			SourceRange range = getExtendedRange(node);
+			int offset = range.getStartPosition();
+			int length = range.getLength();
+			TextEdit edit = new RangeMarker(offset, length);
+			addEditGroup(editGroup, edit);
+			addEdit(edit);
+			this.currentEdit = edit;
+		}
+	}
+

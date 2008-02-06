@@ -1,0 +1,129 @@
+		public final int rewriteList(ASTNode parent, StructuralPropertyDescriptor property, int offset, String keyword) {
+			this.startPos = offset;
+			this.list = getEvent(parent, property).getChildren();
+
+			int total = this.list.length;
+			if (total == 0) {
+				return this.startPos;
+			}
+
+			int currPos = -1;
+
+			int lastNonInsert = -1;
+			int lastNonDelete = -1;
+
+			for (int i = 0; i < total; i++) {
+				int currMark = this.list[i].getChangeKind();
+
+				if (currMark != RewriteEvent.INSERTED) {
+					lastNonInsert = i;
+					if (currPos == -1) {
+						ASTNode elem = (ASTNode) this.list[i].getOriginalValue();
+						currPos = getExtendedOffset(elem);
+					}
+				}
+				if (currMark != RewriteEvent.REMOVED) {
+					lastNonDelete = i;
+				}
+			}
+
+			if (currPos == -1) { // only inserts
+				if (keyword.length() > 0) { // creating a new list -> insert keyword first (e.g. " throws ")
+					TextEditGroup editGroup = getEditGroup(this.list[0]); // first node is insert
+					doTextInsert(offset, keyword, editGroup);
+				}
+				currPos = offset;
+			}
+			if (lastNonDelete == -1) { // all removed, set back to start so the keyword is removed as well
+				currPos = offset;
+			}
+
+			int prevEnd = currPos;
+
+			final int NONE = 0, NEW = 1, EXISTING = 2;
+			int separatorState = NEW;
+
+			for (int i = 0; i < total; i++) {
+				RewriteEvent currEvent = this.list[i];
+				int currMark = currEvent.getChangeKind();
+				int nextIndex = i + 1;
+
+				if (currMark == RewriteEvent.INSERTED) {
+					TextEditGroup editGroup = getEditGroup(currEvent);
+					ASTNode node = (ASTNode) currEvent.getNewValue();
+
+					if (separatorState == NONE) { // element after last existing element (but not first)
+						doTextInsert(currPos, getSeparatorString(i - 1), editGroup); // insert separator
+						separatorState = NEW;
+					}
+					if (separatorState == NEW || insertAfterSeparator(node)) {
+						doTextInsert(currPos, node, getNodeIndent(i), true, editGroup); // insert node
+
+						separatorState = NEW;
+						if (i != lastNonDelete) {
+							if (this.list[nextIndex].getChangeKind() != RewriteEvent.INSERTED) {
+								doTextInsert(currPos, getSeparatorString(i), editGroup); // insert separator
+							} else {
+								separatorState = NONE;
+							}
+						}
+					} else { // EXISTING && insert before separator
+						doTextInsert(prevEnd, getSeparatorString(i - 1), editGroup);
+						doTextInsert(prevEnd, node, getNodeIndent(i), true, editGroup);
+					}
+				} else if (currMark == RewriteEvent.REMOVED) {
+					ASTNode node = (ASTNode) currEvent.getOriginalValue();
+					TextEditGroup editGroup = getEditGroup(currEvent);
+					int currEnd = getEndOfNode(node);
+					if (i > lastNonDelete && separatorState == EXISTING) {
+						// is last, remove previous separator: split delete to allow range copies
+						doTextRemove(prevEnd, currPos - prevEnd, editGroup); // remove separator
+						doTextRemoveAndVisit(currPos, currEnd - currPos, node, editGroup); // remove node
+						currPos = currEnd;
+						prevEnd = currEnd;
+					} else {
+						// remove element and next separator
+						int end = getStartOfNextNode(nextIndex, currEnd); // start of next
+						doTextRemoveAndVisit(currPos, currEnd - currPos, node, getEditGroup(currEvent)); // remove node
+						doTextRemove(currEnd, end - currEnd, editGroup); // remove separator
+						currPos = end;
+						prevEnd = currEnd;
+						separatorState = NEW;
+					}
+				} else { // replaced or unchanged
+					if (currMark == RewriteEvent.REPLACED) {
+						ASTNode node = (ASTNode) currEvent.getOriginalValue();
+						int currEnd = getEndOfNode(node);
+
+						TextEditGroup editGroup = getEditGroup(currEvent);
+						ASTNode changed = (ASTNode) currEvent.getNewValue();
+						doTextRemoveAndVisit(currPos, currEnd - currPos, node, editGroup);
+						doTextInsert(currPos, changed, getNodeIndent(i), true, editGroup);
+
+						prevEnd = currEnd;
+					} else { // is unchanged
+						ASTNode node = (ASTNode) currEvent.getOriginalValue();
+						voidVisit(node);
+					}
+					if (i == lastNonInsert) { // last node or next nodes are all inserts
+						separatorState = NONE;
+						if (currMark == RewriteEvent.UNCHANGED) {
+							ASTNode node = (ASTNode) currEvent.getOriginalValue();
+							prevEnd = getEndOfNode(node);
+						}
+						currPos = prevEnd;
+					} else if (this.list[nextIndex].getChangeKind() != RewriteEvent.UNCHANGED) {
+						// no updates needed while nodes are unchanged
+						if (currMark == RewriteEvent.UNCHANGED) {
+							ASTNode node = (ASTNode) currEvent.getOriginalValue();
+							prevEnd = getEndOfNode(node);
+						}
+						currPos = getStartOfNextNode(nextIndex, prevEnd); // start of next
+						separatorState = EXISTING;
+					}
+				}
+
+			}
+			return currPos;
+		}
+

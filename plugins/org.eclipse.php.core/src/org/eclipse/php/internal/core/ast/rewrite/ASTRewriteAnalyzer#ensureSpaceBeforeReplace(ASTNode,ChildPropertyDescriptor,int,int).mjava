@@ -1,0 +1,17 @@
+	public void ensureSpaceBeforeReplace(ASTNode node, ChildPropertyDescriptor desc, int offset, int numTokenBefore) {
+		// bug 103970
+		if (getChangeKind(node, desc) == RewriteEvent.REPLACED) {
+			try {
+				while (numTokenBefore > 0) {
+					offset = getScanner().getNextEndOffset(offset/*, true*/);
+					numTokenBefore--;
+				}
+				if (offset == getExtendedOffset((ASTNode) getOriginalValue(node, desc))) {
+					doTextInsert(offset, String.valueOf(' '), getEditGroup(node, desc));
+				}
+			} catch (CoreException e) {
+				handleException(e);
+			}
+		}
+	}
+

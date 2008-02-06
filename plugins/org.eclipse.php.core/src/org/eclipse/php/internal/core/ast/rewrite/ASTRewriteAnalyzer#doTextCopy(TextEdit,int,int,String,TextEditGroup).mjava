@@ -1,0 +1,26 @@
+	private final TextEdit doTextCopy(TextEdit sourceEdit, int destOffset, int sourceIndentLevel, String destIndentString, TextEditGroup editGroup) {
+		TextEdit targetEdit;
+		SourceModifier modifier = new SourceModifier(sourceIndentLevel, destIndentString, this.formatter.getTabWidth(), this.formatter.getIndentWidth());
+
+		if (sourceEdit instanceof MoveSourceEdit) {
+			MoveSourceEdit moveEdit = (MoveSourceEdit) sourceEdit;
+			moveEdit.setSourceModifier(modifier);
+
+			targetEdit = new MoveTargetEdit(destOffset, moveEdit);
+			addEdit(targetEdit);
+		} else {
+			CopySourceEdit copyEdit = (CopySourceEdit) sourceEdit;
+			copyEdit.setSourceModifier(modifier);
+
+			targetEdit = new CopyTargetEdit(destOffset, copyEdit);
+			addEdit(targetEdit);
+		}
+
+		if (editGroup != null) {
+			addEditGroup(editGroup, sourceEdit);
+			addEditGroup(editGroup, targetEdit);
+		}
+		return targetEdit;
+
+	}
+

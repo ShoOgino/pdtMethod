@@ -1,0 +1,62 @@
+	/*
+	 * endpos can be -1 -> use the end pos of the body
+	 */
+	private int rewriteBodyNode(ASTNode parent, StructuralPropertyDescriptor property, int offset, int endPos, int indent, BlockContext context) {
+		RewriteEvent event = getEvent(parent, property);
+		if (event != null) {
+			switch (event.getChangeKind()) {
+				case RewriteEvent.INSERTED: {
+					ASTNode node = (ASTNode) event.getNewValue();
+					TextEditGroup editGroup = getEditGroup(event);
+
+					String[] strings = context.getPrefixAndSuffix(indent, node, this.eventStore);
+
+					doTextInsert(offset, strings[0], editGroup);
+					doTextInsert(offset, node, indent, true, editGroup);
+					doTextInsert(offset, strings[1], editGroup);
+					return offset;
+				}
+				case RewriteEvent.REMOVED: {
+					ASTNode node = (ASTNode) event.getOriginalValue();
+					if (endPos == -1) {
+						endPos = getExtendedEnd(node);
+					}
+
+					TextEditGroup editGroup = getEditGroup(event);
+					// if there is a prefix, remove the prefix as well
+					int len = endPos - offset;
+					doTextRemoveAndVisit(offset, len, node, editGroup);
+					return endPos;
+				}
+				case RewriteEvent.REPLACED: {
+					ASTNode node = (ASTNode) event.getOriginalValue();
+					if (endPos == -1) {
+						endPos = getExtendedEnd(node);
+					}
+					TextEditGroup editGroup = getEditGroup(event);
+					int nodeLen = endPos - offset;
+
+					ASTNode replacingNode = (ASTNode) event.getNewValue();
+					String[] strings = context.getPrefixAndSuffix(indent, replacingNode, this.eventStore);
+					doTextRemoveAndVisit(offset, nodeLen, node, editGroup);
+
+					String prefix = strings[0];
+					doTextInsert(offset, prefix, editGroup);
+					String lineInPrefix = getCurrentLine(prefix, prefix.length());
+					if (prefix.length() != lineInPrefix.length()) {
+						// prefix contains a new line: update the indent to the one used in the prefix
+						indent = this.formatter.computeIndentUnits(lineInPrefix);
+					}
+					doTextInsert(offset, replacingNode, indent, true, editGroup);
+					doTextInsert(offset, strings[1], editGroup);
+					return endPos;
+				}
+			}
+		}
+		int pos = doVisit(parent, property, offset);
+		if (endPos != -1) {
+			return endPos;
+		}
+		return pos;
+	}
+

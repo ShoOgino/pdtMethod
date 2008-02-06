@@ -1,0 +1,18 @@
+	private int rewriteDocumentation(ASTNode node, StructuralPropertyDescriptor property) {
+		int pos = rewriteNode(node, property, node.getStart(), ASTRewriteFormatter.NONE);
+		int changeKind = getChangeKind(node, property);
+		if (changeKind == RewriteEvent.INSERTED) {
+			String indent = getLineDelimiter() + getIndentAtOffset(pos);
+			doTextInsert(pos, indent, getEditGroup(node, property));
+		} else if (changeKind == RewriteEvent.REMOVED) {
+			try {
+				getScanner().readNext(pos/*, false*/);
+				doTextRemove(pos, getScanner().getCurrentStartOffset() - pos, getEditGroup(node, property));
+				pos = getScanner().getCurrentStartOffset();
+			} catch (CoreException e) {
+				handleException(e);
+			}
+		}
+		return pos;
+	}
+

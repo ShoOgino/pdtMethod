@@ -1,0 +1,54 @@
+	/* (non-Javadoc)
+	 * @see org.eclipse.jdt.core.dom.ASTVisitor#visit(IfStatement)
+	 */
+	public boolean visit(IfStatement node) {
+		// TODO -- Maybe we also need to treat the ELSEIF condition.
+		if (!hasChildrenChanges(node)) {
+			return doVisitUnchangedChildren(node);
+		}
+
+		//		int pos = rewriteRequiredNode(node, IfStatement.EXPRESSION_PROPERTY); // statement
+		int pos = rewriteRequiredNode(node, IfStatement.CONDITION_PROPERTY); // statement
+
+		//		RewriteEvent thenEvent = getEvent(node, IfStatement.THEN_STATEMENT_PROPERTY);
+		RewriteEvent thenEvent = getEvent(node, IfStatement.TRUE_STATEMENT_PROPERTY);
+		//		int elseChange = getChangeKind(node, IfStatement.ELSE_STATEMENT_PROPERTY);
+		int elseChange = getChangeKind(node, IfStatement.FALSE_STATEMENT_PROPERTY);
+
+		if (thenEvent != null && thenEvent.getChangeKind() != RewriteEvent.UNCHANGED) {
+			try {
+				pos = getScanner().getTokenEndOffset(SymbolsProvider.getSymbol(SymbolsProvider.RPAREN_ID, scanner.getPHPVersion()), pos); // after the closing parent
+				int indent = getIndent(node.getStart());
+
+				int endPos = -1;
+				Object elseStatement = getOriginalValue(node, IfStatement.FALSE_STATEMENT_PROPERTY);
+				if (elseStatement != null) {
+					ASTNode thenStatement = (ASTNode) thenEvent.getOriginalValue();
+					endPos = getScanner().getTokenStartOffset(SymbolsProvider.getSymbol(SymbolsProvider.ELSE_ID, scanner.getPHPVersion()), thenStatement.getStart() + thenStatement.getLength()); // else keyword
+				}
+				if (elseStatement == null || elseChange != RewriteEvent.UNCHANGED) {
+					pos = rewriteBodyNode(node, IfStatement.TRUE_STATEMENT_PROPERTY, pos, endPos, indent, this.formatter.IF_BLOCK_NO_ELSE);
+				} else {
+					pos = rewriteBodyNode(node, IfStatement.TRUE_STATEMENT_PROPERTY, pos, endPos, indent, this.formatter.IF_BLOCK_WITH_ELSE);
+				}
+			} catch (CoreException e) {
+				handleException(e);
+			}
+		} else {
+			pos = doVisit(node, IfStatement.TRUE_STATEMENT_PROPERTY, pos);
+		}
+
+		if (elseChange != RewriteEvent.UNCHANGED) {
+			int indent = getIndent(node.getStart());
+			Object newThen = getNewValue(node, IfStatement.TRUE_STATEMENT_PROPERTY);
+			if (newThen instanceof Block) {
+				rewriteBodyNode(node, IfStatement.FALSE_STATEMENT_PROPERTY, pos, -1, indent, this.formatter.ELSE_AFTER_BLOCK);
+			} else {
+				rewriteBodyNode(node, IfStatement.FALSE_STATEMENT_PROPERTY, pos, -1, indent, this.formatter.ELSE_AFTER_STATEMENT);
+			}
+		} else {
+			pos = doVisit(node, IfStatement.FALSE_STATEMENT_PROPERTY, pos);
+		}
+		return false;
+	}
+
