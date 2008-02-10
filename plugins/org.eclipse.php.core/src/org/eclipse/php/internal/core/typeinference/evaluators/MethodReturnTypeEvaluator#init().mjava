@@ -1,0 +1,104 @@
+	public IGoal[] init() {
+		MethodReturnTypeGoal typedGoal = getTypedGoal();
+		InstanceContext typedContext = getTypedContext();
+
+		IEvaluatedType instanceType = typedContext.getInstanceType();
+		if (instanceType instanceof AmbiguousType) {
+			instanceType = ((AmbiguousType) instanceType).getPossibleTypes()[0];
+		}
+
+		String methodName = typedGoal.getMethodName();
+
+		MethodDeclaration decl = null;
+		List<IMethod> methods = new ArrayList<IMethod>();
+
+		if (instanceType instanceof PHPClassType) {
+			PHPClassType classType = (PHPClassType) instanceType;
+			IModelElement[] elements = PHPMixinModel.getInstance().getMethod(classType.getTypeName(), methodName);
+			for (IModelElement e : elements) {
+				methods.add((IMethod) e);
+			}
+		} else {
+			IModelElement[] elements = PHPMixinModel.getInstance().getFunction(methodName);
+			for (IModelElement e : elements) {
+				methods.add((IMethod) e);
+			}
+		}
+
+		IMethod resultMethod = null;
+		// in case of ambiguity, prefer methods from the same module
+		IMethod resultMethodFromSameModule = null;
+		for (Object element : methods) {
+			IMethod method = (IMethod) element;
+			if (method == null) {
+				continue;
+			}
+			String elementName = method.getElementName();
+			if (elementName.equals(methodName)) {
+				if (method.getSourceModule().equals(typedContext.getSourceModule())) {
+					resultMethodFromSameModule = method;
+				}
+				resultMethod = method;
+			}
+		}
+		if (resultMethodFromSameModule != null) {
+			resultMethod = resultMethodFromSameModule;
+		}
+		if (resultMethod == null) {
+			return IGoal.NO_GOALS;
+		}
+
+		ISourceModule sourceModule = resultMethod.getSourceModule();
+		ModuleDeclaration module = SourceParserUtil.getModuleDeclaration(sourceModule, null);
+		try {
+			decl = PHPModelUtils.getNodeByMethod(module, resultMethod);
+		} catch (ModelException e) {
+			Logger.logException(e);
+		}
+
+		String[] parameters;
+		try {
+			parameters = resultMethod.getParameters();
+		} catch (ModelException e) {
+			Logger.logException(e);
+			parameters = new String[0];
+		}
+
+		innerContext = new MethodContext(goal.getContext(), sourceModule, module, parameters, typedGoal.getArguments());
+
+		ASTVisitor visitor = new ASTVisitor() {
+			public boolean visitGeneral(ASTNode node) throws Exception {
+				if (node instanceof ReturnStatement) {
+					ReturnStatement statement = (ReturnStatement) node;
+					Expression expr = statement.getExpr();
+					if (expr == null) {
+						evaluated.add(new PHPClassType("void"));
+					} else {
+						possibilities.add(expr);
+					}
+				}
+				return super.visitGeneral(node);
+			}
+		};
+
+		if (decl != null) {
+			try {
+				decl.traverse(visitor);
+			} catch (Exception e) {
+				Logger.logException(e);
+			}
+			if (decl.getBody() != null) {
+				possibilities.add(decl.getBody());
+			}
+		}
+
+		IGoal[] newGoals = new IGoal[possibilities.size()];
+		int i = 0;
+		for (Object element : possibilities) {
+			ASTNode st = (ASTNode) element;
+			ExpressionTypeGoal subgoal = new ExpressionTypeGoal(innerContext, st);
+			newGoals[i++] = subgoal;
+		}
+		return newGoals;
+	}
+

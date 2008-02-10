@@ -1,12 +1,17 @@
 	private void reportVariableDeclaration(SimpleReference var, Scope scope) throws Exception {
-		if(scope == null){
+		if (scope == null) {
 			throw new Exception("Scope should not be null");
 		}
 		IField obj = null;
 		String name = var.getName();
 		if (moduleAvailable) {
 			IModelElement element = findModelElementFor(var);
-			obj = (IField) element;
+			if (element instanceof IField) {
+				obj = (IField) element;
+			}
+		}
+		if (obj == null && sourceModule != null) {
+			obj = new FakeField((ModelElement) sourceModule, name, var.sourceStart(), var.sourceEnd() - var.sourceStart());
 		}
 		scope.reportVariable(name, obj);
 	}

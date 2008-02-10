@@ -1,10 +1,12 @@
 	private GoalEvaluator createExpressionEvaluator(ExpressionTypeGoal exprGoal) {
+
 		ASTNode expression = exprGoal.getExpression();
-		if(expression instanceof Assignment){
+
+		if (expression instanceof Assignment) {
 			return new AssignmentEvaluator(exprGoal);
 		}
-		if(expression instanceof Scalar){
-			Scalar scalar = (Scalar)expression;
+		if (expression instanceof Scalar) {
+			Scalar scalar = (Scalar) expression;
 			int scalarType = scalar.getScalarType();
 			int simpleType = SimpleType.TYPE_NONE;
 			switch (scalarType) {
@@ -17,9 +19,19 @@
 					simpleType = SimpleType.TYPE_STRING;
 					break;
 			}
-			return new ScalarEvaluator(exprGoal, new SimpleType(simpleType));
+			return new FixedAnswerEvaluator(exprGoal, new SimpleType(simpleType));
 		}
-		
+		if (expression instanceof TypeReference) {
+			TypeReference type = (TypeReference) expression;
+			return new FixedAnswerEvaluator(exprGoal, new PHPClassType(type.getName()));
+		}
+		if (expression instanceof CallExpression) {
+			return new MethodCallTypeEvaluator(exprGoal);
+		}
+		if (expression instanceof ClassInstanceCreation) {
+			return new InstanceCreationEvaluator(exprGoal);
+		}
+
 		return null;
 	}
 
