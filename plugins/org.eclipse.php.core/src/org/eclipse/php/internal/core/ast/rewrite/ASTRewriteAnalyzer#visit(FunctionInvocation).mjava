@@ -1,21 +1,22 @@
 	/* (non-Javadoc)
 	 * @see org.eclipse.php.internal.core.ast.visitor.AbstractVisitor#visit(org.eclipse.php.internal.core.ast.nodes.FunctionInvocation)
 	 */
-	public boolean visit(FunctionInvocation node) {
-		if (!hasChildrenChanges(node)) {
-			return doVisitUnchangedChildren(node);
+	public boolean visit(FunctionInvocation functionInvocation) {
+		// FIXME - Find all the ASTNodes that might have this kind of structure and implement in a similar way... (shalom)
+		if (!hasChildrenChanges(functionInvocation)) {
+			return doVisitUnchangedChildren(functionInvocation);
 		}
-		int pos = rewriteRequiredNode(node, FunctionInvocation.FUNCTION_PROPERTY);
-		if (isChanged(node, FunctionInvocation.PARAMETERS_PROPERTY)) {
+		int pos = rewriteRequiredNode(functionInvocation, FunctionInvocation.FUNCTION_PROPERTY);
+		if (isChanged(functionInvocation, FunctionInvocation.PARAMETERS_PROPERTY)) {
 			// eval position after opening parent
 			try {
 				int startOffset = getScanner().getTokenEndOffset(SymbolsProvider.getSymbol(SymbolsProvider.LPAREN_ID, scanner.getPHPVersion()), pos);
-				rewriteNodeList(node, FunctionInvocation.PARAMETERS_PROPERTY, startOffset, "", ", "); //$NON-NLS-1$ //$NON-NLS-2$
+				rewriteNodeList(functionInvocation, FunctionInvocation.PARAMETERS_PROPERTY, startOffset, "", ", "); //$NON-NLS-1$ //$NON-NLS-2$
 			} catch (CoreException e) {
 				handleException(e);
 			}
 		} else {
-			voidVisit(node, FunctionInvocation.PARAMETERS_PROPERTY);
+			voidVisit(functionInvocation, FunctionInvocation.PARAMETERS_PROPERTY);
 		}
 		return false;
 	}

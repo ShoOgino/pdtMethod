@@ -1,9 +1,28 @@
 	/* (non-Javadoc)
 	 * @see org.eclipse.php.internal.core.ast.visitor.AbstractVisitor#visit(org.eclipse.php.internal.core.ast.nodes.FunctionDeclaration)
 	 */
-	@Override
 	public boolean visit(FunctionDeclaration functionDeclaration) {
-		// TODO Auto-generated method stub
+		// FIXME - Experimental!! Test implementation (shalom)
+		if (!hasChildrenChanges(functionDeclaration)) {
+			return doVisitUnchangedChildren(functionDeclaration);
+		}
+		// Reference
+		rewriteRequiredNode(functionDeclaration, FunctionDeclaration.IS_REFERENCE_PROPERTY);
+		// Name
+		int pos = rewriteRequiredNode(functionDeclaration, FunctionDeclaration.NAME_PROPERTY);
+		// Parameters
+		if (isChanged(functionDeclaration, FunctionDeclaration.FORMAL_PARAMETERS_PROPERTY)) {
+			try {
+				int startOffset = getScanner().getTokenEndOffset(SymbolsProvider.getSymbol(SymbolsProvider.LPAREN_ID, scanner.getPHPVersion()), pos);
+				rewriteNodeList(functionDeclaration, FunctionDeclaration.FORMAL_PARAMETERS_PROPERTY, startOffset, "", ", "); //$NON-NLS-1$ //$NON-NLS-2$
+			} catch (CoreException e) {
+				handleException(e);
+			}
+		} else {
+			voidVisit(functionDeclaration, FunctionDeclaration.FORMAL_PARAMETERS_PROPERTY);
+		}
+		// Body
+		rewriteRequiredNode(functionDeclaration, FunctionDeclaration.BODY_PROPERTY);
 		return false;
 	}
 
