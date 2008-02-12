@@ -1,0 +1,30 @@
+	private void activePhpEditorChanged(IWorkbenchPart editor) {
+
+		ISourceModule javaElement= null;
+		if (editor instanceof PHPStructuredEditor) {
+			IModelElement inputModelElement = ((PHPStructuredEditor) editor).getInputModelElement();
+			if (inputModelElement.getElementType() == IModelElement.SOURCE_MODULE) {
+				javaElement= (ISourceModule) inputModelElement;
+			}			
+		}
+
+		synchronized (this) {
+			fActiveEditor= editor;
+			fActivePhpElement= javaElement;
+			cache(null, javaElement);
+		}
+
+		if (DEBUG)
+			System.out.println(getThreadName() + " - " + DEBUG_PREFIX + "active editor is: " + toString(javaElement)); //$NON-NLS-1$ //$NON-NLS-2$
+
+		synchronized (fReconcileLock) {
+			if (fIsReconciling && (fReconcilingPhpElement == null || !fReconcilingPhpElement.equals(javaElement))) {
+				fIsReconciling= false;
+				fReconcilingPhpElement= null;
+			} else if (javaElement == null) {
+				fIsReconciling= false;
+				fReconcilingPhpElement= null;
+			}
+		}
+	}
+

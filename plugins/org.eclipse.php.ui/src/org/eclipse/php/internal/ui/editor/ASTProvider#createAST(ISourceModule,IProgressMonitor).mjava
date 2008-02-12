@@ -1,0 +1,52 @@
+	/**
+	 * Creates a new compilation unit AST.
+	 *
+	 * @param input the Php element for which to create the AST
+	 * @param progressMonitor the progress monitor
+	 * @return AST
+	 * @throws IOException 
+	 * @throws ModelException 
+	 */
+	private static Program createAST(final ISourceModule input, final IProgressMonitor progressMonitor) throws ModelException, IOException {
+		if (!hasSource(input))
+			return null;
+		
+		if (progressMonitor != null && progressMonitor.isCanceled())
+			return null;
+		
+		final ASTParser parser = ASTParser.newParser(SHARED_AST_LEVEL);
+		// parser.setResolveBindings(true);
+		// parser.setStatementsRecovery(SHARED_AST_STATEMENT_RECOVERY);
+		// parser.setBindingsRecovery(SHARED_BINDING_RECOVERY);
+		parser.setSource(input.getSourceAsCharArray());
+
+		if (progressMonitor != null && progressMonitor.isCanceled())
+			return null;
+
+		final Program root[]= new Program[1]; 
+		
+		SafeRunner.run(new ISafeRunnable() {
+			public void run() {
+				try {
+					if (progressMonitor != null && progressMonitor.isCanceled())
+						return;
+					if (DEBUG)
+						System.err.println(getThreadName() + " - " + DEBUG_PREFIX + "creating AST for: " + input.getElementName()); //$NON-NLS-1$ //$NON-NLS-2$
+					root[0]= parser.createAST(progressMonitor);
+					
+					//mark as unmodifiable
+					ASTNodes.setFlagsToAST(root[0], ASTNode.PROTECT);
+				} catch (OperationCanceledException ex) {
+					return;
+				} catch (Exception e) {
+					return;
+				}
+			}
+			public void handleException(Throwable ex) {
+				IStatus status= new Status(IStatus.ERROR, PHPUiPlugin.ID, IStatus.OK, "Error in JDT Core during AST creation", ex);  //$NON-NLS-1$
+				PHPUiPlugin.getDefault().getLog().log(status);
+			}
+		});
+		return root[0];
+	}
+

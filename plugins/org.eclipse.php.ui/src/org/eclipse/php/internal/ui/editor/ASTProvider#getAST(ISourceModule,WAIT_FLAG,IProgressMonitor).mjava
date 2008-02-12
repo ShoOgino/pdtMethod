@@ -1,0 +1,99 @@
+	/**
+	 * Returns a shared compilation unit AST for the given
+	 * Php element.
+	 * <p>
+	 * Clients are not allowed to modify the AST and must
+	 * synchronize all access to its nodes.
+	 * </p>
+	 *
+	 * @param input
+	 * 			the Php element, must not be <code>null</code>
+	 * @param waitFlag
+	 * 			{@link SharedASTProvider#WAIT_YES}, {@link SharedASTProvider#WAIT_NO} or {@link SharedASTProvider#WAIT_ACTIVE_ONLY}
+	 * @param progressMonitor
+	 * 			the progress monitor or <code>null</code>
+	 * @return
+	 * 			the AST or <code>null</code> if the AST is not available
+	 * @throws IOException 
+	 * @throws ModelException 
+	 */
+	public Program getAST(ISourceModule input, WAIT_FLAG waitFlag, IProgressMonitor progressMonitor) throws ModelException, IOException {
+		if (input == null || waitFlag == null)
+			throw new IllegalArgumentException("input or wait flag are null"); //$NON-NLS-1$
+		
+		if (progressMonitor != null && progressMonitor.isCanceled())
+			return null;
+
+		boolean isActiveElement;
+		synchronized (this) {
+			isActiveElement= input.equals(fActivePhpElement);
+			if (isActiveElement) {
+				if (fAST != null) {
+					if (DEBUG)
+						System.out.println(getThreadName() + " - " + DEBUG_PREFIX + "returning cached AST:" + toString(fAST) + " for: " + input.getElementName()); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+
+					return fAST;
+				}
+				if (waitFlag == SharedASTProvider.WAIT_NO) {
+					if (DEBUG)
+						System.out.println(getThreadName() + " - " + DEBUG_PREFIX + "returning null (WAIT_NO) for: " + input.getElementName()); //$NON-NLS-1$ //$NON-NLS-2$
+
+					return null;
+
+				}
+			}
+		}
+		if (isActiveElement && isReconciling(input)) {
+			try {
+				final ISourceModule activeElement= fReconcilingPhpElement;
+
+				// Wait for AST
+				synchronized (fWaitLock) {
+					if (DEBUG)
+						System.out.println(getThreadName() + " - " + DEBUG_PREFIX + "waiting for AST for: " + input.getElementName()); //$NON-NLS-1$ //$NON-NLS-2$
+
+					fWaitLock.wait();
+				}
+
+				// Check whether active element is still valid
+				synchronized (this) {
+					if (activeElement == fActivePhpElement && fAST != null) {
+						if (DEBUG)
+							System.out.println(getThreadName() + " - " + DEBUG_PREFIX + "...got AST for: " + input.getElementName()); //$NON-NLS-1$ //$NON-NLS-2$
+
+						return fAST;
+					}
+				}
+				return getAST(input, waitFlag, progressMonitor);
+			} catch (InterruptedException e) {
+				return null; // thread has been interrupted don't compute AST
+			}
+		} else if (waitFlag == SharedASTProvider.WAIT_NO || (waitFlag == SharedASTProvider.WAIT_ACTIVE_ONLY && !(isActiveElement && fAST == null)))
+			return null;
+
+		if (isActiveElement)
+			aboutToBeReconciled(input);
+
+		Program ast= null;
+		try {
+			ast= createAST(input, progressMonitor);
+			if (progressMonitor != null && progressMonitor.isCanceled()) {
+				ast= null;
+				if (DEBUG)
+					System.out.println(getThreadName() + " - " + DEBUG_PREFIX + "Ignore created AST for: " + input.getElementName() + " - operation has been cancelled"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+			}
+		} finally {
+			if (isActiveElement) {
+				if (fAST != null) {
+					// in the meantime, reconcile created a new AST. Return that one
+					if (DEBUG)
+						System.out.println(getThreadName() + " - " + DEBUG_PREFIX + "Ignore created AST for " + input.getElementName() + " - AST from reconciler is newer"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+					reconciled(fAST, input, null);
+					return fAST;
+				} else
+					reconciled(ast, input, null);
+			}
+		}
+		return ast;
+	}
+

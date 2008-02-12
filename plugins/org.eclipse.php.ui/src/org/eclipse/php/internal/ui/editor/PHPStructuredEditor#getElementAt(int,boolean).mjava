@@ -1,0 +1,32 @@
+	/**
+	 * Returns the most narrow element including the given offset. If
+	 * <code>reconcile</code> is <code>true</code> the editor's input
+	 * element is reconciled in advance. If it is <code>false</code> this
+	 * method only returns a result if the editor's input element does not need
+	 * to be reconciled.
+	 * 
+	 * @param offset
+	 *            the offset included by the retrieved element
+	 * @param reconcile
+	 *            <code>true</code> if working copy should be reconciled
+	 * @return the most narrow element which includes the given offset
+	 */
+	protected IModelElement getElementAt(int offset, boolean reconcile) {
+		ISourceModule unit = (ISourceModule) getInputModelElement();
+		if (unit != null) {
+			try {
+				if (reconcile) {
+					ScriptModelUtil.reconcile(unit);
+					return unit.getElementAt(offset);
+				} else if (unit.isConsistent())
+					return unit.getElementAt(offset);
+			} catch (ModelException x) {
+				if (!x.isDoesNotExist())
+					// DLTKUIPlugin.log(x.getStatus());
+					System.err.println(x.getStatus());
+				// nothing found, be tolerant and go on
+			}
+		}
+		return null;
+	}
+
