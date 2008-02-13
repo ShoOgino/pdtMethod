@@ -1,21 +1,37 @@
 	public IGoal[] init() {
-		VariableReference variableReference = (VariableReference) ((ExpressionTypeGoal) goal).getExpression();
 		IContext context = goal.getContext();
 
-		// Handle $this variable reference
-		if (variableReference.getName().equals("$this")) {
+		try {
 			if (context instanceof MethodContext) {
-				MethodContext methodContext = (MethodContext) context;
-				IEvaluatedType instanceType = methodContext.getInstanceType();
-				if (instanceType != null) {
-					this.results.add(new PHPClassType(instanceType.getTypeName()));
-				}
-				return IGoal.NO_GOALS;
-			}
-		}
+				MethodContext methodContex = (MethodContext) context;
+				MethodDeclaration methodDecl = methodContex.getMethodNode();
+				VariableDeclarationSearcher varDecSearcher = new VariableDeclarationSearcher();
+				methodDecl.traverse(varDecSearcher);
 
-		// Handle local variables
-		if (context instanceof MethodContext) {
+				List<ASTNode> declarations = varDecSearcher.getDeclarations();
+				IGoal[] subGoals = new IGoal[declarations.size()];
+				int i = 0;
+				for (ASTNode declaration : declarations) {
+					subGoals[i++] = new ExpressionTypeGoal(context, declaration);
+				}
+				return subGoals;
+
+			} else if (context instanceof BasicContext) {
+				BasicContext basicContex = (BasicContext) context;
+				ModuleDeclaration moduleDecl = basicContex.getRootNode();
+				VariableDeclarationSearcher varDecSearcher = new VariableDeclarationSearcher();
+				moduleDecl.traverse(varDecSearcher);
+
+				List<ASTNode> declarations = varDecSearcher.getDeclarations();
+				IGoal[] subGoals = new IGoal[declarations.size()];
+				int i = 0;
+				for (ASTNode declaration : declarations) {
+					subGoals[i++] = new ExpressionTypeGoal(context, declaration);
+				}
+				return subGoals;
+			}
+		} catch (Exception e) {
+			Logger.logException(e);
 		}
 
 		return IGoal.NO_GOALS;
