@@ -5,12 +5,13 @@
 		if (!hasChildrenChanges(node)) {
 			return doVisitUnchangedChildren(node);
 		}
-
-		int startPos;
-		if (isCollapsed(node)) {
-			startPos = node.getStart();
-		} else {
-			startPos = getPosAfterLeftBrace(node.getStart());
+		int startPos = node.getStart();
+		if (!isCollapsed(node)) {
+			try {
+				startPos = getLeftBraceStartPosition(node.getStart()) + 1;
+			} catch (CoreException e) {
+				handleException(e);
+			}
 		}
 		int startIndent = getIndent(node.getStart()) + 1;
 		rewriteParagraphList(node, Block.STATEMENTS_PROPERTY, startPos, startIndent, 0, 1);

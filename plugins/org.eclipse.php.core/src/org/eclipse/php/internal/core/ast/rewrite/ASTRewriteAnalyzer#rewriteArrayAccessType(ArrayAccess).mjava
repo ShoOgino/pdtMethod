@@ -1,0 +1,26 @@
+	private void rewriteArrayAccessType(ArrayAccess arrayAccess) {
+		RewriteEvent event = getEvent(arrayAccess, ArrayAccess.ARRAY_TYPE_PROPERTY);
+		if (event != null && event.getChangeKind() == RewriteEvent.REPLACED) {
+			Integer original = (Integer) event.getOriginalValue();
+			try {
+				if (original.intValue() == ArrayAccess.VARIABLE_ARRAY) {
+					// the modification was from a variable array to a variable hashtable.
+					int openPos = getLeftBracketStartPosition(arrayAccess.getStart());
+					int closePos = arrayAccess.getEnd() - 1;
+					TextEditGroup editGroup = getEditGroup(event);
+					doTextReplace(openPos, 1, "{", editGroup);
+					doTextReplace(closePos, 1, "}", editGroup);
+				} else {
+					// the modification was from a variable hashtable to a variable array.
+					int openPos = getLeftBraceStartPosition(arrayAccess.getStart());
+					int closePos = arrayAccess.getEnd() - 1;
+					TextEditGroup editGroup = getEditGroup(event);
+					doTextReplace(openPos, 1, "[", editGroup);
+					doTextReplace(closePos, 1, "]", editGroup);
+				}
+			} catch (CoreException ce) {
+				handleException(ce);
+			}
+		}
+	}
+
