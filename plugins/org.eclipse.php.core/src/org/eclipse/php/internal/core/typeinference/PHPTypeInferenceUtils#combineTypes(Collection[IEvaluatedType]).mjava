@@ -1,9 +1,15 @@
-	public static IEvaluatedType combineTypes(Collection<IEvaluatedType> evaluaedTypes) {
-		Set<IEvaluatedType> types = new HashSet<IEvaluatedType>(evaluaedTypes);
-		types.remove(null);
-		if (types.size() > 1 && types.contains(RecursionTypeCall.INSTANCE)) {
-			types.remove(RecursionTypeCall.INSTANCE);
+	public static IEvaluatedType combineTypes(Collection<IEvaluatedType> evaluatedTypes) {
+		Set<IEvaluatedType> types = new HashSet<IEvaluatedType>(evaluatedTypes);
+		if (types.contains(null)) {
+			types.remove(null);
+			types.add(new SimpleType(SimpleType.TYPE_NULL));
 		}
-		return combineUniqueTypes(types.toArray(new IEvaluatedType[types.size()]));
+		if (types.size() == 0) {
+			return UnknownType.INSTANCE;
+		}
+		if (types.size() == 1) {
+			return types.iterator().next();
+		}
+		return new AmbiguousType(types.toArray(new IEvaluatedType[types.size()]));
 	}
 

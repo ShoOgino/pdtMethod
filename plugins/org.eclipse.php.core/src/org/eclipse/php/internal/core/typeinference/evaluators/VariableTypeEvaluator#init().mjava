@@ -2,33 +2,26 @@
 		IContext context = goal.getContext();
 
 		try {
-			if (context instanceof MethodContext) {
-				MethodContext methodContex = (MethodContext) context;
-				MethodDeclaration methodDecl = methodContex.getMethodNode();
+			if (context instanceof ISourceModuleContext) {
+				ISourceModuleContext typedContext = (ISourceModuleContext) context;
+				ASTNode node = (context instanceof MethodContext) ? ((MethodContext)context).getMethodNode() : typedContext.getRootNode();
 				VariableDeclarationSearcher varDecSearcher = new VariableDeclarationSearcher();
-				methodDecl.traverse(varDecSearcher);
+				node.traverse(varDecSearcher);
 
-				List<ASTNode> declarations = varDecSearcher.getDeclarations();
-				IGoal[] subGoals = new IGoal[declarations.size()];
-				int i = 0;
-				for (ASTNode declaration : declarations) {
-					subGoals[i++] = new ExpressionTypeGoal(context, declaration);
+				List<IGoal> subGoals = new LinkedList<IGoal>();
+
+				LinkedList<ASTNode> declarations = varDecSearcher.getDeclarations();
+				if (varDecSearcher.needsMergingWithGlobalScope()) {
+					// collect all global variables, and merge results with existing declarations
+					subGoals.add(new GlobalVariableReferencesGoal(context));
 				}
-				return subGoals;
 
-			} else if (context instanceof BasicContext) {
-				BasicContext basicContex = (BasicContext) context;
-				ModuleDeclaration moduleDecl = basicContex.getRootNode();
-				VariableDeclarationSearcher varDecSearcher = new VariableDeclarationSearcher();
-				moduleDecl.traverse(varDecSearcher);
-
-				List<ASTNode> declarations = varDecSearcher.getDeclarations();
-				IGoal[] subGoals = new IGoal[declarations.size()];
-				int i = 0;
 				for (ASTNode declaration : declarations) {
-					subGoals[i++] = new ExpressionTypeGoal(context, declaration);
+					if (declaration != null) {
+						subGoals.add(new ExpressionTypeGoal(context, declaration));
+					}
 				}
-				return subGoals;
+				return subGoals.toArray(new IGoal[subGoals.size()]);
 			}
 		} catch (Exception e) {
 			Logger.logException(e);
