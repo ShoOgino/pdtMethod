@@ -1,0 +1,23 @@
+		public boolean visit(Assignment node) throws Exception {
+			if (!interesting(node)) {
+				return false;
+			}
+			Expression variable = node.getVariable();
+			if (variable instanceof VariableReference) {
+				VariableReference variableReference = (VariableReference) variable;
+				if (variableName.equals(variableReference.getName())) {
+
+					LinkedList<ASTNode> decl = contextToDeclarations.get(contextStack.peek());
+
+					// remove all declarations of this variable from the inner blocks
+					while (decl.size() > level) {
+						decl.removeLast();
+					}
+					decl.addLast(node.getValue());
+
+					setNextRange();
+				}
+			}
+			return visitGeneral(node);
+		}
+

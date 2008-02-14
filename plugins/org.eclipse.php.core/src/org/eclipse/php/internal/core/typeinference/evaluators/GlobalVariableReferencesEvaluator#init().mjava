@@ -1,4 +1,70 @@
 	public IGoal[] init() {
-		return IGoal.NO_GOALS;
+		GlobalVariableReferencesGoal typedGoal = (GlobalVariableReferencesGoal) goal;
+
+		IContext context = goal.getContext();
+		ISourceModuleContext sourceModuleContext = null;
+		if (context instanceof ISourceModuleContext) {
+			sourceModuleContext = (ISourceModuleContext) context;
+		}
+
+		String variableName = typedGoal.getVariableName();
+
+		boolean exploreOtherFiles = true;
+
+		// Find all global variables from mixin
+		IModelElement[] elements = PHPMixinModel.getInstance().getVariable(variableName, null, null);
+		Map<ISourceModule, SortedSet<ISourceRange>> offsets = new HashMap<ISourceModule, SortedSet<ISourceRange>>();
+
+		Comparator<ISourceRange> sourceRangeComparator = new Comparator<ISourceRange>() {
+			public int compare(ISourceRange o1, ISourceRange o2) {
+				return o1.getOffset() - o2.getOffset();
+			}
+		};
+
+		for (IModelElement element : elements) {
+			if (element instanceof FakeField) {
+				FakeField fakeField = (FakeField) element;
+				ISourceModule sourceModule = fakeField.getSourceModule();
+				if (!offsets.containsKey(sourceModule)) {
+					offsets.put(sourceModule, new TreeSet<ISourceRange>(sourceRangeComparator));
+				}
+				try {
+					offsets.get(sourceModule).add(fakeField.getSourceRange());
+				} catch (ModelException e) {
+					Logger.logException(e);
+				}
+			}
+		}
+
+		List<IGoal> subGoals = new LinkedList<IGoal>();
+		Iterator<ISourceModule> sourceModuleIt = offsets.keySet().iterator();
+		while (sourceModuleIt.hasNext()) {
+			ISourceModule sourceModule = sourceModuleIt.next();
+			if (exploreOtherFiles || (sourceModuleContext != null && sourceModuleContext.getSourceModule().equals(sourceModule))) {
+
+				ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule, null);
+				SortedSet<ISourceRange> fileOffsets = offsets.get(sourceModule);
+
+				if (!fileOffsets.isEmpty()) {
+					VariableDeclarationSearcher varSearcher = new VariableDeclarationSearcher(sourceModule, moduleDeclaration, fileOffsets, variableName);
+					try {
+						moduleDeclaration.traverse(varSearcher);
+
+						Map<IContext, LinkedList<ASTNode>> contextToDeclarationMap = varSearcher.getContextToDeclarationMap();
+						Iterator<IContext> contextIt = contextToDeclarationMap.keySet().iterator();
+						while (contextIt.hasNext()) {
+							IContext c = contextIt.next();
+							for (ASTNode declaration : contextToDeclarationMap.get(c)) {
+								subGoals.add(new ExpressionTypeGoal(c, declaration));
+							}
+						}
+					} catch (Exception e) {
+						Logger.logException(e);
+					}
+				}
+			}
+		}
+
+		return subGoals.toArray(new IGoal[subGoals.size()]);
 	}
 
