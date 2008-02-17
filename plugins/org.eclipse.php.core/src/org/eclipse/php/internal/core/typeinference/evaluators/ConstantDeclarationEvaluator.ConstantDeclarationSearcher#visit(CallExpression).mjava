@@ -1,0 +1,23 @@
+		@SuppressWarnings("unchecked")
+		public boolean visit(CallExpression node) throws Exception {
+			if (!interesting(node)) {
+				return false;
+			}
+			if ("define".equalsIgnoreCase(node.getName())) { //$NON-NLS-1$
+				// report global constant:
+				List args = node.getArgs().getChilds();
+				if (args.size() == 2) {
+					ASTNode firstArg = (ASTNode) args.get(0);
+					ASTNode secondArg = (ASTNode) args.get(0);
+					if (firstArg instanceof Scalar && secondArg instanceof Scalar) {
+						Scalar constantName = (Scalar) firstArg;
+						Scalar constantValue = (Scalar) secondArg;
+						if (this.constantName.equals(stripQuotes(constantName.getValue()))) {
+							declarations.add(constantValue);
+						}
+					}
+				}
+			}
+			return visitGeneral(node);
+		}
+

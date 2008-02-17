@@ -1,0 +1,53 @@
+	public IGoal[] init() {
+		ConstantDeclarationGoal typedGoal = (ConstantDeclarationGoal) goal;
+		String constantName = typedGoal.getConstantName();
+		String typeName = typedGoal.getTypeName();
+
+		IModelElement[] elements = PHPMixinModel.getInstance().getConstant(constantName, typeName);
+
+		Map<ISourceModule, SortedSet<ISourceRange>> offsets = new HashMap<ISourceModule, SortedSet<ISourceRange>>();
+
+		Comparator<ISourceRange> sourceRangeComparator = new Comparator<ISourceRange>() {
+			public int compare(ISourceRange o1, ISourceRange o2) {
+				return o1.getOffset() - o2.getOffset();
+			}
+		};
+
+		for (IModelElement element : elements) {
+			if (element instanceof IField) {
+				IField field = (IField) element;
+				ISourceModule sourceModule = field.getSourceModule();
+				if (!offsets.containsKey(sourceModule)) {
+					offsets.put(sourceModule, new TreeSet<ISourceRange>(sourceRangeComparator));
+				}
+				try {
+					offsets.get(sourceModule).add(field.getSourceRange());
+				} catch (ModelException e) {
+					Logger.logException(e);
+				}
+			}
+		}
+
+		List<IGoal> subGoals = new LinkedList<IGoal>();
+		Iterator<ISourceModule> sourceModuleIt = offsets.keySet().iterator();
+		while (sourceModuleIt.hasNext()) {
+			ISourceModule sourceModule = sourceModuleIt.next();
+			ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule, null);
+			SortedSet<ISourceRange> fileOffsets = offsets.get(sourceModule);
+
+			if (!fileOffsets.isEmpty()) {
+				ConstantDeclarationSearcher searcher = new ConstantDeclarationSearcher(fileOffsets, constantName);
+				try {
+					moduleDeclaration.traverse(searcher);
+					for (Scalar scalar : searcher.getDeclarations()) {
+						subGoals.add(new ScalarGoal(scalar.getScalarType()));
+					}
+				} catch (Exception e) {
+					Logger.logException(e);
+				}
+			}
+		}
+
+		return subGoals.toArray(new IGoal[subGoals.size()]);
+	}
+

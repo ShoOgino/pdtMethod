@@ -1,0 +1,38 @@
+	public IGoal[] init() {
+		ClassVariableDeclarationGoal typedGoal = (ClassVariableDeclarationGoal) goal;
+		InstanceContext context = (InstanceContext) typedGoal.getContext();
+		SimpleReference field = typedGoal.getField();
+
+		List<IGoal> subGoals = new LinkedList<IGoal>();
+
+		String typeName = context.getInstanceType().getTypeName();
+
+		IModelElement[] elements = PHPMixinModel.getInstance().getClass(typeName);
+
+		for (IModelElement element : elements) {
+			if (element instanceof IType) {
+				IType type = (IType) element;
+				ISourceModule sourceModule = type.getSourceModule();
+				ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule, null);
+				try {
+					TypeDeclaration typeDeclaration = PHPModelUtils.getNodeByClass(moduleDeclaration, type);
+					ClassVariableDeclarationSearcher searcher = new ClassVariableDeclarationSearcher(sourceModule, moduleDeclaration, field.getName(), typeName);
+					typeDeclaration.traverse(searcher);
+
+					Map<IContext, LinkedList<ASTNode>> contextToDeclarationMap = searcher.getContextToDeclarationMap();
+					Iterator<IContext> contextIt = contextToDeclarationMap.keySet().iterator();
+					while (contextIt.hasNext()) {
+						IContext c = contextIt.next();
+						for (ASTNode declaration : contextToDeclarationMap.get(c)) {
+							subGoals.add(new ExpressionTypeGoal(c, declaration));
+						}
+					}
+				} catch (Exception e) {
+					Logger.logException(e);
+				}
+			}
+		}
+
+		return subGoals.toArray(new IGoal[subGoals.size()]);
+	}
+
