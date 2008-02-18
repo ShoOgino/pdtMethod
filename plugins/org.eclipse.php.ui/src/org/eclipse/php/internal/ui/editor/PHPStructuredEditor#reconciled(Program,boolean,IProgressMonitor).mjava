@@ -1,0 +1,23 @@
+	/*
+	 * @see org.eclipse.jdt.internal.ui.text.java.IJavaReconcilingListener#reconciled(CompilationUnit,
+	 *      boolean, IProgressMonitor)
+	 * @since 3.0
+	 */
+	public void reconciled(Program ast, boolean forced, IProgressMonitor progressMonitor) {
+
+		// see: https://bugs.eclipse.org/bugs/show_bug.cgi?id=58245
+		PHPUiPlugin phpPlugin= PHPUiPlugin.getDefault();
+		if (phpPlugin == null)
+			return;
+		
+		// Always notify AST provider
+		ISourceModule inputModelElement = (ISourceModule) getInputModelElement();
+		// TODO: notify AST provider
+		phpPlugin.getASTProvider().reconciled(ast , inputModelElement, progressMonitor);
+
+		// Notify listeners
+		Object[] listeners = fReconcilingListeners.getListeners();
+		for (int i = 0, length = listeners.length; i < length; ++i)
+			((IScriptReconcilingListener) listeners[i]).reconciled(inputModelElement, forced, progressMonitor);
+	}
+

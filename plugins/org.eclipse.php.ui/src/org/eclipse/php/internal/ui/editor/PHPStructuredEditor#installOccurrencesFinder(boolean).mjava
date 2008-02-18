@@ -1,0 +1,32 @@
+	protected void installOccurrencesFinder(boolean forceUpdate) {
+		fMarkOccurrenceAnnotations= true;
+
+		fPostSelectionListenerWithAST= new ISelectionListenerWithAST() {
+			public void selectionChanged(IEditorPart part, ITextSelection selection, Program astRoot) {
+				updateOccurrenceAnnotations(selection, astRoot);
+			}
+		};
+		SelectionListenerWithASTManager.getDefault().addListener(this, fPostSelectionListenerWithAST);
+		if (forceUpdate && getSelectionProvider() != null) {
+			fForcedMarkOccurrencesSelection= getSelectionProvider().getSelection();
+			IModelElement source = getInputModelElement();
+			if (source.getElementType() == IModelElement.SOURCE_MODULE) {
+				try {
+					final Program ast = SharedASTProvider.getAST((ISourceModule) source, SharedASTProvider.WAIT_NO, getProgressMonitor());
+					updateOccurrenceAnnotations((ITextSelection)fForcedMarkOccurrencesSelection, ast);
+				} catch (ModelException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+
+		if (fOccurrencesFinderJobCanceler == null) {
+			fOccurrencesFinderJobCanceler= new OccurrencesFinderJobCanceler();
+			fOccurrencesFinderJobCanceler.install();
+		}
+	}
+

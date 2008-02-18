@@ -1,0 +1,31 @@
+		protected final IStatus calculateASTandInform(ISourceModule input, ITextSelection selection, IProgressMonitor monitor) {
+			if (monitor.isCanceled()) {
+				return Status.CANCEL_STATUS;
+			}
+			// create AST
+			try {
+				Program astRoot= SharedASTProvider.getAST(input, SharedASTProvider.WAIT_ACTIVE_ONLY, monitor);
+			
+				if (astRoot != null && !monitor.isCanceled()) {
+					Object[] listeners;
+					synchronized (PartListenerGroup.this) {
+						listeners= fAstListeners.getListeners();
+					}
+					for (int i= 0; i < listeners.length; i++) {
+						((ISelectionListenerWithAST) listeners[i]).selectionChanged(fPart, selection, astRoot);
+						if (monitor.isCanceled()) {
+							return Status.CANCEL_STATUS;
+						}
+					}
+					return Status.OK_STATUS;
+				}
+			} catch (OperationCanceledException e) {
+				// thrown when canceling the AST creation
+			} catch (ModelException e) {
+				new Status(Status.ERROR, PHPUiPlugin.ID, "error retrieving AST from Provider"); 
+			} catch (IOException e) {
+				new Status(Status.ERROR, PHPUiPlugin.ID, "error retrieving AST from Provider");				
+			}
+			return Status.CANCEL_STATUS;
+		}
+

@@ -1,0 +1,31 @@
+		/**
+		 * A post selection event has occurred.
+		 * 
+		 * @param selection the selection
+		 */
+		public void firePostSelectionChanged(final ITextSelection selection) {
+			if (fCurrentJob != null) {
+				fCurrentJob.cancel();
+			}
+			IModelElement input= EditorUtility.getEditorInputModelElement(fPart, false);
+			if (!(input instanceof ISourceModule)) {
+				return;
+			}
+			final ISourceModule typeRoot= (ISourceModule) input;
+			
+			
+			fCurrentJob= new Job("Selection Job titile") { // TODO externenlize  
+				public IStatus run(IProgressMonitor monitor) {
+					if (monitor == null) {
+						monitor= new NullProgressMonitor();
+					}
+					synchronized (fJobLock) {
+						return calculateASTandInform(typeRoot, selection, monitor);
+					}
+				}
+			};
+			fCurrentJob.setPriority(Job.DECORATE);
+			fCurrentJob.setSystem(true);
+			fCurrentJob.schedule();
+		}
+

@@ -1,0 +1,60 @@
+		/*
+		 * @see Job#run(org.eclipse.core.runtime.IProgressMonitor)
+		 */
+		public IStatus run(IProgressMonitor progressMonitor) {
+			if (isCanceled(progressMonitor))
+				return Status.CANCEL_STATUS;
+
+			ITextViewer textViewer= getTextViewer();
+			if (textViewer == null)
+				return Status.CANCEL_STATUS;
+
+			IDocument document= textViewer.getDocument();
+			if (document == null)
+				return Status.CANCEL_STATUS;
+
+			IDocumentProvider documentProvider= getDocumentProvider();
+			if (documentProvider == null)
+				return Status.CANCEL_STATUS;
+
+			IAnnotationModel annotationModel= documentProvider.getAnnotationModel(getEditorInput());
+			if (annotationModel == null)
+				return Status.CANCEL_STATUS;
+
+			// Add occurrence annotations
+			int length= fLocations.length;
+			Map annotationMap= new HashMap(length);
+			for (int i= 0; i < length; i++) {
+
+				if (isCanceled(progressMonitor))
+					return Status.CANCEL_STATUS;
+				
+				OccurrenceLocation location= fLocations[i];
+				Position position= new Position(location.getOffset(), location.getLength());
+
+				String description= location.getDescription();
+				String annotationType= (location.getFlags() == IOccurrencesFinder.F_WRITE_OCCURRENCE) ? "org.eclipse.jdt.ui.occurrences.write" : "org.eclipse.jdt.ui.occurrences"; //$NON-NLS-1$ //$NON-NLS-2$
+				
+				annotationMap.put(new Annotation(annotationType, false, description), position);
+			}
+
+			if (isCanceled(progressMonitor))
+				return Status.CANCEL_STATUS;
+
+			synchronized (getLockObject(annotationModel)) {
+				if (annotationModel instanceof IAnnotationModelExtension) {
+					((IAnnotationModelExtension)annotationModel).replaceAnnotations(fOccurrenceAnnotations, annotationMap);
+				} else {
+					removeOccurrenceAnnotations();
+					Iterator iter= annotationMap.entrySet().iterator();
+					while (iter.hasNext()) {
+						Map.Entry mapEntry= (Map.Entry)iter.next();
+						annotationModel.addAnnotation((Annotation)mapEntry.getKey(), (Position)mapEntry.getValue());
+					}
+				}
+				fOccurrenceAnnotations= (Annotation[])annotationMap.keySet().toArray(new Annotation[annotationMap.keySet().size()]);
+			}
+
+			return Status.OK_STATUS;
+		}
+

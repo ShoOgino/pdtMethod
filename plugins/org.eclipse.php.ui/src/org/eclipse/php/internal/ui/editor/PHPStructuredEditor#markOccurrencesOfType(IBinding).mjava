@@ -1,0 +1,30 @@
+	boolean markOccurrencesOfType(IBinding binding) {
+
+		if (binding == null)
+			return false;
+
+		int kind= binding.getKind();
+
+		if (fMarkTypeOccurrences && kind == IBinding.TYPE)
+			return true;
+
+		if (fMarkMethodOccurrences && kind == IBinding.METHOD)
+			return true;
+
+		if (kind == IBinding.VARIABLE) {
+			IVariableBinding variableBinding= (IVariableBinding)binding;
+			if (variableBinding.isField()) {
+				int constantModifier= Modifiers.AccStatic | Modifiers.AccFinal;
+				boolean isConstant= (variableBinding.getModifiers() & constantModifier) == constantModifier;
+				if (isConstant)
+					return fMarkConstantOccurrences;
+				else
+					return fMarkFieldOccurrences;
+			}
+
+			return fMarkLocalVariableypeOccurrences;
+		}
+
+		return false;
+	}
+

@@ -1,0 +1,98 @@
+	/**
+	 * Updates the occurrences annotations based
+	 * on the current selection.
+	 *
+	 * @param selection the text selection
+	 * @param astRoot the compilation unit AST
+	 * @since 3.0
+	 */
+	protected void updateOccurrenceAnnotations(ITextSelection selection, Program astRoot) {
+
+		if (fOccurrencesFinderJob != null)
+			fOccurrencesFinderJob.cancel();
+
+		if (!fMarkOccurrenceAnnotations)
+			return;
+
+		if (astRoot == null || selection == null)
+			return;
+
+		IDocument document= getSourceViewer().getDocument();
+		if (document == null)
+			return;
+
+		boolean hasChanged= false;
+		if (document instanceof IDocumentExtension4) {
+			int offset= selection.getOffset();
+			long currentModificationStamp= ((IDocumentExtension4)document).getModificationStamp();
+			IRegion markOccurrenceTargetRegion= fMarkOccurrenceTargetRegion;
+			hasChanged= currentModificationStamp != fMarkOccurrenceModificationStamp;
+			if (markOccurrenceTargetRegion != null && !hasChanged) {
+				if (markOccurrenceTargetRegion.getOffset() <= offset && offset <= markOccurrenceTargetRegion.getOffset() + markOccurrenceTargetRegion.getLength())
+					return;
+			}
+			fMarkOccurrenceTargetRegion= ScriptWordFinder.findWord(document, offset);
+			fMarkOccurrenceModificationStamp= currentModificationStamp;
+		}
+
+		OccurrenceLocation[] locations= null;
+		
+		ASTNode selectedNode= NodeFinder.perform(astRoot, selection.getOffset(), selection.getLength());
+		if (fMarkExceptions) {
+//          TODO : Implement Me!
+//			ExceptionOccurrencesFinder finder= new ExceptionOccurrencesFinder();
+//			if (finder.initialize(astRoot, selectedNode) == null) {
+//				locations= finder.getOccurrences();
+//			}
+		}
+
+		if (locations == null && fMarkMethodExitPoints) {
+//          TODO : Implement Me!			
+			MethodExitsFinder finder= new MethodExitsFinder();
+			if (finder.initialize(astRoot, selectedNode) == null) {
+				locations= finder.getOccurrences();
+			}
+		}
+
+		if (locations == null && fMarkBreakContinueTargets) {
+//          TODO : Implement Me!			
+//			BreakContinueTargetFinder finder= new BreakContinueTargetFinder();
+//			if (finder.initialize(astRoot, selectedNode) == null) {
+//				locations= finder.getOccurrences();
+//			}
+		}
+		
+		if (locations == null && fMarkImplementors) {
+//          TODO : Implement Me!			
+//			ImplementOccurrencesFinder finder= new ImplementOccurrencesFinder();
+//			if (finder.initialize(astRoot, selectedNode) == null) {
+//				locations= finder.getOccurrences();
+//			}
+		}
+
+		if (locations == null && selectedNode instanceof Identifier) {
+//          TODO : Implement Me!			
+//			IBinding binding= ((Name)selectedNode).resolveBinding();
+//			if (binding != null && markOccurrencesOfType(binding)) {
+//				OccurrencesFinder finder= new OccurrencesFinder();
+//				if (finder.initialize(astRoot, selectedNode) == null) {
+//					locations= finder.getOccurrences();
+//				}
+//			}
+		}
+
+		if (locations == null) {
+			if (!fStickyOccurrenceAnnotations)
+				removeOccurrenceAnnotations();
+			else if (hasChanged) // check consistency of current annotations
+				removeOccurrenceAnnotations();
+			return;
+		}
+
+		fOccurrencesFinderJob= new OccurrencesFinderJob(document, locations, selection);
+		//fOccurrencesFinderJob.setPriority(Job.DECORATE);
+		//fOccurrencesFinderJob.setSystem(true);
+		//fOccurrencesFinderJob.schedule();
+		fOccurrencesFinderJob.run(new NullProgressMonitor());
+	}
+

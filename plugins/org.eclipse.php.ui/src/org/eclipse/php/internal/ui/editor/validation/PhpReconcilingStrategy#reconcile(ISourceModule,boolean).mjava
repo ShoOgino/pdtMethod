@@ -1,0 +1,48 @@
+	/**
+	 * Performs the reconcile and returns the AST if it was computed.
+	 * 
+	 * @param unit the compilation unit
+	 * @param initialReconcile <code>true</code> if this is the initial reconcile
+	 * @return the AST or <code>null</code> if none
+	 * @throws JavaModelException if the original Java element does not exist
+	 * @since 3.4
+	 */
+	private Program reconcile(ISourceModule unit, boolean initialReconcile) throws ModelException {
+		/* fix for missing cancel flag communication */
+		IProblemRequestorExtension extension= getProblemRequestorExtension();
+		if (extension != null) {
+			extension.setProgressMonitor(fProgressMonitor);
+			extension.setIsActive(true);
+		}
+
+		try {
+			// TODO : create ast if needed
+			boolean isASTNeeded= initialReconcile || PHPUiPlugin.getDefault().getASTProvider().isActive(unit);
+			// reconcile
+			synchronized (unit) {
+				unit.reconcile(true, null, fProgressMonitor);
+			}
+			if (isASTNeeded) {
+				ASTParser newParser = ASTParser.newParser(ASTParser.VERSION_PHP5);
+				newParser.setSource(unit.getBuffer().getCharacters());
+				return newParser.createAST(null);
+			}
+			
+		} catch (OperationCanceledException ex) {
+			Assert.isTrue(fProgressMonitor == null || fProgressMonitor.isCanceled());
+
+		} catch (Exception e) {
+			// TODO: handle this event (although can't reach this point 
+			e.printStackTrace();
+			
+		} finally {
+			/* fix for missing cancel flag communication */
+			if (extension != null) {
+				extension.setProgressMonitor(null);
+				extension.setIsActive(false);
+			}
+		}
+		
+		return null;
+	}
+

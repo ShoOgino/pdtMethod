@@ -1,0 +1,31 @@
+	public void validate(IRegion dirtyRegion, IValidationContext helper, IReporter reporter) {
+		// install editors
+		if (fEditor == null ) {
+			install(helper);
+			if (fEditor == null) {
+				return;
+			}
+		}	
+		
+		final ISourceModule unit = fManager.getWorkingCopy(fEditor.getEditorInput());
+		if (unit == null) {
+			return;
+		}
+
+		try {
+			reconcile(true);
+		} finally {
+			// Always notify listeners, see https://bugs.eclipse.org/bugs/show_bug.cgi?id=55969 for the final solution
+			try {
+				if (fIsScriptReconcilingListener) {
+					IProgressMonitor pm = fProgressMonitor;
+					if (pm == null)
+						pm = new NullProgressMonitor();
+					fJavaReconcilingListener.reconciled(fAST, !fNotify, pm);
+				}
+			} finally {
+				fNotify = true;
+			}
+		}
+	}	
+
