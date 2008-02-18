@@ -2,6 +2,17 @@
 	 * @return default value of this parameter
 	 */
 	public Expression getDefaultValue() {
+		if (defaultValue == null) {
+			// lazy init must be thread-safe for readers
+			synchronized (this) {
+				if (defaultValue == null) {
+					preLazyInit();
+					this.defaultValue = ast.newIdentifier();
+					this.defaultValue.setSourceRange(getStart(), 0);
+					postLazyInit(defaultValue, DEFAULT_VALUE_PROPERTY);
+				}
+			}
+		}
 		return defaultValue;
 	}
 
