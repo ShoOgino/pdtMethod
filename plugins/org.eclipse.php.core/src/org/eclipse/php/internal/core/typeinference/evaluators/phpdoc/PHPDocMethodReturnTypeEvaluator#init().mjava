@@ -1,0 +1,67 @@
+	public IGoal[] init() {
+		PHPDocMethodReturnTypeGoal typedGoal = (PHPDocMethodReturnTypeGoal) goal;
+		IContext context = goal.getContext();
+		String methodName = typedGoal.getMethodName();
+
+		InstanceContext typedGontext = (InstanceContext) context;
+		IEvaluatedType instanceType = typedGontext.getInstanceType();
+
+		Set<DocMember> docs = new HashSet<DocMember>();
+
+		if (instanceType instanceof PHPClassType) {
+			PHPClassType classType = (PHPClassType) instanceType;
+			IModelElement[] elements = PHPMixinModel.getInstance().getMethodDoc(classType.getTypeName(), methodName);
+			for (IModelElement e : elements) {
+				docs.add((DocMember) e);
+			}
+		}
+		else if (instanceType instanceof AmbiguousType) {
+			AmbiguousType ambiguousType = (AmbiguousType) instanceType;
+			for (IEvaluatedType type : ambiguousType.getPossibleTypes()) {
+				if (type instanceof PHPClassType) {
+					PHPClassType classType = (PHPClassType) instanceType;
+					IModelElement[] elements = PHPMixinModel.getInstance().getMethodDoc(classType.getTypeName(), methodName);
+					for (IModelElement e : elements) {
+						docs.add((DocMember) e);
+					}
+				}
+			}
+		}
+		else {
+			IModelElement[] elements = PHPMixinModel.getInstance().getFunctionDoc(methodName);
+			for (IModelElement e : elements) {
+				docs.add((DocMember) e);
+			}
+		}
+
+		DocMember docFromSameFile = null;
+		for (DocMember doc : docs) {
+			if (doc.getSourceModule().equals(typedGontext.getSourceModule())) {
+				docFromSameFile = doc;
+				break;
+			}
+		}
+		// If doc from the same file was found  - use it
+		if (docFromSameFile != null) {
+			docs.clear();
+			docs.add(docFromSameFile);
+		}
+
+		for (DocMember doc : docs) {
+			PHPDocBlock docBlock = doc.getDocBlock();
+			for (PHPDocTag tag : docBlock.getTags()) {
+				if (tag.getTagKind() == PHPDocTag.RETURN) {
+					SimpleReference[] references = tag.getReferences();
+					if (references.length > 0) {
+						SimpleReference firstReference = references[0];
+						if (firstReference instanceof TypeReference) {
+							evaluated.add(new PHPClassType(firstReference.getName()));
+						}
+					}
+				}
+			}
+		}
+
+		return IGoal.NO_GOALS;
+	}
+

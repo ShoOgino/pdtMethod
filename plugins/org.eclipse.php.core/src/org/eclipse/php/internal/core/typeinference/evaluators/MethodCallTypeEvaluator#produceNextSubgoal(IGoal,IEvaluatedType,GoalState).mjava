@@ -1,0 +1,45 @@
+	private IGoal produceNextSubgoal(IGoal previousGoal, IEvaluatedType previousResult, GoalState goalState) {
+
+		ExpressionTypeGoal typedGoal = (ExpressionTypeGoal) goal;
+		CallExpression expression = (CallExpression) typedGoal.getExpression();
+
+		// just starting to evaluate method, evaluate method receiver first:
+		if (state == STATE_INIT) {
+			ASTNode receiver = expression.getReceiver();
+			if (receiver == null) {
+				state = STATE_GOT_RECEIVER;
+			} else {
+				state = STATE_WAITING_RECEIVER;
+				return new ExpressionTypeGoal(goal.getContext(), receiver);
+			}
+		}
+
+		// receiver must been evaluated now, lets evaluate method return type:
+		if (state == STATE_WAITING_RECEIVER) {
+			receiverType = previousResult;
+			if (receiverType == null) {
+				return null;
+			}
+			state = STATE_GOT_RECEIVER;
+		}
+
+		// we've evaluated receiver, lets evaluate the method return type now (using PHP Doc first):
+		if (state == STATE_GOT_RECEIVER) {
+			state = STATE_WAITING_METHOD_PHPDOC;
+			return new PHPDocMethodReturnTypeGoal(new InstanceContext((ISourceModuleContext) goal.getContext(), receiverType), expression.getName());
+		}
+		if (state == STATE_WAITING_METHOD_PHPDOC) {
+			if (goalState != GoalState.PRUNED && previousResult != null && previousResult != UnknownType.INSTANCE) {
+				result = previousResult;
+			}
+			state = STATE_WAITING_METHOD;
+			return new MethodReturnTypeGoal(new InstanceContext((ISourceModuleContext) goal.getContext(), receiverType), expression.getName(), new IEvaluatedType[0] /* arguments are not interesting us */);
+		}
+		if (state == STATE_WAITING_METHOD) {
+			if (goalState != GoalState.PRUNED && previousResult != null && previousResult != UnknownType.INSTANCE) {
+				result = previousResult;
+			}
+		}
+		return null;
+	}
+
