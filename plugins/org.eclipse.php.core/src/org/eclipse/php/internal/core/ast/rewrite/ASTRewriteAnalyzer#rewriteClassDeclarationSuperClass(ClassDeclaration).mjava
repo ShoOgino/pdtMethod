@@ -1,0 +1,37 @@
+	/* 
+	 * Rewrite the super-class part of the class declaration 
+	 * @param classDeclaration
+	 */
+	private void rewriteClassDeclarationSuperClass(ClassDeclaration classDeclaration) throws CoreException {
+		RewriteEvent event = getEvent(classDeclaration, ClassDeclaration.SUPER_CLASS_PROPERTY);
+		if (event != null) {
+			int changeKind = event.getChangeKind();
+			TextEditGroup editGroup = getEditGroup(event);
+			switch (changeKind) {
+				case RewriteEvent.INSERTED:
+					Identifier superClass = (Identifier) event.getNewValue();
+					int insertionPos = classDeclaration.getName().getEnd();
+					String extendsKeyword = " extends ";
+					doTextInsert(insertionPos, extendsKeyword, editGroup);
+					doTextInsert(insertionPos, superClass, 0, false, editGroup);
+					break;
+				case RewriteEvent.REMOVED:
+					superClass = (Identifier) event.getOriginalValue();
+					// locate the end offset of the deletion
+					int deletionEnd;
+					if (classDeclaration.interfaces().size() > 0) {
+						deletionEnd = getScanner().getTokenStartOffset(SymbolsProvider.getSymbol(SymbolsProvider.IMPLEMENTS_ID, scanner.getPHPVersion()), classDeclaration.getStart());
+					} else {
+						deletionEnd = classDeclaration.getBody().getStart();
+					}
+					int deletionStart = classDeclaration.getName().getEnd();
+					doTextRemove(deletionStart, deletionEnd - deletionStart, editGroup);
+					doTextInsert(deletionStart, " ", editGroup);
+					break;
+				case RewriteEvent.REPLACED:
+					rewriteRequiredNode(classDeclaration, ClassDeclaration.SUPER_CLASS_PROPERTY);
+					break;
+			}
+		}
+	}
+
