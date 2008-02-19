@@ -1,0 +1,56 @@
+	private IGoal[] produceNextSubgoal(IGoal previousGoal, IEvaluatedType previousResult, GoalState goalState) {
+
+		ExpressionTypeGoal typedGoal = (ExpressionTypeGoal) goal;
+		FieldAccess expression = (FieldAccess) typedGoal.getExpression();
+		Expression receiver = expression.getDispatcher();
+		Expression field = expression.getField();
+
+		if (!(field instanceof SimpleReference)) {
+			return null;
+		}
+
+		String variableName = '$' + ((SimpleReference)field).getName();
+
+		// just starting to evaluate method, evaluate method receiver first:
+		if (state == STATE_INIT) {
+
+			if (receiver == null) {
+				state = STATE_GOT_RECEIVER;
+			} else {
+				state = STATE_WAITING_RECEIVER;
+				return new IGoal[] { new ExpressionTypeGoal(goal.getContext(), receiver) };
+			}
+		}
+
+		// receiver must been evaluated now:
+		if (state == STATE_WAITING_RECEIVER) {
+			receiverType = previousResult;
+			if (receiverType == null) {
+				return null;
+			}
+			state = STATE_GOT_RECEIVER;
+		}
+
+		// we've evaluated receiver, lets evaluate the method return type now (using PHPDoc first):
+		if (state == STATE_GOT_RECEIVER) {
+			state = STATE_WAITING_FIELD_PHPDOC;
+			return new IGoal[] { new PHPDocClassVariableGoal(new InstanceContext((ISourceModuleContext) goal.getContext(), receiverType), variableName) };
+		}
+
+		if (state == STATE_WAITING_FIELD_PHPDOC) {
+			if (goalState != GoalState.PRUNED && previousResult != null && previousResult != UnknownType.INSTANCE) {
+				result = previousResult;
+			}
+			state = STATE_WAITING_FIELD;
+			return new IGoal[] { new ClassVariableDeclarationGoal(new InstanceContext((ISourceModuleContext) goal.getContext(), receiverType), variableName) };
+		}
+
+		if (state == STATE_WAITING_FIELD) {
+			if (goalState != GoalState.PRUNED && previousResult != null && previousResult != UnknownType.INSTANCE) {
+				result = previousResult;
+			}
+		}
+
+		return null;
+	}
+

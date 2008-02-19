@@ -5,17 +5,20 @@
 				Expression dispatcher = fieldAccess.getDispatcher();
 				if (dispatcher instanceof VariableReference && "$this".equals(((VariableReference) dispatcher).getName())) { //$NON-NLS-1$
 					Expression field = fieldAccess.getField();
-					if (field instanceof SimpleReference && ((SimpleReference) field).getName().equals(variableName)) {
-						LinkedList<ASTNode> declList = contextToDeclarations.get(contextStack.peek());
-						// remove all declarations of this variable from the inner blocks
-						while (declList.size() > level) {
-							declList.removeLast();
-						}
-						declList.addLast(e.getValue());
+					if (field instanceof SimpleReference) {
+						String fieldVarName = '$' + ((SimpleReference) field).getName();
+						if (fieldVarName.equals(variableName)) {
+							LinkedList<ASTNode> declList = contextToDeclarations.get(contextStack.peek());
+							// remove all declarations of this variable from the inner blocks
+							while (declList.size() > level) {
+								declList.removeLast();
+							}
+							declList.addLast(e.getValue());
 
-						// Override primary field declaration:
-						if (level == 0) {
-							primaryDeclarationOverriden = true;
+							// Override primary field declaration:
+							if (level == 0) {
+								primaryDeclarationOverriden = true;
+							}
 						}
 					}
 				}

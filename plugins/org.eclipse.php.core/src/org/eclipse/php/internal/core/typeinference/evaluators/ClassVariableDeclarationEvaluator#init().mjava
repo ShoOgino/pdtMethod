@@ -1,35 +1,64 @@
 	public IGoal[] init() {
 		ClassVariableDeclarationGoal typedGoal = (ClassVariableDeclarationGoal) goal;
 		InstanceContext context = (InstanceContext) typedGoal.getContext();
-		SimpleReference field = typedGoal.getField();
+		String variableName = typedGoal.getVariableName();
 
 		List<IGoal> subGoals = new LinkedList<IGoal>();
 
-		String typeName = context.getInstanceType().getTypeName();
+		IEvaluatedType instanceType = context.getInstanceType();
 
-		IModelElement[] elements = PHPMixinModel.getInstance().getClass(typeName);
+		Set<IType> types = new HashSet<IType>();
 
-		for (IModelElement element : elements) {
-			if (element instanceof IType) {
-				IType type = (IType) element;
-				ISourceModule sourceModule = type.getSourceModule();
-				ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule, null);
-				try {
-					TypeDeclaration typeDeclaration = PHPModelUtils.getNodeByClass(moduleDeclaration, type);
-					ClassVariableDeclarationSearcher searcher = new ClassVariableDeclarationSearcher(sourceModule, moduleDeclaration, field.getName());
-					typeDeclaration.traverse(searcher);
-
-					Map<IContext, LinkedList<ASTNode>> contextToDeclarationMap = searcher.getContextToDeclarationMap();
-					Iterator<IContext> contextIt = contextToDeclarationMap.keySet().iterator();
-					while (contextIt.hasNext()) {
-						IContext c = contextIt.next();
-						for (ASTNode declaration : contextToDeclarationMap.get(c)) {
-							subGoals.add(new ExpressionTypeGoal(c, declaration));
-						}
+		if (instanceType instanceof PHPClassType) {
+			PHPClassType classType = (PHPClassType) instanceType;
+			IModelElement[] elements = PHPMixinModel.getInstance().getClass(classType.getTypeName());
+			for (IModelElement e : elements) {
+				types.add((IType) e);
+			}
+		} else if (instanceType instanceof AmbiguousType) {
+			AmbiguousType ambiguousType = (AmbiguousType) instanceType;
+			for (IEvaluatedType type : ambiguousType.getPossibleTypes()) {
+				if (type instanceof PHPClassType) {
+					PHPClassType classType = (PHPClassType) instanceType;
+					IModelElement[] elements = PHPMixinModel.getInstance().getClass(classType.getTypeName());
+					for (IModelElement e : elements) {
+						types.add((IType) e);
 					}
-				} catch (Exception e) {
-					Logger.logException(e);
 				}
+			}
+		}
+
+		IType typeFromSameFile = null;
+		for (IType type : types) {
+			if (type.getSourceModule().equals(context.getSourceModule())) {
+				typeFromSameFile = type;
+				break;
+			}
+		}
+		// If type from the same file was found  - use it
+		if (typeFromSameFile != null) {
+			types.clear();
+			types.add(typeFromSameFile);
+		}
+
+		for (IType type : types) {
+			ISourceModule sourceModule = type.getSourceModule();
+			ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule, null);
+			try {
+				TypeDeclaration typeDeclaration = PHPModelUtils.getNodeByClass(moduleDeclaration, type);
+				ClassVariableDeclarationSearcher searcher = new ClassVariableDeclarationSearcher(sourceModule, moduleDeclaration, variableName);
+				typeDeclaration.traverse(searcher);
+
+				Map<IContext, LinkedList<ASTNode>> contextToDeclarationMap = searcher.getContextToDeclarationMap();
+				Iterator<IContext> contextIt = contextToDeclarationMap.keySet().iterator();
+				while (contextIt.hasNext()) {
+					IContext c = contextIt.next();
+					for (ASTNode declaration : contextToDeclarationMap.get(c)) {
+						subGoals.add(new ExpressionTypeGoal(c, declaration));
+					}
+				}
+			} catch (Exception e) {
+				Logger.logException(e);
 			}
 		}
 
