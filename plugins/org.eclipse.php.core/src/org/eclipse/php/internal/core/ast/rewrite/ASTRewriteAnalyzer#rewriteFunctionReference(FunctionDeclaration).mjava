@@ -1,0 +1,20 @@
+	private void rewriteFunctionReference(FunctionDeclaration functionDeclaration) {
+		RewriteEvent event = getEvent(functionDeclaration, FunctionDeclaration.IS_REFERENCE_PROPERTY);
+		if (event != null && event.getChangeKind() == RewriteEvent.REPLACED) {
+			boolean isReference = (Boolean) event.getNewValue();
+
+			TextEditGroup editGroup = getEditGroup(event);
+			// we need to remove everything between the word 'function' to the start of the function's
+			// name and then place a blank or an &.
+			int nameStart = functionDeclaration.getFunctionName().getStart();
+			int startDeletionFrom = functionDeclaration.getStart() + 8; // 8 is the 'function' keyword length
+			doTextRemove(startDeletionFrom, nameStart - startDeletionFrom, editGroup);
+			if (isReference) {
+				// we need to insert the &
+				doTextInsert(startDeletionFrom, " &", editGroup);
+			} else {
+				doTextInsert(startDeletionFrom, " ", editGroup);
+			}
+		}
+	}
+

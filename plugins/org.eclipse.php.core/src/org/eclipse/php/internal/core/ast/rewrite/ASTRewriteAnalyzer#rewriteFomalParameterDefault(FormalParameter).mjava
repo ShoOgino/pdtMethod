@@ -1,0 +1,31 @@
+	/*
+	 * Rewrite the parameter's default value of a {@link FormalParameter}
+	 * @param formalParameter
+	 */
+	private void rewriteFomalParameterDefault(FormalParameter formalParameter) {
+		RewriteEvent event = getEvent(formalParameter, FormalParameter.DEFAULT_VALUE_PROPERTY);
+		if (event != null) {
+			int kind = event.getChangeKind();
+			switch (kind) {
+				case RewriteEvent.REPLACED:
+					rewriteRequiredNode(formalParameter, FormalParameter.DEFAULT_VALUE_PROPERTY);
+					break;
+				case RewriteEvent.INSERTED:
+					Identifier identifier = (Identifier) event.getNewValue();
+					String name = identifier.getName();
+					if (name != null) {
+						if (!name.endsWith(" ") && !name.endsWith("\t")) {
+							name += ' ';
+						}
+						doTextInsert(formalParameter.getStart(), name, getEditGroup(event));
+					}
+					break;
+				case RewriteEvent.REMOVED:
+					ASTNode originalValue = (ASTNode) event.getOriginalValue();
+					int nameEnd = formalParameter.getParameterName().getEnd();
+					doTextRemove(nameEnd, originalValue.getEnd() - nameEnd, getEditGroup(event));
+					break;
+			}
+		}
+	}
+

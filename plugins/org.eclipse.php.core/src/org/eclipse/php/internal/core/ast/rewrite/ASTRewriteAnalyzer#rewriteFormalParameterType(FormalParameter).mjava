@@ -1,0 +1,33 @@
+	/*
+	 * Rewrite the parameter type of a {@link FormalParameter}
+	 * @param formalParameter
+	 */
+	private void rewriteFormalParameterType(FormalParameter formalParameter) {
+		// Rewrite the parameter type
+		RewriteEvent event = getEvent(formalParameter, FormalParameter.PARAMETER_TYPE_PROPERTY);
+		if (event != null) {
+			int kind = event.getChangeKind();
+			switch (kind) {
+				case RewriteEvent.REPLACED:
+					int pos = rewriteRequiredNode(formalParameter, FormalParameter.PARAMETER_TYPE_PROPERTY);
+					ASTNode originalValue = (ASTNode) event.getOriginalValue();
+					if (originalValue == null || originalValue.getLength() == 0) {
+						// Add another space to split the type from the name
+						doTextInsert(pos, " ", getEditGroup(event));
+					}
+					break;
+				case RewriteEvent.INSERTED:
+					Scalar scalar = (Scalar) event.getNewValue();
+					String scalarValue = scalar.getStringValue();
+					if (scalar != null) {
+						doTextInsert(formalParameter.getStart(), " = " + scalarValue, getEditGroup(event));
+					}
+					break;
+				case RewriteEvent.REMOVED:
+					originalValue = (ASTNode) event.getOriginalValue();
+					doTextRemove(originalValue.getStart(), originalValue.getLength(), getEditGroup(event));
+					break;
+			}
+		}
+	}
+
