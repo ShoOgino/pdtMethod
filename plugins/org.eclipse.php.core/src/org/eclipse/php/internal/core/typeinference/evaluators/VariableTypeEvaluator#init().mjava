@@ -1,29 +1,5 @@
 	public IGoal[] init() {
-		IContext context = goal.getContext();
-
-		try {
-			if (context instanceof ISourceModuleContext) {
-				ISourceModuleContext typedContext = (ISourceModuleContext) context;
-				ASTNode node = (context instanceof MethodContext) ? ((MethodContext)context).getMethodNode() : typedContext.getRootNode();
-				VariableDeclarationSearcher varDecSearcher = new VariableDeclarationSearcher();
-				node.traverse(varDecSearcher);
-
-				List<IGoal> subGoals = new LinkedList<IGoal>();
-
-				LinkedList<ASTNode> declarations = varDecSearcher.getDeclarations();
-				if (varDecSearcher.needsMergingWithGlobalScope() || (declarations.isEmpty() && context.getClass() == BasicContext.class)) {
-					// collect all global variables, and merge results with existing declarations
-					subGoals.add(new GlobalVariableReferencesGoal(context, variableReference.getName()));
-				}
-				for (ASTNode declaration : declarations) {
-					subGoals.add(new ExpressionTypeGoal(context, declaration));
-				}
-				return subGoals.toArray(new IGoal[subGoals.size()]);
-			}
-		} catch (Exception e) {
-			Logger.logException(e);
-		}
-
-		return IGoal.NO_GOALS;
+		VariableTypeGoal typedGoal = (VariableTypeGoal) goal;
+		return new IGoal[] { new ExpressionTypeGoal(goal.getContext(), typedGoal.getExpression()) };
 	}
 
