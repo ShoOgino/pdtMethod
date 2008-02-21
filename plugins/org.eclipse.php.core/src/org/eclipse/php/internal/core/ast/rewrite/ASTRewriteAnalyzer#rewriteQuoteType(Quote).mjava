@@ -1,0 +1,52 @@
+	/**
+	 * @param quote
+	 */
+	private void rewriteQuoteType(Quote quote) {
+		if (isChanged(quote, Quote.QUOTE_TYPE_PROPERTY)) {
+			List<Expression> expressions = quote.expressions();
+			if (expressions.size() > 0) {
+				RewriteEvent event = getEvent(quote, Quote.QUOTE_TYPE_PROPERTY);
+				if (event != null && event.getChangeKind() == RewriteEvent.REPLACED) {
+					TextEditGroup editGroup = getEditGroup(event);
+					int expressionsStart = expressions.get(0).getStart();
+					int expressionsEnd = expressions.get(expressions.size() - 1).getEnd();
+					int quoteStart = quote.getStart();
+					int quoteEnd = quote.getEnd();
+					// In case this is a Heredoc, we need to fix the expression end position to exclude the heredoc marker.
+					int originalType = (Integer) event.getOriginalValue();
+					if (originalType == Quote.QT_HEREDOC) {
+						for (; expressionsEnd > expressionsStart; expressionsEnd--) {
+							if (content[expressionsEnd] == '\n' || content[expressionsEnd] == '\r') {
+								// Check that we don't have a pair of \n\r before we break the loop
+								if (content[expressionsEnd - 1] == '\n' || content[expressionsEnd - 1] == '\r') {
+									expressionsEnd--;
+								}
+								break;
+							}
+						}
+					}
+
+					int newType = (Integer) event.getNewValue();
+					String newStart = "";
+					String newEnd = "";
+					switch (newType) {
+						case Quote.QT_SINGLE:
+							newStart = "'";
+							newEnd = "'";
+							break;
+						case Quote.QT_QUOTE:
+							newStart = "\"";
+							newEnd = "\"";
+							break;
+						case Quote.QT_HEREDOC:
+							newStart = "<<<Heredoc\n";
+							newEnd = "\nHeredoc;\n";
+							break;
+					}
+					doTextReplace(quoteStart, expressionsStart - quoteStart, newStart, editGroup);
+					doTextReplace(expressionsEnd, quoteEnd - expressionsEnd, newEnd, editGroup);
+				}
+			}
+		}
+	}
+
