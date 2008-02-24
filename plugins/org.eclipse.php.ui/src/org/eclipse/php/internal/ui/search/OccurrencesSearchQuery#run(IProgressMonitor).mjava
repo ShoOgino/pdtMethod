@@ -1,0 +1,43 @@
+	/*
+	 * @see org.eclipse.search.ui.ISearchQuery#run(org.eclipse.core.runtime.IProgressMonitor)
+	 */
+	public IStatus run(IProgressMonitor monitor) {
+		if (fFinder == null) {
+			return new StatusInfo(IStatus.ERROR, "Query has already been running"); //$NON-NLS-1$
+		}
+		if (monitor == null)
+			monitor= new NullProgressMonitor();
+		
+		try {
+			OccurrenceLocation[] occurrences= fFinder.getOccurrences();
+			if (occurrences != null) {
+				HashMap lineMap= new HashMap();
+				Program astRoot= fFinder.getASTRoot();
+				ArrayList resultingMatches= new ArrayList();
+				
+				for (int i= 0; i < occurrences.length; i++) {
+					OccurrenceLocation loc= occurrences[i];
+
+					DLTKElementLine lineKey= getLineElement(astRoot, loc, lineMap);
+					if (lineKey != null) {
+						OccurrenceMatch match= new OccurrenceMatch(lineKey, loc.getOffset(), loc.getLength(), loc.getFlags());
+						resultingMatches.add(match);
+
+						// TODO see location flags for more information
+						// lineKey.setFlags(lineKey.getFlags() | loc.getFlags());
+					}
+				}
+
+				if (!resultingMatches.isEmpty()) {
+					fResult.addMatches((Match[]) resultingMatches.toArray(new Match[resultingMatches.size()]));
+				}
+			}
+
+		} finally {
+			//Don't leak AST:
+			fFinder= null;
+			monitor.done();
+		}
+		return Status.OK_STATUS;
+	}
+

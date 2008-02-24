@@ -3,6 +3,27 @@
 	 */
 	public void fillContextMenu(IMenuManager menu) {
 		super.fillContextMenu(menu);
+		if(!PreferenceConstants.getPreferenceStore().getBoolean(PreferenceConstants.SEARCH_USE_REDUCED_MENU)) {
+			IMenuManager target= menu;
+			IMenuManager searchSubMenu= null;
+			if (fEditor != null) {
+				String groupName= "SearchMessages.group_search"; 
+				searchSubMenu= new MenuManager(groupName, ITextEditorActionConstants.GROUP_FIND);
+				searchSubMenu.add(new GroupMarker(ITextEditorActionConstants.GROUP_FIND));
+				target= searchSubMenu;
+			}
+						
+			if (searchSubMenu != null) {
+				fOccurrencesGroup.fillContextMenu(target);
+				searchSubMenu.add(new Separator());
+			}
+			
+			// no other way to find out if we have added items.
+			if (searchSubMenu != null && searchSubMenu.getItems().length > 2) {		
+				menu.appendToGroup(ITextEditorActionConstants.GROUP_FIND, searchSubMenu);
+			}
+		}
+
 		menu.appendToGroup(IContextMenuConstants.GROUP_OPEN, action);
 	}
 

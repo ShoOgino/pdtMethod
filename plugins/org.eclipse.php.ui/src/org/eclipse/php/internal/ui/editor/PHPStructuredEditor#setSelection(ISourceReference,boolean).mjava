@@ -1,0 +1,64 @@
+	protected void setSelection(ISourceReference reference, boolean moveCursor) {
+		if (getSelectionProvider() == null)
+			return;
+		ISelection selection = getSelectionProvider().getSelection();
+		if (selection instanceof TextSelection) {
+			TextSelection textSelection = (TextSelection) selection;
+			// PR 39995: [navigation] Forward history cleared after going back
+			// in navigation history:
+			// mark only in navigation history if the cursor is being moved
+			// (which it isn't if
+			// this is called from a PostSelectionEvent that should only update
+			// the magnet)
+			if (moveCursor
+					&& (textSelection.getOffset() != 0 || textSelection
+							.getLength() != 0))
+				markInNavigationHistory();
+		}
+		if (reference != null) {
+			StyledText textWidget = null;
+			ISourceViewer sourceViewer = getSourceViewer();
+			if (sourceViewer != null)
+				textWidget = sourceViewer.getTextWidget();
+			if (textWidget == null)
+				return;
+			try {
+				ISourceRange range = null;
+				range = reference.getSourceRange();
+				if (range == null)
+					return;
+				int offset = range.getOffset();
+				int length = range.getLength();
+				if (offset < 0 || length < 0)
+					return;
+				setHighlightRange(offset, length, moveCursor);
+				if (!moveCursor)
+					return;
+				offset = -1;
+				length = -1;
+				if (reference instanceof IMember) {
+					range = ((IMember) reference).getNameRange();
+					if (range != null) {
+						offset = range.getOffset();
+						length = range.getLength();
+					}
+				}
+				if (offset > -1 && length > 0) {
+					try {
+						textWidget.setRedraw(false);
+						sourceViewer.revealRange(offset, length);
+						sourceViewer.setSelectedRange(offset, length);
+					} finally {
+						textWidget.setRedraw(true);
+					}
+					markInNavigationHistory();
+				}
+			} catch (ModelException x) {
+			} catch (IllegalArgumentException x) {
+			}
+		} else if (moveCursor) {
+			resetHighlightRange();
+			markInNavigationHistory();
+		}
+	}
+

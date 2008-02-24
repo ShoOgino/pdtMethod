@@ -23,7 +23,7 @@
 
 			// Add occurrence annotations
 			int length= fLocations.length;
-			Map annotationMap= new HashMap(length);
+			Map<Annotation, Position> annotationMap= new HashMap<Annotation, Position>(length);
 			for (int i= 0; i < length; i++) {
 
 				if (isCanceled(progressMonitor))
@@ -33,7 +33,7 @@
 				Position position= new Position(location.getOffset(), location.getLength());
 
 				String description= location.getDescription();
-				String annotationType= (location.getFlags() == IOccurrencesFinder.F_WRITE_OCCURRENCE) ? "org.eclipse.jdt.ui.occurrences.write" : "org.eclipse.jdt.ui.occurrences"; //$NON-NLS-1$ //$NON-NLS-2$
+				String annotationType= (location.getFlags() == IOccurrencesFinder.F_WRITE_OCCURRENCE) ? "org.eclipse.php.ui.occurrences.write" : "org.eclipse.php.ui.occurrences"; //$NON-NLS-1$ //$NON-NLS-2$
 				
 				annotationMap.put(new Annotation(annotationType, false, description), position);
 			}
@@ -46,13 +46,11 @@
 					((IAnnotationModelExtension)annotationModel).replaceAnnotations(fOccurrenceAnnotations, annotationMap);
 				} else {
 					removeOccurrenceAnnotations();
-					Iterator iter= annotationMap.entrySet().iterator();
-					while (iter.hasNext()) {
-						Map.Entry mapEntry= (Map.Entry)iter.next();
-						annotationModel.addAnnotation((Annotation)mapEntry.getKey(), (Position)mapEntry.getValue());
+					for (Map.Entry<Annotation, Position> entry : annotationMap.entrySet()) {
+						annotationModel.addAnnotation(entry.getKey(), entry.getValue());	
 					}
 				}
-				fOccurrenceAnnotations= (Annotation[])annotationMap.keySet().toArray(new Annotation[annotationMap.keySet().size()]);
+				fOccurrenceAnnotations= annotationMap.keySet().toArray(new Annotation[annotationMap.keySet().size()]);
 			}
 
 			return Status.OK_STATUS;
