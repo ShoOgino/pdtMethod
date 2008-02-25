@@ -1,0 +1,40 @@
+	/*
+	 * Rewrite a key=>value pair
+	 * @param arrayElement
+	 * @param event
+	 */
+	private void rewriteKeyValue(ASTNode node, RewriteEvent event) {
+		int kind = event.getChangeKind();
+		TextEditGroup editGroup = getEditGroup(event);
+		switch (kind) {
+			case RewriteEvent.INSERTED:
+				// We should insert the key and the => string
+				Expression newValue = (Expression) event.getNewValue();
+				int start = node.getStart();
+				if (node instanceof ForEachStatement) {
+					start = ((ForEachStatement) node).getValue().getStart();
+				}
+				doTextInsert(start, newValue, 0, false, editGroup);
+				doTextInsert(start, "=>", editGroup);
+				break;
+			case RewriteEvent.REMOVED:
+				Expression removedExpression = (Expression) event.getOriginalValue();
+				int deleteEndPos = -1;
+				if (node instanceof ArrayElement) {
+					deleteEndPos = ((ArrayElement) node).getValue().getStart();
+				} else if (node instanceof ForEachStatement) {
+					deleteEndPos = ((ForEachStatement) node).getValue().getStart();
+				}
+				int deleteStartPos = removedExpression.getStart();
+				doTextRemove(deleteStartPos, deleteEndPos - deleteStartPos, editGroup);
+				break;
+			case RewriteEvent.REPLACED:
+				if (node instanceof ArrayElement) {
+					rewriteRequiredNode(node, ArrayElement.KEY_PROPERTY);
+				} else if (node instanceof ForEachStatement) {
+					rewriteRequiredNode(node, ForEachStatement.KEY_PROPERTY);
+				}
+				break;
+		}
+	}
+
