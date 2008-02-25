@@ -1,0 +1,36 @@
+	/*
+	 * Rewrite a statement blocks from curly to 'Alternative syntax' blocks.
+	 * 
+	 * @param node
+	 * @param editGroup
+	 * @param shouldBeCurly
+	 * @param keyword The block closing keyword (e.g. endif, endwhile etc.)
+	 * @param keywordSymbol The keyword Symbol
+	 */
+	private void rewriteBlock(Block node, TextEditGroup editGroup, boolean shouldBeCurly, String keyword, Symbol keywordSymbol) {
+		int blockStart = node.getStart();
+		int blockEnd = node.getEnd() - 1;
+		if (shouldBeCurly) {
+			// Change the if's open block char to the opening brace char
+			doTextReplace(blockStart, 1, "{", editGroup);
+			// Change the closing mark to be a closing brace
+			doTextInsert(blockEnd + 1, "\n}", editGroup);
+			try {
+				// We scan for the Block end position by looking for the symbol's start offset.
+				// The search is done a bit before the block's end in order to cover the 'SwitchStatement' that is 
+				// marking the end of the Block after the 'endswitch' keyword (unlike all the other types of blocks).
+				int endBlockPos = getScanner().getTokenStartOffset(keywordSymbol, blockEnd - keyword.length());
+				// search for the semicolon that might appear after that token
+				int semicolonPos = scanToSemicolon(endBlockPos + keyword.length());
+				doTextRemove(endBlockPos, semicolonPos - endBlockPos + 1, editGroup);
+			} catch (Exception e) {
+				// Should not happen, since the if should have the keyword
+				handleException(e);
+			}
+		} else {
+			doTextReplace(blockStart, 1, ":", editGroup);
+			// In case that we don't have a false statement, add the keyword
+			doTextReplace(blockEnd, 1, keyword + ';', editGroup);
+		}
+	}
+

@@ -1,0 +1,55 @@
+	/*
+	 * Rewrite the If statement blocks from curly to 'Alternative syntax' blocks.
+	 * 
+	 * @param node
+	 * @param editGroup
+	 * @param shouldBeCurly
+	 */
+	private void rewriteIfBlocks(Block node, TextEditGroup editGroup, boolean shouldBeCurly) {
+		int blockStart = node.getStart();
+		int blockEnd = node.getEnd() - 1;
+		StructuralPropertyDescriptor propertyDescriptor = node.getLocationInParent();
+		IfStatement ifStatement = (IfStatement) node.getParent();
+		if (propertyDescriptor == IfStatement.TRUE_STATEMENT_PROPERTY) {
+			if (shouldBeCurly) {
+				// Change the if's open block char to the opening brace char
+				doTextReplace(blockStart, 1, "{", editGroup);
+				// Change the closing mark to be a closing brace
+
+				doTextInsert(blockEnd + 1, "\n}", editGroup);
+				// remove the endif token at this stage
+				Symbol endIfSymbol = SymbolsProvider.getSymbol(SymbolsProvider.END_IF_ID, scanner.getPHPVersion());
+				try {
+					int endifPos = getScanner().getTokenStartOffset(endIfSymbol, blockEnd);
+					// search for the semicolon that might appear after that token
+					int semicolonPos = scanToSemicolon(endifPos + 5);
+					doTextRemove(endifPos, semicolonPos - endifPos + 1, editGroup);
+				} catch (Exception e) {
+					// Should not happen, since the if should have an endif
+					handleException(e);
+				}
+			} else {
+				doTextReplace(blockStart, 1, ":", editGroup);
+				// In case that we don't have a false statement, add the endif word
+				if (ifStatement.getFalseStatement() == null) {
+					doTextReplace(blockEnd, 1, "endif;", editGroup);
+				} else {
+					doTextRemove(blockEnd, 1, editGroup);
+				}
+			}
+		} else if (propertyDescriptor == IfStatement.FALSE_STATEMENT_PROPERTY) {
+			// Change the if's closing block char to an endif; or to a closing brace
+			if (shouldBeCurly) {
+				// replace the opening colon char to a brace char
+				doTextReplace(blockStart, 1, "{", editGroup);
+				// close the block with a brace
+				doTextInsert(blockEnd + 1, "\n}", editGroup);
+			} else {
+				// TODO - Check when we have no braces in the if-statement
+				doTextReplace(blockStart, 1, ":", editGroup);
+				// End the if statement
+				doTextReplace(blockEnd, 1, "endif;", editGroup);
+			}
+		}
+	}
+
