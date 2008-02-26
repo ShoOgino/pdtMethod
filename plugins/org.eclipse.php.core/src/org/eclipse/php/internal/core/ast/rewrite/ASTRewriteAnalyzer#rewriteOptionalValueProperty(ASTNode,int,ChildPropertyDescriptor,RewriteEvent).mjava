@@ -1,0 +1,33 @@
+	/*
+	 * Rewrite an optional value property.
+	 * This should handle declarations like $a = 3 etc. and add, remove or modify the assigned value.
+	 * Note that the new value that will be used must be an ASTNode, so in any other case where a value property does not
+	 * hold an ASTNode this call will fail.
+	 * 
+	 * @param node The node that we rewrite
+	 * @param pos The position that the edit should start from
+	 * @param valueProperty ChildPropertyDescriptor
+	 * @param event Non-null RewriteEvent
+	 */
+	private void rewriteOptionalValueProperty(ASTNode node, int pos, ChildPropertyDescriptor valueProperty, RewriteEvent event) {
+		TextEditGroup editGroup = getEditGroup(event);
+		int kind = event.getChangeKind();
+		switch (kind) {
+			case RewriteEvent.REPLACED:
+				rewriteRequiredNode(node, valueProperty);
+				break;
+			case RewriteEvent.INSERTED:
+				ASTNode newNode = (ASTNode) event.getNewValue();
+				doTextInsert(pos, " = ", editGroup);
+				doTextInsert(pos, newNode, 0, false, editGroup);
+				break;
+			case RewriteEvent.REMOVED:
+				ASTNode originalNode = (ASTNode) event.getOriginalValue();
+				int endPos = originalNode.getEnd();
+				doTextRemove(pos, endPos - pos, editGroup);
+				break;
+			default:
+				// do nothing
+		}
+	}
+

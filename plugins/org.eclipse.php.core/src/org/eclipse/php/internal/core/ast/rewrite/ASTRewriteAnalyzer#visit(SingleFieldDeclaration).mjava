@@ -2,6 +2,13 @@
 	 * @see org.eclipse.php.internal.core.ast.visitor.AbstractVisitor#visit(org.eclipse.php.internal.core.ast.nodes.SingleFieldDeclaration)
 	 */
 	public boolean visit(SingleFieldDeclaration singleFieldDeclaration) {
-		return rewriteRequiredNodeVisit(singleFieldDeclaration, SingleFieldDeclaration.NAME_PROPERTY, SingleFieldDeclaration.VALUE_PROPERTY);
+		if (!hasChildrenChanges(singleFieldDeclaration)) {
+			return doVisitUnchangedChildren(singleFieldDeclaration);
+		}
+		RewriteEvent event = getEvent(singleFieldDeclaration, SingleFieldDeclaration.VALUE_PROPERTY);
+		if (event != null) {
+			rewriteOptionalValueProperty(singleFieldDeclaration, singleFieldDeclaration.getName().getEnd(), SingleFieldDeclaration.VALUE_PROPERTY, event);
+		}
+		return rewriteRequiredNodeVisit(singleFieldDeclaration, SingleFieldDeclaration.NAME_PROPERTY);
 	}
 
