@@ -8,118 +8,30 @@
 	 *  IllegalArgumentException is thrown.
 	 */
 	private TextEdit formatNode(ASTNode node, String str, int indentationLevel) {
+		// (shalom) We create chunk of php codes that we inject to the formatter.
+		// Every node is created with a <?php prefix and, optionally, some more prefix string that is needed for the formatting.
 		int code;
-		String prefix= ""; //$NON-NLS-1$
-		String suffix= ""; //$NON-NLS-1$
+		String prefix = "<?php "; //$NON-NLS-1$
+		String suffix = ""; //$NON-NLS-1$
 		if (node instanceof Statement) {
-			code= 0; // CodeFormatter.K_STATEMENTS;
 			if (node.getType() == ASTNode.SWITCH_CASE) {
-				prefix= "switch(1) {"; //$NON-NLS-1$
-				suffix= "}"; //$NON-NLS-1$
-				code= 0; //CodeFormatter.K_STATEMENTS;
+				prefix += "switch(1) {"; //$NON-NLS-1$
+				suffix = "}"; //$NON-NLS-1$
 			}
 		} else if (node instanceof Expression && node.getType() != ASTNode.SINGLE_FIELD_DECLARATION) {
-			code= 0; //CodeFormatter.K_EXPRESSION;
 		} else if (node instanceof BodyDeclaration) {
-			code= 0; //CodeFormatter.K_CLASS_BODY_DECLARATIONS;
 		} else {
-			switch (node.getType()) {
-//				case ASTNode.ARRAY_TYPE:
-//				case ASTNode.PARAMETERIZED_TYPE:
-//				case ASTNode.PRIMITIVE_TYPE:
-//				case ASTNode.QUALIFIED_TYPE:
-//				case ASTNode.SIMPLE_TYPE:
-//					suffix= " x;"; //$NON-NLS-1$
-//					code= CodeFormatter.K_CLASS_BODY_DECLARATIONS;
-//					break;
-//				case ASTNode.WILDCARD_TYPE:
-//					prefix= "A<"; //$NON-NLS-1$
-//					suffix= "> x;"; //$NON-NLS-1$
-//					code= CodeFormatter.K_CLASS_BODY_DECLARATIONS;
-//					break;
-//				case ASTNode.COMPILATION_UNIT:
-//					code= CodeFormatter.K_COMPILATION_UNIT;
-//					break;
-//				case ASTNode.VARIABLE_DECLARATION_EXPRESSION:
-//				case ASTNode.SINGLE_VARIABLE_DECLARATION:
-//					suffix= ";"; //$NON-NLS-1$
-//					code= CodeFormatter.K_STATEMENTS;
-//					break;
-//				case ASTNode.VARIABLE_DECLARATION_FRAGMENT:
-//					prefix= "A "; //$NON-NLS-1$
-//					suffix= ";"; //$NON-NLS-1$
-//					code= CodeFormatter.K_STATEMENTS;
-//					break;			
-//				case ASTNode.PACKAGE_DECLARATION:
-//				case ASTNode.IMPORT_DECLARATION:
-//					suffix= "\nclass A {}"; //$NON-NLS-1$
-//					code= CodeFormatter.K_COMPILATION_UNIT;
-//					break;
-//				case ASTNode.JAVADOC:
-//					suffix= "\nclass A {}"; //$NON-NLS-1$
-//					code= CodeFormatter.K_COMPILATION_UNIT;
-//					break;
-//				case ASTNode.CATCH_CLAUSE:
-//					prefix= "try {}"; //$NON-NLS-1$
-//					code= CodeFormatter.K_STATEMENTS;
-//					break;
-//				case ASTNode.ANONYMOUS_CLASS_DECLARATION:
-//					prefix= "new A()"; //$NON-NLS-1$
-//					suffix= ";"; //$NON-NLS-1$
-//					code= CodeFormatter.K_STATEMENTS;
-//					break;
-//				case ASTNode.MEMBER_VALUE_PAIR:
-//					prefix= "@Author("; //$NON-NLS-1$
-//					suffix= ") class x {}"; //$NON-NLS-1$
-//					code= CodeFormatter.K_COMPILATION_UNIT;
-//					break;
-//				case ASTNode.MODIFIER:
-//					suffix= " class x {}"; //$NON-NLS-1$
-//					code= CodeFormatter.K_COMPILATION_UNIT;				
-//					break;
-//				case ASTNode.TYPE_PARAMETER:
-//					prefix= "class X<"; //$NON-NLS-1$
-//					suffix= "> {}"; //$NON-NLS-1$
-//					code= CodeFormatter.K_COMPILATION_UNIT;
-//					break;
-//				case ASTNode.MEMBER_REF:
-//				case ASTNode.METHOD_REF:
-//				case ASTNode.METHOD_REF_PARAMETER:
-//				case ASTNode.TAG_ELEMENT:
-//				case ASTNode.TEXT_ELEMENT:
-//					// javadoc formatting disabled due to bug 93644
-//					return null; 
-//
-//				wiat for bug 93644 
-//				case ASTNode.MEMBER_REF:
-//				case ASTNode.METHOD_REF:
-//					prefix= "/**\n * @see ";
-//					suffix= "\n*/";
-//					code= CodeFormatter.K_JAVA_DOC;
-//					break;
-//				case ASTNode.METHOD_REF_PARAMETER:
-//					prefix= "/**\n * @see A#foo(";
-//					suffix= ")\n*/";
-//					code= CodeFormatter.K_JAVA_DOC;
-//					break;
-//				case ASTNode.TAG_ELEMENT:
-//				case ASTNode.TEXT_ELEMENT:
-//					prefix= "/**\n * ";
-//					suffix= "\n*/";
-//					code= CodeFormatter.K_JAVA_DOC;
-//					break;
-				default:
-					//Assert.isTrue(false, "Node type not covered: " + node.getClass().getName());
-					return null;
+			if (node.getType() == ASTNode.CATCH_CLAUSE) {
+				prefix += "try {}"; //$NON-NLS-1$
 			}
 		}
-		
-		String concatStr= prefix + str + suffix;
-		TextEdit edit= formatString(code, concatStr, prefix.length(), str.length(), indentationLevel);
-		
+
+		String concatStr = prefix + str + suffix;
+		TextEdit edit = formatString(0, concatStr, prefix.length(), str.length(), indentationLevel);
+
 		if (prefix.length() > 0) {
-			edit= shifEdit(edit, prefix.length());
-		}		
+			edit = shifEdit(edit, prefix.length());
+		}
 		return edit;
-	}	
+	}
 

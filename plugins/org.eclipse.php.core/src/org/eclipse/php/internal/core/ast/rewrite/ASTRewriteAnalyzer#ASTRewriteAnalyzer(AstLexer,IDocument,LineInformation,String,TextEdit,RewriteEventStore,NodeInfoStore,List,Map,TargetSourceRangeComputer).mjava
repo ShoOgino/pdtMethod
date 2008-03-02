@@ -1,7 +1,7 @@
 	/**
 	 * Constructor for ASTRewriteAnalyzer.
 	 * @param scanner An {@link AstLexer} scanner.
-	 * @param content the content of the compilation unit to rewrite.
+	 * @param document The IDocument that contains the content of the compilation unit to rewrite.
 	 * @param lineInfo line information for the content of the compilation unit to rewrite.
 	 * @param rootEdit the edit to add all generated edits to
 	 * @param eventStore the event store containing the description of changes
@@ -10,10 +10,11 @@
 	 * @param options the current options (formatting/compliance) or <code>null</code>.
 	 * @param extendedSourceRangeComputer the source range computer to use
 	 */
-	public ASTRewriteAnalyzer(AstLexer scanner, char[] content, LineInformation lineInfo, String lineDelim, TextEdit rootEdit, RewriteEventStore eventStore, NodeInfoStore nodeInfos, List comments, Map options, TargetSourceRangeComputer extendedSourceRangeComputer) {
+	public ASTRewriteAnalyzer(AstLexer scanner, IDocument document, LineInformation lineInfo, String lineDelim, TextEdit rootEdit, RewriteEventStore eventStore, NodeInfoStore nodeInfos, List comments, Map options, TargetSourceRangeComputer extendedSourceRangeComputer) {
 		this.scanner = scanner;
 		this.eventStore = eventStore;
-		this.content = content;
+		this.document = document;
+		this.content = document.get().toCharArray();
 		this.lineInfo = lineInfo;
 		this.nodeInfos = nodeInfos;
 		this.tokenScanner = null;
@@ -21,7 +22,7 @@
 		this.sourceCopyInfoToEdit = new IdentityHashMap();
 		this.sourceCopyEndNodes = new Stack();
 
-		this.formatter = new ASTRewriteFormatter(nodeInfos, eventStore, options, lineDelim);
+		this.formatter = new ASTRewriteFormatter(document, nodeInfos, eventStore, options, lineDelim, scanner.getPHPVersion());
 
 		this.extendedSourceRangeComputer = extendedSourceRangeComputer;
 		this.lineCommentEndOffsets = new LineCommentEndOffsets(comments);
