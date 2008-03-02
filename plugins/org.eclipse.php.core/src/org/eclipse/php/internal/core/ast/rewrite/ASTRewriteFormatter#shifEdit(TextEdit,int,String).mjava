@@ -1,0 +1,42 @@
+	private static TextEdit shifEdit(TextEdit oldEdit, int diff, String prefix) {
+		TextEdit newEdit;
+		if (oldEdit instanceof ReplaceEdit) {
+			ReplaceEdit edit = (ReplaceEdit) oldEdit;
+			int editOffset = edit.getOffset();
+			if (editOffset >= diff) {
+				newEdit = new ReplaceEdit(editOffset - diff, edit.getLength(), edit.getText());
+			} else {
+				// The new edit is actually an insertion of whitespace and new lines characters.
+				newEdit = getEndPrefixInsertion(edit.getText());
+			}
+		} else if (oldEdit instanceof InsertEdit) {
+			InsertEdit edit = (InsertEdit) oldEdit;
+			int editOffset = edit.getOffset();
+			if (editOffset >= diff) {
+				newEdit = new InsertEdit(editOffset - diff, edit.getText());
+			} else {
+				newEdit = new InsertEdit(0, edit.getText());
+			}
+		} else if (oldEdit instanceof DeleteEdit) {
+			DeleteEdit edit = (DeleteEdit) oldEdit;
+			int editOffset = edit.getOffset();
+			if (editOffset >= diff) {
+				newEdit = new DeleteEdit(editOffset - diff, edit.getLength());
+			} else {
+				newEdit = new DeleteEdit(0, edit.getLength() - (diff - editOffset));
+			}
+		} else if (oldEdit instanceof MultiTextEdit) {
+			newEdit = new MultiTextEdit();
+		} else {
+			return null; // not supported
+		}
+		TextEdit[] children = oldEdit.getChildren();
+		for (int i = 0; i < children.length; i++) {
+			TextEdit shifted = shifEdit(children[i], diff, prefix);
+			if (shifted != null) {
+				newEdit.addChild(shifted);
+			}
+		}
+		return newEdit;
+	}
+
