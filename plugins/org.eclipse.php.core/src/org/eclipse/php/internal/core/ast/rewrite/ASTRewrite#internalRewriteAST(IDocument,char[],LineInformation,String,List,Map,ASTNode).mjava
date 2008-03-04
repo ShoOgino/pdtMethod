@@ -58,18 +58,17 @@
 		return internalRewriteAST(content, lineInfo, lineDelim, astRoot.comments(), options, rootNode);
 	}
 	 */
-	
-	private TextEdit internalRewriteAST(char[] content, LineInformation lineInfo, String lineDelim, List commentNodes, Map options, ASTNode rootNode) {
-		TextEdit result= new MultiTextEdit();
+
+	private TextEdit internalRewriteAST(IDocument document, char[] content, LineInformation lineInfo, String lineDelim, List commentNodes, Map options, ASTNode rootNode) {
+		TextEdit result = new MultiTextEdit();
 		//validateASTNotModified(rootNode);
-		
-		TargetSourceRangeComputer sourceRangeComputer= getExtendedSourceRangeComputer();
+
+		TargetSourceRangeComputer sourceRangeComputer = getExtendedSourceRangeComputer();
 		this.eventStore.prepareMovedNodes(sourceRangeComputer);
-		
-//		TODO Rewrite
-//		ASTRewriteAnalyzer visitor= new ASTRewriteAnalyzer(content, lineInfo, lineDelim, result, this.eventStore, this.nodeStore, commentNodes, options, sourceRangeComputer);
-//		rootNode.accept(visitor); // throws IllegalArgumentException
-		
+
+		ASTRewriteAnalyzer visitor = new ASTRewriteAnalyzer(ast.lexer(), document, lineInfo, lineDelim, result, this.eventStore, this.nodeStore, commentNodes, options, sourceRangeComputer);
+		rootNode.accept(visitor);
+
 		this.eventStore.revertMovedNodes();
 		return result;
 	}
