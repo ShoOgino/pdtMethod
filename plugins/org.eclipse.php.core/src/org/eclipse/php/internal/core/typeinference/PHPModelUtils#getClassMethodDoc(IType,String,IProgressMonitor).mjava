@@ -1,12 +1,12 @@
 	/**
-	 * Finds method by name in the class hierarchy
+	 * Finds method documentation by method name in the class hierarchy
 	 * @param type Class element
 	 * @param name Method name
 	 * @param monitor Progress monitor
-	 * @return method element or <code>null</code> in case it couldn't be found
+	 * @return method phpdoc element or <code>null</code> in case it couldn't be found
 	 * @throws CoreException
 	 */
-	public static IMethod[] getClassMethod(IType type, String name, IProgressMonitor monitor) throws CoreException {
+	public static DocMember[] getClassMethodDoc(IType type, String name, IProgressMonitor monitor) throws CoreException {
 		if (name == null) {
 			throw new NullPointerException();
 		}
@@ -14,13 +14,17 @@
 		IDLTKSearchScope scope = SearchEngine.createHierarchyScope(type);
 		SearchPattern pattern = SearchPattern.createPattern(name, IDLTKSearchConstants.METHOD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH);
 
-		final List<IMethod> methods = new LinkedList<IMethod>();
+		final List<DocMember> docs = new LinkedList<DocMember>();
 		new SearchEngine().search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
 			public void acceptSearchMatch(SearchMatch match) throws CoreException {
-				methods.add((IMethod) match.getElement());
+				IMethod method = (IMethod) match.getElement();
+				IModelElement[] methodDoc = PHPMixinModel.getInstance().getMethodDoc(method.getDeclaringType().getElementName(), method.getElementName());
+				for (IModelElement doc : methodDoc) {
+					docs.add((DocMember) doc);
+				}
 			}
 		}, monitor);
 
-		return methods.toArray(new IMethod[methods.size()]);
+		return docs.toArray(new DocMember[docs.size()]);
 	}
 

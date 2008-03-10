@@ -8,21 +8,35 @@
 
 		Set<DocMember> docs = new HashSet<DocMember>();
 
-		if (instanceType instanceof PHPClassType) {
-			PHPClassType classType = (PHPClassType) instanceType;
-			IModelElement[] elements = PHPMixinModel.getInstance().getMethodDoc(classType.getTypeName(), methodName);
-			for (IModelElement e : elements) {
-				docs.add((DocMember) e);
-			}
-		} else if (instanceType instanceof AmbiguousType) {
-			AmbiguousType ambiguousType = (AmbiguousType) instanceType;
-			for (IEvaluatedType type : ambiguousType.getPossibleTypes()) {
-				if (type instanceof PHPClassType) {
-					PHPClassType classType = (PHPClassType) type;
-					IModelElement[] elements = PHPMixinModel.getInstance().getMethodDoc(classType.getTypeName(), methodName);
-					for (IModelElement e : elements) {
-						docs.add((DocMember) e);
+		if (instanceType instanceof PHPClassType || instanceType instanceof AmbiguousType) {
+
+			List<IType> types = new LinkedList<IType>();
+			if (instanceType instanceof AmbiguousType) {
+				AmbiguousType ambiguousType = (AmbiguousType) instanceType;
+				for (IEvaluatedType type : ambiguousType.getPossibleTypes()) {
+					if (type instanceof PHPClassType) {
+						PHPClassType classType = (PHPClassType) type;
+						IModelElement[] classes = PHPMixinModel.getInstance().getClass(classType.getTypeName());
+						for (IModelElement c : classes) {
+							types.add((IType) c);
+						}
 					}
+				}
+			} else {
+				PHPClassType classType = (PHPClassType) instanceType;
+				IModelElement[] classes = PHPMixinModel.getInstance().getClass(classType.getTypeName());
+				for (IModelElement c : classes) {
+					types.add((IType) c);
+				}
+			}
+
+			for (IType type : types) {
+				try {
+					for (DocMember doc : PHPModelUtils.getClassMethodDoc(type, methodName, null)) {
+						docs.add(doc);
+					}
+				} catch (CoreException e) {
+					Logger.logException(e);
 				}
 			}
 		} else {
