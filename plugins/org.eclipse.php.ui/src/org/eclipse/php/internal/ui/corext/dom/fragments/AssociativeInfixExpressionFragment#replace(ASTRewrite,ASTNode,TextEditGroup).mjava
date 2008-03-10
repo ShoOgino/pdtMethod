@@ -1,0 +1,31 @@
+	public void replace(ASTRewrite rewrite, ASTNode replacement, TextEditGroup textEditGroup) {
+		ASTNode groupNode = getGroupRoot();
+
+		List allOperands = findGroupMembersInOrderFor(getGroupRoot());
+		if (allOperands.size() == fOperands.size()) {
+			if (replacement instanceof Identifier && groupNode.getParent() instanceof ParenthesisExpression) {
+				// replace including the parenthesized expression around it
+				rewrite.replace(groupNode.getParent(), replacement, textEditGroup);
+			} else {
+				rewrite.replace(groupNode, replacement, textEditGroup);
+			}
+			return;
+		}
+
+		// Could maybe be done with less edits.
+		// Problem is that the nodes to replace may not be all in the same InfixExpression.
+		int first = allOperands.indexOf(fOperands.get(0));
+		int after = first + fOperands.size();
+		ArrayList newOperands = new ArrayList();
+		for (int i = 0; i < allOperands.size(); i++) {
+			if (i < first || after <= i) {
+				newOperands.add(rewrite.createCopyTarget((Expression) allOperands.get(i)));
+			} else /* i == first */{
+				newOperands.add(replacement);
+				i = after - 1;
+			}
+		}
+		Expression newExpression = rewrite.getAST().newInfixExpression((Expression) newOperands.get(0), getOperator(), (Expression) newOperands.get(1));
+		rewrite.replace(groupNode, newExpression, textEditGroup);
+	}
+
