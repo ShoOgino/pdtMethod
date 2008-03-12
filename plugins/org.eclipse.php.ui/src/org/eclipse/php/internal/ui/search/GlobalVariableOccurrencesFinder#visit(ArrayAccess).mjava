@@ -1,0 +1,28 @@
+	/**
+	 * Rename $GLOBALS['variableName'] occurences
+	 */
+	public boolean visit(ArrayAccess arrayAccess) {
+		// check the case of $GLOBALS['var']
+		final Expression variableName = arrayAccess.getName();
+		if (variableName.getType() == ASTNode.VARIABLE) {
+			final Variable var = (Variable) variableName;
+			Expression varName = var.getName();
+			if (var.isDollared() && varName.getType() == ASTNode.IDENTIFIER) {
+				final Identifier id = (Identifier) varName;
+				if (id.getName().equals("GLOBALS")) { //$NON-NLS-1$
+					final Expression index = arrayAccess.getIndex();
+					if (index.getType() == ASTNode.SCALAR) {
+						Scalar scalar = (Scalar) index;
+						final String stringValue = scalar.getStringValue();
+						if (stringValue.length() > 2 && isQuated(stringValue)) {
+							if (globalName.equals(stringValue.substring(1, stringValue.length() - 1))) {
+								fResult.add(new OccurrenceLocation(scalar.getStart(), scalar.getLength(), getOccurrenceReadWriteType(scalar), fDescription));
+							}
+						}
+					}
+				}
+			}
+		}
+		return true;
+	}
+
