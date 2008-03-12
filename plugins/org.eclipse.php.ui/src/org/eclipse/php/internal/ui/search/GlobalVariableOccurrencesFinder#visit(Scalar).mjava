@@ -1,0 +1,27 @@
+	/**
+	 * Make sure we mark the occurrences when selecting a scalar inside a GLOBALS array access.
+	 */
+	public boolean visit(Scalar scalar) {
+		String stringValue = scalar.getStringValue();
+		if (stringValue.length() > 2 && isQuated(stringValue)) {
+			stringValue = stringValue.substring(1, stringValue.length() - 1);
+		}
+		if (globalName.equals(stringValue)) {
+			ASTNode parent = scalar.getParent();
+			if (parent.getType() == ASTNode.ARRAY_ACCESS) {
+				Expression variableName = ((ArrayAccess) parent).getName();
+				if (variableName.getType() == ASTNode.VARIABLE) {
+					final Variable var = (Variable) variableName;
+					Expression varName = var.getName();
+					if (var.isDollared() && varName.getType() == ASTNode.IDENTIFIER) {
+						final Identifier id = (Identifier) varName;
+						if (id.getName().equals("GLOBALS")) { //$NON-NLS-1$
+							fResult.add(new OccurrenceLocation(scalar.getStart(), scalar.getLength(), getOccurrenceReadWriteType(scalar), fDescription));
+						}
+					}
+				}
+			}
+		}
+		return true;
+	}
+
