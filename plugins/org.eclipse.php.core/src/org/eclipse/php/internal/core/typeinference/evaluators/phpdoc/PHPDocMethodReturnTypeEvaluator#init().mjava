@@ -6,7 +6,7 @@
 		InstanceContext typedGontext = (InstanceContext) context;
 		IEvaluatedType instanceType = typedGontext.getInstanceType();
 
-		Set<DocMember> docs = new HashSet<DocMember>();
+		Set<PHPDocField> docs = new HashSet<PHPDocField>();
 
 		if (instanceType instanceof PHPClassType || instanceType instanceof AmbiguousType) {
 
@@ -32,7 +32,7 @@
 
 			for (IType type : types) {
 				try {
-					for (DocMember doc : PHPModelUtils.getClassMethodDoc(type, methodName, null)) {
+					for (PHPDocField doc : PHPModelUtils.getClassMethodDoc(type, methodName, null)) {
 						docs.add(doc);
 					}
 				} catch (CoreException e) {
@@ -42,12 +42,12 @@
 		} else {
 			IModelElement[] elements = PHPMixinModel.getInstance().getFunctionDoc(methodName);
 			for (IModelElement e : elements) {
-				docs.add((DocMember) e);
+				docs.add((PHPDocField) e);
 			}
 		}
 
-		DocMember docFromSameFile = null;
-		for (DocMember doc : docs) {
+		PHPDocField docFromSameFile = null;
+		for (PHPDocField doc : docs) {
 			if (doc.getSourceModule().equals(typedGontext.getSourceModule())) {
 				docFromSameFile = doc;
 				break;
@@ -59,7 +59,7 @@
 			docs.add(docFromSameFile);
 		}
 
-		for (DocMember doc : docs) {
+		for (PHPDocField doc : docs) {
 			PHPDocBlock docBlock = doc.getDocBlock();
 			for (PHPDocTag tag : docBlock.getTags()) {
 				if (tag.getTagKind() == PHPDocTag.RETURN) {
