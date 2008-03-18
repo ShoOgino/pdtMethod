@@ -1,0 +1,34 @@
+	/**
+	 * Visit the scalars in the program.
+	 */
+	public boolean visit(Scalar scalar) {
+		String scalarValue = scalar.getStringValue();
+		if (scalar.getScalarType() == Scalar.TYPE_STRING && scalarValue != null) {
+			if (!isQuoted(scalarValue)) {
+				if (constantName.equals(scalarValue)) {
+					// Usage of the scalar
+					fResult.add(new OccurrenceLocation(scalar.getStart(), scalar.getLength(), getOccurrenceReadWriteType(scalar), fDescription));
+				}
+			} else {
+				scalarValue = scalarValue.substring(1, scalarValue.length() - 1);
+				if (constantName.equals(scalarValue)) {
+					ASTNode parent = scalar.getParent();
+					if (parent.getType() == ASTNode.FUNCTION_INVOCATION) {
+						// Check if this is the definition function of the scalar (define).
+						FunctionInvocation functionInvocation = (FunctionInvocation) parent;
+						Expression name = functionInvocation.getFunctionName().getName();
+						if (name.getType() == ASTNode.IDENTIFIER) {
+							String functionName = ((Identifier) name).getName();
+							if ("define".equalsIgnoreCase(functionName)) {//$NON-NLS-1$
+								fResult.add(new OccurrenceLocation(scalar.getStart(), scalar.getLength(), IOccurrencesFinder.F_WRITE_OCCURRENCE, fDescription));
+							} else if ("constant".equalsIgnoreCase(functionName)) { //$NON-NLS-1$
+								fResult.add(new OccurrenceLocation(scalar.getStart(), scalar.getLength(), IOccurrencesFinder.F_READ_OCCURRENCE, fDescription));
+							}
+						}
+					}
+				}
+			}
+		}
+		return true;
+	}
+
