@@ -14,14 +14,16 @@
 		}
 
 		String localPath = null;
-		if (isFirstFileToDebug) { // we suppose that we always get full path here
+		if (isFirstFileToDebug) { // we suppose that we always get full path
+									// here
 			if (isWebServerDebugger) {
 				PathEntry pathEntry = debugTarget.mapFirstDebugFile(remoteFileName);
 				if (pathEntry != null) {
 					localPath = pathEntry.getResolvedPath();
 				}
 
-				// set current working directory to the current script directory on debugger side
+				// set current working directory to the current script directory
+				// on debugger side
 				if (debugType.equals(IDebugParametersKeys.PHP_WEB_SCRIPT_DEBUG)) {
 					VirtualPath remotePath = new VirtualPath(remoteFileName);
 					remotePath.removeLastSegment();
@@ -34,12 +36,21 @@
 
 		// send found breakpoints with remote file name
 		if (localPath != null && ILaunchManager.DEBUG_MODE.equals(debugTarget.getLaunch().getLaunchMode())) {
-			IBreakpoint[] breakPoints = findBreakpoints (localPath, debugTarget);
+			IBreakpoint[] breakPoints = findBreakpoints(localPath, debugTarget);
 
 			for (IBreakpoint bp : breakPoints) {
 				try {
-					int lineNumber = (Integer) bp.getMarker().getAttribute(IMarker.LINE_NUMBER);
-					debugTarget.getRemoteDebugger().addBreakpoint(new Breakpoint(remoteFileName, lineNumber));
+					if (bp.isEnabled()) {
+						int lineNumber = (Integer) bp.getMarker().getAttribute(IMarker.LINE_NUMBER);
+						int bpID = ((PHPConditionalBreakpoint)bp).getRuntimeBreakpoint().getID();
+						int bpType = ((PHPConditionalBreakpoint)bp).getRuntimeBreakpoint().getType();
+						int bpLifeTime = ((PHPConditionalBreakpoint)bp).getRuntimeBreakpoint().getLifeTime();
+						Breakpoint bpToSend = new Breakpoint(remoteFileName, lineNumber);
+						bpToSend.setID(bpID);
+						bpToSend.setType(bpType);
+						bpToSend.setLifeTime(bpLifeTime);
+						debugTarget.getRemoteDebugger().addBreakpoint(bpToSend);
+					}
 				} catch (CoreException e) {
 					PHPDebugPlugin.log(e);
 				}
