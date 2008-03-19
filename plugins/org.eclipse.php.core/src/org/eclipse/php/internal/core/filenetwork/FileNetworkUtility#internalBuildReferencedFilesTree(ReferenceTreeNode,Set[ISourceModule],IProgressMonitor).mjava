@@ -1,0 +1,34 @@
+	private static void internalBuildReferencedFilesTree(ReferenceTreeNode root, Set<ISourceModule> processedFiles, IProgressMonitor monitor) throws CoreException {
+		ISourceModule sourceModule = root.getFile();
+
+		final List<String> includes = new LinkedList<String>();
+		final IBuffer buffer = sourceModule.getBuffer();
+
+		if (buffer != null) {
+			IDLTKSearchScope scope = SearchEngine.createSearchScope(new IModelElement[] { sourceModule });
+			SearchEngine engine = new SearchEngine();
+			SearchPattern pattern = SearchPattern.createPattern("include", IDLTKSearchConstants.METHOD, IDLTKSearchConstants.REFERENCES, SearchPattern.R_EXACT_MATCH);
+			engine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
+				public void acceptSearchMatch(SearchMatch match) throws CoreException {
+					String text = buffer.getText(match.getOffset(), match.getLength());
+					includes.add(stripQuotes(text));
+				}
+			}, monitor);
+		}
+
+		for (String filePath : includes) {
+			ISourceModule testFile = findSourceModule(sourceModule, filePath);
+			if (testFile != null && !processedFiles.contains(testFile)) {
+				processedFiles.add(testFile);
+				root.addChild(new ReferenceTreeNode(testFile));
+			}
+		}
+
+		Collection<ReferenceTreeNode> children = root.getChildren();
+		if (children != null) {
+			for (ReferenceTreeNode child : children) {
+				internalBuildReferencedFilesTree(child, processedFiles, monitor);
+			}
+		}
+	}
+
