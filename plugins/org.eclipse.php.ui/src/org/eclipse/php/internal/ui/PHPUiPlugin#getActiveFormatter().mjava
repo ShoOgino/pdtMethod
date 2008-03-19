@@ -1,0 +1,23 @@
+	/**
+	 * Returns the current active formatter
+	 * @return
+	 */
+	public IContentFormatter getActiveFormatter() {
+		if (fActiveFormatter == null) {
+			String formatterExtensionName = "org.eclipse.php.ui.phpFormatterProcessor"; //$NON-NLS-1$
+			IConfigurationElement[] elements = Platform.getExtensionRegistry().getConfigurationElementsFor(formatterExtensionName);
+			for (int i = 0; i < elements.length; i++) {
+				IConfigurationElement element = elements[i];
+				if (element.getName().equals("processor")) { //$NON-NLS-1$
+					ElementCreationProxy ecProxy = new ElementCreationProxy(element, formatterExtensionName);
+					fActiveFormatter = (IContentFormatter) ecProxy.getObject();
+				}
+			}
+			if (fActiveFormatter == null) {
+				fActiveFormatter = new MultiPassContentFormatter(IStructuredPartitioning.DEFAULT_STRUCTURED_PARTITIONING, IHTMLPartitions.HTML_DEFAULT);
+				((MultiPassContentFormatter) fActiveFormatter).setMasterStrategy(new StructuredFormattingStrategy(new PhpFormatProcessorImpl()));
+			}
+		}
+		return fActiveFormatter;
+	}
+
