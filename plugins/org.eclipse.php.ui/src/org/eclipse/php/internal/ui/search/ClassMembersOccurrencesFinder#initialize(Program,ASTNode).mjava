@@ -1,0 +1,30 @@
+	/**
+	 * @param root the AST root
+	 * @param node the selected node (must be an {@link Identifier} instance)
+	 * @return returns a message if there is a problem
+	 */
+	public String initialize(Program root, ASTNode node) {
+		fASTRoot = root;
+		typeDeclarationName = null;
+		isFunction = false;
+		if (node.getType() == ASTNode.IDENTIFIER) {
+			Identifier identifier = (Identifier) node;
+			classMemberName = identifier.getName();
+			// IBinding binding = identifier.resolveBinding(); // FIXME - This should be implemented...
+			ASTNode parent = identifier.getParent();
+			int type = parent.getType();
+			isFunction = type == ASTNode.FUNCTION_DECLARATION;
+			while (typeDeclarationName == null && parent != fASTRoot) {
+				if (type == ASTNode.CLASS_DECLARATION || type == ASTNode.INTERFACE_DECLARATION) {
+					typeDeclarationName = ((TypeDeclaration) parent).getName().getName();
+					break;
+				}
+				parent = parent.getParent();
+				type = parent.getType();
+			}
+			return null;
+		}
+		fDescription = "OccurrencesFinder_occurrence_description";
+		return fDescription;
+	}
+

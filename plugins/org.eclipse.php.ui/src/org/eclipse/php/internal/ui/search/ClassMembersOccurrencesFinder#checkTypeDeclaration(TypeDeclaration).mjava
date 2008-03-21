@@ -1,0 +1,44 @@
+	private void checkTypeDeclaration(TypeDeclaration typeDeclaration) {
+		assert typeDeclaration != null;
+
+		Identifier className = typeDeclaration.getName();
+		Block body = typeDeclaration.getBody();
+
+		// definitions of the class property
+		if (className.getName().equalsIgnoreCase(typeDeclarationName)) {
+			List<Statement> statements = body.statements();
+			for (Statement statement : statements) {
+				if (statement.getType() == ASTNode.METHOD_DECLARATION) {
+					final MethodDeclaration classMethodDeclaration = (MethodDeclaration) statement;
+					if (isFunction) {
+						final Identifier functionName = classMethodDeclaration.getFunction().getFunctionName();
+						if (classMemberName.equalsIgnoreCase(functionName.getName())) {
+							fResult.add(new OccurrenceLocation(functionName.getStart(), functionName.getLength(), getOccurrenceReadWriteType(functionName), fDescription));
+						}
+					}
+				} else if (statement.getType() == ASTNode.FIELD_DECLARATION) {
+					FieldsDeclaration classVariableDeclaration = (FieldsDeclaration) statement;
+					final Variable[] variableNames = classVariableDeclaration.getVariableNames();
+					for (int j = 0; j < variableNames.length; j++) {
+						// safe cast to identifier
+						assert variableNames[j].getName().getType() == ASTNode.IDENTIFIER;
+
+						final Identifier variable = (Identifier) variableNames[j].getName();
+						if (classMemberName.equals(variable.getName())) {
+							fResult.add(new OccurrenceLocation(variable.getStart(), variable.getLength(), getOccurrenceReadWriteType(variable), fDescription));
+						}
+					}
+				} else if (statement.getType() == ASTNode.CLASS_CONSTANT_DECLARATION) {
+					ClassConstantDeclaration classVariableDeclaration = (ClassConstantDeclaration) statement;
+					List<Identifier> variableNames = classVariableDeclaration.names();
+					for (Identifier name : variableNames) {
+						if (classMemberName.equals(name.getName())) {
+							fResult.add(new OccurrenceLocation(name.getStart(), name.getLength(), getOccurrenceReadWriteType(name), fDescription));
+						}
+					}
+				}
+			}
+		}
+		body.accept(this);
+	}
+
