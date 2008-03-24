@@ -1,58 +1,44 @@
 	protected void loadFiles(PHPLanguageManager languageManager) {
-		try {
-			final PHPParserManager phpParserManager = languageManager.createPHPParserManager();
+		final PHPParserManager phpParserManager = languageManager.createPHPParserManager();
 
-			// parse the specific language model
-			String phpFunctionPath = languageManager.getPHPFunctionPath();
-			Reader reader = new InputStreamReader(FileLocator.openStream(PHPCorePlugin.getDefault().getBundle(), new Path(phpFunctionPath), false));
-			ParserClient innerParserClient = new InnerParserClient();
+		parseFilesFrom(phpParserManager, PHPCorePlugin.getDefault().getBundle(), languageManager.getPHPFunctionPath());
 
-			ParserExecuter executer = new ParserExecuter(phpParserManager, innerParserClient, phpFunctionPath, reader, new Pattern[0], 0, false);
-			executer.run();
+		// load language model extensions:
+		IExtensionRegistry registry = Platform.getExtensionRegistry();
+		IConfigurationElement[] elements = registry.getConfigurationElementsFor(PHPCorePlugin.ID, "phpModelExtensions");
 
-			// load language model extensions:
-			IExtensionRegistry registry = Platform.getExtensionRegistry();
-			IConfigurationElement[] elements = registry.getConfigurationElementsFor(PHPCorePlugin.ID, "phpModelExtensions"); //$NON-NLS-1$
+		for (IConfigurationElement element : elements) {
+			if ("model".equals(element.getName())) {
+				String id = element.getAttribute("id");
 
-			for (IConfigurationElement element : elements) {
-				if ("model".equals(element.getName())) { //$NON-NLS-1$
-					String id = element.getAttribute("id"); //$NON-NLS-1$
+				try {
+					String enabledAttr = element.getAttribute("enabled");
+					boolean enabled = (enabledAttr == null) ? true : Boolean.parseBoolean(enabledAttr);
+					String directory = element.getAttribute("directory");
+					String phpVersion = element.getAttribute("phpVersion");
 
-					try {
-						String enabledAttr = element.getAttribute("enabled"); //$NON-NLS-1$
-						boolean enabled = (enabledAttr == null) ? true : Boolean.parseBoolean(enabledAttr);
-						String file = element.getAttribute("file"); //$NON-NLS-1$
-						String phpVersion = element.getAttribute("phpVersion"); //$NON-NLS-1$
-
-						if (element.getAttribute("class") != null) { //$NON-NLS-1$
-							IPHPModelExtension extension = (IPHPModelExtension) element.createExecutableExtension("class"); //$NON-NLS-1$
-							enabled = extension.isEnabled();
-							if (extension.getFile() != null) {
-								file = extension.getFile();
-							}
-							if (extension.getPHPVersion() != null) {
-								phpVersion = extension.getPHPVersion();
-							}
+					if (element.getAttribute("class") != null) {
+						IPHPModelExtension extension = (IPHPModelExtension) element.createExecutableExtension("class");
+						enabled = extension.isEnabled();
+						if (extension.getDirectory() != null) {
+							directory = extension.getDirectory();
 						}
-
-						if (enabled && getPHPVersion().equals(phpVersion)) {
-							reader = new InputStreamReader(FileLocator.openStream(Platform.getBundle(element.getNamespaceIdentifier()), new Path(file), false));
-							innerParserClient = new InnerParserClient();
-							executer = new ParserExecuter(phpParserManager, innerParserClient, file, reader, new Pattern[0], 0, false);
-							executer.run();
+						if (extension.getPHPVersion() != null) {
+							phpVersion = extension.getPHPVersion();
 						}
-					} catch (CoreException e) {
-						PHPCorePlugin.logErrorMessage(NLS.bind("Error loading PHP model extension ID {0}", id)); //$NON-NLS-1$
 					}
+
+					if (enabled && getPHPVersion().equals(phpVersion)) {
+						parseFilesFrom(phpParserManager, Platform.getBundle(element.getNamespaceIdentifier()), directory);
+					}
+				} catch (CoreException e) {
+					PHPCorePlugin.logErrorMessage(NLS.bind("Error loading PHP model extension ID {0}", id));
 				}
 			}
-
-			Arrays.sort(functions);
-			Arrays.sort(classes);
-			Arrays.sort(constants);
-
-		} catch (IOException e) {
-			PHPCorePlugin.log(e);
 		}
+
+		Arrays.sort(functions);
+		Arrays.sort(classes);
+		Arrays.sort(constants);
 	}
 
