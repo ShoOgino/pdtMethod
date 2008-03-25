@@ -1,0 +1,31 @@
+	public void unrecovered_syntax_error(Symbol cur_token) throws java.lang.Exception {
+		//in case 
+		int start = 0;
+		int end = 0;
+		Object value = cur_token.value;
+		PHPModuleDeclaration program = getModuleDeclaration();
+		List<Statement> statements = program.getStatements();
+		if (value instanceof List) {
+			statements.addAll((List) value);
+		}
+
+		while (!declarations.isEmpty()) {
+			statements.add(declarations.remove(0));
+		}
+		if (!statements.isEmpty()) {
+			Statement s1 = (Statement) statements.get(0);
+			Statement s2 = (Statement) statements.get(statements.size() - 1);
+			start = s1.sourceStart();
+			end = s2.sourceEnd();
+		}
+		List<ASTError> errors = getErrors();
+		if (!errors.isEmpty()) {
+			ASTError lastError = errors.get(errors.size() - 1);
+			end = (end > lastError.sourceEnd()) ? end : lastError.sourceEnd();
+		}
+		program.setStart(start);
+		program.setEnd(end);
+
+		super.unrecovered_syntax_error(cur_token);
+	}
+
