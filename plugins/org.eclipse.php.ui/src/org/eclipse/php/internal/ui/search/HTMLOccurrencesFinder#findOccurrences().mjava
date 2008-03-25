@@ -1,0 +1,36 @@
+	/*
+	 * (non-Javadoc)
+	 * @see org.eclipse.php.internal.ui.search.AbstractOccurrencesFinder#findOccurrences()
+	 */
+	protected void findOccurrences() {
+		IStructuredDocument structuredDocument = ((IStructuredDocument) document);
+		IStructuredDocumentRegion region = structuredDocument.getRegionAtCharacterOffset(offset);
+		htmlTag = region.getFullText();
+		fDescription = Messages.format("Occurrance of ''{0}''", htmlTag);
+		if (region.isEnded()) {
+			IStructuredModel existingModelForRead = null;
+			try {
+				existingModelForRead = StructuredModelManager.getModelManager().getExistingModelForRead(document);
+				if (existingModelForRead instanceof DOMModelForPHP) {
+					DOMModelForPHP domModelForPHP = (DOMModelForPHP) existingModelForRead;
+					IndexedRegion indexedRegion = domModelForPHP.getIndexedRegion(offset);
+					if (indexedRegion instanceof IDOMElement) {
+						IDOMElement domElement = (IDOMElement) indexedRegion;
+						IStructuredDocumentRegion endStructuredDocumentRegion = domElement.getEndStructuredDocumentRegion();
+						IStructuredDocumentRegion startStructuredDocumentRegion = domElement.getStartStructuredDocumentRegion();
+						if (endStructuredDocumentRegion != null && startStructuredDocumentRegion != null) {
+							// mark the occurrences only when the HTML tag has a closing tag
+							fResult.add(new OccurrenceLocation(startStructuredDocumentRegion.getStart(), startStructuredDocumentRegion.getLength(), getOccurrenceReadWriteType(null), fDescription));
+							fResult.add(new OccurrenceLocation(endStructuredDocumentRegion.getStart(), endStructuredDocumentRegion.getLength(), getOccurrenceReadWriteType(null), fDescription));
+						}
+					}
+
+				}
+			} finally {
+				if (existingModelForRead != null) {
+					existingModelForRead.releaseFromRead();
+				}
+			}
+		}
+	}
+
