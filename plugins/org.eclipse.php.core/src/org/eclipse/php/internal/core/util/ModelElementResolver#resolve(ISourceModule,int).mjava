@@ -1,0 +1,26 @@
+	/**
+	 * Returns possible model elements which are placed under the given offset in the source module
+	 * @param sourceModule
+	 * @param offset
+	 * @return model elements or <code>null</code> in case no element could be found
+	 */
+	public static IModelElement[] resolve(ISourceModule sourceModule, int offset) {
+		IModelElement[] modelElements = null;
+
+		ContextFinder visitor = new ContextFinder(sourceModule, offset);
+		ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule, null);
+		try {
+			moduleDeclaration.traverse(visitor);
+		} catch (Exception e) {
+			Logger.logException(e);
+		}
+
+		if (visitor.getNode() != null) {
+			PHPTypeInferencer typeInferencer = new PHPTypeInferencer();
+			IEvaluatedType evaluatedType = typeInferencer.evaluateType(new ExpressionTypeGoal(visitor.getContext(), visitor.getNode()));
+			modelElements = PHPTypeInferenceUtils.getModelElements(evaluatedType, (BasicContext) visitor.getContext());
+		}
+
+		return modelElements;
+	}
+
