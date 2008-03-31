@@ -1,0 +1,30 @@
+	/**
+	 * This is an internal function please use getClassVariableType().
+	 * @param checkedClasses is for internal use - making sure there is no cyclic in the class hierarchy 
+	 */
+	private String innerGetClassVariableType(PHPClassData classData, String variableName, int line, List<String> checkedClasses) {
+		if (classData == null) {
+			return null;
+		}
+		String fileName = classData.getUserData().getFileName();
+		PHPFileData fileData = (PHPFileData) phpFileDataDB.getUniqCodeData(fileName);
+		if (fileData == null) {
+			// we cant find the file return.
+			return null;
+		}
+		PHPVariablesTypeManager variablesTypeManager = fileData.getVariableTypeManager();
+		PHPCodeContext context = ModelSupport.createContext(classData.getName(), "");
+		// search in this context.
+		PHPVariableTypeData typeData = variablesTypeManager.getVariableTypeData(context, variableName, line);
+		if (typeData != null) {
+			return typeData.getType();
+		}
+		checkedClasses.add(classData.getName());
+		String superClassName = classData.getSuperClassData() != null ? classData.getSuperClassData().getName() : null;
+		if (superClassName != null && !checkedClasses.contains(superClassName)) {
+			String rv = innerGetClassVariableType(getClass(fileName, superClassName), variableName, line, checkedClasses);
+			return rv;
+		}
+		return null;
+	}
+
