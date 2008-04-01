@@ -1,0 +1,21 @@
+	public PHPSourceElementRequestor(ISourceElementRequestor requestor, char[] contents, char[] filename) {
+		super(requestor);
+
+		// Load PHP source element requestor extensions
+		IConfigurationElement[] elements = Platform.getExtensionRegistry().getConfigurationElementsFor(PHPCorePlugin.ID, "phpSourceElementRequestors");
+		List<PHPSourceElementRequestorExtension> requestors = new ArrayList<PHPSourceElementRequestorExtension>(elements.length);
+		for (IConfigurationElement element : elements) {
+			try {
+				PHPSourceElementRequestorExtension extension = (PHPSourceElementRequestorExtension) element.createExecutableExtension("class");
+				extension.setRequestor(fRequestor);
+				extension.setContents(contents);
+				extension.setFilename(new String(filename));
+
+				requestors.add(extension);
+			} catch (CoreException e) {
+				Logger.logException(e);
+			}
+		}
+		extensions = requestors.toArray(new PHPSourceElementRequestorExtension[requestors.size()]);
+	}
+

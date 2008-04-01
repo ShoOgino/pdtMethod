@@ -1,12 +1,12 @@
-	private void processStatement(ASTNode node) {
+	protected void processStatement(ASTNode node, PatternLocator locator) {
 		if (node instanceof FieldDeclaration) {
-			getPatternLocator().match((FieldDeclaration) node, getNodeSet());
+			locator.match((FieldDeclaration) node, getNodeSet());
 		} else if (node instanceof ClassConstantDeclaration) {
 			ClassConstantDeclaration constDecl = (ClassConstantDeclaration) node;
 			ConstantReference constantName = constDecl.getConstantName();
 			FieldDeclaration decl = new FieldDeclaration(constantName.getName(), constantName.sourceStart(), constantName.sourceEnd(), constDecl.sourceStart(), constDecl.sourceEnd());
 			decl.setModifiers(Modifiers.AccConstant);
-			getPatternLocator().match(decl, getNodeSet());
+			locator.match(decl, getNodeSet());
 		} else if(node instanceof Assignment){
 			Expression left = ((Assignment)node).getVariable();
 			if (left instanceof FieldAccess) { // class variable ($this->a = .)
@@ -17,20 +17,20 @@
 					if (field instanceof SimpleReference) {
 						SimpleReference ref = (SimpleReference) field;
 						FieldDeclaration decl = new FieldDeclaration('$' + ref.getName(), ref.sourceStart(), ref.sourceEnd(), node.sourceStart(), node.sourceEnd());
-						getPatternLocator().match(decl, getNodeSet());
+						locator.match(decl, getNodeSet());
 					}
 				}
 			}
 		} else if (node instanceof TypeReference) {
-			getPatternLocator().match((TypeReference)node, getNodeSet());
+			locator.match((TypeReference)node, getNodeSet());
 		} else if (node instanceof CallExpression) {
-			getPatternLocator().match((CallExpression)node, getNodeSet());
+			locator.match((CallExpression)node, getNodeSet());
 		} else if (node instanceof Include) {
 			Include include = (Include) node;
 			if (include.getExpr() instanceof Scalar) {
 				Scalar filePath = (Scalar) include.getExpr();
 				CallExpression callExpression = new CallExpression(filePath.sourceStart(), filePath.sourceEnd(), null, "include", new CallArgumentsList());
-				getPatternLocator().match(callExpression, getNodeSet());
+				locator.match(callExpression, getNodeSet());
 			}
 		}
 	}
