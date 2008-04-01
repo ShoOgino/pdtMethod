@@ -1,33 +1,5 @@
 	public PHPProjectModel getModelForProject(final IProject project, boolean forceCreation) {
-		PHPProjectModel projectModel = (PHPProjectModel) models.get(project);
-		if (projectModel == null && forceCreation) {
-			synchronized (project) {
-				projectModel = (PHPProjectModel) models.get(project);
-				if (projectModel == null) {
-
-					if (project.isOpen() && project.exists() && project.isAccessible()) {
-						boolean hasNature;
-						try {
-							//support both RSE and PHP projects
-							//this is to provide the model+outline to php files from RSE, such as FTP etc...
-							hasNature = project.hasNature(PHPCoreConstants.RSE_TEMP_PROJECT_NATURE_ID) || project.hasNature(PHPNature.ID);
-						} catch (CoreException e) {
-							PHPCorePlugin.log(e);
-							return null;
-						}
-						if (hasNature) {
-							projectModel = new PHPProjectModel();
-							putModel(project, projectModel);
-							attachProjectCloseObserver(project);
-						}
-					} else if (!project.exists() && project.equals(ExternalFilesRegistry.getInstance().getExternalFilesProject())) {
-						projectModel = getDefaultPHPProjectModel();
-						putModel(project, projectModel);
-						attachProjectCloseObserver(project);
-					}
-				}
-			}
-		}
-		return projectModel;
+		//any requests not coming from separated job should use getModelForProject with fork = true.
+		return getModelForProject(project, forceCreation, true);
 	}
 

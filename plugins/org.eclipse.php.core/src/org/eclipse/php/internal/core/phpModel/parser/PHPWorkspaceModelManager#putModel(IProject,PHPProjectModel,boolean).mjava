@@ -1,4 +1,8 @@
-	private void putModel(final IProject project, PHPProjectModel projectModel) {
+	/**
+	 * @param fork use different job when building a project. (in order not to run in UI thread)
+	 * by default use true, use false only if you're running from non-UI job.
+	 */
+	private void putModel(final IProject project, PHPProjectModel projectModel, boolean fork) {
 		PHPProjectModel oldPhpProjectModel = (PHPProjectModel) models.get(project);
 		models.put(project, projectModel);
 		projectModel.initialize(project);
@@ -9,11 +13,7 @@
 		}
 		fireProjectModelAdded(project);
 		if (projectModel.isBuildNeeded()) {
-			//checking if we are currently at a job with build scheduling rule
-			//because the build must run in such a job
-			Job currentJob = Job.getJobManager().currentJob();
-			boolean newJobNeeded = currentJob == null || currentJob.getRule() != ResourcesPlugin.getWorkspace().getRuleFactory().buildRule();
-			if (newJobNeeded) {
+			if (fork) {
 				WorkspaceJob buildJob = new WorkspaceJob(NLS.bind(CoreMessages.getString("PHPWorkspaceModelManager_4"), project.getName())) {
 					@Override
 					public IStatus runInWorkspace(IProgressMonitor monitor) throws CoreException {
@@ -21,7 +21,6 @@
 						return Status.OK_STATUS;
 					}
 				};
-				buildJob.setRule(ResourcesPlugin.getWorkspace().getRuleFactory().buildRule());
 				buildJob.setUser(false);
 				buildJob.schedule();
 
