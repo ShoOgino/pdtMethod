@@ -4,6 +4,14 @@
 	 * @see org.eclipse.debug.core.IBreakpointListener#breakpointAdded(org.eclipse.debug.core.model.IBreakpoint)
 	 */
 	public void breakpointAdded(IBreakpoint breakpoint) {
+		// attempt to add a breakpoint under the following conditions
+		// 1. breakpoint manager enabled
+		// 2. the breakpoint is valid for the environment
+		// 3. the breakpoint is enabled
+		// 4. the debugee is suspended or running and async is supported (send immediately) 
+		// 5. the debugee is running and async not supported (defer and send later)
+		// otherwise do not send or defer the breakpoint
+		
 		if (!DebugPlugin.getDefault().getBreakpointManager().isEnabled()) {
 			return;
 		}
@@ -12,21 +20,20 @@
 			try {
 				if (breakpoint.isEnabled()) {
 					DBGpBreakpoint bp = bpFacade.createDBGpBreakpoint(breakpoint);
-					if (asyncSupported || isSuspended()) {
-						// we are suspended or async mode is supported so send
-						// the
-						// breakpoint
+					if (isSuspended() || (asyncSupported && isRunning())) {
+						// we are suspended or async mode is supported and we
+						// are running, so send the breakpoint.
 						if (DBGpLogger.debugBP()) {
 							DBGpLogger.debug("Breakpoint Add requested immediately");
 						}
 						sendBreakpointAddCmd(bp, false);
-					} else {
+					} else if (isRunning()) {
 
-						// we are not suspended and async mode is not supported
-						// so if we send a breakpoint command we may not get a
+						// we are running and async mode is not supported
+						// If we send a breakpoint command we may not get a
 						// response at all or may get a response when the script
 						// suspends on another breakpoint which will hang the
-						// gui if we send it synchronously.
+						// gui until then if we send it synchronously.
 						// Async would require the read thread to handle
 						// the response, locate the breakpoint from the txn_id
 						// and add the id to the runtimeBreakpoint.

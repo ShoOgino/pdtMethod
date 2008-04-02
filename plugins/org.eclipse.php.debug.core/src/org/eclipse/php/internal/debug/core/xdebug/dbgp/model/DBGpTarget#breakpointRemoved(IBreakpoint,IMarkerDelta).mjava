@@ -7,16 +7,16 @@
 	public void breakpointRemoved(IBreakpoint breakpoint, IMarkerDelta delta) {
 		if (supportsBreakpoint(breakpoint)) {
 			DBGpBreakpoint bp = bpFacade.createDBGpBreakpoint(breakpoint);
-			if (asyncSupported || isSuspended()) {
+			if (isSuspended() || (asyncSupported && isRunning())) {
 
-				// aysnc mode or we are suspended so send the remove request
+				// aysnc mode and running or we are suspended so send the remove request
 				if (DBGpLogger.debugBP()) {
 					DBGpLogger.debug("Immediately removing of breakpoint with ID: " + bp.getID());
 				}
 				sendBreakpointRemoveCmd(bp, false);
-			} else {
+			} else if (isRunning()) {
 
-				// no async mode and not suspended so queue the request.
+				// running and not suspended and no async support, so we must defer the removal.
 				if (DBGpLogger.debugBP()) {
 					DBGpLogger.debug("Deferring Removing of breakpoint with ID: " + bp.getID());
 				}
