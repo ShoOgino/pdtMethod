@@ -5,7 +5,20 @@
 		try {
 			moduleDeclaration.traverse(visitor);
 		} catch (Exception e) {
-			e.printStackTrace();
+			Logger.logException(e);
+		}
+
+		for (IConfigurationElement extension : extensions) {
+			try {
+				PHPMixinBuildVisitorExtension visitorExtension = (PHPMixinBuildVisitorExtension) extension.createExecutableExtension("class");
+				visitorExtension.setSourceModule(module);
+				visitorExtension.setModuleAvailable(signature);
+				visitorExtension.setRequestor(requestor);
+
+				moduleDeclaration.traverse(visitorExtension);
+			} catch (Exception e) {
+				Logger.logException(e);
+			}
 		}
 	}
 
