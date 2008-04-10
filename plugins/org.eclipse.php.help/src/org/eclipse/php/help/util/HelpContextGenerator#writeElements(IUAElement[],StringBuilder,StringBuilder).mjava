@@ -1,0 +1,28 @@
+	/*
+	 * Recursive elements writer that writes the elements into the string builders.
+	 * @param children
+	 * @param helpContextBuilder
+	 * @param newJavaFileBuilder
+	 */
+	private void writeElements(IUAElement[] children, StringBuilder helpContextBuilder, StringBuilder newJavaFileBuilder) {
+		for (IUAElement child : children) {
+			if (child instanceof ITopic) {
+				ITopic topic = ((ITopic) child);
+				String href = topic.getHref();
+				String label = topic.getLabel();
+				// Remove any special markings from the label
+				String labelAsKey = cleanLabel(label).toLowerCase();
+				String labelAsModifier = labelAsKey;
+				if (Character.isDigit(labelAsModifier.charAt(0))) {
+					labelAsModifier = '_' + labelAsModifier;
+				}
+				newJavaFileBuilder.append(String.format(JAVA_CONSTANT_LINE, labelAsModifier.toUpperCase(), labelAsKey));
+				helpContextBuilder.append(String.format(CONTEXT_BLOCK, labelAsKey, label + DESCRIPTION_POSTFIX, href, label)); // id, description, href, label
+				ITopic[] subtopics = topic.getSubtopics();
+				if (subtopics != null && subtopics.length > 0) {
+					writeElements(subtopics, helpContextBuilder, newJavaFileBuilder);
+				}
+			}
+		}
+	}
+

@@ -1,0 +1,29 @@
+	/**
+	 * Generate the files.
+	 * 
+	 * @param phpTocs
+	 * @throws Exception
+	 */
+	private void generateFiles(ArrayList<ITocContribution> phpTocs) throws Exception {
+		// Prepare the files
+		File javaTemplateFile = getJavaTemplateFile();
+		File helpContextFile = new File(javaTemplateFile.getParent(), HELP_CONTEXT_FILE);
+		File newJavaFile = new File(javaTemplateFile.getParent(), JAVA_HELP_CONTEXT_NAME);
+		StringBuilder helpContextBuilder = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + NEW_LINE + "<contexts>" + NEW_LINE); //$NON-NLS-1$ //$NON-NLS-2$
+		StringBuilder newJavaFileBuilder = new StringBuilder();
+		loadJavaTemplate(newJavaFileBuilder, javaTemplateFile);
+
+		// Generate the code 
+		for (ITocContribution tocContribution : phpTocs) {
+			IToc toc = tocContribution.getToc();
+			IUAElement[] children = toc.getChildren();
+			writeElements(children, helpContextBuilder, newJavaFileBuilder);
+		}
+
+		newJavaFileBuilder.append('}');
+		helpContextBuilder.append("</contexts>");//$NON-NLS-1$
+		// Write the generated files
+		writeFile(helpContextFile, helpContextBuilder.toString());
+		writeFile(newJavaFile, newJavaFileBuilder.toString());
+	}
+
