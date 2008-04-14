@@ -4,7 +4,7 @@
 	 * @param helpContextBuilder
 	 * @param newJavaFileBuilder
 	 */
-	private void writeElements(IUAElement[] children, StringBuilder helpContextBuilder, StringBuilder newJavaFileBuilder) {
+	private void writeElements(IUAElement[] children, StringBuilder helpContextBuilder, StringBuilder newJavaFileBuilder, int tocLevel) {
 		for (IUAElement child : children) {
 			if (child instanceof ITopic) {
 				ITopic topic = ((ITopic) child);
@@ -16,11 +16,24 @@
 				if (Character.isDigit(labelAsModifier.charAt(0))) {
 					labelAsModifier = '_' + labelAsModifier;
 				}
-				newJavaFileBuilder.append(String.format(JAVA_CONSTANT_LINE, labelAsModifier.toUpperCase(), labelAsKey));
+				if (topics.contains(labelAsModifier)) {
+					// append the parent topic name to this label
+					ITopic parent = (ITopic) ((Topic) topic).getParentElement();
+					String parentLabel = cleanLabel(parent.getLabel()).toLowerCase();
+					if (Character.isDigit(parentLabel.charAt(0))) {
+						parentLabel = '_' + parentLabel;
+					}
+					labelAsModifier = parentLabel + labelAsModifier;
+				}
+				topics.add(labelAsModifier);
+				for (int i = 0; i < tocLevel; i++) {
+					newJavaFileBuilder.append('\t');
+				}
+				newJavaFileBuilder.append(String.format(JAVA_CONSTANT_LINE, labelAsModifier.toUpperCase(), labelAsKey, href));
 				helpContextBuilder.append(String.format(CONTEXT_BLOCK, labelAsKey, label + DESCRIPTION_POSTFIX, href, label)); // id, description, href, label
 				ITopic[] subtopics = topic.getSubtopics();
 				if (subtopics != null && subtopics.length > 0) {
-					writeElements(subtopics, helpContextBuilder, newJavaFileBuilder);
+					writeElements(subtopics, helpContextBuilder, newJavaFileBuilder, tocLevel + 1);
 				}
 			}
 		}
