@@ -17,7 +17,7 @@
 		if (file.isAbsolute()) {
 			return searchExternalOrWorkspaceFile(file);
 		}
-		if (path.matches("\\.\\.?[/\\\\].*")) { // check whether the path starts with ./ or ../
+		if (RELATIVE_PATH_PATTERN.matcher(path).matches()) { // check whether the path starts with ./ or ../
 			return searchExternalOrWorkspaceFile(currentWorkingDir, path);
 		}
 
@@ -43,17 +43,15 @@
 					}
 				} else if (entry.getEntryKind() == IIncludePathEntry.IPE_VARIABLE) {
 					entryPath = IncludePathVariableManager.instance().resolveVariablePath(entryPath.toString());
-					if (entryPath != null) {
-						File entryDir = entryPath.toFile();
-						file = new File(entryDir, path);
-						if (file.exists()) {
-							return new IncludedFileResult(entry, file);
-						}
+					File entryDir = entryPath.toFile();
+					file = new File(entryDir, path);
+					if (file.exists()) {
+						return new IncludedFileResult(entry, file);
 					}
 				} else if (entry.getEntryKind() == IIncludePathEntry.IPE_PROJECT) {
-					IContainer container = (IContainer) entry.getResource();
-					if (container.isAccessible()) {
-						IResource resource = container.findMember(path);
+					IProject project = (IProject) entry.getResource();
+					if (project.isAccessible()) {
+						IResource resource = project.findMember(path);
 						if (resource instanceof IFile) {
 							return new ResourceResult((IFile) resource);
 						}
