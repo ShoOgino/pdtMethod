@@ -1,0 +1,40 @@
+	/**
+	 * Finds minimal ast node, that covers given position
+	 * 
+	 * @param unit
+	 * @param position
+	 * @return
+	 */
+	public static ASTNode findMaximalNodeEndingAt(ModuleDeclaration unit, final int boundaryOffset) {
+
+		class Visitor extends ASTVisitor {
+			ASTNode result = null;
+
+			public ASTNode getResult() {
+				return result;
+			}
+
+			public boolean visitGeneral(ASTNode s) throws Exception {
+				if (s.sourceStart() < 0 || s.sourceEnd() < 0) {
+					return true;
+				}
+				int sourceEnd = s.sourceEnd();
+				if (Math.abs(sourceEnd - boundaryOffset) <= 0) {
+					result = s;
+				}
+				return true;
+			}
+
+		}
+
+		Visitor visitor = new Visitor();
+
+		try {
+			unit.traverse(visitor);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return visitor.getResult();
+	}
+
