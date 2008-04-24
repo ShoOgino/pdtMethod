@@ -6,10 +6,7 @@
 	 */
 	public Object sendRequest(Object request) throws Exception {
 		if (isDebugMode) {
-			if (request instanceof GetVariableValueRequest) {
-				GetVariableValueRequest gvr = (GetVariableValueRequest) request;
-				System.out.println("sendRequest()->GetVariableValueRequest:getVar() = " + gvr.getVar()); //$NON-NLS-1$
-			}
+			System.out.println("Sending syncrhonic request: " + request);
 		}
 		try {
 			IDebugRequestMessage theMsg = (IDebugRequestMessage) request;
@@ -19,13 +16,8 @@
 				theMsg.serialize(dataOutputStream);
 
 				int messageSize = byteArrayOutputStream.size();
-
-				if (isDebugMode) {
-					System.out.println("sending message request size=" + messageSize + " type=" + theMsg.getType()); //$NON-NLS-1$ //$NON-NLS-2$
-				}
 				synchronized (out) {
 					requestsTable.put(theMsg.getID(), theMsg);
-					//System.out.println("Request table has " +requestsTable.size() +" items");
 					out.writeInt(messageSize);
 					byteArrayOutputStream.writeTo(out);
 					out.flush();
@@ -58,10 +50,9 @@
 				// This can be because on the peerResponseTimeout.
 				if (response == null && isConnected()) {
 					if (isDebugMode) {
-						System.out.println("Communication problems"); //$NON-NLS-1$
+						System.out.println("Communication problems (response is null)"); //$NON-NLS-1$
 					}
 					// Handle time out will stop the communication if need to stop.
-					//System.out.println("handleto");
 
 					if (timeoutCount > 0) {
 						timeoutCount--;
@@ -77,7 +68,7 @@
 			}
 			PHPLaunchUtilities.hideWaitForDebuggerMessage();
 			if (isDebugMode) {
-				System.out.println("response received by client: " + response); //$NON-NLS-1$
+				System.out.println("Received response: " + response); //$NON-NLS-1$
 			}
 			return response;
 

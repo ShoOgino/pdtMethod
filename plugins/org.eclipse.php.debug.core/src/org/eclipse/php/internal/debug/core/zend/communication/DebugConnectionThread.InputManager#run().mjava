@@ -32,9 +32,6 @@
 
 					// reads the length
 					int num = in.readInt();
-					if (isDebugMode) {
-						System.out.println("recieved message size = " + num); //$NON-NLS-1$
-					}
 					if (num < 0) {
 						shutDown();
 						if (isDebugMode) {
@@ -65,9 +62,6 @@
 							return;
 						}
 						validProtocol = true;
-						if (isDebugMode) {
-							System.out.println("message type=" + messageType); //$NON-NLS-1$
-						}
 
 						IDebugMessage message = DebugMessagesRegistry.getMessage(messageType);
 						if (message != null) {
@@ -80,25 +74,13 @@
 
 						// handle the message
 						if (message instanceof IDebugNotificationMessage) {
-							if (isDebugMode) {
-								System.out.println("Starting to read notification "); //$NON-NLS-1$
-							}
 							message.deserialize(in);
-							if (isDebugMode) {
-								System.out.println("End reading of notification " + message); //$NON-NLS-1$
-							}
 							//getCommunicationClient().handleNotification((Notification)message);
 							//PUT NOTIFICATION TO NOTIFICATION QUEUE
 							inputMessageHandler.queueIn(message);
 						} else if (message instanceof IDebugResponseMessage) {
-							if (isDebugMode) {
-								System.out.println("Starting to read response"); //$NON-NLS-1$
-							}
 							message.deserialize(in);
 							int idd = ((IDebugResponseMessage) message).getID();
-							if (isDebugMode) {
-								System.out.println("End reading of response " + message); //$NON-NLS-1$
-							}
 							//responseQueue.queueIn(message);
 							//INSERT RESPONSE TO TABLE AND RELEASE THE THREAD WAITING FOR THE REQUEST
 							ResponseHandler handler = responseHandlers.get(new Integer(idd)); // find the handler.
@@ -117,13 +99,7 @@
 								inputMessageHandler.queueIn(message);
 							}
 						} else if (message instanceof IDebugRequestMessage) { // this is a request.
-							if (isDebugMode) {
-								System.out.println("Starting to read request"); //$NON-NLS-1$
-							}
 							message.deserialize(in);
-							if (isDebugMode) {
-								System.out.println("End reading of request " + message); //$NON-NLS-1$
-							}
 							//Response response =  getCommunicationClient().handleRequest((Request)message);
 							inputMessageHandler.queueIn(message);
 						}
