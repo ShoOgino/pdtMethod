@@ -1,0 +1,35 @@
+	private void initPHPVersionsListener() {
+		if (phpVersionListener != null) {
+			return;
+		}
+		
+		phpVersionListener = new IPreferencesPropagatorListener() {
+			public void preferencesEventOccured(PreferencesPropagatorEvent event) {
+				try {
+					// get the structured document and go over its regions
+					// in case of PhpScriptRegion reparse the region text
+					IDocument doc = getDocumentProvider().getDocument(getEditorInput());
+					if (doc instanceof IStructuredDocument) {
+						IStructuredDocumentRegion[] sdRegions = ((IStructuredDocument) doc).getStructuredDocumentRegions();
+						for (IStructuredDocumentRegion element : sdRegions) {
+							Iterator regionsIt = element.getRegions().iterator();
+							reparseRegion(doc, regionsIt, element.getStartOffset());
+						}
+						PHPStructuredTextViewer textViewer = (PHPStructuredTextViewer) getTextViewer();
+						textViewer.reconcile();
+					}
+				} catch (BadLocationException e) {
+				}
+			}
+	
+			public IProject getProject() {
+				IFile file = getFile();
+				if (file == null)
+					return null;
+				return file.getProject();
+			}
+		};
+		
+		PhpVersionChangedHandler.getInstance().addPhpVersionChangedListener(phpVersionListener);
+	}
+
