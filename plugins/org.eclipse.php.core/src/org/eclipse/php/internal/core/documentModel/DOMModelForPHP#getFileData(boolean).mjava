@@ -9,25 +9,17 @@
 	public PHPFileData getFileData(boolean forceCreation) {
 		PHPFileData fileData = null;
 		IFile file = getIFile();
-
+		
 		if (file != null) {
+			PHPProjectModel projectModel = getProjectModel();
 			if (projectModel != null) {
 				fileData = projectModel.getFileData(file.getFullPath().toString());
 			}
 		}
 		if (fileData == null) {
-			fileData = PHPWorkspaceModelManager.getInstance().getModelForFile(getBaseLocation(), projectModel != null && forceCreation);
-			if (fileData != null) {
-				return fileData;
-			}
+			PHPProjectModel projectModel = getProjectModel();
+			fileData = internalGetFileData(projectModel != null && forceCreation);
 		}
-
-		// external file
-		if ((file != null) && ExternalFilesRegistry.getInstance().isEntryExist(file.getFullPath().toOSString())) {
-			fileData = PHPWorkspaceModelManager.getInstance().getModelForFile(new Path(getBaseLocation()).toOSString());
-			return fileData;
-		}
-
 		return fileData;
 	}
 
