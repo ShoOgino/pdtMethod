@@ -1,9 +1,12 @@
 	protected IContributionItem[] createMenuContributions(final TreeViewer viewer) {
 		IContributionItem[] items;
-		final IContributionItem showPHPItem = new ActionContributionItem(new ChangeOutlineModeAction(PHPUIMessages.getString("PHPOutlinePage_mode_php"), PHPOutlineContentProvider.MODE_PHP, viewer));
-		ChangeOutlineModeAction action = new ChangeOutlineModeAction(PHPUIMessages.getString("PHPOutlinePage_mode_html"), PHPOutlineContentProvider.MODE_HTML, viewer);
-		action.addPropertyChangeListener(new IPropertyChangeListener() {
+		
+		changeOutlineModeActionPHP = new ChangeOutlineModeAction(PHPUIMessages.getString("PHPOutlinePage_mode_php"), PHPOutlineContentProvider.MODE_PHP, viewer);
+		final IContributionItem showPHPItem = new ActionContributionItem(changeOutlineModeActionPHP);
 
+		changeOutlineModeActionHTML = new ChangeOutlineModeAction(PHPUIMessages.getString("PHPOutlinePage_mode_html"), PHPOutlineContentProvider.MODE_HTML, viewer);
+		
+		propertyChangeListener = new IPropertyChangeListener() {
 			public void propertyChange(PropertyChangeEvent event) {
 				if (event.getProperty().equals("checked")) { //$NON-NLS-1$
 					boolean checked = ((Boolean) event.getNewValue()).booleanValue();
@@ -11,11 +14,11 @@
 						sortAction.setEnabled(!checked);
 					}
 				}
-
 			}
-
-		});
-		final IContributionItem showHTMLItem = new ActionContributionItem(action);
+		};
+		changeOutlineModeActionHTML.addPropertyChangeListener(propertyChangeListener);
+		
+		final IContributionItem showHTMLItem = new ActionContributionItem(changeOutlineModeActionHTML);
 		items = super.createMenuContributions(viewer);
 		if (items == null)
 			items = new IContributionItem[] { showPHPItem, showHTMLItem };
@@ -26,7 +29,7 @@
 			combinedItems[items.length + 1] = showHTMLItem;
 			items = combinedItems;
 		}
-		if (action.isChecked()) {
+		if (changeOutlineModeActionHTML.isChecked()) {
 			sortAction.setEnabled(false);
 		}
 		return items;
