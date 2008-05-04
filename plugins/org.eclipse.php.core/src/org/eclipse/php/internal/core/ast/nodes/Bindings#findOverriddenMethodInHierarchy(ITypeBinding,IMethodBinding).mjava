@@ -1,0 +1,29 @@
+	/**
+	 * Finds a method in the hierarchy of <code>type</code> that is overridden by </code>binding</code>.
+	 * Returns <code>null</code> if no such method exists. If the method is defined in more than one super type only the first match is 
+	 * returned. First the super class is examined and than the implemented interfaces.
+	 * @param type The type to search the method in
+	 * @param binding The method that overrides
+	 * @return the method binding overridden the method
+	 */
+	public static IMethodBinding findOverriddenMethodInHierarchy(ITypeBinding type, IMethodBinding binding) {
+		IMethodBinding method = findOverriddenMethodInType(type, binding);
+		if (method != null)
+			return method;
+		ITypeBinding superClass = type.getSuperclass();
+		if (superClass != null) {
+			method = findOverriddenMethodInHierarchy(superClass, binding);
+			if (method != null)
+				return method;
+		}
+		ITypeBinding[] interfaces = type.getInterfaces();
+		if (interfaces != null) {
+			for (int i = 0; i < interfaces.length; i++) {
+				method = findOverriddenMethodInHierarchy(interfaces[i], binding);
+				if (method != null)
+					return method;
+			}
+		}
+		return null;
+	}
+

@@ -1,0 +1,31 @@
+	/**
+	 * Finds a type binding for a given fully qualified type in the hierarchy of a type.
+	 * Returns <code>null</code> if no type binding is found.
+	 * @param hierarchyType the binding representing the hierarchy
+	 * @param fullyQualifiedTypeName the fully qualified name to search for
+	 * @return the type binding
+	 */
+	public static ITypeBinding findTypeInHierarchy(ITypeBinding hierarchyType, String fullyQualifiedTypeName) {
+		if (hierarchyType.isArray() || hierarchyType.isPrimitive()) {
+			return null;
+		}
+		if (fullyQualifiedTypeName.equals(hierarchyType.getBinaryName())) { // hierarchyType.getQualifiedName() 
+			return hierarchyType;
+		}
+		ITypeBinding superClass = hierarchyType.getSuperclass();
+		if (superClass != null) {
+			ITypeBinding res = findTypeInHierarchy(superClass, fullyQualifiedTypeName);
+			if (res != null) {
+				return res;
+			}
+		}
+		ITypeBinding[] superInterfaces = hierarchyType.getInterfaces();
+		for (int i = 0; i < superInterfaces.length; i++) {
+			ITypeBinding res = findTypeInHierarchy(superInterfaces[i], fullyQualifiedTypeName);
+			if (res != null) {
+				return res;
+			}
+		}
+		return null;
+	}
+
