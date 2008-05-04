@@ -1,0 +1,15 @@
+	/* (non-Javadoc)
+	 * @see org.eclipse.php.internal.core.ast.visitor.AbstractVisitor#visit(org.eclipse.php.internal.core.ast.nodes.MethodDeclaration)
+	 */
+	public boolean visit(MethodDeclaration methodDeclaration) {
+		IMethodBinding methodBinding = methodDeclaration.resolveMethodBinding();
+		if (methodBinding != null && !Modifier.isStatic(methodBinding.getModifiers())) {
+			IMethodBinding method = Bindings.findOverriddenMethodInHierarchy(fBinding, methodBinding);
+			if (method != null) {
+				Identifier name = methodDeclaration.getFunction().getFunctionName();
+				fResult.add(new OccurrenceLocation(name.getStart(), name.getLength(), 0, fDescription));
+			}
+		}
+		return super.visit(methodDeclaration);
+	}
+

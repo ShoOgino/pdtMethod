@@ -1,0 +1,24 @@
+	/* (non-Javadoc)
+	 * @see org.eclipse.php.internal.ui.search.IOccurrencesFinder#initialize(org.eclipse.php.internal.core.ast.nodes.Program, org.eclipse.php.internal.core.ast.nodes.ASTNode)
+	 */
+	public String initialize(Program root, ASTNode node) {
+		fASTRoot = root;
+		if (isIdendifier(node)) {
+			fIdentifier = (Identifier) node;
+			StructuralPropertyDescriptor locationInParent = fIdentifier.getLocationInParent();
+			if (locationInParent != ClassDeclaration.SUPER_CLASS_PROPERTY && locationInParent != ClassDeclaration.INTERFACES_PROPERTY && locationInParent != InterfaceDeclaration.INTERFACES_PROPERTY) {
+				return "ImplementOccurrencesFinder_invalidTarget";
+			}
+			IBinding resolvedBinding = fIdentifier.resolveBinding();
+			if (resolvedBinding == null || !(resolvedBinding instanceof ITypeBinding)) {
+				return "ImplementOccurrencesFinder_invalidTarget";
+			} else {
+				fBinding = (ITypeBinding) resolvedBinding;
+			}
+			fTypeDeclaration = (TypeDeclaration) fIdentifier.getParent();
+			return null;
+		}
+		fDescription = "OccurrencesFinder_occurrence_description";
+		return fDescription;
+	}
+
