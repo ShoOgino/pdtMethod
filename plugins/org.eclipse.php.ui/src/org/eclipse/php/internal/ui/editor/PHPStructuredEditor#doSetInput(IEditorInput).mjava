@@ -8,14 +8,16 @@
 			final IFileEditorInput fileInput = (IFileEditorInput) input;
 			resource = fileInput.getFile();
 
-			//we add this test to provide model for PHP files opened from RSE (temp) project
+			// we add this test to provide model for PHP files opened from RSE
+			// (temp) project
 			IProject proj = resource.getProject();
 			if (proj.isAccessible() && proj.hasNature(PHPUiConstants.RSE_TEMP_PROJECT_NATURE_ID)) {
 				PHPWorkspaceModelManager.getInstance().getModelForProject(proj, true);
 			}
 		} else if (input instanceof IStorageEditorInput) {
 			// This kind of editor input usually means non-workspace file, like
-			// PHP file which comes from include path, remote file which comes from
+			// PHP file which comes from include path, remote file which comes
+			// from
 			// Web server while debugging, file from ZIP archive, etc...
 
 			final IStorageEditorInput editorInput = (IStorageEditorInput) input;
@@ -24,18 +26,22 @@
 			if (storage instanceof ZipEntryStorage) {
 				resource = ((ZipEntryStorage) storage).getProject();
 			} else if (storage instanceof LocalFileStorage) {
-				// don't create external resource, it's wrong! Include paths should not have a resource.
+				// don't create external resource, it's wrong! Include paths
+				// should not have a resource.
 			} else {
 				// This is, probably, a remote storage:
 				externalPath = storage.getFullPath();
 				resource = ExternalFileWrapper.createFile(externalPath.toOSString());
 			}
 		} else if (input instanceof IURIEditorInput || input instanceof NonExistingPHPFileEditorInput) {
-			// External file editor input. It's usually used when opening PHP file
+			// External file editor input. It's usually used when opening PHP
+			// file
 			// via "File -> Open File" menu option, or using D&D:
-			//OR
-			// When we are dealing with an Untitled PHP document and the underlying PHP file
-			// does not really exist, but is still considered as an "External" file.
+			// OR
+			// When we are dealing with an Untitled PHP document and the
+			// underlying PHP file
+			// does not really exist, but is still considered as an "External"
+			// file.
 			if (input instanceof NonExistingPHPFileEditorInput) {
 				externalPath = ((NonExistingPHPFileEditorInput) input).getPath();
 			} else {
@@ -51,7 +57,8 @@
 					ExternalFilesRegistry.getInstance().addFileEntry(externalPath.toOSString(), (ExternalFileWrapper) resource);
 					isExternal = true;
 				}
-				// Remove an older record from the external files registry in case this editor
+				// Remove an older record from the external files registry in
+				// case this editor
 				// is being reused to display a new content.
 				IEditorInput oldInput = getEditorInput();
 				if (oldInput != null && oldInput instanceof IStorageEditorInput) {
@@ -60,17 +67,17 @@
 				}
 				PhpSourceParser.editFile.set(resource);
 				super.doSetInput(input);
-				
+
 				initPHPVersionsListener();
-				
+
 			} else {
 				super.doSetInput(input);
-				//				close(false);
+				// close(false);
 			}
 		} else {
 			super.doSetInput(input);
 		}
-		
+
 		ImageDescriptor imageDescriptor = input.getImageDescriptor();
 		if (imageDescriptor != null) {
 			setTitleImage(JFaceResources.getResources().createImageWithDefault(imageDescriptor));

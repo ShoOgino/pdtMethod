@@ -5,36 +5,36 @@
 			if (isCanceled(progressMonitor))
 				return Status.CANCEL_STATUS;
 
-			ITextViewer textViewer= getTextViewer();
+			ITextViewer textViewer = getTextViewer();
 			if (textViewer == null)
 				return Status.CANCEL_STATUS;
 
-			IDocument document= textViewer.getDocument();
+			IDocument document = textViewer.getDocument();
 			if (document == null)
 				return Status.CANCEL_STATUS;
 
-			IDocumentProvider documentProvider= getDocumentProvider();
+			IDocumentProvider documentProvider = getDocumentProvider();
 			if (documentProvider == null)
 				return Status.CANCEL_STATUS;
 
-			IAnnotationModel annotationModel= documentProvider.getAnnotationModel(getEditorInput());
+			IAnnotationModel annotationModel = documentProvider.getAnnotationModel(getEditorInput());
 			if (annotationModel == null)
 				return Status.CANCEL_STATUS;
 
 			// Add occurrence annotations
-			int length= fLocations.length;
-			Map<Annotation, Position> annotationMap= new HashMap<Annotation, Position>(length);
-			for (int i= 0; i < length; i++) {
+			int length = fLocations.length;
+			Map<Annotation, Position> annotationMap = new HashMap<Annotation, Position>(length);
+			for (int i = 0; i < length; i++) {
 
 				if (isCanceled(progressMonitor))
 					return Status.CANCEL_STATUS;
-				
-				OccurrenceLocation location= fLocations[i];
-				Position position= new Position(location.getOffset(), location.getLength());
 
-				String description= location.getDescription();
-				String annotationType= (location.getFlags() == IOccurrencesFinder.F_WRITE_OCCURRENCE) ? "org.eclipse.php.ui.occurrences.write" : "org.eclipse.php.ui.occurrences"; //$NON-NLS-1$ //$NON-NLS-2$
-				
+				OccurrenceLocation location = fLocations[i];
+				Position position = new Position(location.getOffset(), location.getLength());
+
+				String description = location.getDescription();
+				String annotationType = (location.getFlags() == IOccurrencesFinder.F_WRITE_OCCURRENCE) ? "org.eclipse.php.ui.occurrences.write" : "org.eclipse.php.ui.occurrences"; //$NON-NLS-1$ //$NON-NLS-2$
+
 				annotationMap.put(new TemporaryAnnotation(position, annotationType, description, new ReconcileAnnotationKey(null, PHPPartitionTypes.PHP_DEFAULT, ReconcileAnnotationKey.TOTAL)), position);
 			}
 
@@ -43,14 +43,14 @@
 
 			synchronized (getLockObject(annotationModel)) {
 				if (annotationModel instanceof IAnnotationModelExtension) {
-					((IAnnotationModelExtension)annotationModel).replaceAnnotations(fOccurrenceAnnotations, annotationMap);
+					((IAnnotationModelExtension) annotationModel).replaceAnnotations(fOccurrenceAnnotations, annotationMap);
 				} else {
 					removeOccurrenceAnnotations();
 					for (Map.Entry<Annotation, Position> entry : annotationMap.entrySet()) {
-						annotationModel.addAnnotation(entry.getKey(), entry.getValue());	
+						annotationModel.addAnnotation(entry.getKey(), entry.getValue());
 					}
 				}
-				fOccurrenceAnnotations= annotationMap.keySet().toArray(new Annotation[annotationMap.keySet().size()]);
+				fOccurrenceAnnotations = annotationMap.keySet().toArray(new Annotation[annotationMap.keySet().size()]);
 			}
 
 			return Status.OK_STATUS;

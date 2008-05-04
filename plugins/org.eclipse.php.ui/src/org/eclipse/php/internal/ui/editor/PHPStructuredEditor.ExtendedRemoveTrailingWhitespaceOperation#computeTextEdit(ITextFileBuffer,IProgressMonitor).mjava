@@ -1,0 +1,49 @@
+		/*
+		 * Same as in parent, with the addition of the ability to ignore empty
+		 * lines - depending on the value of fIgnoreEmptyLines
+		 */
+		@Override
+		protected MultiTextEditWithProgress computeTextEdit(ITextFileBuffer fileBuffer, IProgressMonitor progressMonitor) throws CoreException {
+			IDocument document = fileBuffer.getDocument();
+			int lineCount = document.getNumberOfLines();
+
+			progressMonitor = Progress.getMonitor(progressMonitor);
+			progressMonitor.beginTask(PHPUIMessages.getString("RemoveTrailingWhitespaceOperation_task_generatingChanges"), lineCount);
+			try {
+
+				MultiTextEditWithProgress multiEdit = new MultiTextEditWithProgress(PHPUIMessages.getString("RemoveTrailingWhitespaceOperation_task_applyingChanges"));
+
+				for (int i = 0; i < lineCount; i++) {
+					if (progressMonitor.isCanceled()) {
+						throw new OperationCanceledException();
+					}
+					IRegion region = document.getLineInformation(i);
+					if (region.getLength() == 0) {
+						continue;
+					}
+					int lineStart = region.getOffset();
+					int lineExclusiveEnd = lineStart + region.getLength();
+					int j = lineExclusiveEnd - 1;
+					while (j >= lineStart && Character.isWhitespace(document.getChar(j))) {
+						--j;
+					}
+					++j;
+					// A flag for skipping empty lines, if required
+					if (fIgnoreEmptyLines && j == lineStart) {
+						continue;
+					}
+					if (j < lineExclusiveEnd) {
+						multiEdit.addChild(new DeleteEdit(j, lineExclusiveEnd - j));
+					}
+					progressMonitor.worked(1);
+				}
+
+				return multiEdit.getChildrenSize() <= 0 ? null : multiEdit;
+
+			} catch (BadLocationException x) {
+				throw new CoreException(new Status(IStatus.ERROR, PHPUiPlugin.ID, IFileBufferStatusCodes.CONTENT_CHANGE_FAILED, "", x)); //$NON-NLS-1$
+			} finally {
+				progressMonitor.done();
+			}
+		}
+

@@ -1,0 +1,21 @@
+	/*
+	 * Added the handling of Save Actions (non-Javadoc)
+	 * 
+	 * @see org.eclipse.wst.sse.ui.StructuredTextEditor#doSave(org.eclipse.core.runtime.IProgressMonitor)
+	 */
+	@Override
+	public void doSave(IProgressMonitor progressMonitor) {
+		updateSaveActionsState(getFile().getProject());
+		if (saveActionsEnabled) {
+			RemoveTrailingWhitespaceOperation op = new ExtendedRemoveTrailingWhitespaceOperation(saveActionsIgnoreEmptyLines);
+			try {
+				op.run(FileBuffers.getTextFileBufferManager().getTextFileBuffer(getDocument()), progressMonitor);
+			} catch (OperationCanceledException e) {
+				Logger.logException(e);
+			} catch (CoreException e) {
+				Logger.logException(e);
+			}
+		}
+		super.doSave(progressMonitor);
+	}
+

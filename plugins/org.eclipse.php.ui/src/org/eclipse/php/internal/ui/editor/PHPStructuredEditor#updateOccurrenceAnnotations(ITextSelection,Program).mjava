@@ -1,9 +1,10 @@
 	/**
-	 * Updates the occurrences annotations based
-	 * on the current selection.
-	 *
-	 * @param selection the text selection
-	 * @param astRoot the compilation unit AST
+	 * Updates the occurrences annotations based on the current selection.
+	 * 
+	 * @param selection
+	 *            the text selection
+	 * @param astRoot
+	 *            the compilation unit AST
 	 * @since 3.0
 	 */
 	protected void updateOccurrenceAnnotations(ITextSelection selection, Program astRoot) {
@@ -17,40 +18,41 @@
 		if (astRoot == null || selection == null)
 			return;
 
-		IDocument document= getSourceViewer().getDocument();
+		IDocument document = getSourceViewer().getDocument();
 		if (document == null)
 			return;
 
-		boolean hasChanged= false;
+		boolean hasChanged = false;
 		if (document instanceof IDocumentExtension4) {
-			int offset= selection.getOffset();
-			long currentModificationStamp= ((IDocumentExtension4)document).getModificationStamp();
-			IRegion markOccurrenceTargetRegion= fMarkOccurrenceTargetRegion;
-			hasChanged= currentModificationStamp != fMarkOccurrenceModificationStamp;
+			int offset = selection.getOffset();
+			long currentModificationStamp = ((IDocumentExtension4) document).getModificationStamp();
+			IRegion markOccurrenceTargetRegion = fMarkOccurrenceTargetRegion;
+			hasChanged = currentModificationStamp != fMarkOccurrenceModificationStamp;
 			if (markOccurrenceTargetRegion != null && !hasChanged) {
 				if (markOccurrenceTargetRegion.getOffset() <= offset && offset <= markOccurrenceTargetRegion.getOffset() + markOccurrenceTargetRegion.getLength())
 					return;
 			}
-			fMarkOccurrenceTargetRegion= ScriptWordFinder.findWord(document, offset);
-			fMarkOccurrenceModificationStamp= currentModificationStamp;
+			fMarkOccurrenceTargetRegion = ScriptWordFinder.findWord(document, offset);
+			fMarkOccurrenceModificationStamp = currentModificationStamp;
 		}
 
-		OccurrenceLocation[] locations= null;
-		
-		ASTNode selectedNode= NodeFinder.perform(astRoot, selection.getOffset(), selection.getLength());
+		OccurrenceLocation[] locations = null;
+
+		ASTNode selectedNode = NodeFinder.perform(astRoot, selection.getOffset(), selection.getLength());
 		if (fMarkHTMLTags) {
 			IOccurrencesFinder finder = OccurrencesFinderFactory.createHTMLOccurrencesFinder(document, selection.getOffset());
 			if (finder.initialize(astRoot, selectedNode) == null) {
 				locations = finder.getOccurrences();
 			}
 		}
-		
+
 		if (locations == null && fMarkExceptions) {
-//          TODO : Implement Me!
-//			ExceptionOccurrencesFinder finder= new ExceptionOccurrencesFinder();
-//			if (finder.initialize(astRoot, selectedNode) == null) {
-//				locations= finder.getOccurrences();
-//			}
+			// TODO : Implement Me!
+			// ExceptionOccurrencesFinder finder= new
+			// ExceptionOccurrencesFinder();
+			// if (finder.initialize(astRoot, selectedNode) == null) {
+			// locations= finder.getOccurrences();
+			// }
 		}
 
 		if (locations == null && fMarkMethodExitPoints) {
@@ -66,13 +68,14 @@
 				locations = finder.getOccurrences();
 			}
 		}
-		
+
 		if (locations == null && fMarkImplementors) {
-			//TODO
-//			IOccurrencesFinder finder= OccurrencesFinderFactory.createImplementorsOccurrencesFinder();
-//			if (finder.initialize(astRoot, selectedNode) == null) {
-//				locations= finder.getOccurrences();
-//			}
+			// TODO
+			// IOccurrencesFinder finder=
+			// OccurrencesFinderFactory.createImplementorsOccurrencesFinder();
+			// if (finder.initialize(astRoot, selectedNode) == null) {
+			// locations= finder.getOccurrences();
+			// }
 		}
 
 		if (locations == null && (selectedNode instanceof Identifier || selectedNode instanceof Scalar)) {
@@ -95,10 +98,10 @@
 			return;
 		}
 
-		fOccurrencesFinderJob= new OccurrencesFinderJob(document, locations, selection);
-		//fOccurrencesFinderJob.setPriority(Job.DECORATE);
-		//fOccurrencesFinderJob.setSystem(true);
-		//fOccurrencesFinderJob.schedule();
+		fOccurrencesFinderJob = new OccurrencesFinderJob(document, locations, selection);
+		// fOccurrencesFinderJob.setPriority(Job.DECORATE);
+		// fOccurrencesFinderJob.setSystem(true);
+		// fOccurrencesFinderJob.schedule();
 		fOccurrencesFinderJob.run(new NullProgressMonitor());
 	}
 
