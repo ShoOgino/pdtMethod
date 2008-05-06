@@ -1,0 +1,29 @@
+	/**
+	 * @param root the AST root
+	 * @param node the selected node
+	 * @return returns a message if there is a problem
+	 */
+	public String initialize(Program root, ASTNode node) {
+		fASTRoot = root;
+
+		this.includeNode = getIncludeExpression(node);
+		if (this.includeNode != null) {
+			binding = includeNode.resolveBinding();
+			source = binding.getPHPElement();
+			if (source != null) {
+				AbstractSourceModule module = (AbstractSourceModule) source;
+				try {
+					this.types = module.getTypes();
+					this.methods = module.getMethods();
+					return null;
+				} catch (ModelException e) {
+					fDescription = "MethodExitsFinder_occurrence_exit_description";
+					return fDescription;
+				}
+			}
+
+		}
+		fDescription = "MethodExitsFinder_occurrence_exit_description";
+		return fDescription;
+	}
+
