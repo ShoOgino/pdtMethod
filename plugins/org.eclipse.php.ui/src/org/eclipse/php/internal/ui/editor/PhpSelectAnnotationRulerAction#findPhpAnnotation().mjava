@@ -1,0 +1,60 @@
+	private void findPhpAnnotation() {
+		fPosition = null;
+		fAnnotation = null;
+		fHasCorrection = false;
+
+		AbstractMarkerAnnotationModel model = getAnnotationModel();
+		IAnnotationAccessExtension annotationAccess = getAnnotationAccessExtension();
+
+		IDocument document = getDocument();
+		if (model == null)
+			return;
+
+		boolean hasAssistLightbulb = false;// TODO - fStore.getBoolean(PreferenceConstants.EDITOR_QUICKASSIST_LIGHTBULB);
+
+		Iterator iter = model.getAnnotationIterator();
+		int layer = Integer.MIN_VALUE;
+
+		while (iter.hasNext()) {
+			Annotation annotation = (Annotation) iter.next();
+			if (annotation.isMarkedDeleted())
+				continue;
+
+			int annotationLayer = layer;
+			if (annotationAccess != null) {
+				annotationLayer = annotationAccess.getLayer(annotation);
+				if (annotationLayer < layer)
+					continue;
+			}
+
+			Position position = model.getPosition(annotation);
+			if (!includesRulerLine(position, document))
+				continue;
+
+			// TODO - Add the quick-fix support here.
+			//			boolean isReadOnly = fTextEditor instanceof ITextEditorExtension && ((ITextEditorExtension) fTextEditor).isEditorInputReadOnly();
+			//			if (!isReadOnly && (((hasAssistLightbulb && annotation instanceof AssistAnnotation) || JavaCorrectionProcessor.hasCorrections(annotation)))) {
+			//				fPosition = position;
+			//				fAnnotation = annotation;
+			//				fHasCorrection = true;
+			//				layer = annotationLayer;
+			//				continue;
+			//			} else {
+			AnnotationPreference preference = fAnnotationPreferenceLookup.getAnnotationPreference(annotation);
+			if (preference == null)
+				continue;
+
+			String key = preference.getVerticalRulerPreferenceKey();
+			if (key == null)
+				continue;
+
+			//			if (fStore.getBoolean(key)) {
+			fPosition = position;
+			fAnnotation = annotation;
+			fHasCorrection = false;
+			layer = annotationLayer;
+			//			}
+			//			}
+		}
+	}
+

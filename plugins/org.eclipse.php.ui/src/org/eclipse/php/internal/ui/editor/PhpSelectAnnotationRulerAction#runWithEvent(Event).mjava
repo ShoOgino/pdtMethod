@@ -1,0 +1,23 @@
+	/*
+	 * @see org.eclipse.jface.action.IAction#runWithEvent(org.eclipse.swt.widgets.Event)
+	 * @since 3.2
+	 */
+	public void runWithEvent(Event event) {
+		if (fAnnotation instanceof OverrideIndicatorManager.OverrideIndicator) {
+			((OverrideIndicatorManager.OverrideIndicator) fAnnotation).open();
+			return;
+		}
+
+		if (fHasCorrection) {
+			ITextOperationTarget operation = (ITextOperationTarget) fTextEditor.getAdapter(ITextOperationTarget.class);
+			final int opCode = ISourceViewer.QUICK_ASSIST;
+			if (operation != null && operation.canDoOperation(opCode)) {
+				fTextEditor.selectAndReveal(fPosition.getOffset(), fPosition.getLength());
+				operation.doOperation(opCode);
+			}
+			return;
+		}
+
+		super.run();
+	}
+
