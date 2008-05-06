@@ -1,0 +1,30 @@
+	public static String restoreKeyByNode(ISourceModule sourceModule, ModuleDeclaration unit, final ASTNode node) {
+		final String elementKey[] = new String[1];
+		
+		PHPMixinBuildVisitor visitor = new PHPMixinBuildVisitor(unit, sourceModule, false, null) {
+			private String tmpKey;
+			
+			protected String report(String key, PHPMixinElementInfo object) {
+				tmpKey = key;
+				return super.report(key, object);
+			}
+
+			public boolean visitGeneral(ASTNode n) throws Exception {
+				if (elementKey[0] != null) {
+					return false;
+				}
+				if (node == n) {
+					elementKey[0] = tmpKey;
+				}
+				return super.visitGeneral(node);
+			}
+		};
+		try {
+			unit.traverse(visitor);
+		} catch (Exception e) {
+			Logger.logException(e);
+		}
+
+		return elementKey[0];
+	}
+

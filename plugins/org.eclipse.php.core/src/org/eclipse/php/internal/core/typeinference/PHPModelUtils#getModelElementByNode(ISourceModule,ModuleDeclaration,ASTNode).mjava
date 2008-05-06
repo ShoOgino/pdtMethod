@@ -1,0 +1,23 @@
+	/**
+	 * Finds model element that corresponds to the given AST node
+	 * @param sourceModule Source module (file model element)
+	 * @param unit AST nodes root
+	 * @param node Requested node
+	 * @return model element or <code>null</code> in case of error
+	 */
+	public static IModelElement getModelElementByNode(ISourceModule sourceModule, ModuleDeclaration unit, ASTNode node) {
+		Assert.isNotNull(node);
+		
+		String key = PHPMixinBuildVisitor.restoreKeyByNode(sourceModule, unit, node);
+		if (key != null) {
+			IMixinElement[] elements = PHPMixinModel.getRawInstance().find(key);
+			if (elements.length > 0) {
+				Object[] allObjects = elements[0].getAllObjects();
+				if (allObjects.length > 0) {
+					return (IModelElement) ((PHPMixinElementInfo)allObjects[0]).getObject();
+				}
+			}
+		}
+		return null;
+	}
+
