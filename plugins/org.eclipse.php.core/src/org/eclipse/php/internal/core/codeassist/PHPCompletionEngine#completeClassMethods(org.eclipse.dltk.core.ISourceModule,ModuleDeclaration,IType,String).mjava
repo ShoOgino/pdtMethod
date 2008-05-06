@@ -1,0 +1,17 @@
+	private void completeClassMethods(org.eclipse.dltk.core.ISourceModule modelModule, ModuleDeclaration moduleDeclaration, IType type, String prefix) {
+		try {
+			SearchEngine engine = new SearchEngine();
+			IDLTKSearchScope scope = SearchEngine.createHierarchyScope(type);
+			SearchPattern pattern = SearchPattern.createPattern(prefix + "*", IDLTKSearchConstants.DECLARATIONS, IDLTKSearchConstants.METHOD, SearchPattern.R_PATTERN_MATCH | SearchPattern.R_CAMELCASE_MATCH); //$NON-NLS-1$
+
+			engine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
+				public void acceptSearchMatch(SearchMatch match) throws CoreException {
+					reportMethod((IMethod) match.getElement(), RELEVANCE_METHODS);
+				}
+			}, new NullProgressMonitor());
+
+		} catch (Exception e) {
+			Logger.logException(e);
+		}
+	}
+

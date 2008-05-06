@@ -1,0 +1,23 @@
+	private void completeFieldAccess(org.eclipse.dltk.core.ISourceModule module, ModuleDeclaration moduleDeclaration, FieldAccess node, int position) {
+		String content;
+		try {
+			content = module.getSource();
+		} catch (ModelException e) {
+			return;
+		}
+		int pos = (node.getDispatcher() != null) ? (node.getDispatcher().sourceEnd() + 2) : (node.sourceStart());
+		String starting = null;
+		try {
+			starting = content.substring(pos, position).trim();
+		} catch (IndexOutOfBoundsException e) {
+			Logger.logException(e);
+			return;
+		}
+
+		this.setSourceRange(position - starting.length(), position);
+
+		ExpressionTypeGoal goal = new ExpressionTypeGoal(new BasicContext(module, moduleDeclaration), node.getDispatcher());
+		IEvaluatedType type = inferencer.evaluateType(goal, 3000);
+		reportSubElements(module, type, starting);
+	}
+

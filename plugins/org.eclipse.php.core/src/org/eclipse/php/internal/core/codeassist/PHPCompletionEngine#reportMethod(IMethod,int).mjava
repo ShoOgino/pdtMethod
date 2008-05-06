@@ -1,0 +1,53 @@
+	private void reportMethod(IMethod method, int rel) {
+		this.intresting.add(method);
+		String elementName = method.getElementName();
+		if (completedNames.contains(elementName)) {
+			return;
+		}
+		completedNames.add(elementName);
+		if (elementName.indexOf('.') != -1) {
+			elementName = elementName.substring(elementName.indexOf('.') + 1);
+		}
+		char[] name = elementName.toCharArray();
+		char[] compl = name;
+
+		int relevance = rel;
+
+		// accept result
+		noProposal = false;
+		if (!requestor.isIgnored(CompletionProposal.METHOD_DECLARATION)) {
+			CompletionProposal proposal = createProposal(CompletionProposal.METHOD_DECLARATION, actualCompletionPosition);
+
+			String[] params = null;
+			try {
+				params = method.getParameters();
+			} catch (ModelException e) {
+				Logger.logException(e);
+			}
+
+			if (params != null && params.length > 0) {
+				char[][] args = new char[params.length][];
+				for (int i = 0; i < params.length; ++i) {
+					args[i] = params[i].toCharArray();
+				}
+				proposal.setParameterNames(args);
+			}
+
+			proposal.setModelElement(method);
+			proposal.setName(name);
+			proposal.setCompletion(compl);
+			try {
+				proposal.setFlags(method.getFlags());
+			} catch (ModelException e) {
+				PHPCorePlugin.log(e);
+			}
+			proposal.setReplaceRange(this.startPosition - this.offset, this.endPosition - this.offset);
+			proposal.setRelevance(relevance);
+			this.requestor.accept(proposal);
+			if (DEBUG) {
+				this.printDebug(proposal);
+			}
+		}
+
+	}
+
