@@ -1,0 +1,21 @@
+	private static IEditorInput getEditorInput(IModelElement element) {
+		// [Taken from:  org.eclipse.dltk.internal.ui.editor.EditorUtility]
+		while (element != null) {
+			if (element instanceof IExternalSourceModule) {
+				ISourceModule unit = ((ISourceModule) element).getPrimary();
+				if (unit instanceof IStorage) {
+					return new ExternalStorageEditorInput((IStorage) unit);
+				}
+
+			} else if (element instanceof ISourceModule) {
+				ISourceModule unit = ((ISourceModule) element).getPrimary();
+				IResource resource = unit.getResource();
+				if (resource instanceof IFile)
+					return new FileEditorInput((IFile) resource);
+			}
+			element = element.getParent();
+		}
+		return null;
+		// TODO - Handle external model elements (for external files)
+	}
+

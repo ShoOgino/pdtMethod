@@ -2,30 +2,25 @@
 		 * Opens and reveals the defining method.
 		 */
 		public void open() {
-			//			MessageDialog.openInformation(null, "Message", "TBD");
-			// TODO - Open the defining method
-			//			Program ast = SharedASTProvider.getAST((ISourceModule) fModelElement, SharedASTProvider.WAIT_ACTIVE_ONLY, null);
-			//			if (ast != null) {
-			//				ASTNode node = ast.findDeclaringNode(fAstNodeKey);
-			//				if (node instanceof MethodDeclaration) {
-			//					try {
-			//						IMethodBinding methodBinding = ((MethodDeclaration) node).resolveBinding();
-			//						IMethodBinding definingMethodBinding = Bindings.findOverriddenMethod(methodBinding, true);
-			//						if (definingMethodBinding != null) {
-			//							IJavaElement definingMethod = definingMethodBinding.getJavaElement();
-			//							if (definingMethod != null) {
-			//								JavaUI.openInEditor(definingMethod, true, true);
-			//								return;
-			//							}
-			//						}
-			//					} catch (CoreException e) {
-			//						ExceptionHandler.handle(e, JavaEditorMessages.OverrideIndicatorManager_open_error_title, JavaEditorMessages.OverrideIndicatorManager_open_error_messageHasLogEntry);
-			//						return;
-			//					}
-			//				}
-			//			}
-			//			String title = JavaEditorMessages.OverrideIndicatorManager_open_error_title;
-			//			String message = JavaEditorMessages.OverrideIndicatorManager_open_error_message;
-			//			MessageDialog.openError(JavaPlugin.getActiveWorkbenchShell(), title, message);
+			try {
+				Program ast = SharedASTProvider.getAST((ISourceModule) fModelElement, SharedASTProvider.WAIT_ACTIVE_ONLY, null);
+				if (ast != null) {
+					IModelElement modelElement = DLTKCore.create(fAstNodeKey);
+					if (modelElement instanceof IMethod) {
+						IMethod method = (IMethod) modelElement;
+						int offset = method.getSourceRange().getOffset();
+						int length = method.getSourceRange().getLength();
+						IEditorPart editor = EditorUtility.openInEditor(method, true);
+						EditorUtility.revealInEditor(editor, offset, length);
+						return;
+					}
+				}
+			} catch (Exception e) {
+				ExceptionHandler.handle(new CoreException(new Status(IStatus.ERROR, PHPUiPlugin.ID, 0, "Exception occurred", e)), PHPUIMessages.getString("OverrideIndicatorManager_open_error_title"), PHPUIMessages.getString("OverrideIndicatorManager_open_error_messageHasLogEntry"));
+				return;
+			}
+			String title = PHPUIMessages.getString("OverrideIndicatorManager_open_error_title");
+			String message = PHPUIMessages.getString("OverrideIndicatorManager_open_error_message");
+			MessageDialog.openError(PHPUiPlugin.getActiveWorkbenchShell(), title, message);
 		}
 
