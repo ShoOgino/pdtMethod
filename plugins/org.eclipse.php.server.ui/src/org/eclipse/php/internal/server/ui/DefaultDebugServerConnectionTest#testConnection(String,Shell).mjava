@@ -1,0 +1,77 @@
+	public void testConnection(String url, Shell shell) {
+		fURL = url;
+		fShell = shell;
+
+		// check:
+		// 1. server is available
+		// 2. dummy.php exists 
+		// 3. check debugger communication
+		// 4. debugger version
+
+		IRunnableWithProgress runnableWithProgress = new IRunnableWithProgress() {
+			public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
+				monitor.beginTask(PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_testingConnectivity"), IProgressMonitor.UNKNOWN); //$NON-NLS-1$
+				try {
+					//1. check base URL (http://HOST_NAME)
+					//2.check dummy file existence
+					final URL checkURL = new URL(fURL + "/dummy.php"); //$NON-NLS-1$
+					URLConnection connection = checkURL.openConnection();
+
+					InputStream inputStream = null;
+
+					Timer timer = new Timer();
+					TimerTask task = new TimerTask() {
+
+						@Override
+						public void run() {
+							if (!isFinished) {
+								DebugServerTestController.getInstance().notifyTestListeners(new DebugServerTestEvent(fURL, DebugServerTestEvent.TEST_TIMEOUT));
+							}
+						}
+					};
+					timer.schedule(task, DEFAULT_TIMEOUT);
+					inputStream = connection.getInputStream();//this will fail when host not found and/or dummy.php not found (2 different exception
+					inputStream.close();
+
+					///Build Query String to call debugger via GET
+					StringBuilder queryBuilder = new StringBuilder();
+					queryBuilder.append(fURL);
+					queryBuilder.append("/dummy.php?start_debug=0&debug_port="); //$NON-NLS-1$
+					String port = Integer.toString(PHPDebugPlugin.getDebugPort(DebuggerCommunicationDaemon.ZEND_DEBUGGER_ID));
+					queryBuilder.append(port);
+					queryBuilder.append("&debug_fastfile=1&debug_host="); //$NON-NLS-1$
+					String hosts = PHPDebugPlugin.getDebugHosts();
+					queryBuilder.append(hosts + "&testConnection=true"); //$NON-NLS-1$
+					final String urlToDebug = queryBuilder.toString();
+
+					//Calling the debugger
+					URL checkDebugURL = new URL(urlToDebug);
+					URLConnection debugConnection = checkDebugURL.openConnection();
+					DebugServerTestController.getInstance().addListener(DefaultDebugServerConnectionTest.this);
+					debugConnection.getInputStream();//this should activate the debugger
+
+					synchronized (isFinished) {
+						if (!isFinished) {
+							isFinished.wait();
+						}
+					}
+
+				} catch (FileNotFoundException fnfe) {//dummy.php was not found
+					showErrorDialog(NLS.bind(PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_theURLCouldNotBeFound"), fURL)); //$NON-NLS-1$
+				} catch (IOException er) {//server not found / server is down
+					showErrorDialog(NLS.bind(PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_webServerConnectionFailed"), fURL)); //$NON-NLS-1$
+				}
+
+			}
+		};
+		progressDialog = new ProgressMonitorDialog(fShell);
+		progressDialog.setBlockOnOpen(false);
+		progressDialog.setCancelable(true);
+
+		try {
+			progressDialog.run(true, true, runnableWithProgress);
+		} catch (Exception e) {
+			Logger.logException(e);
+		}
+	}
+

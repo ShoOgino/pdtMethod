@@ -1,0 +1,17 @@
+	public void testEventReceived(final DebugServerTestEvent e) {
+		synchronized (isFinished) {
+			isFinished.notifyAll();
+			isFinished = true;
+		}
+		fShell.getDisplay().asyncExec(new Runnable() {
+			public void run() {
+				DebugServerTestController.getInstance().removeListener(DefaultDebugServerConnectionTest.this);
+				if (e.getEventType() == DebugServerTestEvent.TEST_SUCCEEDED) {
+					MessageDialog.openInformation(fShell, PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_testDebugServer"), e.getEventMessage()); //$NON-NLS-1$
+				} else {
+					showErrorDialog(e.getEventMessage());
+				}
+			}
+		});
+	}
+
