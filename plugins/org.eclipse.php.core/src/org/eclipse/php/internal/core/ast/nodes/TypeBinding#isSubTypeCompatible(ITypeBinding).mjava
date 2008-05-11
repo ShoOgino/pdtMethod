@@ -6,19 +6,25 @@
 	 * given type, and <code>false</code> otherwise
 	 */
 	public boolean isSubTypeCompatible(ITypeBinding otherType) {
-		if (otherType instanceof TypeBinding) {
-			if (element instanceof IType) {
-				try {
-					IModelElement otherElement = ((TypeBinding) otherType).element;
-					if (otherElement instanceof IType) {
-						ITypeHierarchy supertypeHierarchy = ((IType) element).newSupertypeHierarchy(new NullProgressMonitor());
-						return supertypeHierarchy.contains((IType) otherElement);
+		if (otherType == null) {
+			return false;
+		}
+
+		boolean result = true;
+		for (IModelElement element : elements) {
+			try {
+				ITypeHierarchy supertypeHierarchy = ((IType) element).newSupertypeHierarchy(new NullProgressMonitor());
+				IModelElement[] otherElements = ((TypeBinding) otherType).elements;
+				for (IModelElement modelElement : otherElements) {
+					if (modelElement instanceof IType) {
+						result &= supertypeHierarchy.contains((IType) modelElement);
 					}
-				} catch (ModelException e) {
-					Logger.logException(e);
 				}
+			} catch (ModelException e) {
+				Logger.logException(e);
 			}
 		}
-		return false;
+		
+		return result;
 	}
 

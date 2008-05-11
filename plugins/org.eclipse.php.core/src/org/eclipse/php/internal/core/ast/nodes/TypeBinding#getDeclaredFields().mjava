@@ -15,22 +15,28 @@
 	 *   or the empty list if this type does not have field members
 	 */
 	public IVariableBinding[] getDeclaredFields() {
-		if (element == null) {
+		if (isUnknown()) {
 			return new IVariableBinding[0];
 		}
 		if (isClass()) {
-			IType type = (IType) element;
-			try {
-				IField[] fields = type.getFields();
-				IVariableBinding[] variableBindings = new IVariableBinding[fields.length];
-				for (int i = 0; i < fields.length; i++) {
-					variableBindings[i] = resolver.getVariableBinding(fields[i]);
+			List<IVariableBinding> variableBindings = new ArrayList<IVariableBinding>();
+
+			for (IModelElement element : this.elements) {
+				IType type = (IType) element;
+				try {
+					IField[] fields = type.getFields();
+					for (int i = 0; i < fields.length; i++) {
+						IVariableBinding variableBinding = resolver.getVariableBinding(fields[i]);
+						if (variableBinding != null) {
+							variableBindings.add(variableBinding);
+						}
+					}
+				} catch (ModelException e) {
+					Logger.logException(e);
 				}
-				return variableBindings;
-			} catch (ModelException e) {
-				Logger.logException(e);
 			}
+			return variableBindings.toArray(new IVariableBinding[variableBindings.size()]);
 		}
-		return new IVariableBinding[0]; // TODO - Implement IVariableBinding
+		return new IVariableBinding[0];
 	}
 

@@ -16,23 +16,26 @@
 	 *   or the empty list if this type does not declare any methods or constructors
 	 */
 	public IMethodBinding[] getDeclaredMethods() {
-		if (element == null) {
+		if (isUnknown()) {
 			return new IMethodBinding[0];
 		}
 		if (isClass()) {
-			IType type = (IType) element;
-			try {
-				IMethod[] methods = type.getMethods();
-				if (methods != null) {
-					IMethodBinding[] methodBinding = new IMethodBinding[methods.length];
-					for (int i = 0; i < methods.length; i++) {
-						methodBinding[i] = resolver.getMethodBinding(methods[i]);
+			List<IMethodBinding> methodBindings = new ArrayList<IMethodBinding>();
+			for (IModelElement element : this.elements) {
+				IType type = (IType) element;
+				try {
+					IMethod[] methods = type.getMethods();
+					if (methods != null) {
+						for (int i = 0; i < methods.length; i++) {
+							IMethodBinding methodBinding = resolver.getMethodBinding(methods[i]);
+							methodBindings.add(methodBinding);
+						}
 					}
-					return methodBinding;
+				} catch (ModelException e) {
+					Logger.logException(e);
 				}
-			} catch (ModelException e) {
-				Logger.logException(e);
 			}
+			return methodBindings.toArray(new IMethodBinding[methodBindings.size()]);
 		}
 		return new IMethodBinding[0]; // TODO - Implement IMethodBinding
 	}

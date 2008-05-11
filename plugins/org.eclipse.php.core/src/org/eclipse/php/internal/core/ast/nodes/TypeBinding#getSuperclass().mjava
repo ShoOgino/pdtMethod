@@ -26,7 +26,12 @@
 	 * @see AST#resolveWellKnownType(String)
 	 */
 	public ITypeBinding getSuperclass() {
-		if (element != null && element instanceof IType) {
+		if (isUnknown()) {
+			return null;
+		}
+
+		List<IType> superClasses = new ArrayList<IType>(elements.length);
+		for (IModelElement element : elements) {
 			IType type = (IType) element;
 			try {
 				ITypeHierarchy supertypeHierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
@@ -34,7 +39,7 @@
 				if (superclasses != null) {
 					for (IType superClass : superclasses) {
 						if ((superClass.getFlags() & Modifiers.AccInterface) == 0) {
-							return resolver.getTypeBinding(superClass);
+							superClasses.add(superClass);
 						}
 					}
 				}
@@ -42,6 +47,6 @@
 				Logger.logException(e);
 			}
 		}
-		return null;
+		return resolver.getTypeBinding(superClasses.toArray(new IType[superClasses.size()]));
 	}
 

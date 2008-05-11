@@ -29,24 +29,28 @@
 	 *   the empty list
 	 */
 	public ITypeBinding[] getInterfaces() {
-		if (element != null && element instanceof IType) {
+		if (isUnknown()) {
+			return new ITypeBinding[0];
+		}
+
+		ArrayList<ITypeBinding> interfaces = new ArrayList<ITypeBinding>();
+		for (IModelElement element : elements) {
 			IType type = (IType) element;
 			try {
 				ITypeHierarchy supertypeHierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
 				IType[] superTypes = supertypeHierarchy.getSupertypes(type);
 				if (superTypes != null) {
-					ArrayList<ITypeBinding> interfaces = new ArrayList<ITypeBinding>();
 					for (IType superType : superTypes) {
 						if ((superType.getFlags() & Modifiers.AccInterface) != 0) {
 							interfaces.add(resolver.getTypeBinding(superType));
 						}
 					}
-					return interfaces.toArray(new ITypeBinding[interfaces.size()]);
 				}
 			} catch (ModelException e) {
 				Logger.logException(e);
 			}
+
 		}
-		return new ITypeBinding[0];
+		return interfaces.toArray(new ITypeBinding[interfaces.size()]);
 	}
 
