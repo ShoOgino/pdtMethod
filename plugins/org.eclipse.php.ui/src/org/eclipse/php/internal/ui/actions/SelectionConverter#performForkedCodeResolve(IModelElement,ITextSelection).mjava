@@ -1,0 +1,16 @@
+	private static IModelElement[] performForkedCodeResolve(final IModelElement input, final ITextSelection selection) throws InvocationTargetException, InterruptedException {
+		final class CodeResolveRunnable implements IRunnableWithProgress {
+			IModelElement[] result;
+			public void run(IProgressMonitor monitor) throws InvocationTargetException {
+				try {
+					result= org.eclipse.dltk.internal.ui.actions.SelectionConverter.codeResolve(input, selection);
+				} catch (ModelException e) {
+					throw new InvocationTargetException(e);
+				}
+			}
+		}
+		CodeResolveRunnable runnable= new CodeResolveRunnable();
+		PlatformUI.getWorkbench().getProgressService().busyCursorWhile(runnable);
+		return runnable.result;
+	}
+
