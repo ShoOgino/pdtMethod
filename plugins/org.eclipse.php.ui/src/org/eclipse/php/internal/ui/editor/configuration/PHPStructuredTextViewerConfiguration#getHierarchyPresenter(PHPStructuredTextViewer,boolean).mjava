@@ -1,0 +1,24 @@
+	/**
+	 * Returns the hierarchy presenter which will determine and shown type hierarchy
+	 * information requested for the current cursor position.
+	 *
+	 * @param sourceViewer the source viewer to be configured by this configuration
+	 * @param doCodeResolve a boolean which specifies whether code resolve should be used to compute the PHP element
+	 * @return an information presenter
+	 * @since 3.4
+	 */
+	public IInformationPresenter getHierarchyPresenter(PHPStructuredTextViewer viewer, boolean doCodeResolve) {
+
+		// Do not create hierarchy presenter if there's no CU.
+		if (viewer.getTextEditor() == null || viewer.getTextEditor().getEditorInput() == null) {
+			return null;
+		}
+		InformationPresenter presenter = new InformationPresenter(getHierarchyPresenterControlCreator());
+		presenter.setDocumentPartitioning(getConfiguredDocumentPartitioning(viewer));
+		presenter.setAnchor(AbstractInformationControlManager.ANCHOR_GLOBAL);
+		IInformationProvider provider = new PHPInformationElementProvider(viewer.getTextEditor(), doCodeResolve);
+		presenter.setInformationProvider(provider, PHPPartitionTypes.PHP_DEFAULT);
+		presenter.setSizeConstraints(50, 20, true, false);
+		return presenter;
+	}
+
