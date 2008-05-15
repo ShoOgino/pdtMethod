@@ -1,0 +1,98 @@
+	public void testConnection(Server server, Shell shell) {
+		fServer = server;
+		fShell = shell;
+		fURL = server.getBaseURL();
+
+		// check:
+		// 1. server is available
+		// 2. dummy.php exists 
+		// 3. check debugger communication
+		// 4. debugger version
+		IRunnableWithProgress runnableWithProgress = new IRunnableWithProgress() {
+			public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
+				monitor.beginTask(PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_testingConnectivity"), IProgressMonitor.UNKNOWN); //$NON-NLS-1$
+				try {
+					//Check existence of both web server and dummy.php
+					checkWebServerExistence();
+
+					//Build Query String to call debugger via GET
+					String debugQuery = generateDebugQuery();
+
+					//Calling the debugger
+					activateTestDebug(debugQuery);
+				} catch (FileNotFoundException fnfe) {//dummy.php was not found
+					showCustomErrorDialog(NLS.bind(PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_theURLCouldNotBeFound"), fURL)); //$NON-NLS-1$
+					removeThisListener();
+					return;
+				} catch (SocketTimeoutException ste) {
+					if (!isFinished) {
+						showCustomErrorDialog(NLS.bind(PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_timeOutMessage"), fURL)); //$NON-NLS-1$
+						removeThisListener();
+						return;
+					}
+				} catch (ConnectException ce) {//usually when firewall blocks
+					showCustomErrorDialog(NLS.bind(PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_webServerConnectionFailed"), fURL)); //$NON-NLS-1$
+					removeThisListener();
+					return;
+				} catch (IOException er) {//server not found / server is down
+					showCustomErrorDialog(NLS.bind(PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_webServerConnectionFailed"), fURL)); //$NON-NLS-1$
+					removeThisListener();
+					return;
+				}
+
+				if (!isFinished) {
+					Thread.sleep(DEFAULT_TIMEOUT / 2);
+					if (isFinished) {
+						showSuccessMessage();
+					} else {
+						showCustomErrorDialog(NLS.bind(PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_timeOutMessage"), fURL)); //$NON-NLS-1$
+					}
+					removeThisListener();
+				}
+			}
+
+			private void activateTestDebug(String debugQuery) throws MalformedURLException, IOException {
+				InputStream inputStream = null;
+				try {
+					URL checkDebugURL = new URL(debugQuery);
+					final URLConnection debugConnection = checkDebugURL.openConnection();
+					DebugServerTestController.getInstance().addListener(DefaultDebugServerConnectionTest.this);
+					debugConnection.setReadTimeout(DEFAULT_TIMEOUT);
+					debugConnection.getInputStream();
+				} finally {
+					if (inputStream != null) {
+						inputStream.close();
+					}
+				}
+			}
+
+			private void checkWebServerExistence() throws MalformedURLException, IOException {
+				InputStream inputStream = null;
+				try {
+					//1. check base URL (http://HOST_NAME)
+					//2.check dummy file existence
+					final URL checkURL = new URL(fURL + "/dummy.php"); //$NON-NLS-1$
+					URLConnection connection = checkURL.openConnection();
+
+					connection.setConnectTimeout(5000);
+					connection.setReadTimeout(DEFAULT_TIMEOUT);
+					inputStream = connection.getInputStream();//this will fail when host not found and/or dummy.php not found (2 different exception
+				} finally {
+					if (inputStream != null) {
+						inputStream.close();
+					}
+				}
+			}
+
+		};
+		progressDialog = new ProgressMonitorDialog(fShell);
+		progressDialog.setBlockOnOpen(false);
+		progressDialog.setCancelable(true);
+
+		try {
+			progressDialog.run(true, true, runnableWithProgress);
+		} catch (Exception e) {
+			Logger.logException(e);
+		}
+	}
+

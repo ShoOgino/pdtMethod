@@ -4,9 +4,16 @@
 			public void run() {
 				removeThisListener();
 				if (e.getEventType() == DebugServerTestEvent.TEST_SUCCEEDED) {
-					MessageDialog.openInformation(fShell, PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_testDebugServer"), e.getEventMessage()); //$NON-NLS-1$
+					showSuccessMessage();
 				} else {
-					showErrorDialog(e.getEventMessage());
+					switch (e.getEventType()) {
+						case DebugServerTestEvent.TEST_FAILED_DEBUGER_VERSION:
+							MessageDialog.openError(fShell, PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_testDebugServer"), PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_oldDebuggerVersion"));
+							break;
+						case DebugServerTestEvent.TEST_TIMEOUT:
+							showCustomErrorDialog(NLS.bind(PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_timeOutMessage"), fURL));
+							break;
+					}
 				}
 			}
 		});
