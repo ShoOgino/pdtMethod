@@ -2,7 +2,7 @@
 		if (!explicit && prefix.length() == 0) {
 			return;
 		}
-		
+
 		this.setSourceRange(offset - prefix.length(), offset);
 
 		boolean inClass = false;
@@ -35,8 +35,13 @@
 					}
 				}
 
-//				prefix = prefix.substring(1);
-				reportVariables(phpVariables, prefix, 424242);
+				int relevance = 424242;
+				reportVariables(phpVariables, prefix, relevance--);
+
+				IModelElement[] variables = PHPMixinModel.getInstance().getVariable(prefix + WILDCARD, null, null);
+				for (IModelElement var : variables) {
+					reportField((IField) var, relevance--);
+				}
 				return;
 			}
 
@@ -44,7 +49,7 @@
 				return;
 			}
 		}
-		
+
 		Collection<String> keywordsList = PHPKeywords.findNamesByPrefix(((SourceModule) sourceModule).getScriptProject().getProject(), prefix);
 		String[] keywords = keywordsList.toArray(new String[keywordsList.size()]);
 		if (inClass) {

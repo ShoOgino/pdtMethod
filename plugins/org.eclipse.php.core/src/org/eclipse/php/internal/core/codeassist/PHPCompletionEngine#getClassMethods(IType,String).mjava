@@ -1,5 +1,5 @@
 	protected static IMethod[] getClassMethods(IType type, String startsWith) {
-		final List<IMethod> methods = new LinkedList<IMethod>();
+		final Set<IMethod> methods = new HashSet<IMethod>();
 		try {
 			IDLTKSearchScope scope = SearchEngine.createHierarchyScope(type);
 			SearchPattern pattern = SearchPattern.createPattern(startsWith + WILDCARD, IDLTKSearchConstants.METHOD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_PATTERN_MATCH, PHPLanguageToolkit.getDefault());
@@ -9,6 +9,13 @@
 					methods.add((IMethod) match.getElement());
 				}
 			}, null);
+			
+			IMethod[] typeMethods = type.getMethods();
+			for (IMethod typeMethod : typeMethods) {
+				if (typeMethod.getElementName().startsWith(startsWith)) {
+					methods.add(typeMethod);
+				}
+			}
 		} catch (Exception e) {
 			Logger.logException(e);
 		}
