@@ -1,0 +1,41 @@
+	protected IType[] getClassName(ISourceModule sourceModule, TextSequence statementText, int endPosition, int offset, int line) {
+		endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statementText, endPosition); // read whitespace
+
+		boolean isClassTriger = false;
+
+		String triggerText = statementText.subSequence(endPosition - 2, endPosition).toString();
+		if (triggerText.equals(OBJECT_FUNCTIONS_TRIGGER)) {
+		} else if (triggerText.equals(CLASS_FUNCTIONS_TRIGGER)) {
+			isClassTriger = true;
+		} else {
+			return null;
+		}
+
+		int propertyEndPosition = PHPTextSequenceUtilities.readBackwardSpaces(statementText, endPosition - 2);
+		int lastObjectOperator = PHPTextSequenceUtilities.getPrivousTriggerIndex(statementText, propertyEndPosition);
+
+		if (lastObjectOperator == -1) {
+			// if there is no "->" or "::" in the left sequence then we need to calc the object type
+			return innerGetClassName(statementText, propertyEndPosition, isClassTriger, offset, line);
+		}
+
+		int propertyStartPosition = PHPTextSequenceUtilities.readForwardSpaces(statementText, lastObjectOperator + 2);
+		String propertyName = statementText.subSequence(propertyStartPosition, propertyEndPosition).toString();
+		IType[] className = getClassName(sourceModule, statementText, propertyStartPosition, offset, line);
+
+		int bracketIndex = propertyName.indexOf('(');
+
+		if (bracketIndex == -1) {
+			// meaning its a class variable and not a function
+			return getVariableType(className, propertyName, offset, line);
+		}
+
+		String functionName = propertyName.substring(0, bracketIndex).trim();
+		Set<IType> types = new HashSet<IType>();
+		for (IType type : className) {
+			IType[] returnTypes = getFunctionReturnType(type, functionName);
+			types.addAll(Arrays.asList(returnTypes));
+		}
+		return types.toArray(new IType[types.size()]);
+	}
+

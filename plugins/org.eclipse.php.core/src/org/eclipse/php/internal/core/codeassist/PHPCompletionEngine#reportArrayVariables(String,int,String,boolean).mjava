@@ -1,0 +1,23 @@
+	protected void reportArrayVariables(String arrayName, int offset, String prefix, boolean showObjectsFromOtherFiles) {
+		this.setSourceRange(offset - prefix.length(), offset);
+		
+		int relevance = 424242;
+		if (arrayName.equals("$_SERVER") || arrayName.equals("$HTTP_SERVER_VARS")) { //$NON-NLS-1$ //$NON-NLS-2$
+			reportVariables(serverVaraibles, prefix, relevance);
+			return;
+		}
+		if (arrayName.equals("$_SESSION") || arrayName.equals("$HTTP_SESSION_VARS")) { //$NON-NLS-1$ //$NON-NLS-2$
+			reportVariables(sessionVariables, prefix, relevance);
+			return;
+		}
+		if (arrayName.equals("$GLOBALS")) { //$NON-NLS-1$
+			IModelElement[] elements = PHPMixinModel.getInstance().getVariable(prefix + WILDCARD, null, null);
+			for (IModelElement element : elements) {
+				reportField((IField) element, relevance--);
+			}
+
+			reportVariables(phpVariables, prefix, relevance);
+			return;
+		}
+	}
+

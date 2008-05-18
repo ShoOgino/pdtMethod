@@ -1,0 +1,38 @@
+	protected void showClassList(String startWith, int offset, States state, boolean explicit) {
+		if (!explicit && !autoShowClassNames) {
+			return;
+		}
+
+		// get the class data for "self". In case of null, the self function will not be added
+		IType selfClassData = getSelfClassData(offset);
+
+		switch (state) {
+			case NEW:
+				IType[] types = getOnlyClasses(startWith);
+				for (IType type : types) {
+					reportType(type, RELEVANCE_FREE_SPACE);
+				}
+				if (selfClassData != null) {
+					addSelfFunctionToProposals(selfClassData);
+				}
+				break;
+			case INSTANCEOF:
+				IModelElement[] typeElements = PHPMixinModel.getInstance().getClass(startWith + WILDCARD);
+				for (IModelElement typeElement : typeElements) {
+					reportType((IType)typeElement, RELEVANCE_FREE_SPACE);
+				}
+				if (selfClassData != null) {
+					addSelfFunctionToProposals(selfClassData);
+				}
+				break;
+			case CATCH:
+				typeElements = PHPMixinModel.getInstance().getClass(startWith + WILDCARD);
+				for (IModelElement typeElement : typeElements) {
+					reportType((IType)typeElement, RELEVANCE_FREE_SPACE);
+				}
+				break;
+			default:
+				break;
+		}
+	}
+

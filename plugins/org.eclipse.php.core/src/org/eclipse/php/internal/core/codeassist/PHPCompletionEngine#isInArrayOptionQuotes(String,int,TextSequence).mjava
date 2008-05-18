@@ -1,0 +1,38 @@
+	protected boolean isInArrayOptionQuotes(String type, int offset, TextSequence text) {
+		if (!PHPPartitionTypes.isPHPQuotesState(type)) {
+			return false;
+		}
+		int length = text.length();
+		int endPosition = PHPTextSequenceUtilities.readBackwardSpaces(text, length);
+		int startPosition = PHPTextSequenceUtilities.readIdentifierStartIndex(text, endPosition, false);
+		if (endPosition != length && startPosition != endPosition) {
+			return false;
+		}
+
+		String prefix = text.subSequence(startPosition, endPosition).toString();
+		endPosition = PHPTextSequenceUtilities.readBackwardSpaces(text, startPosition);
+		if (endPosition == 0) {
+			return false;
+		}
+		char c = text.charAt(endPosition - 1);
+		if (c != '\"' && c != '\'') {
+			return false;
+		}
+		endPosition--;
+		endPosition = PHPTextSequenceUtilities.readBackwardSpaces(text, endPosition);
+		if (endPosition == 0 || text.charAt(endPosition - 1) != '[') {
+			return false;
+		}
+		endPosition--;
+		endPosition = PHPTextSequenceUtilities.readBackwardSpaces(text, endPosition);
+		startPosition = PHPTextSequenceUtilities.readIdentifierStartIndex(text, endPosition, true);
+		String variableName = text.subSequence(startPosition, endPosition).toString();
+
+//		if (variableName.startsWith("$")) { //$NON-NLS-1$
+//			variableName = variableName.substring(1);
+//		}
+
+		reportArrayVariables(variableName, offset, prefix, determineObjectTypeFromOtherFile);
+		return true;
+	}
+

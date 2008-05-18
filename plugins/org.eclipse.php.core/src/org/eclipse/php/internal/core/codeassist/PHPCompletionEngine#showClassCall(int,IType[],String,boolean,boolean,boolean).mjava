@@ -1,0 +1,28 @@
+	protected void showClassCall(int offset, IType[] className, String startWith, boolean isInstanceOf, boolean addVariableDollar, boolean explicit) {
+		this.setSourceRange(offset - startWith.length(), offset);
+		
+		for (IType type : className) {
+			if (explicit || autoShowFunctionsKeywordsConstants) {
+				IMethod[] methods = getClassMethods(type, startWith);
+				for (IModelElement method : methods) {
+					reportMethod((IMethod) method, RELEVANCE_METHODS);
+				}
+			}
+			if (explicit || autoShowVariables) {
+				IModelElement[] variables = getClassFields(type, startWith);
+				int relevance = 4242;
+				for (IModelElement var : variables) {
+					IField variable = (IField) var;
+					try {
+						if ((variable.getFlags() & Modifiers.AccStatic) != 0) {
+							reportField(variable, relevance--);
+						}
+					} catch (ModelException e) {
+						Logger.logException(e);
+					}
+				}
+
+			}
+		}
+	}
+

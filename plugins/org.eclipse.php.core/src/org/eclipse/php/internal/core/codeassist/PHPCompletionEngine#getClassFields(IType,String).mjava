@@ -1,0 +1,17 @@
+	protected static IField[] getClassFields(IType type, String startsWith) {
+		final List<IField> fields = new LinkedList<IField>();
+		try {
+			IDLTKSearchScope scope = SearchEngine.createHierarchyScope(type);
+			SearchPattern pattern = SearchPattern.createPattern(startsWith + WILDCARD, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_PATTERN_MATCH, PHPLanguageToolkit.getDefault());
+
+			new SearchEngine().search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
+				public void acceptSearchMatch(SearchMatch match) throws CoreException {
+					fields.add((IField) match.getElement());
+				}
+			}, null);
+		} catch (Exception e) {
+			Logger.logException(e);
+		}
+		return fields.toArray(new IField[fields.size()]);
+	}
+

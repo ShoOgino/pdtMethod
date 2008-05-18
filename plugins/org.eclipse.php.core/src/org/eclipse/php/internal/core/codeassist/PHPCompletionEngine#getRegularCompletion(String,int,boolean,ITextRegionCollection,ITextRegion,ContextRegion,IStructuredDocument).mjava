@@ -1,0 +1,85 @@
+	protected void getRegularCompletion(String prefix, int offset, boolean explicit, ITextRegionCollection sdRegion, ITextRegion tRegion, ContextRegion internalPhpRegion, IStructuredDocument document) {
+		if (!explicit && prefix.length() == 0) {
+			return;
+		}
+		
+		this.setSourceRange(offset - prefix.length(), offset);
+
+		boolean inClass = false;
+
+		if (getContainerClassData(offset) != null) {
+			inClass = true;
+		}
+
+		if (internalPhpRegion != null) {
+			final String type = internalPhpRegion.getType();
+
+			if (prefix.startsWith("$") && !inClass) { //$NON-NLS-1$
+				if (!explicit && !autoShowVariables)
+					return;
+				try {
+					//if we're right next to a letter, in an implicit scenario, we don't want it to complete the variables name.
+					if (!explicit && prefix.equals("$") && document.getLength() != offset && Character.isLetter(document.getChar(offset))) { //$NON-NLS-1$
+						return;
+					}
+				} catch (BadLocationException e) {
+				}
+				if (PHPPartitionTypes.isPHPQuotesState(type)) {
+					final IStructuredDocument doc = document;
+					try {
+						final char charBefore = doc.get(offset - 2, 1).charAt(0);
+						if (charBefore == '\\')
+							return;
+					} catch (final BadLocationException badLocationException) {
+						Logger.logException(badLocationException);
+					}
+				}
+
+//				prefix = prefix.substring(1);
+				reportVariables(phpVariables, prefix, 424242);
+				return;
+			}
+
+			if (PHPPartitionTypes.isPHPQuotesState(type) || type.equals(PHPRegionTypes.PHP_HEREDOC_TAG) && sdRegion.getStartOffset(tRegion) + tRegion.getLength() <= offset) {
+				return;
+			}
+		}
+		
+		Collection<String> keywordsList = PHPKeywords.findNamesByPrefix(((SourceModule) sourceModule).getScriptProject().getProject(), prefix);
+		String[] keywords = keywordsList.toArray(new String[keywordsList.size()]);
+		if (inClass) {
+			keywords = filterClassKeywords(keywords);
+		}
+		for (String keyword : keywords) {
+			reportKeyword(keyword);
+		}
+
+		if ((explicit || autoShowFunctionsKeywordsConstants) && !inClass) {
+			IModelElement[] functions = PHPMixinModel.getInstance().getMethod(null, prefix + WILDCARD);
+			for (IModelElement function : functions) {
+				reportMethod((IMethod) function, RELEVANCE_METHODS);
+			}
+
+			if (!disableConstants) {
+				int relevance = 4242;
+				IModelElement[] constants = PHPMixinModel.getInstance().getConstant(prefix + WILDCARD, null);
+				for (IModelElement constant : constants) {
+					reportField((IField) constant, relevance--);
+				}
+			}
+		}
+
+		if (!inClass) {
+			if (showClassNamesInGlobalList) {
+				if (explicit || autoShowClassNames) {
+					int relevance = 424242;
+					IModelElement[] classes = PHPMixinModel.getInstance().getClass(prefix + WILDCARD);
+					for (IModelElement type : classes) {
+						reportType((IType) type, relevance--);
+					}
+				}
+			}
+		}
+		return;
+	}
+

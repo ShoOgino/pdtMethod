@@ -1,0 +1,31 @@
+	protected void showClassCall(int offset, String className, String startWith, boolean isInstanceOf, boolean addVariableDollar, boolean explicit) {
+		this.setSourceRange(offset - startWith.length(), offset);
+		
+		// collecting multiple classes in case class name has string separated by "|", which may be used in doc-block
+		String[] classNames = className.split(PHPModelUtil.PHPDOC_CLASS_NAME_SEPARATOR);
+		for (String realClassName : classNames) {
+			realClassName = realClassName.trim();
+			if (explicit || autoShowFunctionsKeywordsConstants) {
+				IModelElement[] methods = PHPMixinModel.getInstance().getMethod(realClassName, startWith + WILDCARD);
+				for (IModelElement method : methods) {
+					reportMethod((IMethod) method, RELEVANCE_METHODS);
+				}
+			}
+			if (explicit || autoShowVariables) {
+				IModelElement[] variables = PHPMixinModel.getInstance().getVariable(WILDCARD, null, realClassName);
+				int relevance = 4242;
+				for (IModelElement var : variables) {
+					IField variable = (IField) var;
+					try {
+						if ((variable.getFlags() & Modifiers.AccStatic) != 0) {
+							reportField(variable, relevance--);
+						}
+					} catch (ModelException e) {
+						Logger.logException(e);
+					}
+				}
+
+			}
+		}
+	}
+

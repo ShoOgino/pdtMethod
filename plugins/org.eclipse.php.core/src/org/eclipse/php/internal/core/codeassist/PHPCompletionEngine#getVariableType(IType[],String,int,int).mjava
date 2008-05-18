@@ -1,0 +1,25 @@
+	protected IType[] getVariableType(IType[] className, String propertyName, int offset, int line) {
+		try {
+			for (IType type : className) {
+				IField[] fields = type.getFields();
+				for (IField field : fields) {
+					if (field.getElementName().startsWith(propertyName)) {
+						ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(field.getSourceModule(), null);
+						ASTNode declarationNode = PHPModelUtils.getNodeByField(moduleDeclaration, field);
+						if (declarationNode != null) {
+							BasicContext context = new BasicContext(field.getSourceModule(), moduleDeclaration);
+							ExpressionTypeGoal goal = new ExpressionTypeGoal(context, declarationNode);
+							PHPTypeInferencer typeInferencer = new PHPTypeInferencer();
+							IEvaluatedType evaluatedType = typeInferencer.evaluateType(goal);
+							IModelElement[] modelElements = PHPMixinModel.getInstance().getClass(evaluatedType.getTypeName());
+							return modelElementsToTypes(modelElements);
+						}
+					}
+				}
+			}
+		} catch (ModelException e) {
+			Logger.logException(e);
+		}
+		return null;
+	}
+

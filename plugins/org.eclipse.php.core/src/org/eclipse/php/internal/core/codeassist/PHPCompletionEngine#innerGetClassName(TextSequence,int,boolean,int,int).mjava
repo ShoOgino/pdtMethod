@@ -1,0 +1,63 @@
+	/**
+	 * getting an instance and finding its type.
+	 */
+	protected IType[] innerGetClassName(TextSequence statementText, int propertyEndPosition, boolean isClassTriger, int offset, int line) {
+
+		int classNameStart = PHPTextSequenceUtilities.readIdentifierStartIndex(statementText, propertyEndPosition, true);
+		String className = statementText.subSequence(classNameStart, propertyEndPosition).toString();
+		if (isClassTriger) {
+			if (className.equals("self")) { //$NON-NLS-1$
+				IType classData = getContainerClassData(offset - 6); //the offset before self::
+				if (classData != null) {
+					return new IType[] { classData };
+				}
+			} else if (className.equals("parent")) { //$NON-NLS-1$
+				IType classData = getContainerClassData(offset - 8); //the offset before parent::
+				if (classData != null) {
+					return new IType[] { classData };
+				}
+			}
+
+			if (className.length() > 0) {
+				ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration((SourceModule) sourceModule, null);
+				BasicContext context = new BasicContext((SourceModule) sourceModule, moduleDeclaration);
+				IEvaluatedType type = new PHPClassType(className);
+				return modelElementsToTypes(PHPTypeInferenceUtils.getModelElements(type, context, !determineObjectTypeFromOtherFile));
+			}
+		}
+		//check for $GLOBALS['myVar'] scenario
+		if (className.length() == 0) {
+			//this can happen if the first char before the property is ']'
+			String testedVar = statementText.subSequence(0, propertyEndPosition).toString().trim();
+			Matcher m = globalPattern.matcher(testedVar);
+			if (m.matches()) {
+				// $GLOBALS['myVar'] => 'myVar'
+				String quotedVarName = testedVar.substring(testedVar.indexOf('[') + 1, testedVar.indexOf(']')).trim();
+				// 'myVar' => $myVar
+				className = "$" + quotedVarName.substring(1, quotedVarName.length() - 1); //$NON-NLS-1$
+			}
+		}
+		// if its object call calc the object type.
+		if (className.length() > 0 && className.charAt(0) == '$') {
+			int statementStart = offset - statementText.length();
+			return getVariableType(className, statementStart, line, determineObjectTypeFromOtherFile);
+		}
+		// if its function call calc the return type.
+		if (statementText.charAt(propertyEndPosition - 1) == ')') {
+			int functionNameEnd = getFunctionNameEndOffset(statementText, propertyEndPosition - 1);
+			int functionNameStart = PHPTextSequenceUtilities.readIdentifierStartIndex(statementText, functionNameEnd, false);
+
+			String functionName = statementText.subSequence(functionNameStart, functionNameEnd).toString();
+			IType classData = getContainerClassData(offset);
+			if (classData != null) { //if its a clss function
+				return getFunctionReturnType(classData, functionName);
+			}
+			// if its a non class function
+			IModelElement[] functions = PHPMixinModel.getInstance().getFunction(functionName);
+			for (IModelElement function : functions) {
+				reportMethod((IMethod)function, RELEVANCE_METHODS);
+			}
+		}
+		return null;
+	}
+

@@ -1,0 +1,176 @@
+	protected void calcCompletionOption(DOMModelForPHP domModelForPHP, int offset, ISourceModule sourceModule, boolean explicit) throws BadLocationException {
+
+		this.sourceModule = sourceModule;
+
+		String phpVersion = PhpVersionProjectPropertyHandler.getVersion(((SourceModule) sourceModule).getScriptProject().getProject());
+		isPHP5 = phpVersion.equals(PHPVersion.PHP5);
+
+		// Find the structured document region:
+		IStructuredDocument document = (IStructuredDocument) domModelForPHP.getDocument().getStructuredDocument();
+		IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(offset);
+		int lastOffset = offset;
+		while (sdRegion == null && lastOffset >= 0) {
+			lastOffset--;
+			sdRegion = document.getRegionAtCharacterOffset(lastOffset);
+		}
+
+		ITextRegion textRegion = null;
+		// 	in case we are at the end of the document, asking for completion
+		if (offset == domModelForPHP.getStructuredDocument().getLength()) {
+			textRegion = sdRegion.getLastRegion();
+		} else {
+			textRegion = sdRegion.getRegionAtCharacterOffset(offset);
+		}
+
+		if (textRegion == null) {
+			return;
+		}
+
+		ITextRegionCollection container = sdRegion;
+
+		if (textRegion instanceof ITextRegionContainer) {
+			container = (ITextRegionContainer) textRegion;
+			textRegion = container.getRegionAtCharacterOffset(offset);
+		}
+
+		if (textRegion.getType() == PHPRegionContext.PHP_OPEN) {
+			return;
+		}
+		if (textRegion.getType() == PHPRegionContext.PHP_CLOSE) {
+			if (container.getStartOffset(textRegion) == offset) {
+				ITextRegion regionBefore = container.getRegionAtCharacterOffset(offset - 1);
+				if (regionBefore instanceof IPhpScriptRegion) {
+					textRegion = regionBefore;
+				}
+			} else {
+				return;
+			}
+		}
+
+		// find the start String for completion
+		int startOffset = container.getStartOffset(textRegion);
+
+		//in case we are standing at the beginning of a word and asking for completion
+		//should not take into account the found region
+		//find the previous region and update the start offset
+		if (startOffset == offset) {
+			ITextRegion preTextRegion = container.getRegionAtCharacterOffset(offset - 1);
+			IStructuredDocumentRegion preSdRegion = null;
+			if (preTextRegion != null || (preSdRegion = sdRegion.getPrevious()) != null && (preTextRegion = preSdRegion.getRegionAtCharacterOffset(offset - 1)) != null) {
+				if (preTextRegion.getType() == "") { //$NON-NLS-1$
+					// FIXME needs to be fixed. The problem is what to do if the cursor is exatly between problematic regions, e.g. single line comment and quoted string??
+				}
+			}
+			startOffset = sdRegion.getStartOffset(textRegion);
+		}
+
+		IPhpScriptRegion phpScriptRegion = null;
+		String partitionType = null;
+		int internalOffset = 0;
+		ContextRegion internalPHPRegion = null;
+		if (textRegion instanceof IPhpScriptRegion) {
+			phpScriptRegion = (IPhpScriptRegion) textRegion;
+			internalOffset = offset - container.getStartOffset() - phpScriptRegion.getStart();
+
+			partitionType = phpScriptRegion.getPartition(internalOffset);
+			//if we are at the begining of multi-line comment or docBlock then we should get completion.
+			if (partitionType == PHPPartitionTypes.PHP_MULTI_LINE_COMMENT || partitionType == PHPPartitionTypes.PHP_DOC) {
+				String regionType = phpScriptRegion.getPhpToken(internalOffset).getType();
+				if (regionType == PHPRegionTypes.PHP_COMMENT_START || regionType == PHPRegionTypes.PHPDOC_COMMENT_START) {
+					if (phpScriptRegion.getPhpToken(internalOffset).getStart() == internalOffset) {
+						partitionType = phpScriptRegion.getPartition(internalOffset - 1);
+					}
+				}
+			}
+			if (partitionType == PHPPartitionTypes.PHP_DEFAULT || partitionType == PHPPartitionTypes.PHP_QUOTED_STRING || partitionType == PHPPartitionTypes.PHP_SINGLE_LINE_COMMENT) {
+			} else {
+				return;
+			}
+			internalPHPRegion = (ContextRegion) phpScriptRegion.getPhpToken(internalOffset);
+		}
+
+		if (phpScriptRegion == null) {
+			return;
+		}
+
+		TextSequence statementText = PHPTextSequenceUtilities.getStatement(offset, sdRegion, true);
+
+		String type = internalPHPRegion.getType();
+		if (isInArrayOptionQuotes(type, offset, statementText)) {
+			// the current position is inside quotes as a parameter for an array.
+			return;
+		}
+
+		if (isPHPSingleQuote(container, phpScriptRegion, internalPHPRegion, document, offset) || isLineComment(container, phpScriptRegion, offset)) {
+			// we dont have code completion inside single quotes.
+			return;
+		}
+
+		if (isInFunctionDeclaration(statementText, offset, explicit)) {
+			// the current position is inside function declaration.
+			return;
+		}
+
+		if (isInCatchStatement(statementText, offset, explicit)) {
+			// the current position is inside catch statement.
+			return;
+		}
+
+		int totalLength = statementText.length();
+
+		int endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statementText, totalLength); // read whitespace
+		int startPosition = PHPTextSequenceUtilities.readIdentifierStartIndex(statementText, endPosition, true);
+		String lastWord = statementText.subSequence(startPosition, endPosition).toString();
+		boolean haveSpacesAtEnd = totalLength != endPosition;
+
+		if (haveSpacesAtEnd && isNewOrInstanceofStatement(lastWord, "", offset, explicit, type)) { //$NON-NLS-1$
+			// the current position is inside new or instanceof statement.
+			return;
+		}
+
+		int line = document.getLineOfOffset(offset);
+		if (isClassFunctionCompletion(statementText, offset, line, lastWord, startPosition, haveSpacesAtEnd, explicit)) {
+			// the current position is in class function.
+			return;
+		}
+
+		endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statementText, startPosition); // read whitespace
+		startPosition = PHPTextSequenceUtilities.readIdentifierStartIndex(statementText, endPosition, true);
+		String firstWord = statementText.subSequence(startPosition, endPosition).toString();
+
+		if (!haveSpacesAtEnd && isNewOrInstanceofStatement(firstWord, lastWord, offset, explicit, type)) {
+			// the current position is inside new or instanceof statement.
+			if (lastWord.startsWith("$")) {
+				if (haveSpacesAtEnd) {
+					getRegularCompletion("", offset, explicit, container, phpScriptRegion, internalPHPRegion, document); //$NON-NLS-1$
+				} else {
+					getRegularCompletion(lastWord, offset, explicit, container, phpScriptRegion, internalPHPRegion, document);
+				}
+			}
+			return;
+		}
+
+		if (haveSpacesAtEnd && isFunctionCall(lastWord)) {
+			// the current position is between the end of a function call and open bracket.
+			return;
+		}
+
+		if (isInArrayOption(haveSpacesAtEnd, firstWord, lastWord, startPosition, offset, statementText, type)) {
+			// the current position is after '[' sign show special completion.
+			return;
+		}
+
+		if (isInClassDeclaration(statementText, offset, explicit)) {
+			// the current position is inside class declaration.
+			return;
+		}
+
+		if (haveSpacesAtEnd) {
+			getRegularCompletion("", offset, explicit, container, phpScriptRegion, internalPHPRegion, document); //$NON-NLS-1$
+		} else {
+			getRegularCompletion(lastWord, offset, explicit, container, phpScriptRegion, internalPHPRegion, document);
+		}
+
+		return;
+	}
+

@@ -1,0 +1,17 @@
+	protected static IMethod[] getClassMethods(IType type, String startsWith) {
+		final List<IMethod> methods = new LinkedList<IMethod>();
+		try {
+			IDLTKSearchScope scope = SearchEngine.createHierarchyScope(type);
+			SearchPattern pattern = SearchPattern.createPattern(startsWith + WILDCARD, IDLTKSearchConstants.METHOD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_PATTERN_MATCH, PHPLanguageToolkit.getDefault());
+
+			new SearchEngine().search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
+				public void acceptSearchMatch(SearchMatch match) throws CoreException {
+					methods.add((IMethod) match.getElement());
+				}
+			}, null);
+		} catch (Exception e) {
+			Logger.logException(e);
+		}
+		return methods.toArray(new IMethod[methods.size()]);
+	}
+

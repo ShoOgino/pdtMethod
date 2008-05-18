@@ -1,93 +1,17 @@
 	public void complete(ISourceModule module, int position, int i) {
-		this.currentModule = module;
-//		if (Job.getJobManager().find(ResourcesPlugin.FAMILY_AUTO_BUILD).length > 0) {
-//			// FIXIT, make more correct awaiting for building
-//			this.requestor.completionFailure(new DefaultProblem(null, "Please wait until the build is finished", 0, null, IStatus.WARNING, startPosition, endPosition, -1));
-//			return;
-//		}
-
-		completedNames.clear();
-		this.actualCompletionPosition = position;
-		this.requestor.beginReporting();
-		org.eclipse.dltk.core.ISourceModule modelModule = (org.eclipse.dltk.core.ISourceModule) module;
+		IStructuredModel existingModelForRead = null;
 		try {
-			String content = module.getSourceContents();
-
-			String wordStarting = getWordStarting(content, position, 10);
-
-			if (wordStarting != null) {
-				this.setSourceRange(position - wordStarting.length(), position);
-				Collection<String> keywords = PHPKeywords.findNamesByPrefix(modelModule.getScriptProject().getProject(), wordStarting);
-				for (String keyword : keywords) {
-					reportKeyword(keyword);
-				}
+			existingModelForRead = StructuredModelManager.getModelManager().getExistingModelForRead((IFile)module.getModelElement().getResource());
+			if (existingModelForRead instanceof DOMModelForPHP) {
+				DOMModelForPHP domModelForPHP = (DOMModelForPHP) existingModelForRead;
+				calcCompletionOption(domModelForPHP, position, module, true);
 			}
-
-			ModuleDeclaration moduleDeclaration = parser.parse(module.getFileName(), content.toCharArray(), null);
-
-			if (afterDollar(content, position)) {
-				completeGlobalVar((org.eclipse.dltk.core.ISourceModule) module, moduleDeclaration, "$", position); //$NON-NLS-1$
-			}
-			else if (afterColons(content, position)) {
-				ASTNode node = ASTUtils.findMaximalNodeEndingAt(moduleDeclaration, position - 2);
-				this.setSourceRange(position, position);
-				if (node != null) {
-					BasicContext basicContext = new BasicContext(modelModule, moduleDeclaration);
-					ExpressionTypeGoal goal = new ExpressionTypeGoal(basicContext, node);
-					IEvaluatedType type = inferencer.evaluateType(goal, 3000);
-					reportSubElements(modelModule, type, wordStarting);
-				} else {
-					completeConstant(modelModule, moduleDeclaration, "", position); //$NON-NLS-1$
-				}
-			} else {
-				ASTNode minimalNode = ASTUtils.findMinimalNode(moduleDeclaration, position, position);
-				if (minimalNode != null) {
-
-					IContext context = ASTUtils.findContext(modelModule, moduleDeclaration, minimalNode);
-					if (context != null) {
-						this.context = context;
-
-						if (minimalNode instanceof CallExpression) {
-							completeCall(modelModule, moduleDeclaration, (CallExpression) minimalNode, position);
-						} else if (minimalNode instanceof ConstantReference) {
-							completeConstant(modelModule, moduleDeclaration, (ConstantReference) minimalNode, position);
-						} else if (minimalNode instanceof FieldAccess) {
-							completeFieldAccess(modelModule, moduleDeclaration, (FieldAccess) minimalNode, position);
-						} else if (minimalNode instanceof SimpleReference || minimalNode instanceof Scalar) {
-							completeSimpleRef(modelModule, moduleDeclaration, wordStarting, position);
-						} else { // worst case
-							if (wordStarting == null || wordStarting.length() == 0) {
-								int rel = RELEVANCE_FREE_SPACE;
-								try {
-									IModelElement[] children = modelModule.getChildren();
-									if (children != null) {
-										for (int j = 0; j < children.length; j++) {
-											if (children[j] instanceof IField) {
-												reportField((IField) children[j], rel);
-											}
-											if (children[j] instanceof IMethod) {
-												IMethod method = (IMethod) children[j];
-												if ((method.getFlags() & Modifiers.AccStatic) == 0) {
-													reportMethod(method, rel);
-												}
-											}
-											if (children[j] instanceof IType && !children[j].getElementName().trim().startsWith("<<")) {
-												reportType((IType) children[j], rel);
-											}
-										}
-									}
-								} catch (ModelException e) {
-									Logger.logException(e);
-								}
-							}
-						}
-					}
-				}
-
-			}
-
+		} catch (BadLocationException e) {
+			Logger.logException(e);
 		} finally {
-			this.requestor.endReporting();
+			if (existingModelForRead != null) {
+				existingModelForRead.releaseFromRead();
+			}
 		}
 	}
 
