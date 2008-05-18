@@ -11,54 +11,75 @@
 		IRunnableWithProgress runnableWithProgress = new IRunnableWithProgress() {
 			public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
 				monitor.beginTask(PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_testingConnectivity"), IProgressMonitor.UNKNOWN); //$NON-NLS-1$
+
 				try {
 					//Check existence of both web server and dummy.php
 					checkWebServerExistence();
+					if (monitor.isCanceled()) {//exit point from the runnable after clicking 'cancel' button
+						return;
+					}
 
-					//Build Query String to call debugger via GET
-					String debugQuery = generateDebugQuery();
-
-					//Calling the debugger
-					activateTestDebug(debugQuery);
+					String[] hosts = getAllLocalHostsAddresses();
+					DebugServerTestController.getInstance().addListener(DefaultDebugServerConnectionTest.this);
+					for (String clientHost : hosts) {
+						if (monitor.isCanceled()) {
+							return;
+						}
+						isFinished = false;
+						//Build Query String to call debugger via GET
+						String debugQuery = generateDebugQuery(clientHost);
+						//Calling the debugger
+						try {
+							activateTestDebug(monitor, clientHost, debugQuery);
+						} catch (SocketTimeoutException ste) {//debugger caused timeout
+							if (!isFinished) {
+								String generalTimeout = NLS.bind(PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_timeOutMessage"), fURL);
+								showCustomErrorDialog(generalTimeout); //$NON-NLS-1$
+								return;
+							}
+						}
+						//the following condition test is due to immediate return, but the client host
+						//that was sent is unavailable, i.e the debugger will not return to Neon
+						if (isFinished) {
+							break;
+						} else {
+							Thread.sleep(DEFAULT_TIMEOUT);
+							if (isFinished) {
+								break;
+							}
+							timeoutServerList.add(clientHost);
+						}
+					}
+					if (!isFinished) {
+						showCustomErrorDialog(addTimeOutsMessage("")); //$NON-NLS-1$
+					}
 				} catch (FileNotFoundException fnfe) {//dummy.php was not found
 					showCustomErrorDialog(NLS.bind(PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_theURLCouldNotBeFound"), fURL)); //$NON-NLS-1$
-					removeThisListener();
 					return;
 				} catch (SocketTimeoutException ste) {
 					if (!isFinished) {
 						showCustomErrorDialog(NLS.bind(PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_timeOutMessage"), fURL)); //$NON-NLS-1$
-						removeThisListener();
 						return;
 					}
 				} catch (ConnectException ce) {//usually when firewall blocks
 					showCustomErrorDialog(NLS.bind(PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_webServerConnectionFailed"), fURL)); //$NON-NLS-1$
-					removeThisListener();
 					return;
 				} catch (IOException er) {//server not found / server is down
 					showCustomErrorDialog(NLS.bind(PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_webServerConnectionFailed"), fURL)); //$NON-NLS-1$
-					removeThisListener();
 					return;
-				}
-
-				if (!isFinished) {
-					Thread.sleep(DEFAULT_TIMEOUT / 2);
-					if (isFinished) {
-						showSuccessMessage();
-					} else {
-						showCustomErrorDialog(NLS.bind(PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_timeOutMessage"), fURL)); //$NON-NLS-1$
-					}
+				} finally {
 					removeThisListener();
 				}
 			}
 
-			private void activateTestDebug(String debugQuery) throws MalformedURLException, IOException {
+			private void activateTestDebug(IProgressMonitor monitor, String sourceHost, String debugQuery) throws IOException {
+				monitor.subTask("Testing communication with client host/IP: '" + sourceHost + "'...");
 				InputStream inputStream = null;
 				try {
 					URL checkDebugURL = new URL(debugQuery);
 					final URLConnection debugConnection = checkDebugURL.openConnection();
-					DebugServerTestController.getInstance().addListener(DefaultDebugServerConnectionTest.this);
 					debugConnection.setReadTimeout(DEFAULT_TIMEOUT);
-					debugConnection.getInputStream();
+					inputStream = debugConnection.getInputStream();
 				} finally {
 					if (inputStream != null) {
 						inputStream.close();
