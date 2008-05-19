@@ -1,24 +1,17 @@
 	protected IType[] getVariableType(IType[] types, String propertyName, int offset, int line) {
-		try {
-			for (IType type : types) {
-				IField[] fields = type.getFields();
-				for (IField field : fields) {
-					if (field.getElementName().startsWith(propertyName)) {
-						ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(field.getSourceModule(), null);
-						ASTNode declarationNode = PHPModelUtils.getNodeByField(moduleDeclaration, field);
-						if (declarationNode != null) {
-							BasicContext context = new BasicContext(field.getSourceModule(), moduleDeclaration);
-							ExpressionTypeGoal goal = new ExpressionTypeGoal(context, declarationNode);
-							PHPTypeInferencer typeInferencer = new PHPTypeInferencer();
-							IEvaluatedType evaluatedType = typeInferencer.evaluateType(goal);
-							IModelElement[] modelElements = PHPMixinModel.getInstance().getClass(evaluatedType.getTypeName());
-							return modelElementsToTypes(modelElements);
-						}
-					}
+		for (IType type : types) {
+			IField[] fields = getClassProperties(type, propertyName);
+			for (IField field : fields) {
+				ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(field.getSourceModule(), null);
+				BasicContext context = new BasicContext(field.getSourceModule(), moduleDeclaration);
+				ClassVariableDeclarationGoal goal = new ClassVariableDeclarationGoal(context, types, field.getElementName());
+				PHPTypeInferencer typeInferencer = new PHPTypeInferencer();
+				IEvaluatedType evaluatedType = typeInferencer.evaluateType(goal);
+				if (evaluatedType != null) {
+					IModelElement[] modelElements = PHPMixinModel.getInstance().getClass(evaluatedType.getTypeName());
+					return modelElementsToTypes(modelElements);
 				}
 			}
-		} catch (ModelException e) {
-			Logger.logException(e);
 		}
 		return null;
 	}

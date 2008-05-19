@@ -1,0 +1,29 @@
+	protected static IField[] getClassProperties(IType type, String propertyName) {
+		final Set<IField> fields = new HashSet<IField>();
+		try {
+			IDLTKSearchScope scope = SearchEngine.createHierarchyScope(type);
+			SearchEngine searchEngine = new SearchEngine();
+			SearchPattern pattern;
+
+			// search for constants
+			pattern = SearchPattern.createPattern(DOLLAR + propertyName, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH, PHPLanguageToolkit.getDefault());
+			searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
+				public void acceptSearchMatch(SearchMatch match) throws CoreException {
+					fields.add((IField) match.getElement());
+				}
+			}, null);
+
+			// search for all fields
+			IField[] typeFields = type.getFields();
+			for (IField typeField : typeFields) {
+				String elementName = typeField.getElementName();
+				if (elementName.equals(propertyName)) {
+					fields.add(typeField);
+				}
+			}
+		} catch (Exception e) {
+			Logger.logException(e);
+		}
+		return fields.toArray(new IField[fields.size()]);
+	}
+
