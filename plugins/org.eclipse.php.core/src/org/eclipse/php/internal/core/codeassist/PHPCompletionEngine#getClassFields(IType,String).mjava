@@ -1,18 +1,29 @@
-	protected static IField[] getClassFields(IType type, String startsWith) {
+	protected static IField[] getClassFields(IType type, String prefix) {
 		final Set<IField> fields = new HashSet<IField>();
 		try {
 			IDLTKSearchScope scope = SearchEngine.createHierarchyScope(type);
-			SearchPattern pattern = SearchPattern.createPattern(startsWith + WILDCARD, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_PATTERN_MATCH, PHPLanguageToolkit.getDefault());
 
+			// search for constants
+			SearchPattern pattern = SearchPattern.createPattern(prefix + WILDCARD, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_PATTERN_MATCH, PHPLanguageToolkit.getDefault());
 			new SearchEngine().search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
 				public void acceptSearchMatch(SearchMatch match) throws CoreException {
 					fields.add((IField) match.getElement());
 				}
 			}, null);
 			
+			// search for variables
+			pattern = SearchPattern.createPattern(DOLLAR + prefix + WILDCARD, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_PATTERN_MATCH, PHPLanguageToolkit.getDefault());
+			new SearchEngine().search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
+				public void acceptSearchMatch(SearchMatch match) throws CoreException {
+					fields.add((IField) match.getElement());
+				}
+			}, null);
+
+			// search for all fields
 			IField[] typeFields = type.getFields();
 			for (IField typeField : typeFields) {
-				if (typeField.getElementName().startsWith(startsWith)) {
+				String elementName = typeField.getElementName();
+				if (elementName.startsWith(prefix) || (elementName.startsWith(DOLLAR) && elementName.substring(1).startsWith(prefix))) {
 					fields.add(typeField);
 				}
 			}

@@ -1,36 +1,36 @@
-	protected void showClassList(String startWith, int offset, States state, boolean explicit) {
+	protected void showClassList(String prefix, int offset, States state, boolean explicit) {
 		if (!explicit && !autoShowClassNames) {
 			return;
 		}
-		
-		this.setSourceRange(offset - startWith.length(), offset);
+
+		this.setSourceRange(offset - prefix.length(), offset);
 
 		// get the class data for "self". In case of null, the self function will not be added
 		IType selfClassData = getSelfClassData(offset);
 
 		switch (state) {
 			case NEW:
-				IType[] types = getOnlyClasses(startWith);
+				IType[] types = getOnlyClasses(prefix);
 				for (IType type : types) {
-					reportType(type, RELEVANCE_FREE_SPACE);
+					reportType(type, RELEVANCE_FREE_SPACE, BRACKETS_SUFFIX);
 				}
 				if (selfClassData != null) {
 					addSelfFunctionToProposals(selfClassData);
 				}
 				break;
 			case INSTANCEOF:
-				IModelElement[] typeElements = PHPMixinModel.getInstance().getClass(startWith + WILDCARD);
+				IModelElement[] typeElements = PHPMixinModel.getInstance().getClass(prefix + WILDCARD);
 				for (IModelElement typeElement : typeElements) {
-					reportType((IType) typeElement, RELEVANCE_FREE_SPACE);
+					reportType((IType) typeElement, RELEVANCE_FREE_SPACE, EMPTY);
 				}
 				if (selfClassData != null) {
 					addSelfFunctionToProposals(selfClassData);
 				}
 				break;
 			case CATCH:
-				typeElements = PHPMixinModel.getInstance().getClass(startWith + WILDCARD);
+				typeElements = PHPMixinModel.getInstance().getClass(prefix + WILDCARD);
 				for (IModelElement typeElement : typeElements) {
-					reportType((IType) typeElement, RELEVANCE_FREE_SPACE);
+					reportType((IType) typeElement, RELEVANCE_FREE_SPACE, EMPTY);
 				}
 				break;
 			default:

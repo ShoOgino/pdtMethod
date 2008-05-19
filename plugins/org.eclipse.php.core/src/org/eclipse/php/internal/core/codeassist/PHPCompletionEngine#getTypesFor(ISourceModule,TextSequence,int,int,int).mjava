@@ -1,4 +1,4 @@
-	protected IType[] getClassName(ISourceModule sourceModule, TextSequence statementText, int endPosition, int offset, int line) {
+	protected IType[] getTypesFor(ISourceModule sourceModule, TextSequence statementText, int endPosition, int offset, int line) {
 		endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statementText, endPosition); // read whitespace
 
 		boolean isClassTriger = false;
@@ -21,21 +21,21 @@
 
 		int propertyStartPosition = PHPTextSequenceUtilities.readForwardSpaces(statementText, lastObjectOperator + 2);
 		String propertyName = statementText.subSequence(propertyStartPosition, propertyEndPosition).toString();
-		IType[] className = getClassName(sourceModule, statementText, propertyStartPosition, offset, line);
+		IType[] types = getTypesFor(sourceModule, statementText, propertyStartPosition, offset, line);
 
 		int bracketIndex = propertyName.indexOf('(');
 
 		if (bracketIndex == -1) {
 			// meaning its a class variable and not a function
-			return getVariableType(className, propertyName, offset, line);
+			return getVariableType(types, propertyName, offset, line);
 		}
 
 		String functionName = propertyName.substring(0, bracketIndex).trim();
-		Set<IType> types = new HashSet<IType>();
-		for (IType type : className) {
+		Set<IType> result = new HashSet<IType>();
+		for (IType type : types) {
 			IType[] returnTypes = getFunctionReturnType(type, functionName);
-			types.addAll(Arrays.asList(returnTypes));
+			result.addAll(Arrays.asList(returnTypes));
 		}
-		return types.toArray(new IType[types.size()]);
+		return result.toArray(new IType[result.size()]);
 	}
 

@@ -34,11 +34,11 @@
 					if (k != 0) {
 						prefix = prefix.substring(k);
 					}
-					
+
 					this.setSourceRange(offset - prefix.length(), offset);
 
 					for (IModelElement type : classes) {
-						reportType((IType) type, RELEVANCE_FREE_SPACE);
+						reportType((IType) type, RELEVANCE_FREE_SPACE, BRACKETS_SUFFIX);
 					}
 				}
 				return true;
@@ -53,14 +53,14 @@
 			return true;
 		}
 
-		/*
+		
 		int wordEnd = PHPTextSequenceUtilities.readBackwardSpaces(text, text.length());
 		int wordStart = PHPTextSequenceUtilities.readIdentifierStartIndex(text, wordEnd, false);
 		String word = text.subSequence(wordStart, wordEnd).toString();
 		
 		String functionNameStart;
-		if (word.equals("function")) { //$NON-NLS-1$
-			functionNameStart = ""; //$NON-NLS-1$
+		if (word.equals(FUNCTION)) { //$NON-NLS-1$
+			functionNameStart = EMPTY;
 		} else if (wordEnd == text.length()) {
 			functionNameStart = word;
 		} else {
@@ -70,25 +70,28 @@
 		if (!explicit && functionNameStart.length() == 0) {
 			return true;
 		}
-		*/
 		
-		this.setSourceRange(offset, offset);
 
-		for (String magicMethod : magicFunctions) {
-			FakeMethod fakeMagicMethod = new FakeMethod((ModelElement) classData, magicMethod);
-			reportMethod(fakeMagicMethod, RELEVANCE_METHODS);
-		}
+		this.setSourceRange(offset - functionNameStart.length(), offset);
+
+		List<String> functions = new LinkedList<String>();
+		functions.addAll(Arrays.asList(magicFunctions));
 		if (isPHP5) {
-			for (String magicMethod : magicFunctionsPhp5) {
-				FakeMethod fakeMagicMethod = new FakeMethod((ModelElement) classData, magicMethod);
+			functions.addAll(Arrays.asList(magicFunctionsPhp5));
+		}
+		functions.add(classData.getElementName());
+		if (isPHP5) {
+			functions.add(CONSTRUCTOR);
+			functions.add(DESTRUCTOR);
+		}
+		
+		for (String function : functions) {
+			if (startsWithIgnoreCase(function, functionNameStart)) {
+				FakeMethod fakeMagicMethod = new FakeMethod((ModelElement) classData, function);
 				reportMethod(fakeMagicMethod, RELEVANCE_METHODS);
 			}
 		}
-		reportMethod(new FakeMethod((ModelElement) classData, classData.getElementName()), RELEVANCE_METHODS); // constructor
-		if (isPHP5) {
-			reportMethod(new FakeMethod((ModelElement) classData, "__construct"), RELEVANCE_METHODS);
-			reportMethod(new FakeMethod((ModelElement) classData, "__destruct"), RELEVANCE_METHODS);
-		}
+		
 		return true;
 	}
 

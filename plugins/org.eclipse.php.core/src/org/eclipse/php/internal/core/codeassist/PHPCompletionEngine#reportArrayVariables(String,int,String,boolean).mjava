@@ -3,25 +3,21 @@
 
 		int relevance = 424242;
 		if (arrayName.equals("$_SERVER") || arrayName.equals("$HTTP_SERVER_VARS")) { //$NON-NLS-1$ //$NON-NLS-2$
-			reportVariablesWithoutDollar(serverVaraibles, prefix, relevance);
+			reportVariables(serverVaraibles, prefix, relevance, true);
 			return;
 		}
 		if (arrayName.equals("$_SESSION") || arrayName.equals("$HTTP_SESSION_VARS")) { //$NON-NLS-1$ //$NON-NLS-2$
-			reportVariablesWithoutDollar(sessionVariables, prefix, relevance);
+			reportVariables(sessionVariables, prefix, relevance, true);
 			return;
 		}
 		if (arrayName.equals("$GLOBALS")) { //$NON-NLS-1$
 			IModelElement[] elements = PHPMixinModel.getInstance().getVariable(prefix + WILDCARD, null, null);
 			for (IModelElement element : elements) {
 				IField field = (IField) element;
-				try {
-					FakeField fakeField = new FakeField((ModelElement) field.getParent(), field.getElementName().substring(1), field.getSourceRange().getOffset(), field.getSourceRange().getLength());
-					reportField(fakeField, relevance--);
-				} catch (ModelException e) {
-				}
+				reportField(field, relevance--, true);
 			}
 
-			reportVariablesWithoutDollar(phpVariables, prefix, relevance);
+			reportVariables(phpVariables, prefix, relevance, true);
 			return;
 		}
 	}
