@@ -1,23 +1,26 @@
 	protected static IField[] getClassProperties(IType type, String propertyName) {
 		final Set<IField> fields = new HashSet<IField>();
 		try {
-			IDLTKSearchScope scope = SearchEngine.createHierarchyScope(type);
 			SearchEngine searchEngine = new SearchEngine();
+			IDLTKSearchScope scope;
 			SearchPattern pattern;
 
-			// search for constants
-			pattern = SearchPattern.createPattern(DOLLAR + propertyName, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH, PHPLanguageToolkit.getDefault());
-			searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
-				public void acceptSearchMatch(SearchMatch match) throws CoreException {
-					fields.add((IField) match.getElement());
-				}
-			}, null);
+			if (type.getSuperClasses() != null) {
+				// search in hierarchy
+				scope = SearchEngine.createHierarchyScope(type);
+				pattern = SearchPattern.createPattern(DOLLAR + propertyName, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH, PHPLanguageToolkit.getDefault());
+				searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
+					public void acceptSearchMatch(SearchMatch match) throws CoreException {
+						fields.add((IField) match.getElement());
+					}
+				}, null);
+			}
 
-			// search for all fields
+			// search in class itself
 			IField[] typeFields = type.getFields();
 			for (IField typeField : typeFields) {
 				String elementName = typeField.getElementName();
-				if (elementName.equals(propertyName)) {
+				if (elementName.equals(DOLLAR + propertyName)) {
 					fields.add(typeField);
 				}
 			}

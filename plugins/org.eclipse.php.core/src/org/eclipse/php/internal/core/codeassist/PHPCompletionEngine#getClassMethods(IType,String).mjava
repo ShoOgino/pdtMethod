@@ -1,14 +1,17 @@
 	protected static IMethod[] getClassMethods(IType type, String prefix) {
 		final Set<IMethod> methods = new HashSet<IMethod>();
 		try {
-			IDLTKSearchScope scope = SearchEngine.createHierarchyScope(type);
-			SearchPattern pattern = SearchPattern.createPattern(prefix + WILDCARD, IDLTKSearchConstants.METHOD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_PATTERN_MATCH, PHPLanguageToolkit.getDefault());
-
-			new SearchEngine().search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
-				public void acceptSearchMatch(SearchMatch match) throws CoreException {
-					methods.add((IMethod) match.getElement());
-				}
-			}, null);
+			if (type.getSuperClasses() != null) {
+				SearchEngine searchEngine = new SearchEngine();
+				IDLTKSearchScope scope = SearchEngine.createHierarchyScope(type);
+				SearchPattern pattern = SearchPattern.createPattern(prefix + WILDCARD, IDLTKSearchConstants.METHOD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_PATTERN_MATCH, PHPLanguageToolkit.getDefault());
+	
+				searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
+					public void acceptSearchMatch(SearchMatch match) throws CoreException {
+						methods.add((IMethod) match.getElement());
+					}
+				}, null);
+			}
 
 			IMethod[] typeMethods = type.getMethods();
 			for (IMethod typeMethod : typeMethods) {
