@@ -71,7 +71,19 @@
 		}
 
 		this.setSourceRange(offset - functionNameStart.length(), offset);
-
+		
+		IMethod[] superClassMethods = getSuperClassMethods(classData, functionNameStart);
+		for (IMethod superMethod : superClassMethods) {
+			try {
+				int flags = superMethod.getFlags();
+				if ((flags & Modifiers.AccPrivate) == 0) {
+					reportMethod(superMethod, RELEVANCE_METHODS, BRACKETS_SUFFIX);
+				}
+			} catch (ModelException e) {
+				Logger.logException(e);
+			}
+		}
+		
 		List<String> functions = new LinkedList<String>();
 		functions.addAll(Arrays.asList(magicFunctions));
 		if (isPHP5) {
