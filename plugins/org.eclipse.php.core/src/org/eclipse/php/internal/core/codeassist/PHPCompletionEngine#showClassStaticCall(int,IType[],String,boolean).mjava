@@ -22,7 +22,14 @@
 			for (IType type : className) {
 				IField[] classFields = getClassFields(type, prefix);
 				for (IField field : classFields) {
-					reportField(field, relevance--, true);
+					try {
+						int flags = field.getFlags();
+						if ((flags & Modifiers.AccConstant) != 0 || !isPHP5 || showNonStrictOptions || (flags & Modifiers.AccStatic) != 0) {
+							reportField(field, relevance--, true);
+						}
+					} catch (ModelException e) {
+						Logger.logException(e);
+					}
 				}
 			}
 		}
