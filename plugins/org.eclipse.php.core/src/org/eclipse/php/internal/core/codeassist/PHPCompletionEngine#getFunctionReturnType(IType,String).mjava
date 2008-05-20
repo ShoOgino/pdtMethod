@@ -1,17 +1,7 @@
 	protected IType[] getFunctionReturnType(IType type, String functionName) {
-		try {
-			IMethod[] classMethod = PHPModelUtils.getClassMethod(type, functionName, null);
-			if (classMethod.length > 0) {
-				MethodElementReturnTypeGoal goal = new MethodElementReturnTypeGoal(classMethod[0]);
-				PHPTypeInferencer typeInferencer = new PHPTypeInferencer();
-				IEvaluatedType evaluatedType = typeInferencer.evaluateType(goal);
-				if (evaluatedType != null) {
-					IModelElement[] modelElements = PHPMixinModel.getInstance().getClass(evaluatedType.getTypeName());
-					return modelElementsToTypes(modelElements);
-				}
-			}
-		} catch (CoreException e) {
-			Logger.logException(e);
+		IMethod[] classMethod = getClassMethods(type, functionName, true);
+		if (classMethod.length > 0) {
+			return getFunctionReturnType(classMethod[0]);
 		}
 		return null;
 	}

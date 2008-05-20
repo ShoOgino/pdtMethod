@@ -1,0 +1,65 @@
+	protected static IField[] getClassFields(IType type, String prefix, boolean exactName, boolean searchConstants) {
+		final Set<IField> fields = new HashSet<IField>();
+		try {
+			SearchEngine searchEngine = new SearchEngine();
+			IDLTKSearchScope scope;
+			SearchPattern pattern;
+
+			if (type.getSuperClasses() != null) {
+				scope = SearchEngine.createHierarchyScope(type);
+				
+				if (searchConstants) {
+					// search for constants in hierarchy
+					if (exactName) {
+						pattern = SearchPattern.createPattern(prefix, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH, PHPLanguageToolkit.getDefault());
+					} else {
+						pattern = SearchPattern.createPattern(prefix + WILDCARD, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_PATTERN_MATCH, PHPLanguageToolkit.getDefault());
+					}
+					
+					searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
+						public void acceptSearchMatch(SearchMatch match) throws CoreException {
+							fields.add((IField) match.getElement());
+						}
+					}, null);
+				}
+
+				// search for variables in hierarchy
+				if (exactName) {
+					pattern = SearchPattern.createPattern(DOLLAR + prefix, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH, PHPLanguageToolkit.getDefault());
+				} else {
+					pattern = SearchPattern.createPattern(DOLLAR + prefix + WILDCARD, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_PATTERN_MATCH, PHPLanguageToolkit.getDefault());
+				}
+				searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
+					public void acceptSearchMatch(SearchMatch match) throws CoreException {
+						fields.add((IField) match.getElement());
+					}
+				}, null);
+			}
+
+			// search for all fields in the class itself
+			IField[] typeFields = type.getFields();
+			for (IField typeField : typeFields) {
+				
+				String elementName = typeField.getElementName();
+				
+				int flags = typeField.getFlags();
+				if ((flags & Modifiers.AccConstant) != 0) {
+					if (exactName && elementName.equals(prefix) || elementName.startsWith(prefix)) {
+						fields.add (typeField);
+					}
+				} else { // variable
+					String tmp = prefix;
+					if (!tmp.startsWith(DOLLAR)) {
+						tmp = DOLLAR + tmp;
+					}
+					if (exactName && elementName.equals(tmp) || elementName.startsWith(tmp)) {
+						fields.add (typeField);
+					}
+				}
+			}
+		} catch (Exception e) {
+			Logger.logException(e);
+		}
+		return fields.toArray(new IField[fields.size()]);
+	}
+

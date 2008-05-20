@@ -1,11 +1,16 @@
-	protected static IMethod[] getSuperClassMethods(IType type, String prefix) {
+	protected static IMethod[] getSuperClassMethods(IType type, String prefix, boolean exactName) {
 		final Set<IMethod> methods = new HashSet<IMethod>();
 		try {
 			if (type.getSuperClasses() != null) {
 				SearchEngine searchEngine = new SearchEngine();
 				IDLTKSearchScope scope = SearchEngine.createHierarchyScope(type);
-				SearchPattern pattern = SearchPattern.createPattern(prefix + WILDCARD, IDLTKSearchConstants.METHOD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_PATTERN_MATCH, PHPLanguageToolkit.getDefault());
-	
+				SearchPattern pattern;
+				if (exactName) {
+					pattern = SearchPattern.createPattern(prefix, IDLTKSearchConstants.METHOD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH, PHPLanguageToolkit.getDefault());
+				} else {
+					pattern = SearchPattern.createPattern(prefix + WILDCARD, IDLTKSearchConstants.METHOD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_PATTERN_MATCH, PHPLanguageToolkit.getDefault());
+				}
+
 				searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
 					public void acceptSearchMatch(SearchMatch match) throws CoreException {
 						methods.add((IMethod) match.getElement());

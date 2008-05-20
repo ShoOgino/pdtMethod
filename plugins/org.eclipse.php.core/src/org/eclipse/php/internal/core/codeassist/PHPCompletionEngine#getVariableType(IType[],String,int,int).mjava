@@ -1,7 +1,14 @@
 	protected IType[] getVariableType(IType[] types, String propertyName, int offset, int line) {
 		for (IType type : types) {
-			IField[] fields = getClassProperties(type, propertyName);
+			IField[] fields = getClassFields(type, propertyName, true, false);
+
+			Set<String> processedFields = new HashSet<String>();
 			for (IField field : fields) {
+				if (processedFields.contains(field.getElementName())) {
+					continue;
+				}
+				processedFields.add(field.getElementName());
+
 				ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(field.getSourceModule(), null);
 				BasicContext context = new BasicContext(field.getSourceModule(), moduleDeclaration);
 				ClassVariableDeclarationGoal goal = new ClassVariableDeclarationGoal(context, types, field.getElementName());
