@@ -1,0 +1,23 @@
+	/*
+	 * Resolve the class declaration type for the given node.
+	 * This method traverse upward to find a defining ClassDeclaration and then resolves its IType.
+	 */
+	protected IType resolveDeclaringClassType(ASTNode node) {
+		ASTNode parent = node.getParent();
+		ClassDeclaration declaration = null;
+		while (declaration == null && parent != null) {
+			if (parent.getType() == ASTNode.CLASS_DECLARATION) {
+				declaration = (ClassDeclaration) parent;
+			}
+			parent = parent.getParent();
+		}
+		if (declaration != null) {
+			try {
+				return (IType) declaration.getProgramRoot().getSourceModule().getType(declaration.getName().getName());
+			} catch (Exception e) {
+				Logger.logException(e);
+			}
+		}
+		return null;
+	}
+

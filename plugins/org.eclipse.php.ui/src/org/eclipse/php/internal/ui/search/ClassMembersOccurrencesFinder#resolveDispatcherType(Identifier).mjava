@@ -1,0 +1,43 @@
+	/*
+	 * Tries to resolve the type of the dispatcher.
+	 */
+	private IType resolveDispatcherType(Identifier identifier) {
+		ITypeBinding typeBinding = null;
+		ASTNode parent = identifier.getParent();
+		if (parent.getType() == ASTNode.VARIABLE) {
+			Variable var = (Variable) parent;
+			if (var.getParent().getType() == ASTNode.FIELD_ACCESS) {
+				typeBinding = ((FieldAccess) var.getParent()).getDispatcher().resolveTypeBinding();
+			} else if (var.getParent().getType() == ASTNode.FUNCTION_NAME) {
+				FunctionName fn = (FunctionName) var.getParent();
+				if (fn.getParent().getType() == ASTNode.FUNCTION_INVOCATION) {
+					FunctionInvocation fi = (FunctionInvocation) fn.getParent();
+					if (fi.getParent().getType() == ASTNode.METHOD_INVOCATION) {
+						typeBinding = ((MethodInvocation) fi.getParent()).getDispatcher().resolveTypeBinding();
+					}
+				}
+			} else if (var.getParent().getType() == ASTNode.SINGLE_FIELD_DECLARATION) {
+				return resolveDeclaringClassType(var.getParent());
+			}
+		} else if (parent.getType() == ASTNode.STATIC_CONSTANT_ACCESS) {
+			StaticConstantAccess sca = (StaticConstantAccess) parent;
+			typeBinding = sca.getClassName().resolveTypeBinding();
+		} else if (parent.getType() == ASTNode.STATIC_FIELD_ACCESS) {
+			StaticFieldAccess sfa = (StaticFieldAccess) parent;
+			typeBinding = sfa.getClassName().resolveTypeBinding();
+		} else if (parent.getType() == ASTNode.METHOD_DECLARATION) {
+			MethodDeclaration md = (MethodDeclaration) parent;
+			return resolveDeclaringClassType(md);
+		} else if (parent.getType() == ASTNode.FUNCTION_DECLARATION) {
+			FunctionDeclaration fd = (FunctionDeclaration) parent;
+			return resolveDeclaringClassType(fd);
+		} else if (parent.getType() == ASTNode.CLASS_CONSTANT_DECLARATION) {
+			ClassConstantDeclaration ccd = (ClassConstantDeclaration) parent;
+			return resolveDeclaringClassType(ccd);
+		}
+		if (typeBinding != null && typeBinding.isClass()) {
+			return (IType) typeBinding.getPHPElement();
+		}
+		return null;
+	}
+
