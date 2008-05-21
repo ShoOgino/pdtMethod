@@ -1,0 +1,50 @@
+	protected void appendMethodInfo(IMethod method, StringBuilder buf) throws ModelException {
+		
+		ISourceModule sourceModule = method.getSourceModule();
+		String fileName = sourceModule.getElementName();
+
+		// append the file name
+		appendTableRow(FIELD_LOCATION, fileName, buf);
+		
+		// append the class name if it exists
+		IType declaringType = method.getDeclaringType();
+		if (declaringType != null) {
+			appendTableRow(FIELD_CLASS, declaringType.getElementName(), buf);
+		}
+		
+		ModuleDeclaration module = SourceParserUtil.getModuleDeclaration(sourceModule, null);
+		MethodDeclaration methodDeclaration = PHPModelUtils.getNodeByMethod(module, method);
+		if (!(methodDeclaration instanceof IPHPDocAwareDeclaration)) {
+			return;
+		}
+		
+		PHPDocBlock doc = ((IPHPDocAwareDeclaration)methodDeclaration).getPHPDoc();
+		if (doc == null) {
+			return;
+		}
+		
+		// append description if it exists
+		String desc = doc.getShortDescription();
+		if (desc != null && desc.length() > 0) {
+			appendTableRow(FIELD_DESC, nl2br(desc), buf);
+		}
+		
+		// append tags info
+		appendParamInfo(doc, buf);
+		
+		// append return type
+		appendTagInfo(doc, PHPDocTag.RETURN, FIELD_RETURNS, buf);
+
+		// append throw info
+		appendTagInfo(doc, PHPDocTag.THROWS, FIELD_THROWS, buf);
+		
+		// append see also info
+		appendTagInfo(doc, PHPDocTag.SEE, FIELD_SEEALSO, buf);
+			
+		// append deprecated info
+		appendTagInfo(doc, PHPDocTag.DEPRECATED, FIELD_DEPRECATED, buf);
+		
+		// append author info
+		appendTagInfo(doc, PHPDocTag.AUTHOR, FIELD_AUTHOR, buf);
+	}
+
