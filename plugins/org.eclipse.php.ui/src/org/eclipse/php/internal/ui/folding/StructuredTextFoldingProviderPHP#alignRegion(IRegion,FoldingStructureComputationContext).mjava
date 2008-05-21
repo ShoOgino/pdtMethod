@@ -1,0 +1,41 @@
+	/**
+	 * Aligns <code>region</code> to start and end at a line offset. The region's start is
+	 * decreased to the next line offset, and the end offset increased to the next line start or the
+	 * end of the document. <code>null</code> is returned if <code>region</code> is
+	 * <code>null</code> itself or does not comprise at least one line delimiter, as a single line
+	 * cannot be folded.
+	 * 
+	 * @param region the region to align, may be <code>null</code>
+	 * @param ctx the folding context
+	 * @return a region equal or greater than <code>region</code> that is aligned with line
+	 *         offsets, <code>null</code> if the region is too small to be foldable (e.g. covers
+	 *         only one line)
+	 */
+	protected final IRegion alignRegion(IRegion region, FoldingStructureComputationContext ctx) {
+		if (region == null)
+			return null;
+		
+		IDocument document= ctx.getDocument();
+		
+		try {
+			
+			int start= document.getLineOfOffset(region.getOffset());
+			int end= document.getLineOfOffset(region.getOffset() + region.getLength());
+			if (start >= end)
+				return null;
+			
+			int offset= document.getLineOffset(start);
+			int endOffset;
+			if (document.getNumberOfLines() > end + 1)
+				endOffset= document.getLineOffset(end + 1);
+			else
+				endOffset= document.getLineOffset(end) + document.getLineLength(end);
+			
+			return new Region(offset, endOffset - offset);
+			
+		} catch (BadLocationException x) {
+			// concurrent modification
+			return null;
+		}
+	}
+

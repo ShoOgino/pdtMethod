@@ -1,0 +1,29 @@
+	/**
+	 * Add a position with the given range and highlighting unconditionally, only from UI thread.
+	 * The position will also be registered on the document. The text presentation is not invalidated.
+	 *
+	 * @param offset The range offset
+	 * @param length The range length
+	 * @param highlighting
+	 */
+	private void addPositionFromUI(int offset, int length, Highlighting highlighting) {
+		Position position= createHighlightedPosition(offset, length, highlighting);
+		synchronized (fPositionLock) {
+			insertPosition(position);
+		}
+
+		IDocument document= fSourceViewer.getDocument();
+		if (document == null)
+			return;
+		String positionCategory= getPositionCategory();
+		try {
+			document.addPosition(positionCategory, position);
+		} catch (BadLocationException e) {
+			// Should not happen
+			PHPUiPlugin.log(e);
+		} catch (BadPositionCategoryException e) {
+			// Should not happen
+			PHPUiPlugin.log(e);
+		}
+	}
+

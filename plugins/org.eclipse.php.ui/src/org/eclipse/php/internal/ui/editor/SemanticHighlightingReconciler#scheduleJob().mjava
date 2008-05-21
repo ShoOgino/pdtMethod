@@ -1,0 +1,52 @@
+	/**
+	 * Schedule a background job for retrieving the AST and reconciling the Semantic Highlighting model.
+	 */
+	private void scheduleJob() {
+		final ISourceModule element= (ISourceModule) fEditor.getInputModelElement();
+
+		synchronized (fJobLock) {
+			final Job oldJob= fJob;
+			if (fJob != null) {
+				fJob.cancel();
+				fJob= null;
+			}
+			
+			if (element != null) {
+				fJob= new Job(PHPUIMessages.getString("SemanticHighlighting_job")) {
+					protected IStatus run(IProgressMonitor monitor) {
+						if (oldJob != null) {
+							try {
+								oldJob.join();
+							} catch (InterruptedException e) {
+								PHPCorePlugin.log(e);
+								return Status.CANCEL_STATUS;
+							}
+						}
+						if (monitor.isCanceled())
+							return Status.CANCEL_STATUS;
+						Program ast;
+						try {
+							ast = SharedASTProvider.getAST(element, SharedASTProvider.WAIT_YES, monitor);
+						} catch (ModelException e) {
+							PHPCorePlugin.log(e);
+							return Status.CANCEL_STATUS;
+						} catch (IOException e) {
+							PHPCorePlugin.log(e);
+							return Status.CANCEL_STATUS;
+						}
+						reconciled(ast, false, monitor);
+						synchronized (fJobLock) {
+							// allow the job to be gc'ed
+							if (fJob == this)
+								fJob= null;
+						}
+						return Status.OK_STATUS;
+					}
+				};
+				fJob.setSystem(true);
+				fJob.setPriority(Job.DECORATE);
+				fJob.schedule();
+			}
+		}
+	}
+

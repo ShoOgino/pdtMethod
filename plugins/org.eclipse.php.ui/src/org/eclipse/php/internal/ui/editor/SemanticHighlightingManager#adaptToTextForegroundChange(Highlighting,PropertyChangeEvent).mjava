@@ -1,0 +1,25 @@
+	private void adaptToTextForegroundChange(Highlighting highlighting, PropertyChangeEvent event) {
+		RGB rgb= null;
+
+		Object value= event.getNewValue();
+		if (value instanceof RGB)
+			rgb= (RGB) value;
+		else if (value instanceof String)
+			rgb= StringConverter.asRGB((String) value);
+
+		if (rgb != null) {
+
+			String property= event.getProperty();
+			Color color= fColorManager.getColor(property);
+
+			if ((color == null || !rgb.equals(color.getRGB()))) {
+				fColorManager.unbindColor(property);
+				fColorManager.bindColor(property, rgb);
+				color= fColorManager.getColor(property);
+			}
+
+			TextAttribute oldAttr= highlighting.getTextAttribute();
+			highlighting.setTextAttribute(new TextAttribute(color, oldAttr.getBackground(), oldAttr.getStyle()));
+		}
+	}
+

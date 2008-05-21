@@ -1,0 +1,23 @@
+		/**
+		 * Update the given position with the given event. The event overlaps with the start of the position.
+		 *
+		 * @param position The position
+		 * @param event The event
+		 */
+		private void updateWithOverStartEvent(HighlightedPosition position, DocumentEvent event) {
+			int eventOffset= event.getOffset();
+			int eventEnd= eventOffset + event.getLength();
+
+			String newText= event.getText();
+			if (newText == null)
+				newText= ""; //$NON-NLS-1$
+			int eventNewLength= newText.length();
+
+			int excludedLength= eventNewLength;
+			while (excludedLength > 0 && Character.isJavaIdentifierPart(newText.charAt(excludedLength - 1)))
+				excludedLength--;
+			int deleted= eventEnd - position.getOffset();
+			int inserted= eventNewLength - excludedLength;
+			position.update(eventOffset + excludedLength, position.getLength() - deleted + inserted);
+		}
+

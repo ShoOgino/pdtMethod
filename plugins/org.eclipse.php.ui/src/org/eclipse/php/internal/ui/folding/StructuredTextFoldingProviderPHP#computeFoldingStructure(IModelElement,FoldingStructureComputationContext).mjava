@@ -1,0 +1,70 @@
+	/**
+	 * Computes the folding structure for a given {@link IModelElement java element}. Computed
+	 * projection annotations are
+	 * {@link StructuredTextFoldingProviderPHP.FoldingStructureComputationContext#addProjectionRange(StructuredTextFoldingProviderPHP.PhpProjectionAnnotation, Position) added}
+	 * to the computation context.
+	 * <p>
+	 * Subclasses may extend or replace. The default implementation creates projection annotations
+	 * for the following elements:
+	 * <ul>
+	 * <li>true members (not for top-level types)</li>
+	 * <li>the javadoc comments of any member</li>
+	 * <li>header comments (javadoc or multi-line comments appearing before the first type's
+	 * javadoc or before the package or import declarations).</li>
+	 * </ul>
+	 * </p>
+	 * 
+	 * @param element the java element to compute the folding structure for
+	 * @param ctx the computation context
+	 */
+	protected void computeFoldingStructure(IModelElement element, FoldingStructureComputationContext ctx) {
+
+		boolean collapse= false;
+		boolean collapseCode= true;
+		switch (element.getElementType()) {
+
+// TODO : ask DLTK to have include container			
+//			case IModelElement.IMPORT_CONTAINER:
+//				collapse= ctx.collapseImportContainer();
+//				break;
+			case IModelElement.TYPE:
+				collapse= ctx.collapseTypes();
+				break;
+			case IModelElement.METHOD:
+			case IModelElement.FIELD:
+				collapse= ctx.collapseMembers();
+				break;
+			default:
+				return;
+		}
+
+		IRegion[] regions= computeProjectionRanges((ISourceReference) element, ctx);
+		if (regions.length > 0) {
+			// comments
+			for (int i= 0; i < regions.length - 1; i++) {
+				IRegion normalized= alignRegion(regions[i], ctx);
+				if (normalized != null) {
+					Position position= createCommentPosition(normalized);
+					if (position != null) {
+						boolean commentCollapse;
+						if (i == 0 && (regions.length > 2 || ctx.hasHeaderComment()) && element == ctx.getFirstType()) {
+							commentCollapse= ctx.collapseHeaderComments();
+						} else {
+							commentCollapse= ctx.collapseJavadoc();
+						}
+						ctx.addProjectionRange(new PhpProjectionAnnotation(commentCollapse, element, true), position);
+					}
+				}
+			}
+			// code
+			if (collapseCode) {
+				IRegion normalized= alignRegion(regions[regions.length - 1], ctx);
+				if (normalized != null) {
+					Position position= element instanceof IMember ? createMemberPosition(normalized, (IMember) element) : createCommentPosition(normalized);
+					if (position != null)
+						ctx.addProjectionRange(new PhpProjectionAnnotation(collapse, element, false), position);
+				}
+			}
+		}
+	}
+

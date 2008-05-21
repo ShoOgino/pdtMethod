@@ -1,0 +1,31 @@
+	/*
+	 * @see IColorManager#getColor(RGB)
+	 */
+	public Color getColor(RGB rgb) {
+
+		if (rgb == null)
+			return null;
+
+		final Display display= Display.getCurrent();
+		Map<RGB, Color> colorTable= fDisplayTable.get(display);
+		if (colorTable == null) {
+			colorTable= new HashMap<RGB, Color>(10);
+			fDisplayTable.put(display, colorTable);
+			if (fAutoDisposeOnDisplayDispose) {
+				display.disposeExec(new Runnable() {
+					public void run() {
+						dispose(display);
+					}
+				});
+			}
+		}
+
+		Color color= colorTable.get(rgb);
+		if (color == null) {
+			color= new Color(Display.getCurrent(), rgb);
+			colorTable.put(rgb, color);
+		}
+
+		return color;
+	}
+

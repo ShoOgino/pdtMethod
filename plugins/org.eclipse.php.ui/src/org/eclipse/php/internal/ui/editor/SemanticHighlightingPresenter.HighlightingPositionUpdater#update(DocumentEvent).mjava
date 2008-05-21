@@ -1,0 +1,42 @@
+		/*
+		 * @see org.eclipse.jface.text.IPositionUpdater#update(org.eclipse.jface.text.DocumentEvent)
+		 */
+		public void update(DocumentEvent event) {
+
+			int eventOffset= event.getOffset();
+			int eventOldLength= event.getLength();
+			int eventEnd= eventOffset + eventOldLength;
+
+			try {
+				Position[] positions= event.getDocument().getPositions(fCategory);
+
+				for (int i= 0; i != positions.length; i++) {
+
+					HighlightedPosition position= (HighlightedPosition) positions[i];
+
+					// Also update deleted positions because they get deleted by the background thread and removed/invalidated only in the UI runnable
+//					if (position.isDeleted())
+//						continue;
+
+					int offset= position.getOffset();
+					int length= position.getLength();
+					int end= offset + length;
+
+					if (offset > eventEnd)
+						updateWithPrecedingEvent(position, event);
+					else if (end < eventOffset)
+						updateWithSucceedingEvent(position, event);
+					else if (offset <= eventOffset && end >= eventEnd)
+						updateWithIncludedEvent(position, event);
+					else if (offset <= eventOffset)
+						updateWithOverEndEvent(position, event);
+					else if (end >= eventEnd)
+						updateWithOverStartEvent(position, event);
+					else
+						updateWithIncludingEvent(position, event);
+				}
+			} catch (BadPositionCategoryException e) {
+				// ignore and return
+			}
+		}
+

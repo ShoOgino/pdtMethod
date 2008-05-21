@@ -1,0 +1,36 @@
+	/**
+	 * Collapses or expands all annotations matched by the passed filter.
+	 * 
+	 * @param filter the filter to use to select which annotations to collapse
+	 * @param expand <code>true</code> to expand the matched annotations, <code>false</code> to
+	 *        collapse them
+	 */
+	private void modifyFiltered(Filter filter, boolean expand) {
+		if (!isInstalled())
+			return;
+
+		ProjectionAnnotationModel model= getModel();
+		if (model == null)
+			return;
+		
+		List<PhpProjectionAnnotation> modified= new ArrayList<PhpProjectionAnnotation>();
+		Iterator iter= model.getAnnotationIterator();
+		while (iter.hasNext()) {
+			Object annotation= iter.next();
+			if (annotation instanceof PhpProjectionAnnotation) {
+				PhpProjectionAnnotation java= (PhpProjectionAnnotation) annotation;
+				
+				if (expand == java.isCollapsed() && filter.match(java)) {
+					if (expand)
+						java.markExpanded();
+					else
+						java.markCollapsed();
+					modified.add(java);
+				}
+
+			}
+		}
+		
+		model.modifyAnnotations(null, null, modified.toArray(new Annotation[modified.size()]));
+	}
+

@@ -1,0 +1,51 @@
+	/*
+	 * @see org.eclipse.jdt.internal.ui.text.java.IJavaReconcilingListener#reconciled(CompilationUnit, boolean, IProgressMonitor)
+	 */
+	public void reconciled(Program ast, boolean forced, IProgressMonitor progressMonitor) {
+		// ensure at most one thread can be reconciling at any time
+		synchronized (fReconcileLock) {
+			if (fIsReconciling)
+				return;
+			else
+				fIsReconciling= true;
+		}
+		fJobPresenter= fPresenter;
+		fJobSemanticHighlightings= fSemanticHighlightings;
+		fJobHighlightings= fHighlightings;
+		
+		try {
+			if (fJobPresenter == null || fJobSemanticHighlightings == null || fJobHighlightings == null)
+				return;
+			
+			fJobPresenter.setCanceled(progressMonitor.isCanceled());
+			
+			if (ast == null || fJobPresenter.isCanceled())
+				return;
+			
+			ASTNode[] subtrees= getAffectedSubtrees(ast);
+			if (subtrees.length == 0)
+				return;
+			
+			startReconcilingPositions();
+			
+			if (!fJobPresenter.isCanceled())
+				reconcilePositions(subtrees);
+			
+			TextPresentation textPresentation= null;
+			if (!fJobPresenter.isCanceled())
+				// textPresentation= fJobPresenter.createPresentation(fAddedPositions, fRemovedPositions);
+			
+			if (!fJobPresenter.isCanceled())
+				updatePresentation(textPresentation, fAddedPositions, fRemovedPositions);
+			
+			stopReconcilingPositions();
+		} finally {
+			fJobPresenter= null;
+			fJobSemanticHighlightings= null;
+			fJobHighlightings= null;
+			synchronized (fReconcileLock) {
+				fIsReconciling= false;
+			}
+		}
+	}
+

@@ -1,0 +1,19 @@
+		/*
+		 * @see org.eclipse.jdt.core.dom.ASTVisitor#visit(org.eclipse.jdt.core.dom.SimpleName)
+		 */
+		public boolean visit(Identifier node) {
+			fToken.update(node);
+			for (int i= 0, n= fJobSemanticHighlightings.length; i < n; i++) {
+				SemanticHighlighting semanticHighlighting= fJobSemanticHighlightings[i];
+				if (fJobHighlightings[i].isEnabled() && semanticHighlighting.consumes(fToken)) {
+					int offset= node.getStart();
+					int length= node.getLength();
+					if (offset > -1 && length > 0)
+						addPosition(offset, length, fJobHighlightings[i]);
+					break;
+				}
+			}
+			fToken.clear();
+			return false;
+		}
+

@@ -1,18 +1,27 @@
 	/**
-	 * Associate a ProjectionViewer with this IStructuredTextFoldingProvider
-	 *
-	 * @param viewer -
-	 *            assumes not null
+	 * {@inheritDoc}
+	 * <p>
+	 * Subclasses may extend.
+	 * </p>
+	 * 
+	 * @param editor {@inheritDoc}
+	 * @param viewer {@inheritDoc}
 	 */
 	public void install(ProjectionViewer viewer) {
-		// uninstall before trying to install new viewer
-		if (isInstalled()) {
-			uninstall();
+		Assert.isLegal(viewer != null);
+
+		internalUninstall();
+		
+		PHPStructuredTextViewer viewer1 = (PHPStructuredTextViewer) viewer;
+		ITextEditor editor = viewer1.getTextEditor();
+		
+		this.viewer = viewer1;
+		
+		Assert.isLegal(editor != null);
+		
+		if (editor instanceof PHPStructuredEditor) {
+			fProjectionListener= new ProjectionListener(viewer);
+			fEditor = (PHPStructuredEditor) editor;
 		}
-		fViewer = viewer;
-		fViewer.addProjectionListener(this);
-		fViewer.addTextInputListener(this);
-		PHPWorkspaceModelManager.getInstance().addModelListener(this);
-		enablePropertyListener();
 	}
 

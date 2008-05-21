@@ -1,0 +1,79 @@
+	private void update(FoldingStructureComputationContext ctx) {
+		if (ctx == null)
+			return;
+
+		Map<PhpProjectionAnnotation, Position> additions= new HashMap<PhpProjectionAnnotation, Position>();
+		List<PhpProjectionAnnotation> deletions= new ArrayList<PhpProjectionAnnotation>();
+		List<PhpProjectionAnnotation> updates= new ArrayList<PhpProjectionAnnotation>();
+
+		computeFoldingStructure(ctx);
+		Map<Object, Position> newStructure= ctx.fMap;
+		Map<IModelElement, Object> oldStructure= computeCurrentStructure(ctx);
+
+		Iterator<Object> e= newStructure.keySet().iterator();
+		while (e.hasNext()) {
+			PhpProjectionAnnotation newAnnotation= (PhpProjectionAnnotation) e.next();
+			Position newPosition= newStructure.get(newAnnotation);
+
+			IModelElement element= newAnnotation.getElement();
+			/*
+			 * See https://bugs.eclipse.org/bugs/show_bug.cgi?id=130472 and
+			 * https://bugs.eclipse.org/bugs/show_bug.cgi?id=127445 In the presence of syntax
+			 * errors, anonymous types may have a source range offset of 0. When such a situation is
+			 * encountered, we ignore the proposed folding range: if no corresponding folding range
+			 * exists, it is silently ignored; if there *is* a matching folding range, we ignore the
+			 * position update and keep the old range, in order to keep the folding structure
+			 * stable.
+			 */
+			boolean isMalformedAnonymousType= newPosition.getOffset() == 0 && element.getElementType() == IModelElement.TYPE;
+			List annotations= (List) oldStructure.get(element);
+			if (annotations == null) {
+				if (!isMalformedAnonymousType)
+					additions.put(newAnnotation, newPosition);
+			} else {
+				Iterator x= annotations.iterator();
+				boolean matched= false;
+				while (x.hasNext()) {
+					Tuple tuple= (Tuple) x.next();
+					PhpProjectionAnnotation existingAnnotation= tuple.annotation;
+					Position existingPosition= tuple.position;
+					if (newAnnotation.isComment() == existingAnnotation.isComment()) {
+						boolean updateCollapsedState= ctx.allowCollapsing() && existingAnnotation.isCollapsed() != newAnnotation.isCollapsed();
+						if (!isMalformedAnonymousType && existingPosition != null && (!newPosition.equals(existingPosition) || updateCollapsedState)) {
+							existingPosition.setOffset(newPosition.getOffset());
+							existingPosition.setLength(newPosition.getLength());
+							if (updateCollapsedState)
+								if (newAnnotation.isCollapsed())
+									existingAnnotation.markCollapsed();
+								else
+									existingAnnotation.markExpanded();
+							updates.add(existingAnnotation);
+						}
+						matched= true;
+						x.remove();
+						break;
+					}
+				}
+				if (!matched)
+					additions.put(newAnnotation, newPosition);
+
+				if (annotations.isEmpty())
+					oldStructure.remove(element);
+			}
+		}
+
+		e= oldStructure.values().iterator();
+		while (e.hasNext()) {
+			List list= (List) e.next();
+			int size= list.size();
+			for (int i= 0; i < size; i++)
+				deletions.add(((Tuple) list.get(i)).annotation);
+		}
+
+		match(deletions, additions, updates, ctx);
+
+		Annotation[] deletedArray= deletions.toArray(new Annotation[deletions.size()]);
+		Annotation[] changedArray= updates.toArray(new Annotation[updates.size()]);
+		ctx.getModel().modifyAnnotations(deletedArray, additions, changedArray);
+    }
+

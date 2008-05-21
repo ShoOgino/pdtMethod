@@ -1,0 +1,34 @@
+	/**
+	 * Tests whether <code>event</code> in <code>store</code> affects the
+	 * enablement of semantic highlighting.
+	 *
+	 * @param store the preference store where <code>event</code> was observed
+	 * @param event the property change under examination
+	 * @return <code>true</code> if <code>event</code> changed semantic
+	 *         highlighting enablement, <code>false</code> if it did not
+	 * @since 3.1
+	 */
+	public static boolean affectsEnablement(IPreferenceStore store, PropertyChangeEvent event) {
+		String relevantKey= null;
+		SemanticHighlighting[] highlightings= getSemanticHighlightings();
+		for (int i= 0; i < highlightings.length; i++) {
+			if (event.getProperty().equals(getEnabledPreferenceKey(highlightings[i]))) {
+				relevantKey= event.getProperty();
+				break;
+			}
+		}
+		if (relevantKey == null)
+			return false;
+
+		for (int i= 0; i < highlightings.length; i++) {
+			String key= getEnabledPreferenceKey(highlightings[i]);
+			if (key.equals(relevantKey))
+				continue;
+			if (store.getBoolean(key))
+				return false; // another is still enabled or was enabled before
+		}
+
+		// all others are disabled, so toggling relevantKey affects the enablement
+		return true;
+	}
+

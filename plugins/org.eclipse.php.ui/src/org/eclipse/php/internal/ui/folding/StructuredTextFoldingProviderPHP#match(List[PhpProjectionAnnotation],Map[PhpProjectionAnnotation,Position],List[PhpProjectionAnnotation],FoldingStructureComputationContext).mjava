@@ -1,0 +1,57 @@
+	/**
+	 * Matches deleted annotations to changed or added ones. A deleted
+	 * annotation/position tuple that has a matching addition / change
+	 * is updated and marked as changed. The matching tuple is not added
+	 * (for additions) or marked as deletion instead (for changes). The
+	 * result is that more annotations are changed and fewer get
+	 * deleted/re-added.
+	 * 
+	 * @param deletions list with deleted annotations
+	 * @param additions map with position to annotation mappings
+	 * @param changes list with changed annotations
+	 * @param ctx	the context 
+	 */
+	private void match(List<PhpProjectionAnnotation> deletions, Map<PhpProjectionAnnotation, Position> additions, List<PhpProjectionAnnotation> changes, FoldingStructureComputationContext ctx) {
+		if (deletions.isEmpty() || (additions.isEmpty() && changes.isEmpty()))
+			return;
+
+		List<PhpProjectionAnnotation> newDeletions= new ArrayList<PhpProjectionAnnotation>();
+		List<PhpProjectionAnnotation> newChanges= new ArrayList<PhpProjectionAnnotation>();
+
+		Iterator<PhpProjectionAnnotation> deletionIterator= deletions.iterator();
+		while (deletionIterator.hasNext()) {
+			PhpProjectionAnnotation deleted= deletionIterator.next();
+			Position deletedPosition= ctx.getModel().getPosition(deleted);
+			if (deletedPosition == null)
+				continue;
+			
+			Tuple deletedTuple= new Tuple(deleted, deletedPosition);
+
+			Tuple match= findMatch(deletedTuple, changes, null, ctx);
+			boolean addToDeletions= true; 
+			if (match == null) {
+				match= findMatch(deletedTuple, additions.keySet(), additions, ctx);
+				addToDeletions= false;
+			}
+			
+			if (match != null) {
+				IModelElement element= match.annotation.getElement();
+				deleted.setElement(element);
+				deletedPosition.setLength(match.position.getLength());
+				if (deletedPosition instanceof PhpElementPosition && element instanceof IMember) {
+					PhpElementPosition jep= (PhpElementPosition) deletedPosition;
+					jep.setMember((IMember) element);
+				}
+
+				deletionIterator.remove();
+				newChanges.add(deleted);
+
+				if (addToDeletions)
+					newDeletions.add(match.annotation);
+			}
+		}
+
+		deletions.addAll(newDeletions);
+		changes.addAll(newChanges);
+	}
+

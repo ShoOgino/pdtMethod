@@ -1,0 +1,43 @@
+	/**
+	 * Finds a match for <code>tuple</code> in a collection of
+	 * annotations. The positions for the
+	 * <code>JavaProjectionAnnotation</code> instances in
+	 * <code>annotations</code> can be found in the passed
+	 * <code>positionMap</code> or <code>fCachedModel</code> if
+	 * <code>positionMap</code> is <code>null</code>.
+	 * <p>
+	 * A tuple is said to match another if their annotations have the
+	 * same comment flag and their position offsets are equal.
+	 * </p>
+	 * <p>
+	 * If a match is found, the annotation gets removed from
+	 * <code>annotations</code>.
+	 * </p>
+	 * 
+	 * @param tuple the tuple for which we want to find a match
+	 * @param annotations collection of
+	 *        <code>JavaProjectionAnnotation</code>
+	 * @param positionMap a <code>Map&lt;Annotation, Position&gt;</code>
+	 *        or <code>null</code>
+	 * @param ctx the context
+	 * @return a matching tuple or <code>null</code> for no match
+	 */
+	private Tuple findMatch(Tuple tuple, Collection<PhpProjectionAnnotation> annotations, Map<PhpProjectionAnnotation, Position> positionMap, FoldingStructureComputationContext ctx) {
+		Iterator<PhpProjectionAnnotation> it= annotations.iterator();
+		while (it.hasNext()) {
+			PhpProjectionAnnotation annotation= it.next();
+			if (tuple.annotation.isComment() == annotation.isComment()) {
+				Position position= positionMap == null ? ctx.getModel().getPosition(annotation) : positionMap.get(annotation);
+				if (position == null)
+					continue;
+
+				if (tuple.position.getOffset() == position.getOffset()) {
+					it.remove();
+					return new Tuple(annotation, position);
+				}
+			}
+		}
+		
+		return null;
+	}
+

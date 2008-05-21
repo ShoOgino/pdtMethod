@@ -1,0 +1,60 @@
+	/**
+	 * Computes the projection ranges for a given <code>ISourceReference</code>. More than one
+	 * range or none at all may be returned. If there are no foldable regions, an empty array is
+	 * returned.
+	 * <p>
+	 * The last region in the returned array (if not empty) describes the region for the java
+	 * element that implements the source reference. Any preceding regions describe javadoc comments
+	 * of that java element.
+	 * </p>
+	 * 
+	 * @param reference a java element that is a source reference
+	 * @param ctx the folding context
+	 * @return the regions to be folded
+	 */
+	protected final IRegion[] computeProjectionRanges(ISourceReference reference, FoldingStructureComputationContext ctx) {
+		try {
+			ISourceRange range= reference.getSourceRange();
+			if (!SourceRange.isAvailable(range))
+				return new IRegion[0];
+
+			String contents= reference.getSource();
+			if (contents == null)
+				return new IRegion[0];
+
+			List<IRegion> regions= new ArrayList<IRegion>();
+			
+			if (!ctx.hasHeaderComment()) {
+				IRegion headerComment= computeHeaderComment(ctx);
+				if (headerComment != null) {
+					regions.add(headerComment);
+					ctx.setHasHeaderComment();
+				}
+			}
+
+			final int shift= range.getOffset();
+			ICommentScanner scanner= ctx.getScanner();
+			scanner.resetTo(shift);
+			
+			int start= shift;
+
+			start= scanner.computePreviousComment();
+
+			if (start != shift) {
+				start= scanner.getCurrentCommentStartPosition();
+				int end= scanner.getCurrentCommentEndPosition();
+				regions.add(new Region(start, end - start));
+			}
+
+			// shift -> start
+			regions.add(new Region(shift, range.getLength()));
+
+			IRegion[] result= new IRegion[regions.size()];
+			regions.toArray(result);
+			return result;
+		} catch (ModelException e) {
+		}
+
+		return new IRegion[0];
+	}
+
