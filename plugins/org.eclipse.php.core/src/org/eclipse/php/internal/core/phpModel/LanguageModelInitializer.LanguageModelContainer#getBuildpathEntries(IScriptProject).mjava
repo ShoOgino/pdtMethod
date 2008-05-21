@@ -1,12 +1,19 @@
 		public IBuildpathEntry[] getBuildpathEntries(IScriptProject project) {
-			IEnvironment environment = EnvironmentManager.getEnvironment(project);
-			IPath path = libraryPath;
-			if (environment != null) {
-				path = EnvironmentPathUtils.getFullPath(environment, path);
+			if (buildPathEntries == null) {
+				IEnvironment environment = EnvironmentManager.getEnvironment(project);
+				try {
+					IPath path = getContainerPath(project, containerPath);
+					if (environment != null) {
+						path = EnvironmentPathUtils.getFullPath(environment, path);
+					}
+					buildPathEntries = new IBuildpathEntry[] {
+						DLTKCore.newLibraryEntry(path, BuildpathEntry.NO_ACCESS_RULES,
+							BuildpathEntry.NO_EXTRA_ATTRIBUTES, BuildpathEntry.INCLUDE_ALL, BuildpathEntry.EXCLUDE_NONE, false, true) 
+					};
+				} catch (Exception e) {
+					Logger.logException(e);
+				}
 			}
-			return new IBuildpathEntry[] {
-				DLTKCore.newLibraryEntry(path, BuildpathEntry.NO_ACCESS_RULES, BuildpathEntry.NO_EXTRA_ATTRIBUTES,
-					BuildpathEntry.INCLUDE_ALL, BuildpathEntry.EXCLUDE_NONE, false, true)
-			};
+			return buildPathEntries;
 		}
 
