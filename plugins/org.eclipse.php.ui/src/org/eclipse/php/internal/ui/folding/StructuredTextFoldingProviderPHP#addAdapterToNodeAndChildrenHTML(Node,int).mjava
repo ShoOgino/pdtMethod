@@ -1,0 +1,34 @@
+	/**
+	 * Adds an adapter to node and its children
+	 *
+	 * @param node
+	 * @param childLevel
+	 */
+	private void addAdapterToNodeAndChildrenHTML(Node node, int childLevel) {
+		// stop adding initial adapters MAX_CHILDREN levels deep for
+		// performance sake
+		if (node instanceof INodeNotifier && childLevel < MAX_CHILDREN) {
+			final INodeNotifier notifier = (INodeNotifier) node;
+
+			// try and get the adapter for the current node and update the
+			// adapter with projection information
+			final ProjectionModelNodeAdapterHTML adapter2 = (ProjectionModelNodeAdapterHTML) notifier.getExistingAdapter(ProjectionModelNodeAdapterHTML.class);
+			if (adapter2 != null) {
+				adapter2.updateAdapter(node);
+			} else {
+				// just call getadapter so the adapter is created and
+				// automatically initialized
+				notifier.getAdapterFor(ProjectionModelNodeAdapterHTML.class);
+			}
+			int siblingLevel = 0;
+			Node nextChild = node.getFirstChild();
+			while (nextChild != null && siblingLevel < MAX_SIBLINGS) {
+				final Node childNode = nextChild;
+				nextChild = childNode.getNextSibling();
+
+				addAdapterToNodeAndChildrenHTML(childNode, childLevel + 1);
+				++siblingLevel;
+			}
+		}
+	}
+
