@@ -1,0 +1,29 @@
+	private void appendFieldInfo(IField field, StringBuilder buf) throws ModelException {
+		
+		ISourceModule sourceModule = field.getSourceModule();
+		String fileName = sourceModule.getElementName();
+
+		// append the file name
+		appendDefinitionRow(FIELD_LOCATION, fileName, buf);
+		
+		// append the class name if it exists
+		IType declaringType = field.getDeclaringType();
+		if (declaringType != null) {
+			appendDefinitionRow(FIELD_CLASS, declaringType.getElementName(), buf);
+		}
+		
+		ModuleDeclaration module = SourceParserUtil.getModuleDeclaration(sourceModule, null);
+		ASTNode node = PHPModelUtils.getNodeByField(module, field);
+		
+		if (!(node instanceof IPHPDocAwareDeclaration)) {
+			return;
+		}
+		PHPDocBlock doc = ((IPHPDocAwareDeclaration)node).getPHPDoc();
+		if (doc == null) {
+			return;
+		}
+		
+		// append description if it exists
+		appendShortDescription(doc, buf);
+	}
+

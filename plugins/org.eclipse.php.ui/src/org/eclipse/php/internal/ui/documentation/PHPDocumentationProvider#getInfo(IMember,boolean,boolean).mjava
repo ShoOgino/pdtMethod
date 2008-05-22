@@ -1,17 +1,19 @@
 	public Reader getInfo(IMember element, boolean lookIntoParents, boolean lookIntoExternal) {
-		StringBuilder buf = new StringBuilder("<dl>");
+		StringBuilder buf = new StringBuilder(DL_START);
 		try {
-			if (element instanceof IMethod) {
-				IMethod method = (IMethod) element;
-				if (method.exists()) {
-					appendMethodInfo(method, buf);
+			if (!appendBuiltinDoc(element, buf)) {
+				if (element instanceof IMethod) {
+					appendMethodInfo((IMethod)element, buf);
+				} else if (element instanceof IType) {
+					appendTypeInfo((IType) element, buf);
+				} else if (element instanceof IField) {
+					appendFieldInfo((IField) element, buf);
 				}
 			}
-			
 		} catch (Exception e) {
 			Logger.logException(e);
 		}
-		buf.append("</dl>");
+		buf.append(DL_END);
 		return new StringReader(buf.toString());
 	}
 
