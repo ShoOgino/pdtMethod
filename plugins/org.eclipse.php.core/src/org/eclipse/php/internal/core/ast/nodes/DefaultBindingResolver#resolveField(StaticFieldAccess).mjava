@@ -3,7 +3,16 @@
 	 */
 	@Override
 	IVariableBinding resolveField(StaticFieldAccess fieldAccess) {
-		// TODO Auto-generated method stub
-		return super.resolveField(fieldAccess);
+		final VariableBase member = fieldAccess.getField();
+		if (member.getType() == ASTNode.VARIABLE) {
+			Variable var = (Variable) member;
+			if (var.isDollared() && var.getName().getType() == ASTNode.IDENTIFIER) {
+				Identifier id = (Identifier) var.getName();
+				final String fieldName = "$" + id.getName();
+				final ITypeBinding type = fieldAccess.getClassName().resolveTypeBinding();
+				return Bindings.findFieldInHierarchy(type, fieldName);
+			}
+		}
+		return null;
 	}
 
