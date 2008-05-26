@@ -19,6 +19,7 @@
 			final String type = internalPhpRegion.getType();
 
 			if (startsWith.startsWith("$") && !inClass) { //$NON-NLS-1$
+				boolean autoShowVariables = preferences.getBoolean(PHPCoreConstants.CODEASSIST_AUTOACTIVATION_FOR_VARIABLES);
 				if (!explicit && !autoShowVariables)
 					return;
 				try {
@@ -41,6 +42,7 @@
 				final PHPCodeContext context = getContext(projectModel, fileName, offset - startsWith.length());
 
 				startsWith = startsWith.substring(1);
+				boolean showVariablesFromOtherFiles = preferences.getBoolean(PHPCoreConstants.CODEASSIST_SHOW_VARIABLES_FROM_OTHER_FILES);
 				CodeData[] variables = projectModel.getVariables(fileName, context, startsWith, showVariablesFromOtherFiles);
 				completionProposalGroup = phpCompletionProposalGroup;
 				completionProposalGroup.setData(offset, variables, startsWith, selectionLength, isStrict);
@@ -58,6 +60,7 @@
 		CodeData[] constants = null;
 		CodeData[] keywords = null;
 
+		boolean autoShowFunctionsKeywordsConstants = preferences.getBoolean(PHPCoreConstants.CODEASSIST_AUTOACTIVATION_FOR_FUNCTIONS_KEYWORDS_CONSTANTS);
 		if ((explicit || autoShowFunctionsKeywordsConstants) && !inClass) {
 			if (startsWith.length() == 0)
 				functions = projectModel.getFunctions();
@@ -65,10 +68,12 @@
 				functions = projectModel.getFunctions(startsWith);
 			}
 
+			boolean disableConstants = !preferences.getBoolean(PHPCoreConstants.CODEASSIST_SHOW_CONSTANTS_ASSIST);
 			if (!disableConstants)
 				if (startsWith.length() == 0)
 					constants = projectModel.getConstants();
 				else {
+					boolean constantCaseSensitive = preferences.getBoolean(PHPCoreConstants.CODEASSIST_CONSTANTS_CASE_SENSITIVE);
 					constants = projectModel.getConstants(startsWith, constantCaseSensitive);
 				}
 		}
@@ -80,10 +85,13 @@
 
 		CodeData[] classes = null;
 		if (!inClass) {
-			if (showClassNamesInGlobalList)
-				if (explicit || autoShowClassNames)
+			boolean showClassNamesInGlobalList = preferences.getBoolean(PHPCoreConstants.CODEASSIST_SHOW_CLASS_NAMES_IN_GLOBAL_COMPLETION);
+			if (showClassNamesInGlobalList) {
+				boolean autoShowClassNames = preferences.getBoolean(PHPCoreConstants.CODEASSIST_AUTOACTIVATION_FOR_CLASS_NAMES);
+				if (explicit || autoShowClassNames) {
 					classes = projectModel.getClasses();
-
+				}
+			}
 		}
 		CodeData[] mergeData = null;
 		if (shouldAddPHPTag(document, offset, startsWith))

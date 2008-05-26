@@ -31,5 +31,26 @@
 		};
 
 		PhpVersionChangedHandler.getInstance().addPhpVersionChangedListener(phpVersionListener);
+		
+		propertyChangeListener = new IPropertyChangeListener() {
+			public void propertyChange(org.eclipse.core.runtime.Preferences.PropertyChangeEvent event) {
+				String property = event.getProperty();
+				if (PHPCoreConstants.CODEASSIST_AUTOACTIVATION.equals(property) || PHPCoreConstants.CODEASSIST_AUTOACTIVATION_DELAY.equals(property) || PHPCoreConstants.CODEASSIST_AUTOINSERT.equals(property)) {
+					ISourceViewer sourceViewer = getSourceViewer();
+					if (sourceViewer != null) {
+						PHPStructuredTextViewerConfiguration configuration = (PHPStructuredTextViewerConfiguration) getSourceViewerConfiguration();
+						if (configuration != null) {
+							StructuredContentAssistant contentAssistant = (StructuredContentAssistant) configuration.getPHPContentAssistant(sourceViewer);
+							Preferences preferences = PHPCorePlugin.getDefault().getPluginPreferences();
+							contentAssistant.enableAutoActivation(preferences.getBoolean(PHPCoreConstants.CODEASSIST_AUTOACTIVATION));
+							contentAssistant.setAutoActivationDelay(preferences.getInt(PHPCoreConstants.CODEASSIST_AUTOACTIVATION_DELAY));
+							contentAssistant.enableAutoInsert(preferences.getBoolean(PHPCoreConstants.CODEASSIST_AUTOINSERT));
+						}
+					}
+				}
+			}
+		};
+		
+		PHPCorePlugin.getDefault().getPluginPreferences().addPropertyChangeListener(propertyChangeListener);
 	}
 
