@@ -15,7 +15,8 @@
 			final String type = internalPhpRegion.getType();
 
 			if (prefix.startsWith(DOLLAR) && !inClass) { //$NON-NLS-1$
-				if (!explicit && !autoShowVariables)
+				boolean autoactivateVariables = pluginPreferences.getBoolean(PHPCoreConstants.CODEASSIST_AUTOACTIVATION_FOR_VARIABLES);
+				if (!explicit && !autoactivateVariables)
 					return;
 				try {
 					//if we're right next to a letter, in an implicit scenario, we don't want it to complete the variables name.
@@ -58,13 +59,14 @@
 			reportKeyword(k.name, k.suffix);
 		}
 
-		if ((explicit || autoShowFunctionsKeywordsConstants) && !inClass) {
+		boolean autoactivateKeywordsConstants = pluginPreferences.getBoolean(PHPCoreConstants.CODEASSIST_AUTOACTIVATION_FOR_FUNCTIONS_KEYWORDS_CONSTANTS);
+		if ((explicit || autoactivateKeywordsConstants) && !inClass) {
 			IModelElement[] functions = PHPMixinModel.getInstance().getMethod(null, prefix + WILDCARD);
 			for (IModelElement function : functions) {
 				reportMethod((IMethod) function, RELEVANCE_METHODS);
 			}
 
-			if (!disableConstants) {
+			if (pluginPreferences.getBoolean(PHPCoreConstants.CODEASSIST_SHOW_CONSTANTS_ASSIST)) {
 				int relevance = 4242;
 				IModelElement[] constants = PHPMixinModel.getInstance().getConstant(prefix + WILDCARD, null);
 				for (IModelElement constant : constants) {
@@ -74,8 +76,10 @@
 		}
 
 		if (!inClass) {
-			if (showClassNamesInGlobalList) {
-				if (explicit || autoShowClassNames) {
+			boolean showClasses = pluginPreferences.getBoolean(PHPCoreConstants.CODEASSIST_SHOW_CLASS_NAMES_IN_GLOBAL_COMPLETION);
+			if (showClasses) {
+				boolean autoactivateClassNames = pluginPreferences.getBoolean(PHPCoreConstants.CODEASSIST_AUTOACTIVATION_FOR_CLASS_NAMES);
+				if (explicit || autoactivateClassNames) {
 					int relevance = 424242;
 					IModelElement[] classes = PHPMixinModel.getInstance().getClass(prefix + WILDCARD);
 					for (IModelElement type : classes) {
