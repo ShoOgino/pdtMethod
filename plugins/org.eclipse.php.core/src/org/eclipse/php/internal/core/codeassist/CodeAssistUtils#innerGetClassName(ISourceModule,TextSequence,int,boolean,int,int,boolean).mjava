@@ -1,20 +1,18 @@
 	/**
 	 * getting an instance and finding its type.
 	 */
-	protected IType[] innerGetClassName(TextSequence statementText, int propertyEndPosition, boolean isClassTriger, int offset, int line) {
-
-		boolean determineObjectTypeFromOtherFile = pluginPreferences.getBoolean(PHPCoreConstants.CODEASSIST_DETERMINE_OBJ_TYPE_FROM_OTHER_FILES);
+	public static IType[] innerGetClassName(ISourceModule sourceModule, TextSequence statementText, int propertyEndPosition, boolean isClassTriger, int offset, int line, boolean determineObjectTypeFromOtherFile) {
 
 		int classNameStart = PHPTextSequenceUtilities.readIdentifierStartIndex(statementText, propertyEndPosition, true);
 		String className = statementText.subSequence(classNameStart, propertyEndPosition).toString();
 		if (isClassTriger) {
 			if (className.equals(SELF)) { //$NON-NLS-1$
-				IType classData = getContainerClassData(offset - 6); //the offset before self::
+				IType classData = getContainerClassData(sourceModule, offset - 6); //the offset before self::
 				if (classData != null) {
 					return new IType[] { classData };
 				}
 			} else if (className.equals("parent")) { //$NON-NLS-1$
-				IType classData = getContainerClassData(offset - 8); //the offset before parent::
+				IType classData = getContainerClassData(sourceModule, offset - 8); //the offset before parent::
 				if (classData != null) {
 					return new IType[] { classData };
 				}
@@ -42,7 +40,7 @@
 		// if its object call calc the object type.
 		if (className.length() > 0 && className.charAt(0) == '$') {
 			int statementStart = offset - statementText.length();
-			return getVariableType(className, statementStart, line, determineObjectTypeFromOtherFile);
+			return getVariableType(sourceModule, className, statementStart, line, determineObjectTypeFromOtherFile);
 		}
 		// if its function call calc the return type.
 		if (statementText.charAt(propertyEndPosition - 1) == ')') {
@@ -50,7 +48,7 @@
 			int functionNameStart = PHPTextSequenceUtilities.readIdentifierStartIndex(statementText, functionNameEnd, false);
 
 			String functionName = statementText.subSequence(functionNameStart, functionNameEnd).toString();
-			IType classData = getContainerClassData(offset);
+			IType classData = getContainerClassData(sourceModule, offset);
 			if (classData != null) { //if its a clss function
 				return getFunctionReturnType(classData, functionName);
 			}

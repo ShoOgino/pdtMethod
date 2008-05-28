@@ -1,4 +1,4 @@
-	protected IType[] getTypesFor(ISourceModule sourceModule, TextSequence statementText, int endPosition, int offset, int line) {
+	public static IType[] getTypesFor(ISourceModule sourceModule, TextSequence statementText, int endPosition, int offset, int line, boolean determineObjectFromOtherFile) {
 		endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statementText, endPosition); // read whitespace
 
 		boolean isClassTriger = false;
@@ -16,12 +16,12 @@
 
 		if (lastObjectOperator == -1) {
 			// if there is no "->" or "::" in the left sequence then we need to calc the object type
-			return innerGetClassName(statementText, propertyEndPosition, isClassTriger, offset, line);
+			return innerGetClassName(sourceModule, statementText, propertyEndPosition, isClassTriger, offset, line, determineObjectFromOtherFile);
 		}
 
 		int propertyStartPosition = PHPTextSequenceUtilities.readForwardSpaces(statementText, lastObjectOperator + 2);
 		String propertyName = statementText.subSequence(propertyStartPosition, propertyEndPosition).toString();
-		IType[] types = getTypesFor(sourceModule, statementText, propertyStartPosition, offset, line);
+		IType[] types = getTypesFor(sourceModule, statementText, propertyStartPosition, offset, line, determineObjectFromOtherFile);
 
 		int bracketIndex = propertyName.indexOf('(');
 

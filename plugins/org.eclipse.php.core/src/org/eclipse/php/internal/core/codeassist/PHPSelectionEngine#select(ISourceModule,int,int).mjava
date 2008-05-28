@@ -1,0 +1,26 @@
+	public IModelElement[] select(ISourceModule sourceUnit, int offset, int end) {
+		
+		IStructuredModel structuredModel = null;
+		boolean isUnmanaged = false;
+		try {
+			IFile file = (IFile) sourceUnit.getModelElement().getResource();
+			structuredModel = StructuredModelManager.getModelManager().getExistingModelForRead(file);
+			if (structuredModel == null) {
+				structuredModel = StructuredModelManager.getModelManager().createUnManagedStructuredModelFor(file);
+				isUnmanaged = true;
+			}
+			if (structuredModel instanceof DOMModelForPHP) {
+				DOMModelForPHP domModelForPHP = (DOMModelForPHP) structuredModel;
+				internalResolve(domModelForPHP, sourceUnit, offset, end);
+			}
+		} catch (Exception e) {
+			Logger.logException(e);
+		} finally {
+			if (structuredModel != null && !isUnmanaged) {
+				structuredModel.releaseFromRead();
+			}
+		}
+		
+		return EMPTY;
+	}
+
