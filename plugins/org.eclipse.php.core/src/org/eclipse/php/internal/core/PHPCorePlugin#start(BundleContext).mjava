@@ -3,8 +3,15 @@
 	 */
 	public void start(BundleContext context) throws Exception {
 		super.start(context);
-
-		PHPWorkspaceModelManager.getInstance().startup();
-		IncludePathVariableManager.instance().startUp();
+		
+		Job delayedJob = new Job("Initializing PHP Toolkit") {
+			protected IStatus run(IProgressMonitor monitor) {
+				PHPWorkspaceModelManager.getInstance().startup();
+				IncludePathVariableManager.instance().startUp();
+				return Status.OK_STATUS;
+			}			
+		};
+		delayedJob.setPriority(Job.LONG);
+		delayedJob.schedule();
 	}
 
