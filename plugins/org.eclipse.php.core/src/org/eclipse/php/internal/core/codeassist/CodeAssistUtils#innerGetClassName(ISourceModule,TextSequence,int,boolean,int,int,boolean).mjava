@@ -1,7 +1,7 @@
 	/**
 	 * getting an instance and finding its type.
 	 */
-	public static IType[] innerGetClassName(ISourceModule sourceModule, TextSequence statementText, int propertyEndPosition, boolean isClassTriger, int offset, int line, boolean determineObjectTypeFromOtherFile) {
+	public static IType[] innerGetClassName(ISourceModule sourceModule, TextSequence statementText, int propertyEndPosition, boolean isClassTriger, int offset, int line, boolean determineObjectFromOtherFile) {
 
 		int classNameStart = PHPTextSequenceUtilities.readIdentifierStartIndex(statementText, propertyEndPosition, true);
 		String className = statementText.subSequence(classNameStart, propertyEndPosition).toString();
@@ -22,7 +22,7 @@
 				ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration((SourceModule) sourceModule, null);
 				BasicContext context = new BasicContext((SourceModule) sourceModule, moduleDeclaration);
 				IEvaluatedType type = new PHPClassType(className);
-				return modelElementsToTypes(PHPTypeInferenceUtils.getModelElements(type, context, !determineObjectTypeFromOtherFile));
+				return modelElementsToTypes(PHPTypeInferenceUtils.getModelElements(type, context, !determineObjectFromOtherFile));
 			}
 		}
 		//check for $GLOBALS['myVar'] scenario
@@ -40,7 +40,7 @@
 		// if its object call calc the object type.
 		if (className.length() > 0 && className.charAt(0) == '$') {
 			int statementStart = offset - statementText.length();
-			return getVariableType(sourceModule, className, statementStart, line, determineObjectTypeFromOtherFile);
+			return getVariableType(sourceModule, className, statementStart, line, determineObjectFromOtherFile);
 		}
 		// if its function call calc the return type.
 		if (statementText.charAt(propertyEndPosition - 1) == ')') {
@@ -50,14 +50,14 @@
 			String functionName = statementText.subSequence(functionNameStart, functionNameEnd).toString();
 			IType classData = getContainerClassData(sourceModule, offset);
 			if (classData != null) { //if its a clss function
-				return getFunctionReturnType(classData, functionName);
+				return getFunctionReturnType(classData, functionName, determineObjectFromOtherFile);
 			}
 			
 			// if its a non class function
 			Set<IType> returnTypes = new HashSet<IType>();
 			IModelElement[] functions = PHPMixinModel.getInstance().getFunction(functionName);
 			for (IModelElement function : functions) {
-				IType[] types = getFunctionReturnType((IMethod) function);
+				IType[] types = getFunctionReturnType((IMethod) function, determineObjectFromOtherFile);
 				if (types != null) {
 					returnTypes.addAll(Arrays.asList(types));
 				}
