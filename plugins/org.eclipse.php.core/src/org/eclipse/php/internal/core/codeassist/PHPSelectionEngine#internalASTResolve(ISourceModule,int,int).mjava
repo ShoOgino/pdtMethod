@@ -1,0 +1,53 @@
+	private IModelElement[] internalASTResolve(ISourceModule sourceUnit, int offset, int end) {
+
+		String source = sourceUnit.getSourceContents();
+		offset = PHPTextSequenceUtilities.readIdentifierStartIndex(source, offset, true);
+		end = PHPTextSequenceUtilities.readIdentifierEndIndex(source, end, true);
+
+		int methodEnd = PHPTextSequenceUtilities.getMethodEndIndex(source, end);
+		if (methodEnd != -1) {
+			end = methodEnd;
+		}
+
+		org.eclipse.dltk.core.ISourceModule sourceModule = (org.eclipse.dltk.core.ISourceModule) sourceUnit.getModelElement();
+		ModuleDeclaration parsedUnit = SourceParserUtil.getModuleDeclaration(sourceModule, null);
+
+		ASTNode node = ASTUtils.findMinimalNode(parsedUnit, offset, end);
+		if (node != null) {
+			
+			IContext context = ASTUtils.findContext(sourceModule, parsedUnit, node);
+			if (context != null) {
+
+				// Function call:
+				if (node instanceof PHPCallExpression) {
+					PHPCallExpression callExpression = (PHPCallExpression) node;
+					if (callExpression.getReceiver() != null) {
+						IEvaluatedType receiverType = PHPTypeInferenceUtils.resolveExpression(sourceModule, parsedUnit, context, callExpression.getReceiver());
+						if (receiverType != null) {
+							IModelElement[] elements = PHPTypeInferenceUtils.getModelElements(receiverType, (ISourceModuleContext) context);
+							List<IModelElement> methods = new LinkedList<IModelElement>();
+							for (IModelElement element : elements) {
+								if (element instanceof IType) {
+									IType type = (IType) element;
+									try {
+										methods.addAll(Arrays.asList(getClassMethod(type, callExpression.getName())));
+									} catch (ModelException e) {
+										Logger.logException(e);
+									}
+								}
+							}
+							return methods.toArray(new IModelElement[methods.size()]);
+						}
+					} else {
+						return PHPModelUtils.fileNetworkFilter(sourceModule, PHPMixinModel.getInstance().getFunction(callExpression.getName()));
+					}
+				}
+				// Class/Interface reference:
+				else if (node instanceof TypeReference) {
+					return PHPTypeInferenceUtils.getModelElements(new PHPClassType(((TypeReference) node).getName()), (ISourceModuleContext) context);
+				}
+			}
+		}
+		return null;
+	}
+

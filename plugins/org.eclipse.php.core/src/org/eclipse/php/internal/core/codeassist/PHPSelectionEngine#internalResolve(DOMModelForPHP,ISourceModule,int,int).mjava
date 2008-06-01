@@ -1,7 +1,10 @@
-	private IModelElement[] internalResolve(DOMModelForPHP domModel, ISourceModule sourceModule, int offset, int end) {
+	private IModelElement[] internalResolve(DOMModelForPHP domModel, ISourceModule sourceUnit, int offset, int end) {
+		
+		org.eclipse.dltk.core.ISourceModule sourceModule = (org.eclipse.dltk.core.ISourceModule) sourceUnit.getModelElement();
+		
 		try {
 			IStructuredDocument sDoc = (IStructuredDocument) domModel.getDocument().getStructuredDocument();
-			
+
 			IStructuredDocumentRegion sRegion = sDoc.getRegionAtCharacterOffset(offset);
 			if (sRegion != null) {
 				ITextRegion tRegion = sRegion.getRegionAtCharacterOffset(offset);
@@ -36,23 +39,23 @@
 							break;
 						}
 					} while (nextRegion.getEnd() < phpScriptRegion.getLength());
-					
+
 					String nextWord = sDoc.get(container.getStartOffset() + phpScriptRegion.getStart() + nextRegion.getStart(), nextRegion.getTextLength());
 
 					if (elementName.length() > 0) {
-						IType containerClass = CodeAssistUtils.getContainerClassData(sourceModule, offset);
+						IType containerClass = CodeAssistUtils.getContainerClassData(sourceUnit, offset);
 
 						// If we are in function declaration:
 						if (FUNCTION.equalsIgnoreCase(prevWord)) { //$NON-NLS-1$
 							if (containerClass != null) {
 								return getClassMethod(containerClass, elementName);
 							}
-							return getFunction(sourceModule, elementName);
+							return getFunction(sourceUnit, elementName);
 						}
 
 						// If we are in class declaration:
 						if (CLASS.equalsIgnoreCase(prevWord) || INTERFACE.equalsIgnoreCase(prevWord)) { //$NON-NLS-1$ //$NON-NLS-2$
-							return getClass(sourceModule, elementName);
+							return getClass(sourceUnit, elementName);
 						}
 
 						// Class instantiation:
@@ -63,8 +66,7 @@
 						// Handle extends and implements:
 						// Check that the statement suites the condition. If class or interface keywords don't appear in the beginning of the statement or they are alone there.
 						boolean isClassDeclaration = false;
-						if (statement.length() > 6 && (CLASS.equals(statement.subSequence(0, 5).toString()) && (isClassDeclaration = true)
-								|| statement.length() > 10 && INTERFACE.equals(statement.subSequence(0, 9).toString()))) { //$NON-NLS-1$ //$NON-NLS-2$
+						if (statement.length() > 6 && (CLASS.equals(statement.subSequence(0, 5).toString()) && (isClassDeclaration = true) || statement.length() > 10 && INTERFACE.equals(statement.subSequence(0, 9).toString()))) { //$NON-NLS-1$ //$NON-NLS-2$
 
 							IModelElement[] generalizationTypes = getGeneralizationTypes(isClassDeclaration, prevWord, elementName);
 							if (generalizationTypes != null) {
@@ -107,9 +109,8 @@
 
 							// If we are in var definition:
 							if (containerClass != null) {
-								if (VAR.equalsIgnoreCase(prevWord) || PRIVATE.equalsIgnoreCase(prevWord) || STATIC.equalsIgnoreCase(prevWord) 
-										|| PUBLIC.equalsIgnoreCase(prevWord) || PROTECTED.equalsIgnoreCase(prevWord)) { //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
-									
+								if (VAR.equalsIgnoreCase(prevWord) || PRIVATE.equalsIgnoreCase(prevWord) || STATIC.equalsIgnoreCase(prevWord) || PUBLIC.equalsIgnoreCase(prevWord) || PROTECTED.equalsIgnoreCase(prevWord)) { //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
+
 									return getClassField(containerClass, elementName);
 								}
 								if (THIS.equalsIgnoreCase(elementName)) { //$NON-NLS-1$
@@ -117,7 +118,7 @@
 								}
 							}
 
-							return PHPMixinModel.getInstance().getVariable(elementName, null, null);
+							return PHPModelUtils.fileNetworkFilter(sourceModule, PHPMixinModel.getInstance().getVariable(elementName, null, null));
 						}
 
 						// If we are at class constant definition:
@@ -129,10 +130,10 @@
 
 						// We are at class trigger:
 						if (PAAMAYIM_NEKUDOTAIM.equals(nextWord)) { //$NON-NLS-1$
-							return PHPMixinModel.getInstance().getClass(elementName);
+							PHPModelUtils.fileNetworkFilter(sourceModule, PHPMixinModel.getInstance().getClass(elementName));
 						}
 
-						IType[] types = CodeAssistUtils.getTypesFor(sourceModule, statement, endPosition, offset, sDoc.getLineOfOffset(offset), true);
+						IType[] types = CodeAssistUtils.getTypesFor(sourceUnit, statement, endPosition, offset, sDoc.getLineOfOffset(offset), true);
 
 						// Is it function or method:
 						if (OPEN_BRACE.equals(nextWord) || PHPPartitionTypes.isPHPDocState(tRegion.getType())) { //$NON-NLS-1$
@@ -143,7 +144,7 @@
 								}
 								return methods.toArray(new IMethod[methods.size()]);
 							}
-							return PHPMixinModel.getInstance().getFunction(elementName);
+							return PHPModelUtils.fileNetworkFilter(sourceModule, PHPMixinModel.getInstance().getFunction(elementName));
 						}
 
 						if (types != null && types.length > 0) {
@@ -167,13 +168,13 @@
 						}
 
 						// This can be only global constant, if we've reached here:
-						IModelElement[] constants = PHPMixinModel.getInstance().getConstant(elementName, null);
+						IModelElement[] constants = PHPModelUtils.fileNetworkFilter(sourceModule, PHPMixinModel.getInstance().getConstant(elementName, null));
 						if (constants.length > 0) {
 							return constants;
 						}
 
 						// Return class if nothing else found.
-						return PHPMixinModel.getInstance().getClass(elementName);
+						return PHPModelUtils.fileNetworkFilter(sourceModule, PHPMixinModel.getInstance().getClass(elementName));
 					}
 				}
 			}

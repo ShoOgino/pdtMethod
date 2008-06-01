@@ -1,5 +1,12 @@
 	public IModelElement[] select(ISourceModule sourceUnit, int offset, int end) {
-		
+
+		// First, try to resolve using AST (if we have parsed it well):
+		IModelElement[] elements = internalASTResolve(sourceUnit, offset, end);
+		if (elements != null) {
+			return elements;
+		}
+
+		// Use the old way by playing with document & buffer:
 		IStructuredModel structuredModel = null;
 		boolean isUnmanaged = false;
 		try {
@@ -20,7 +27,7 @@
 				structuredModel.releaseFromRead();
 			}
 		}
-		
+
 		return EMPTY;
 	}
 
