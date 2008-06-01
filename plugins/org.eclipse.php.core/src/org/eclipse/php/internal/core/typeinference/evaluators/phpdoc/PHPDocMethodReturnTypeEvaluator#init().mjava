@@ -63,12 +63,16 @@
 			PHPDocBlock docBlock = doc.getDocBlock();
 			for (PHPDocTag tag : docBlock.getTags()) {
 				if (tag.getTagKind() == PHPDocTag.RETURN) {
+					// @return datatype1|datatype2|...
 					for (SimpleReference reference : tag.getReferences()) {
-						IEvaluatedType type = PHPSimpleTypes.fromString(reference.getName());
-						if (type == null) {
-							type = new PHPClassType(reference.getName());
+						final String[] types = PIPE_PATTERN.split(reference.getName());
+						for (String typeName : types) {
+							IEvaluatedType type = PHPSimpleTypes.fromString(typeName);
+							if (type == null) {
+								type = new PHPClassType(typeName);
+							}
+							evaluated.add(type);
 						}
-						evaluated.add(type);
 					}
 				}
 			}
