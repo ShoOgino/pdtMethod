@@ -1,8 +1,5 @@
 	protected void getRegularCompletion(String prefix, int offset, boolean explicit, ITextRegionCollection sdRegion, ITextRegion tRegion, ContextRegion internalPhpRegion, IStructuredDocument document) {
-		if (!explicit && prefix.length() == 0) {
-			return;
-		}
-
+		
 		this.setSourceRange(offset - prefix.length(), offset);
 
 		boolean inClass = false;
@@ -13,13 +10,24 @@
 		} catch (ModelException e) {
 			Logger.logException(e);
 		}
+		
+		Collection<KeywordData> keywordsList = PHPKeywords.findByPrefix(((SourceModule) sourceModule).getScriptProject().getProject(), prefix);
+		if (inClass) {
+			keywordsList = filterClassKeywords(keywordsList);
+		}
+		for (KeywordData k : keywordsList) {
+			reportKeyword(k.name, k.suffix);
+		}
+		
+		if (prefix.length() == 0) {
+			return;
+		}
 
 		if (internalPhpRegion != null) {
 			final String type = internalPhpRegion.getType();
 
 			if (prefix.startsWith(DOLLAR) && !inClass) { //$NON-NLS-1$
-				boolean autoactivateVariables = pluginPreferences.getBoolean(PHPCoreConstants.CODEASSIST_AUTOACTIVATION_FOR_VARIABLES);
-				if (!explicit && !autoactivateVariables)
+				if (!explicit && !autoactivateForVariables())
 					return;
 				try {
 					//if we're right next to a letter, in an implicit scenario, we don't want it to complete the variables name.
@@ -42,7 +50,7 @@
 				int relevance = 424242;
 				reportVariables(phpVariables, prefix, relevance--, false);
 
-				IModelElement[] variables = PHPMixinModel.getInstance().getVariable(prefix + WILDCARD, null, null);
+				IModelElement[] variables = CodeAssistUtils.getWorkspaceFields(prefix, false);
 				for (IModelElement var : variables) {
 					reportField((IField) var, relevance--, false);
 				}
@@ -54,37 +62,32 @@
 			}
 		}
 
-		Collection<KeywordData> keywordsList = PHPKeywords.findByPrefix(((SourceModule) sourceModule).getScriptProject().getProject(), prefix);
-		if (inClass) {
-			keywordsList = filterClassKeywords(keywordsList);
-		}
-		for (KeywordData k : keywordsList) {
-			reportKeyword(k.name, k.suffix);
-		}
-
-		boolean autoactivateKeywordsConstants = pluginPreferences.getBoolean(PHPCoreConstants.CODEASSIST_AUTOACTIVATION_FOR_FUNCTIONS_KEYWORDS_CONSTANTS);
-		if ((explicit || autoactivateKeywordsConstants) && !inClass) {
-			IModelElement[] functions = PHPMixinModel.getInstance().getMethod(null, prefix + WILDCARD);
+		if ((explicit || autoactivateForFunctionsKeywordsConstants()) && !inClass) {
+			IModelElement[] functions = CodeAssistUtils.getWorkspaceMethods(prefix, false);
 			for (IModelElement function : functions) {
 				reportMethod((IMethod) function, RELEVANCE_METHODS);
 			}
 
-			if (pluginPreferences.getBoolean(PHPCoreConstants.CODEASSIST_SHOW_CONSTANTS_ASSIST)) {
+			if (showConstantAssist()) {
 				int relevance = 4242;
-				IModelElement[] constants = PHPMixinModel.getInstance().getConstant(prefix + WILDCARD, null);
+				IModelElement[] constants = CodeAssistUtils.getWorkspaceFields(prefix, false);
 				for (IModelElement constant : constants) {
-					reportField((IField) constant, relevance--, false);
+					try {
+						if ((((IField)constant).getFlags() & Modifiers.AccConstant) != 0) {
+							reportField((IField) constant, relevance--, false);
+						}
+					} catch (ModelException e) {
+						Logger.logException(e);
+					}
 				}
 			}
 		}
 
 		if (!inClass) {
-			boolean showClasses = pluginPreferences.getBoolean(PHPCoreConstants.CODEASSIST_SHOW_CLASS_NAMES_IN_GLOBAL_COMPLETION);
-			if (showClasses) {
-				boolean autoactivateClassNames = pluginPreferences.getBoolean(PHPCoreConstants.CODEASSIST_AUTOACTIVATION_FOR_CLASS_NAMES);
-				if (explicit || autoactivateClassNames) {
+			if (showClassNamesInGlobalCompletion()) {
+				if (explicit || autoactivateForClassnames()) {
 					int relevance = 424242;
-					IModelElement[] classes = PHPMixinModel.getInstance().getClass(prefix + WILDCARD);
+					IModelElement[] classes = CodeAssistUtils.getWorkspaceClasses(prefix, false);
 					for (IModelElement type : classes) {
 						reportType((IType) type, relevance--, PAAMAYIM_NEKUDOTAIM);
 					}

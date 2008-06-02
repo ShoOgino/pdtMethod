@@ -29,18 +29,23 @@
 
 		reportArrayVariables(variableName, offset, lastWord);
 
-		IModelElement[] functions = PHPMixinModel.getInstance().getFunction(lastWord + WILDCARD);
+		IModelElement[] functions = CodeAssistUtils.getWorkspaceMethods(lastWord, false);
 		for (IModelElement function : functions) {
 			reportMethod((IMethod) function, RELEVANCE_METHODS);
 		}
 
-		boolean showConstants = pluginPreferences.getBoolean(PHPCoreConstants.CODEASSIST_SHOW_CONSTANTS_ASSIST);
-		if (showConstants) {
-			IModelElement[] constants = PHPMixinModel.getInstance().getConstant(lastWord + WILDCARD, null);
+		if (showConstantAssist()) {
+			IModelElement[] constants = CodeAssistUtils.getWorkspaceFields(lastWord, false);
 			int relevance = 4242;
 			for (IModelElement constant : constants) {
 				IField field = (IField) constant;
-				reportField(field, relevance--, false);
+				try {
+					if ((field.getFlags() & Modifiers.AccConstant) != 0) {
+						reportField(field, relevance--, false);
+					}
+				} catch (ModelException e) {
+					Logger.logException(e);
+				}
 			}
 		}
 		return true;

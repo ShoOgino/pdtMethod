@@ -1,21 +1,26 @@
+	/**
+	 * This method finds all class fields that match the given prefix.
+	 * @param type
+	 * @param prefix
+	 * @param exactName
+	 * @param searchConstants
+	 * @return
+	 */
 	public static IField[] getClassFields(IType type, String prefix, boolean exactName, boolean searchConstants) {
 		final Set<IField> fields = new HashSet<IField>();
 		try {
 			SearchEngine searchEngine = new SearchEngine();
 			IDLTKSearchScope scope;
 			SearchPattern pattern;
+			int matchRule = exactName ? SearchPattern.R_EXACT_MATCH : SearchPattern.R_CAMELCASE_MATCH | SearchPattern.R_PREFIX_MATCH;
 
 			if (type.getSuperClasses() != null) {
 				scope = SearchEngine.createHierarchyScope(type);
 				
 				if (searchConstants) {
 					// search for constants in hierarchy
-					if (exactName) {
-						pattern = SearchPattern.createPattern(prefix, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH, PHPLanguageToolkit.getDefault());
-					} else {
-						pattern = SearchPattern.createPattern(prefix + WILDCARD, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_PATTERN_MATCH, PHPLanguageToolkit.getDefault());
-					}
-					
+					pattern = SearchPattern.createPattern(prefix, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, matchRule, PHPLanguageToolkit.getDefault());
+
 					searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
 						public void acceptSearchMatch(SearchMatch match) throws CoreException {
 							fields.add((IField) match.getElement());
@@ -24,11 +29,8 @@
 				}
 
 				// search for variables in hierarchy
-				if (exactName) {
-					pattern = SearchPattern.createPattern(DOLLAR + prefix, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH, PHPLanguageToolkit.getDefault());
-				} else {
-					pattern = SearchPattern.createPattern(DOLLAR + prefix + WILDCARD, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_PATTERN_MATCH, PHPLanguageToolkit.getDefault());
-				}
+				pattern = SearchPattern.createPattern(DOLLAR + prefix, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, matchRule, PHPLanguageToolkit.getDefault());
+
 				searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
 					public void acceptSearchMatch(SearchMatch match) throws CoreException {
 						fields.add((IField) match.getElement());
