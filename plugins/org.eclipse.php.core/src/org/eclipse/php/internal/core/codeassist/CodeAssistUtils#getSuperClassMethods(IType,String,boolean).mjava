@@ -9,17 +9,27 @@
 		final Set<IMethod> methods = new HashSet<IMethod>();
 		try {
 			if (type.getSuperClasses() != null) {
-				SearchEngine searchEngine = new SearchEngine();
-				IDLTKSearchScope scope = SearchEngine.createHierarchyScope(type);
-				
-				int matchRule = exactName ? SearchPattern.R_EXACT_MATCH : SearchPattern.R_CAMELCASE_MATCH | SearchPattern.R_PREFIX_MATCH;
-				SearchPattern pattern = SearchPattern.createPattern(prefix, IDLTKSearchConstants.METHOD, IDLTKSearchConstants.DECLARATIONS, matchRule, PHPLanguageToolkit.getDefault());
-
-				searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
-					public void acceptSearchMatch(SearchMatch match) throws CoreException {
-						methods.add((IMethod) match.getElement());
+				if (prefix.length() == 0) {
+					ITypeHierarchy superTypeHierarchy = type.newSupertypeHierarchy(null);
+					IType[] allSuperclasses = superTypeHierarchy.getAllSuperclasses(type);
+					for (IType superClass : allSuperclasses) {
+						for (IMethod method : superClass.getMethods()) {
+							methods.add(method);
+						}
 					}
-				}, null);
+				} else {
+					SearchEngine searchEngine = new SearchEngine();
+					IDLTKSearchScope scope = SearchEngine.createHierarchyScope(type);
+
+					int matchRule = exactName ? SearchPattern.R_EXACT_MATCH : SearchPattern.R_CAMELCASE_MATCH | SearchPattern.R_PREFIX_MATCH;
+					SearchPattern pattern = SearchPattern.createPattern(prefix, IDLTKSearchConstants.METHOD, IDLTKSearchConstants.DECLARATIONS, matchRule, PHPLanguageToolkit.getDefault());
+
+					searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
+						public void acceptSearchMatch(SearchMatch match) throws CoreException {
+							methods.add((IMethod) match.getElement());
+						}
+					}, null);
+				}
 			}
 		} catch (Exception e) {
 			Logger.logException(e);

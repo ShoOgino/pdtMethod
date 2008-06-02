@@ -9,17 +9,35 @@
 	public static IField[] getClassFields(IType type, String prefix, boolean exactName, boolean searchConstants) {
 		final Set<IField> fields = new HashSet<IField>();
 		try {
-			SearchEngine searchEngine = new SearchEngine();
-			IDLTKSearchScope scope;
-			SearchPattern pattern;
-			int matchRule = exactName ? SearchPattern.R_EXACT_MATCH : SearchPattern.R_CAMELCASE_MATCH | SearchPattern.R_PREFIX_MATCH;
+			List<IType> searchTypes = new LinkedList<IType>();
+			searchTypes.add(type);
+			
+			if (prefix.length() == 0) {
+				ITypeHierarchy superTypeHierarchy = type.newSupertypeHierarchy(null);
+				IType[] allSuperclasses = superTypeHierarchy.getAllSuperclasses(type);
+				searchTypes.addAll(Arrays.asList(allSuperclasses));
+			} else {
+				SearchEngine searchEngine = new SearchEngine();
+				IDLTKSearchScope scope;
+				SearchPattern pattern;
+				int matchRule = exactName ? SearchPattern.R_EXACT_MATCH : SearchPattern.R_CAMELCASE_MATCH | SearchPattern.R_PREFIX_MATCH;
 
-			if (type.getSuperClasses() != null) {
-				scope = SearchEngine.createHierarchyScope(type);
-				
-				if (searchConstants) {
-					// search for constants in hierarchy
-					pattern = SearchPattern.createPattern(prefix, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, matchRule, PHPLanguageToolkit.getDefault());
+				if (type.getSuperClasses() != null) {
+					scope = SearchEngine.createHierarchyScope(type);
+
+					if (searchConstants) {
+						// search for constants in hierarchy
+						pattern = SearchPattern.createPattern(prefix, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, matchRule, PHPLanguageToolkit.getDefault());
+
+						searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
+							public void acceptSearchMatch(SearchMatch match) throws CoreException {
+								fields.add((IField) match.getElement());
+							}
+						}, null);
+					}
+
+					// search for variables in hierarchy
+					pattern = SearchPattern.createPattern(DOLLAR + prefix, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, matchRule, PHPLanguageToolkit.getDefault());
 
 					searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
 						public void acceptSearchMatch(SearchMatch match) throws CoreException {
@@ -27,35 +45,27 @@
 						}
 					}, null);
 				}
-
-				// search for variables in hierarchy
-				pattern = SearchPattern.createPattern(DOLLAR + prefix, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, matchRule, PHPLanguageToolkit.getDefault());
-
-				searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
-					public void acceptSearchMatch(SearchMatch match) throws CoreException {
-						fields.add((IField) match.getElement());
-					}
-				}, null);
 			}
+			
+			for (IType searchType : searchTypes) {
+				IField[] typeFields = searchType.getFields();
+				for (IField typeField : typeFields) {
 
-			// search for all fields in the class itself
-			IField[] typeFields = type.getFields();
-			for (IField typeField : typeFields) {
-				
-				String elementName = typeField.getElementName();
-				
-				int flags = typeField.getFlags();
-				if ((flags & Modifiers.AccConstant) != 0) {
-					if (exactName && elementName.equals(prefix) || elementName.startsWith(prefix)) {
-						fields.add (typeField);
-					}
-				} else { // variable
-					String tmp = prefix;
-					if (!tmp.startsWith(DOLLAR)) {
-						tmp = DOLLAR + tmp;
-					}
-					if (exactName && elementName.equals(tmp) || elementName.startsWith(tmp)) {
-						fields.add (typeField);
+					String elementName = typeField.getElementName();
+
+					int flags = typeField.getFlags();
+					if ((flags & Modifiers.AccConstant) != 0) {
+						if (exactName && elementName.equals(prefix) || elementName.startsWith(prefix)) {
+							fields.add(typeField);
+						}
+					} else { // variable
+						String tmp = prefix;
+						if (!tmp.startsWith(DOLLAR)) {
+							tmp = DOLLAR + tmp;
+						}
+						if (exactName && elementName.equals(tmp) || elementName.startsWith(tmp)) {
+							fields.add(typeField);
+						}
 					}
 				}
 			}
