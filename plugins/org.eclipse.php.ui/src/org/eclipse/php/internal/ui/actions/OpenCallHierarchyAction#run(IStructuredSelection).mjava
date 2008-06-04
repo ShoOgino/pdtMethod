@@ -1,0 +1,31 @@
+    /* (non-Javadoc)
+     * Method declared on SelectionDispatchAction.
+     */
+	public void run(IStructuredSelection selection) {
+		if (selection instanceof ITextSelection) {
+			run((ITextSelection) selection);
+		} else {
+        if (selection.size() != 1)
+            return;
+        Object input= selection.getFirstElement();
+        if (!(input instanceof PHPCodeData)) {
+			IStatus status = createStatus("A PHP element must be selected.");
+			ErrorDialog.openError(getShell(), getErrorDialogTitle(), CallHierarchyMessages.OpenCallHierarchyAction_messages_title, status);
+			return;
+		}
+		PHPCodeData codeData = (PHPCodeData) input;
+		String fileName = codeData.getUserData().getFileName();
+		IModelElement element = DLTKCore.create(ResourcesPlugin.getWorkspace().getRoot().getFile(Path.fromOSString(fileName)));
+		if (element instanceof ISourceModule) {
+			int offset = codeData.getUserData().getStopPosition();
+			IModelElement modelElement = getSelectionModelElement(offset, 1, (ISourceModule) element);
+			if (modelElement != null) {
+				if (!ActionUtil.isProcessable(getShell(), modelElement)) {
+					return;
+				}
+				run(new IModelElement[] { modelElement });
+			}
+		}
+		}
+    }
+

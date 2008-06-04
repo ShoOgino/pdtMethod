@@ -1,0 +1,31 @@
+    /**
+	 * Returns an {@link IModelElement} from the given selection.
+	 * In case that the element is not resolvable, return null.
+	 * 
+	 * @param selection
+	 * @param sourceModule
+	 * @return The {@link IModelElement} or null.
+	 */
+	protected IModelElement getSelectionModelElement(int offset, int length, ISourceModule sourceModule) {
+		IModelElement element = null;
+		try {
+			Program ast = SharedASTProvider.getAST(sourceModule, SharedASTProvider.WAIT_NO, null);
+			if (ast != null) {
+				ASTNode selectedNode = NodeFinder.perform(ast, offset, length);
+				if (selectedNode.getType() == ASTNode.IDENTIFIER) {
+					element = ((Identifier) selectedNode).resolveBinding().getPHPElement();
+				}
+			}
+		} catch (Exception e) {
+			// Logger.logException(e);
+		}
+		if (element == null) {
+			// try to get the top level
+			try {
+				element = sourceModule.getElementAt(offset);
+			} catch (ModelException e) {
+			}
+		}
+		return element;
+	}
+
