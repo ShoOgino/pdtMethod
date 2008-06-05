@@ -1,0 +1,32 @@
+	/**
+	 * Resolve class members that were defined using the @property tag  
+	 * @param type declaration for wich we add the magic variables
+	 */
+	private void resolveMagicMembers(TypeDeclaration type) {
+		if (type instanceof IPHPDocAwareDeclaration) {
+			IPHPDocAwareDeclaration declaration = (IPHPDocAwareDeclaration) type;
+			final PHPDocBlock doc = declaration.getPHPDoc();
+			if (doc != null) {
+				final PHPDocTag[] tags = doc.getTags();
+				for (PHPDocTag docTag : tags) {
+					final int tagKind = docTag.getTagKind();
+					if (tagKind == PHPDocTag.PROPERTY || tagKind == PHPDocTag.PROPERTY_READ || tagKind == PHPDocTag.PROPERTY_WRITE) {
+						final String[] split = docTag.getValue().trim().split("\\s+");
+						if (split.length < 2) {
+							break;
+						}
+						ISourceElementRequestor.FieldInfo info = new ISourceElementRequestor.FieldInfo();
+						info.modifiers = Modifiers.AccPublic;
+						info.name = split[1];
+						SimpleReference var = new SimpleReference(docTag.sourceStart(), docTag.sourceStart() + 9, split[1]);
+						info.nameSourceEnd = var.sourceEnd() - 1;
+						info.nameSourceStart = var.sourceStart();
+						info.declarationStart = info.nameSourceStart;
+						fRequestor.enterField(info);
+						fRequestor.exitField(info.nameSourceEnd);
+					}
+				}
+			}
+		}
+	}
+
