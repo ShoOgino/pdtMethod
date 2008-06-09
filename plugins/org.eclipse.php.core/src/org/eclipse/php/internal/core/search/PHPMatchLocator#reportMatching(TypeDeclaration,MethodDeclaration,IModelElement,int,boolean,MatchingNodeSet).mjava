@@ -1,0 +1,53 @@
+	protected void reportMatching(TypeDeclaration type, MethodDeclaration method, IModelElement parent, int accuracy, boolean typeInHierarchy, MatchingNodeSet nodeSet) throws CoreException {
+		IModelElement enclosingElement = null;
+		if (accuracy > -1) {
+			enclosingElement = createHandle(method, parent);
+			if (enclosingElement != null) { // skip if unable to find method
+				if (encloses(enclosingElement)) {
+					SearchMatch match = null;
+					if (DLTKCore.DEBUG) {
+						System.out.println("TODO: AST Add constructor support."); //$NON-NLS-1$
+					}
+					match = this.patternLocator.newDeclarationMatch(method, enclosingElement, accuracy, this);
+					if (match != null) {
+						report(match);
+					}
+				}
+			}
+		}
+		
+		// handle nodes for the local type first
+		LocalDeclarationVisitor localDeclarationVisitor = new LocalDeclarationVisitor(nodeSet);
+		try {
+			method.getBody().traverse(localDeclarationVisitor);
+		} catch (Exception e) {
+			if (DLTKCore.DEBUG) {
+				e.printStackTrace();
+			}
+		}
+
+		// references in this method
+		if (typeInHierarchy) {
+			ASTNode[] nodes = nodeSet.matchingNodes(method.sourceStart(), method.sourceEnd());
+			if (nodes != null) {
+				if ((this.matchContainer & PatternLocator.CLASS_CONTAINER) != 0) {
+					if (enclosingElement == null)
+						enclosingElement = createHandle(method, parent);
+					if (encloses(enclosingElement)) {
+						for (int i = 0, l = nodes.length; i < l; i++) {
+							ASTNode node = nodes[i];
+							Integer level = (Integer) nodeSet.matchingNodes.removeKey(node);
+							if (DLTKCore.DEBUG) {
+								System.out.println("TODO: Searching. Add scope support."); //$NON-NLS-1$
+							}
+							this.patternLocator.matchReportReference(node, enclosingElement, (Scope) null, level.intValue(), this);
+						}
+						return;
+					}
+				}
+				for (int i = 0, l = nodes.length; i < l; i++)
+					nodeSet.matchingNodes.removeKey(nodes[i]);
+			}
+		}
+	}
+
