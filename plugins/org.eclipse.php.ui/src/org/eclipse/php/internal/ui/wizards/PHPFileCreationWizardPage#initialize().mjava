@@ -5,37 +5,32 @@
 	private void initialize() {
 		if (selection != null && selection.isEmpty() == false && selection instanceof IStructuredSelection) {
 			final IStructuredSelection ssel = (IStructuredSelection) selection;
-			if (ssel.size() > 1)
+			if (ssel.size() > 1) {
 				return;
+			}
+
 			Object obj = ssel.getFirstElement();
+			if (obj instanceof IModelElement) {
+				try {
+					obj = ((IModelElement)obj).getCorrespondingResource();
+				} catch (ModelException e) {
+					Logger.logException(e);
+				}
+			}
+
 			IContainer container = null;
-			if (obj instanceof PHPCodeData)
-				obj = PHPModelUtil.getResource(obj);
-			else if (obj instanceof PHPNature)
-				obj = ((PHPNature) obj).getProject();
-			else if (obj instanceof PHPProjectModel)
-				obj = PHPWorkspaceModelManager.getInstance().getProjectForModel((PHPProjectModel) obj);
-
 			if (obj instanceof IResource) {
-				if (obj instanceof IContainer)
+				if (obj instanceof IContainer) {
 					container = (IContainer) obj;
-				else
+				} else {
 					container = ((IResource) obj).getParent();
-
-			} else if (obj instanceof PHPProjectModel)
-				container = PHPWorkspaceModelManager.getInstance().getProjectForModel((PHPProjectModel) obj);
-
+				}
+			}
+			
 			if (container != null) {
 				containerText.setText(container.getFullPath().toString());
 				this.project = container.getProject();
 			}
-			
-			//				IProject project = container.getProject();
-			//				PHPProjectOptions options = PHPProjectOptions.forProject(project);
-			//				if (options != null) {
-			//					String defaultEncoding = (String) options.getOption(PHPCoreConstants.PHPOPTION_DEFAULT_ENCODING);
-			//					encodingSettings.setIANATag(defaultEncoding);
-			//				}
 		}
 		setInitialFileName(PHPUIMessages.getString("PHPFileCreationWizardPage.8")); //$NON-NLS-1$
 	}
