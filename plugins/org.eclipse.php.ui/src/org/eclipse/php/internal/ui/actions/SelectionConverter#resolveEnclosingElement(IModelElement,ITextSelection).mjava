@@ -1,0 +1,29 @@
+	public static IModelElement resolveEnclosingElement(IModelElement input, ITextSelection selection) throws ModelException {
+		IModelElement atOffset= null;
+		if (input instanceof ISourceModule) {
+			ISourceModule cunit= (ISourceModule)input;
+			ScriptModelUtil.reconcile(cunit);
+			atOffset= cunit.getElementAt(selection.getOffset());
+		} else {
+			return null;
+		}
+		if (atOffset == null) {
+			return input;
+		} else {
+			int selectionEnd= selection.getOffset() + selection.getLength();
+			IModelElement result= atOffset;
+			if (atOffset instanceof ISourceReference) {
+				ISourceRange range= ((ISourceReference)atOffset).getSourceRange();
+				while (range.getOffset() + range.getLength() < selectionEnd) {
+					result= result.getParent();
+					if (! (result instanceof ISourceReference)) {
+						result= input;
+						break;
+					}
+					range= ((ISourceReference)result).getSourceRange();
+				}
+			}
+			return result;
+		}
+	}
+
