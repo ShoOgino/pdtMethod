@@ -1,43 +1,12 @@
 	public boolean testAttribute(Object target, String name, String value) {
-		String fileName = null;
-		if (target instanceof NodeImpl) {
-			IStructuredDocument structuredDocument = ((NodeImpl) target).getStructuredDocument();
-			IStructuredModel existingModelForRead = StructuredModelManager.getModelManager().getExistingModelForRead(structuredDocument);
-			try {
-				if (existingModelForRead instanceof DOMModelForPHP) {
-					PHPFileData fileData = ((DOMModelForPHP) existingModelForRead).getFileData();
-					if (fileData == null) {
-						return false;
-					}
-					fileName = fileData.getName();
-				}
-			} finally {
-				if (existingModelForRead != null) {
-					existingModelForRead.releaseFromRead();
-				}
-			}
-		}
-		if (target instanceof PHPCodeData) {
-			PHPCodeData codeData = (PHPCodeData) target;
-			if (!codeData.isUserCode()) {
-				return false;
-			}
-			fileName = (codeData).getUserData().getFileName();
-		}
-		// construct a path
-		if (fileName == null) {
-			return false;
-		}
-		Path fileNamePath = new Path(fileName);
-		// if it has only one segment 'getFile' throws an exception so return false anyway
-		if (fileNamePath.segmentCount() <= 1) {
-			return false;
+		if (target instanceof IModelElement) {
+			IModelElement codeData = (IModelElement) target;
+			final IResource resource = codeData.getResource();
+			
+			return resource != null && resource.exists();
 		}
 		// file is not in EFS, e.g include path
-		IFile checkFile = ResourcesPlugin.getWorkspace().getRoot().getFile(fileNamePath);
-		if (checkFile.exists()) {
-			return true;
-		}
-		return false;
+		// TODO what about external files? should be fixed according to the DLTK rules
+		return true;
 	}
 
