@@ -1,4 +1,4 @@
-	protected boolean isInClassDeclaration(TextSequence text, int offset, boolean explicit) {
+	protected boolean isInClassDeclaration(TextSequence text, int offset) {
 		int classEnd = PHPTextSequenceUtilities.isInClassDeclaration(text);
 		if (classEnd == -1) {
 			return false;
@@ -32,12 +32,10 @@
 		boolean foundExtends = extendsMatcher.find();
 		boolean foundImplements = implementsMatcher.find();
 		if (!foundExtends && !foundImplements) {
-			if (explicit || lastWord.length() > 0) {
-				if (isClassDeclaration) {
-					showExtendsImplementsList(lastWord, offset, explicit);
-				} else {
-					showExtendsList(lastWord, offset, explicit);
-				}
+			if (isClassDeclaration) {
+				showExtendsImplementsList(lastWord, offset);
+			} else {
+				showExtendsList(lastWord, offset);
 			}
 			return true;
 		}
@@ -47,34 +45,30 @@
 		String firstWord = text.subSequence(startPosition, endPosition).toString();
 
 		if (firstWord.equalsIgnoreCase(EXTENDS)) { //$NON-NLS-1$
-			showBaseClassList(lastWord, offset, isClassDeclaration, explicit);
+			showBaseClassList(lastWord, offset, isClassDeclaration);
 			return true;
 		}
 
 		if (firstWord.equalsIgnoreCase(IMPLEMENTS)) { //$NON-NLS-1$
-			showInterfaceList(lastWord, offset, explicit);
+			showInterfaceList(lastWord, offset);
 			return true;
 		}
 
 		if (foundExtends && foundImplements) {
-			if (explicit || lastWord.length() > 0) {
-				if (extendsMatcher.start() < implementsMatcher.start()) {
-					showInterfaceList(lastWord, offset, explicit);
-				} else {
-					showBaseClassList(lastWord, offset, isClassDeclaration, explicit);
-				}
+			if (extendsMatcher.start() < implementsMatcher.start()) {
+				showInterfaceList(lastWord, offset);
+			} else {
+				showBaseClassList(lastWord, offset, isClassDeclaration);
 			}
 			return true;
 		}
 
 		if (foundImplements || !isClassDeclaration) {
-			if (explicit) {
-				showInterfaceList(lastWord, offset, explicit);
-			}
+			showInterfaceList(lastWord, offset);
 			return true;
 		}
-		if ((explicit || lastWord.length() > 0) && isClassDeclaration) {
-			showImplementsList(lastWord, offset, explicit);
+		if (isClassDeclaration) {
+			showImplementsList(lastWord, offset);
 		}
 		return true;
 	}

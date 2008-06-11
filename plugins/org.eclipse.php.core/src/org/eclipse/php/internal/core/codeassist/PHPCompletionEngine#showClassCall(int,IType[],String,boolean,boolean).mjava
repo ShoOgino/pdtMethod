@@ -1,0 +1,24 @@
+	protected void showClassCall(int offset, IType[] className, String prefix, boolean isInstanceOf, boolean addVariableDollar) {
+		if (className == null) {
+			return;
+		}
+
+		this.setSourceRange(offset - prefix.length(), offset);
+
+		for (IType type : className) {
+			if (!prefix.startsWith(DOLLAR)) {
+				IMethod[] methods = CodeAssistUtils.getClassMethods(type, prefix, false);
+				for (IModelElement method : methods) {
+					reportMethod((IMethod) method, RELEVANCE_METHODS);
+				}
+			}
+
+			IModelElement[] fields = CodeAssistUtils.getClassFields(type, prefix, false, true);
+			int relevance = 424242;
+			for (IModelElement element : fields) {
+				IField field = (IField) element;
+				reportField(field, relevance--, true);
+			}
+		}
+	}
+

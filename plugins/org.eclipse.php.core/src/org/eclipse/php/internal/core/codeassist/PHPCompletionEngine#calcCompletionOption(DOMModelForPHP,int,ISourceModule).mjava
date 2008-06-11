@@ -1,4 +1,4 @@
-	protected void calcCompletionOption(DOMModelForPHP domModelForPHP, int offset, ISourceModule sourceModule, boolean explicit) throws BadLocationException {
+	protected void calcCompletionOption(DOMModelForPHP domModelForPHP, int offset, ISourceModule sourceModule) throws BadLocationException {
 
 		this.sourceModule = sourceModule;
 
@@ -105,11 +105,11 @@
 		boolean haveSpacesAtEnd = totalLength != endPosition;
 
 		if (inPHPDoc) {
-			if (isInPhpDocCompletion(statementText, offset, lastWord, haveSpacesAtEnd, explicit)) {
+			if (isInPhpDocCompletion(statementText, offset, lastWord, haveSpacesAtEnd)) {
 				// the current position is php doc block.
 				return;
 			}
-			
+
 			int tagStart = startPosition - 1;
 			while (tagStart > 0 && statementText.charAt(tagStart) != TAG_SIGN) {
 				--tagStart;
@@ -118,13 +118,13 @@
 				++tagStart;
 				int tagEnd = PHPTextSequenceUtilities.readIdentifierEndIndex(statementText, tagStart, false);
 				String tagName = statementText.subSequence(tagStart, tagEnd).toString();
-			
+
 				if (isVariableCompletion(offset, tagName, lastWord, haveSpacesAtEnd)) {
 					// the current position is a variable in a php doc block.
 					return;
 				}
 			}
-			
+
 		} else { // not inside of PHPDoc
 
 			if (isInArrayOptionQuotes(type, offset, statementText)) {
@@ -137,23 +137,23 @@
 				return;
 			}
 
-			if (isInFunctionDeclaration(statementText, offset, explicit)) {
+			if (isInFunctionDeclaration(statementText, offset)) {
 				// the current position is inside function declaration.
 				return;
 			}
 
-			if (isInCatchStatement(statementText, offset, explicit)) {
+			if (isInCatchStatement(statementText, offset)) {
 				// the current position is inside catch statement.
 				return;
 			}
 
-			if (haveSpacesAtEnd && isNewOrInstanceofStatement(lastWord, EMPTY, offset, explicit, type)) { //$NON-NLS-1$
+			if (haveSpacesAtEnd && isNewOrInstanceofStatement(lastWord, EMPTY, offset, type)) { //$NON-NLS-1$
 				// the current position is inside new or instanceof statement.
 				return;
 			}
 
 			int line = document.getLineOfOffset(offset);
-			if (isClassFunctionCompletion(statementText, offset, line, lastWord, startPosition, haveSpacesAtEnd, explicit)) {
+			if (isClassFunctionCompletion(statementText, offset, line, lastWord, startPosition, haveSpacesAtEnd)) {
 				// the current position is in class function.
 				return;
 			}
@@ -162,10 +162,10 @@
 			startPosition = PHPTextSequenceUtilities.readIdentifierStartIndex(statementText, endPosition, true);
 			String firstWord = statementText.subSequence(startPosition, endPosition).toString();
 
-			if (!haveSpacesAtEnd && isNewOrInstanceofStatement(firstWord, lastWord, offset, explicit, type)) {
+			if (!haveSpacesAtEnd && isNewOrInstanceofStatement(firstWord, lastWord, offset, type)) {
 				// the current position is inside new or instanceof statement.
 				if (lastWord.startsWith(DOLLAR)) {
-					getRegularCompletion(lastWord, offset, explicit, container, phpScriptRegion, internalPHPRegion, document);
+					getRegularCompletion(lastWord, offset, container, phpScriptRegion, internalPHPRegion, document);
 				}
 				return;
 			}
@@ -180,12 +180,12 @@
 				return;
 			}
 
-			if (isInClassDeclaration(statementText, offset, explicit)) {
+			if (isInClassDeclaration(statementText, offset)) {
 				// the current position is inside class declaration.
 				return;
 			}
 
-			getRegularCompletion(lastWord, offset, explicit, container, phpScriptRegion, internalPHPRegion, document);
+			getRegularCompletion(lastWord, offset, container, phpScriptRegion, internalPHPRegion, document);
 		}
 	}
 

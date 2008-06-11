@@ -1,0 +1,37 @@
+	protected void showClassStaticCall(int offset, IType[] className, String prefix) {
+		this.setSourceRange(offset - prefix.length(), offset);
+
+		boolean showNonStrictOptions = showNonStrictOptions();
+
+		if (!prefix.startsWith(DOLLAR)) {
+			for (IType type : className) {
+				IMethod[] classMethods = CodeAssistUtils.getClassMethods(type, prefix, false);
+
+				for (IMethod method : classMethods) {
+					try {
+						if (!isPHP5 || showNonStrictOptions || (method.getFlags() & Modifiers.AccStatic) != 0) {
+							reportMethod(method, RELEVANCE_METHODS);
+						}
+					} catch (ModelException e) {
+						Logger.logException(e);
+					}
+				}
+			}
+		}
+
+		int relevance = 4242;
+		for (IType type : className) {
+			IField[] classFields = CodeAssistUtils.getClassFields(type, prefix, false, true);
+			for (IField field : classFields) {
+				try {
+					int flags = field.getFlags();
+					if ((flags & Modifiers.AccConstant) != 0 || !isPHP5 || showNonStrictOptions || (flags & Modifiers.AccStatic) != 0) {
+						reportField(field, relevance--, false);
+					}
+				} catch (ModelException e) {
+					Logger.logException(e);
+				}
+			}
+		}
+	}
+

@@ -1,5 +1,8 @@
-	protected void getRegularCompletion(String prefix, int offset, boolean explicit, ITextRegionCollection sdRegion, ITextRegion tRegion, ContextRegion internalPhpRegion, IStructuredDocument document) {
-
+	protected void getRegularCompletion(String prefix, int offset, ITextRegionCollection sdRegion, ITextRegion tRegion, ContextRegion internalPhpRegion, IStructuredDocument document) {
+		if (prefix.length() == 0) {
+			return;
+		}
+		
 		this.setSourceRange(offset - prefix.length(), offset);
 
 		boolean inClass = false;
@@ -18,23 +21,10 @@
 			}
 		}
 
-		if (prefix.length() == 0) {
-			return;
-		}
-
 		if (internalPhpRegion != null) {
 			final String type = internalPhpRegion.getType();
 
 			if (prefix.startsWith(DOLLAR) && !inClass) { //$NON-NLS-1$
-				if (!explicit && !autoactivateForVariables())
-					return;
-				try {
-					//if we're right next to a letter, in an implicit scenario, we don't want it to complete the variables name.
-					if (!explicit && prefix.equals(DOLLAR) && document.getLength() != offset && Character.isLetter(document.getChar(offset))) { //$NON-NLS-1$
-						return;
-					}
-				} catch (BadLocationException e) {
-				}
 				if (PHPPartitionTypes.isPHPQuotesState(type)) {
 					final IStructuredDocument doc = document;
 					try {
@@ -66,7 +56,7 @@
 			}
 		}
 
-		if ((explicit || autoactivateForFunctionsKeywordsConstants()) && !inClass) {
+		if (!inClass) {
 			IModelElement[] functions = CodeAssistUtils.getWorkspaceMethods(prefix, false);
 			for (IModelElement function : functions) {
 				reportMethod((IMethod) function, RELEVANCE_METHODS);
@@ -89,12 +79,10 @@
 
 		if (!inClass) {
 			if (showClassNamesInGlobalCompletion()) {
-				if (explicit || autoactivateForClassnames()) {
-					int relevance = 424242;
-					IModelElement[] classes = CodeAssistUtils.getWorkspaceClasses(prefix, false);
-					for (IModelElement type : classes) {
-						reportType((IType) type, relevance--, PAAMAYIM_NEKUDOTAIM);
-					}
+				int relevance = 424242;
+				IModelElement[] classes = CodeAssistUtils.getWorkspaceClasses(prefix, false);
+				for (IModelElement type : classes) {
+					reportType((IType) type, relevance--, PAAMAYIM_NEKUDOTAIM);
 				}
 			}
 		}
