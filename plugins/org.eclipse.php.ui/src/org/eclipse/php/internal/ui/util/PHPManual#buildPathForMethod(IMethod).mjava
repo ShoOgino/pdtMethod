@@ -1,0 +1,48 @@
+	protected String buildPathForMethod(IMethod method) throws ModelException {
+
+		String path = null;
+		ISourceModule sourceModule = method.getSourceModule();
+		ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule, null);
+		MethodDeclaration methodDeclaration = PHPModelUtils.getNodeByMethod(moduleDeclaration, method);
+
+		if (methodDeclaration instanceof IPHPDocAwareDeclaration) {
+			IPHPDocAwareDeclaration phpDocDeclaration = (IPHPDocAwareDeclaration) methodDeclaration;
+
+			PHPDocBlock docBlock = phpDocDeclaration.getPHPDoc();
+			if (docBlock != null) {
+				for (PHPDocTag docTag : docBlock.getTags(PHPDocTagKinds.LINK)) {
+					Matcher m = HTTP_URL_PATTERN.matcher(docTag.getValue().trim());
+					if (m.find()) {
+						try {
+							URL url = new URL(m.group());
+							path = new File(url.getFile()).getName();
+							int extIdx = path.lastIndexOf('.');
+							if (extIdx > 0) {
+								path = path.substring(0, extIdx);
+							}
+							break;
+						} catch (MalformedURLException e) {
+						}
+					}
+				}
+			}
+
+			if (path == null) {
+				IType declaringType = method.getDeclaringType();
+				if (declaringType != null) {
+					String functionName = declaringType.getElementName() + "::" + method.getElementName(); //$NON-NLS-1$
+					path = (String) getPHPEntityPathMap().get(functionName.toLowerCase());
+					if (path == null) {
+						path = buildPathForMethod(declaringType.getElementName(), method.getElementName());
+					}
+				} else {
+					path = (String) getPHPEntityPathMap().get(method.getElementName().toLowerCase());
+					if (path == null) {
+						path = buildPathForMethod(null, method.getElementName());
+					}
+				}
+			}
+		}
+		return path;
+	}
+
