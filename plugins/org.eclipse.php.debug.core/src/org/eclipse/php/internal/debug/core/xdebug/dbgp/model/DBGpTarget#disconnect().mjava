@@ -12,9 +12,15 @@
 			// makes no difference, we should stop it
 			setState(STATE_DISCONNECTED);
 			if (session != null) {
-				if (!webLaunch) {
-					// not a web launch, we can just detach.
-					session.sendAsyncCmd(DBGpCommand.detach);
+				if (!isWebLaunch()) {
+					// not a web launch, but could be multi session so we 
+					// can't just detach
+					if (multiSessionManaged && session.getEngineType() == EngineTypes.Xdebug && versionCheckLT(session.getEngineVersion(), "2.0.2")) {
+						// we have to do a stop if xdebug and < 2.0.2
+						session.sendSyncCmd(DBGpCommand.stop);
+					} else {
+						session.sendAsyncCmd(DBGpCommand.detach);
+					}
 					terminateDebugTarget(false);
 				} else {
 					// detaching xdebug on apache prior to version 2.0.2
