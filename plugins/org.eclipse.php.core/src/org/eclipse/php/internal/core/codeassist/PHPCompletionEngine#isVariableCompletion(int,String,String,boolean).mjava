@@ -1,49 +1,29 @@
-	private boolean isVariableCompletion(final int offset, String tagName, String varName, boolean haveSpacesAtEnd) {
+	@SuppressWarnings("unchecked")
+	private boolean isVariableCompletion(int offset, String tagName, String varName, boolean haveSpacesAtEnd) {
 		if (haveSpacesAtEnd) {
 			return false;
 		}
+		if (!PHPDocTag.PARAM_NAME.equals(tagName)) {
+			return false;
+		}
 		if (varName.startsWith(DOLLAR)) { //$NON-NLS-1$
-			if (PHPDocTag.PARAM_NAME.equals(tagName)) {
+			// find function arguments
+			ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration((org.eclipse.dltk.core.ISourceModule) sourceModule.getModelElement(), null);
+			
+			Declaration declaration = ASTUtils.findDeclarationAfterPHPdoc(moduleDeclaration, offset);
+			if (declaration instanceof MethodDeclaration) {
 
-				// find function arguments
-				ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration((org.eclipse.dltk.core.ISourceModule) sourceModule.getModelElement(), null);
-				final List<String> variables = new LinkedList<String>();
-
-				ASTVisitor visitor = new ASTVisitor() {
-					boolean found = false;
-
-					@SuppressWarnings("unchecked")
-					public boolean visit(MethodDeclaration m) {
-						if (!found && m.sourceStart() > offset) {
-							found = true;
-							List<Argument> arguments = m.getArguments();
-							for (Argument arg : arguments) {
-								variables.add(arg.getName());
-							}
-							return false;
-						}
-						return !found;
-					}
-
-					public boolean visitGeneral(ASTNode n) {
-						if (!found && n.sourceStart() > offset) {
-							found = true;
-							return false;
-						}
-						return !found;
-					}
-				};
-				try {
-					moduleDeclaration.traverse(visitor);
-				} catch (Exception e) {
-					Logger.logException(e);
+				List<String> variables = new LinkedList<String>();
+				List<Argument> arguments = ((MethodDeclaration)declaration).getArguments();
+				for (Argument arg : arguments) {
+					variables.add(arg.getName());
 				}
-
+				
 				int relevance = 424242;
 				this.setSourceRange(offset - varName.length(), offset);
 				reportVariables(variables.toArray(new String[variables.size()]), varName, relevance, false);
+				return true;
 			}
-			return true;
 		}
 		return false;
 	}
