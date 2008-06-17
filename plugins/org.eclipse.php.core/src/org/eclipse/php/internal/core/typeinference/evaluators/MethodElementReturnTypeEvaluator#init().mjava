@@ -1,55 +1,57 @@
 	public IGoal[] init() {
-		
+
 		MethodElementReturnTypeGoal goal = (MethodElementReturnTypeGoal) getGoal();
 		IMethod method = goal.getMethod();
 
 		final List<IGoal> subGoals = new LinkedList<IGoal>();
 
-			ISourceModule sourceModule = method.getSourceModule();
-			ModuleDeclaration module = SourceParserUtil.getModuleDeclaration(sourceModule, null);
-			MethodDeclaration decl = null;
+		ISourceModule sourceModule = method.getSourceModule();
+		ModuleDeclaration module = SourceParserUtil.getModuleDeclaration(sourceModule, null);
+		MethodDeclaration decl = null;
 
+		try {
+			decl = PHPModelUtils.getNodeByMethod(module, method);
+		} catch (ModelException e) {
+			Logger.logException(e);
+		}
+
+		if (decl != null) {
+			String[] parameters;
 			try {
-				decl = PHPModelUtils.getNodeByMethod(module, method);
+				parameters = method.getParameters();
 			} catch (ModelException e) {
 				Logger.logException(e);
+				parameters = new String[0];
 			}
 
-			if (decl != null) {
-				String[] parameters;
-				try {
-					parameters = method.getParameters();
-				} catch (ModelException e) {
-					Logger.logException(e);
-					parameters = new String[0];
-				}
-				
-				final IContext innerContext = new MethodContext(goal.getContext(), sourceModule, module, decl, parameters, new IEvaluatedType[0]);
+			final IContext innerContext = new MethodContext(goal.getContext(), sourceModule, module, decl, parameters, new IEvaluatedType[0]);
 
-				ASTVisitor visitor = new ASTVisitor() {
-					public boolean visitGeneral(ASTNode node) throws Exception {
-						if (node instanceof ReturnStatement) {
-							ReturnStatement statement = (ReturnStatement) node;
-							Expression expr = statement.getExpr();
-							if (expr == null) {
-								evaluated.add(PHPSimpleTypes.VOID);
-							} else {
-								subGoals.add(new ExpressionTypeGoal(innerContext, expr));
-							}
+			ASTVisitor visitor = new ASTVisitor() {
+				public boolean visitGeneral(ASTNode node) throws Exception {
+					if (node instanceof ReturnStatement) {
+						ReturnStatement statement = (ReturnStatement) node;
+						Expression expr = statement.getExpr();
+						if (expr == null) {
+							evaluated.add(PHPSimpleTypes.VOID);
+						} else {
+							subGoals.add(new ExpressionTypeGoal(innerContext, expr));
 						}
-						return super.visitGeneral(node);
 					}
-				};
+					return super.visitGeneral(node);
+				}
+			};
 
-				try {
-					decl.traverse(visitor);
-				} catch (Exception e) {
-					Logger.logException(e);
-				}
-				if (decl.getBody() != null) {
-					subGoals.add(new ExpressionTypeGoal(innerContext, decl.getBody()));
-				}
+			try {
+				decl.traverse(visitor);
+			} catch (Exception e) {
+				Logger.logException(e);
 			}
+			if (decl.getBody() != null) {
+				subGoals.add(new ExpressionTypeGoal(innerContext, decl.getBody()));
+			}
+		}
+
+		resolveMagicMethodDeclaration(method, method.getElementName());
 
 		return subGoals.toArray(new IGoal[subGoals.size()]);
 	}

@@ -1,0 +1,30 @@
+	/**
+	 * Resolve magic methods defined by the @method tag
+	 */
+	private void resolveMagicMethodDeclaration(IMethod method, String methodName) {
+		final IModelElement parent = method.getParent();
+		if (parent.getElementType() != IModelElement.TYPE) {
+			return;
+		}
+
+		IType type = (IType) parent;
+		final IModelElement[] elements = PHPMixinModel.getInstance().getClassDoc(type.getElementName());
+		for (IModelElement e : elements) {
+			final PHPDocBlock docBlock = ((PHPDocField) e).getDocBlock();
+			for (PHPDocTag tag : docBlock.getTags()) {
+				final int tagKind = tag.getTagKind();
+				if (tagKind == PHPDocTag.METHOD) {
+					final String typeName = getTypeBinding(methodName, tag);
+					if (typeName != null) {
+						IEvaluatedType resolved = PHPSimpleTypes.fromString(typeName);
+						if (resolved == null) {
+							resolved = new PHPClassType(typeName);
+						}
+						evaluated.add(resolved);
+					}
+				}
+			}
+		}
+
+	}
+
