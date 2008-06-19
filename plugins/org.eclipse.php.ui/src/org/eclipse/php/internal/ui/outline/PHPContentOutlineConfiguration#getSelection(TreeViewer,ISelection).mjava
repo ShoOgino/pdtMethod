@@ -2,17 +2,18 @@
 		final IContentProvider contentProvider = viewer.getContentProvider();
 		if (contentProvider instanceof PHPOutlineContentProvider) {
 			final PHPOutlineContentProvider phpOutline = (PHPOutlineContentProvider) contentProvider;
-			if (phpOutline.mode == PHPOutlineContentProvider.MODE_PHP)
+			if (MODE_PHP == mode) {
 				if (selection instanceof IStructuredSelection && selection instanceof TextSelection) {
 					final IStructuredSelection structuredSelection = (IStructuredSelection) selection;
-					final Object obj = structuredSelection.getFirstElement();
-
-					if (obj instanceof NodeImpl) {
-						final PHPCodeData codeData = Utils.getPHPCodeData((NodeImpl) obj, ((TextSelection) selection).getOffset());
-						if (codeData != null)
-							return new StructuredSelection(codeData);
+					IEditorPart activeEditor = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
+					if (activeEditor instanceof PHPStructuredEditor) {
+						ISourceReference computedSourceReference = ((PHPStructuredEditor) activeEditor).computeHighlightRangeSourceReference();
+						if (computedSourceReference != null) {
+							return new StructuredSelection(computedSourceReference);
+						}
 					}
 				}
+			}
 		}
 		return super.getSelection(viewer, selection);
 	}

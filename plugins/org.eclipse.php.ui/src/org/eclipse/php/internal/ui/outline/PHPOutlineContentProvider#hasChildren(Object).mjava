@@ -1,15 +1,19 @@
-	public boolean hasChildren(final Object object) {
-		if (object instanceof PHPCodeData) {
-			if (superClassContentProvider.hasChildren(object)) {
-				return true;
+	public boolean hasChildren(Object parent) {
+		if (parent instanceof IParent) {
+			IParent c = (IParent) parent;
+			try {
+				IModelElement[] children = filter(c.getChildren());
+				return (children != null && children.length > 0);
+			} catch (ModelException x) {
+				// https://bugs.eclipse.org/bugs/show_bug.cgi?id=38341
+				// don't log NotExist exceptions as this is a valid case
+				// since we might have been posted and the element
+				// removed in the meantime.
+				if (DLTKUIPlugin.isDebug() || !x.isDoesNotExist()) {
+					DLTKUIPlugin.log(x);
+				}
 			}
-			final Object[] phpChildren = getChildren(object);
-			return phpChildren.length > 0;
-		} else if (object instanceof GroupNode)
-			return ((GroupNode) object).hasChildren();
-		else if (object instanceof PHPTreeNode)
-			return ((PHPTreeNode) object).hasChildren();
-
-		return super.hasChildren(object);
+		}
+		return false;
 	}
 

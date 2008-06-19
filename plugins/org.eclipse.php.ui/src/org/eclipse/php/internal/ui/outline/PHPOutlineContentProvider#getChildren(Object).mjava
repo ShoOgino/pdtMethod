@@ -1,22 +1,26 @@
-	public Object[] getChildren(final Object object) {
-		if (object instanceof PHPCodeData) {
-			ArrayList children = new ArrayList(Arrays.asList(phpContentProvider.getChildren(object)));
-			children.addAll(Arrays.asList(superClassContentProvider.getChildren(object)));
-			return children.toArray();
-		} else if (object instanceof DOMModelForPHP && mode == MODE_PHP) {
-			editorModel = (DOMModelForPHP) object;
-			editorModel.getDocument().getAdapterFor(IJFaceNodeAdapter.class);
-			final PHPFileData fileData = editorModel.getFileData();
-			if (fileData != null) {
-				final GroupNode[] groupNodes = getGroupNodes(fileData);
-				if (groupNodes != null)
-					return groupNodes;
+	public Object[] getChildren(Object parent) {
+		IModelElement sourceModule = null;
+		if (parent instanceof DOMModelForPHP) {
+			DOMModelForPHP model = (DOMModelForPHP) parent;
+			sourceModule = model.getModelElement();
+		}
+		if (parent instanceof SourceType) {
+			sourceModule = (IModelElement) parent;
+		}
+		if (sourceModule instanceof IParent) {
+			IParent c = (IParent) sourceModule;
+			try {
+				return filter(c.getChildren());
+			} catch (ModelException x) {
+				// https://bugs.eclipse.org/bugs/show_bug.cgi?id=38341
+				// don't log NotExist exceptions as this is a valid case
+				// since we might have been posted and the element
+				// removed in the meantime.
+				if (DLTKCore.DEBUG || !x.isDoesNotExist()) {
+					DLTKUIPlugin.log(x);
+				}
 			}
-			return getChildren(fileData);
-		} else if (object instanceof GroupNode)
-			return ((GroupNode) object).getChildren();
-		else if (object instanceof PHPTreeNode)
-			return ((PHPTreeNode) object).getChildren();
-		return super.getChildren(object);
+		}
+		return PHPContentOutlineConfiguration.NO_CHILDREN;
 	}
 

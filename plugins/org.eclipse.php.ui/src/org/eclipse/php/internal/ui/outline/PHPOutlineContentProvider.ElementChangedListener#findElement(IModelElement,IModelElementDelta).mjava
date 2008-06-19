@@ -1,0 +1,34 @@
+		protected IModelElementDelta findElement(IModelElement unit, IModelElementDelta delta) {
+
+			if (delta == null || unit == null) {
+				return null;
+			}
+
+			IModelElement element = delta.getElement();
+
+			if (unit.equals(element)) {
+				if (isPossibleStructuralChange(delta)) {
+					return delta;
+				}
+				return null;
+			}
+
+			if (element.getElementType() > IModelElement.SOURCE_MODULE) {
+				return null;
+			}
+
+			IModelElementDelta[] children = delta.getAffectedChildren();
+			if (children == null || children.length == 0) {
+				return null;
+			}
+
+			for (int i = 0; i < children.length; i++) {
+				IModelElementDelta d = findElement(unit, children[i]);
+				if (d != null) {
+					return d;
+				}
+			}
+
+			return null;
+		}
+
