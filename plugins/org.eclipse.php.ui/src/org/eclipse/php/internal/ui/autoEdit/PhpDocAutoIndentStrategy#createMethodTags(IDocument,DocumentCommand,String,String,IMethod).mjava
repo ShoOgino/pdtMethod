@@ -1,0 +1,21 @@
+	private String createMethodTags(IDocument document, DocumentCommand command, String indentation, String lineDelimiter, IMethod method)
+		throws CoreException, BadLocationException
+	{
+		IRegion partition= TextUtilities.getPartition(document, fPartitioning, command.offset, false);
+		IMethod inheritedMethod= getInheritedMethod(method);
+		// TODO : should fix the comment stub content 
+		// String comment= CodeGeneration.getMethodComment(method, inheritedMethod, lineDelimiter);
+		String comment= "";
+		if (comment != null) {
+			comment= comment.trim();
+			boolean ScriptdocComment= comment.startsWith("/**"); //$NON-NLS-1$
+			if (!isFirstComment(document, command, method, ScriptdocComment))
+				return null;
+			boolean isScriptdoc= partition.getLength() >= 3 && document.get(partition.getOffset(), 3).equals("/**"); //$NON-NLS-1$
+			if (ScriptdocComment == isScriptdoc) {
+				return prepareTemplateComment(comment, indentation, method.getScriptProject(), lineDelimiter);
+			}
+		}
+		return null;
+	}
+

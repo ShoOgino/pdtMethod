@@ -1,0 +1,18 @@
+	public static MethodOverrideTester getMethodOverrideTester(IType type) throws ModelException {
+		MethodOverrideTester test= null;
+		synchronized (fgMethodOverrideTesterCache) {
+			test= (MethodOverrideTester) fgMethodOverrideTesterCache.get(type);
+		}
+		if (test == null) {
+			ITypeHierarchy hierarchy= getTypeHierarchy(type); // don't nest the locks
+			synchronized (fgMethodOverrideTesterCache) {
+				test= (MethodOverrideTester) fgMethodOverrideTesterCache.get(type); // test again after waiting a long time for 'getTypeHierarchy'
+				if (test == null) {
+					test= new MethodOverrideTester(type, hierarchy);
+					fgMethodOverrideTesterCache.put(type, test);
+				}
+			}
+		}
+		return test;
+	}
+

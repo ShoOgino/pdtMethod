@@ -1,0 +1,24 @@
+	/**
+	 * Returns the range of the Scriptdoc prefix on the given line in
+	 * <code>document</code>. The prefix greedily matches the following regex
+	 * pattern: <code>\w*\*\w*</code>, that is, any number of whitespace
+	 * characters, followed by an asterisk ('*'), followed by any number of
+	 * whitespace characters.
+	 *
+	 * @param document the document to which <code>line</code> refers
+	 * @param line the line from which to extract the prefix range
+	 * @return an <code>IRegion</code> describing the range of the prefix on the given line
+	 * @throws BadLocationException if accessing the document fails
+	 */
+	private IRegion findPrefixRange(IDocument document, IRegion line) throws BadLocationException {
+		int lineOffset= line.getOffset();
+		int lineEnd= lineOffset + line.getLength();
+		int indentEnd= findEndOfWhiteSpace(document, lineOffset, lineEnd);
+		if (indentEnd < lineEnd && document.getChar(indentEnd) == '*') {
+			indentEnd++;
+			while (indentEnd < lineEnd && document.getChar(indentEnd) == ' ')
+				indentEnd++;
+		}
+		return new Region(lineOffset, indentEnd - lineOffset);
+	}
+

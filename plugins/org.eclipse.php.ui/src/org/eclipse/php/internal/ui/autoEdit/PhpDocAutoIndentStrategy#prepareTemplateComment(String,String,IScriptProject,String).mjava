@@ -1,0 +1,34 @@
+	/**
+	 * Removes start and end of a comment and corrects indentation and line
+	 * delimiters.
+	 *
+	 * @param comment the computed comment
+	 * @param indentation the base indentation
+	 * @param project the Java project for the formatter settings, or <code>null</code> for global preferences
+	 * @param lineDelimiter the line delimiter
+	 * @return a trimmed version of <code>comment</code>
+	 */
+	private String prepareTemplateComment(String comment, String indentation, IScriptProject project, String lineDelimiter) {
+		//	trim comment start and end if any
+		if (comment.endsWith("*/")) //$NON-NLS-1$
+			comment= comment.substring(0, comment.length() - 2);
+		comment= comment.trim();
+		if (comment.startsWith("/*")) { //$NON-NLS-1$
+			if (comment.length() > 2 && comment.charAt(2) == '*') {
+				comment= comment.substring(3); // remove '/**'
+			} else {
+				comment= comment.substring(2); // remove '/*'
+			}
+		}
+		// trim leading spaces, but not new lines
+		int nonSpace= 0;
+		int len= comment.length();
+		while (nonSpace < len && Character.getType(comment.charAt(nonSpace)) == Character.SPACE_SEPARATOR)
+				nonSpace++;
+		comment= comment.substring(nonSpace);
+		
+		return comment;
+		// TODO : should fix the formatter step
+		// return Strings.changeIndent(comment, 0, project, indentation, lineDelimiter);
+	}
+

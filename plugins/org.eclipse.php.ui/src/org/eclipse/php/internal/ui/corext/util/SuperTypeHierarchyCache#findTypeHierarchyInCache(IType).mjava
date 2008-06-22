@@ -1,0 +1,18 @@
+	private static ITypeHierarchy findTypeHierarchyInCache(IType type) {
+		synchronized (fgHierarchyCache) {
+			for (int i= fgHierarchyCache.size() - 1; i>= 0; i--) {
+				HierarchyCacheEntry curr= (HierarchyCacheEntry) fgHierarchyCache.get(i);
+				ITypeHierarchy hierarchy= curr.getTypeHierarchy();
+				if (!hierarchy.exists()) {
+					removeHierarchyEntryFromCache(curr);
+				} else {
+					if (hierarchy.contains(type)) {
+						curr.markAsAccessed();
+						return hierarchy;
+					}
+				}
+			}
+		}
+		return null;
+	}
+
