@@ -6,15 +6,11 @@
 		// so that if outline selects codedata, editor selects correct item
 		if (adapter instanceof ConfigurableContentOutlinePage && IContentOutlinePage.class.equals(required)) {
 			final ConfigurableContentOutlinePage outlinePage = (ConfigurableContentOutlinePage) adapter;
-			DoubleClickListener doubleClickListener = ((PHPContentOutlineConfiguration) outlinePage.getConfiguration()).getDoubleClickListener();
-			if (!doubleClickListener.isEnabled()) {
-				outlinePage.addDoubleClickListener(doubleClickListener);
-				doubleClickListener.setEnabled(true);
-			}
 			if (selectionListener == null) {
-				selectionListener = new OutlineSelectionListener(outlinePage);
+				selectionListener = new OutlineSelectionChangedListener();
+				outlinePage.addDoubleClickListener(selectionListener);
 			}
-			outlinePage.addSelectionChangedListener(selectionListener);
+			selectionListener.install(getSelectionProvider());
 		}
 		return adapter;
 	}
