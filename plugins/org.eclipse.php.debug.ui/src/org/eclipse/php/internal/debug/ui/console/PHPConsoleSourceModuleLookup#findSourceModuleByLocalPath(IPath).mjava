@@ -1,0 +1,29 @@
+	public ISourceModule findSourceModuleByLocalPath(final IPath path) {
+		final boolean isFullPath = EnvironmentPathUtils.isFull(path);
+		final IProject[] projects = getAllProjects();
+		final IPath[] enclosingProjectsAndZips = scope.enclosingProjectsAndZips();
+		for (int i = 0, max = projects.length; i < max; i++) {
+			try {
+				final IProject project = projects[i];
+				if (!checkScope(project, enclosingProjectsAndZips)) {
+					continue;
+				}
+				if (!project.isAccessible() || !DLTKLanguageManager.hasScriptNature(project))
+					continue;
+
+				IScriptProject scriptProject = model.getScriptProject(project);
+				final ISourceModule module = findInProject(scriptProject, path, isFullPath);
+				if (module != null) {
+					return module.exists() ? module : null;
+				}
+
+			} catch (CoreException e) {
+				// CoreException from hasNature - should not happen since we
+				// check that the project is accessible
+				// ModelException from getProjectFragments - a problem occurred
+				// while accessing project: nothing we can do, ignore
+			}
+		}
+		return null;
+	}
+

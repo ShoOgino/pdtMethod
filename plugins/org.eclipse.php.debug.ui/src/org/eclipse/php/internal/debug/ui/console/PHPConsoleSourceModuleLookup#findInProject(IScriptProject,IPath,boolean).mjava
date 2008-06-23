@@ -1,0 +1,24 @@
+	private ISourceModule findInProject(IScriptProject scriptProject, IPath path, boolean isFullPath) throws ModelException {
+		IProjectFragment[] roots = scriptProject.getProjectFragments();
+		for (int j = 0, rootCount = roots.length; j < rootCount; j++) {
+			final ProjectFragment root = (ProjectFragment) roots[j];
+			IPath rootPath = root.getPath();
+			if (!isFullPath) {
+				rootPath = EnvironmentPathUtils.getLocalPath(rootPath);
+			}
+			if (rootPath.isPrefixOf(path) && !Util.isExcluded(path, root.fullInclusionPatternChars(), root.fullExclusionPatternChars(), false)) {
+				IPath localPath = path.setDevice(null).removeFirstSegments(rootPath.segmentCount());
+				if (localPath.segmentCount() >= 1) {
+					final IScriptFolder folder;
+					if (localPath.segmentCount() > 1) {
+						folder = root.getScriptFolder(localPath.removeLastSegments(1));
+					} else {
+						folder = root.getScriptFolder(""); //$NON-NLS-1$
+					}
+					return folder.getSourceModule(localPath.lastSegment());
+				}
+			}
+		}
+		return null;
+	}
+
