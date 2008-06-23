@@ -4,24 +4,12 @@
 	 * @return the IFile that this strategy is operating on
 	 */
 	protected IFile getFile(ITextEditor textEditor) {
-		if (textEditor == null)
-			return null;
-		IEditorInput input = textEditor.getEditorInput();
-		if (input instanceof IFileEditorInput) {
-			return ((IFileEditorInput) input).getFile();
-		}
-		if (input instanceof IURIEditorInput) {
-			String filePath = new Path(((IURIEditorInput)input).getURI().getPath()).toOSString();
-			IFile result = ExternalFilesRegistry.getInstance().getFileEntry(filePath);
-			if (result == null && filePath.length() > 0 && filePath.charAt(0) == '/') {
-				return ExternalFilesRegistry.getInstance().getFileEntry(filePath.substring(1));
+		if (textEditor != null) {
+			IModelElement modelElement =  EditorUtility.getEditorInputModelElement(textEditor, false);
+			if (modelElement != null) {
+				return (IFile) modelElement.getResource();
 			}
-			return result;
-		}
-		if (input instanceof NonExistingPHPFileEditorInput) {
-			return (IFile)((NonExistingPHPFileEditorInput)input).getAdapter(IResource.class);
 		}
 		return null;
-		
 	}
 

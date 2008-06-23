@@ -15,52 +15,20 @@
 	 */
 	public boolean test(Object receiver, String property, Object[] args, Object expectedValue) {
 		if (receiver instanceof List) {
-			List list = (List) receiver;
+			List<?> list = (List<?>) receiver;
 			if (list.size() > 0) {
-				String launchType = args.length > 0 ? args[0].toString() : "";
-				// Test only the first element
-				IFile file = null;
 				Object obj = list.get(0);
-				if (obj instanceof FileEditorInput) {
-					FileEditorInput editorInput = (FileEditorInput) list.get(0);
-					file = editorInput.getFile();
-				} else if (obj instanceof IFile) {
-					file = (IFile) obj;
-				} else if (SCRIPT_ID.equalsIgnoreCase(launchType)) {
-					if (obj instanceof LocalFileStorageEditorInput) {
-						// In this case, the editor input is probably an external file. 
-						// Allow only script run/debug on this kind of file (internal executable launch).
-						LocalFileStorageEditorInput editorInput = (LocalFileStorageEditorInput) obj;
-						// Try to get it first from the external files registry.
-						IPath fullPath = editorInput.getStorage().getFullPath();
-						file = ExternalFilesRegistry.getInstance().getFileEntry(fullPath.toOSString());
-						if (file == null) {
-							return false; //if the files are not in the ExternalFilesRegistry then this 
-							//means they are coming from include path and we don't want to allow debugging those files directly only through user's files.
+				if (obj instanceof IAdaptable) {
+					IResource resource = (IResource)((IAdaptable)obj).getAdapter(IResource.class);
+					if (resource instanceof IFile) {
+						IFile file = (IFile) resource;
+						try {
+							return file.getContentDescription().getContentType().getId().equals(PHP_SOURCE_ID);
+						} catch (ResourceException re) {
+							return PHPModelUtil.isPhpFile(file);
+						} catch (Exception e) {
 						}
-					} else if (obj instanceof IURIEditorInput || obj instanceof NonExistingPHPFileEditorInput) {
-						IPath fullPath = null;
-						if (obj instanceof IURIEditorInput) {
-							fullPath = URIUtil.toPath(((IURIEditorInput) obj).getURI());
-						} else {
-							fullPath = ((NonExistingPHPFileEditorInput) obj).getPath();
-						}
-
-						file = ExternalFilesRegistry.getInstance().getFileEntry(fullPath.toOSString());
 					}
-				}
-				try {
-					//  Allow only a PHP Script launch shortcut in case the file is part of a non-PHP project.
-					if (file != null && file.getProject() != null && !file.getProject().hasNature(PHPNature.ID) && !SCRIPT_ID.equalsIgnoreCase(launchType)) {
-						return false;
-					}
-				} catch (CoreException ce) {
-				}
-				try {
-					return file.getContentDescription().getContentType().getId().equals(PHP_SOURCE_ID);
-				} catch (ResourceException re) {
-					return PHPModelUtil.isPhpFile(file);
-				} catch (Exception e) {
 				}
 			}
 		}
