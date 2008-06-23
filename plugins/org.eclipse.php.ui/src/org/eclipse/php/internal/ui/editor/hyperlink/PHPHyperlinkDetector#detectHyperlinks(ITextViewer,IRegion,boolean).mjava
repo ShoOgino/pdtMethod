@@ -6,15 +6,22 @@
 			return null;
 		}
 
-		int offset = region.getOffset();
-
 		IModelElement input = EditorUtility.getEditorInputModelElement(fEditor, false);
 		if (input == null) {
 			return null;
 		}
+		
+		IDocument document = textViewer.getDocument();
+		int offset = region.getOffset();
+		try {
+			while (offset > 0 && !Character.isJavaIdentifierPart(document.getChar(offset))) {
+				--offset;
+			}
+		} catch (BadLocationException e) {
+			Logger.logException(e);
+		}
 
 		try {
-			IDocument document = textViewer.getDocument();
 			IRegion wordRegion = ScriptWordFinder.findWord(document, offset);
 			if (wordRegion == null)
 				return null;
