@@ -6,7 +6,18 @@
 			viewer.setContentProvider(fContentProvider);
 		} else if (MODE_HTML == mode) {
 			if (fContentProviderHTML == null) {
-				fContentProviderHTML = new JFaceNodeContentProvider();
+				fContentProviderHTML = new JFaceNodeContentProvider() {
+					public Object[] getElements(Object object) {
+						if (object instanceof ISourceModule) {
+							IEditorPart activeEditor = PHPUiPlugin.getActiveEditor();
+							if (activeEditor instanceof StructuredTextEditor) {
+								StructuredTextEditor editor = (StructuredTextEditor) activeEditor;
+								object = editor.getModel();
+							}
+						}
+						return super.getElements(object);
+					}
+				};
 			}
 			viewer.setContentProvider(fContentProviderHTML);
 		}
