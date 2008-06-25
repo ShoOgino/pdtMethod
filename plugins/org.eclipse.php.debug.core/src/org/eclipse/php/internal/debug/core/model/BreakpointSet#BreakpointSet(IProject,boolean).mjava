@@ -5,32 +5,34 @@
 		fProjects = new ArrayList<IProject>();
 
 		if (project != null) {
-			PHPProjectOptions options = PHPProjectOptions.forProject(project);
-			if (options != null) {
-				IIncludePathEntry[] entries = options.readRawIncludePath();
-
-				if (entries != null) {
-					for (IIncludePathEntry element : entries) {
-						if (element.getEntryKind() == IIncludePathEntry.IPE_LIBRARY) {
-							IPath path = element.getPath();
-							File file = new File(path.toOSString());
-							fDirectories.add(file.getAbsolutePath());
-						} else if (element.getEntryKind() == IIncludePathEntry.IPE_PROJECT) {
-							IResource includeResource = element.getResource();
-							if (includeResource instanceof IContainer) {
-								fProjects.add(includeResource.getProject());
-							}
-						} else if (element.getEntryKind() == IIncludePathEntry.IPE_VARIABLE) {
-							IPath path = element.getPath();
-							String variableName = path.toOSString();
-							File file = getVariableFile(variableName);
-							if (file != null) {
-								if (file.isDirectory()) {
-									fDirectories.add(file.getAbsolutePath());
-								}
-							}
+			IBuildpathEntry[] entries = null;
+			try {
+				entries = DLTKCore.create(project).getRawBuildpath();
+			} catch (ModelException e) {
+			}
+			if (entries != null) {
+				for (IBuildpathEntry element : entries) {
+					if (element.getEntryKind() == IBuildpathEntry.BPE_LIBRARY) {
+						IPath path = element.getPath();
+						File file = new File(path.toOSString());
+						fDirectories.add(file.getAbsolutePath());
+					} else if (element.getEntryKind() == IBuildpathEntry.BPE_PROJECT) {
+						IResource includeResource = ResourcesPlugin.getWorkspace().getRoot().findMember(element.getPath().lastSegment());
+						if (includeResource instanceof IProject) {
+							fProjects.add((IProject) includeResource);
 						}
 					}
+					// TODO : should fix once DLTK expose variable mechanism
+					/* else if (element.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
+						IPath path = element.getPath();
+						String variableName = path.toOSString();
+						File file = getVariableFile(variableName);
+						if (file != null) {
+							if (file.isDirectory()) {
+								fDirectories.add(file.getAbsolutePath());
+							}
+						}
+					}*/
 				}
 			}
 		}

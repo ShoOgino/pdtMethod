@@ -69,14 +69,15 @@
 				File file = new File(remoteFile);
 				if (file.exists()) {
 					for (Object includePath : includePaths) {
-						if (includePath instanceof IIncludePathEntry) {
-							IIncludePathEntry entry = (IIncludePathEntry) includePath;
+						if (includePath instanceof IBuildpathEntry) {
+							IBuildpathEntry entry = (IBuildpathEntry) includePath;
 							IPath entryPath = entry.getPath();
-							if (entry.getEntryKind() == IIncludePathEntry.IPE_VARIABLE) {
-								entryPath = IncludePathVariableManager.instance().resolveVariablePath(entryPath.toString());
-							}
+							// TODO : should fix once DLTK expose variable mechanism
+//							if (entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
+//								entryPath = IncludePathVariableManager.instance().resolveVariablePath(entryPath.toString());
+//							}
 							if (entryPath != null && entryPath.isPrefixOf(Path.fromOSString(remoteFile))) {
-								Type type = (entry.getEntryKind() == IIncludePathEntry.IPE_VARIABLE) ? Type.INCLUDE_VAR : Type.INCLUDE_FOLDER;
+								Type type = /*(entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) ? Type.INCLUDE_VAR : */Type.INCLUDE_FOLDER;
 								localFile[0] = new PathEntry(file.getAbsolutePath(), type, entry);
 								pathMapper.addEntry(remoteFile, localFile[0]);
 								PathMapperRegistry.storeToPreferences();
@@ -94,30 +95,34 @@
 						} catch (InterruptedException e) {
 							PHPDebugPlugin.log(e);
 						}
-					} else if (includePath instanceof IIncludePathEntry) {
-						IIncludePathEntry entry = (IIncludePathEntry) includePath;
+					} else if (includePath instanceof IBuildpathEntry) {
+						IBuildpathEntry entry = (IBuildpathEntry) includePath;
 						IPath entryPath = entry.getPath();
-						if (entry.getEntryKind() == IIncludePathEntry.IPE_LIBRARY) {
-							if (entry.getContentKind() != IIncludePathEntry.K_BINARY) { // We don't support lookup in archive
-								File entryDir = entryPath.toFile();
-								find(entryDir, abstractPath, entry, results);
-							}
-						} else if (entry.getEntryKind() == IIncludePathEntry.IPE_PROJECT) {
-							IProject project = (IProject) entry.getResource();
-							if (project.isOpen() && project.isAccessible()) {
-								try {
-									find(project, abstractPath, results);
-								} catch (InterruptedException e) {
-									PHPDebugPlugin.log(e);
+						if (entry.getEntryKind() == IBuildpathEntry.BPE_LIBRARY) {
+							// We don't support lookup in archive
+							File entryDir = entryPath.toFile();
+							find(entryDir, abstractPath, entry, results);
+						} else if (entry.getEntryKind() == IBuildpathEntry.BPE_PROJECT) {
+							IResource res = ResourcesPlugin.getWorkspace().getRoot().findMember(entry.getPath().lastSegment());
+							if (res instanceof IProject) {
+								IProject project = (IProject) res;
+								if (project.isOpen() && project.isAccessible()) {
+									try {
+										find(project, abstractPath, results);
+									} catch (InterruptedException e) {
+										PHPDebugPlugin.log(e);
+									}
 								}
 							}
-						} else if (entry.getEntryKind() == IIncludePathEntry.IPE_VARIABLE) {
+						}
+						// TODO : should fix once DLTK expose variable mechanism
+						/*else if (entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
 							entryPath = IncludePathVariableManager.instance().resolveVariablePath(entryPath.toString());
 							if (entryPath != null) {
 								File entryDir = entryPath.toFile();
 								find(entryDir, abstractPath, entry, results);
 							}
-						}
+						}*/
 					}
 				}
 
