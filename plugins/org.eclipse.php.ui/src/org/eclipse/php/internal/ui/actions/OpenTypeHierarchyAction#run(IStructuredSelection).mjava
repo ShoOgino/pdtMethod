@@ -9,16 +9,22 @@
 				return;
 			Object input = selection.getFirstElement();
 			//|| firstElement instanceof PHPSuperClassNameData || firstElement instanceof PHPInterfaceNameData
-			if (!(input instanceof PHPCodeData)) {
+			if (!(input instanceof ISourceModule)) {
 				IStatus status = createStatus("A PHP element must be selected.");
 				ErrorDialog.openError(getShell(), getDialogTitle(), "Cannot create type hierarchy", status);
 				return;
 			}
-			PHPCodeData codeData = (PHPCodeData) input;
-			String fileName = codeData.getUserData().getFileName();
+			ISourceModule sourceModule = (ISourceModule) input;
+			String fileName = sourceModule.getElementName();
 			IModelElement element = DLTKCore.create(ResourcesPlugin.getWorkspace().getRoot().getFile(Path.fromOSString(fileName)));
 			if (element instanceof ISourceModule) {
-				int offset = codeData.getUserData().getStopPosition();
+				int offset = 0;
+				try {
+					offset = sourceModule.getSourceRange().getOffset();
+				} catch (ModelException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				IModelElement modelElement = getSelectionModelElement(offset, 1, (ISourceModule) element);
 				if (modelElement != null) {
 					if (!ActionUtil.isProcessable(getShell(), modelElement)) {

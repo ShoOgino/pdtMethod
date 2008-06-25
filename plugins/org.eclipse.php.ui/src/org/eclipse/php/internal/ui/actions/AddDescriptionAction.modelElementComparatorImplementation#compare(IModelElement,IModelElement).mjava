@@ -1,0 +1,30 @@
+		public int compare(IModelElement object1, IModelElement object2) {
+			/* handling null-pointers on both levels (object=null or object1.getUserData()=null)
+			   'null' objects will be considered as 'bigger' and will be pushed to the end of the array 
+			 */
+			if (object1 instanceof ISourceReference && object2 instanceof ISourceReference) {
+				ISourceReference sourceReference1 = (ISourceReference) object1;
+				ISourceReference sourceReference2 = (ISourceReference) object2;
+
+				try {
+					if (sourceReference1 == null || sourceReference1.getSourceRange() == null) {
+						if (sourceReference2 == null || sourceReference2.getSourceRange() == null) {
+							return 0; // both null => equal
+						} else
+							return 1; // only object1 is null => object1 is bigger
+					}
+
+					if (sourceReference2 == null || sourceReference2.getSourceRange() == null) {
+						return -1; // only object2 is null => object2 is bigger
+					}
+
+					return sourceReference1.getSourceRange().getOffset() - sourceReference2.getSourceRange().getOffset();
+
+				} catch (ModelException e) {
+					e.printStackTrace();
+				}
+			}
+			assert false; // we never supposed to get here
+			return 0;
+		}
+

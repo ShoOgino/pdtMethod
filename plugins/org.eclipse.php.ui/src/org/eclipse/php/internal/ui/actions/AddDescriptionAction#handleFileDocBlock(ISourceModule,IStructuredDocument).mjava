@@ -1,0 +1,61 @@
+	/**
+	 * Handle a situation where a file DocBlock is requested and there is an undocumented
+	 * class, function or define at the beginning of the document. 
+	 * In this case we auto-document the undocumented element to comply the DocBlock rules.
+	 *  
+	 * @param data	A PHPFileData that need to be documented
+	 * @param document The IStructuredDocument that we are working on
+	 */
+	private void handleFileDocBlock(ISourceModule data, IStructuredDocument document) {
+
+		// Find the first PHP script region:
+		IStructuredDocumentRegion sdRegion = document.getFirstStructuredDocumentRegion();
+		IPhpScriptRegion phpScriptRegion = null;
+		ITextRegion textRegion = null;
+		String docBlock = null;
+		while (sdRegion != null && docBlock == null) {
+			ITextRegion region = sdRegion.getFirstRegion();
+			if (region.getType() == PHPRegionContext.PHP_OPEN) {
+				// File's content starts with '<?PHP' tag
+				region = sdRegion.getRegionAtCharacterOffset(region.getEnd() + sdRegion.getStart());
+				if (region != null && region.getType() == PHPRegionContext.PHP_CONTENT) {
+					phpScriptRegion = (IPhpScriptRegion) region;
+					docBlock = createDocBlock(document, null);
+					break;
+				}
+			} else if (region.getType() == DOMRegionContext.XML_DECLARATION_OPEN) {
+				// File's content starts with HTML code
+				region = sdRegion.getRegionAtCharacterOffset(region.getEnd() + sdRegion.getStart());
+				if (region != null) {
+					phpScriptRegion = null;
+					textRegion = (ITextRegion) region;
+					docBlock = createPHPScopeDocBlock(document);
+					break;
+				}
+			}
+
+			sdRegion = sdRegion.getNext();
+		}
+
+		if (phpScriptRegion != null || textRegion != null) {
+			try {
+				int offset = 0;
+				if (phpScriptRegion == null && textRegion != null) {
+					// File's content starts with HTML code
+					offset = 0;
+				} else if (phpScriptRegion != null) {
+					// File's content starts with '<?PHP' tag
+					textRegion = phpScriptRegion.getPhpToken(0);
+					offset = textRegion.getStart() + sdRegion.getStartOffset() + phpScriptRegion.getStart() + 1;
+				} else {
+					assert false;//we shouldn't get here ...
+				}
+
+				if (data instanceof AbstractSourceModule)
+					insertDocBlock(document, offset, docBlock);
+
+			} catch (BadLocationException e) {
+			}
+		}
+	}
+

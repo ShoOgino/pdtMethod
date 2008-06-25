@@ -8,16 +8,22 @@
         if (selection.size() != 1)
             return;
         Object input= selection.getFirstElement();
-        if (!(input instanceof PHPCodeData)) {
+        if (!(input instanceof IModelElement)) {
 			IStatus status = createStatus("A PHP element must be selected.");
 			ErrorDialog.openError(getShell(), getErrorDialogTitle(), CallHierarchyMessages.OpenCallHierarchyAction_messages_title, status);
 			return;
 		}
-		PHPCodeData codeData = (PHPCodeData) input;
-		String fileName = codeData.getUserData().getFileName();
+        ISourceModule sourceModule = (ISourceModule) input;
+		String fileName = sourceModule.getElementName();
 		IModelElement element = DLTKCore.create(ResourcesPlugin.getWorkspace().getRoot().getFile(Path.fromOSString(fileName)));
 		if (element instanceof ISourceModule) {
-			int offset = codeData.getUserData().getStopPosition();
+			int offset = 0;
+			try {
+				offset = sourceModule.getSourceRange().getOffset();
+			} catch (ModelException e){
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}// getUserData().getStopPosition();
 			IModelElement modelElement = getSelectionModelElement(offset, 1, (ISourceModule) element);
 			if (modelElement != null) {
 				if (!ActionUtil.isProcessable(getShell(), modelElement)) {

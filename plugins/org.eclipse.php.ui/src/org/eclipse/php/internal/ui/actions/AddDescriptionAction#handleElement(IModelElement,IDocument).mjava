@@ -1,0 +1,29 @@
+	public String handleElement (IModelElement modelElem, IDocument document){
+		if (modelElem instanceof ISourceModule) {
+			handleFileDocBlock((ISourceModule) modelElem, (IStructuredDocument) document);
+			return null;
+		}
+
+		try {
+			startPosition = getCodeDataOffset(modelElem);
+		} catch (ModelException e) {
+			e.printStackTrace();
+			return null;
+		}
+
+		// Calculating indentation need to be added
+		String indentString = null;
+		try {
+			indentString = getIndentString(document, modelElem);
+		} catch (BadLocationException e) {
+			e.printStackTrace();
+			return null;
+		}
+
+		docBlock = createDocBlock(document, indentString);
+
+		String docBlockText = insertDocBlock((IStructuredDocument) document, startPosition, docBlock);
+		
+		return docBlockText;
+	}
+

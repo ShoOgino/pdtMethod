@@ -1,0 +1,25 @@
+	/**
+	 * Calculates the leading string to be used as indentation prefix 
+	 *  
+	 * @param document The IStructuredDocument that we are working on
+	 * @param modelElem	A PHPFileData that need to be documented
+	 * 
+	 * @return String to be used as leading indentation
+	 */
+	private String getIndentString(IDocument document, IModelElement modelElem) throws BadLocationException {
+		int elementOffset = 0;
+		String leadingString = null;
+		try {
+			elementOffset = getCodeDataOffset(modelElem);
+			int lineStartOffset = document.getLineInformationOfOffset(elementOffset).getOffset();
+			leadingString = document.get(lineStartOffset, elementOffset - lineStartOffset);
+		} catch (ModelException e) {
+			e.printStackTrace();
+			return null;
+		}
+		// replacing all non-spaces/tabs to single-space, in order to get "char-clean" prefix
+		leadingString = leadingString.replaceAll("[^\\s]", " ");
+
+		return leadingString;
+	}
+

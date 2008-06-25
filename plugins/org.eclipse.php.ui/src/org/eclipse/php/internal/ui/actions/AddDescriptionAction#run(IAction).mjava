@@ -1,36 +1,21 @@
 	public void run(IAction action) {
-		if (phpCodeData == null) {
+		if (fmodelElement == null) {
 			return;
 		}
-		
+
 		// Sorting the PHP code elements array by "first-line" position.
 		// this will enable "right" order of iteration
-		Arrays.sort(phpCodeData, new Comparator<PHPCodeData>() {
-			public int compare(PHPCodeData object1, PHPCodeData object2) {
 
-				/* handling null-pointers on both levels (object=null or object1.getUserData()=null)
-				   'null' objects will be considered as 'bigger' and will be pushed to the end of the array 
-				 */
-				if (object1 == null || object1.getUserData() == null){
-					if (object2 == null || object2.getUserData() == null) {
-						return 0 ;	// both null => equal
-					}else return 1;	// only object1 is null => object1 is bigger
-				}
-				if (object2 == null || object2.getUserData() == null){ 
-					return -1;		// only object2 is null => object2 is bigger
-				}
-				return object1.getUserData().getStartPosition() - object2.getUserData().getStartPosition() ;			
-			}	
-		});
-		
+		Arrays.sort(fmodelElement, new modelElementComparatorImplementation());
+
 		// iterating the functions that need to add 'PHP Doc' bottoms-up - to eliminate mutual interference
-		for (int i = phpCodeData.length-1 ; i >= 0; i--) {
-			PHPCodeData codeData = phpCodeData[i];
-			if (null == codeData){
-				continue ; // if we got to null pointer, skipping it
+		for (int i = fmodelElement.length - 1; i >= 0; i--) {
+			IModelElement modelElem = fmodelElement[i];
+			if (null == modelElem) {
+				continue; // if we got to null pointer, skipping it
 			}
 			IEditorPart editorPart;
-			IEditorInput input = EditorUtility.getEditorInput(codeData);
+			IEditorInput input = EditorUtility.getEditorInput(modelElem);
 			IWorkbenchPage page = PHPUiPlugin.getActivePage();
 			try {
 				editorPart = IDE.openEditor(page, input, PHPUiConstants.PHP_EDITOR_ID);
@@ -41,20 +26,14 @@
 			ITextEditor textEditor = EditorUtility.getPHPStructuredEditor(editorPart);
 			IEditorInput editorInput = editorPart.getEditorInput();
 			IDocument document = textEditor.getDocumentProvider().getDocument(editorInput);
-			if (codeData instanceof PHPFileData) {
-				handleFileDocBlock((PHPFileData) codeData, (IStructuredDocument) document);
-			}
-			PHPDocBlock docBlock = PHPDocTool.createPhpDoc(codeData);
-			int startPosition = getCodeDataOffset(codeData);
-			String dockBlockText = insertDocBlock(codeData, (IStructuredDocument) document, startPosition);
-			if (dockBlockText == null) {
+			
+			String docBlockText = handleElement(modelElem, document);
+			if (docBlockText == null) {
+				assert false;
 				return;
 			}
-			String shortDescription = docBlock.getShortDescription();
-			int shortDescriptionInnerOffset = dockBlockText.indexOf(shortDescription);
-			int shortDescriptionStartOffset = startPosition + shortDescriptionInnerOffset;
-
-			EditorUtility.revealInEditor(textEditor, shortDescriptionStartOffset, shortDescription.length());
+			
+			EditorUtility.revealInEditor(textEditor, startPosition, docBlock.length());
 		}
 	}
 
