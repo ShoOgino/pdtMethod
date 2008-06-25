@@ -3,9 +3,9 @@
 				return "External Files";
 			}
 
-			if (element instanceof IIncludePathEntry) {
-				IIncludePathEntry includePathEntry = (IIncludePathEntry) element;
-				return includePathEntry.getPath().toOSString();
+			if (element instanceof IBuildpathEntry) {
+				IBuildpathEntry includePathEntry = (IBuildpathEntry) element;
+				return EnvironmentPathUtils.getLocalPathString(includePathEntry.getPath());
 			}
 
 			if (!(element instanceof PathEntry)) {
@@ -24,14 +24,15 @@
 				}
 			}
 			if (entry.getType() == Type.INCLUDE_FOLDER || entry.getType() == Type.INCLUDE_VAR) {
-				IIncludePathEntry includePathEntry = (IIncludePathEntry) entry.getContainer();
-				String includePath = includePathEntry.getPath().toString();
-				if (includePathEntry.getEntryKind() == IIncludePathEntry.IPE_VARIABLE) {
-					IPath p = IncludePathVariableManager.instance().resolveVariablePath(includePath);
-					if (p != null) {
-						includePath = p.toOSString();
-					}
-				}
+				IBuildpathEntry includePathEntry = (IBuildpathEntry) entry.getContainer();
+				String includePath = EnvironmentPathUtils.getLocalPathString(includePathEntry.getPath());
+				// TODO : fix once DLTK exposes variables
+//				if (includePathEntry.getEntryKind() == IBuildpathEntry.IPE_VARIABLE) {
+//					IPath p = IncludePathVariableManager.instance().resolveVariablePath(includePath);
+//					if (p != null) {
+//						includePath = p.toOSString();
+//					}
+//				}
 				if (includePath != null && path.startsWith(includePath)) {
 					path = path.substring(includePath.length());
 				}

@@ -3,14 +3,16 @@
 		// Add include paths:
 		if (parentElement instanceof IProject) {
 			IProject project = (IProject) parentElement;
-			PHPProjectOptions options = PHPProjectOptions.forProject(project);
-			if (options != null) {
-				IIncludePathEntry[] includePaths = options.readRawIncludePath();
-				for (IIncludePathEntry entry : includePaths) {
-					if (entry.getEntryKind() != IncludePathEntry.IPE_PROJECT) {
+			IScriptProject scriptProject = DLTKCore.create(project);
+			try {
+				IBuildpathEntry[] includePaths = scriptProject.getRawBuildpath();
+				for (IBuildpathEntry entry : includePaths) {
+					if (entry.getEntryKind() != IBuildpathEntry.BPE_PROJECT) {
 						r.add(entry);
 					}
 				}
+			} catch (ModelException e) {
+				Logger.logException(e);
 			}
 		}
 		return r.toArray();
