@@ -1,0 +1,41 @@
+	/*
+	 * constructs a build entry from an element 
+	 */
+	private static IBuildpathEntry elementDecode(Element element) {
+
+		String entryKindAttr = element.getAttribute(TAG_ENTRY_KIND);
+		String pathAttr = element.getAttribute(TAG_PATH);
+		String resourceAttr = element.getAttribute(TAG_RESOURCE);
+
+		// exported flag (optional)
+		boolean isExported = element.getAttribute(TAG_EXPORTED).equals("true"); //$NON-NLS-1$
+		IBuildpathEntry entry = null;
+		IPath path = null;
+
+		int entryKind = entryKindFromString(entryKindAttr);
+		switch (entryKind) {
+			case IBuildpathEntry.BPE_PROJECT:
+				path = ResourcesPlugin.getWorkspace().getRoot().getProject(resourceAttr).getFullPath();
+				if (path != null) {
+					entry = DLTKCore.newProjectEntry(path, isExported);
+				}
+				break;
+			case IBuildpathEntry.BPE_LIBRARY:
+				if ("var".equalsIgnoreCase(entryKindAttr)) {
+					path = IncludePathVariableManager.instance().resolveVariablePath(pathAttr);
+					if (path != null) {
+						entry = DLTKCore.newExtLibraryEntry(path.makeAbsolute());
+					}
+				} else {
+					entry = DLTKCore.newLibraryEntry(new Path(pathAttr).makeAbsolute());
+				}
+			case IBuildpathEntry.BPE_CONTAINER:
+				break;
+			case IBuildpathEntry.BPE_SOURCE:
+				entry = DLTKCore.newSourceEntry(path);
+				break;
+		}
+
+		return entry;
+	}
+

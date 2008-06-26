@@ -1,0 +1,50 @@
+	/*
+	 * Reads the project include paths and returns the corresponding build paths
+	 */
+	public static IBuildpathEntry[] convertIncludePathForProject(IProject project) {
+		try {
+			ProjectScope projectScope = new ProjectScope(project);
+			// reads the project options created by the old model
+			IEclipsePreferences preferences = projectScope.getNode(PREF_QUALIFIER);
+			String includePathXml = preferences.get(PHPCoreConstants.PHPOPTION_INCLUDE_PATH, null);
+
+			if (includePathXml == null) {
+				return buildpathEntries;
+			}
+
+			// parse the includes xml 
+			Element cpElement;
+			final Reader reader = new StringReader(includePathXml);
+
+			try {
+				final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+				cpElement = parser.parse(new InputSource(reader)).getDocumentElement();
+			} catch (final Exception e) {
+				throw new IOException(CoreMessages.getString("PHPProjectOptions_1"));
+			} finally {
+				reader.close();
+			}
+
+			// convert each node in the xml into a build path entry 
+			final List<IBuildpathEntry> paths = new ArrayList<IBuildpathEntry>();
+			NodeList list = cpElement.getElementsByTagName(TAG_INCLUDEPATHENTRY);
+			for (int i = 0; i < list.getLength(); ++i) {
+				final Node node = list.item(i);
+				if (node.getNodeType() == Node.ELEMENT_NODE) {
+					final IBuildpathEntry entry = elementDecode((Element) node);
+					if (entry != null) {
+						paths.add(entry);
+					}
+				}
+			}
+			final int pathSize = paths.size();
+			buildpathEntries = new IBuildpathEntry[pathSize];
+			return paths.toArray(buildpathEntries);
+		} catch (IOException e) {
+			PHPCorePlugin.log(e);
+		} finally {
+
+		}
+		return buildpathEntries;
+	}
+
