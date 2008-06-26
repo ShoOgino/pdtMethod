@@ -1,27 +1,18 @@
-	public Object[] getChildren(Object parentElement) {
-		if (!exists(parentElement)) {
-			return NO_CHILDREN;
-		}
-		if (parentElement instanceof PHPLanguageModel) {
-			//			PHPLanguageModel model = (PHPLanguageModel) parentElement;
-			CodeData[] functions = model.getFunctions();
-			CodeData[] classes = model.getClasses();
-			//			CodeData[] constants = model.getConstants();
-			Object[] rootsChildren = NO_CHILDREN;
-			if (functions.length > 0 && classes.length > 0 /*&& constants.length > 0*/) {
-				rootsChildren = new Object[classes.length + functions.length + 1];
-				rootsChildren[0] = CONSTANTS_NODE_NAME;
-				System.arraycopy(classes, 0, rootsChildren, 1, classes.length);
-				System.arraycopy(functions, 0, rootsChildren, classes.length + 1, functions.length);
+	/* (non-Javadoc)
+	 * @see org.eclipse.dltk.internal.ui.StandardModelElementContentProvider#getChildren(java.lang.Object)
+	 */
+	@Override
+	public Object[] getChildren(Object element) {
+		List<Object> children = new ArrayList<Object>();
+		
+		if (element instanceof IBuildpathEntry[]) {
+			IBuildpathEntry[] entries = (IBuildpathEntry[]) element;
+			for (IBuildpathEntry buildpathEntry : entries) {
+				final Object[] child = super.getChildren(buildpathEntry);
+				children.addAll(Arrays.asList(child));
 			}
-			return rootsChildren;
 		}
-		if (parentElement instanceof PHPClassData) {
-			return getClassChildren((PHPClassData) parentElement);
-		}
-		if (parentElement.equals(CONSTANTS_NODE_NAME)) {
-			return model.getConstants();
-		}
-		return NO_CHILDREN;
+		
+		return children.toArray(new Object[children.size()]);
 	}
 
