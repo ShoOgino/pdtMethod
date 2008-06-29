@@ -1,0 +1,23 @@
+	private void modifyProject(IProject project) throws CoreException, ModelException {
+		if (phpNature == null) {
+			phpNature = new PHPNature();
+		}
+		// add the required builders and build paths as defined in the new PHP nature
+		phpNature.setProject(project);
+		phpNature.configure();
+
+		IScriptProject scriptProject = DLTKCore.create(project);
+		// merge the project build path with the old include path
+		IBuildpathEntry[] existingPath = scriptProject.getRawBuildpath();
+
+		ArrayList<IBuildpathEntry> newPath = new ArrayList<IBuildpathEntry>();
+		if (existingPath != null) {
+			newPath.addAll(Arrays.asList(existingPath));
+		}
+		IBuildpathEntry[] oldIncludePath = ProjectBackwardCompatibilityUtil.convertIncludePathForProject(project);
+		if (oldIncludePath != null) {
+			newPath.addAll(Arrays.asList(oldIncludePath));
+		}
+		scriptProject.setRawBuildpath(newPath.toArray(new IBuildpathEntry[newPath.size()]), new NullProgressMonitor());
+	}
+
