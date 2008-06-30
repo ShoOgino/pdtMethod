@@ -1,19 +1,22 @@
+	@SuppressWarnings("unchecked")
 	public Object getAdapter(Object adaptableObject, Class adapterType) {
 		ITextEditor editorPart = (ITextEditor) adaptableObject;
-		IResource resource = (IResource) editorPart.getEditorInput().getAdapter(IResource.class);
-		if (resource == null) {
-			return null;
+		
+		boolean isPHPFile = false;
+		
+		if (editorPart instanceof PHPStructuredEditor) {
+			IModelElement modelElement = ((PHPStructuredEditor)editorPart).getModelElement();
+			isPHPFile = PHPModelUtil.isPhpElement(modelElement);
+		} else {
+			IResource resource = (IResource) editorPart.getEditorInput().getAdapter(IResource.class);
+			if (resource instanceof IFile) {
+				isPHPFile = PHPModelUtil.isPhpFile((IFile) resource);
+			}
 		}
-		if (resource.getType() != IResource.FILE) {
-			return null;
-		}
-		if (!PHPModelUtil.isPhpFile((IFile) resource)) {
-			return null;
-		}
-		if (adapterType.equals(IRunToLineTarget.class)) {
+		
+		if (isPHPFile && adapterType == IRunToLineTarget.class) {
 			return new PHPRunToLineAdapter();
 		}
 		return null;
-
 	}
 
