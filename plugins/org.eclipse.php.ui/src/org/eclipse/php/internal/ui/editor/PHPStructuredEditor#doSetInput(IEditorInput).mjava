@@ -1,8 +1,8 @@
 	@Override
 	protected void doSetInput(IEditorInput input) throws CoreException {
 		IResource resource = null;
-		IPath externalPath = null;
 		isExternal = false;
+		
 		if (input instanceof IFileEditorInput) {
 			// This is the existing workspace file
 			final IFileEditorInput fileInput = (IFileEditorInput) input;
@@ -18,56 +18,23 @@
 
 			if (storage instanceof ZipEntryStorage) {
 				resource = ((ZipEntryStorage) storage).getProject();
-			} else if (storage instanceof LocalFileStorage) {
-				// don't create external resource, it's wrong! Include paths
-				// should not have a resource.
-			} else {
-				// This is, probably, a remote storage:
-				externalPath = storage.getFullPath();
-//				resource = ExternalFileWrapper.createFile(externalPath.toOSString());
 			}
-		} else if (input instanceof IURIEditorInput || input instanceof NonExistingPHPFileEditorInput) {
-			// External file editor input. It's usually used when opening PHP
-			// file
-			// via "File -> Open File" menu option, or using D&D:
-			// OR
-			// When we are dealing with an Untitled PHP document and the
-			// underlying PHP file
-			// does not really exist, but is still considered as an "External"
-			// file.
-			if (input instanceof NonExistingPHPFileEditorInput) {
-				externalPath = ((NonExistingPHPFileEditorInput) input).getPath();
-			} else {
-				externalPath = URIUtil.toPath(((IURIEditorInput) input).getURI());
-			}
-//			resource = ExternalFileWrapper.createFile(externalPath.toOSString());
 		}
 
 		if (resource instanceof IFile) {
 			if (PHPModelUtil.isPhpFile((IFile) resource)) {
-				// Add file decorator entry to the list of external files:
-//				if (externalPath != null && resource instanceof ExternalFileWrapper) {
-//					ExternalFilesRegistry.getInstance().addFileEntry(externalPath.toOSString(), (ExternalFileWrapper) resource);
-//					isExternal = true;
-//				}
-				// Remove an older record from the external files registry in
-				// case this editor
-				// is being reused to display a new content.
-				IEditorInput oldInput = getEditorInput();
-//				if (oldInput != null && oldInput instanceof IStorageEditorInput) {
-//					String storagePath = ((IStorageEditorInput) oldInput).getStorage().getFullPath().toOSString();
-//					ExternalFilesRegistry.getInstance().removeFileEntry(storagePath);
-//				}
+
 				PhpSourceParser.editFile.set(resource);
+				
 				super.doSetInput(input);
 
 				initPHPVersionsListener();
 
 			} else {
 				super.doSetInput(input);
-				// close(false);
 			}
 		} else {
+			isExternal = true;
 			super.doSetInput(input);
 		}
 
