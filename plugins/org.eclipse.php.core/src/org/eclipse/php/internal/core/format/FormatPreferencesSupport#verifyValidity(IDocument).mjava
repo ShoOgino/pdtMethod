@@ -3,9 +3,23 @@
 			DOMModelForPHP editorModel = null;
 			try {
 				editorModel = (DOMModelForPHP) StructuredModelManager.getModelManager().getExistingModelForRead(document);
-				final IFile file = editorModel.getIFile();
-				if (file == null)
+				
+				String baseLocation = editorModel.getBaseLocation();
+				// The baseLocation may be a path on disk or relative to the
+				// workspace root. Don't translate on-disk paths to
+				// in-workspace resources.
+				IPath basePath = new Path(baseLocation);
+				IFile file = null;
+				if (basePath.segmentCount() > 1) {
+					file = ResourcesPlugin.getWorkspace().getRoot().getFile(basePath);
+					if (!file.exists()) {
+						file = null;
+					}
+				}
+				if (file == null) {
 					return;
+				}
+
 				IProject project = file.getProject();
 				if (fLastProject != project) {
 					fLastProject = project;
