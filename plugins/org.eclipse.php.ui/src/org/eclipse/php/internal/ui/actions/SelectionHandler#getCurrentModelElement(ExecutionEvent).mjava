@@ -1,0 +1,36 @@
+	/**
+	 * Returns the current model element from the PHP editor 
+	 * @param event
+	 * @return
+	 * @throws ModelException
+	 */
+	protected IModelElement getCurrentModelElement(ExecutionEvent event) throws ExecutionException {
+		IEditorPart editorPart = HandlerUtil.getActiveEditor(event); 
+		PHPStructuredEditor textEditor = null;
+		if (editorPart instanceof PHPStructuredEditor)
+			textEditor = (PHPStructuredEditor) editorPart;
+		else {
+			Object o = editorPart.getAdapter(ITextEditor.class);
+			if (o != null)
+				textEditor = (PHPStructuredEditor) o;
+		}
+		final IModelElement modelElement = textEditor.getModelElement();
+		if (textEditor != null && modelElement != null) {
+			final ISelectionProvider selectionProvider = textEditor.getSelectionProvider();
+			final ISelection selection = selectionProvider.getSelection();
+			if (selection instanceof TextSelection) {
+				TextSelection textSelection = (TextSelection) selection;
+				final int offset = textSelection.getOffset();
+				if (modelElement instanceof SourceModule) {
+					SourceModule module = (SourceModule) modelElement;
+					try {
+						return module.getElementAt(offset);
+					} catch (ModelException e) {
+						throw new ExecutionException("Error trying to resolve document's element", e); //$NON-NLS-1 
+					}
+				}
+			}
+		}
+		return null;
+	}
+
