@@ -8,22 +8,22 @@
 	 */
 	private void indentAfterNewLine(IDocument d, DocumentCommand c) {
 
-		int offset= c.offset;
+		int offset = c.offset;
 		if (offset == -1 || d.getLength() == 0)
 			return;
 
 		try {
-			int p= (offset == d.getLength() ? offset - 1 : offset);
-			IRegion line= d.getLineInformationOfOffset(p);
+			int p = (offset == d.getLength() ? offset - 1 : offset);
+			IRegion line = d.getLineInformationOfOffset(p);
 
-			int lineOffset= line.getOffset();
-			int firstNonWS= findEndOfWhiteSpace(d, lineOffset, offset);
+			int lineOffset = line.getOffset();
+			int firstNonWS = findEndOfWhiteSpace(d, lineOffset, offset);
 			Assert.isTrue(firstNonWS >= lineOffset, "indentation must not be negative"); //$NON-NLS-1$
 
-			StringBuffer buf= new StringBuffer(c.text);
-			IRegion prefix= findPrefixRange(d, line);
-			String indentation= d.get(prefix.getOffset(), prefix.getLength());
-			int lengthToAdd= Math.min(offset - prefix.getOffset(), prefix.getLength());
+			StringBuffer buf = new StringBuffer(c.text);
+			IRegion prefix = findPrefixRange(d, line);
+			String indentation = d.get(prefix.getOffset(), prefix.getLength());
+			int lengthToAdd = Math.min(offset - prefix.getOffset(), prefix.getLength());
 
 			buf.append(indentation.substring(0, lengthToAdd));
 
@@ -33,15 +33,19 @@
 					buf.append(" * "); //$NON-NLS-1$
 					boolean preference = true; // isPreferenceTrue(PreferenceConstants.EDITOR_CLOSE_ScriptdocS);	
 					if (preference && isNewComment(d, offset)) {
-						c.shiftsCaret= false;
-						c.caretOffset= c.offset + buf.length();
-						String lineDelimiter= TextUtilities.getDefaultLineDelimiter(d);
-						
-						int eolOffset= lineOffset + line.getLength();
-						int replacementLength= eolOffset - p;
-						String restOfLine= d.get(p, replacementLength);
-						String endTag= lineDelimiter + indentation + " */"; //$NON-NLS-1$
+						c.shiftsCaret = false;
+						c.caretOffset = c.offset + buf.length();
+						String lineDelimiter = TextUtilities.getDefaultLineDelimiter(d);
 
+						int eolOffset = lineOffset + line.getLength();
+						int replacementLength = eolOffset - p;
+						String restOfLine = d.get(p, replacementLength);
+						String endTag = lineDelimiter + indentation + " */"; //$NON-NLS-1$
+
+						//Check if we need end tag
+						if (getCommentEnd(d, offset) > 0) {
+							endTag = "";
+						}
 						preference = true; // isPreferenceTrue(PreferenceConstants.EDITOR_ADD_Scriptdoc_TAGS);
 						if (preference) {
 							// we need to close the comment before computing
@@ -49,12 +53,12 @@
 							d.replace(offset, replacementLength, endTag);
 
 							// evaluate method signature
-							ISourceModule unit= getCompilationUnit();
+							ISourceModule unit = getCompilationUnit();
 
 							if (unit != null) {
 								try {
 									ScriptModelUtil.reconcile(unit);
-									String string= createScriptdocTags(d, c, indentation, lineDelimiter, unit);
+									String string = createScriptdocTags(d, c, indentation, lineDelimiter, unit);
 									buf.append(restOfLine);
 									// only add tags if they are non-empty - the empty line has already been added above.
 									if (string != null && !string.trim().equals("*")) //$NON-NLS-1$
@@ -64,7 +68,7 @@
 								}
 							}
 						} else {
-							c.length= replacementLength;
+							c.length = replacementLength;
 							buf.append(restOfLine);
 							buf.append(endTag);
 						}
@@ -75,8 +79,8 @@
 
 			// move the caret behind the prefix, even if we do not have to insert it.
 			if (lengthToAdd < prefix.getLength())
-				c.caretOffset= offset + prefix.getLength() - lengthToAdd;
-			c.text= buf.toString();
+				c.caretOffset = offset + prefix.getLength() - lengthToAdd;
+			c.text = buf.toString();
 
 		} catch (BadLocationException excp) {
 			// stop work
