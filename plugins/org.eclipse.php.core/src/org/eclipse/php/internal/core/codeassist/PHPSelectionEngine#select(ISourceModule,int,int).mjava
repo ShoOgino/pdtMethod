@@ -1,5 +1,5 @@
 	public IModelElement[] select(ISourceModule sourceUnit, int offset, int end) {
-		
+
 		if (end < offset) {
 			end = offset + 1;
 		}
@@ -11,6 +11,7 @@
 		}
 
 		// Use the old way by playing with document & buffer:
+		IStructuredDocument document = null;
 		IStructuredModel structuredModel = null;
 		boolean isUnmanaged = false;
 		try {
@@ -20,9 +21,8 @@
 				structuredModel = StructuredModelManager.getModelManager().createUnManagedStructuredModelFor(file);
 				isUnmanaged = true;
 			}
-			if (structuredModel instanceof DOMModelForPHP) {
-				DOMModelForPHP domModelForPHP = (DOMModelForPHP) structuredModel;
-				return internalResolve(domModelForPHP, sourceUnit, offset, end);
+			if (structuredModel instanceof AbstractStructuredModel) {
+				document = ((AbstractStructuredModel) structuredModel).getStructuredDocument();
 			}
 		} catch (Exception e) {
 			Logger.logException(e);
@@ -30,6 +30,10 @@
 			if (structuredModel != null && !isUnmanaged) {
 				structuredModel.releaseFromRead();
 			}
+		}
+
+		if (document != null) {
+			return internalResolve(document, sourceUnit, offset, end);
 		}
 
 		return EMPTY;

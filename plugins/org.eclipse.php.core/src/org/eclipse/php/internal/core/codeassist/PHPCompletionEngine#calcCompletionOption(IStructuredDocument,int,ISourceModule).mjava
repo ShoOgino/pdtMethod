@@ -1,4 +1,4 @@
-	protected void calcCompletionOption(DOMModelForPHP domModelForPHP, int offset, ISourceModule sourceModule) throws BadLocationException {
+	protected void calcCompletionOption(IStructuredDocument document, int offset, ISourceModule sourceModule) throws BadLocationException {
 
 		this.sourceModule = sourceModule;
 
@@ -6,17 +6,20 @@
 		isPHP5 = phpVersion.equals(PHPVersion.PHP5);
 
 		// Find the structured document region:
-		IStructuredDocument document = (IStructuredDocument) domModelForPHP.getDocument().getStructuredDocument();
 		IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(offset);
 		int lastOffset = offset;
 		while (sdRegion == null && lastOffset >= 0) {
 			lastOffset--;
 			sdRegion = document.getRegionAtCharacterOffset(lastOffset);
 		}
+		
+		if (sdRegion == null) {
+			return;
+		}
 
 		ITextRegion textRegion = null;
 		// 	in case we are at the end of the document, asking for completion
-		if (offset == domModelForPHP.getStructuredDocument().getLength()) {
+		if (offset == document.getLength()) {
 			textRegion = sdRegion.getLastRegion();
 		} else {
 			textRegion = sdRegion.getRegionAtCharacterOffset(offset);
