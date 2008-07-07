@@ -7,7 +7,8 @@
 
 		boolean inClass = false;
 		try {
-			if (((SourceModule) sourceModule.getModelElement()).getElementAt(offset) instanceof IType) {
+			IModelElement enclosingElement = ((SourceModule) sourceModule.getModelElement()).getElementAt(offset);
+			if (enclosingElement instanceof IType) {
 				inClass = true;
 			}
 		} catch (ModelException e) {
@@ -19,7 +20,7 @@
 		int relevanceConst = RELEVANCE_CONST;
 		int relevanceClass = RELEVANCE_CLASS;
 		int relevanceMethod = RELEVANCE_METHOD;
-		
+
 		Collection<KeywordData> keywordsList = PHPKeywords.findByPrefix(((SourceModule) sourceModule).getScriptProject().getProject(), prefix);
 		for (KeywordData k : keywordsList) {
 			if (inClass == k.isClassKeyword) {
@@ -42,7 +43,26 @@
 					}
 				}
 
-				
+				// Complete local scope variables:
+				try {
+					IModelElement enclosingElement = ((SourceModule) sourceModule.getModelElement()).getElementAt(offset);
+					if (enclosingElement instanceof IMethod) {
+						IMethod method = (IMethod) enclosingElement;
+						IModelElement[] variables = CodeAssistUtils.getMethodFields(method, prefix, false);
+						for (IModelElement var : variables) {
+							IField field = (IField) var;
+							if ((field.getFlags() & Modifiers.AccConstant) != 0) {
+								reportField(field, relevanceConst--, false);
+							} else {
+								reportField(field, relevanceVar--, false);
+							}
+						}
+					}
+				} catch (ModelException e) {
+					Logger.logException(e);
+				}
+
+				// Complete global scope variables:
 				IModelElement[] variables = CodeAssistUtils.getWorkspaceFields(prefix, false);
 				for (IModelElement var : variables) {
 					IField field = (IField) var;
@@ -56,7 +76,7 @@
 						Logger.logException(e);
 					}
 				}
-				
+
 				IMethod containerMethodData = CodeAssistUtils.getContainerMethodData(sourceModule, offset);
 				if (containerMethodData != null && containerMethodData.getDeclaringType() != null) {
 					reportVariables(classVariables, prefix, relevanceVar--, false);
@@ -76,7 +96,7 @@
 			IModelElement[] functions = CodeAssistUtils.getWorkspaceMethods(prefix, false);
 			for (IModelElement function : functions) {
 				try {
-					if ((((IMethod)function).getFlags() & IPHPModifiers.Internal) == 0) {
+					if ((((IMethod) function).getFlags() & IPHPModifiers.Internal) == 0) {
 						reportMethod((IMethod) function, relevanceMethod--);
 					}
 				} catch (ModelException e) {
@@ -103,7 +123,7 @@
 				IModelElement[] classes = CodeAssistUtils.getWorkspaceClasses(prefix, false);
 				for (IModelElement type : classes) {
 					try {
-						if ((((IType)type).getFlags() & IPHPModifiers.Internal) == 0) {
+						if ((((IType) type).getFlags() & IPHPModifiers.Internal) == 0) {
 							reportType((IType) type, relevanceClass--, PAAMAYIM_NEKUDOTAIM);
 						}
 					} catch (ModelException e) {
