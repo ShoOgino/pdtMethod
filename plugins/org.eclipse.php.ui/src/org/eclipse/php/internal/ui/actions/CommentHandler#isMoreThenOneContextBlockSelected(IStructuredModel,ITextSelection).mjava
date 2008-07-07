@@ -1,29 +1,30 @@
-	protected boolean isMoreThenOneContextBlockSelected (IStructuredModel model, ITextSelection textSelection) {
-		IndexedRegion selectionStartIndexedRegion = model.getIndexedRegion(textSelection.getOffset());
-	
-		int regionEndOffset = 0 ;
-		int selectionEndOffset = textSelection.getOffset() + textSelection.getLength();
-		
-		if (selectionStartIndexedRegion instanceof NodeImpl){ 
-			regionEndOffset  = ((NodeImpl)selectionStartIndexedRegion).getEndOffset();
-			if (selectionEndOffset < regionEndOffset){
-				return false;
-			}
-		}else{
+	protected boolean isMoreThenOneContextBlockSelected(IStructuredModel model, ITextSelection textSelection) {
+		IStructuredDocument structuredDocument = model.getStructuredDocument();
+		if (structuredDocument == null) {
 			assert false;
 			return true;
 		}
-		// searching for PHP open/close tags within the selected text for oh content start/end.
-		while (selectionStartIndexedRegion != null && (regionEndOffset < selectionEndOffset) ){
-			regionEndOffset = ((NodeImpl)selectionStartIndexedRegion).getEndOffset();
-			String regionAsString = selectionStartIndexedRegion.toString();
-			if(regionAsString.contains("<?PHP") || regionAsString.contains("<?") || regionAsString.contains("?>") ){
+
+		IStructuredDocumentRegion[] structuredDocumentRegions = structuredDocument.getStructuredDocumentRegions(textSelection.getOffset(), textSelection.getLength());
+		if (structuredDocumentRegions == null || structuredDocumentRegions.length == 0) {
+			assert false;
+			return true;
+		}
+
+		if (structuredDocumentRegions.length == 1 && isPhpDocumentRegion(structuredDocumentRegions[0])) {
+			//single PHP element and the selection is inside the element boundaries
+			return false;
+		}
+
+		// Handling case there is more then 1 region within the selection,
+		// if we encounter PHP open/close Tag - it means we are not only within HTML context
+		for (IStructuredDocumentRegion structuredDocumentRegion : structuredDocumentRegions) {
+			if (isPhpDocumentRegion(structuredDocumentRegion)) {
 				return true;
 			}
-			selectionStartIndexedRegion = model.getIndexedRegion(selectionStartIndexedRegion.getEndOffset());
+		}
 
-		}	
-					
+		// all regions are !PHP
 		return false;
 	}
 
