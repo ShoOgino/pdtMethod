@@ -1,0 +1,40 @@
+	void processAction(ITextEditor textEditor, IDocument document, ITextSelection textSelection) {
+		// get text selection lines info
+		int selectionStartLine = textSelection.getStartLine();
+		int selectionEndLine = textSelection.getEndLine();
+		try {
+			int selectionEndLineOffset = document.getLineOffset(selectionEndLine);
+			int selectionEndOffset = textSelection.getOffset() + textSelection.getLength();
+
+			// adjust selection end line
+			if ((selectionEndLine > selectionStartLine) && (selectionEndLineOffset == selectionEndOffset)) {
+				selectionEndLine--;
+			}
+
+		}
+		catch (BadLocationException e) {
+			Logger.log(Logger.WARNING_DEBUG, e.getMessage(), e);
+		}
+
+		// save the selection position since it will be changing
+		Position selectionPosition = null;
+		boolean updateStartOffset = false;
+		try {
+			selectionPosition = new Position(textSelection.getOffset(), textSelection.getLength());
+			document.addPosition(selectionPosition);
+
+			// extra check if commenting from beginning of line
+			int selectionStartLineOffset = document.getLineOffset(selectionStartLine);
+			if ((textSelection.getLength() > 0) && (selectionStartLineOffset == textSelection.getOffset()) && !isCommentLine(document, selectionStartLine)) {
+				updateStartOffset = true;
+			}
+		}
+		catch (BadLocationException e) {
+			Logger.log(Logger.WARNING_DEBUG, e.getMessage(), e);
+		}
+
+		processAction(document, selectionStartLine, selectionEndLine);
+
+		updateCurrentSelection(textEditor, selectionPosition, document, updateStartOffset);
+	}
+

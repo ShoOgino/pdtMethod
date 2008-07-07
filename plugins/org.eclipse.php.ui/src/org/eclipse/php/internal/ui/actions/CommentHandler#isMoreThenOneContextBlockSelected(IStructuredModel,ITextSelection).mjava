@@ -1,0 +1,29 @@
+	protected boolean isMoreThenOneContextBlockSelected (IStructuredModel model, ITextSelection textSelection) {
+		IndexedRegion selectionStartIndexedRegion = model.getIndexedRegion(textSelection.getOffset());
+	
+		int regionEndOffset = 0 ;
+		int selectionEndOffset = textSelection.getOffset() + textSelection.getLength();
+		
+		if (selectionStartIndexedRegion instanceof NodeImpl){ 
+			regionEndOffset  = ((NodeImpl)selectionStartIndexedRegion).getEndOffset();
+			if (selectionEndOffset < regionEndOffset){
+				return false;
+			}
+		}else{
+			assert false;
+			return true;
+		}
+		// searching for PHP open/close tags within the selected text for oh content start/end.
+		while (selectionStartIndexedRegion != null && (regionEndOffset < selectionEndOffset) ){
+			regionEndOffset = ((NodeImpl)selectionStartIndexedRegion).getEndOffset();
+			String regionAsString = selectionStartIndexedRegion.toString();
+			if(regionAsString.contains("<?PHP") || regionAsString.contains("<?") || regionAsString.contains("?>") ){
+				return true;
+			}
+			selectionStartIndexedRegion = model.getIndexedRegion(selectionStartIndexedRegion.getEndOffset());
+
+		}	
+					
+		return false;
+	}
+

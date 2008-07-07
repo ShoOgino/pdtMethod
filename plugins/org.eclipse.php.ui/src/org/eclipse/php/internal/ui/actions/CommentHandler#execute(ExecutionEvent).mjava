@@ -1,0 +1,26 @@
+	public Object execute(ExecutionEvent event) throws ExecutionException {
+		IEditorPart editor = HandlerUtil.getActiveEditor(event);
+		ITextEditor textEditor = null;
+		if (editor instanceof ITextEditor)
+			textEditor = (ITextEditor) editor;
+		else {
+			Object o = editor.getAdapter(ITextEditor.class);
+			if (o != null)
+				textEditor = (ITextEditor) o;
+		}
+		if (textEditor != null) {
+			IDocument document = textEditor.getDocumentProvider().getDocument(textEditor.getEditorInput());
+			if (document != null) {
+				// get current text selection
+				ITextSelection textSelection = getCurrentSelection(textEditor);
+				if (textSelection.isEmpty()) {
+					return null;
+				}
+
+				processAction(textEditor, document, textSelection);
+			}
+		}
+
+		return null;
+	}
+

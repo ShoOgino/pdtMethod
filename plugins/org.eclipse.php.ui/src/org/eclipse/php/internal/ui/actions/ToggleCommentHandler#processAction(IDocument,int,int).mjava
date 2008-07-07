@@ -1,0 +1,36 @@
+	private void processAction(IDocument document, int selectionStartLine, int selectionEndLine) {
+		IStructuredModel model = StructuredModelManager.getModelManager().getExistingModelForEdit(document);
+		if (model != null) {
+			try {
+				model.beginRecording(this, XMLUIMessages.ToggleComment_tooltip);
+				model.aboutToChangeModel();
+
+				for (int i = selectionStartLine; i <= selectionEndLine; i++) {
+					try {
+						if (document.getLineLength(i) > 0) {
+							if (isCommentLine(document, i)) {
+								int lineOffset = document.getLineOffset(i);
+								IRegion region = document.getLineInformation(i);
+								String string = document.get(region.getOffset(), region.getLength());
+								int openCommentOffset = lineOffset + string.indexOf(SINGLE_LINE_COMMENT);
+								uncommentSingleLine(document, openCommentOffset);
+							}
+							else {
+								int openCommentOffset = document.getLineOffset(i);
+								commentSingleLine(document, openCommentOffset);
+							}
+						}
+					}
+					catch (BadLocationException e) {
+						Logger.log(Logger.WARNING_DEBUG, e.getMessage(), e);
+					}
+				}
+			}
+			finally {
+				model.changedModel();
+				model.endRecording(this);
+				model.releaseFromEdit();
+			}
+		}
+	}
+

@@ -1,0 +1,24 @@
+	void processAction(ITextEditor textEditor, IDocument document, ITextSelection textSelection) {
+		IStructuredModel model = StructuredModelManager.getModelManager().getExistingModelForEdit(document);
+		
+		int openCommentOffset = textSelection.getOffset();
+		int closeCommentOffset = openCommentOffset + textSelection.getLength();
+		
+		if (textSelection.getLength() == 0) {
+			return;
+		}
+		
+		model.beginRecording(this, PHPUIMessages.getString("AddBlockComment_tooltip"));
+		model.aboutToChangeModel();
+		
+		try {
+			document.replace(closeCommentOffset, 0, CLOSE_COMMENT);
+			document.replace(openCommentOffset, 0, OPEN_COMMENT);
+		}catch (BadLocationException e) {
+			Logger.log(Logger.WARNING_DEBUG, e.getMessage(), e);
+		}finally {
+			model.changedModel();
+			model.endRecording(this);
+		}
+	}
+

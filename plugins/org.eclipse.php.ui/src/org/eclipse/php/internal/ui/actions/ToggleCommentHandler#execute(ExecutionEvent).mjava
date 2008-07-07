@@ -1,0 +1,54 @@
+	public Object execute(ExecutionEvent event) throws ExecutionException {
+		IEditorPart editor = HandlerUtil.getActiveEditor(event);
+		ITextEditor textEditor = null;
+		if (editor instanceof ITextEditor)
+			textEditor = (ITextEditor) editor;
+		else {
+			Object o = editor.getAdapter(ITextEditor.class);
+			if (o != null)
+				textEditor = (ITextEditor) o;
+		}
+		if (textEditor != null) {
+			IDocument document = textEditor.getDocumentProvider().getDocument(textEditor.getEditorInput());
+			if (document != null) {
+				// get current text selection
+				ITextSelection textSelection = getCurrentSelection(textEditor);
+				if (textSelection.isEmpty()) {
+					return null;
+				}
+				if (document instanceof IStructuredDocument) {
+					int selectionOffset = textSelection.getOffset();
+					IStructuredDocument sDoc = (IStructuredDocument) document;
+					IStructuredModel model = StructuredModelManager.getModelManager().getExistingModelForEdit(document);
+					
+					if (model != null) {
+						// If there is alternating or more then one block in the text selection, action is aborted !
+						if(isMoreThenOneContextBlockSelected(model, textSelection)){
+							displayCommentActinosErrorDialog(editor);
+							return null;
+						}
+					}
+					
+					IStructuredDocumentRegion sdRegion = sDoc.getRegionAtCharacterOffset(selectionOffset);
+					ITextRegion textRegion = sdRegion.getRegionAtCharacterOffset(selectionOffset);
+
+					ITextRegionCollection container = sdRegion;
+
+					if (textRegion instanceof ITextRegionContainer) {
+						container = (ITextRegionContainer) textRegion;
+						textRegion = container.getRegionAtCharacterOffset(selectionOffset);
+					}
+					
+					
+					if (textRegion.getType() == PHPRegionContext.PHP_CONTENT) {
+						processAction(textEditor, document, textSelection);
+					}else{
+						org.eclipse.wst.xml.ui.internal.handlers.ToggleCommentHandler toggleCommentHandlerWST = new org.eclipse.wst.xml.ui.internal.handlers.ToggleCommentHandler() ;//org.eclipse.wst.xml.ui.internal.handlers.AddBlockCommentHandler();
+						return toggleCommentHandlerWST.execute(event);
+					}
+				}
+			}
+		}
+		return null;
+	}
+
