@@ -2,7 +2,20 @@
 		Display.getDefault().asyncExec(new Runnable() {
 			public void run() {
 				try {
-					actionGroup.handleUpdateInput(editorPart);
+					final PHPStructuredEditor phpEditor = EditorUtility.getPHPStructuredEditor(editorPart);
+					if (phpEditor != null) {
+						IScriptProject project = phpEditor.getProject();
+						Object currentInput = fViewer.getInput();
+						if (project != null) {
+							IPath languagePath = new Path(LanguageModelInitializer.CONTAINER_PATH);
+							final IBuildpathContainer buildpathContainer = DLTKCore.getBuildpathContainer(languagePath, project);
+							IProjectFragment[] projectFragments = project.getProjectFragments();
+							Object newInput = projectFragments[1];
+							if (!newInput.equals(currentInput)) {
+								fViewer.setInput(newInput);
+							}
+						}
+					}
 				} catch (ModelException e) {
 					Logger.logException(e);
 				}
