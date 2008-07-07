@@ -59,7 +59,13 @@
 		if (!inClass) {
 			IModelElement[] functions = CodeAssistUtils.getWorkspaceMethods(prefix, false);
 			for (IModelElement function : functions) {
-				reportMethod((IMethod) function, RELEVANCE_METHODS);
+				try {
+					if ((((IMethod)function).getFlags() & IPHPModifiers.Internal) == 0) {
+						reportMethod((IMethod) function, RELEVANCE_METHODS);
+					}
+				} catch (ModelException e) {
+					Logger.logException(e);
+				}
 			}
 
 			if (showConstantAssist()) {
@@ -82,7 +88,13 @@
 				int relevance = 424242;
 				IModelElement[] classes = CodeAssistUtils.getWorkspaceClasses(prefix, false);
 				for (IModelElement type : classes) {
-					reportType((IType) type, relevance--, PAAMAYIM_NEKUDOTAIM);
+					try {
+						if ((((IType)type).getFlags() & IPHPModifiers.Internal) == 0) {
+							reportType((IType) type, relevance--, PAAMAYIM_NEKUDOTAIM);
+						}
+					} catch (ModelException e) {
+						Logger.logException(e);
+					}
 				}
 			}
 		}

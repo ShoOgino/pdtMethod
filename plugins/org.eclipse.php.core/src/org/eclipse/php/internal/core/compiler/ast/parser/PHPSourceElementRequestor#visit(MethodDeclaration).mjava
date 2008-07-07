@@ -1,10 +1,9 @@
-	@SuppressWarnings("unchecked")
 	public boolean visit(MethodDeclaration method) throws Exception {
 		Declaration parentDeclaration = null;
 		if (!declarations.empty()) {
 			parentDeclaration = declarations.peek();
 		}
-				
+
 		if (parentDeclaration instanceof InterfaceDeclaration) {
 			method.setModifier(Modifiers.AccAbstract);
 		}
@@ -14,32 +13,7 @@
 		for (PHPSourceElementRequestorExtension visitor : extensions) {
 			visitor.visit(method);
 		}
-		
-		// The rest is copied from the super implementation just for setting isConstructor flag:
-		this.fNodes.push(method);
-		List args = method.getArguments();
 
-		String[] parameter = new String[args.size()];
-		for (int a = 0; a < args.size(); a++) {
-			Argument arg = (Argument) args.get(a);
-			parameter[a] = arg.getName();
-		}
-
-		ISourceElementRequestor.MethodInfo mi = new ISourceElementRequestor.MethodInfo();
-		mi.parameterNames = parameter;
-		mi.name = method.getName();
-		mi.modifiers = method.getModifiers();
-		mi.nameSourceStart = method.getNameStart();
-		mi.nameSourceEnd = method.getNameEnd() - 1;
-		mi.declarationStart = method.sourceStart();
-		
-		mi.isConstructor = mi.name.equalsIgnoreCase(CONSTRUCTOR_NAME) || (parentDeclaration instanceof ClassDeclaration && 
-				mi.name.equalsIgnoreCase(((ClassDeclaration)parentDeclaration).getName()));
-
-		this.fRequestor.enterMethod(mi);
-
-		this.fInMethod = true;
-		this.fCurrentMethod = method;
-		return true;
+		return super.visit(method);
 	}
 
