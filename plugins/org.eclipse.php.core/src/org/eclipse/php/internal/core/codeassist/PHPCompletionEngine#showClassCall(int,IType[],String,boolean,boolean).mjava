@@ -4,6 +4,8 @@
 		}
 
 		this.setSourceRange(offset - prefix.length(), offset);
+		
+		int relevanceMethod = RELEVANCE_METHOD;
 
 		for (IType type : className) {
 			if (!prefix.startsWith(DOLLAR)) {
@@ -11,7 +13,7 @@
 				for (IModelElement method : methods) {
 					try {
 						if ((((IMethod)method).getFlags() & IPHPModifiers.Internal) == 0) {
-							reportMethod((IMethod) method, RELEVANCE_METHODS);
+							reportMethod((IMethod) method, relevanceMethod--);
 						}
 					} catch (ModelException e) {
 						Logger.logException(e);
@@ -20,10 +22,19 @@
 			}
 
 			IModelElement[] fields = CodeAssistUtils.getClassFields(type, prefix, false, true);
-			int relevance = 424242;
+			int relevanceVar = RELEVANCE_VAR;
+			int relevanceConst = RELEVANCE_CONST;
 			for (IModelElement element : fields) {
 				IField field = (IField) element;
-				reportField(field, relevance--, true);
+				try {
+					if ((field.getFlags() & Modifiers.AccConstant) != 0) {
+						reportField(field, relevanceConst--, true);
+					} else {
+						reportField(field, relevanceVar--, true);
+					}
+				} catch (ModelException e) {
+					Logger.logException(e);
+				}
 			}
 		}
 	}

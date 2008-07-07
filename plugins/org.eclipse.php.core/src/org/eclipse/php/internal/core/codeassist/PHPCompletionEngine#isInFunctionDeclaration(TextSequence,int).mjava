@@ -35,11 +35,12 @@
 
 					this.setSourceRange(offset - prefix.length(), offset);
 
+					int relevanceClass = RELEVANCE_CLASS;
 					IModelElement[] classes = CodeAssistUtils.getWorkspaceClasses(prefix, false);
 					for (IModelElement type : classes) {
 						try {
 							if ((((IType)type).getFlags() & IPHPModifiers.Internal) == 0) {
-								reportType((IType) type, RELEVANCE_FREE_SPACE, WHITESPACE_SUFFIX);
+								reportType((IType) type, relevanceClass--, WHITESPACE_SUFFIX);
 							}
 						} catch (ModelException e) {
 							Logger.logException(e);
@@ -72,6 +73,8 @@
 		}
 
 		this.setSourceRange(offset - functionNameStart.length(), offset);
+		
+		int relevanceMethod = RELEVANCE_METHOD;
 
 		IMethod[] superClassMethods = CodeAssistUtils.getSuperClassMethods(classData, functionNameStart, false);
 		for (IMethod superMethod : superClassMethods) {
@@ -81,7 +84,7 @@
 			try {
 				int flags = superMethod.getFlags();
 				if ((flags & Modifiers.AccPrivate) == 0 && (flags & Modifiers.AccStatic) == 0 && (flags & IPHPModifiers.Internal) == 0) {
-					reportMethod(superMethod, RELEVANCE_METHODS);
+					reportMethod(superMethod, relevanceMethod--);
 				}
 			} catch (ModelException e) {
 				Logger.logException(e);
@@ -102,7 +105,7 @@
 		for (String function : functions) {
 			if (CodeAssistUtils.startsWithIgnoreCase(function, functionNameStart)) {
 				FakeMethod fakeMagicMethod = new FakeMethod((ModelElement) classData, function);
-				reportMethod(fakeMagicMethod, RELEVANCE_METHODS);
+				reportMethod(fakeMagicMethod, relevanceMethod--);
 			}
 		}
 		return true;

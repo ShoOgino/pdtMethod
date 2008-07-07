@@ -14,10 +14,16 @@
 			Logger.logException(e);
 		}
 
+		int relevanceKeyword = RELEVANCE_KEYWORD;
+		int relevanceVar = RELEVANCE_VAR;
+		int relevanceConst = RELEVANCE_CONST;
+		int relevanceClass = RELEVANCE_CLASS;
+		int relevanceMethod = RELEVANCE_METHOD;
+		
 		Collection<KeywordData> keywordsList = PHPKeywords.findByPrefix(((SourceModule) sourceModule).getScriptProject().getProject(), prefix);
 		for (KeywordData k : keywordsList) {
 			if (inClass == k.isClassKeyword) {
-				reportKeyword(k.name, k.suffix);
+				reportKeyword(k.name, k.suffix, relevanceKeyword--);
 			}
 		}
 
@@ -36,18 +42,28 @@
 					}
 				}
 
-				int relevance = 424242;
-				IMethod containerMethodData = CodeAssistUtils.getContainerMethodData(sourceModule, offset);
-				if (containerMethodData != null && containerMethodData.getDeclaringType() != null) {
-					reportVariables(classVariables, prefix, relevance--, false);
-				}
-
-				reportVariables(phpVariables, prefix, relevance--, false);
-
+				
 				IModelElement[] variables = CodeAssistUtils.getWorkspaceFields(prefix, false);
 				for (IModelElement var : variables) {
-					reportField((IField) var, relevance--, false);
+					IField field = (IField) var;
+					try {
+						if ((field.getFlags() & Modifiers.AccConstant) != 0) {
+							reportField(field, relevanceConst--, false);
+						} else {
+							reportField(field, relevanceVar--, false);
+						}
+					} catch (ModelException e) {
+						Logger.logException(e);
+					}
 				}
+				
+				IMethod containerMethodData = CodeAssistUtils.getContainerMethodData(sourceModule, offset);
+				if (containerMethodData != null && containerMethodData.getDeclaringType() != null) {
+					reportVariables(classVariables, prefix, relevanceVar--, false);
+					relevanceVar -= classVariables.length;
+				}
+
+				reportVariables(phpVariables, prefix, relevanceVar--, false);
 				return;
 			}
 
@@ -61,7 +77,7 @@
 			for (IModelElement function : functions) {
 				try {
 					if ((((IMethod)function).getFlags() & IPHPModifiers.Internal) == 0) {
-						reportMethod((IMethod) function, RELEVANCE_METHODS);
+						reportMethod((IMethod) function, relevanceMethod--);
 					}
 				} catch (ModelException e) {
 					Logger.logException(e);
@@ -69,12 +85,11 @@
 			}
 
 			if (showConstantAssist()) {
-				int relevance = 4242;
 				IModelElement[] constants = CodeAssistUtils.getWorkspaceFields(prefix, false);
 				for (IModelElement constant : constants) {
 					try {
 						if ((((IField) constant).getFlags() & Modifiers.AccConstant) != 0) {
-							reportField((IField) constant, relevance--, false);
+							reportField((IField) constant, relevanceConst--, false);
 						}
 					} catch (ModelException e) {
 						Logger.logException(e);
@@ -85,12 +100,11 @@
 
 		if (!inClass) {
 			if (showClassNamesInGlobalCompletion()) {
-				int relevance = 424242;
 				IModelElement[] classes = CodeAssistUtils.getWorkspaceClasses(prefix, false);
 				for (IModelElement type : classes) {
 					try {
 						if ((((IType)type).getFlags() & IPHPModifiers.Internal) == 0) {
-							reportType((IType) type, relevance--, PAAMAYIM_NEKUDOTAIM);
+							reportType((IType) type, relevanceClass--, PAAMAYIM_NEKUDOTAIM);
 						}
 					} catch (ModelException e) {
 						Logger.logException(e);

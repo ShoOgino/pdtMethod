@@ -3,6 +3,7 @@
 
 		boolean showNonStrictOptions = showNonStrictOptions();
 
+		int relevanceMethod = RELEVANCE_METHOD;
 		if (!prefix.startsWith(DOLLAR)) {
 			for (IType type : className) {
 				IMethod[] classMethods = CodeAssistUtils.getClassMethods(type, prefix, false);
@@ -11,7 +12,7 @@
 					try {
 						if ((!isPHP5 || showNonStrictOptions || (method.getFlags() & Modifiers.AccStatic) != 0)
 								&& (method.getFlags() & IPHPModifiers.Internal) == 0) {
-							reportMethod(method, RELEVANCE_METHODS);
+							reportMethod(method, relevanceMethod--);
 						}
 					} catch (ModelException e) {
 						Logger.logException(e);
@@ -20,14 +21,20 @@
 			}
 		}
 
-		int relevance = 4242;
+		int relevanceConst = RELEVANCE_CONST;
+		int relevanceVar = RELEVANCE_VAR;
 		for (IType type : className) {
 			IField[] classFields = CodeAssistUtils.getClassFields(type, prefix, false, true);
 			for (IField field : classFields) {
 				try {
 					int flags = field.getFlags();
-					if ((flags & Modifiers.AccConstant) != 0 || !isPHP5 || showNonStrictOptions || (flags & Modifiers.AccStatic) != 0) {
-						reportField(field, relevance--, false);
+					boolean isConstant = (flags & Modifiers.AccConstant) != 0;
+					if (isConstant || !isPHP5 || showNonStrictOptions || (flags & Modifiers.AccStatic) != 0) {
+						if (isConstant) {
+							reportField(field, relevanceConst--, false);
+						} else {
+							reportField(field, relevanceVar--, false);
+						}
 					}
 				} catch (ModelException e) {
 					Logger.logException(e);
