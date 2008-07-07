@@ -1,23 +1,20 @@
 	protected void reportMatching(TypeDeclaration type, MethodDeclaration method, IModelElement parent, int accuracy, boolean typeInHierarchy, MatchingNodeSet nodeSet) throws CoreException {
-		IModelElement enclosingElement = null;
-		if (accuracy > -1) {
-			enclosingElement = createHandle(method, parent);
-			if (enclosingElement != null) { // skip if unable to find method
-				if (encloses(enclosingElement)) {
-					SearchMatch match = null;
-					if (DLTKCore.DEBUG) {
-						System.out.println("TODO: AST Add constructor support."); //$NON-NLS-1$
-					}
-					match = this.patternLocator.newDeclarationMatch(method, enclosingElement, accuracy, this);
-					if (match != null) {
-						report(match);
-					}
+		IModelElement enclosingElement = createHandle(method, parent);
+		if (accuracy > -1 && enclosingElement != null) { // skip if unable to find method
+			if (encloses(enclosingElement)) {
+				SearchMatch match = null;
+				if (DLTKCore.DEBUG) {
+					System.out.println("TODO: AST Add constructor support."); //$NON-NLS-1$
+				}
+				match = this.patternLocator.newDeclarationMatch(method, enclosingElement, accuracy, this);
+				if (match != null) {
+					report(match);
 				}
 			}
 		}
-		
+
 		// handle nodes for the local type first
-		LocalDeclarationVisitor localDeclarationVisitor = new LocalDeclarationVisitor(nodeSet);
+		LocalDeclarationVisitor localDeclarationVisitor = new LocalDeclarationVisitor(enclosingElement, nodeSet);
 		try {
 			method.getBody().traverse(localDeclarationVisitor);
 		} catch (Exception e) {
