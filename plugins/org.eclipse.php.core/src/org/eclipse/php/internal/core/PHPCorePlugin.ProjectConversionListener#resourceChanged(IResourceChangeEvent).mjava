@@ -1,0 +1,23 @@
+		/*
+		 * Gathers all the projects that changed in the workspace and sends them to the conversion method
+		 * 
+		 * (non-Javadoc)
+		 * @see org.eclipse.core.resources.IResourceChangeListener#resourceChanged(org.eclipse.core.resources.IResourceChangeEvent)
+		 */
+		public void resourceChanged(IResourceChangeEvent event) {
+			IResourceDelta delta = event.getDelta();
+			IResourceDelta[] affectedChildren = delta.getAffectedChildren();
+			IProject[] projects = new IProject[affectedChildren.length];
+			for (int i = 0; i < affectedChildren.length; i++) {
+				projects[i]=affectedChildren[i].getResource().getProject();
+			}
+			
+			try {
+				processProjects(projects);
+			} catch (ModelException e) {
+				Logger.logException(e);
+			} catch (CoreException e) {
+				Logger.logException(e);
+			}
+		}
+
