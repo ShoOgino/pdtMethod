@@ -2,32 +2,26 @@
 		ISourceModule sourceModule = root.getFile();
 
 		final List<String> includes = new LinkedList<String>();
-		final IBuffer buffer = sourceModule.getBuffer();
 
-		if (buffer != null) {
+		ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule, null);
 
-			ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule, null);
-			
-			ASTVisitor visitor = new ASTVisitor() {
-				public boolean visit(Expression expr) throws ModelException {
-					if (expr instanceof Include) {
-						Expression fileExpr = ((Include) expr).getExpr();
-						if (fileExpr instanceof Scalar) {
-							int start = fileExpr.sourceStart();
-							int length = fileExpr.sourceEnd() - start;
-							String fileName = ASTUtils.stripQuotes(buffer.getText(start, length));
-							includes.add(fileName);
-						}
+		ASTVisitor visitor = new ASTVisitor() {
+			public boolean visit(Expression expr) throws ModelException {
+				if (expr instanceof Include) {
+					Expression fileExpr = ((Include) expr).getExpr();
+					if (fileExpr instanceof Scalar) {
+						String fileName = ASTUtils.stripQuotes(((Scalar) fileExpr).getValue());
+						includes.add(fileName);
 					}
-					return true;
 				}
-			};
-			
-			try {
-				moduleDeclaration.traverse(visitor);
-			} catch (Exception e) {
-				Logger.logException(e);
+				return true;
 			}
+		};
+
+		try {
+			moduleDeclaration.traverse(visitor);
+		} catch (Exception e) {
+			Logger.logException(e);
 		}
 
 		for (String filePath : includes) {
