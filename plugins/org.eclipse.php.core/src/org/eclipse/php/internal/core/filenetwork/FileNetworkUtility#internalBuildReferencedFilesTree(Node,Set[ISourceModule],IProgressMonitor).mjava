@@ -5,15 +5,29 @@
 		final IBuffer buffer = sourceModule.getBuffer();
 
 		if (buffer != null) {
-			IDLTKSearchScope scope = SearchEngine.createSearchScope(sourceModule);
-			SearchEngine engine = new SearchEngine();
-			SearchPattern pattern = SearchPattern.createPattern("include", IDLTKSearchConstants.METHOD, IDLTKSearchConstants.REFERENCES, SearchPattern.R_EXACT_MATCH, PHPLanguageToolkit.getDefault());
-			engine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
-				public void acceptSearchMatch(SearchMatch match) throws CoreException {
-					String text = buffer.getText(match.getOffset(), match.getLength());
-					includes.add(stripQuotes(text));
+
+			ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule, null);
+			
+			ASTVisitor visitor = new ASTVisitor() {
+				public boolean visit(Expression expr) throws ModelException {
+					if (expr instanceof Include) {
+						Expression fileExpr = ((Include) expr).getExpr();
+						if (fileExpr instanceof Scalar) {
+							int start = fileExpr.sourceStart();
+							int length = fileExpr.sourceEnd() - start;
+							String fileName = ASTUtils.stripQuotes(buffer.getText(start, length));
+							includes.add(fileName);
+						}
+					}
+					return true;
 				}
-			}, monitor);
+			};
+			
+			try {
+				moduleDeclaration.traverse(visitor);
+			} catch (Exception e) {
+				Logger.logException(e);
+			}
 		}
 
 		for (String filePath : includes) {
