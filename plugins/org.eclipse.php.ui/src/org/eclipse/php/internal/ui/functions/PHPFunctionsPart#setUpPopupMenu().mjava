@@ -2,8 +2,8 @@
 		showFunctionHelpAction = new ShowFunctionHelpAction();
 
 		MenuManager menuMgr = new MenuManager("#PopupMenu"); //$NON-NLS-1$
-		menuMgr.setRemoveAllWhenShown(true);
 		fContextMenu = menuMgr.createContextMenu(fViewer.getTree());
+		menuMgr.add(showFunctionHelpAction);
 		menuMgr.addMenuListener(new IMenuListener() {
 			public void menuAboutToShow(IMenuManager mgr) {
 				ISelection selection = fViewer.getSelection();
@@ -11,15 +11,20 @@
 					IStructuredSelection s = (IStructuredSelection) selection;
 					String url = PHPManualFactory.getManual().getURLForManual((IModelElement) s.getFirstElement());
 					if (url != null) {
+						showFunctionHelpAction.setEnabled(true);
 						showFunctionHelpAction.setURL(url);
-						mgr.add(showFunctionHelpAction);
+					} else {
+						showFunctionHelpAction.setEnabled(false);
 					}
 				}
 			}
 		});
+
 		fViewer.getTree().setMenu(fContextMenu);
-		IWorkbenchPartSite site = getSite();
-		site.registerContextMenu(menuMgr, fViewer);
-		site.setSelectionProvider(fViewer);
+		// Do not register the context menu - no extra entries contributed will be added
+		// fixes bug #239764
+		//		IWorkbenchPartSite site = getSite();
+		//		site.registerContextMenu(menuMgr, fViewer);
+		//		site.setSelectionProvider(fViewer);
 	}
 
