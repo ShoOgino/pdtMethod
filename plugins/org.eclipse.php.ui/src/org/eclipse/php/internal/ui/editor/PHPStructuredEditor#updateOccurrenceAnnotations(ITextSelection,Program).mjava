@@ -83,7 +83,16 @@
 			}
 		}
 
-		if (locations == null && (selectedNode instanceof Identifier || selectedNode instanceof Scalar)) {
+		// if this is a global variable re-select the node to be the global entry
+		final int nodetype = selectedNode.getType();
+		if (nodetype == ASTNode.VARIABLE) {
+			final Expression name = ((Variable) selectedNode).getName();
+			if (name.getType() == ASTNode.IDENTIFIER) {
+				selectedNode = name;
+			}
+		}
+		
+		if (locations == null && (selectedNode.getType() == ASTNode.IDENTIFIER || selectedNode.getType() == ASTNode.SCALAR)) {
 			int type = PhpElementConciliator.concile(selectedNode);
 			if (markOccurrencesOfType(type)) {
 				IOccurrencesFinder finder = OccurrencesFinderFactory.getOccurrencesFinder(type);
