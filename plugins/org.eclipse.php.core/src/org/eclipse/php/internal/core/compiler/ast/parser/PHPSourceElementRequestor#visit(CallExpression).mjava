@@ -1,23 +1,20 @@
 	public boolean visit(CallExpression call) throws Exception {
-		int argsCount = 0;
-		CallArgumentsList args = call.getArgs();
-		if (args != null && args.getChilds() != null) {
-			argsCount = args.getChilds().size();
-		}
-		String name = call.getName();
-		if (args != null && args.getChilds() != null && "define".equalsIgnoreCase(name)) {//$NON-NLS-0$
-			ASTNode argument = (ASTNode) args.getChilds().get(0);
-			if (argument instanceof Scalar) {
-				ISourceElementRequestor.FieldInfo info = new ISourceElementRequestor.FieldInfo();
-				info.modifiers = Modifiers.AccConstant;
-				info.name = ASTUtils.stripQuotes(((Scalar)argument).getValue());
-				info.nameSourceEnd = argument.sourceEnd() - 1;
-				info.nameSourceStart = argument.sourceStart();
-				info.declarationStart = call.sourceStart();
-				fRequestor.enterField(info);
-				fRequestor.exitField(call.sourceEnd() - 1);
+		FieldDeclaration constantDecl = ASTUtils.getConstantDeclaration(call);
+		if (constantDecl != null) {
+			// In case we are entering a nested element 
+			if (!declarations.empty() && declarations.peek() instanceof MethodDeclaration) {
+				deferredDeclarations.add(constantDecl);
+				return false;
 			}
+			
+			visit((FieldDeclaration)constantDecl);
+			
 		} else {
+			int argsCount = 0;
+			CallArgumentsList args = call.getArgs();
+			if (args != null && args.getChilds() != null) {
+				argsCount = args.getChilds().size();
+			}
 			fRequestor.acceptMethodReference(call.getName().toCharArray(), argsCount, call.sourceStart(), call.sourceEnd());
 		}
 		return true;
