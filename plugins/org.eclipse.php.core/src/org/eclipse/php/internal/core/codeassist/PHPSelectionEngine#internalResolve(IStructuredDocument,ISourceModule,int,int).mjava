@@ -1,7 +1,4 @@
-	private IModelElement[] internalResolve(IStructuredDocument sDoc, ISourceModule sourceUnit, int offset, int end) {
-
-		org.eclipse.dltk.core.ISourceModule sourceModule = (org.eclipse.dltk.core.ISourceModule) sourceUnit.getModelElement();
-
+	private IModelElement[] internalResolve(IStructuredDocument sDoc, ISourceModule sourceModule, int offset, int end) {
 		try {
 			IStructuredDocumentRegion sRegion = sDoc.getRegionAtCharacterOffset(offset);
 			if (sRegion != null) {
@@ -41,19 +38,19 @@
 					String nextWord = sDoc.get(container.getStartOffset() + phpScriptRegion.getStart() + nextRegion.getStart(), nextRegion.getTextLength());
 
 					if (elementName.length() > 0) {
-						IType containerClass = CodeAssistUtils.getContainerClassData(sourceUnit, offset);
+						IType containerClass = CodeAssistUtils.getContainerClassData(sourceModule, offset);
 
 						// If we are in function declaration:
 						if (FUNCTION.equalsIgnoreCase(prevWord)) { //$NON-NLS-1$
 							if (containerClass != null) {
 								return getClassMethod(containerClass, elementName);
 							}
-							return getFunction(sourceUnit, elementName);
+							return getFunction(sourceModule, elementName);
 						}
 
 						// If we are in class declaration:
 						if (CLASS.equalsIgnoreCase(prevWord) || INTERFACE.equalsIgnoreCase(prevWord)) { //$NON-NLS-1$ //$NON-NLS-2$
-							return getClass(sourceUnit, elementName);
+							return getClass(sourceModule, elementName);
 						}
 
 						// Class instantiation:
@@ -116,7 +113,8 @@
 								}
 							}
 
-							return filterElements(sourceModule, CodeAssistUtils.getWorkspaceFields(elementName, true));
+							IModelElement[] elements = CodeAssistUtils.getWorkspaceOrMethodFields(sourceModule, offset, elementName, true);
+							return filterElements(sourceModule, elements);
 						}
 
 						// If we are at class constant definition:
@@ -131,7 +129,7 @@
 							filterElements(sourceModule, CodeAssistUtils.getWorkspaceClasses(elementName, true));
 						}
 
-						IType[] types = CodeAssistUtils.getTypesFor(sourceUnit, statement, startPosition, offset, sDoc.getLineOfOffset(offset), true);
+						IType[] types = CodeAssistUtils.getTypesFor(sourceModule, statement, startPosition, offset, sDoc.getLineOfOffset(offset), true);
 
 						// Is it function or method:
 						if (OPEN_BRACE.equals(nextWord) || PHPPartitionTypes.isPHPDocState(tRegion.getType())) { //$NON-NLS-1$
@@ -172,7 +170,8 @@
 						}
 
 						// Return class if nothing else found.
-						return filterElements(sourceModule, CodeAssistUtils.getWorkspaceClasses(elementName, true));
+						IModelElement[] elements = CodeAssistUtils.getWorkspaceOrMethodFields(sourceModule, offset, elementName, true);
+						return filterElements(sourceModule, elements);
 					}
 				}
 			}

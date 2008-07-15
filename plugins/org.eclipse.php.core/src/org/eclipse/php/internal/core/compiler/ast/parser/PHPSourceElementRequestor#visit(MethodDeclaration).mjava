@@ -1,3 +1,4 @@
+	@SuppressWarnings("unchecked")
 	public boolean visit(MethodDeclaration method) throws Exception {
 		Declaration parentDeclaration = null;
 		if (!declarations.empty()) {
@@ -21,6 +22,21 @@
 			visitor.visit(method);
 		}
 
-		return super.visit(method);
+		boolean visit = super.visit(method);
+		
+		if (visit) {
+			// Process method argument (local variable) declarations:
+			List<Argument> arguments = method.getArguments();
+			for (Argument arg : arguments) {
+				ISourceElementRequestor.FieldInfo info = new ISourceElementRequestor.FieldInfo();
+				info.name = arg.getName();
+				info.nameSourceStart = arg.getNameStart();
+				info.nameSourceEnd = arg.getNameEnd() - 1;
+				info.declarationStart = arg.sourceStart();
+				fRequestor.enterField(info);
+				fRequestor.exitField(arg.sourceEnd() - 1);
+			}
+		}
+		return visit;
 	}
 
