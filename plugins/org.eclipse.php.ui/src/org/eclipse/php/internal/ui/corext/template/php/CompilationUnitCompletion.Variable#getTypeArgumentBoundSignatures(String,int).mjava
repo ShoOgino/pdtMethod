@@ -1,0 +1,28 @@
+		/**
+		 * Returns the type arguments of the declared type of the variable. Returns
+		 * an empty array if it is not a parameterized type.
+		 * 
+		 * @param type the fully qualified type name of which to match a type argument  
+		 * @param index the index of the type parameter in the type
+		 * @return the type bounds for the specified type argument in this local variable
+		 * @since 3.3
+		 */
+		public String[] getTypeArgumentBoundSignatures(String type, int index) {
+			List all= new ArrayList();
+			IType[] supertypes= getSupertypes(type);
+			if (fUnit != null) {
+				for (int i= 0; i < supertypes.length; i++) {
+					try {
+						TypeParameterResolver util= new TypeParameterResolver(this);
+						String[] result= util.computeBinding(supertypes[i].getFullyQualifiedName(), index);
+						all.addAll(Arrays.asList(result));
+					} catch (JavaModelException e) {
+					} catch (IndexOutOfBoundsException e) {
+					}
+				}
+			}
+			if (all.isEmpty())
+				return new String[] {Signature.createTypeSignature("java.lang.Object", true)}; //$NON-NLS-1$
+			return (String[]) all.toArray(new String[all.size()]);
+		}
+

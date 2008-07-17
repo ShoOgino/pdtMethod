@@ -1,0 +1,34 @@
+		/*
+		 * @see org.eclipse.jface.text.templates.TemplateVariableResolver#resolve(org.eclipse.jface.text.templates.TemplateVariable, org.eclipse.jface.text.templates.TemplateContext)
+		 */
+		public void resolve(TemplateVariable variable, TemplateContext context) {
+			if (variable instanceof MultiVariable) {
+				PhpContext jc= (PhpContext) context;
+				MultiVariable mv= (MultiVariable) variable;
+
+				Variable[] iterables= getLocalVariables(jc);
+				if (iterables.length > 0) {
+
+					for (int i= 0; i < iterables.length; i++)
+						mv.setChoices(iterables[i], iterables[i].getMemberTypeNames());
+
+					TemplateVariable master= jc.getTemplateVariable(fMasterName);
+					if (master instanceof MultiVariable) {
+						final MultiVariable masterMv= (MultiVariable) master;
+						jc.addDependency(masterMv, mv);
+						mv.setKey(masterMv.getCurrentChoice());
+					}
+
+					if (iterables.length > 1 || iterables.length == 1 && mv.getChoices().length > 1)
+						variable.setUnambiguous(false);
+					else
+						variable.setUnambiguous(isUnambiguous(context));
+
+					return;
+				}
+
+			}
+			
+			super.resolve(variable, context);
+		}
+

@@ -1,0 +1,28 @@
+	public ProjectTemplateStore(IProject project) {
+		fInstanceStore= PHPUiPlugin.getDefault().getTemplateStore();
+		if (project == null) {
+			fProjectStore= null;
+		} else {
+			final ScopedPreferenceStore projectSettings= new ScopedPreferenceStore(new ProjectScope(project), PHPUiPlugin.ID);
+			fProjectStore= new TemplateStore(projectSettings, KEY) {
+				/*
+				 * Make sure we keep the id of added code templates - add removes
+				 * it in the usual add() method
+				 */
+				public void add(TemplatePersistenceData data) {
+					internalAdd(data);
+				}
+				
+				public void save() throws IOException {
+					
+					StringWriter output= new StringWriter();
+					TemplateReaderWriter writer= new TemplateReaderWriter();
+					writer.save(getTemplateData(false), output);
+					
+					projectSettings.setValue(KEY, output.toString());
+					projectSettings.save();
+				}
+			};
+		}
+	}
+

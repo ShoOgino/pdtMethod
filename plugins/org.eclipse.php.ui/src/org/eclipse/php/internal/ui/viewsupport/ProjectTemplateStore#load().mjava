@@ -1,0 +1,22 @@
+	public void load() throws IOException {
+		if (fProjectStore != null) {
+			fProjectStore.load();
+			
+			Set datas= new HashSet();
+			TemplatePersistenceData[] data= fProjectStore.getTemplateData(false);
+			for (int i= 0; i < data.length; i++) {
+				datas.add(data[i].getId());
+			}
+			
+			data= fInstanceStore.getTemplateData(false);
+			for (int i= 0; i < data.length; i++) {
+				TemplatePersistenceData orig= data[i];
+				if (!datas.contains(orig.getId())) {
+					TemplatePersistenceData copy= new TemplatePersistenceData(new Template(orig.getTemplate()), orig.isEnabled(), orig.getId());
+					fProjectStore.add(copy);
+					copy.setDeleted(true);
+				}
+			}
+		}
+	}
+

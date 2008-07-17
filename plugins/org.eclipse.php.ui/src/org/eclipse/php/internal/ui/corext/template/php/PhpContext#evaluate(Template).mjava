@@ -1,0 +1,37 @@
+	/*
+	 * @see TemplateContext#evaluate(Template template)
+	 */
+	public TemplateBuffer evaluate(Template template) throws BadLocationException, TemplateException {
+		clear();
+		
+		if (!canEvaluate(template))
+			throw new TemplateException(PhpTemplateMessages.Context_error_cannot_evaluate);
+		
+		TemplateTranslator translator= new TemplateTranslator() {
+			protected TemplateVariable createVariable(TemplateVariableType type, String name, int[] offsets) {
+//				TemplateVariableResolver resolver= getContextType().getResolver(type.getName());
+//				return resolver.createVariable();
+				
+				MultiVariable variable= new PhpVariable(type, name, offsets);
+				fVariables.put(name, variable);
+				return variable;
+			}
+		};
+		TemplateBuffer buffer= translator.translate(template);
+
+		getContextType().resolve(buffer, this);
+		
+		rewriteImports();
+
+		IPreferenceStore prefs= JavaPlugin.getDefault().getPreferenceStore();
+		boolean useCodeFormatter= prefs.getBoolean(PreferenceConstants.TEMPLATES_USE_CODEFORMATTER);
+
+		IJavaProject project= getJavaProject();
+		PhpFormatter formatter= new PhpFormatter(TextUtilities.getDefaultLineDelimiter(getDocument()), getIndentation(), useCodeFormatter, project);
+		formatter.format(buffer, this);
+		
+		clear();
+
+		return buffer;
+	}
+

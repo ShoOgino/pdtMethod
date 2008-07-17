@@ -1,0 +1,33 @@
+	/* (non-Javadoc)
+	 * @see org.eclipse.jface.text.templates.TemplateVariableResolver#resolve(org.eclipse.jface.text.templates.TemplateVariable, org.eclipse.jface.text.templates.TemplateContext)
+	 */
+	public void resolve(TemplateVariable variable, TemplateContext context) {
+
+		variable.setUnambiguous(false);
+
+		if (variable instanceof PhpVariable) {
+			PhpContext jc= (PhpContext) context;
+			PhpVariable jv= (PhpVariable) variable;
+
+			List params= variable.getVariableType().getParams();
+			if (params.size() > 0) {
+				fProposals= new String[params.size()];
+				int i= 0;
+				for (Iterator iterator= params.iterator(); iterator.hasNext();) {
+					String param= (String) iterator.next();
+					fProposals[i]= param;
+					i++;
+				}
+				jv.setChoices(fProposals);
+				jv.setCurrentChoice(fProposals[0]);
+
+				jc.markAsUsed(jv.getDefaultValue());
+			} else {
+				fProposals= new String[] { variable.getDefaultValue() };
+				super.resolve(variable, context);
+				return;
+			}
+		} else
+			super.resolve(variable, context);
+	}
+

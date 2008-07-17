@@ -1,0 +1,45 @@
+		protected boolean isNewContext() {
+
+			final String templateVariableRegEx= "\\$\\{[^\\}]*\\}"; //$NON-NLS-1$
+			
+			String template= fTemplate.getPattern();
+			int currentPosition= template.indexOf($_LINE_SELECTION);
+			int insertionPosition= -1;
+			while (currentPosition != -1) {
+				insertionPosition= currentPosition;
+				template= template.replaceFirst(templateVariableRegEx, ""); //$NON-NLS-1$
+				currentPosition= template.indexOf($_LINE_SELECTION);
+			}
+			template= template.replaceAll(templateVariableRegEx, ""); //$NON-NLS-1$
+
+			AST ast= getAst();
+			ASTParser parser= ASTParser.newParser(ast.apiLevel());
+			parser.setSource(template.toCharArray());
+			parser.setProject(fCurrentProject);
+			parser.setKind(ASTParser.K_STATEMENTS);
+			ASTNode root= parser.createAST(null);
+			if (((Block)root).statements().isEmpty()) {
+				parser= ASTParser.newParser(ast.apiLevel());
+				parser.setSource(template.toCharArray());
+				parser.setProject(fCurrentProject);
+				parser.setKind(ASTParser.K_EXPRESSION);
+				root= parser.createAST(null);
+			}
+			
+			final int lineSelectionPosition= insertionPosition;
+			root.accept(new GenericVisitor() {
+				public void endVisit(Block node) {
+					super.endVisit(node);
+					if (fTemplateNode == null && node.getStartPosition() <= lineSelectionPosition && node.getLength() + node.getStartPosition() >= lineSelectionPosition) {
+						fTemplateNode= node;
+					}
+				}
+			});
+			
+			if (fTemplateNode != null && ASTNodes.getParent(fTemplateNode, MethodDeclaration.class) != null) {
+				return true;
+			}
+			
+			return false;
+		}
+

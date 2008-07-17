@@ -1,0 +1,20 @@
+	private CompilationUnitContext createNewContext(IDocument document) throws CoreException, BadLocationException {
+		AssistContext invocationContext= new AssistContext(fCompilationUnit, fContext.getStart(), fContext.getEnd() - fContext.getStart());
+		
+		SurroundWithTemplate surroundWith= new SurroundWithTemplate(invocationContext, fSelectedStatements, fTemplate);
+		Map options= fCompilationUnit.getJavaProject().getOptions(true);
+		
+		surroundWith.getRewrite().rewriteAST(document, options).apply(document);
+		
+		int offset= surroundWith.getBodyStart();
+		int length= surroundWith.getBodyLength();
+		String newSelection= document.get(offset, length);
+		
+		//Create the new context
+		CompilationUnitContextType contextType= (CompilationUnitContextType) JavaPlugin.getDefault().getTemplateContextRegistry().getContextType(fTemplate.getContextTypeId());
+		CompilationUnitContext context= contextType.createContext(document, offset, newSelection.length(), fCompilationUnit);
+		context.setVariable("selection", newSelection); //$NON-NLS-1$
+		context.setForceEvaluation(true);
+		return context;
+	}
+

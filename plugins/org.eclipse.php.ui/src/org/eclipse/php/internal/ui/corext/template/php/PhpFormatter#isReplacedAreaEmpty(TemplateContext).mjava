@@ -1,0 +1,25 @@
+	private boolean isReplacedAreaEmpty(TemplateContext context) {
+		// don't trim the buffer if the replacement area is empty
+		// case: surrounding empty lines with block
+		if (context instanceof DocumentTemplateContext) {
+			DocumentTemplateContext dtc= (DocumentTemplateContext) context;
+			if (dtc.getStart() == dtc.getCompletionOffset())
+				try {
+					IDocument document= dtc.getDocument();
+					int lineOffset= document.getLineInformationOfOffset(dtc.getStart()).getOffset();
+					//only if we are at the beginning of the line
+					if (lineOffset != dtc.getStart())
+						return false;
+					
+					//Does the selection only contain whitespace characters?
+					if (document.get(dtc.getStart(), dtc.getEnd() - dtc.getStart()).trim().length() == 0)
+						return true;
+				} catch (BadLocationException x) {
+					// ignore - this may happen when the document was modified after the initial invocation, and the
+					// context does not track the changes properly - don't trim in that case
+					return true;
+				}
+		}
+		return false;
+	}
+

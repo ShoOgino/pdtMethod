@@ -1,0 +1,47 @@
+	/*
+	 * @see IContentAssistProcessor#computeCompletionProposals(ITextViewer, int)
+	 */
+	public ICompletionProposal[] computeCompletionProposals(ITextViewer viewer,	int documentOffset) {
+
+		if (fContextType == null)
+			return null;
+
+		List proposals= new ArrayList();
+
+		String text= viewer.getDocument().get();
+		int start= getStart(text, documentOffset);
+		int end= documentOffset;
+
+		String string= text.substring(start, end);
+		int colon= string.indexOf(':');
+		boolean includeBrace= true;
+		int offset= start;
+		String prefix= string;
+		if (colon != -1) {
+			includeBrace= false;
+			offset= start + colon + 1;
+			prefix= string.substring(colon + 1);
+		} else {
+			int escape= string.indexOf("${"); //$NON-NLS-1$
+			if (escape != -1) {
+				offset= start + escape + 2;
+				includeBrace= false;
+				prefix= string.substring(escape + 2);
+			}
+		}
+		if (prefix.equals("$")) //$NON-NLS-1$
+			prefix= ""; //$NON-NLS-1$
+
+		int length= end - offset;
+
+		for (Iterator iterator= fContextType.resolvers(); iterator.hasNext(); ) {
+			TemplateVariableResolver variable= (TemplateVariableResolver) iterator.next();
+
+			if (variable.getType().startsWith(prefix))
+				proposals.add(new TemplateVariableProposal(variable, offset, length, viewer, includeBrace));
+		}
+
+		Collections.sort(proposals, fgTemplateVariableProposalComparator);
+		return (ICompletionProposal[]) proposals.toArray(new ICompletionProposal[proposals.size()]);
+	}
+

@@ -1,0 +1,40 @@
+	/**
+	 * Creates a new dialog.
+	 * 
+	 * @param parent the shell parent of the dialog
+	 * @param template the template to edit
+	 * @param edit whether this is a new template or an existing being edited
+	 * @param isNameModifiable whether the name of the template may be modified
+	 * @param registry the context type registry to use
+	 */
+	public EditTemplateDialog(Shell parent, Template template, boolean edit, boolean isNameModifiable, ContextTypeRegistry registry) {
+		super(parent);
+		
+		String title= edit
+			? PreferencesMessages.EditTemplateDialog_title_edit
+			: PreferencesMessages.EditTemplateDialog_title_new;
+		setTitle(title);
+
+		fTemplate= template;
+		fIsNameModifiable= isNameModifiable;
+		
+		String delim= new Document().getLegalLineDelimiters()[0];
+		
+		List contexts= new ArrayList();
+		for (Iterator it= registry.contextTypes(); it.hasNext();) {
+			TemplateContextType type= (TemplateContextType) it.next();
+			if (type.getId().equals("javadoc")) //$NON-NLS-1$
+				contexts.add(new String[] { type.getId(), type.getName(), "/**" + delim }); //$NON-NLS-1$
+			else
+				contexts.add(0, new String[] { type.getId(), type.getName(), "" }); //$NON-NLS-1$
+		}
+		fContextTypes= (String[][]) contexts.toArray(new String[contexts.size()][]);
+				
+		fValidationStatus= new StatusInfo();
+		
+		fContextTypeRegistry= registry;
+		
+		TemplateContextType type= fContextTypeRegistry.getContextType(template.getContextTypeId());
+		fTemplateProcessor.setContextType(type);
+	}
+

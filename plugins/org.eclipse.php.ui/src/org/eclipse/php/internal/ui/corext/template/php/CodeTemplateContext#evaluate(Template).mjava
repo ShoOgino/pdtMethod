@@ -1,0 +1,24 @@
+	/*
+	 * @see org.eclipse.jdt.internal.corext.template.TemplateContext#evaluate(org.eclipse.jdt.internal.corext.template.Template)
+	 */
+	public TemplateBuffer evaluate(Template template) throws BadLocationException, TemplateException {
+		// test that all variables are defined
+		Iterator iterator = getContextType().resolvers();
+		while (iterator.hasNext()) {
+			TemplateVariableResolver var = (TemplateVariableResolver) iterator.next();
+			if (var instanceof CodeTemplateContextType.CodeTemplateVariableResolver) {
+				Assert.isNotNull(getVariable(var.getType()), "Variable " + var.getType() + "not defined"); //$NON-NLS-1$ //$NON-NLS-2$
+			}
+		}
+
+		if (!canEvaluate(template))
+			return null;
+
+		String pattern = changeLineDelimiter(template.getPattern(), fLineDelimiter);
+
+		TemplateTranslator translator = new TemplateTranslator();
+		TemplateBuffer buffer = translator.translate(pattern);
+		getContextType().resolve(buffer, this);
+		return buffer;
+	}
+

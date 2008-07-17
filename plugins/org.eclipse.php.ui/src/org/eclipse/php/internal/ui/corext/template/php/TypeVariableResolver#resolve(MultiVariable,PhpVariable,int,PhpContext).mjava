@@ -1,0 +1,19 @@
+	private void resolve(MultiVariable mv, PhpVariable master, int index, PhpContext context) {
+		Object[] choices= master.getChoices();
+		if (choices instanceof Variable[]) {
+			context.addDependency(master, mv);
+			Variable[] variables= (Variable[]) choices;
+			String type= master.getParamType();
+			for (int i= 0; i < choices.length; i++) {
+				String[] bounds= variables[i].getTypeArgumentBoundSignatures(type, index);
+				for (int j= 0; j < bounds.length; j++)
+					bounds[j]= Signature.getSignatureSimpleName(bounds[j]);
+				mv.setChoices(variables[i], bounds);
+			}
+			mv.setKey(master.getCurrentChoice());
+		} else {
+			super.resolve(mv, context);
+			return; 
+		}
+	}
+

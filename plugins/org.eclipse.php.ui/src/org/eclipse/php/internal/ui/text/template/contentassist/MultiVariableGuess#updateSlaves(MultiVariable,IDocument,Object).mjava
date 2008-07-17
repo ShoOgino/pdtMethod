@@ -1,0 +1,22 @@
+	private void updateSlaves(MultiVariable variable, IDocument document, Object oldChoice) {
+		Object choice= variable.getCurrentChoice();
+		if (!oldChoice.equals(choice)) {
+			Set slaves= (Set) fDependencies.get(variable);
+			for (Iterator it= slaves.iterator(); it.hasNext();) {
+				MultiVariable slave= (MultiVariable) it.next();
+				VariablePosition pos= (VariablePosition) fPositions.get(slave);
+
+				Object slavesOldChoice= slave.getCurrentChoice();
+				slave.setKey(choice); // resets the current choice
+				try {
+					document.replace(pos.getOffset(), pos.getLength(), slave.getDefaultValue());
+				} catch (BadLocationException x) {
+					// ignore and continue
+				}
+				// handle slaves recursively
+				if (fDependencies.containsKey(slave))
+					updateSlaves(slave, document, slavesOldChoice);
+			}
+		}
+	}
+

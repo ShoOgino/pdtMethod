@@ -1,0 +1,35 @@
+		/**
+		 * Finds and returns the super type signature in the
+		 * <code>extends</code> or <code>implements</code> clause of
+		 * <code>subType</code> that corresponds to <code>superType</code>.
+		 * 
+		 * @param subType a direct and true sub type of <code>superType</code>
+		 * @param superType a direct super type (super class or interface) of
+		 *        <code>subType</code>
+		 * @return the super type signature of <code>subType</code> referring
+		 *         to <code>superType</code>
+		 * @throws JavaModelException if extracting the super type signatures
+		 *         fails, or if <code>subType</code> contains no super type
+		 *         signature to <code>superType</code>
+		 */
+		private String findMatchingSuperTypeSignature(IType subType, IType superType) throws JavaModelException {
+			String[] signatures= getSuperTypeSignatures(subType, superType);
+			for (int i= 0; i < signatures.length; i++) {
+				String signature= signatures[i];
+				String qualified= SignatureUtil.qualifySignature(signature, subType);
+				String subFQN= SignatureUtil.stripSignatureToFQN(qualified);
+				
+				String superFQN= superType.getFullyQualifiedName();
+				if (subFQN.equals(superFQN)) {
+					return signature;
+				}
+				
+				// handle local types
+				if (fLocalTypes.containsValue(subFQN)) {
+					return signature;
+				}
+			}
+			
+			throw new JavaModelException(new CoreException(new Status(IStatus.ERROR, JavaPlugin.getPluginId(), IStatus.OK, "Illegal hierarchy", null))); //$NON-NLS-1$
+		}
+

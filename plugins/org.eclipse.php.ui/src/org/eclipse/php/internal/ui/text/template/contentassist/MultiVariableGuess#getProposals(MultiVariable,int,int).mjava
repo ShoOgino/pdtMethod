@@ -1,0 +1,39 @@
+	public ICompletionProposal[] getProposals(final MultiVariable variable, int offset, int length) {
+		MultiVariable master= (MultiVariable) fBackwardDeps.get(variable);
+		Object[] choices;
+		if (master == null)
+			choices= variable.getChoices();
+		else
+			choices= variable.getChoices(master.getCurrentChoice());
+		
+		if (choices == null)
+			return null;
+
+		if (fDependencies.containsKey(variable)) {
+			ICompletionProposal[] ret= new ICompletionProposal[choices.length];
+			for (int i= 0; i < ret.length; i++) {
+				final Object choice= choices[i];
+				ret[i]= new Proposal(variable.toString(choice), offset, length, offset + length) {
+					public void apply(IDocument document) {
+						super.apply(document);
+						Object oldChoice= variable.getCurrentChoice();
+						variable.setCurrentChoice(choice);
+						updateSlaves(variable, document, oldChoice);
+					}
+				};
+			}
+
+			return ret;
+
+		} else {
+			if (choices.length < 2)
+				return null;
+
+			ICompletionProposal[] ret= new ICompletionProposal[choices.length];
+			for (int i= 0; i < ret.length; i++)
+				ret[i]= new Proposal(variable.toString(choices[i]), offset, length, offset + length);
+
+			return ret;
+		}
+	}
+

@@ -1,0 +1,41 @@
+	/**
+	 * Returns the lower bound of a type signature. Returns the null type
+	 * signature if <code>signature</code> is a wildcard or upper bound (<code>? extends T</code>);
+	 * returns the signature of the type <code>T</code> of a lower bound (<code>? super T</code>)
+	 * or <code>signature</code> itself if it is not a bound signature.
+	 * 
+	 * @param signature the signature
+	 * @return the lower bound signature of <code>signature</code>
+	 */
+	public static char[] getLowerBound(char[] signature) {
+		if (signature.length < 1)
+			return signature;
+		
+		if (signature.length == 1 && signature[0] == Signature.C_STAR)
+			return signature;
+		
+		int superIndex= indexOf(signature, Signature.C_EXTENDS);
+		if (superIndex == 0)
+			return NULL_TYPE_SIGNATURE_ARRAY;
+		
+		if (superIndex != -1) {
+			char afterSuper= signature[superIndex + 1];
+			if (afterSuper == Signature.C_STAR || afterSuper == Signature.C_EXTENDS)
+				// impossible captured type
+				return NULL_TYPE_SIGNATURE_ARRAY;
+		}
+		
+		char[][] typeArguments= Signature.getTypeArguments(signature);
+		for (int i= 0; i < typeArguments.length; i++)
+			if (Arrays.equals(typeArguments[i], NULL_TYPE_SIGNATURE_ARRAY))
+				return NULL_TYPE_SIGNATURE_ARRAY;
+		
+		if (signature[0] == Signature.C_SUPER) {
+			char[] type= new char[signature.length - 1];
+			System.arraycopy(signature, 1, type, 0, signature.length - 1);
+			return type;
+		}
+		
+		return signature;
+	}
+

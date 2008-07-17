@@ -1,0 +1,69 @@
+	private SourceViewer createViewer(Composite parent, int nColumns) {
+		Label label= new Label(parent, SWT.NONE);
+		label.setText(PreferencesMessages.CodeTemplateBlock_preview); 
+		GridData data= new GridData();
+		data.horizontalSpan= nColumns;
+		label.setLayoutData(data);
+//		
+//		JobSafeStructuredDocument document= new JobSafeStructuredDocument();
+//		IDocumentPartitioner partitioner= new PHPStructuredTextPartitioner();
+//		
+//		//document.setDocumentPartitioner("org.eclipse.wst.sse.core.default_structured_text_partitioning", partitioner); //$NON-NLS-1$
+//		document.setDocumentPartitioner( partitioner); 
+//
+//		IPreferenceStore store= PHPUiPlugin.getDefault().getPreferenceStore();
+//		PHPStructuredTextViewer viewer= new PHPStructuredTextViewer(parent, null, null, false, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
+//		//PHPStructuredTextViewerConfiguration configuration= new PHPStructuredTextViewerConfiguration(PHPUiPlugin.getDefault().getColorManager(), store, null, fTemplateProcessor);
+//		//ScriptSourceViewerConfiguration configuration = new PHPStructuredEditor().getSourceViwerConfiguration();
+//		
+//		PHPStructuredTextViewerConfiguration configuration = new PHPStructuredTextViewerConfiguration();
+//		viewer.configure(configuration);
+//		viewer.setEditable(false);
+//		viewer.setDocument(document);
+//		
+//		Font font= JFaceResources.getFont("org.eclipse.wst.sse.ui.textfont"); //$NON-NLS-1$		
+//		viewer.getTextWidget().setFont(font);
+//		new PHPSourcePreviewerUpdater(viewer, configuration, store);
+//		
+//		Control control= viewer.getControl();
+//		data= new GridData(GridData.HORIZONTAL_ALIGN_FILL | GridData.FILL_VERTICAL);
+//		data.horizontalSpan= nColumns;
+//		data.heightHint= fPixelConverter.convertHeightInCharsToPixels(5);
+//		control.setLayoutData(data);
+		
+		StructuredTextViewer viewer = new StructuredTextViewer(parent, null, null, false, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL | SWT.READ_ONLY);
+
+		IStructuredDocument document = StructuredModelManager.getModelManager().createStructuredDocumentFor(ContentTypeIdForPHP.ContentTypeID_PHP);
+		StyledText text = viewer.getTextWidget();
+		text.setLayoutData(data);
+		text.setEditable(false);
+		text.setFont(JFaceResources.getFont("org.eclipse.wst.sse.ui.textfont")); //$NON-NLS-1$
+
+		
+//		PHPStructuredTextViewerConfiguration configuration = new PHPStructuredTextViewerConfiguration();
+		SourceViewerConfiguration configuration = new StructuredTextViewerConfiguration() {
+			StructuredTextViewerConfiguration baseConfiguration = new PHPStructuredTextViewerConfiguration();
+
+			@Override
+			public String[] getConfiguredContentTypes(ISourceViewer sourceViewer) {
+				return baseConfiguration.getConfiguredContentTypes(sourceViewer);
+			}
+
+			@Override
+			public LineStyleProvider[] getLineStyleProviders(ISourceViewer sourceViewer, String partitionType) {
+				return baseConfiguration.getLineStyleProviders(sourceViewer, partitionType);
+			}
+		};
+		viewer.configure(configuration);
+		viewer.setEditable(false);
+		viewer.setDocument(document);
+		
+		Control control= viewer.getControl();
+		data= new GridData(GridData.HORIZONTAL_ALIGN_FILL | GridData.FILL_VERTICAL);
+		data.horizontalSpan= nColumns;
+		data.heightHint= fPixelConverter.convertHeightInCharsToPixels(5);
+		control.setLayoutData(data);
+		
+		return viewer;
+	}
+

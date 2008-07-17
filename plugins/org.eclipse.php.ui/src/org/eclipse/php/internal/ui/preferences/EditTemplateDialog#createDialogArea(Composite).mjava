@@ -1,0 +1,107 @@
+	/*
+	 * @see Dialog#createDialogArea(Composite)
+	 */
+	protected Control createDialogArea(Composite ancestor) {
+		Composite parent= new Composite(ancestor, SWT.NONE);
+		GridLayout layout= new GridLayout();
+		layout.numColumns= 2;
+		layout.marginHeight= convertVerticalDLUsToPixels(IDialogConstants.VERTICAL_MARGIN);
+		layout.marginWidth= convertHorizontalDLUsToPixels(IDialogConstants.HORIZONTAL_MARGIN);
+		layout.verticalSpacing= convertVerticalDLUsToPixels(IDialogConstants.VERTICAL_SPACING);
+		layout.horizontalSpacing= convertHorizontalDLUsToPixels(IDialogConstants.HORIZONTAL_SPACING);
+
+		parent.setLayout(layout);
+		parent.setLayoutData(new GridData(GridData.FILL_BOTH));
+		
+		ModifyListener listener= new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+				doTextWidgetChanged(e.widget);
+			}
+		};
+		
+		if (fIsNameModifiable) {
+			createLabel(parent, PreferencesMessages.EditTemplateDialog_name);
+			
+			Composite composite= new Composite(parent, SWT.NONE);
+			composite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+			layout= new GridLayout();
+			layout.numColumns= 4;
+			layout.marginWidth= 0;
+			layout.marginHeight= 0;
+			composite.setLayout(layout);
+			
+			fNameText= createText(composite);
+			fNameText.addFocusListener(new FocusListener() {
+				
+				public void focusGained(FocusEvent e) {
+				}
+				
+				public void focusLost(FocusEvent e) {
+					if (fSuppressError) {
+						fSuppressError= false;
+						updateStatusAndButtons();
+					}
+				}
+			});
+			
+			createLabel(composite, PreferencesMessages.EditTemplateDialog_context);
+			fContextCombo= new Combo(composite, SWT.READ_ONLY);
+	
+			for (int i= 0; i < fContextTypes.length; i++) {
+				fContextCombo.add(fContextTypes[i][1]);
+			}
+	
+			fContextCombo.addModifyListener(listener);
+			
+			fAutoInsertCheckbox= createCheckbox(composite, PreferencesMessages.EditTemplateDialog_autoinsert);
+			fAutoInsertCheckbox.setSelection(fTemplate.isAutoInsertable());
+		}
+		
+		createLabel(parent, PreferencesMessages.EditTemplateDialog_description);
+		
+		int descFlags= fIsNameModifiable ? SWT.BORDER : SWT.BORDER | SWT.READ_ONLY;
+		fDescriptionText= new Text(parent, descFlags );
+		fDescriptionText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		
+		fDescriptionText.addModifyListener(listener);
+
+		Label patternLabel= createLabel(parent, PreferencesMessages.EditTemplateDialog_pattern);
+		patternLabel.setLayoutData(new GridData(GridData.VERTICAL_ALIGN_BEGINNING));
+		fPatternEditor= createEditor(parent);
+		
+		Label filler= new Label(parent, SWT.NONE);
+		filler.setLayoutData(new GridData());
+		
+		Composite composite= new Composite(parent, SWT.NONE);
+		layout= new GridLayout();
+		layout.marginWidth= 0;
+		layout.marginHeight= 0;
+		composite.setLayout(layout);
+		composite.setLayoutData(new GridData());
+		
+		fInsertVariableButton= new Button(composite, SWT.NONE);
+		fInsertVariableButton.setLayoutData(getButtonGridData());
+		fInsertVariableButton.setText(PreferencesMessages.EditTemplateDialog_insert_variable);
+		fInsertVariableButton.addSelectionListener(new SelectionListener() {
+			public void widgetSelected(SelectionEvent e) {
+				fPatternEditor.getTextWidget().setFocus();
+				fPatternEditor.doOperation(ISourceViewer.CONTENTASSIST_PROPOSALS);
+			}
+
+			public void widgetDefaultSelected(SelectionEvent e) {}
+		});
+
+		fDescriptionText.setText(fTemplate.getDescription());
+		if (fIsNameModifiable) {
+			fNameText.setText(fTemplate.getName());
+			fNameText.addModifyListener(listener);
+			fContextCombo.select(getIndex(fTemplate.getContextTypeId()));
+		} else {
+			fPatternEditor.getControl().setFocus();
+		}
+		initializeActions();
+
+		applyDialogFont(parent);
+		return composite;
+	}
+

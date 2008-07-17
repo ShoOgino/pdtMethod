@@ -1,0 +1,38 @@
+	/*
+	 * @see org.eclipse.jface.text.templates.TemplateVariableResolver#resolve(org.eclipse.jface.text.templates.TemplateVariable, org.eclipse.jface.text.templates.TemplateContext)
+	 * @since 3.3
+	 */
+	public void resolve(TemplateVariable variable, TemplateContext context) {
+		if (!(variable instanceof MultiVariable)) {
+			super.resolve(variable, context);
+			return;
+		}
+		MultiVariable mv= (MultiVariable) variable;
+		List params= variable.getVariableType().getParams();
+		if (params.isEmpty()) {
+			super.resolve(variable, context);
+			return;
+		}
+		
+		PhpContext jc= (PhpContext) context;
+		String reference= (String) params.get(0);
+		int index= 0;
+		if (params.size() > 1) {
+			String indexParam= (String) params.get(1);
+			try {
+				index= Integer.parseInt(indexParam);
+			} catch (NumberFormatException x) {
+			}
+		}
+		TemplateVariable refVar= jc.getTemplateVariable(reference);
+		if (refVar instanceof PhpVariable) {
+			PhpVariable jvar= (PhpVariable) refVar;
+			resolve(mv, jvar, index, jc);
+			
+			return;
+		}
+		
+		
+		super.resolve(variable, context);
+	}
+

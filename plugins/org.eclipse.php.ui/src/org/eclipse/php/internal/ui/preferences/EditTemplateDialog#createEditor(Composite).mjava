@@ -1,0 +1,45 @@
+	private SourceViewer createEditor(Composite parent) {
+		String prefix= getPrefix();
+		IDocument document= new Document(prefix + fTemplate.getPattern());
+//		JavaTextTools tools= JavaPlugin.getDefault().getJavaTextTools();
+//		tools.setupJavaDocumentPartitioner(document, IJavaPartitions.JAVA_PARTITIONING);
+//		IPreferenceStore store= JavaPlugin.getDefault().getCombinedPreferenceStore();
+		SourceViewer viewer= new SourceViewer(parent, null, null, false, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
+//		CodeTemplateSourceViewerConfiguration configuration= new CodeTemplateSourceViewerConfiguration(tools.getColorManager(), store, null, fTemplateProcessor);
+//		viewer.configure(configuration);
+		viewer.setEditable(true);
+		viewer.setDocument(document, prefix.length(), document.getLength() - prefix.length());
+		
+//		Font font= JFaceResources.getFont(PreferenceConstants.EDITOR_TEXT_FONT);
+//		viewer.getTextWidget().setFont(font);
+//		new PHPSourcePreviewerUpdater(viewer, configuration, store);
+		
+		int nLines= document.getNumberOfLines();
+		if (nLines < 5) {
+			nLines= 5;
+		} else if (nLines > 12) {
+			nLines= 12;
+		}
+				
+		Control control= viewer.getControl();
+		GridData data= new GridData(GridData.FILL_BOTH);
+		data.widthHint= convertWidthInCharsToPixels(80);
+		data.heightHint= convertHeightInCharsToPixels(nLines);
+		control.setLayoutData(data);
+		
+		viewer.addTextListener(new ITextListener() {
+			public void textChanged(TextEvent event) {
+				if (event .getDocumentEvent() != null)
+					doSourceChanged(event.getDocumentEvent().getDocument());
+			}
+		});
+
+		viewer.addSelectionChangedListener(new ISelectionChangedListener() {
+			public void selectionChanged(SelectionChangedEvent event) {
+				updateSelectionDependentActions();
+			}
+		});
+
+		return viewer;
+	}
+

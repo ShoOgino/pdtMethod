@@ -1,0 +1,25 @@
+	/**
+	 * @param master
+	 * @param slave
+	 * @since 3.3
+	 */
+	public void addDependency(MultiVariable master, MultiVariable slave) {
+		// check for cycles and multi-slaves
+		if (fBackwardDeps.containsKey(slave))
+			throw new IllegalArgumentException("slave can only serve one master"); //$NON-NLS-1$
+		Object parent= master;
+		while (parent != null) {
+			parent= fBackwardDeps.get(parent);
+			if (parent == slave)
+				throw new IllegalArgumentException("cycle detected"); //$NON-NLS-1$
+		}
+		
+		Set slaves= (Set) fDependencies.get(master);
+		if (slaves == null) {
+			slaves= new HashSet();
+			fDependencies.put(master, slaves);
+		}
+		fBackwardDeps.put(slave, master);
+		slaves.add(slave);
+	}
+

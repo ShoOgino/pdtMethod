@@ -1,0 +1,42 @@
+		private IType[] getSupertypes(String supertype) {
+			IType[] empty= new IType[0];
+			String implementorName= SignatureUtil.stripSignatureToFQN(signature);
+			if (implementorName.length() == 0)
+				return empty;
+			
+			boolean qualified= supertype.indexOf('.') != -1;
+
+			if (fUnit == null)
+				return empty;
+			
+			IJavaProject project= fUnit.getJavaProject();
+			
+			try {
+				IType sub= project.findType(implementorName);
+				if (sub == null)
+					return empty;
+				
+				if (qualified) {
+					IType sup= project.findType(supertype);
+					if (sup == null)
+						return empty;
+					return new IType[] {sup};
+				} else {
+					ITypeHierarchy hierarchy= sub.newSupertypeHierarchy(null);
+					IType[] allTypes= hierarchy.getAllTypes();
+					List matches= new ArrayList();
+					for (int i= 0; i < allTypes.length; i++) {
+						IType type= allTypes[i];
+						if (type.getElementName().equals(supertype))
+							matches.add(type);
+					}
+					return (IType[]) matches.toArray(new IType[matches.size()]);
+				}
+				
+			} catch (JavaModelException e) {
+				// ignore and return false
+			}			
+			
+			return empty;
+		}
+

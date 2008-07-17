@@ -1,0 +1,49 @@
+		/**
+		 * Returns <code>true</code> if <code>subTypeSignature</code>
+		 * describes a type which is a true sub type of the type described by
+		 * <code>superTypeSignature</code>.
+		 * 
+		 * @param subTypeSignature the potential subtype's signature
+		 * @param superTypeSignature the potential supertype's signature
+		 * @return <code>true</code> if the inheritance relationship holds
+		 */
+		private boolean isTrueSubtypeOf(String subTypeSignature, String superTypeSignature) {
+			// try cheap test first
+			if (subTypeSignature.equals(superTypeSignature))
+				return true;
+			
+			if (SignatureUtil.isJavaLangObject(subTypeSignature))
+				return false; // Object has no super types
+			
+			if (Signature.getTypeSignatureKind(subTypeSignature) != Signature.BASE_TYPE_SIGNATURE && SignatureUtil.isJavaLangObject(superTypeSignature)) 
+				return true;
+			
+			IJavaProject project= fUnit.getJavaProject();
+			
+			try {
+				
+				if ((Signature.getTypeSignatureKind(subTypeSignature) & (Signature.TYPE_VARIABLE_SIGNATURE | Signature.CLASS_TYPE_SIGNATURE)) == 0)
+					return false;
+				IType subType= project.findType(SignatureUtil.stripSignatureToFQN(subTypeSignature));
+				if (subType == null)
+					return false;
+				
+				if ((Signature.getTypeSignatureKind(superTypeSignature) & (Signature.TYPE_VARIABLE_SIGNATURE | Signature.CLASS_TYPE_SIGNATURE)) == 0)
+					return false;
+				IType superType= project.findType(SignatureUtil.stripSignatureToFQN(superTypeSignature));
+				if (superType == null)
+					return false;
+				
+				ITypeHierarchy hierarchy= subType.newSupertypeHierarchy(null);
+				IType[] types= hierarchy.getAllSupertypes(subType);
+				
+				for (int i= 0; i < types.length; i++)
+					if (types[i].equals(superType))
+						return true;
+			} catch (JavaModelException e) {
+				// ignore and return false
+			}			
+			
+			return false;
+		}
+
