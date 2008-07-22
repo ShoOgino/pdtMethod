@@ -55,7 +55,7 @@
 
 						// Class instantiation:
 						if (NEW.equalsIgnoreCase(prevWord)) { //$NON-NLS-1$
-							return CodeAssistUtils.getOnlyClasses(elementName, true);
+							return CodeAssistUtils.getOnlyClasses(sourceModule, elementName, true);
 						}
 
 						// Handle extends and implements:
@@ -63,7 +63,7 @@
 						boolean isClassDeclaration = false;
 						if (statement.length() > 6 && (CLASS.equals(statement.subSequence(0, 5).toString()) && (isClassDeclaration = true) || statement.length() > 10 && INTERFACE.equals(statement.subSequence(0, 9).toString()))) { //$NON-NLS-1$ //$NON-NLS-2$
 
-							IModelElement[] generalizationTypes = getGeneralizationTypes(isClassDeclaration, prevWord, elementName);
+							IModelElement[] generalizationTypes = getGeneralizationTypes(sourceModule, isClassDeclaration, prevWord, elementName);
 							if (generalizationTypes != null) {
 								return generalizationTypes;
 							}
@@ -76,7 +76,7 @@
 							int preListWordStart = PHPTextSequenceUtilities.readIdentifierStartIndex(statement, preListWordEnd, false);
 							String preListWord = statement.subSequence(preListWordStart, preListWordEnd).toString();
 
-							generalizationTypes = getGeneralizationTypes(isClassDeclaration, preListWord, elementName);
+							generalizationTypes = getGeneralizationTypes(sourceModule, isClassDeclaration, preListWord, elementName);
 							if (generalizationTypes != null) {
 								return generalizationTypes;
 							}
@@ -113,7 +113,7 @@
 								}
 							}
 
-							IModelElement[] elements = CodeAssistUtils.getWorkspaceOrMethodFields(sourceModule, offset, elementName, true);
+							IModelElement[] elements = CodeAssistUtils.getGlobalOrMethodFields(sourceModule, offset, elementName, true);
 							return filterElements(sourceModule, elements);
 						}
 
@@ -126,7 +126,7 @@
 
 						// We are at class trigger:
 						if (PAAMAYIM_NEKUDOTAIM.equals(nextWord)) { //$NON-NLS-1$
-							filterElements(sourceModule, CodeAssistUtils.getWorkspaceClasses(elementName, true));
+							filterElements(sourceModule, CodeAssistUtils.getGlobalClasses(sourceModule, elementName, true));
 						}
 
 						IType[] types = CodeAssistUtils.getTypesFor(sourceModule, statement, startPosition, offset, sDoc.getLineOfOffset(offset), true);
@@ -140,7 +140,7 @@
 								}
 								return methods.toArray(new IMethod[methods.size()]);
 							}
-							return filterElements(sourceModule, CodeAssistUtils.getWorkspaceMethods(elementName, true));
+							return filterElements(sourceModule, CodeAssistUtils.getGlobalMethods(sourceModule, elementName, true));
 						}
 
 						if (types != null && types.length > 0) {
@@ -164,13 +164,13 @@
 						}
 
 						// This can be only global constant, if we've reached here:
-						IModelElement[] constants = filterElements(sourceModule, CodeAssistUtils.getWorkspaceFields(elementName, true));
+						IModelElement[] constants = filterElements(sourceModule, CodeAssistUtils.getGlobalFields(sourceModule, elementName, true));
 						if (constants.length > 0) {
 							return constants;
 						}
 
 						// Return class if nothing else found.
-						IModelElement[] elements = CodeAssistUtils.getWorkspaceOrMethodFields(sourceModule, offset, elementName, true);
+						IModelElement[] elements = CodeAssistUtils.getGlobalOrMethodFields(sourceModule, offset, elementName, true);
 						return filterElements(sourceModule, elements);
 					}
 				}

@@ -1,7 +1,19 @@
-	private static IModelElement[] getWorkspaceElements(String prefix, boolean exactName, int elementType) {
+	/**
+	 * This method searches in the project scope for all elements of specified type that match the given prefix.
+	 * If the project doesn't exist, workspace scope is used.
+	 * 
+	 * @param sourceModule Current source module
+	 * @param prefix Element name or prefix
+	 * @param exactName Whether the prefix is an exact name of the element
+	 * @param elementType Element type from {@link IDLTKSearchConstants}
+	 * @return
+	 */
+	private static IModelElement[] getGlobalElements(ISourceModule sourceModule, String prefix, boolean exactName, int elementType) {
 		SearchEngine searchEngine = new SearchEngine();
 		IDLTKLanguageToolkit toolkit = PHPLanguageToolkit.getDefault();
-		IDLTKSearchScope scope = SearchEngine.createWorkspaceScope(toolkit);
+		
+		IScriptProject scriptProject = sourceModule.getScriptProject();
+		IDLTKSearchScope scope = scriptProject != null ? SearchEngine.createSearchScope(scriptProject) : SearchEngine.createWorkspaceScope(toolkit);
 
 		int matchRule;
 		if (prefix.length() == 0 && !exactName) {
