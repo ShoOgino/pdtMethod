@@ -1,0 +1,27 @@
+	/**
+	 * Don't use this method directly, use CodeGeneration.
+	 * @param templateID the template id of the type body to get. Valid id's are {@link CodeTemplateContextType#CLASSBODY_ID},
+	 * {@link CodeTemplateContextType#INTERFACEBODY_ID}, {@link CodeTemplateContextType#ENUMBODY_ID},{@link CodeTemplateContextType#ANNOTATIONBODY_ID},
+	 * @param sp the compilation unit to which the template is added
+	 * @param typeName the type name
+	 * @param lineDelim the line delimiter to use
+	 * @return return the type body template or <code>null</code>
+	 * @throws CoreException thrown if the template could not be evaluated
+	 * @see org.eclipse.jdt.ui.CodeGeneration#getTypeBody(String, ICompilationUnit, String, String)
+	 */
+	public static String getTypeBody(String templateID, IScriptProject sp, String typeName, String lineDelim) throws CoreException {
+		if (!VALID_TYPE_BODY_TEMPLATES.contains(templateID)) {
+			throw new IllegalArgumentException("Invalid code template ID: " + templateID); //$NON-NLS-1$
+		}
+
+		Template template = getCodeTemplate(templateID, sp);
+		if (template == null) {
+			return null;
+		}
+		CodeTemplateContext context = new CodeTemplateContext(template.getContextTypeId(), sp, lineDelim);
+		//context.setCompilationUnitVariables(sp);
+		context.setVariable(CodeTemplateContextType.TYPENAME, typeName);
+
+		return evaluateTemplate(context, template);
+	}
+

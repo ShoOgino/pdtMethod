@@ -1,0 +1,48 @@
+	private static void insertTag(IDocument textBuffer, int offset, int length, String[] paramNames, String returnType, String[] typeParameterNames, boolean isDeprecated, String lineDelimiter) throws BadLocationException {
+		IRegion region = textBuffer.getLineInformationOfOffset(offset);
+		if (region == null) {
+			return;
+		}
+		String lineStart = textBuffer.get(region.getOffset(), offset - region.getOffset());
+
+		StringBuffer buf = new StringBuffer();
+		if (null != typeParameterNames) {
+			for (int i = 0; i < typeParameterNames.length; i++) {
+				if (buf.length() > 0) {
+					buf.append(lineDelimiter).append(lineStart);
+				}
+				buf.append("@param <").append(typeParameterNames[i]).append('>'); //$NON-NLS-1$
+			}
+		}
+		for (int i = 0; i < paramNames.length; i++) {
+			if (buf.length() > 0) {
+				buf.append(lineDelimiter).append(lineStart);
+			}
+			buf.append("@param ").append(paramNames[i]); //$NON-NLS-1$
+		}
+		if (returnType != null && !returnType.equals("void")) { //$NON-NLS-1$
+			if (buf.length() > 0) {
+				buf.append(lineDelimiter).append(lineStart);
+			}
+			buf.append("@return ").append(returnType); //$NON-NLS-1$
+		}
+
+		if (isDeprecated) {
+			if (buf.length() > 0) {
+				buf.append(lineDelimiter).append(lineStart);
+			}
+			buf.append("@deprecated"); //$NON-NLS-1$
+		}
+		if (buf.length() == 0 && isAllCommentWhitespace(lineStart)) {
+			int prevLine = textBuffer.getLineOfOffset(offset) - 1;
+			if (prevLine > 0) {
+				IRegion prevRegion = textBuffer.getLineInformation(prevLine);
+				int prevLineEnd = prevRegion.getOffset() + prevRegion.getLength();
+				// clear full line
+				textBuffer.replace(prevLineEnd, offset + length - prevLineEnd, ""); //$NON-NLS-1$
+				return;
+			}
+		}
+		textBuffer.replace(offset, length, buf.toString());
+	}
+

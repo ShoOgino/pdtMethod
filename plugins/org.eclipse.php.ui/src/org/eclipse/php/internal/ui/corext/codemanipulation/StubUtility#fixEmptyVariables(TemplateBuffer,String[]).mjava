@@ -1,0 +1,27 @@
+	// remove lines for empty variables
+	private static String fixEmptyVariables(TemplateBuffer buffer, String[] variables) throws MalformedTreeException, BadLocationException {
+		IDocument doc = new Document(buffer.getString());
+		int nLines = doc.getNumberOfLines();
+		MultiTextEdit edit = new MultiTextEdit();
+		HashSet removedLines = new HashSet();
+		for (int i = 0; i < variables.length; i++) {
+			TemplateVariable position = findVariable(buffer, variables[i]); // look if Javadoc tags have to be added
+			if (position == null || position.getLength() > 0) {
+				continue;
+			}
+			int[] offsets = position.getOffsets();
+			for (int k = 0; k < offsets.length; k++) {
+				int line = doc.getLineOfOffset(offsets[k]);
+				IRegion lineInfo = doc.getLineInformation(line);
+				int offset = lineInfo.getOffset();
+				String str = doc.get(offset, lineInfo.getLength());
+				if (Strings.containsOnlyWhitespaces(str) && nLines > line + 1 && removedLines.add(new Integer(line))) {
+					int nextStart = doc.getLineOffset(line + 1);
+					edit.addChild(new DeleteEdit(offset, nextStart - offset));
+				}
+			}
+		}
+		edit.apply(doc, 0);
+		return doc.get();
+	}
+

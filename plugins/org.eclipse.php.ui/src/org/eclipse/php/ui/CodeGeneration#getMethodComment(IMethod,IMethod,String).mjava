@@ -1,0 +1,62 @@
+	/**
+	 * Returns the comment for a method or constructor using the comment code templates (constructor / method / overriding method).
+	 * <code>null</code> is returned if the template is empty.
+	 * <p>The returned string is unformatted and not indented.
+	 * 
+	 * @param method The method to be documented. The method must exist.
+	 * @param overridden The method that will be overridden by the created method or
+	 * <code>null</code> for non-overriding methods. If not <code>null</code>, the method must exist.
+	 * @param lineDelimiter The line delimiter to be used.
+	 * @return Returns the constructed comment or <code>null</code> if
+	 * the comment code template is empty. The returned string is unformatted and and has no indent (formatting required).
+	 * @throws CoreException Thrown when the evaluation of the code template fails.
+	 */
+	public static String getMethodComment(IMethod method, IMethod overridden, String lineDelimiter) throws CoreException {
+		String retType = "unknown_type";
+		String[] typeParameterNames = null;
+
+		try {
+			Program program = SharedASTProvider.getAST(method.getSourceModule(), SharedASTProvider.WAIT_YES, new NullProgressMonitor());
+			ASTNode elementAt = program.getElementAt(method.getSourceRange().getOffset());
+			ITypeBinding returnType = null;
+			ITypeBinding[] typeParametersTypes = null;
+			IFunctionBinding resolvedBinding = null;
+
+			if (elementAt instanceof MethodDeclaration) {
+				MethodDeclaration methodDeclaration = (MethodDeclaration) elementAt;
+				resolvedBinding = methodDeclaration.resolveMethodBinding();
+			} else if (elementAt instanceof FunctionDeclaration) {
+				FunctionDeclaration functionDeclaration = (FunctionDeclaration) elementAt;
+				resolvedBinding = functionDeclaration.resolveFunctionBinding();
+			}
+			if (null != resolvedBinding) {
+				returnType = resolvedBinding.getReturnType();
+				if (null != returnType) {
+					if (returnType.isUnknown()) {
+						retType = "unknown_type";
+					} else if (returnType.isAmbiguous()) {
+						retType = "Ambigues";
+					} else {
+						retType = returnType.getName();
+					}
+				}
+
+				typeParametersTypes = resolvedBinding.getParameterTypes();
+
+				
+				if (null != returnType) {
+					int i = 0;
+					for (ITypeBinding type : typeParametersTypes) {
+						typeParameterNames[i++] = type.getName();
+					}
+				}
+			}
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+		}
+		String[] paramNames = method.getParameters();// ParameterNames();
+
+		return StubUtility.getMethodComment(method.getScriptProject(), method.getDeclaringType().getElementName(), method.getElementName(), paramNames, retType, typeParameterNames, overridden, false, lineDelimiter);
+	}
+

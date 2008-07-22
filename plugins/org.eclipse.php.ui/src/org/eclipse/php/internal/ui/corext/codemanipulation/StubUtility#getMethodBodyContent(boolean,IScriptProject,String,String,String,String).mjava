@@ -1,0 +1,20 @@
+	/*
+	 * Don't use this method directly, use CodeGeneration.
+	 */
+	public static String getMethodBodyContent(boolean isConstructor, IScriptProject project, String destTypeName, String methodName, String bodyStatement, String lineDelimiter) throws CoreException {
+		String templateName = isConstructor ? CodeTemplateContextType.CONSTRUCTORSTUB_ID : CodeTemplateContextType.METHODSTUB_ID;
+		Template template = getCodeTemplate(templateName, project);
+		if (template == null) {
+			return bodyStatement;
+		}
+		CodeTemplateContext context = new CodeTemplateContext(template.getContextTypeId(), project, lineDelimiter);
+		context.setVariable(CodeTemplateContextType.ENCLOSING_METHOD, methodName);
+		context.setVariable(CodeTemplateContextType.ENCLOSING_TYPE, destTypeName);
+		context.setVariable(CodeTemplateContextType.BODY_STATEMENT, bodyStatement);
+		String str = evaluateTemplate(context, template, new String[] { CodeTemplateContextType.BODY_STATEMENT });
+		if (str == null && !Strings.containsOnlyWhitespaces(bodyStatement)) {
+			return bodyStatement;
+		}
+		return str;
+	}
+

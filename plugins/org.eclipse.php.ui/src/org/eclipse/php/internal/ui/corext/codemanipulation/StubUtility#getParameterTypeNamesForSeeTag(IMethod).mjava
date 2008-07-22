@@ -1,0 +1,34 @@
+	/*
+	 * Returns the parameters type names used in see tags. Currently, these are always fully qualified.
+	 */
+	private static String[] getParameterTypeNamesForSeeTag(IMethod overridden) throws ModelException {
+		try {
+			Program program = SharedASTProvider.getAST(overridden.getSourceModule(), SharedASTProvider.WAIT_YES, new NullProgressMonitor());
+			ASTNode elementAt = program.getElementAt(overridden.getSourceRange().getOffset());
+			IFunctionBinding resolvedBinding = null;
+
+			if (elementAt instanceof MethodDeclaration) {
+				MethodDeclaration methodDeclaration = (MethodDeclaration) elementAt;
+				resolvedBinding = methodDeclaration.resolveMethodBinding();
+			} else if (elementAt instanceof FunctionDeclaration) {
+				FunctionDeclaration functionDeclaration = (FunctionDeclaration) elementAt;
+				resolvedBinding = functionDeclaration.resolveFunctionBinding();
+			}
+
+			if (resolvedBinding != null) {
+				return getParameterTypeNamesForSeeTag(resolvedBinding);
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		// fall back code. Not good for generic methods!
+		String[] paramTypes = overridden.getParameters();
+		String[] paramTypeNames = new String[paramTypes.length];
+		for (int i = 0; i < paramTypes.length; i++) {
+			paramTypeNames[i] = Signature.toString(Signature.getTypeErasure(paramTypes[i]));
+		}
+		return paramTypeNames;
+	}
+
