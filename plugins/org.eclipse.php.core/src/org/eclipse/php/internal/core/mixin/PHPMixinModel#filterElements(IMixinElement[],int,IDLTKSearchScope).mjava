@@ -1,4 +1,4 @@
-	private IModelElement[] filterElements(IMixinElement[] elements, int kind) {
+	private IModelElement[] filterElements(IMixinElement[] elements, int kind, IDLTKSearchScope scope) {
 		List<IModelElement> filtered = new LinkedList<IModelElement>();
 		for (IMixinElement element : elements) {
 			Object[] objects = element.getAllObjects();
@@ -6,7 +6,10 @@
 				if (obj instanceof PHPMixinElementInfo) {
 					PHPMixinElementInfo info = (PHPMixinElementInfo) obj;
 					if ((info.getKind() & kind) != 0) {
-						filtered.add((IModelElement) info.getObject());
+						IModelElement modelElement = (IModelElement) info.getObject();
+						if (scope == null || scope.encloses(modelElement)) {
+							filtered.add(modelElement);
+						}
 					}
 				}
 			}
