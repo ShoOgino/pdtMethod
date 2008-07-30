@@ -4,15 +4,25 @@
 	 * @param socket
 	 */
 	protected void startConnectionThread(Socket socket) {
+		// a socket has been accepted by the listener. This runs on the listener
+		// thread so we should make damn sure we don't throw an exception here
+		// otherwise it will abort that thread.
 		if (DBGpLogger.debugSession()) {
 			DBGpLogger.debug("Connection established: " + socket.toString());
 		}
-		DBGpSession session = new DBGpSession(socket);
-		if (session.isActive()) {
-			if (!DBGpSessionHandler.getInstance().fireSessionAdded(session)) {
-				// session was not taken, throw it away
-				session.endSession();
+		
+		try {
+			DBGpSession session = new DBGpSession(socket);
+			if (session.isActive()) {
+				if (!DBGpSessionHandler.getInstance().fireSessionAdded(session)) {
+					//Session not taken, we want to create a launch
+					//TODO: add config to preferences to enable, disable
+					createLaunch(session);
+				}
 			}
+		}
+		catch(Exception e) {
+			DBGpLogger.logException("Unexpected Exception: Listener thread still listening", this, e);
 		}
 	}
 

@@ -18,28 +18,7 @@
 				te.waitForEvent(XDebugPreferenceInit.getTimeoutDefault());
 			}
 
-			boolean launchIsCanceled = false;
-			if (session != null && session.isActive()) {
-				if (launchMonitor != null) {
-					launchIsCanceled = launchMonitor.isCanceled();
-				}
-
-				if (!isTerminating() && !launch.isTerminated() && !launchIsCanceled) {
-					langThread = new DBGpThread(this);
-					allThreads = new IThread[] { langThread };
-					langThread.fireCreationEvent();
-					DebugPlugin.getDefault().getBreakpointManager().addBreakpointListener(this);
-
-					//Determine something about the initial script and path mapping
-					testInitialScriptLocating();
-					initiateSession();
-				} else {
-					session.endSession();
-					terminateDebugTarget(true);
-				}
-			} else {
-				terminateDebugTarget(true);
-			}
+			sessionReceived(launchMonitor);
 		} catch (Exception e) {
 			// cannot proceed any further as we will never be able to get a
 			// session. The exception doesn't need logging.
