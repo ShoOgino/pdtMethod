@@ -1,19 +1,35 @@
 	protected Control createDialogArea(Composite parent) {
+		comboListener = new ComboListener();
 		parent = (Composite) super.createDialogArea(parent);
-		setTitle(PHPDebugCoreMessages.XDebugConfigurationDialog_xdebugSettings);
-		Composite[] subsections = createSubsections(parent, PHPDebugCoreMessages.XDebugConfigurationDialog_xdebugSettings,
-														PHPDebugCoreMessages.XDebugConfigurationDialog_proxyGroup);
+		setTitle(PHPDebugCoreMessages.XDebugConfigurationDialog_mainTitle);
+		Composite[] subsections = createSubsections(parent, PHPDebugCoreMessages.XDebugConfigurationDialog_generalGroup,
+													PHPDebugCoreMessages.XDebugConfigurationDialog_captureGroup,
+													PHPDebugCoreMessages.XDebugConfigurationDialog_proxyGroup); 
 		
+		// main
 		Composite mainSubSection = subsections[0];		
-		addLabelControl(mainSubSection, PHPDebugCoreMessages.DebuggerConfigurationDialog_debugPort, XDebugUIAttributeConstants.XDEBUG_PREF_PORT); //$NON-NLS-1$
-		portTextBox = addNumTextField(mainSubSection, XDebugUIAttributeConstants.XDEBUG_PREF_PORT, 5, 2, false);
-		showGlobals = addCheckBox(mainSubSection, PHPDebugCoreMessages.XDebugConfigurationDialog_showSuperGlobals, XDebugUIAttributeConstants.XDEBUG_PREF_SHOWSUPERGLOBALS, 0);
-		addLabelControl(mainSubSection, PHPDebugCoreMessages.XDebugConfigurationDialog_maxArrayDepth, XDebugUIAttributeConstants.XDEBUG_PREF_ARRAYDEPTH);
-		variableDepth = addVariableLevel(mainSubSection, XDebugUIAttributeConstants.XDEBUG_PREF_ARRAYDEPTH, 1, 150, 2);		
-		useMultiSession = addCheckBox(mainSubSection, PHPDebugCoreMessages.XDebugConfigurationDialog_useMultisession, XDebugUIAttributeConstants.XDEBUG_PREF_MULTISESSION, 0);
+		addLabelControl(mainSubSection, PHPDebugCoreMessages.DebuggerConfigurationDialog_debugPort, XDebugPreferenceMgr.XDEBUG_PREF_PORT); //$NON-NLS-1$
+		portTextBox = addNumTextField(mainSubSection, XDebugPreferenceMgr.XDEBUG_PREF_PORT, 5, 2, false);
+		showGlobals = addCheckBox(mainSubSection, PHPDebugCoreMessages.XDebugConfigurationDialog_showSuperGlobals, XDebugPreferenceMgr.XDEBUG_PREF_SHOWSUPERGLOBALS, 0);
 		
-		Composite proxySubSection = subsections[1];
-		useProxy = addCheckBox(proxySubSection, PHPDebugCoreMessages.XDebugConfigurationDialog_useProxy, XDebugUIAttributeConstants.XDEBUG_PREF_USEPROXY, 0);
+		addLabelControl(mainSubSection, PHPDebugCoreMessages.XDebugConfigurationDialog_maxArrayDepth, XDebugPreferenceMgr.XDEBUG_PREF_ARRAYDEPTH);
+		variableDepth = addVariableLevel(mainSubSection, XDebugPreferenceMgr.XDEBUG_PREF_ARRAYDEPTH, 1, 150, 2);
+		
+		addLabelControl(mainSubSection, PHPDebugCoreMessages.XDebugConfigurationDialog_maxChildren, XDebugPreferenceMgr.XDEBUG_PREF_CHILDREN);
+		maxChildren = addVariableLevel(mainSubSection, XDebugPreferenceMgr.XDEBUG_PREF_CHILDREN, 1, 500, 2);
+		
+		useMultiSession = addCheckBox(mainSubSection, PHPDebugCoreMessages.XDebugConfigurationDialog_useMultisession, XDebugPreferenceMgr.XDEBUG_PREF_MULTISESSION, 0);
+	
+		acceptRemoteSession = addComboField(mainSubSection, PHPDebugCoreMessages.XDebugConfigurationDialog_remoteSession, XDebugPreferenceMgr.remoteSessionOptions);
+				
+		// output capture
+		Composite captureSubSection = subsections[1];
+		captureStdout = addComboField(captureSubSection, PHPDebugCoreMessages.XDebugConfigurationDialog_captureStdout, XDebugPreferenceMgr.captureOutputOptions); 
+		captureStderr = addComboField(captureSubSection, PHPDebugCoreMessages.XDebugConfigurationDialog_captureStderr, XDebugPreferenceMgr.captureOutputOptions); 
+		
+		//proxy
+		Composite proxySubSection = subsections[2];
+		useProxy = addCheckBox(proxySubSection, PHPDebugCoreMessages.XDebugConfigurationDialog_useProxy, XDebugPreferenceMgr.XDEBUG_PREF_USEPROXY, 0);
 		useProxy.addSelectionListener(new SelectionListener() {
 		public void widgetSelected(SelectionEvent e) {
 				toggleProxyFields(useProxy.getSelection());
@@ -24,12 +40,17 @@
 			toggleProxyFields(useProxy.getSelection());
 		}	
 		});
-		addLabelControl(proxySubSection, PHPDebugCoreMessages.XDebugConfigurationDialog_idekey, XDebugUIAttributeConstants.XDEBUG_PREF_IDEKEY); //$NON-NLS-1$
-		idekeyTextBox = addATextField(proxySubSection, XDebugUIAttributeConstants.XDEBUG_PREF_IDEKEY, 100, 2);
-		addLabelControl(proxySubSection, PHPDebugCoreMessages.XDebugConfigurationDialog_proxy, XDebugUIAttributeConstants.XDEBUG_PREF_PROXY); //$NON-NLS-1$
-		proxyTextBox = addATextField(proxySubSection, XDebugUIAttributeConstants.XDEBUG_PREF_PROXY, 100, 2);
+		addLabelControl(proxySubSection, PHPDebugCoreMessages.XDebugConfigurationDialog_idekey, XDebugPreferenceMgr.XDEBUG_PREF_IDEKEY); //$NON-NLS-1$
+		idekeyTextBox = addATextField(proxySubSection, XDebugPreferenceMgr.XDEBUG_PREF_IDEKEY, 100, 2);
+		addLabelControl(proxySubSection, PHPDebugCoreMessages.XDebugConfigurationDialog_proxy, XDebugPreferenceMgr.XDEBUG_PREF_PROXY); //$NON-NLS-1$
+		proxyTextBox = addATextField(proxySubSection, XDebugPreferenceMgr.XDEBUG_PREF_PROXY, 100, 2);
+		
+		GridData gridData = (GridData)proxyTextBox.getLayoutData();
+		gridData.widthHint = convertWidthInCharsToPixels(90);
+
 		
 		internalInitializeValues(); // Initialize the dialog's values.
+		
 		return parent;
 	}
 

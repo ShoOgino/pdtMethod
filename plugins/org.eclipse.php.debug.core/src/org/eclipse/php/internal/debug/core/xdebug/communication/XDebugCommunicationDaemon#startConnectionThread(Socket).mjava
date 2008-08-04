@@ -15,9 +15,22 @@
 			DBGpSession session = new DBGpSession(socket);
 			if (session.isActive()) {
 				if (!DBGpSessionHandler.getInstance().fireSessionAdded(session)) {
-					//Session not taken, we want to create a launch
-					//TODO: add config to preferences to enable, disable
-					createLaunch(session);
+					//Session not taken, we want to create a launch					
+					AcceptRemoteSession aSess = XDebugPreferenceMgr.getAcceptRemoteSession();
+					if (aSess != AcceptRemoteSession.off) {
+						if (aSess == AcceptRemoteSession.localhost && session.getRemoteAddress().isLoopbackAddress() == false) {
+							session.endSession();
+						}
+						else {
+							// session was either localhost or from any outside one and
+							// preferences allow it.
+							createLaunch(session);
+						}
+					}
+					else {
+						//reject the session
+						session.endSession();
+					}
 				}
 			}
 		}
