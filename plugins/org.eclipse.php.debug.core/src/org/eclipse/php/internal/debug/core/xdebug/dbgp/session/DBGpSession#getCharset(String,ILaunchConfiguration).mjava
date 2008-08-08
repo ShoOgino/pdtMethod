@@ -1,0 +1,27 @@
+	private Charset getCharset(String encodingKey, ILaunchConfiguration launchConfig) {
+		Charset charset = null;
+		String outputEncoding = null;		
+		if (launchConfig != null) {
+			try {
+				outputEncoding = launchConfig.getAttribute(encodingKey, "");
+			} catch (CoreException e) {
+			}
+		}
+		if (outputEncoding == null || outputEncoding.length() == 0) {
+			// null will return it from the main preferences
+			if (encodingKey == IDebugParametersKeys.OUTPUT_ENCODING) {
+				outputEncoding = PHPProjectPreferences.getOutputEncoding(null);
+			}
+			else {
+				outputEncoding = PHPProjectPreferences.getTransferEncoding(null);				
+			}
+		}
+		if (outputEncoding == null || Charset.isSupported(outputEncoding) == false) {
+			charset = Charset.defaultCharset();
+		}
+		else {
+			charset = Charset.forName(outputEncoding);
+		}
+		return charset;
+	}
+

@@ -1,52 +1,97 @@
+	/**
+	 * decode a base64 stream.
+	 * 
+	 * @param input
+	 *            base64 encoded byte array
+	 * @return decoded byte array
+	 */
 	private static byte[] decode(byte[] input) {
-		int outsize = input.length;
-		outsize = outsize / 4 * 3;
 
-		if (input[input.length - 1] == valToBase64CharTable[64]) {
-			outsize--;
-		}
-		if (input[input.length - 2] == valToBase64CharTable[64]) {
-			outsize--;
-		}
-
-		// note that if there are 2 pads at the end, reduce outsize by 2
-		// if there is 1 pad at end, reduce outsize by 1. Also need to handle
-		// situation where we have added crlfs to the output.
-
+		// if this is a pure base64 encoded stream then
+		// the longest result is outsize (including the
+		// possibility of 2-3 extra bytes (and missing
+		// padding) will result in at most an extra 2 decoded
+		// bytes
+		int outsize = input.length / 4 * 3;
+		
+		// if we have a dodgy stream (ie not multiples of 4 bytes)
+		// we will attempt to cater for this.
 		if (input.length % 4 != 0) {
-			// error, but need to handle 76 character lines where crlfs have been added
+			outsize += input.length % 4 - 1;
+		}
+		else {
+			// we have a proper base64 stream so we can adjust futher.
+			// note that if there are 2 pads at the end, reduce outsize by 2
+			// if there is 1 pad at end, reduce outsize by 1. Also need to handle
+			// situation where we have added crlfs to the output.
+			// if (input[input.length - 1] == valToBase64CharTable[64]) {
+			// outsize--;
+			// }
+			// if (input[input.length - 2] == valToBase64CharTable[64]) {
+			// outsize--;
+			// }
 		}
 
-		byte[] decoded = new byte[outsize];
-		for (int j = 0; j < outsize; j++) {
-			decoded[j] = '?';
+		// return nothing if we have no allocation.
+		if (outsize == 0) {
+			return new byte[0];
 		}
+
+
+		// outsize could be too large. Will reduce the size at the end.
+		byte[] decoded = new byte[outsize];
 		int[] base64set = new int[4];
 
-		int pos = 0;
+		int outputPos = 0;
 		int decodepos = 0;
-
 		for (int i = 0; i < input.length; i++) {
-			if (base64ToValTable[input[i]] == -1) {
+	    	 // Get byte value and mask of any sign bit if byte > 0x7F
+	    	 int byteVal = (int) input[i] & 0xFF;			
+			if (base64ToValTable[byteVal] == -1) {
 				continue;
 			} else {
-				base64set[decodepos] = base64ToValTable[input[i]];
+				base64set[decodepos] = base64ToValTable[byteVal];
 				decodepos++;
 
 				// check to see if we have 4 entries now
 				if (decodepos == 4) {
 					decodepos = 0;
-					decoded[pos] = (byte) ((base64set[0] << 2) | ((base64set[1] & 0x30) >>> 4));
+					decoded[outputPos] = (byte) ((base64set[0] << 2) | ((base64set[1] & 0x30) >>> 4));
+					outputPos++;
 					if (base64set[2] != 64) {
-						decoded[pos + 1] = (byte) (((base64set[1] & 0x0f) << 4) | ((base64set[2] & 0x3c) >>> 2));
+						decoded[outputPos] = (byte) (((base64set[1] & 0x0f) << 4) | ((base64set[2] & 0x3c) >>> 2));
+						outputPos++;
 						if (base64set[3] != 64) {
-							decoded[pos + 2] = (byte) (((base64set[2] & 0x03) << 6 | base64set[3]));
+							decoded[outputPos] = (byte) (((base64set[2] & 0x03) << 6 | base64set[3]));
+							outputPos++;
 						}
 					}
-					pos += 3;
 				}
 			}
 		}
-		return decoded;
-	}
+
+		if (decodepos > 1) {
+			// we have some bits left over
+			decoded[outputPos] = (byte) ((base64set[0] << 2) | ((base64set[1] & 0x30) >>> 4));
+			outputPos++;
+			if (decodepos > 2 && base64set[2] != 64) {
+				decoded[outputPos] = (byte) (((base64set[1] & 0x0f) << 4) | ((base64set[2] & 0x3c) >>> 2));
+				outputPos++;
+			}
+		}
+		byte[] finalDecoded = decoded;
+
+		// reduce the returned byte array to contain just the relevant entries.
+		// outputPos contains the final length of the information
+		if (outsize > outputPos) {
+			if (outputPos > 0) {
+				finalDecoded = new byte[outputPos];
+				System.arraycopy(decoded, 0, finalDecoded, 0, outputPos);
+			} else {
+				return new byte[0];
+			}
+		}
+
+		return finalDecoded;
+	}	
 

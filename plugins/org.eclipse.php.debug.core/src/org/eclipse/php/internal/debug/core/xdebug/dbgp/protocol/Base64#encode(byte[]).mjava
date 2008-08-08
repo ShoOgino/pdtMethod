@@ -1,48 +1,11 @@
-	private static byte[] encode(byte[] input) {
-		int outsize = input.length / 3 * 4;
-		if (input.length % 3 != 0) {
-			outsize += 4;
+	public static String encode(byte[] input) {
+		byte[] result = encodeToBytes(input);;		
+		String strResult = null;
+		try {
+			strResult = new String(result, INTERNAL_ENCODING);			
+		} catch (UnsupportedEncodingException e) {
+			strResult = new String(result);			
 		}
-
-		byte[] encoded = new byte[outsize];
-		byte zero = (byte) 0;
-		byte[] data = new byte[4];
-
-		int pos = 0;
-		for (int i = 0; i < input.length; i += 3) {
-
-			switch (input.length - i) {
-				case 1:
-					// ok encode 1 byte into 2 and add '=='
-					int[] result = three2four(input[i], zero, zero);
-					data[0] = valToBase64CharTable[result[0]];
-					data[1] = valToBase64CharTable[result[1]];
-					data[2] = valToBase64CharTable[64];
-					data[3] = valToBase64CharTable[64];
-
-					break;
-				case 2:
-					result = three2four(input[i], input[i + 1], zero);
-					data[0] = valToBase64CharTable[result[0]];
-					data[1] = valToBase64CharTable[result[1]];
-					data[2] = valToBase64CharTable[result[2]];
-					data[3] = valToBase64CharTable[64];
-					// ok encode 2 bytes into 3 and add '='
-					break;
-				default:
-					result = three2four(input[i], input[i + 1], input[i + 2]);
-					data[0] = valToBase64CharTable[result[0]];
-					data[1] = valToBase64CharTable[result[1]];
-					data[2] = valToBase64CharTable[result[2]];
-					data[3] = valToBase64CharTable[result[3]];
-					// ok encode 3 bytes into 4
-					break;
-			}
-			for (int j = 0; j < 4; j++) {
-				encoded[pos] = data[j];
-				pos++;
-			}
-		}
-		return encoded;
+		return strResult;		
 	}
 
