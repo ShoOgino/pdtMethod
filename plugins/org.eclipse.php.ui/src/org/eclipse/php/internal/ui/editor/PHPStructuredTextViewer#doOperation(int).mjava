@@ -64,6 +64,52 @@
 			// ((IStructuredDocument) getDocument()).getUndoManager().enableUndoManagement();
 			// }
 		} else if (operation == CONTENTASSIST_PROPOSALS) {
+			// Handle javascript content assist when there is no support (instead of printing the stack trace)
+			if (config != null) {
+				IProject project =null;
+				boolean isJavaScriptRegion = false;
+				boolean hasJavaScriptNature = true;
+				try {
+					// Resolve the partition type
+					IStructuredDocument sDoc = (IStructuredDocument) getDocument();
+					IStructuredDocumentRegion sdRegion = sDoc.getRegionAtCharacterOffset(selection.x);
+					ITextRegion textRegion = sdRegion.getRegionAtCharacterOffset(selection.x);
+					if (textRegion instanceof ForeignRegion) {
+						isJavaScriptRegion = (textRegion.getType() == DOMRegionContext.BLOCK_TEXT);
+					}
+
+					// Check if the containing project has JS nature or not
+					if (textEditor instanceof PHPStructuredEditor) {
+						IModelElement modelElement = ((PHPStructuredEditor) textEditor).getModelElement();
+						
+						if (modelElement != null) {
+							IScriptProject scriptProject = modelElement.getScriptProject();
+							project = scriptProject.getProject();
+							if (project != null && project.getNature(JavaScriptCore.NATURE_ID) == null) {
+								hasJavaScriptNature = false;
+							}
+						}
+					}
+					
+					// open dialog if required
+					if (isJavaScriptRegion && !hasJavaScriptNature) {
+						Shell activeWorkbenchShell = PHPUiPlugin.getActiveWorkbenchShell();
+						// Pop a question dialog - if the user selects 'Yes' JS Support is added, otherwise no change
+						boolean addJavaScriptSupport = ErrorDialog.openQuestion(activeWorkbenchShell, PHPUIMessages.getString("PHPStructuredTextViewer.0"), PHPUIMessages.getString("PHPStructuredTextViewer.1"));
+						// run the JSDT action for adding the JS nature
+						if (addJavaScriptSupport && project != null) {
+							SetupProjectsWizzard wiz = new SetupProjectsWizzard();
+							wiz.selectionChanged(null, new StructuredSelection(project));
+							wiz.run(null);
+						}
+						return;
+					}
+
+				} catch (CoreException e) {
+					Logger.logException(e);
+				}
+			}
+
 			// notifing the processors that the next request for completion is an explicit request
 			if (config != null) {
 				PHPStructuredTextViewerConfiguration structuredTextViewerConfiguration = (PHPStructuredTextViewerConfiguration) config;
