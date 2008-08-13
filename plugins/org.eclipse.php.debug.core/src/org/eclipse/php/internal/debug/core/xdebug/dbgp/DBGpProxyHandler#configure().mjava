@@ -5,8 +5,7 @@
 		//TODO: move to using preference manager completely.
 		Preferences prefs = XDebugPreferenceMgr.getPreferences();
 		
-		useProxy = prefs.getBoolean(XDebugPreferenceMgr.XDEBUG_PREF_USEPROXY);
-		if (useProxy == false) {
+		if (useProxy() == false) {
 			unregister();
 		}
 		else {
@@ -15,7 +14,7 @@
 			boolean multisession = XDebugPreferenceMgr.useMultiSession(); 
 			String proxy = prefs.getString(XDebugPreferenceMgr.XDEBUG_PREF_PROXY);
 			String proxyHost = proxy;
-			int proxyPort = -1;
+			int proxyPort = DEFAULT_PROXY_PORT;
 			int split = proxy.indexOf(':');
 			if (split != -1) {
 				proxyHost = proxy.substring(0, split);
@@ -28,13 +27,30 @@
 				}
 			}
 			
-			setProxyInfo(proxyHost, proxyPort, ideKey, idePort, multisession);
-			if (XDebugPreferenceMgr.getAcceptRemoteSession() != AcceptRemoteSession.off) {
-				// if jit we must register with the proxy straight away rather than wait
-				// for the first launch
-				if (registerWithProxy() == false) {
-					displayErrorMessage("Unable to connect to proxy\n" + getErrorMsg());
+			if (proxyPort == XDebugPreferenceMgr.getPort()) {
+				displayErrorMessage("proxy port cannot be the same as debug port.\nproxy use disabled");
+				XDebugPreferenceMgr.setUseProxy(false);
+			}
+			else {
+				setProxyInfo(proxyHost, proxyPort, ideKey, idePort, multisession);
+				if (XDebugPreferenceMgr.getAcceptRemoteSession() != AcceptRemoteSession.off) {
+					// if jit we must register with the proxy straight away rather than wait
+					// for the first launch
+					
+					Job job = new Job("register with proxy") {
+
+						@Override
+						protected IStatus run(IProgressMonitor monitor) {
+							if (registerWithProxy() == false) {
+								displayErrorMessage("Unable to connect to proxy\n" + getErrorMsg());
+								XDebugPreferenceMgr.setUseProxy(false);
+							}
+							return Status.OK_STATUS;
+						}
+					};
+					job.schedule();
 				}
+				
 			}
 		}
 	}
