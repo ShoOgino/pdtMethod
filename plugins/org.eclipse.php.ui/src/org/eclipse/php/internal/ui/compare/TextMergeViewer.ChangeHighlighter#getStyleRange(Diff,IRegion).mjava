@@ -1,4 +1,24 @@
 		private StyleRange getStyleRange(Diff diff, IRegion region) {
-			return diff.getStyleRange(viewer, region);
+			//Color cText = getColor(null, getTextColor());
+			Color cTextFill = getColor(null, getTextFillColor(diff));
+			if (cTextFill == null)
+				return null;
+			Position p = diff.getPosition(getLeg(viewer));
+			int start = p.getOffset();
+			int length = p.getLength();
+			// Don't start before the region
+			if (start < region.getOffset()) {
+				length = length - (region.getOffset() - start);
+				start = region.getOffset();
+			}
+			// Don't go past the end of the region
+			int regionEnd = region.getOffset() + region.getLength();
+			if (start + length > regionEnd) {
+				length = regionEnd - start;
+			}
+			if (length < 0)
+				return null;
+			
+			return new StyleRange(start, length, null, cTextFill);
 		}
 

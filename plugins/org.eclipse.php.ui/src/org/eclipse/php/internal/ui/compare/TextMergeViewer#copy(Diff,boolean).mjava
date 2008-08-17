@@ -8,66 +8,15 @@
 		if (diff != null && !diff.isResolved()) {
 			if (!validateChange(!leftToRight)) 
 				return false;
-			Position fromPos= null;
-			Position toPos= null;
-			IDocument fromDoc= null;
-			IDocument toDoc= null;
-
 			if (leftToRight) {
 				fRight.setEnabled(true);
-				fromPos= diff.fLeftPos;
-				toPos= diff.fRightPos;
-				fromDoc= fLeft.getDocument();
-				toDoc= fRight.getDocument();
 			} else {
 				fLeft.setEnabled(true);
-				fromPos= diff.fRightPos;
-				toPos= diff.fLeftPos;
-				fromDoc= fRight.getDocument();
-				toDoc= fLeft.getDocument();
 			}
-			
-			if (fromDoc != null) {
-				
-				int fromStart= fromPos.getOffset();
-				int fromLen= fromPos.getLength();
-				
-				int toStart= toPos.getOffset();
-				int toLen= toPos.getLength();
-
-				try {
-					String s= null;
-											
-					switch (diff.fDirection) {
-					case RangeDifference.RIGHT:
-					case RangeDifference.LEFT:
-						s= fromDoc.get(fromStart, fromLen);
-						break;
-					case RangeDifference.ANCESTOR:
-						break;
-					case RangeDifference.CONFLICT:
-						if (APPEND_CONFLICT) {
-							s= toDoc.get(toStart, toLen);
-							s+= fromDoc.get(fromStart, fromLen);
-						} else
-							s= fromDoc.get(fromStart, fromLen);
-						break;
-					}
-					if (s != null) {
-						toDoc.replace(toStart, toLen, s);						
-						toPos.setOffset(toStart);
-						toPos.setLength(s.length());
-					}	
-				
-				} catch (BadLocationException e) {
-					// silently ignored
-				}
-			}
-		
-			diff.setResolved(true);
-			updateResolveStatus();
-			
-			return true;
+			boolean result = fMerger.copy(diff, leftToRight);
+			if (result)
+				updateResolveStatus();
+			return result;
 		}
 		return false;
 	}
