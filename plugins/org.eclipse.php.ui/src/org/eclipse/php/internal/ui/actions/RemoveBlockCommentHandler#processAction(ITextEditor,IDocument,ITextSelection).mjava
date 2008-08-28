@@ -1,7 +1,5 @@
 	void processAction(ITextEditor textEditor, IDocument document, ITextSelection textSelection) {
 
-		IStructuredModel model = StructuredModelManager.getModelManager().getExistingModelForEdit(document);
-
 		int selectionOffset = textSelection.getOffset();
 		int selectionLength = textSelection.getLength();
 
@@ -9,14 +7,21 @@
 			return;
 		}
 
-		model.beginRecording(this, PHPUIMessages.getString("RemoveBlockComment_tooltip"));
-		model.aboutToChangeModel();
+		IStructuredModel model = StructuredModelManager.getModelManager().getExistingModelForEdit(document);
+		if (model != null) {
+			try {
+				model.beginRecording(this, PHPUIMessages.getString("RemoveBlockComment_tooltip"));
+				model.aboutToChangeModel();
 
-		try {
-			removeOpenCloseComments(document, selectionOffset, selectionLength);
-		} finally {
-			model.changedModel();
-			model.endRecording(this);
+				try {
+					removeOpenCloseComments(document, selectionOffset, selectionLength);
+				} finally {
+					model.changedModel();
+					model.endRecording(this);
+				}
+			} finally {
+				model.releaseFromEdit();
+			}
 		}
 	}
 
