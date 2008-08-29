@@ -4,23 +4,51 @@
 			try {
 				model.beginRecording(this, PHPUIMessages.getString("ToggleComment_tooltip"));
 				model.aboutToChangeModel();
-
+				
+				// The eclipse way is as follows:
+				// If and only if all lines are commented - we should uncomment
+				// else - comment all
+				
+				// Check first whether all lines are commented:
+				boolean allLinesCommented = true;
 				for (int i = selectionStartLine; i <= selectionEndLine; i++) {
 					try {
 						if (document.getLineLength(i) > 0) {
-							if (isCommentLine(document, i)) {
+							if (!isCommentLine(document, i)) {
+								allLinesCommented = false;
+								break;
+							}
+						}
+					} catch (BadLocationException e) {
+						Logger.log(Logger.WARNING_DEBUG, e.getMessage(), e);
+					}
+				}
+
+				// If all lines are commented, uncomment all lines:
+				if (allLinesCommented) {
+					for (int i = selectionStartLine; i <= selectionEndLine; i++) {
+						try {
+							if (document.getLineLength(i) > 0) {
 								int lineOffset = document.getLineOffset(i);
 								IRegion region = document.getLineInformation(i);
 								String string = document.get(region.getOffset(), region.getLength());
 								int openCommentOffset = lineOffset + string.indexOf(SINGLE_LINE_COMMENT);
 								uncommentSingleLine(document, openCommentOffset);
-							} else {
+							}
+						} catch (BadLocationException e) {
+							Logger.log(Logger.WARNING_DEBUG, e.getMessage(), e);
+						}
+					}
+				} else { // comment all lines
+					for (int i = selectionStartLine; i <= selectionEndLine; i++) {
+						try {
+							if (document.getLineLength(i) > 0) {
 								int openCommentOffset = document.getLineOffset(i);
 								commentSingleLine(document, openCommentOffset);
 							}
+						} catch (BadLocationException e) {
+							Logger.log(Logger.WARNING_DEBUG, e.getMessage(), e);
 						}
-					} catch (BadLocationException e) {
-						Logger.log(Logger.WARNING_DEBUG, e.getMessage(), e);
 					}
 				}
 			} finally {
