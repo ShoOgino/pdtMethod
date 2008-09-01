@@ -2,27 +2,26 @@
      * @see org.eclipse.debug.ui.AbstractDebugView#createViewer(org.eclipse.swt.widgets.Composite)
      */
     protected Viewer createViewer(Composite parent) {
-        int styles= SWT.V_SCROLL | SWT.H_SCROLL | SWT.MULTI | SWT.FULL_SELECTION;
-        StructuredTextViewer fSourceViewer= new StructuredTextViewer(parent, null, null, false, styles);
-        StructuredTextViewerConfigurationHTML config = new StructuredTextViewerConfigurationHTML();
-        fSourceViewer.configure(config);
+        
+    	int styles= SWT.V_SCROLL | SWT.H_SCROLL | SWT.MULTI | SWT.FULL_SELECTION;
+        fSourceViewer= new StructuredTextViewer(parent, null, null, false, styles);
         fSourceViewer.setEditable(false);
         getSite().getWorkbenchWindow().getSelectionService().addSelectionListener(IDebugUIConstants.ID_DEBUG_VIEW, this);
         getSite().setSelectionProvider(fSourceViewer.getSelectionProvider());
 
         terminateListener = new IDebugEventSetListener() {
-        	IPHPDebugTarget target;
+        	PHPDebugTarget target;
 			public void handleDebugEvents(DebugEvent[] events) {
 				if (events != null) {
 					int size = events.length;
 					for (int i = 0; i < size; i++) {
 						Object obj = events[i].getSource();
 
-						if(!(obj instanceof IPHPDebugTarget))
+						if(!(obj instanceof PHPDebugTarget))
 							continue;
 
 						if ( events[i].getKind() == DebugEvent.TERMINATE) {
-							target = (IPHPDebugTarget)obj;
+							target = (PHPDebugTarget)obj;
 							Job job = new UIJob("debug output") {
 								public IStatus runInUIThread(IProgressMonitor monitor) {
 									update(target);

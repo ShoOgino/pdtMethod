@@ -13,21 +13,8 @@
 	        	// check if output hasn't been updated
 	        	if (fTarget == oldTarget && fUpdateCount == oldcount) return;
 
-	            ss = new HTMLDocumentLoader();
-	            dd = (BasicStructuredDocument)ss.createNewStructuredDocument();
-	            IModelManager mmanager = StructuredModelManager.getModelManager();
-	            dd.setParser(mmanager.createStructuredDocumentFor(ContentTypeIdForHTML.ContentTypeID_HTML).getParser());
 	            String output = outputBuffer.toString();
 	            dd.setText(this, output);
-	            try {
-	                dd.computePartitioning(0,output.length());
-	            } catch (BadLocationException e) {
-	                Logger.logException("DebugOutputView: ", e);
-	            }
-	            dd.setDocumentPartitioner(new StructuredTextPartitionerForHTML());
-	            dd.setReParser(new XMLStructuredDocumentReParser());
-	            dd.reparse(this);
-	            input = dd;
         	} else {
         		// Not Suspended or Terminated
 
@@ -39,22 +26,12 @@
         		return;
         	}
         }
-        StructuredTextViewer viewer = (StructuredTextViewer)getViewer();
-        StyledText control = (StyledText)viewer.getControl();
-        int top = 0;
         try {
-        	top = control.getTopIndex();
-        } catch (Exception e1){
-            Logger.logException("DebugOutputView: ", e1);
+	        fSourceViewer.setInput(input);
+        } catch (Exception e) {
+        	// Don't handle - it may be NPE in LineStyleProviderForEmbeddedCSS
         }
-        //TODO: This is a hack to workaround a null pointer exception occuring on .setInput()
-        try {
-        	viewer.setInput(input);
-            viewer.refresh();        	
-        }
-        catch (NullPointerException npe) {
-        	
-        }
-        control.setTopIndex(top);
+        fSourceViewer.configure(new StructuredTextViewerConfigurationHTML());
+        fSourceViewer.refresh();
     }
 
