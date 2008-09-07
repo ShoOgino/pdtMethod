@@ -9,62 +9,6 @@
 	 * @return
 	 */
 	private static IModelElement[] getGlobalElements(ISourceModule sourceModule, String prefix, boolean exactName, int elementType) {
-		
-		IDLTKLanguageToolkit toolkit = PHPLanguageToolkit.getDefault();
-		
-		IScriptProject scriptProject = sourceModule.getScriptProject();
-		IDLTKSearchScope scope;
-		if (scriptProject != null) {
-			scope = SearchEngine.createSearchScope(scriptProject);
-		} else {
-			scope = SearchEngine.createWorkspaceScope(toolkit);
-		}
-		
-		int matchRule;
-		if (prefix.length() == 0 && !exactName) {
-			prefix = WILDCARD;
-			matchRule = SearchPattern.R_PATTERN_MATCH;
-		} else {
-			if (exactName) {
-				matchRule = SearchPattern.R_EXACT_MATCH;
-			} else {
-				if (prefix.startsWith("$")) { //$NON-NLS-1$
-					// search variables using mixin model:
-					IModelElement[] variables = PHPMixinModel.getInstance().getVariable(prefix + WILDCARD, null, null, scope);
-					return variables == null ? EMPTY : variables;
-				}
-				matchRule = SearchPattern.R_CAMELCASE_MATCH | SearchPattern.R_PREFIX_MATCH;
-			}
-		}
-		
-		SearchEngine searchEngine = new SearchEngine();
-		SearchPattern pattern = SearchPattern.createPattern(prefix, elementType, IDLTKSearchConstants.DECLARATIONS, matchRule, toolkit);
-
-		final List<IModelElement> elements = new LinkedList<IModelElement>();
-		try {
-			searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
-				public void acceptSearchMatch(SearchMatch match) throws CoreException {
-					
-					IModelElement element = (IModelElement) match.getElement();
-					
-					// sometimes method reference is found instead of declaration (seems to be a bug in search engine):
-					if (element instanceof SourceModule) {
-						return;
-					}
-					
-					IModelElement parent = element.getParent();
-					
-					// Global scope elements in PHP are those, which are not defined in class body,
-					// or it is a variable, and its parent - source module
-					if ((element instanceof IField && parent instanceof org.eclipse.dltk.core.ISourceModule)
-							|| (!(element instanceof IField) && !(parent instanceof IType))) {
-						elements.add(element);
-					}
-				}
-			}, null);
-		} catch (CoreException e) {
-//			Logger.logException(e);
-		}
-		return elements.toArray(new IModelElement[elements.size()]);
+		return getGlobalElements(sourceModule, prefix, exactName, elementType, false);
 	}
 
