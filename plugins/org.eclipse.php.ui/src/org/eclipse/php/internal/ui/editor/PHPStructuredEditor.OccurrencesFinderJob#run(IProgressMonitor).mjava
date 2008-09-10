@@ -35,7 +35,18 @@
 				String description = location.getDescription();
 				String annotationType = (location.getFlags() == IOccurrencesFinder.F_WRITE_OCCURRENCE) ? "org.eclipse.php.ui.occurrences.write" : "org.eclipse.php.ui.occurrences"; //$NON-NLS-1$ //$NON-NLS-2$
 
-				annotationMap.put(new TemporaryAnnotation(position, annotationType, description, new ReconcileAnnotationKey(null, PHPPartitionTypes.PHP_DEFAULT, ReconcileAnnotationKey.TOTAL)), position);
+				// create an annotation to mark the occurrence
+				ReconcileAnnotationKey reconcileAnnotationKey = new ReconcileAnnotationKey(null, PHPPartitionTypes.PHP_DEFAULT, ReconcileAnnotationKey.TOTAL);
+				TemporaryAnnotation annotation = new TemporaryAnnotation(position, annotationType, description, reconcileAnnotationKey) {
+
+					// Supply an occurrence image to display in the vertical ruler
+					@Override
+					public void paint(GC gc, Canvas canvas, Rectangle r) {
+						ImageUtilities.drawImage(PHPUiPlugin.getImageDescriptorRegistry().get(PHPPluginImages.DESC_OBJS_OCCURRENCES), gc, canvas, r, SWT.CENTER, SWT.TOP);
+					}
+
+				};
+				annotationMap.put(annotation, position);
 			}
 
 			if (isCanceled(progressMonitor))
