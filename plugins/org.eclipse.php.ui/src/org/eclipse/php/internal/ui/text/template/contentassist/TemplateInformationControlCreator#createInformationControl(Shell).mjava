@@ -2,7 +2,16 @@
 	 * @see org.eclipse.jface.text.IInformationControlCreator#createInformationControl(org.eclipse.swt.widgets.Shell)
 	 */
 	public IInformationControl createInformationControl(Shell parent) {
-		fControl= new SourceViewerInformationControl(parent, fOrientation, PHPLanguageToolkit.getDefault());
+		fControl= new PHPSourceViewerInformationControl(parent, fOrientation) {
+			public void setInformation(String content) {
+				TextPresentation presentation = new TextPresentation();
+				HTML2TextReader reader = new HTML2TextReader(new StringReader(content), presentation);
+				try {
+					super.setInformation(reader.getString());
+				} catch (IOException e) {
+				}
+			}
+		};
 		fControl.addDisposeListener(new DisposeListener() {
 			public void widgetDisposed(DisposeEvent e) {
 				fControl= null;
