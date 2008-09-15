@@ -1,0 +1,28 @@
+	protected void calculateCursorPosition(IDocument document, int offset) {
+		try {
+			while (Character.isJavaIdentifierPart(document.getChar(offset))) {
+				++offset;
+			}
+			if (document.getChar(offset) == '(') {
+				boolean hasArguments = false;
+				IModelElement modelElement = getModelElement();
+				if (modelElement.getElementType() == IModelElement.METHOD) {
+					IMethod method = (IMethod) modelElement;
+					try {
+						String[] parameters = method.getParameters();
+						if (parameters != null && parameters.length > 0) {
+							hasArguments = true;
+						}
+					} catch (ModelException e) {
+					}
+				}
+				if (!hasArguments) {
+					setCursorPosition(offset - getReplacementOffset() + 2);
+				} else {
+					setCursorPosition(offset - getReplacementOffset() + 1);
+				}
+			}
+		} catch (BadLocationException e) {
+		}
+	}
+
