@@ -41,12 +41,27 @@
 
 			proposal.setModelElement(type);
 			proposal.setName(name);
-			proposal.setCompletion((elementName + suffix).toCharArray());
+			
+			if (hasPaamayimNekudotaimAtEnd && PAAMAYIM_NEKUDOTAIM == suffix) {
+				proposal.setCompletion(elementName.toCharArray());
+			} else {
+				proposal.setCompletion((elementName + suffix).toCharArray());
+			}
+			
 			try {
 				proposal.setFlags(type.getFlags());
 			} catch (ModelException e) {
 			}
-			proposal.setReplaceRange(this.startPosition - this.offset, this.endPosition - this.offset);
+			
+			int replaceStart = this.startPosition - this.offset;
+			int replaceEnd = this.endPosition - this.offset;
+			if (replaceEnd < wordEndOffset) {
+				replaceEnd = wordEndOffset - 1;
+			} else if (wordEndOffset != this.endPosition) {
+				replaceEnd--;
+			}
+			proposal.setReplaceRange(replaceStart, replaceEnd);
+			
 			proposal.setRelevance(relevance);
 			this.requestor.accept(proposal);
 			if (DEBUG) {

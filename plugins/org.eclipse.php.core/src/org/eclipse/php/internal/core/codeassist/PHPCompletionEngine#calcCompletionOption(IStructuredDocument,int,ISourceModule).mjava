@@ -105,10 +105,10 @@
 		int endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statementText, totalLength); // read whitespace
 		int startPosition = PHPTextSequenceUtilities.readIdentifierStartIndex(statementText, endPosition, true);
 		String lastWord = statementText.subSequence(startPosition, endPosition).toString();
-		boolean haveSpacesAtEnd = totalLength != endPosition;
-
+		hasWhitespaceAtEnd = totalLength != endPosition;
+		
 		if (inPHPDoc) {
-			if (isInPhpDocCompletion(statementText, offset, lastWord, haveSpacesAtEnd)) {
+			if (isInPhpDocCompletion(statementText, offset, lastWord)) {
 				// the current position is php doc block.
 				return;
 			}
@@ -122,11 +122,11 @@
 				int tagEnd = PHPTextSequenceUtilities.readIdentifierEndIndex(statementText, tagStart, false);
 				String tagName = statementText.subSequence(tagStart, tagEnd).toString();
 
-				if (isVariableCompletion(offset, tagName, lastWord, haveSpacesAtEnd)) {
+				if (isVariableCompletion(offset, tagName, lastWord)) {
 					// the current position is a variable completion after @param PHP-doc tag
 					return;
 				}
-				if (tagStart == startPosition && isReturnTypeCompletion(offset, tagName, haveSpacesAtEnd)) {
+				if (tagStart == startPosition && isReturnTypeCompletion(offset, tagName)) {
 					// the current position is a class completion after @return PHP-doc tag
 					return;
 				}
@@ -154,13 +154,13 @@
 				return;
 			}
 
-			if (haveSpacesAtEnd && isNewOrInstanceofStatement(lastWord, EMPTY, offset, type)) { //$NON-NLS-1$
+			if (hasWhitespaceAtEnd && isNewOrInstanceofStatement(lastWord, EMPTY, offset, type)) { //$NON-NLS-1$
 				// the current position is inside new or instanceof statement.
 				return;
 			}
 
 			int line = document.getLineOfOffset(offset);
-			if (isClassFunctionCompletion(statementText, offset, line, lastWord, startPosition, haveSpacesAtEnd)) {
+			if (isClassFunctionCompletion(statementText, offset, line, lastWord, startPosition)) {
 				// the current position is in class function.
 				return;
 			}
@@ -169,7 +169,26 @@
 			startPosition = PHPTextSequenceUtilities.readIdentifierStartIndex(statementText, endPosition, true);
 			String firstWord = statementText.subSequence(startPosition, endPosition).toString();
 
-			if (!haveSpacesAtEnd && isNewOrInstanceofStatement(firstWord, lastWord, offset, type)) {
+			wordEndOffset = container.getStartOffset() + phpScriptRegion.getStart() + internalPHPRegion.getTextEnd();
+			
+			ITextRegion nextRegion = internalPHPRegion;
+			do {
+				nextRegion = phpScriptRegion.getPhpToken(nextRegion.getEnd());
+				if (!PHPPartitionTypes.isPHPCommentState(nextRegion.getType()) && nextRegion.getType() != PHPRegionTypes.WHITESPACE) {
+					break;
+				}
+			} while (nextRegion.getEnd() < phpScriptRegion.getLength());
+			
+			nextWord = document.get(container.getStartOffset() + phpScriptRegion.getStart() + nextRegion.getStart(), nextRegion.getTextLength());
+			
+			hasOpenBraceAtEnd = hasPaamayimNekudotaimAtEnd = false;
+			if (OPEN_BRACE.equals(nextWord)) {
+				hasOpenBraceAtEnd = true;
+			} else if (PAAMAYIM_NEKUDOTAIM.equals(nextWord)) {
+				hasPaamayimNekudotaimAtEnd = true;
+			}
+			
+			if (!hasWhitespaceAtEnd && isNewOrInstanceofStatement(firstWord, lastWord, offset, type)) {
 				// the current position is inside new or instanceof statement.
 				if (lastWord.startsWith(DOLLAR)) {
 					getRegularCompletion(lastWord, offset, container, phpScriptRegion, internalPHPRegion, document);
@@ -177,12 +196,12 @@
 				return;
 			}
 
-			if (haveSpacesAtEnd && CodeAssistUtils.isFunctionCall(lastWord)) {
+			if (hasWhitespaceAtEnd && CodeAssistUtils.isFunctionCall(lastWord)) {
 				// the current position is between the end of a function call and open bracket.
 				return;
 			}
 
-			if (isInArrayOption(haveSpacesAtEnd, firstWord, lastWord, startPosition, offset, statementText, type)) {
+			if (isInArrayOption(firstWord, lastWord, startPosition, offset, statementText, type)) {
 				// the current position is after '[' sign show special completion.
 				return;
 			}

@@ -38,14 +38,26 @@
 
 			proposal.setModelElement(method);
 			proposal.setName(name);
-			proposal.setCompletion((elementName + BRACKETS_SUFFIX).toCharArray());
+			
+			if (hasOpenBraceAtEnd) {
+				proposal.setCompletion(elementName.toCharArray());
+			} else {
+				proposal.setCompletion((elementName + BRACKETS_SUFFIX).toCharArray());
+			}
 			try {
 				proposal.setIsConstructor(elementName.equals(CONSTRUCTOR) || method.isConstructor());
 				proposal.setFlags(method.getFlags());
 			} catch (ModelException e) {
 				PHPCorePlugin.log(e);
 			}
-			proposal.setReplaceRange(this.startPosition - this.offset, this.endPosition - this.offset);
+			
+			int replaceStart = this.startPosition - this.offset;
+			int replaceEnd = this.endPosition - this.offset;
+			if (replaceEnd < wordEndOffset) {
+				replaceEnd = wordEndOffset;
+			}
+			proposal.setReplaceRange(replaceStart, replaceEnd);
+			
 			proposal.setRelevance(relevance);
 			this.requestor.accept(proposal);
 			if (DEBUG) {
