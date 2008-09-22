@@ -1,5 +1,8 @@
 	/**
 	 * Returns the partition at <code>position</code>.
+	 * Classify the partition as - PHPPartitionTypes.PHP_COMMENT, PHPPartitionTypes.PHP_QUOTED_STRING or PHPPartitionTypes.PHP_DEFAULT.
+	 * Matching open/close symbol will only be looked for in the same partition type, so that for example a closing bracket in a commented line 
+	 * will not match an opening bracket in the code. 
 	 * 
 	 * @param position
 	 *            the position to get the partition for
@@ -11,6 +14,28 @@
 		Assert.isTrue(position <= fDocument.getLength());
 
 		try {
+			// If we have a structured document - extract the text region from the document and classify it
+			if (fDocument instanceof BasicStructuredDocument) {
+				IStructuredDocumentRegion sdRegion = ((BasicStructuredDocument) fDocument).getRegionAtCharacterOffset(position);
+				ITextRegion textRegion = sdRegion.getRegionAtCharacterOffset(position);
+				if (textRegion instanceof IPhpScriptRegion) {
+					IPhpScriptRegion phpScriptRegion = (IPhpScriptRegion) textRegion;
+					textRegion = phpScriptRegion.getPhpToken(position - sdRegion.getStartOffset() - phpScriptRegion.getStart());
+					// handle comments
+					if (PHPPartitionTypes.isPHPCommentState(textRegion.getType())) {
+						return new TypedRegion(position, 0, PHPPartitionTypes.PHP_COMMENT);
+					}
+					// handle strings
+					else if (PHPPartitionTypes.isPHPQuotesState(textRegion.getType())) {
+						return new TypedRegion(position, 0, PHPPartitionTypes.PHP_QUOTED_STRING);
+					}
+					// handle the rest
+					else if (PHPPartitionTypes.isPHPRegularState(textRegion.getType())) {
+						return new TypedRegion(position, 0, PHPPartitionTypes.PHP_DEFAULT);
+					}
+				}
+			}
+
 			return TextUtilities.getPartition(fDocument, fPartitioning, position, false);
 		} catch (BadLocationException e) {
 			return new TypedRegion(position, 0, "__no_partition_at_all"); //$NON-NLS-1$
