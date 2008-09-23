@@ -1,25 +1,66 @@
 	void processAction(ITextEditor textEditor, IDocument document, ITextSelection textSelection) {
-
+		
 		int selectionOffset = textSelection.getOffset();
 		int selectionLength = textSelection.getLength();
 
-		if (textSelection.getLength() == 0) {
-			return;
-		}
+//		if (textSelection.getLength() == 0) {
+//			return; 
+//		}
 
 		IStructuredModel model = StructuredModelManager.getModelManager().getExistingModelForEdit(document);
 		if (model != null) {
 			try {
 				model.beginRecording(this, PHPUIMessages.getString("RemoveBlockComment_tooltip"));
 				model.aboutToChangeModel();
+				
+				if (document instanceof IStructuredDocument) {
+					IStructuredDocument sDoc = (IStructuredDocument) document;
 
-				try {
-					removeOpenCloseComments(document, selectionOffset, selectionLength);
-				} finally {
-					model.changedModel();
-					model.endRecording(this);
+					//IStructuredDocumentRegion sdRegion = sDoc.getRegionAtCharacterOffset(selectionOffset);
+					ITextRegion textRegion = sDoc.getRegionAtCharacterOffset(selectionOffset).getRegionAtCharacterOffset(selectionOffset);
+
+					Stack<TextLocation> phpCommentLocationStack = new Stack<TextLocation>(); // stack of ITextRegion including only Comments' Start and End tokens locations
+
+					try {
+						int regionOffset = textRegion.getStart();
+						ITextRegion[] phpTokens = ((PhpScriptRegion) textRegion).getPhpTokens(selectionOffset - regionOffset, selectionLength);
+
+						int lastOffsetParsed = -1;
+
+						for (ITextRegion token : phpTokens) {
+							if (lastOffsetParsed >= token.getEnd()) //in order to save some redundant computation cycles...
+								continue;
+
+							if (isCommentStartRegion(token) || isCommentRegion(token) || isCommentEndRegion(token)) {
+								// if we are somewhere within a comment (start/end/body), this will find the start and end tokens
+								ITextRegion startToken = findCommentStartToken(token, (PhpScriptRegion) textRegion);
+								TextLocation commentOffsets = new TextLocation(startToken.getStart() + regionOffset, startToken.getEnd() + regionOffset);
+								boolean result = validateAndPushLocation(phpCommentLocationStack, commentOffsets);
+								assert(result);
+								lastOffsetParsed = commentOffsets.endOffset - regionOffset;
+
+								ITextRegion endToken = findCommentEndToken(token, (PhpScriptRegion) textRegion);
+								commentOffsets = new TextLocation(endToken.getStart() + regionOffset, endToken.getEnd() + regionOffset);
+								result = validateAndPushLocation(phpCommentLocationStack, commentOffsets);
+								assert(result);
+								lastOffsetParsed = commentOffsets.endOffset - regionOffset;
+
+							}
+						}
+						for (int i = phpCommentLocationStack.size(); i > 0; i--) {
+							TextLocation location = phpCommentLocationStack.pop();
+							removeOpenCloseComments(document, location.startOffset, location.endOffset );
+						}
+
+					} catch (BadLocationException e) {
+						Logger.log(Logger.WARNING_DEBUG, e.getMessage(), e);
+					}
+
 				}
+
 			} finally {
+				model.changedModel();
+				model.endRecording(this);
 				model.releaseFromEdit();
 			}
 		}
