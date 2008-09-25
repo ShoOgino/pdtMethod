@@ -58,11 +58,17 @@
 							if (unit != null) {
 								try {
 									ScriptModelUtil.reconcile(unit);
-									String string = createScriptdocTags(d, c, indentation, lineDelimiter, unit);
+									String partitionType = FormatterUtils.getPartitionType((IStructuredDocument) d, c.offset);
+									String commentBlockBody;
+									if (partitionType.equals(PHPPartitionTypes.PHP_DOC)) {
+										commentBlockBody = createScriptdocTags(d, c, indentation, lineDelimiter, unit);
+									} else {//Multiline comment
+										commentBlockBody = PHP_COMMENT_BLOCK_MID;
+									}
 									buf.append(restOfLine);
 									// only add tags if they are non-empty - the empty line has already been added above.
-									if (string != null && !string.trim().equals("*")) //$NON-NLS-1$
-										buf.append(string);
+									if (commentBlockBody != null && !commentBlockBody.trim().equals("*")) //$NON-NLS-1$
+										buf.append(commentBlockBody);
 								} catch (CoreException e) {
 									Logger.logException(e);
 								}
