@@ -1,0 +1,65 @@
+	public void build(ISourceModule module, ModuleDeclaration astModuleDeclaration, IProblemReporter reporter) throws CoreException {
+		if (!isValid()) {
+			return;
+		}
+		final ITaskReporter taskReporter = (ITaskReporter) reporter.getAdapter(ITaskReporter.class);
+		if (taskReporter == null) {
+			return;
+		}
+
+		IStructuredModel model = null;
+		try {
+			IFile file = ResourcesPlugin.getWorkspace().getRoot().getFile(module.getPath());
+			model = StructuredModelManager.getModelManager().getExistingModelForRead(file);
+			IStructuredDocumentRegion[] sdRegions = model.getStructuredDocument().getStructuredDocumentRegions();
+			for (IStructuredDocumentRegion structuredDocumentRegion : sdRegions) {
+				// analyze only php regions
+				ITextRegionList textRegions = structuredDocumentRegion.getRegions();
+				for (int i = 0; i < textRegions.size(); i++) {
+					ITextRegion textRegion = textRegions.get(i);
+					// only handle PHP regions
+					if (textRegion.getType().indexOf("PHP") == -1) { //$NON-NLS-1$
+						break;
+					}
+					// parse the actual script
+					if (textRegion instanceof PhpScriptRegion) {
+						PhpScriptRegion scriptRegion = (PhpScriptRegion) textRegion;
+						try {
+							//go over the text regions and look for the tasks
+							ITextRegion[] phpTokens = scriptRegion.getPhpTokens(textRegion.getStart(), textRegion.getLength());
+							for (int j = 0; j < phpTokens.length; j++) {
+								ITextRegion phpToken = phpTokens[j]; 
+								if (phpToken.getType().equals(PHPRegionTypes.TASK)) {
+									// get the task information from the document 
+									IStructuredDocument document = structuredDocumentRegion.getParentDocument();
+									int offset = textRegion.getStart() + phpToken.getStart();
+									int length = phpToken.getLength();
+									// get the actual message for this task - if any
+									if (j + 1 < phpTokens.length) {
+										ITextRegion phpNextToken = phpTokens[j + 1];
+										phpNextToken.getType().equals(PHPRegionTypes.TASK);
+										//length = length + phpNextToken.getLength();
+									}
+									String taskStr = document.get(offset, length);
+									taskStr = taskStr.trim();
+									int lineNumber = document.getLineOfOffset(offset);
+									
+									// report the task
+									taskReporter.reportTask(taskStr, lineNumber, TaskTag.PRIORITY_NORMAL, offset, length);
+								}
+							}
+						} catch (BadLocationException e) {
+							Logger.logException(CoreMessages.PHPTodoTaskAstParser_0, e);
+						}
+
+					}
+				}
+			}
+		} finally {
+			if (model != null) {
+				model.releaseFromRead();
+			}
+		}
+
+	}
+
