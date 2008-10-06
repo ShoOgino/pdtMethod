@@ -1,0 +1,32 @@
+	/** 
+	 * This method functionality is slightly different then the method it implements 
+	 * ( org.eclipse.jface.text.information.IInformationProviderExtension#getInformation2(org.eclipse.jface.text.ITextViewer, org.eclipse.jface.text.IRegion))
+	 * as it returns the enclosing type for members, and not the element itself (nirc)
+	 */
+	public Object getInformation2(ITextViewer textViewer, IRegion subject) {
+		if (fEditor == null)
+			return null;
+
+		if (fUseCodeResolve) {
+			IModelElement inputModelElement = fEditor.getModelElement();
+			if (inputModelElement instanceof ISourceModule && subject != null) {
+				ISourceModule sourceModule = (ISourceModule) inputModelElement;
+				IModelElement modelElement = getSelectionModelElement(subject.getOffset(), subject.getLength(), sourceModule);
+				
+				if (modelElement != null ) {
+					if (modelElement instanceof SourceType){
+						return modelElement;
+					}
+					if(modelElement instanceof Member){ 
+						return ((Member) modelElement).getDeclaringType();
+					}
+				} else { // if no element - returns null
+					return null;							
+				}
+			}
+		}
+
+		return EditorUtility.getEditorInputModelElement(fEditor, false);
+
+	}
+
