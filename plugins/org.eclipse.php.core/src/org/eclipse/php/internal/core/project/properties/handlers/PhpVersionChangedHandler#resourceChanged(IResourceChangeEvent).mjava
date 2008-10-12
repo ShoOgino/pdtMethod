@@ -1,0 +1,24 @@
+	public void resourceChanged(IResourceChangeEvent event) {
+		IResourceDelta resourceDelta = event.getDelta();
+		if (resourceDelta != null) {
+			IResourceDelta[] affectedChildren = resourceDelta.getAffectedChildren(IResourceDelta.CHANGED);
+			if (affectedChildren.length > 0) {
+				for (int i = 0; i < affectedChildren.length; i++) {
+					resourceDelta = affectedChildren[i];
+					IResource resource = resourceDelta.getResource();
+					if (resource instanceof IProject) {
+						IProject project = (IProject) resource;
+						int eventFlags = resourceDelta.getFlags();
+						if ((eventFlags & IResourceDelta.OPEN) != 0) {
+							if (project.isOpen()) {
+								projectAdded(project);
+							} else {
+								projectRemoved(project);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
