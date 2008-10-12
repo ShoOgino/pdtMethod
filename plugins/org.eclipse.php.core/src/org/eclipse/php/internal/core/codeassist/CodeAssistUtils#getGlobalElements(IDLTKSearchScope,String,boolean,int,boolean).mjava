@@ -8,7 +8,7 @@
 	 * @param elementType Element type from {@link IDLTKSearchConstants}
 	 * @return
 	 */
-	private static IModelElement[] getGlobalElements(IDLTKSearchScope scope, String prefix, boolean exactName, int elementType) {
+	private static IModelElement[] getGlobalElements(IDLTKSearchScope scope, String prefix, boolean exactName, int elementType, boolean caseSensitive) {
 		
 		IDLTKLanguageToolkit toolkit = PHPLanguageToolkit.getDefault();
 		
@@ -16,8 +16,16 @@
 		if (prefix.length() == 0 && !exactName) {
 			prefix = WILDCARD;
 			matchRule = SearchPattern.R_PATTERN_MATCH;
+			if (caseSensitive) {
+				matchRule |= SearchPattern.R_CASE_SENSITIVE;
+			}
 		} else {
-			matchRule = exactName ? SearchPattern.R_EXACT_MATCH : SearchPattern.R_CAMELCASE_MATCH | SearchPattern.R_PREFIX_MATCH;
+			if (caseSensitive) {
+				matchRule = exactName ? SearchPattern.R_EXACT_MATCH : SearchPattern.R_PREFIX_MATCH;
+				matchRule |= SearchPattern.R_CASE_SENSITIVE;
+			} else {
+				matchRule = exactName ? SearchPattern.R_EXACT_MATCH : SearchPattern.R_CAMELCASE_MATCH | SearchPattern.R_PREFIX_MATCH;
+			}
 		}
 		
 		SearchEngine searchEngine = new SearchEngine();
