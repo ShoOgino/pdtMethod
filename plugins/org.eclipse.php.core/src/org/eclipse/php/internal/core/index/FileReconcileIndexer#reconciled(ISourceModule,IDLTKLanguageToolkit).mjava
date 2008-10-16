@@ -1,0 +1,40 @@
+	public void reconciled(ISourceModule module, IDLTKLanguageToolkit toolkit) {
+
+		final IPath containerPath = module.getScriptProject().getProject().getFullPath();
+		final SearchParticipant participant = SearchEngine.getDefaultSearchParticipant();
+		final IResource resource = module.getResource();
+		final SearchDocument document = participant.getDocument(resource.getFullPath().toString(), resource.getProject());
+
+		manager.request(new IndexRequest(containerPath, manager) {
+			public boolean execute(IProgressMonitor progressMonitor) {
+				if (this.isCancelled || progressMonitor != null && progressMonitor.isCanceled()) {
+					return true;
+				}
+				/* ensure no concurrent write access to index */
+				String indexLocation = manager.computeIndexLocation(containerPath);
+				Index index = manager.getIndex(this.containerPath, indexLocation, true, true);
+				/* reuse index file */
+				/* create if none */
+				if (index == null) {
+					return true;
+				}
+				ReadWriteMonitor monitor = index.monitor;
+				if (monitor == null) {
+					return true; // index got deleted since acquired
+				}
+				try {
+					monitor.enterWrite(); // ask permission to write
+					manager.removeIndex(resource.getFullPath());
+					manager.indexDocument(document, participant, index, new Path(indexLocation));
+				} finally {
+					monitor.exitWrite(); // free write lock
+				}
+				return true;
+			}
+
+			public String toString() {
+				return "indexing " + document.getPath(); //$NON-NLS-1$
+			}
+		});
+	}
+
