@@ -1,0 +1,22 @@
+	protected void setASTLevel(String level, boolean doRefresh) {
+		String oldLevel= fCurrentASTLevel;
+		fCurrentASTLevel= level;
+
+		fDialogSettings.put(SETTINGS_JLS, fCurrentASTLevel);
+		
+		if (doRefresh && fSourceRoot != null && oldLevel != fCurrentASTLevel) {
+			try {
+				refreshAST();
+			} catch (CoreException e) {
+				showAndLogError("Could not set AST to new level.", e); //$NON-NLS-1$
+				// set back to old level
+				fCurrentASTLevel= oldLevel;
+			}
+		}
+		// update action state
+		for (int i= 0; i < fASTVersionToggleActions.length; i++) {
+			ASTLevelToggle curr= fASTVersionToggleActions[i];
+			curr.setChecked(curr.getLevel() == fCurrentASTLevel);
+		}
+	}
+

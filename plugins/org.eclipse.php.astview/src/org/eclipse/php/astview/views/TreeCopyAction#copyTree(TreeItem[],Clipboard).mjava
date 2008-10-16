@@ -1,0 +1,45 @@
+	private void copyTree(TreeItem[] selection, Clipboard clipboard) {
+		HashMap elementToTreeObj= new HashMap();
+		List roots= new ArrayList();
+		int indent= Integer.MIN_VALUE;
+		
+		for (int i= 0; i < selection.length; i++) {
+			TreeItem item= selection[i];
+			TreeObject treeObj= (TreeObject) elementToTreeObj.get(item);
+			if (treeObj == null) {
+				treeObj= new TreeObject(item, true);
+				elementToTreeObj.put(item, treeObj);
+			} else {
+				treeObj.setSelected();
+				continue;
+			}
+			// walk up to roots:
+			int level= 0;
+			item= item.getParentItem();
+			while (item != null) {
+				TreeObject parentTreeObj= (TreeObject) elementToTreeObj.get(item);
+				if (parentTreeObj == null) {
+					parentTreeObj= new TreeObject(item, false);
+					elementToTreeObj.put(item, parentTreeObj);
+					parentTreeObj.addChild(treeObj);
+					treeObj= parentTreeObj;
+					item= item.getParentItem();
+					level--;
+				} else {
+					parentTreeObj.addChild(treeObj);
+					treeObj= parentTreeObj;
+					break;
+				}
+			}
+			if (item == null) {
+				roots.add(treeObj);
+				indent= Math.max(indent, level);
+			}
+		}
+		elementToTreeObj= null;
+		StringBuffer buf= new StringBuffer();
+		appendSelectionObjects(buf, indent, roots);
+		String result= buf.length() > 0 ? buf.substring(1) : buf.toString();
+		clipboard.setContents(new Object[] { result }, new Transfer[] { TextTransfer.getInstance() });
+	}
+

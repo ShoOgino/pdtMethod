@@ -1,0 +1,51 @@
+	private Program createAST(ISourceModule input, String astLevel, int offset) throws Exception {
+		long startTime;
+		long endTime;
+		Program root = null;
+		
+		if ((getCurrentInputKind() == ASTInputKindAction.USE_RECONCILE)) {
+			final IProblemRequestor problemRequestor= new IProblemRequestor() { //strange: don't get bindings when supplying null as problemRequestor
+				public void acceptProblem(IProblem problem) {/*not interested*/}
+				public void beginReporting() {/*not interested*/}
+				public void endReporting() {/*not interested*/}
+				public boolean isActive() {
+					return true;
+				}
+			};
+			WorkingCopyOwner workingCopyOwner= new WorkingCopyOwner() {
+				public IProblemRequestor getProblemRequestor(ISourceModule workingCopy) {
+					return problemRequestor;
+				}
+			};
+			ISourceModule wc= input.getWorkingCopy(workingCopyOwner, null, new NullProgressMonitor());
+			try {
+				startTime= System.currentTimeMillis();
+				wc.reconcile(true, wc.getOwner(), new NullProgressMonitor()) ; //  getCurrentASTLevel(), null, null);
+				
+				root= SharedASTProvider.getAST(wc, SharedASTProvider.WAIT_YES, null);
+				endTime= System.currentTimeMillis();
+
+			} finally {
+				wc.discardWorkingCopy();
+			}
+			
+		} else if (input instanceof ISourceModule && (getCurrentInputKind() == ASTInputKindAction.USE_CACHE)) {
+			ISourceModule cu= (ISourceModule) input;
+			startTime= System.currentTimeMillis();
+			root= SharedASTProvider.getAST(cu, SharedASTProvider.WAIT_YES, null);
+			endTime= System.currentTimeMillis();
+			
+		} else {
+			ISourceModule sm = (ISourceModule) input;
+			StringReader st = new StringReader (sm.getBuffer().getContents());
+			ASTParser parser= ASTParser.newParser(st,  astLevel,  false, sm);
+			startTime= System.currentTimeMillis();
+			root= (Program) parser.createAST(null);
+			endTime= System.currentTimeMillis();
+		}
+		if (root != null) {
+			updateContentDescription(input, root, endTime - startTime);
+		}
+		return root;
+	}
+

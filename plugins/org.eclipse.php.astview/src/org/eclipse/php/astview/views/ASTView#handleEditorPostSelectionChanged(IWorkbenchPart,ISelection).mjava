@@ -1,0 +1,30 @@
+	protected void handleEditorPostSelectionChanged(IWorkbenchPart part, ISelection selection) {
+		if (!(selection instanceof ITextSelection)) {
+			return;
+		}
+		ITextSelection textSelection= (ITextSelection) selection;
+		if (part == fEditor) {
+			fViewer.getTree().setRedraw(false);
+			try {
+				fASTLabelProvider.setSelectedRange(textSelection.getOffset(), textSelection.getLength());
+			} finally {
+				fViewer.getTree().setRedraw(true);
+			}
+		}
+		if (!fDoLinkWithEditor) {
+			return;
+		}
+		if (fRoot == null || part != fEditor) {
+			if (part instanceof ITextEditor && (EditorUtility.getPhpInput((ITextEditor) part) != null)) {
+				try {
+					setInput((ITextEditor) part);
+				} catch (CoreException e) {
+					setContentDescription(e.getStatus().getMessage());
+				}
+			}
+			
+		} else { // fRoot != null && part == fEditor
+			doLinkWithEditor(selection);
+		}
+	}
+

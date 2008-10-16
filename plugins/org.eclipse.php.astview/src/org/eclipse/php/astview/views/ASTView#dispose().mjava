@@ -1,0 +1,23 @@
+	/* (non-Javadoc)
+	 * @see org.eclipse.ui.IWorkbenchPart#dispose()
+	 */
+	public void dispose() {
+		if (fSuperListener != null) {
+			if (fEditor != null) {
+				uninstallModificationListener();
+			}
+			ISelectionService service= getSite().getWorkbenchWindow().getSelectionService();
+			service.removePostSelectionListener(fSuperListener);
+			getSite().getPage().removePartListener(fSuperListener);
+			FileBuffers.getTextFileBufferManager().removeFileBufferListener(fSuperListener);
+			fSuperListener.dispose(); // removes reference to view
+			fSuperListener= null;
+		}
+		if (fTrayUpdater != null) {
+			fViewer.removePostSelectionChangedListener(fTrayUpdater);
+			fTray.removePostSelectionChangedListener(fTrayUpdater);
+			fTrayUpdater= null;
+		}
+		super.dispose();
+	}
+

@@ -1,0 +1,53 @@
+	/*
+	 * (non-Javadoc)
+	 * @see org.eclipse.ui.IWorkbenchPart#createPartControl(org.eclipse.swt.widgets.Composite)
+	 */
+	public void createPartControl(Composite parent) {
+		fSash= new SashForm(parent, SWT.VERTICAL | SWT.SMOOTH);
+		fViewer = new TreeViewer(fSash, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
+		fDrillDownAdapter = new DrillDownAdapter(fViewer);
+		fViewer.setContentProvider(new ASTViewContentProvider());
+		fASTLabelProvider= new ASTViewLabelProvider();
+		fViewer.setLabelProvider(fASTLabelProvider);
+		fViewer.addSelectionChangedListener(fSuperListener);
+		fViewer.addDoubleClickListener(fSuperListener);
+		fViewer.addFilter(new ViewerFilter() {
+			public boolean select(Viewer viewer, Object parentElement, Object element) {
+				if (!fCreateBindings && element instanceof Binding)
+					return false;
+				return true;
+			}
+		});
+		fViewer.addFilter(fNonRelevantFilter);
+		
+		
+		ViewForm trayForm= new ViewForm(fSash, SWT.NONE);
+		Label label= new Label(trayForm, SWT.NONE);
+		label.setText(" Comparison Tray (* = selection in the upper tree):"); //$NON-NLS-1$
+		trayForm.setTopLeft(label);
+		
+		fTray= new TreeViewer(trayForm, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
+		trayForm.setContent(fTray.getTree());
+		
+		
+		makeActions();
+		hookContextMenu();
+		hookTrayContextMenu();
+		contributeToActionBars();
+		getSite().setSelectionProvider(new ASTViewSelectionProvider());
+		
+		try {
+			IEditorPart part= EditorUtility.getActiveEditor();
+			if (part instanceof ITextEditor) {
+				setInput((ITextEditor) part);
+			}
+		} catch (CoreException e) {
+			// ignore
+		}
+		if (fSourceRoot == null) {
+			clearView();
+		} else {
+			setASTUptoDate(fSourceRoot != null);
+		}
+	}
+

@@ -1,0 +1,77 @@
+	protected void performDoubleClick() {
+		if (fEditor == null) {
+			return;
+		}
+		
+		ISelection selection = fViewer.getSelection();
+		Object obj = ((IStructuredSelection) selection).getFirstElement();
+
+		boolean isTripleClick= (obj == fPreviousDouble);
+		fPreviousDouble= isTripleClick ? null : obj;
+		
+		if (obj instanceof ExceptionAttribute) {
+			Throwable exception= ((ExceptionAttribute) obj).getException();
+			if (exception != null) {
+				String label= ((ExceptionAttribute) obj).getLabel();
+				showAndLogError("An error occurred while calculating an AST View Label:\n" + label, exception); //$NON-NLS-1$
+				return;
+			}
+		}
+		
+		ASTNode node= null;
+		if (obj instanceof ASTNode) {
+			node= (ASTNode) obj;
+			
+		} else if (obj instanceof NodeProperty) {
+			Object val= ((NodeProperty) obj).getNode();
+			if (val instanceof ASTNode) {
+				node= (ASTNode) val;
+			}
+			
+		} else if (obj instanceof Binding) {
+			
+			// TODO shou;d cpmplete the IBinding part
+			
+//			IBinding binding= ((Binding) obj).getBinding();
+//			ASTNode declaring= fRoot.findDeclaringNode(binding);
+//			if (declaring != null) {
+//				fViewer.reveal(declaring);
+//				fViewer.setSelection(new StructuredSelection(declaring));
+//			} else {
+//				fViewer.getTree().getDisplay().beep();
+//			}
+//			return;
+			
+		} else if (obj instanceof ProblemNode) {
+			ProblemNode problemNode= (ProblemNode) obj;
+			EditorUtility.selectInEditor(fEditor, problemNode.getOffset(), problemNode.getLength());
+			return;
+			
+		} else if (obj instanceof PhpElement) {
+			// TODO : complete this task for open in edtior
+/*			ISourceModule phpElement= ((PhpElement) obj).getPhpElement();
+			if (phpElement instanceof IPackageFragment) {
+				ShowInPackageViewAction showInPackageViewAction= new ShowInPackageViewAction(getViewSite());
+				showInPackageViewAction.run(phpElement);
+			} else {
+				try {
+					IEditorPart editorPart= JavaUI.openInEditor(phpElement);
+					if (editorPart != null)
+						JavaUI.revealInEditor(editorPart, phpElement);
+				} catch (PartInitException e) {
+					showAndLogError("Could not open editor.", e); //$NON-NLS-1$
+				} catch (JavaModelException e) {
+					showAndLogError("Could not open editor.", e); //$NON-NLS-1$
+				}
+			}
+*/			return;
+		}
+		
+		if (node != null) {
+			int offset= isTripleClick ? fRoot.getExtendedStartPosition(node) : node.getStart();
+			int length= isTripleClick ? fRoot.getExtendedLength(node) : node.getLength();
+
+			EditorUtility.selectInEditor(fEditor, offset, length);
+		}
+	}
+

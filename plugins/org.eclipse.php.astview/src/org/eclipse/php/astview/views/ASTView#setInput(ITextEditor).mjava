@@ -1,0 +1,28 @@
+	public void setInput(ITextEditor editor) throws CoreException {
+		if (fEditor != null) {
+			uninstallModificationListener();
+		}
+		
+		fEditor= null;
+		fRoot= null;
+		
+		if (editor != null) {
+			ISourceModule typeRoot= EditorUtility.getPhpInput(editor);
+			if (typeRoot == null) {
+				throw new CoreException(getErrorStatus("Editor not showing a CU or class file", null)); //$NON-NLS-1$
+			}
+			fSourceRoot= typeRoot;
+			String astLevel= getInitialASTLevel(typeRoot);
+			
+			ISelection selection= editor.getSelectionProvider().getSelection();
+			if (selection instanceof ITextSelection) {
+				ITextSelection textSelection= (ITextSelection) selection;
+				fRoot= internalSetInput(typeRoot, textSelection.getOffset(), textSelection.getLength(), astLevel);
+				fEditor= editor;
+				setASTLevel(astLevel, false);
+			}
+			installModificationListener();
+		}
+
+	}
+
