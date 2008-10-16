@@ -1,0 +1,40 @@
+	/**
+	 * Determines the return type of the given method element.
+	 * @param method
+	 * @param determineObjectFromOtherFile
+	 * @return
+	 */
+	public static IType[] getFunctionReturnType(IMethod method, boolean determineObjectFromOtherFile, boolean usePhpDoc) {
+		PHPTypeInferencer typeInferencer = new PHPTypeInferencer();
+
+		IEvaluatedType classType = null;
+		if (method.getDeclaringType() != null) {
+			classType = new PHPClassType(method.getDeclaringType().getElementName());
+		}
+		org.eclipse.dltk.core.ISourceModule sourceModule = method.getSourceModule();
+		ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule, null);
+		BasicContext sourceModuleContext = new BasicContext(sourceModule, moduleDeclaration);
+
+		InstanceContext instanceContext = new InstanceContext(sourceModuleContext, classType);
+		IEvaluatedType evaluatedType;
+		IModelElement[] modelElements;
+		
+		if (usePhpDoc) {
+			PHPDocMethodReturnTypeGoal phpDocGoal = new PHPDocMethodReturnTypeGoal(instanceContext, method.getElementName());
+			evaluatedType = typeInferencer.evaluateTypePHPDoc(phpDocGoal, 3000);
+	
+			modelElements = PHPTypeInferenceUtils.getModelElements(evaluatedType, sourceModuleContext, !determineObjectFromOtherFile);
+			if (modelElements != null) {
+				return modelElementsToTypes(modelElements);
+			}
+		}
+
+		MethodElementReturnTypeGoal methodGoal = new MethodElementReturnTypeGoal(instanceContext, method);
+		evaluatedType = typeInferencer.evaluateType(methodGoal);
+		modelElements = PHPTypeInferenceUtils.getModelElements(evaluatedType, sourceModuleContext, !determineObjectFromOtherFile);
+		if (modelElements != null) {
+			return modelElementsToTypes(modelElements);
+		}
+		return null;
+	}
+

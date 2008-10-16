@@ -121,12 +121,17 @@
 				++tagStart;
 				int tagEnd = PHPTextSequenceUtilities.readIdentifierEndIndex(statementText, tagStart, false);
 				String tagName = statementText.subSequence(tagStart, tagEnd).toString();
+				
+				wordEndOffset = offset;
+				while (!Character.isWhitespace(document.getChar(wordEndOffset))) {
+					++wordEndOffset;
+				}
 
-				if (isVariableCompletion(offset, tagName, lastWord)) {
+				if (isVariableCompletion(offset, tagName, tagEnd == endPosition ? EMPTY : lastWord)) {
 					// the current position is a variable completion after @param PHP-doc tag
 					return;
 				}
-				if (tagStart == startPosition && isReturnTypeCompletion(offset, tagName)) {
+				if (isReturnTypeCompletion(offset, tagName, tagEnd == endPosition ? EMPTY : lastWord)) {
 					// the current position is a class completion after @return PHP-doc tag
 					return;
 				}

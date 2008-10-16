@@ -1,7 +1,4 @@
-	private boolean isReturnTypeCompletion(final int offset, String tagName) {
-		if (!hasWhitespaceAtEnd) {
-			return false;
-		}
+	private boolean isReturnTypeCompletion(final int offset, String tagName, String className) {
 		if (!PHPDocTag.RETURN_NAME.equals(tagName)) {
 			return false;
 		}
@@ -13,12 +10,15 @@
 		if (declaration instanceof MethodDeclaration) {
 			IMethod method = (IMethod) PHPModelUtils.getModelElementByNode(sourceModule, moduleDeclaration, declaration);
 			if (method != null) {
-				IType[] returnTypes = CodeAssistUtils.getFunctionReturnType(method, true);
+				IType[] returnTypes = CodeAssistUtils.getFunctionReturnType(method, true, false);
 				if (returnTypes != null) {
+					
 					int relevanceClass = RELEVANCE_CLASS;
+					this.setSourceRange(offset - className.length(), offset);
+					
 					for (IType type : returnTypes) {
 						try {
-							if ((type.getFlags() & IPHPModifiers.Internal) == 0) {
+							if (CodeAssistUtils.startsWithIgnoreCase(type.getElementName(), className) && (type.getFlags() & IPHPModifiers.Internal) == 0) {
 								reportType(type, relevanceClass--, EMPTY);
 							}
 						} catch (ModelException e) {
