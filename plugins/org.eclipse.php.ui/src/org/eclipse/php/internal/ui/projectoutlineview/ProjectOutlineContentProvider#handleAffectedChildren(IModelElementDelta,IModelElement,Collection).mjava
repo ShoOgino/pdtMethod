@@ -1,0 +1,55 @@
+	/* package */void handleAffectedChildren(final IModelElementDelta delta, final IModelElement element, final Collection runnables) throws ModelException {
+		int count = 0;
+
+		IResourceDelta[] resourceDeltas = delta.getResourceDeltas();
+		if (resourceDeltas != null) {
+			for (int i = 0; i < resourceDeltas.length; i++) {
+				int kind = resourceDeltas[i].getKind();
+				if (kind == IResourceDelta.ADDED || kind == IResourceDelta.REMOVED) {
+					count++;
+				}
+			}
+		}
+		IModelElementDelta[] affectedChildren = delta.getAffectedChildren();
+		for (int i = 0; i < affectedChildren.length; i++) {
+			int kind = affectedChildren[i].getKind();
+			if (kind == IModelElementDelta.ADDED || kind == IModelElementDelta.REMOVED) {
+				count++;
+			}
+		}
+
+		if (count > 1) {
+			// more than one child changed, refresh from here downwards
+			if (element instanceof IScriptFolder) {
+				// a package fragment might become non empty refresh from the
+				// parent
+				IModelElement parent = (IModelElement) internalGetParent(element);
+				// 1GE8SI6: ITPJUI:WIN98 - Rename is not shown in Packages View
+				// avoid posting a refresh to an invisible parent
+				if (element.equals(fInput)) {
+					postRefresh(element, ProjectOutlineContentProvider.ORIGINAL, element, runnables);
+				} else {
+					postRefresh(parent, ProjectOutlineContentProvider.PARENT, element, runnables);
+				}
+			} else if (element instanceof IProjectFragment) {
+				Object toRefresh = internalGetParent(element);
+				postRefresh(toRefresh, ProjectOutlineContentProvider.ORIGINAL, toRefresh, runnables);
+			} else {
+				postRefresh(element, ProjectOutlineContentProvider.ORIGINAL, element, runnables);
+			}
+			return;
+		}
+		if (resourceDeltas != null) {
+			for (int i = 0; i < resourceDeltas.length; i++) {
+				if (processResourceDelta(resourceDeltas[i], element, runnables)) {
+					return; // early return, element got refreshed
+				}
+			}
+		}
+		for (int i = 0; i < affectedChildren.length; i++) {
+			if (processDelta(affectedChildren[i], runnables)) {
+				return; // early return, element got refreshed
+			}
+		}
+	}
+

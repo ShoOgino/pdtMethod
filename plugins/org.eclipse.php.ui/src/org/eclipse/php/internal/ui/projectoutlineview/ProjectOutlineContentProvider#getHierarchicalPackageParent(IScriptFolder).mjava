@@ -1,0 +1,29 @@
+	public Object getHierarchicalPackageParent(final IScriptFolder child) {
+		String name = child.getElementName();
+		IProjectFragment parent = (IProjectFragment) child.getParent();
+		int index = name.lastIndexOf(IScriptFolder.PACKAGE_DELIMITER);
+		if (index != -1) {
+			String realParentName = name.substring(0, index);
+			IScriptFolder element = parent.getScriptFolder(realParentName);
+			if (element.exists()) {
+				try {
+					if (fFoldPackages && ProjectOutlineContentProvider.isEmpty(element) && ProjectOutlineContentProvider.findSinglePackageChild(element, parent.getChildren()) != null) {
+						return getHierarchicalPackageParent(element);
+					}
+				} catch (ModelException e) {
+					// ignore
+				}
+				return element;
+			} else { // bug 65240
+				IResource resource = element.getResource();
+				if (resource != null) {
+					return resource;
+				}
+			}
+		}
+		if (parent.getResource() instanceof IProject) {
+			return parent.getScriptProject();
+		}
+		return parent;
+	}
+

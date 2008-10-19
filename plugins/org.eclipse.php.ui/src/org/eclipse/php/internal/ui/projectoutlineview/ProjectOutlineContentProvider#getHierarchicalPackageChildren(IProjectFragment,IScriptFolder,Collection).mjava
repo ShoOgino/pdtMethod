@@ -1,0 +1,55 @@
+	// hierarchical packages
+	/**
+	 * Returns the hierarchical packages inside a given fragment or root.
+	 * 
+	 * @param parent
+	 *            The parent package fragment root
+	 * @param fragment
+	 *            The package to get the children for or 'null' to get the
+	 *            children of the root.
+	 * @param result
+	 *            Collection where the resulting elements are added
+	 * @throws JavaModelException
+	 */
+	private void getHierarchicalPackageChildren(final IProjectFragment parent, final IScriptFolder fragment, final Collection result) throws ModelException {
+		IModelElement[] children = parent.getChildren();
+
+		List newElements = new ArrayList();
+		if (fragment == null || fragment.isRootFolder()) {
+			for (int i = 0; i < children.length; ++i) {
+				if (children[i] instanceof IScriptFolder) {
+					IScriptFolder scriptFolder = ((IScriptFolder) children[i]);
+					if (scriptFolder.isRootFolder()) {
+						IModelElement[] members = scriptFolder.getChildren();
+						for (int j = 0; j < members.length; ++j) {
+							newElements.add(members[j]);
+						}
+						continue;
+					}
+				}
+				newElements.add(children[i]);
+			}
+			children = (IModelElement[]) newElements.toArray(new IModelElement[newElements.size()]);
+		}
+
+		String prefix = fragment != null ? fragment.getElementName() + IScriptFolder.PACKAGE_DELIMETER_STR : ""; //$NON-NLS-1$
+		int prefixLen = prefix.length();
+		for (int i = 0; i < children.length; i++) {
+			if (children[i] instanceof IScriptFolder) {
+				IScriptFolder curr = (IScriptFolder) children[i];
+				String name = curr.getElementName();
+				if (name.startsWith(prefix) && name.length() > prefixLen && name.indexOf(IScriptFolder.PACKAGE_DELIMITER, prefixLen) == -1) {
+					if (fFoldPackages) {
+						curr = ProjectOutlineContentProvider.getFolded(children, curr);
+					}
+					result.add(curr);
+				} /*
+																																						 * else if (fragment == null && curr.isRootFolder()) {
+																																						 * result.add(curr); }
+																																						 */
+			} else {
+				result.add(children[i]);
+			}
+		}
+	}
+

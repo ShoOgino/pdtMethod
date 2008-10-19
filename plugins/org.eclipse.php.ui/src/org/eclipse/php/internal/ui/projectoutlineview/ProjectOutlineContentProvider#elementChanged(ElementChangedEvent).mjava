@@ -1,0 +1,22 @@
+	/*
+	 * (non-Javadoc) Method declared on IElementChangedListener.
+	 */
+	public void elementChanged(final ElementChangedEvent event) {
+		final ArrayList<Runnable> runnables = new ArrayList<Runnable>();
+		try {
+			// 58952 delete project does not update Package Explorer [package
+			// explorer]
+			// if the input to the viewer is deleted then refresh to avoid the
+			// display of stale elements
+			if (inputDeleted(runnables)) {
+				return;
+			}
+
+			processDelta(event.getDelta(), runnables);
+		} catch (ModelException e) {
+			DLTKUIPlugin.log(e);
+		} finally {
+			executeRunnables(runnables);
+		}
+	}
+

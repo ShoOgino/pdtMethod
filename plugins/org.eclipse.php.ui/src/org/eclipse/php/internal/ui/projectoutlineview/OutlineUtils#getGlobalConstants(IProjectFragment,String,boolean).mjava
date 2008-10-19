@@ -1,0 +1,21 @@
+	public static IModelElement[] getGlobalConstants(IProjectFragment projectFragment, String prefix, boolean exactName) {
+		ArrayList<IModelElement> constantsElements = new ArrayList<IModelElement>();
+		
+		IModelElement[] globalElements = getGlobalElements( projectFragment, prefix, exactName, IDLTKSearchConstants.FIELD);
+		for (IModelElement modelElement : globalElements) {
+			if ((modelElement instanceof IField && modelElement.getParent() instanceof ISourceModule)){
+				
+				int flags = 0;
+				try {
+					flags = ((IField)modelElement).getFlags();
+				} catch (ModelException e) {
+					Logger.logException(e);
+				}
+				if ((flags & Modifiers.AccConstant) != 0) 
+					constantsElements.add(modelElement);
+			}
+		}
+		
+		return constantsElements.toArray(new IModelElement[constantsElements.size()]);
+	}
+

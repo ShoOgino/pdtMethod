@@ -1,0 +1,56 @@
+		Object[] getChildren() {
+			TreeSet<IModelElement> childrenList = new TreeSet<IModelElement>(new Comparator<IModelElement>() {
+				public int compare(IModelElement o1, IModelElement o2) {
+					return (o1.getElementName().compareTo(o2.getElementName()));
+
+				}
+			});
+
+			if (modelElement != null && modelElement instanceof IScriptProject) {
+				IScriptProject scriptProject = (IScriptProject) modelElement;
+				ArrayList<IProjectFragment> projectFragments = new ArrayList<IProjectFragment>();
+
+				// getting project's fragments
+				try {
+					for (IProjectFragment projectFragment : (scriptProject.getProjectFragments())) {
+						if (!projectFragment.isExternal()) { //adding only non-external resources
+							projectFragments.add(projectFragment);
+						}
+					}
+				} catch (ModelException e) {
+					Logger.logException(e);
+				}
+
+				// foreach fragment getting its children, 
+				// and then merging them into last fragments list
+				for (IProjectFragment projectFragment : projectFragments) {
+					IModelElement[] children = null;
+
+					switch (type) {
+						case GROUP_CLASSES:
+							children = OutlineUtils.getGlobalClasses(projectFragment, "", false);
+							break;
+
+						case GROUP_FUNCTIONS:
+							children = OutlineUtils.getGlobalFunctions(projectFragment, "", false);
+							break;
+
+						case GROUP_CONSTANTS:
+							children = OutlineUtils.getGlobalConstants(projectFragment, "", false);
+							break;
+					}
+
+					childrenList.addAll(Arrays.asList(children));
+					if (null != children) {
+						for (IModelElement child : children) {
+							childrenList.add(child);
+						}
+					}
+				}
+			}
+
+			if (null == childrenList || childrenList.isEmpty())
+				return StandardModelElementContentProvider.NO_CHILDREN;
+			return childrenList.toArray();
+		}
+

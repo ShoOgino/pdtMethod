@@ -1,0 +1,63 @@
+	/**
+	 * Process a resource delta.
+	 * 
+	 * @param delta
+	 *            the delta to process
+	 * @param parent
+	 *            the parent
+	 * @param runnables
+	 *            the resulting view changes as runnables (type {@link Runnable})
+	 * @return true if the parent got refreshed
+	 */
+	private boolean processResourceDelta(final IResourceDelta delta, final Object parent, final Collection runnables) {
+		int status = delta.getKind();
+		int flags = delta.getFlags();
+
+		IResource resource = delta.getResource();
+		// filter out changes affecting the output folder
+		if (resource == null) {
+			return false;
+		}
+
+		// this could be optimized by handling all the added children in the
+		// parent
+		if ((status & IResourceDelta.REMOVED) != 0) {
+			if (parent instanceof IScriptFolder) {
+				// refresh one level above to deal with empty package filtering
+				// properly
+				postRefresh(internalGetParent(parent), ProjectOutlineContentProvider.PARENT, parent, runnables);
+				return true;
+			} else {
+				postRemove(resource, runnables);
+			}
+		}
+		if ((status & IResourceDelta.ADDED) != 0) {
+			if (parent instanceof IScriptFolder) {
+				// refresh one level above to deal with empty package filtering
+				// properly
+				postRefresh(internalGetParent(parent), ProjectOutlineContentProvider.PARENT, parent, runnables);
+				return true;
+			} else {
+				postAdd(parent, resource, runnables);
+			}
+		}
+		if ((status & IResourceDelta.CHANGED) != 0) {
+			if ((flags & IResourceDelta.TYPE) != 0) {
+				postRefresh(parent, ProjectOutlineContentProvider.PARENT, resource, runnables);
+				return true;
+			}
+		}
+		// open/close state change of a project
+		if ((flags & IResourceDelta.OPEN) != 0) {
+			postProjectStateChanged(internalGetParent(parent), runnables);
+			return true;
+		}
+		IResourceDelta[] resourceDeltas = delta.getAffectedChildren();
+		for (int i = 0; i < resourceDeltas.length; i++) {
+			if (processResourceDelta(resourceDeltas[i], resource, runnables)) {
+				return false; // early return, element got refreshed
+			}
+		}
+		return false;
+	}
+
