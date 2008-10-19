@@ -22,43 +22,13 @@
 			return false;
 		}
 		int endPosition = startPosition - 1;
-
+		
 		endPosition = PHPTextSequenceUtilities.readBackwardSpaces(text, endPosition);
 		startPosition = PHPTextSequenceUtilities.readIdentifierStartIndex(text, endPosition, true);
 		String variableName = text.subSequence(startPosition, endPosition).toString();
 
-		reportArrayVariables(variableName, offset, lastWord);
-
-		int relevanceMethod = RELEVANCE_METHOD;
-
-		IModelElement[] functions = CodeAssistUtils.getGlobalMethods(sourceModule, lastWord, requestor.isContextInformationMode());
-		for (IModelElement function : functions) {
-			try {
-				if ((((IMethod) function).getFlags() & IPHPModifiers.Internal) == 0) {
-					reportMethod((IMethod) function, relevanceMethod--);
-				}
-			} catch (ModelException e) {
-				if (DLTKCore.DEBUG_COMPLETION) {
-					e.printStackTrace();
-				}
-			}
-		}
-
-		if (showConstantAssist()) {
-			IModelElement[] constants = CodeAssistUtils.getGlobalFields(sourceModule, lastWord, requestor.isContextInformationMode(), !showVarsFromOtherFiles(), constantsCaseSensitive());
-			int relevanceConst = RELEVANCE_CONST;
-			for (IModelElement constant : constants) {
-				IField field = (IField) constant;
-				try {
-					if ((field.getFlags() & Modifiers.AccConstant) != 0) {
-						reportField(field, relevanceConst--, false);
-					}
-				} catch (ModelException e) {
-					if (DLTKCore.DEBUG_COMPLETION) {
-						e.printStackTrace();
-					}
-				}
-			}
+		if (!reportArrayVariables(variableName, offset, lastWord)) {
+			getRegularCompletion(lastWord, offset, false);
 		}
 		return true;
 	}

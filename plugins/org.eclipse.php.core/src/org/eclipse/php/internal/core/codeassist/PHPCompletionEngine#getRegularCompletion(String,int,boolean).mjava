@@ -1,4 +1,4 @@
-	protected void getRegularCompletion(String prefix, int offset, ITextRegionCollection sdRegion, ITextRegion tRegion, ContextRegion internalPhpRegion, IStructuredDocument document) {
+	protected void getRegularCompletion(String prefix, int offset, boolean showKeywords) {
 
 		this.setSourceRange(offset - prefix.length(), offset);
 
@@ -20,17 +20,19 @@
 		int relevanceClass = RELEVANCE_CLASS;
 		int relevanceMethod = RELEVANCE_METHOD;
 
-		Collection<KeywordData> keywordsList = PHPKeywords.findByPrefix(sourceModule.getScriptProject().getProject(), prefix);
-		for (KeywordData k : keywordsList) {
-			if (!inClass || (inClass && k.isClassKeyword)) {
-				reportKeyword(k.name, k.suffix, relevanceKeyword--);
+		if (showKeywords) {
+			Collection<KeywordData> keywordsList = PHPKeywords.findByPrefix(sourceModule.getScriptProject().getProject(), prefix);
+			for (KeywordData k : keywordsList) {
+				if (!inClass || (inClass && k.isClassKeyword)) {
+					reportKeyword(k.name, k.suffix, relevanceKeyword--);
+				}
 			}
 		}
 		
 		boolean currentFileOnly = (!explicit && prefix.length() == 0);
 
-		if (!currentFileOnly && internalPhpRegion != null) {
-			final String type = internalPhpRegion.getType();
+		if (!currentFileOnly && internalPHPRegion != null) {
+			final String type = internalPHPRegion.getType();
 
 			if (prefix.startsWith(DOLLAR) && !inClass) { //$NON-NLS-1$
 				if (PHPPartitionTypes.isPHPQuotesState(type)) {
@@ -88,7 +90,7 @@
 				return;
 			}
 
-			if (PHPPartitionTypes.isPHPQuotesState(type) || type.equals(PHPRegionTypes.PHP_HEREDOC_TAG) && sdRegion.getStartOffset(tRegion) + tRegion.getLength() <= offset) {
+			if (PHPPartitionTypes.isPHPQuotesState(type) || type.equals(PHPRegionTypes.PHP_HEREDOC_TAG) && regionContainer.getStartOffset(phpScriptRegion) + phpScriptRegion.getLength() <= offset) {
 				return;
 			}
 		}
