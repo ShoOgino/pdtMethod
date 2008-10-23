@@ -1,0 +1,27 @@
+	private String getPHPDocLink(Declaration declaration) {
+		String path = null;
+		if (declaration instanceof IPHPDocAwareDeclaration) {
+			IPHPDocAwareDeclaration phpDocDeclaration = (IPHPDocAwareDeclaration) declaration;
+
+			PHPDocBlock docBlock = phpDocDeclaration.getPHPDoc();
+			if (docBlock != null) {
+				for (PHPDocTag docTag : docBlock.getTags(PHPDocTagKinds.LINK)) {
+					Matcher m = HTTP_URL_PATTERN.matcher(docTag.getValue().trim());
+					if (m.find()) {
+						try {
+							URL url = new URL(m.group());
+							path = new File(url.getFile()).getName();
+							int extIdx = path.lastIndexOf('.');
+							if (extIdx > 0) {
+								path = path.substring(0, extIdx);
+							}
+							break;
+						} catch (MalformedURLException e) {
+						}
+					}
+				}
+			}
+		}
+		return path;
+	}
+
