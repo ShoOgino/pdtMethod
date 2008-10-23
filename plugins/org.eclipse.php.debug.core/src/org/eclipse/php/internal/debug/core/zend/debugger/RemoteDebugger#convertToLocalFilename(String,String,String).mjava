@@ -10,15 +10,44 @@
 		if (debugTarget.getContextManager().isResolveBlacklisted(remoteFile)) {
 			return remoteFile;
 		}
+		
+		IWorkspace workspace = ResourcesPlugin.getWorkspace();
 
 		// check if this file is already local
-		if (ResourcesPlugin.getWorkspace().getRoot().findMember(remoteFile) != null) {
+		if (workspace.getRoot().findMember(remoteFile) != null) {
 			return remoteFile;
 		}
 
 		// If we are running local debugger, check if "remote" file exists and return it if it does
 		if (debugTarget.isPHPCGI() && new File(remoteFile).exists()) {
-			IFile wsFile = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(remoteFile));
+			
+			IFile wsFile = null;
+			IPath location = new Path(remoteFile); 
+			IProject[] projects = workspace.getRoot().getProjects();
+			IProject currentProject = debugTarget.getProject();
+			// set current project to higher priority:
+			for (int i = 0; i < projects.length; i++) {
+				IProject project = projects[i];
+				if (project.equals(currentProject)) {
+					IProject tmp = projects[0];
+					projects[0] = project;
+					projects[i] = tmp;
+					break;
+				}
+			}
+			for (int i = 0; i < projects.length; i++) {
+				IProject project = projects[i];
+				if (!project.isOpen() || !project.isAccessible()) {
+					continue;
+				}
+				IPath projectLocation = project.getLocation();
+				if (projectLocation != null && projectLocation.isPrefixOf(location)) {
+					int segmentsToRemove = projectLocation.segmentCount();
+					wsFile = workspace.getRoot().getFile(project.getFullPath().append(location.removeFirstSegments(segmentsToRemove)));
+					break;
+				}
+			}
+			
 			if (wsFile != null) {
 				return wsFile.getFullPath().toString();
 			} else {
