@@ -4,7 +4,7 @@
 	 * @param project Current project
 	 * @param results Array of include path objects (it can be one of: IContainer, IncludePathEntry)
 	 */
-	public static void buildIncludePath(IProject project, Set<Object> results) {
+	public static void buildIncludePath(IProject project, Set<IncludePath> results) {
 		if (results.contains(project)) {
 			return;
 		}
@@ -12,19 +12,6 @@
 			return;
 		}
 		// Collect include paths:
-		final IScriptProject scriptProject = DLTKCore.create(project);
-		if (scriptProject != null) {
-			IBuildpathEntry[] rawBuildpath;
-			try {
-				rawBuildpath = scriptProject.getRawBuildpath();
-				for (IBuildpathEntry entry : rawBuildpath) {
-					results.add(entry);
-				}
-			} catch (ModelException e) {
-				return;
-			}
-		}
-		// Add current project:
-		results.add(project);
+		results.addAll(Arrays.asList(IncludePathManager.getInstance().getIncludePath(project)));
 	}
 

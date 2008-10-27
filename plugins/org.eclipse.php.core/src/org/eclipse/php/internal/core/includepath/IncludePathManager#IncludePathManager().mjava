@@ -1,0 +1,81 @@
+	private IncludePathManager() {
+		DLTKCore.addElementChangedListener(new IElementChangedListener() {
+
+			public void elementChanged(ElementChangedEvent event) {
+				processChildren(event.getDelta());
+			}
+			
+			private void processChildren(IModelElementDelta delta) {
+				IModelElement element = delta.getElement();
+				try {
+					if ((delta.getFlags() & IModelElementDelta.F_BUILDPATH_CHANGED) != 0) {
+						IScriptProject scriptProject = element.getScriptProject();
+						IProject project = scriptProject.getProject();
+						IncludePath[] includePathEntries = getIncludePath(project);
+						List<IncludePath> newEntries = new LinkedList<IncludePath>(Arrays.asList(includePathEntries));
+						
+						IBuildpathEntry[] rawBuildpath = scriptProject.getRawBuildpath();
+						
+						// This is a workaround to the lack of information about buildpath changes in delta:
+						boolean changed = false;
+						
+						// Calculate added entries: 
+						for (IBuildpathEntry entry : rawBuildpath) {
+							boolean added = true;
+							for (IncludePath includePath : includePathEntries) {
+								if (includePath.isBuildpath() && entry == includePath.getEntry()) {
+									added = false;
+									break;
+								}
+							}
+							if (added && !entry.getPath().toString().equals(LanguageModelInitializer.CONTAINER_PATH)) {
+								newEntries.add(new IncludePath(entry));
+								changed = true;
+							}
+						}
+						
+						// Calculate removed entries:
+						List<IncludePath> entriesToRemove = new LinkedList<IncludePath>();
+						for (IncludePath includePath : includePathEntries) {
+							boolean removed = true;
+							for (IBuildpathEntry entry : rawBuildpath) {
+								if (includePath.isBuildpath()) {
+									if (entry == includePath.getEntry()) {
+										removed = false;
+										break;
+									}
+								} else {
+									if (entry.getPath().isPrefixOf(((IResource)includePath.getEntry()).getFullPath())) {
+										removed = false;
+										break;
+									}
+								}
+							}
+							if (removed) {
+								entriesToRemove.add(includePath);
+							}
+						}
+						for (IncludePath includePath : entriesToRemove) {
+							newEntries.remove(includePath);
+							changed = true;
+						}
+
+						if (changed) {
+							setIncludePath(project, newEntries.toArray(new IncludePath[newEntries.size()]));
+						}
+						
+					} else {
+						IModelElementDelta[] children = delta.getAffectedChildren();
+						for (IModelElementDelta child : children) {
+							processChildren(child);
+						}
+					}
+				} catch (ModelException e) {
+					if (DLTKCore.DEBUG) {
+						e.printStackTrace();
+					}
+				}
+			}
+		});
+	}
+

@@ -1,0 +1,23 @@
+	/**
+	 * Sets project's include path
+	 * @param project
+	 * @param includePathEntries Ordered include path entries
+	 */
+	public void setIncludePath(IProject project, IncludePath[] includePathEntries) {
+		StringBuilder buf = new StringBuilder();
+		for (int i = 0; i < includePathEntries.length; ++i) {
+			IncludePath includePath = includePathEntries[i];
+			if (includePath.isBuildpath()) {
+				IBuildpathEntry entry = (IBuildpathEntry) includePath.getEntry();
+				buf.append(entry.getEntryKind()).append(';').append(entry.getPath().toString());
+			} else {
+				IResource entry = (IResource) includePath.getEntry();
+				buf.append("0;").append(entry.getFullPath().toString());
+			}
+			if (i < includePathEntries.length - 1) {
+				buf.append(PREF_SEP);
+			}
+		}
+		CorePreferencesSupport.getInstance().setProjectSpecificPreferencesValue(PREF_KEY, buf.toString(), project);
+	}
+

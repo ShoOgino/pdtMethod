@@ -1,0 +1,59 @@
+	/**
+	 * Read project's include path 
+	 * @param project
+	 * @return ordered include path
+	 */
+	public IncludePath[] getIncludePath(IProject project) {
+
+		List<IncludePath> includePathEntries = new LinkedList<IncludePath>();
+
+		String includePath = CorePreferencesSupport.getInstance().getProjectSpecificPreferencesValue(PREF_KEY, null, project);
+		if (includePath != null) {
+			int i;
+			while ((i = includePath.indexOf(PREF_SEP)) != -1) {
+				String path = includePath.substring(0, i);
+				includePath = includePath.substring(i + 1);
+
+				if ((i = path.indexOf(';')) != -1) {
+					int kind = Integer.parseInt(path.substring(0, i));
+					path = path.substring(i + 1);
+
+					if (kind == 0) {
+						IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(path);
+						if (resource != null) {
+							includePathEntries.add(new IncludePath(resource));
+						}
+					} else {
+						IBuildpathEntry[] buildpath;
+						try {
+							buildpath = DLTKCore.create(project).getRawBuildpath();
+							for (IBuildpathEntry entry : buildpath) {
+								if (entry.getEntryKind() == kind && entry.getPath().equals(new Path(path))) {
+									includePathEntries.add(new IncludePath(entry));
+								}
+							}
+						} catch (ModelException e) {
+							if (DLTKCore.DEBUG) {
+								e.printStackTrace();
+							}
+						}
+					}
+				}
+			}
+		} else { // by default include path equals to the build path
+			try {
+				IBuildpathEntry[] buildpath = DLTKCore.create(project).getRawBuildpath();
+				for (IBuildpathEntry entry : buildpath) {
+					if (!entry.getPath().toString().equals(LanguageModelInitializer.CONTAINER_PATH)) {
+						includePathEntries.add(new IncludePath(entry));
+					}
+				}
+			} catch (ModelException e) {
+				if (DLTKCore.DEBUG) {
+					e.printStackTrace();
+				}
+			}
+		}
+		return includePathEntries.toArray(new IncludePath[includePathEntries.size()]);
+	}
+
