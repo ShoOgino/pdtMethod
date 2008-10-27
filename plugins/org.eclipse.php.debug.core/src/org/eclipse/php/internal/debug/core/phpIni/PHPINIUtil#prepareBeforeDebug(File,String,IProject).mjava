@@ -15,35 +15,29 @@
 
 		// Modify include path:
 		if (project != null) {
-			Object[] path = PHPSearchEngine.buildIncludePath(project);
+			IncludePath[] path = PHPSearchEngine.buildIncludePath(project);
 			List<String> includePath = new ArrayList<String>(path.length);
-			for (Object pathObject : path) {
-				if (pathObject instanceof IBuildpathEntry) {
-					IBuildpathEntry entry = (IBuildpathEntry) pathObject;
-					IPath entryPath = entry.getPath();
+			for (IncludePath pathObject : path) {
+				if (pathObject.isBuildpath()) {
+					IBuildpathEntry entry = (IBuildpathEntry) pathObject.getEntry();
 					
-					// TODO : should fix once DLTK expose variable mechanism
-					/*if (entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
-						entryPath = IncludePathVariableManager.instance().resolveVariablePath(entryPath.toString());
-					} else */if (entry.getEntryKind() == IBuildpathEntry.BPE_PROJECT) {
-						IPath containerPath = EnvironmentPathUtils.getLocalPath(entry.getPath());
-						if (containerPath != null) {
-							entryPath = containerPath;
-						} else {
-							entryPath = null;
+					if (entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
+						IPath entryPath = DLTKCore.getResolvedVariablePath(entry.getPath());
+						includePath.add(entryPath.toFile().getAbsolutePath());
+					} else if (entry.getEntryKind() == IBuildpathEntry.BPE_PROJECT || entry.getEntryKind() == IBuildpathEntry.BPE_SOURCE) {
+						IPath entryPath = EnvironmentPathUtils.getLocalPath(entry.getPath());
+						IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(entryPath);
+						IPath location = resource.getLocation();
+						if (location != null) {
+							includePath.add(location.toOSString());
 						}
 					}
-					if (entryPath != null) {
-						includePath.add(entryPath.toFile().getAbsolutePath());
-					}
-				} else if (pathObject instanceof IContainer) {
-					IContainer container = (IContainer) pathObject;
+				} else {
+					IContainer container = (IContainer) pathObject.getEntry();
 					IPath location = container.getLocation();
 					if (location != null) {
 						includePath.add(location.toOSString());
 					}
-				} else {
-					includePath.add(pathObject.toString());
 				}
 			}
 			modifyIncludePath(tempIniFile, includePath.toArray(new String[includePath.size()]));

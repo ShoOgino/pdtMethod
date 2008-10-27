@@ -20,9 +20,17 @@
 
 		String phpExeString = configuration.getAttribute(IPHPDebugConstants.ATTR_EXECUTABLE_LOCATION, (String) null);
 		String phpIniPath = configuration.getAttribute(IPHPDebugConstants.ATTR_INI_LOCATION, (String) null);
-		String projectName = configuration.getAttribute(IPHPDebugConstants.ATTR_WORKING_DIRECTORY, (String) null);
 		String fileName = configuration.getAttribute(IPHPDebugConstants.ATTR_FILE_FULL_PATH, (String) null);
 		boolean runWithDebugInfo = configuration.getAttribute(IPHPDebugConstants.RUN_WITH_DEBUG_INFO, true);
+		
+		IProject project = null;
+		String file = configuration.getAttribute(IPHPDebugConstants.ATTR_FILE, (String) null);
+		if (file != null) { 
+			IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(file);
+			if (resource != null) {
+				project = resource.getProject();
+			}
+		}
 
 		if (monitor.isCanceled()) {
 			return;
@@ -37,9 +45,6 @@
 			displayErrorMessage("Please set a valid PHP executable for this launch.");
 			return;
 		}
-
-		IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
-		IProject project = projectName == null ? null : workspaceRoot.getProject(projectName);
 
 		subMonitor = new SubProgressMonitor(monitor, 10); // 10 of 100
 

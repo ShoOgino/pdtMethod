@@ -29,19 +29,19 @@
 
 				LinkedList<PathEntry> results = new LinkedList<PathEntry>();
 
-				Object[] includePaths;
+				IncludePath[] includePaths;
 				if (currentProject != null) {
 					includePaths = PHPSearchEngine.buildIncludePath(currentProject);
 				} else {
 					// Search in the whole workspace:
-					Set<Object> s = new LinkedHashSet<Object>();
+					Set<IncludePath> s = new LinkedHashSet<IncludePath>();
 					IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
 					for (IProject project : projects) {
 						if (project.isOpen() && project.isAccessible()) {
 							PHPSearchEngine.buildIncludePath(project, s);
 						}
 					}
-					includePaths = s.toArray();
+					includePaths = s.toArray(new IncludePath[s.size()]);
 				}
 
 				// Try to find this file in the Workspace:
@@ -72,12 +72,11 @@
 						if (includePath instanceof IBuildpathEntry) {
 							IBuildpathEntry entry = (IBuildpathEntry) includePath;
 							IPath entryPath = entry.getPath();
-							// TODO : should fix once DLTK expose variable mechanism
-//							if (entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
-//								entryPath = IncludePathVariableManager.instance().resolveVariablePath(entryPath.toString());
-//							}
+							if (entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
+								entryPath = DLTKCore.getResolvedVariablePath(entryPath);
+							}
 							if (entryPath != null && entryPath.isPrefixOf(Path.fromOSString(remoteFile))) {
-								Type type = /*(entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) ? Type.INCLUDE_VAR : */Type.INCLUDE_FOLDER;
+								Type type = (entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) ? Type.INCLUDE_VAR : Type.INCLUDE_FOLDER;
 								localFile[0] = new PathEntry(file.getAbsolutePath(), type, entry);
 								pathMapper.addEntry(remoteFile, localFile[0]);
 								PathMapperRegistry.storeToPreferences();
@@ -115,14 +114,13 @@
 								}
 							}
 						}
-						// TODO : should fix once DLTK expose variable mechanism
-						/*else if (entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
-							entryPath = IncludePathVariableManager.instance().resolveVariablePath(entryPath.toString());
+						else if (entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
+							entryPath = DLTKCore.getResolvedVariablePath(entryPath);
 							if (entryPath != null) {
 								File entryDir = entryPath.toFile();
 								find(entryDir, abstractPath, entry, results);
 							}
-						}*/
+						}
 					}
 				}
 
