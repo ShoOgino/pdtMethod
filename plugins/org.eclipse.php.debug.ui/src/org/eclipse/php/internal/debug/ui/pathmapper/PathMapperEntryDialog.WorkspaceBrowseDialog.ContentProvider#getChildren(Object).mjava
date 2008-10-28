@@ -7,20 +7,33 @@
 						IResource[] members = container.members();
 						for (IResource member : members) {
 							if (member instanceof IContainer && member.isAccessible()) {
-								r.add(member);
+								if (member instanceof IProject) { // show only PHP projects
+									IProject project = (IProject) member;
+									if (project.hasNature(PHPNature.ID)) {
+										r.add(member);
+									}
+								} else {
+									r.add(member);
+								}
 							}
 						}
 						// Add include paths:
 						if (parentElement instanceof IProject) {
 							IProject project = (IProject) parentElement;
-							IScriptProject scriptProject = DLTKCore.create(project);
-							IBuildpathEntry[] includePath = scriptProject.getRawBuildpath();
-							r.addAll(Arrays.asList(includePath));
+							IncludePath[] includePath = IncludePathManager.getInstance().getIncludePath(project);
+							for (IncludePath path : includePath) {
+								if (path.isBuildpath()) {
+									IBuildpathEntry buildpathEntry = (IBuildpathEntry) path.getEntry();
+									if (buildpathEntry.getEntryKind() == IBuildpathEntry.BPE_LIBRARY || buildpathEntry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
+										r.add(buildpathEntry);
+									}
+								}
+							}
 						}
 						return r.toArray();
 					} else if (parentElement instanceof IBuildpathEntry) {
 						IBuildpathEntry includePathEntry = (IBuildpathEntry) parentElement;
-						IPath path = includePathEntry.getPath();
+						IPath path = EnvironmentPathUtils.getLocalPath(includePathEntry.getPath());
 						File file = null;
 						if (includePathEntry.getEntryKind() == IBuildpathEntry.BPE_LIBRARY) {
 							file = path.toFile();
