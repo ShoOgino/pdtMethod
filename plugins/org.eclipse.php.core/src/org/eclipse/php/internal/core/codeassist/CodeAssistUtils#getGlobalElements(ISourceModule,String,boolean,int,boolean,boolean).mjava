@@ -15,12 +15,12 @@
 		IDLTKLanguageToolkit toolkit = PHPLanguageToolkit.getDefault();
 		
 		boolean isVariable = prefix.startsWith("$"); //$NON-NLS-1$
-		
+
+		IScriptProject scriptProject = sourceModule.getScriptProject();
 		IDLTKSearchScope scope;
 		if (currentFileOnly) {
 			scope = SearchEngine.createSearchScope(sourceModule);
 		} else {
-			IScriptProject scriptProject = sourceModule.getScriptProject();
 			if (scriptProject != null) {
 				scope = SearchEngine.createSearchScope(scriptProject);
 			} else {
@@ -30,7 +30,8 @@
 		
 		if (!currentFileOnly && isVariable) {
 			// search variables using mixin model:
-			IModelElement[] variables = PHPMixinModel.getInstance().getVariable(prefix + WILDCARD, null, null, scope);
+			PHPMixinModel mixinModel = scriptProject == null ? PHPMixinModel.getWorkspaceInstance() : PHPMixinModel.getInstance(scriptProject);
+			IModelElement[] variables = mixinModel.getVariable(prefix + WILDCARD, null, null, scope);
 			return variables == null ? EMPTY : variables;
 		}
 		

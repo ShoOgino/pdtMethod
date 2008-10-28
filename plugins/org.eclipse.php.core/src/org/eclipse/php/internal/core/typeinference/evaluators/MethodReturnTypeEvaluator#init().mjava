@@ -8,14 +8,16 @@
 		IType[] types = getTypes(typedContext.getInstanceType(), typedContext.getSourceModule());
 
 		if (types.length == 0) {
-			IModelElement[] elements = PHPMixinModel.getInstance().getFunction(methodName);
+			IScriptProject scriptProject = typedContext.getSourceModule().getScriptProject();
+			IDLTKSearchScope scope = SearchEngine.createSearchScope(scriptProject);
+			IModelElement[] elements = PHPMixinModel.getInstance(scriptProject).getFunction(methodName, scope);
 			for (IModelElement e : elements) {
 				methods.add((IMethod) e);
 			}
 		} else {
 			for (IType type : types) {
 				try {
-					IModelElement[] elements = PHPMixinModel.getInstance().getMethod(type.getElementName(), methodName);
+					IModelElement[] elements = PHPMixinModel.getInstance(type.getScriptProject()).getMethod(type.getElementName(), methodName);
 					if (elements.length == 0) {
 						elements = PHPModelUtils.getClassMethod(type, methodName, null);
 					}
