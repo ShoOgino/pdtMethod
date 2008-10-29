@@ -1,22 +1,38 @@
 	private static void internalBuildReferencingFilesTree(Node root, Set<ISourceModule> processedFiles, IProgressMonitor monitor) {
 
 		ISourceModule file = root.getFile();
-
-		// Find all includes to the current source module in mixin:
-		IModelElement[] includes = PHPMixinModel.getWorkspaceInstance().getInclude(file.getPath().lastSegment());
-		for (IModelElement e : includes) {
-			IncludeField include = (IncludeField) e;
-
-			// Candidate that includes the original source module:
-			ISourceModule referencingFile = include.getSourceModule();
-
-			// Try to resolve include:
-			ISourceModule testFile = findSourceModule(referencingFile, include.getFilePath());
-
-			// If this is the correct include (that means that included file is the original file):
-			if (file.equals(testFile) && !processedFiles.contains(referencingFile)) {
-				processedFiles.add(referencingFile);
-				root.addChild(new Node(referencingFile));
+		
+		List<PHPMixinModel> mixinModelInstances;
+		IScriptProject scriptProject = file.getScriptProject();
+		if (scriptProject != null) {
+			IProject[] referencingProjects = scriptProject.getProject().getReferencingProjects();
+			mixinModelInstances = new ArrayList<PHPMixinModel>(referencingProjects.length + 1);
+			mixinModelInstances.add(PHPMixinModel.getInstance(scriptProject));
+			for (IProject referencingProject : referencingProjects) {
+				mixinModelInstances.add(PHPMixinModel.getInstance(DLTKCore.create(referencingProject)));
+			}
+		} else {
+			mixinModelInstances = new ArrayList<PHPMixinModel>(1);
+			mixinModelInstances.add(PHPMixinModel.getWorkspaceInstance());
+		}
+		
+		for (PHPMixinModel mixinModel : mixinModelInstances) {
+			// Find all includes to the current source module in mixin:
+			IModelElement[] includes = mixinModel.getInclude(file.getPath().lastSegment());
+			for (IModelElement e : includes) {
+				IncludeField include = (IncludeField) e;
+	
+				// Candidate that includes the original source module:
+				ISourceModule referencingFile = include.getSourceModule();
+	
+				// Try to resolve include:
+				ISourceModule testFile = findSourceModule(referencingFile, include.getFilePath());
+	
+				// If this is the correct include (that means that included file is the original file):
+				if (file.equals(testFile) && !processedFiles.contains(referencingFile)) {
+					processedFiles.add(referencingFile);
+					root.addChild(new Node(referencingFile));
+				}
 			}
 		}
 
