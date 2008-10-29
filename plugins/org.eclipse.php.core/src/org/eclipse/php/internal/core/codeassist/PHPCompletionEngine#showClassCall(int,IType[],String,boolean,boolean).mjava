@@ -1,4 +1,4 @@
-	protected void showClassCall(int offset, IType[] className, String prefix, boolean isInstanceOf, boolean addVariableDollar) {
+	protected void showClassCall(int offset, IType[] className, String prefix, boolean isThisVar, boolean addVariableDollar) {
 		if (className == null) {
 			return;
 		}
@@ -6,13 +6,15 @@
 		this.setSourceRange(offset - prefix.length(), offset);
 
 		int relevanceMethod = RELEVANCE_METHOD;
+		
+		boolean showNonStrictOptions = showNonStrictOptions();
 
 		for (IType type : className) {
 			if (!prefix.startsWith(DOLLAR)) {
 				IMethod[] methods = CodeAssistUtils.getClassMethods(type, prefix, requestor.isContextInformationMode());
 				for (IModelElement method : methods) {
 					try {
-						if ((((IMethod) method).getFlags() & IPHPModifiers.Internal) == 0) {
+						if ((((IMethod) method).getFlags() & IPHPModifiers.Internal) == 0 && (showNonStrictOptions || isThisVar || (((IMethod) method).getFlags() & Modifiers.AccPrivate) == 0)) {
 							reportMethod((IMethod) method, relevanceMethod--);
 						}
 					} catch (ModelException e) {
@@ -23,8 +25,6 @@
 				}
 			}
 
-			boolean showNonStrictOptions = showNonStrictOptions();
-			
 			IModelElement[] fields = CodeAssistUtils.getClassFields(type, prefix, requestor.isContextInformationMode(), true);
 			int relevanceVar = RELEVANCE_VAR;
 			int relevanceConst = RELEVANCE_CONST;
@@ -33,7 +33,7 @@
 				try {
 					if ((field.getFlags() & Modifiers.AccConstant) != 0) {
 						reportField(field, relevanceConst--, true);
-					} else if (showNonStrictOptions || (field.getFlags() & Modifiers.AccPrivate) == 0) {
+					} else if (showNonStrictOptions || isThisVar || (field.getFlags() & Modifiers.AccPrivate) == 0) {
 						reportField(field, relevanceVar--, true);
 					}
 				} catch (ModelException e) {
