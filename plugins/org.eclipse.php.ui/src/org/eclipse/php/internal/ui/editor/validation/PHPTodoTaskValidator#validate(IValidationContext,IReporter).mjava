@@ -1,0 +1,102 @@
+	/**
+	 * Search for tasks in the validated file and create a marker for each task found 
+	 */
+	public void validate(IValidationContext helper, IReporter reporter) throws ValidationException {
+
+		String[] delta = helper.getURIs();
+		if (delta.length == 0) {
+			return;
+		}
+
+		file = getFile(delta[0]);		
+		Assert.isNotNull(file);
+
+		// populate the task tags from the preferences
+		if (taskTags == null) {
+			populateTaskTags(file);
+		}
+
+		// remove the markers currently existing for this resource
+		// in case of project/folder, the markers are deleted recursively
+		try {
+			file.deleteMarkers(PHPUiConstants.PHP_MARKER_TYPE, false, IResource.DEPTH_INFINITE);
+		} catch (CoreException e) {
+		}
+		IStructuredModel model = null;
+		try {
+			// desperately try to get the model :) In case it doesn't exist yet, try to create it now
+			try {
+				model = StructuredModelManager.getModelManager().getExistingModelForRead(file);
+			} catch (NullPointerException e) {
+				try {
+					model = StructuredModelManager.getModelManager().getNewModelForRead(file, false);
+				} catch (Exception e2) {
+					model = StructuredModelManager.getModelManager().getNewModelForRead(file, true);
+				}
+			}
+			if (model == null) {
+				return;
+			}
+			//collect the tasks info and report 
+			IStructuredDocumentRegion[] sdRegions = model.getStructuredDocument().getStructuredDocumentRegions();
+			for (IStructuredDocumentRegion structuredDocumentRegion : sdRegions) {
+
+				IStructuredDocument document = structuredDocumentRegion.getParentDocument();
+
+				ITextRegionList textRegions = structuredDocumentRegion.getRegions();
+				for (int i = 0; i < textRegions.size(); i++) {
+					ITextRegion textRegion = textRegions.get(i);
+					int regionStart = structuredDocumentRegion.getStartOffset(textRegion);
+
+					// special handling for php tags inside html
+					if (textRegion instanceof ContextRegionContainer) {
+						textRegion = extractPhpScriptRegion(textRegion);
+						regionStart += textRegion.getStart();
+					}
+					// parse the actual script
+					if (textRegion instanceof PhpScriptRegion) {
+						PhpScriptRegion scriptRegion = (PhpScriptRegion) textRegion;
+						try {
+
+							//go over the text regions and look for the tasks
+							ITextRegion[] phpTokens = scriptRegion.getPhpTokens(0, textRegion.getLength());
+							for (int j = 0; j < phpTokens.length; j++) {
+								ITextRegion phpToken = phpTokens[j];
+								if (phpToken.getType().equals(PHPRegionTypes.TASK)) {
+									// get the task information from the document 									
+									int offset = regionStart + phpToken.getStart();
+									int length = phpToken.getLength();
+
+									String taskKeyword = document.get(offset, phpToken.getLength());
+									int priority = getTaskPriority(taskKeyword);
+
+									// get the actual message for this task - if any
+									if (j + 1 < phpTokens.length) {
+										ITextRegion phpNextToken = phpTokens[j + 1];
+										length = length + phpNextToken.getLength();
+									}
+
+									try {
+										reportTask(document, file, reporter, offset, length, priority);
+									} catch (CoreException e) {
+										Logger.logException("Failed creating task", e); //$NON-NLS-1$
+									}
+								}
+							}
+						} catch (BadLocationException e) {
+							Logger.logException(CoreMessages.getString("PHPTodoTaskAstParser_0"), e);
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+			Logger.logException("Failed validating file for tasks " + file, e);
+		} finally {
+			if (model != null) {
+				model.releaseFromRead();
+			}
+
+		}
+
+	}
+
