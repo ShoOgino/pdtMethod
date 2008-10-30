@@ -7,6 +7,7 @@
 	 */
 	public static IMethod[] getClassMethods(IType type, String prefix, boolean exactName) {
 		final Set<IMethod> methods = new TreeSet<IMethod>(new AlphabeticComparator());
+		final Set<String> methodNames = new HashSet<String>();
 		try {
 			IMethod[] typeMethods = type.getMethods();
 			for (IMethod typeMethod : typeMethods) {
@@ -14,13 +15,22 @@
 				if (exactName) {
 					if (methodName.equalsIgnoreCase(prefix)) {
 						methods.add(typeMethod);
+						methodNames.add(methodName.toLowerCase());
 					}
 				} else if (startsWithIgnoreCase(methodName, prefix)) {
 					methods.add(typeMethod);
 				}
 			}
 			
-			methods.addAll(Arrays.asList(getSuperClassMethods(type, prefix, exactName)));
+			IMethod[] superClassMethods = getSuperClassMethods(type, prefix, exactName);
+			// Filter overriden methods:
+			for (IMethod superClassMethod : superClassMethods) {
+				String methodName = superClassMethod.getElementName().toLowerCase();
+				if (!methodNames.contains(methodName)) {
+					methods.add(superClassMethod);
+					methodNames.add(methodName);
+				}
+			}
 			
 		} catch (Exception e) {
 			if (DLTKCore.DEBUG_COMPLETION) {

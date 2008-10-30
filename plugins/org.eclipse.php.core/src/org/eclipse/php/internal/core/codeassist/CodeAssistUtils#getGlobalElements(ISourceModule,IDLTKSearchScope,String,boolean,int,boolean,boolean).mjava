@@ -2,13 +2,16 @@
 	 * This method searches in the project scope for all elements of specified type that match the given prefix.
 	 * If the project doesn't exist, workspace scope is used.
 	 * 
+	 * @param sourceModule Current file
 	 * @param scope Search scope
 	 * @param prefix Element name or prefix
 	 * @param exactName Whether the prefix is an exact name of the element
 	 * @param elementType Element type from {@link IDLTKSearchConstants}
+	 * @param currentFileOnly Whether to look in current file only
+	 * @param caseSensitive Whether the search is case sensitive
 	 * @return
 	 */
-	private static IModelElement[] getGlobalElements(IDLTKSearchScope scope, String prefix, boolean exactName, int elementType, boolean caseSensitive) {
+	private static IModelElement[] getGlobalElements(ISourceModule sourceModule, IDLTKSearchScope scope, String prefix, boolean exactName, int elementType, boolean currentFileOnly, boolean caseSensitive) {
 		
 		IDLTKLanguageToolkit toolkit = PHPLanguageToolkit.getDefault();
 		
@@ -31,7 +34,7 @@
 		SearchEngine searchEngine = new SearchEngine();
 		SearchPattern pattern = SearchPattern.createPattern(prefix, elementType, IDLTKSearchConstants.DECLARATIONS, matchRule, toolkit);
 
-		final Set<IModelElement> elements = new TreeSet<IModelElement>(new AlphabeticComparator());
+		final Set<IModelElement> elements = new TreeSet<IModelElement>(new AlphabeticComparator(sourceModule));
 		try {
 			searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
 				public void acceptSearchMatch(SearchMatch match) throws CoreException {
@@ -58,6 +61,8 @@
 				e.printStackTrace();
 			}
 		}
-		return elements.toArray(new IModelElement[elements.size()]);
+		
+		IModelElement[] result = elements.toArray(new IModelElement[elements.size()]);
+		return currentFileOnly ? result : PHPModelUtils.filterElements(sourceModule, result);
 	}
 
