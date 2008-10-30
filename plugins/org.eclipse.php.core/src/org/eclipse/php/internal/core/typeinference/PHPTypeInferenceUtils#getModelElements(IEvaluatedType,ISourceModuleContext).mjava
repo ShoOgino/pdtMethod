@@ -4,6 +4,28 @@
 	 * @return model elements
 	 */
 	public static IModelElement[] getModelElements(IEvaluatedType type, ISourceModuleContext context) {
-		return getModelElements(type, context, true);
+		IModelElement[] elements = null;
+		ISourceModule sourceModule = context.getSourceModule();
+
+		if (type instanceof ModelClassType) {
+			return new IModelElement[] { ((ModelClassType)type).getTypeDeclaration() };
+		}
+		if (type instanceof PHPClassType) {
+			IScriptProject scriptProject = sourceModule.getScriptProject();
+			IDLTKSearchScope scope = SearchEngine.createSearchScope(scriptProject);
+			elements = PHPMixinModel.getInstance(scriptProject).getClass(((PHPClassType)type).getTypeName(), scope);
+		}
+		else if (type instanceof AmbiguousType) {
+			List<IModelElement> tmpList = new LinkedList<IModelElement>();
+			IEvaluatedType[] possibleTypes = ((AmbiguousType)type).getPossibleTypes();
+			for (IEvaluatedType possibleType : possibleTypes) {
+				IModelElement[] tmpArray = getModelElements(possibleType, context);
+				if (tmpArray != null) {
+					tmpList.addAll(Arrays.asList(tmpArray));
+				}
+			}
+			elements = tmpList.toArray(new IModelElement[tmpList.size()]);
+		}
+		return PHPModelUtils.filterElements(sourceModule, elements);
 	}
 
