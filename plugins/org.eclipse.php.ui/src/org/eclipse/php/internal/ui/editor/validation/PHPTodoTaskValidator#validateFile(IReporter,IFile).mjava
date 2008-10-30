@@ -1,15 +1,7 @@
 	/**
 	 * Search for tasks in the validated file and create a marker for each task found 
 	 */
-	public void validate(IValidationContext helper, IReporter reporter) throws ValidationException {
-
-		String[] delta = helper.getURIs();
-		if (delta.length == 0) {
-			return;
-		}
-
-		file = getFile(delta[0]);		
-		Assert.isNotNull(file);
+	public void validateFile(IReporter reporter, IFile file) {
 
 		// populate the task tags from the preferences
 		if (taskTags == null) {
@@ -24,15 +16,11 @@
 		}
 		IStructuredModel model = null;
 		try {
-			// desperately try to get the model :) In case it doesn't exist yet, try to create it now
+			// desperately try to get the model :) In case it doesn't exist yet, create it
 			try {
 				model = StructuredModelManager.getModelManager().getExistingModelForRead(file);
-			} catch (NullPointerException e) {
-				try {
-					model = StructuredModelManager.getModelManager().getNewModelForRead(file, false);
-				} catch (Exception e2) {
-					model = StructuredModelManager.getModelManager().getNewModelForRead(file, true);
-				}
+			} catch (Exception e) {
+				model = StructuredModelManager.getModelManager().createUnManagedStructuredModelFor(file);
 			}
 			if (model == null) {
 				return;
@@ -94,6 +82,7 @@
 		} finally {
 			if (model != null) {
 				model.releaseFromRead();
+				model = null;
 			}
 
 		}
