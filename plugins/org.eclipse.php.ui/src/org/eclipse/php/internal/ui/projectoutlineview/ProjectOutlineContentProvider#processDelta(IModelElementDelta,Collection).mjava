@@ -14,169 +14,44 @@
 	private boolean processDelta(final IModelElementDelta delta, final Collection runnables) throws ModelException {
 
 		int kind = delta.getKind();
-		int flags = delta.getFlags();
 		IModelElement element = delta.getElement();
-		int elementType = element.getElementType();
-
-		if (elementType != IModelElement.SCRIPT_MODEL && elementType != IModelElement.SCRIPT_PROJECT) {
-			IScriptProject proj = element.getScriptProject();
-			if (proj == null || !proj.getProject().isOpen()) {
-				// needed if
-				// parent
-				// already did
-				// the 'open'
-				// check!
-				return false;
-			}
-		}
-
-		if (!fIsFlatLayout && elementType == IModelElement.SCRIPT_FOLDER) {
-			if (kind == IModelElementDelta.REMOVED) {
-				final Object parent = getHierarchicalPackageParent((IScriptFolder) element);
-				if (parent instanceof IProjectFragment) {
-					postRemove(element, runnables);
-					return false;
-				} else {
-					postRefresh(internalGetParent(parent), ProjectOutlineContentProvider.GRANT_PARENT, element, runnables);
-					return true;
-				}
-			} else if (kind == IModelElementDelta.ADDED) {
-				final Object parent = getHierarchicalPackageParent((IScriptFolder) element);
-				if (parent instanceof IProjectFragment) {
-					postAdd(parent, element, runnables);
-					return false;
-				} else {
-					postRefresh(internalGetParent(parent), ProjectOutlineContentProvider.GRANT_PARENT, element, runnables);
-					return true;
-				}
-			}
-			handleAffectedChildren(delta, element, runnables);
-			return false;
-		}
-
-		if (elementType == IModelElement.SOURCE_MODULE) {
-			ISourceModule cu = (ISourceModule) element;
-			if (!ScriptModelUtil.isPrimary(cu)) {
-				return false;
-			}
-
-			if (!getProvideMembers() && cu.isWorkingCopy() && kind == IModelElementDelta.CHANGED) {
-				return false;
-			}
-
-			if (kind == IModelElementDelta.CHANGED && !ProjectOutlineContentProvider.isStructuralCUChange(flags)) {
-				return false; // test moved ahead
-			}
-
-			if (!isOnClassPath(cu)) { // TODO: isOnClassPath expensive! Should
-				// be put after all cheap tests
-				return false;
-			}
-
-		}
-
-		if (elementType == IModelElement.SCRIPT_PROJECT) {
-			// handle open and closing of a project
-			if ((flags & (IModelElementDelta.F_CLOSED | IModelElementDelta.F_OPENED)) != 0) {
-				postRefresh(element, ProjectOutlineContentProvider.ORIGINAL, element, runnables);
-				return false;
-			}
-			// if the class path has changed we refresh the entire project
-			if ((flags & IModelElementDelta.F_BUILDPATH_CHANGED) != 0) {
-				postRefresh(element, ProjectOutlineContentProvider.ORIGINAL, element, runnables);
-				return false;
-			}
-			// if added it could be that the corresponding IProject is already
-			// shown. Remove it first.
-			// bug 184296
-
-			if (kind == IModelElementDelta.ADDED || kind == IModelElementDelta.CHANGED) {
-				postRemove(element.getResource(), runnables);
-				postAdd(element.getParent(), element, runnables);
-				return false;
-			}
-		}
-
-		if (kind == IModelElementDelta.REMOVED) {
-			Object parent = internalGetParent(element);
-			if (element instanceof IScriptFolder) {
-				// refresh package fragment root to allow filtering empty
-				// (parent) packages: bug 72923
-				if (fViewer.testFindItem(parent) != null) {
-					postRefresh(parent, ProjectOutlineContentProvider.PARENT, element, runnables);
-				}
-				return true;
-			}
-
-			postRemove(element, runnables);
-			if (parent instanceof IScriptFolder) {
-				postUpdateIcon((IScriptFolder) parent, runnables);
-			}
-			// we are filtering out empty subpackages, so we
-			// a package becomes empty we remove it from the viewer.
-			if (isScriptFolderEmpty(element.getParent())) {
-				if (fViewer.testFindItem(parent) != null) {
-					postRefresh(internalGetParent(parent), ProjectOutlineContentProvider.GRANT_PARENT, element, runnables);
-				}
-				return true;
-			}
-			return false;
-		}
+		Object parent = internalGetParentGroupNode(element);
 
 		if (kind == IModelElementDelta.ADDED) {
-			Object parent = internalGetParent(element);
-			// we are filtering out empty subpackages, so we
-			// have to handle additions to them specially.
-			if (parent instanceof IScriptFolder) {
-				Object grandparent = internalGetParent(parent);
-				// 1GE8SI6: ITPJUI:WIN98 - Rename is not shown in Packages View
-				// avoid posting a refresh to an invisible parent
-				if (parent.equals(fInput)) {
-					postRefresh(parent, ProjectOutlineContentProvider.PARENT, element, runnables);
-				} else {
-					// refresh from grandparent if parent isn't visible yet
-					if (fViewer.testFindItem(parent) == null) {
-						postRefresh(grandparent, ProjectOutlineContentProvider.GRANT_PARENT, element, runnables);
-					} else {
-						postRefresh(parent, ProjectOutlineContentProvider.PARENT, element, runnables);
-					}
-				}
-				return true;
-			} else {
-				postAdd(parent, element, runnables);
-			}
-		}
 
-		if (elementType == IModelElement.SOURCE_MODULE) {
-			if (kind == IModelElementDelta.CHANGED) {
-				// isStructuralCUChange already performed above
-				postRefresh(element, ProjectOutlineContentProvider.ORIGINAL, element, runnables);
-				updateSelection(delta, runnables);
-			}
-			return false;
-		}
-		// no changes possible in class files
-		// if (elementType == IModelElement.CLASS_FILE) {
-		// return false;
-		// }
-
-		if (elementType == IModelElement.PROJECT_FRAGMENT) {
-			// the contents of an external JAR has changed
-			if ((flags & IModelElementDelta.F_ARCHIVE_CONTENT_CHANGED) != 0) {
-				postRefresh(element, ProjectOutlineContentProvider.ORIGINAL, element, runnables);
+			// if it is an IOpenable (source module and up) - refresh the view 
+			IModelElement refreshRoot = (element instanceof IOpenable) ? element.getScriptProject() : element.getParent();
+			if (null == parent) {
+				postRefresh(refreshRoot, ProjectOutlineContentProvider.ORIGINAL, element, runnables);
 				return false;
 			}
-			// the source attachment of a JAR has changed
-			// if ((flags & ( | IModelElementDelta.F_SOURCEDETACHED)) != 0) {
-			// postUpdateIcon(element, runnables);
-			// }
+			
+			// adding element if parent is not null 
+			// (means it should be showed on the project outline view)
+			postAdd(parent, element, runnables);
+		
+		} else if (kind == IModelElementDelta.REMOVED) {
 
-			if (isBuildPathChange(delta)) {
-				// throw the towel and do a full refresh of the affected java
-				// project.
-				postRefresh(element.getScriptProject(), ProjectOutlineContentProvider.PROJECT, element, runnables);
-				return true;
-			}
+			if (element instanceof IOpenable) {
+				IPath removedPath = element.getPath();
+				for (TreeItem node : fViewer.getTree().getItems()) {
+					//iterating on all 1st level (classes, constants, and functions)
+					TreeItem[] treeItems = node.getItems();
+					for (TreeItem treeItem : treeItems) {
+						// iterating on all 2nd level elements and checking :
+						// if item path is prefixed by the removed element - need to remove it.
+						if (removedPath.isPrefixOf(((IModelElement) treeItem.getData()).getPath())) {
+							postRemove((IModelElement) treeItem.getData(), runnables);
+						}
+					}
+
+				}
+			} else {
+				//if element is not folder/project/SourceModule etc' - just need to remove it from the view
+				postRemove(element, runnables);
+			} 
+			
+			return false;
 		}
 		handleAffectedChildren(delta, element, runnables);
 		return false;

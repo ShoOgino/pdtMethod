@@ -10,7 +10,7 @@
 	 */
 	private static IModelElement[] getGlobalElements(IDLTKSearchScope scope, String prefix, boolean exactName, int elementType, boolean caseSensitive) {
 		IDLTKLanguageToolkit toolkit = PHPLanguageToolkit.getDefault();
-		
+
 		int matchRule;
 		if (prefix.length() == 0 && !exactName) {
 			prefix = WILDCARD;
@@ -26,28 +26,55 @@
 				matchRule = exactName ? SearchPattern.R_EXACT_MATCH : SearchPattern.R_CAMELCASE_MATCH | SearchPattern.R_PREFIX_MATCH;
 			}
 		}
-		
+
 		SearchEngine searchEngine = new SearchEngine();
 		SearchPattern pattern = SearchPattern.createPattern(prefix, elementType, IDLTKSearchConstants.DECLARATIONS, matchRule, toolkit);
-
 		final List<IModelElement> elements = new LinkedList<IModelElement>();
+
+		if (elementType == IDLTKSearchConstants.METHOD) {
+			try {
+				searchEngine.searchAllMethodNames(new char[] { '*' }, SearchPattern.R_PATTERN_MATCH, IDLTKSearchConstants.METHOD, scope, new MethodNameMatchRequestor() {
+
+					@Override
+					public void acceptMethodNameMatch(MethodNameMatch match) {
+						IModelElement element = (IModelElement) match.getMethod();
+
+						if (element instanceof SourceModule) {
+							return;
+						}
+
+						IModelElement parent = element.getParent();
+
+						// Global scope elements in PHP are those, which are not defined in class body,
+						// or it is a variable, and its parent - source module
+						if ((element instanceof IField && parent instanceof org.eclipse.dltk.core.ISourceModule) || (!(element instanceof IField) && !(parent instanceof IType))) {
+							elements.add(element);
+						}
+
+					}
+				}, IDLTKSearchConstants.FORCE_IMMEDIATE_SEARCH, new NullProgressMonitor());
+			} catch (ModelException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		}
+
 		try {
 			searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
 				public void acceptSearchMatch(SearchMatch match) throws CoreException {
-					
+
 					IModelElement element = (IModelElement) match.getElement();
-					
+
 					// sometimes method reference is found instead of declaration (seems to be a bug in search engine):
 					if (element instanceof SourceModule) {
 						return;
 					}
-					
+
 					IModelElement parent = element.getParent();
-					
+
 					// Global scope elements in PHP are those, which are not defined in class body,
 					// or it is a variable, and its parent - source module
-					if ((element instanceof IField && parent instanceof org.eclipse.dltk.core.ISourceModule)
-							|| (!(element instanceof IField) && !(parent instanceof IType))) {
+					if ((element instanceof IField && parent instanceof org.eclipse.dltk.core.ISourceModule) || (!(element instanceof IField) && !(parent instanceof IType))) {
 						elements.add(element);
 					}
 				}
@@ -57,6 +84,7 @@
 				e.printStackTrace();
 			}
 		}
+
 		return elements.toArray(new IModelElement[elements.size()]);
 	}
 
