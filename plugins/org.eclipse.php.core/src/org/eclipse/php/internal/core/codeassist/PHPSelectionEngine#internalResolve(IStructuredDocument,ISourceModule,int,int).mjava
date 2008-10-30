@@ -156,7 +156,20 @@
 							}
 
 							// What can it be? Only class variables:
-							List<IModelElement> fields = new LinkedList<IModelElement>();
+							Set<IModelElement> fields = new TreeSet<IModelElement>(new Comparator<IModelElement>() {
+								public int compare(IModelElement o1, IModelElement o2) {
+									try {
+										ISourceRange r1 = ((SourceRefElement)o1).getSourceRange();
+										ISourceRange r2 = ((SourceRefElement)o2).getSourceRange();
+										return (int) Math.signum(r1.getOffset() - r2.getOffset());
+									} catch (ModelException e) {
+										if (DLTKCore.DEBUG_SELECTION) {
+											e.printStackTrace();
+										}
+									}
+									return 0;
+								}
+							});
 							for (IType t : types) {
 								fields.addAll(Arrays.asList(CodeAssistUtils.getClassFields(t, elementName, true, false)));
 							}
