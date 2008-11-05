@@ -1,5 +1,18 @@
 	protected XMLNodeActionManager createNodeActionManager(TreeViewer treeViewer) {
 		IEditorPart activeEditor = PHPUiPlugin.getActiveEditor();
-		return new PHPNodeActionManager(((StructuredTextEditor) activeEditor).getModel(), treeViewer);
+		if (activeEditor instanceof StructuredTextEditor) {
+			StructuredTextEditor editor = (StructuredTextEditor) activeEditor;
+			IDocument document = editor.getDocumentProvider().getDocument(editor.getEditorInput());
+			IStructuredModel model = null;
+			try {
+				model = StructuredModelManager.getModelManager().getExistingModelForRead(document);
+				return new PHPNodeActionManager(model, treeViewer);
+			} finally {
+				if (model != null) {
+					model.releaseFromRead();
+				}
+			}
+		}
+		return null;
 	}
 

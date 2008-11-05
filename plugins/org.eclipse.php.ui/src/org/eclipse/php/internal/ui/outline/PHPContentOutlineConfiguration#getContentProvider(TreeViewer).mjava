@@ -12,7 +12,16 @@
 							IEditorPart activeEditor = PHPUiPlugin.getActiveEditor();
 							if (activeEditor instanceof StructuredTextEditor) {
 								StructuredTextEditor editor = (StructuredTextEditor) activeEditor;
-								object = editor.getModel();
+								IDocument document = editor.getDocumentProvider().getDocument(editor.getEditorInput());
+								IStructuredModel model = null;
+								try {
+									model = StructuredModelManager.getModelManager().getExistingModelForRead(document);
+									return super.getElements(model);
+								} finally {
+									if (model != null) {
+										model.releaseFromRead();
+									}
+								}
 							}
 						}
 						return super.getElements(object);
