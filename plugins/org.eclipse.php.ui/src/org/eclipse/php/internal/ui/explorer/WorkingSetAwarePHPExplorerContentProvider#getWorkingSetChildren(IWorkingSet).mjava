@@ -1,0 +1,37 @@
+	private Object[] getWorkingSetChildren(IWorkingSet set) {
+		IAdaptable[] elements = fWorkingSetModel.getChildren(set);
+		boolean isKnownWorkingSet = isKnownWorkingSet(set);
+		List result = new ArrayList(elements.length);
+		for (int i = 0; i < elements.length; i++) {
+			IAdaptable element = elements[i];
+			boolean add = false;
+			if (element instanceof IProject) {
+				add = true;
+			} else if (element instanceof IResource) {
+				IProject project = ((IResource) element).getProject();
+				add = project == null || project.isOpen();
+			} else if (element instanceof IScriptProject) {
+				add = true;
+			} else if (element instanceof IModelElement) {
+				IProject project = getProject((IModelElement) element);
+				add = project == null || project.isOpen();
+			}
+			if (add) {
+				if (isKnownWorkingSet) {
+					result.add(element);
+				} else {
+					IProject project = (IProject) element.getAdapter(IProject.class);
+					if (project != null && project.exists()) {
+						IScriptProject jp = DLTKCore.create(project);
+						if (jp != null && jp.exists()) {
+							result.add(jp);
+						} else {
+							result.add(project);
+						}
+					}
+				}
+			}
+		}
+		return result.toArray();
+	}
+
