@@ -1,0 +1,31 @@
+	private void updateBuildpathList() {
+		List srcelements= fFoldersList.getElements();
+		
+		List cpelements= fBuildpathList.getElements();
+		int nEntries= cpelements.size();
+		// backwards, as entries will be deleted
+		int lastRemovePos= nEntries;
+		int afterLastSourcePos= 0;
+		for (int i= nEntries - 1; i >= 0; i--) {
+			BPListElement cpe= (BPListElement)cpelements.get(i);
+			int kind= cpe.getEntryKind();
+			if (isEntryKind(kind)) {
+				if (!srcelements.remove(cpe)) {
+					cpelements.remove(i);
+					lastRemovePos= i;
+				} else if (lastRemovePos == nEntries) {
+					afterLastSourcePos= i + 1;
+				}
+			}
+		}
+
+		if (!srcelements.isEmpty()) {
+			int insertPos= Math.min(afterLastSourcePos, lastRemovePos);
+			cpelements.addAll(insertPos, srcelements);
+		}
+		
+		if (lastRemovePos != nEntries || !srcelements.isEmpty()) {
+			fBuildpathList.setElements(cpelements);
+		}
+	}
+

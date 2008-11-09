@@ -1,0 +1,43 @@
+	/**
+	 * Validates the build path.
+	 */
+	public void updatePathStatus() {
+		fPathStatus.setOK();
+		List elements = fBuildPathList.getElements();
+		BPListElement entryMissing = null;
+		int nEntriesMissing = 0;
+		IBuildpathEntry[] entries = new IBuildpathEntry[elements.size()];
+		for (int i = elements.size() - 1; i >= 0; i--) {
+			BPListElement currElement = (BPListElement) elements.get(i);
+			boolean isChecked = fBuildPathList.isChecked(currElement);
+			if (currElement.getEntryKind() == IBuildpathEntry.BPE_SOURCE) {
+				if (!isChecked) {
+					fBuildPathList.setCheckedWithoutUpdate(currElement, true);
+				}
+				if (!fBuildPathList.isGrayed(currElement)) {
+					fBuildPathList.setGrayedWithoutUpdate(currElement, true);
+				}
+			} else {
+				currElement.setExported(isChecked);
+			}
+			entries[i] = currElement.getBuildpathEntry();
+			if (currElement.isMissing()) {
+				nEntriesMissing++;
+				if (entryMissing == null) {
+					entryMissing = currElement;
+				}
+			}
+		}
+		if (nEntriesMissing > 0) {
+			if (nEntriesMissing == 1) {
+				fPathStatus.setWarning(Messages.format(NewWizardMessages.BuildPathsBlock_warning_EntryMissing,
+						entryMissing.getPath().toString()));
+			} else {
+				fPathStatus.setWarning(Messages.format(NewWizardMessages.BuildPathsBlock_warning_EntriesMissing,
+						String.valueOf(nEntriesMissing)));
+			}
+		}
+		
+		updateBuildPathStatus();
+	}
+
