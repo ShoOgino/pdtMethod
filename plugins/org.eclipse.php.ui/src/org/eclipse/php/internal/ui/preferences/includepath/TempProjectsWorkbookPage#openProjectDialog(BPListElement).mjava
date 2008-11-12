@@ -1,0 +1,49 @@
+	private BPListElement[] openProjectDialog(BPListElement elem) {
+
+		try {
+			ArrayList selectable = new ArrayList();
+			final IScriptModel model = fCurrJProject.getModel();
+			final IDLTKLanguageToolkit toolkit = fCurrJProject
+					.getLanguageToolkit();
+			selectable.addAll(Arrays.asList(toolkit != null ? model
+					.getScriptProjects(toolkit.getNatureId()) : model
+					.getScriptProjects()));
+			selectable.remove(fCurrJProject);
+
+			List elements = fProjectsList.getElements();
+			for (int i = 0; i < elements.size(); i++) {
+				BPListElement curr = (BPListElement) elements.get(0);
+				IScriptProject proj = (IScriptProject) DLTKCore.create(curr
+						.getResource());
+				selectable.remove(proj);
+			}
+			Object[] selectArr = selectable.toArray();
+			new ModelElementSorter().sort(null, selectArr);
+			// IScriptProject project = elem.getScriptProject();
+			ScriptUILabelProvider labelProvider = new ScriptUILabelProvider();
+			ListSelectionDialog dialog = new ListSelectionDialog(
+					getShell(),
+					Arrays.asList(selectArr),
+					new ArrayContentProvider(),
+					labelProvider,
+					NewWizardMessages.ProjectsWorkbookPage_chooseProjects_message);
+			dialog
+					.setTitle(NewWizardMessages.ProjectsWorkbookPage_chooseProjects_title);
+			dialog.setHelpAvailable(false);
+			if (dialog.open() == Window.OK) {
+				Object[] result = dialog.getResult();
+				BPListElement[] cpElements = new BPListElement[result.length];
+				for (int i = 0; i < result.length; i++) {
+					IScriptProject curr = (IScriptProject) result[i];
+					cpElements[i] = new BPListElement(fCurrJProject,
+							IBuildpathEntry.BPE_PROJECT, curr.getPath(), curr
+									.getResource(), false);
+				}
+				return cpElements;
+			}
+		} catch (ModelException e) {
+			return null;
+		}
+		return null;
+	}
+

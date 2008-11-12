@@ -1,0 +1,54 @@
+	private void removeEntry() {
+		List selElements = fLibrariesList.getSelectedElements();
+		HashMap containerEntriesToUpdate = new HashMap();
+		for (int i = selElements.size() - 1; i >= 0; i--) {
+			Object elem = selElements.get(i);
+			if (elem instanceof BPListElementAttribute) {
+				BPListElementAttribute attrib = (BPListElementAttribute) elem;
+				String key = attrib.getKey();
+				Object value = null;
+				if (key.equals(BPListElement.ACCESSRULES)) {
+					value = new IAccessRule[0];
+				}
+				attrib.getParent().setAttribute(key, value);
+				selElements.remove(i);
+				if (attrib.getParent().getParentContainer() instanceof BPListElement) { // inside
+					// a
+					// container:
+					// apply
+					// changes
+					// right
+					// away
+					BPListElement containerEntry = attrib.getParent();
+					HashSet changedAttributes = (HashSet) containerEntriesToUpdate
+							.get(containerEntry);
+					if (changedAttributes == null) {
+						changedAttributes = new HashSet();
+						containerEntriesToUpdate.put(containerEntry,
+								changedAttributes);
+					}
+					changedAttributes.add(key); // collect the changed
+					// attributes
+				}
+			}
+		}
+		if (selElements.isEmpty()) {
+			fLibrariesList.refresh();
+			fBuildPathList.dialogFieldChanged(); // validate
+		} else {
+			fLibrariesList.removeElements(selElements);
+		}
+		for (Iterator iter = containerEntriesToUpdate.entrySet().iterator(); iter
+				.hasNext();) {
+			Map.Entry entry = (Entry) iter.next();
+			BPListElement curr = (BPListElement) entry.getKey();
+			HashSet attribs = (HashSet) entry.getValue();
+			String[] changedAttributes = (String[]) attribs
+					.toArray(new String[attribs.size()]);
+			IBuildpathEntry changedEntry = curr.getBuildpathEntry();
+			updateContainerEntry(changedEntry, changedAttributes,
+					fCurrJProject, ((BPListElement) curr.getParentContainer())
+							.getPath());
+		}
+	}
+

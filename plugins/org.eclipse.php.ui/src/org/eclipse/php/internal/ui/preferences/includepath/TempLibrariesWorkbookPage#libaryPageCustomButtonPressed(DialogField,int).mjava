@@ -1,0 +1,57 @@
+	private void libaryPageCustomButtonPressed(DialogField field, int index) {
+		BPListElement[] libentries = null;
+		IEnvironment environment = EnvironmentManager
+				.getEnvironment(this.scriptProject);
+		switch (index - IDX_ADD) {
+		case IDX_ADDZIP: /* add archive */
+			if (fWithZip) {
+				libentries = openZipFileDialog(null);
+				break;
+			}
+		case IDX_ADDEXT: /* add external archive */
+			if (fWithZip) {
+				libentries = openExtZipFileDialog(null, environment);
+				break;
+			}
+		case IDX_ADDLIB: /* add library */
+			libentries = openContainerSelectionDialog(null);
+			break;
+		case IDX_ADDEXTFOL: /* add folder */
+			libentries = opensExtSourceFolderDialog(null, environment);
+			break;
+		// case IDX_ADDFOL: /* add folder */
+		// libentries = opensSourceFolderDialog(null);
+		// break;
+		case IDX_EDIT: /* edit */
+			editEntry();
+			return;
+		case IDX_REMOVE: /* remove */
+			removeEntry();
+			return;
+		case IDX_REPLACE: /* replace */
+			replaceArchiveFile();
+			return;
+		}
+		if (libentries != null) {
+			int nElementsChosen = libentries.length;
+			// remove duplicates
+			List cplist = fLibrariesList.getElements();
+			List elementsToAdd = new ArrayList(nElementsChosen);
+			for (int i = 0; i < nElementsChosen; i++) {
+				BPListElement curr = libentries[i];
+				if (!cplist.contains(curr) && !elementsToAdd.contains(curr)) {
+					elementsToAdd.add(curr);
+				}
+			}
+			// if (!elementsToAdd.isEmpty() && (index == IDX_ADDFOL+IDX_ADD)) {
+			// askForAddingExclusionPatternsDialog(elementsToAdd);
+			// }
+			fLibrariesList.addElements(elementsToAdd);
+			if (index == IDX_ADDLIB + IDX_ADD) {
+				fLibrariesList.refresh();
+			}
+			fLibrariesList
+					.postSetSelection(new StructuredSelection(libentries));
+		}
+	}
+

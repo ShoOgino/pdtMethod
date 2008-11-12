@@ -1,0 +1,22 @@
+	private static void addExclusionPatterns(BPListElement newEntry,
+			BPListElement[] existing, Set modifiedEntries) {
+		IPath entryPath = newEntry.getPath();
+		for (int i = 0; i < existing.length; i++) {
+			BPListElement curr = existing[i];
+			if (curr.getEntryKind() == IBuildpathEntry.BPE_SOURCE) {
+				IPath currPath = curr.getPath();
+				if (!currPath.equals(entryPath)) {
+					if (currPath.isPrefixOf(entryPath)) {
+						if (addToExclusions(entryPath, curr)) {
+							modifiedEntries.add(curr);
+						}
+					} else if (entryPath.isPrefixOf(currPath)) {
+						if (addToExclusions(currPath, newEntry)) {
+							modifiedEntries.add(curr);
+						}
+					}
+				}
+			}
+		}
+	}
+

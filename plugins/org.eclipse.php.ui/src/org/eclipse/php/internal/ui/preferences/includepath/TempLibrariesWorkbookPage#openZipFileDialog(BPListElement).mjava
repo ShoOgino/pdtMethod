@@ -1,0 +1,34 @@
+	private BPListElement[] openZipFileDialog(BPListElement existing) {
+		IWorkspaceRoot root = fCurrJProject.getProject().getWorkspace()
+				.getRoot();
+		if (existing == null) {
+			IPath[] selected = BuildpathDialogAccess.chooseArchiveEntries(
+					getShell(), fCurrJProject.getPath(),
+					getUsedArchiveFiles(existing));
+			if (selected != null) {
+				ArrayList res = new ArrayList();
+				for (int i = 0; i < selected.length; i++) {
+					IPath curr = selected[i];
+					IResource resource = root.findMember(curr);
+					if (resource instanceof IFile) {
+						res.add(newBPLibraryElement(resource, false));
+					}
+				}
+				return (BPListElement[]) res.toArray(new BPListElement[res
+						.size()]);
+			}
+		} else {
+			IPath configured = BuildpathDialogAccess.configureArchiveEntry(
+					getShell(), existing.getPath(),
+					getUsedArchiveFiles(existing));
+			if (configured != null) {
+				IResource resource = root.findMember(configured);
+				if (resource instanceof IFile) {
+					return new BPListElement[] { newBPLibraryElement(resource,
+							false) };
+				}
+			}
+		}
+		return null;
+	}
+

@@ -1,0 +1,34 @@
+	private void editElementEntry(BPListElement elem) {
+		BPListElement[] res = null;
+		switch (elem.getEntryKind()) {
+		case IBuildpathEntry.BPE_CONTAINER:
+			res = openContainerSelectionDialog(elem);
+			break;
+		case IBuildpathEntry.BPE_LIBRARY:
+			IEnvironment environment = EnvironmentManager
+					.getEnvironment(this.scriptProject);
+			IResource resource = elem.getResource();
+			if (resource == null) {
+				if (Util.isArchiveFileName(elem.getPath().toOSString())) {
+					res = openExtZipFileDialog(elem, environment);
+				} else {
+					res = opensExtSourceFolderDialog(elem, environment);
+				}
+			} else if (resource.getType() == IResource.FOLDER) {
+				if (resource.exists()) {
+					res = opensSourceFolderDialog(elem);
+				} else {
+					res = openNewClassFolderDialog(elem);
+				}
+			} else if (resource.getType() == IResource.FILE) {
+				res = openZipFileDialog(elem);
+			}
+			break;
+		}
+		if (res != null && res.length > 0) {
+			BPListElement curr = res[0];
+			curr.setExported(elem.isExported());
+			fLibrariesList.replaceElement(elem, curr);
+		}
+	}
+

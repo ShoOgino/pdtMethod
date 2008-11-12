@@ -1,0 +1,40 @@
+	protected void sourcePageCustomButtonPressed(DialogField field, int index) {
+		if (field == fFoldersList) {
+			if (index == IDX_ADD) {
+				IProject project = fCurrJProject.getProject();
+				if (project.exists() && hasFolders(project)) {
+					List existingElements = fFoldersList.getElements();
+					BPListElement[] existing = (BPListElement[]) existingElements
+							.toArray(new BPListElement[existingElements.size()]);
+					CreateMultipleSourceFoldersDialog dialog = new CreateMultipleSourceFoldersDialog(
+							fCurrJProject, existing, getShell());
+					if (dialog.open() == Window.OK) {
+						refresh(dialog.getInsertedElements(), dialog
+								.getRemovedElements(), dialog
+								.getModifiedElements());
+					}
+				} else {
+					BPListElement newElement = new BPListElement(fCurrJProject,
+							IBuildpathEntry.BPE_SOURCE, false);
+					AddSourceFolderWizard wizard = newSourceFolderWizard(
+							newElement, fFoldersList.getElements(), true);
+					OpenBuildPathWizardAction action = new OpenBuildPathWizardAction(
+							wizard);
+					action.run();
+				}
+			} else if (index == IDX_ADD_LINK) {
+				BPListElement newElement = new BPListElement(fCurrJProject,
+						IBuildpathEntry.BPE_SOURCE, false);
+				AddSourceFolderWizard wizard = newLinkedSourceFolderWizard(
+						newElement, fFoldersList.getElements(), true);
+				OpenBuildPathWizardAction action = new OpenBuildPathWizardAction(
+						wizard);
+				action.run();
+			} else if (index == IDX_EDIT) {
+				editEntry();
+			} else if (index == IDX_REMOVE) {
+				removeEntry();
+			}
+		}
+	}
+
