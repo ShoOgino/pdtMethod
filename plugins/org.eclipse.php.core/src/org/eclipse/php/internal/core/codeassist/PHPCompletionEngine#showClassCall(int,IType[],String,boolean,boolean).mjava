@@ -9,9 +9,13 @@
 		
 		boolean showNonStrictOptions = showNonStrictOptions();
 
+		int mask = 0;
+		if (requestor.isContextInformationMode()) {
+			mask |= CodeAssistUtils.EXACT_NAME;
+		}
 		for (IType type : className) {
 			if (!prefix.startsWith(DOLLAR)) {
-				IMethod[] methods = CodeAssistUtils.getClassMethods(type, prefix, requestor.isContextInformationMode());
+				IMethod[] methods = CodeAssistUtils.getClassMethods(type, prefix, mask);
 				for (IModelElement method : methods) {
 					try {
 						if ((((IMethod) method).getFlags() & IPHPModifiers.Internal) == 0 && (showNonStrictOptions || isThisVar || (((IMethod) method).getFlags() & Modifiers.AccPrivate) == 0)) {
@@ -25,7 +29,7 @@
 				}
 			}
 
-			IModelElement[] fields = CodeAssistUtils.getClassFields(type, prefix, requestor.isContextInformationMode(), true);
+			IModelElement[] fields = CodeAssistUtils.getClassFields(type, prefix, mask);
 			int relevanceVar = RELEVANCE_VAR;
 			int relevanceConst = RELEVANCE_CONST;
 			for (IModelElement element : fields) {

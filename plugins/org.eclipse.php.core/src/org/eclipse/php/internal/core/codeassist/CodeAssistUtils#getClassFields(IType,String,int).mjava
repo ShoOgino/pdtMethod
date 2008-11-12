@@ -1,0 +1,97 @@
+	/**
+	 * This method finds all class fields that match the given prefix.
+	 * @param type
+	 * @param prefix
+	 * @param mask
+	 * @return
+	 */
+	public static IField[] getClassFields(IType type, String prefix, int mask) {
+		boolean exactName = (mask & EXACT_NAME) != 0;
+		boolean searchConstants = (mask & ONLY_VARIABLES) == 0;
+		
+		final Set<IField> fields = new TreeSet<IField>(new AlphabeticComparator());
+		try {
+			List<IType> searchTypes = new LinkedList<IType>();
+			searchTypes.add(type);
+
+			if (prefix.length() == 0) {
+				ITypeHierarchy superTypeHierarchy = type.newSupertypeHierarchy(null);
+				IType[] allSuperclasses = superTypeHierarchy.getAllSuperclasses(type);
+				searchTypes.addAll(Arrays.asList(allSuperclasses));
+			} else {
+				SearchEngine searchEngine = new SearchEngine();
+				IDLTKSearchScope scope;
+				SearchPattern pattern;
+
+				int matchRule;
+				if (prefix.length() == 0 && !exactName) {
+					prefix = WILDCARD;
+					matchRule = SearchPattern.R_PATTERN_MATCH;
+				} else {
+					matchRule = exactName ? SearchPattern.R_EXACT_MATCH : SearchPattern.R_CAMELCASE_MATCH | SearchPattern.R_PREFIX_MATCH;
+				}
+
+				if (type.getSuperClasses() != null) {
+					scope = SearchEngine.createSuperHierarchyScope(type);
+
+					if (searchConstants) {
+						// search for constants in hierarchy
+						pattern = SearchPattern.createPattern(prefix, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, matchRule, PHPLanguageToolkit.getDefault());
+
+						searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
+							public void acceptSearchMatch(SearchMatch match) throws CoreException {
+								fields.add((IField) match.getElement());
+							}
+						}, null);
+					}
+
+					// search for variables in hierarchy
+					pattern = SearchPattern.createPattern(DOLLAR + prefix, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, matchRule, PHPLanguageToolkit.getDefault());
+
+					searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
+						public void acceptSearchMatch(SearchMatch match) throws CoreException {
+							fields.add((IField) match.getElement());
+						}
+					}, null);
+				}
+			}
+
+			for (IType searchType : searchTypes) {
+				IField[] typeFields = searchType.getFields();
+
+				for (IField typeField : typeFields) {
+					String elementName = typeField.getElementName();
+					int flags = typeField.getFlags();
+					if ((flags & Modifiers.AccConstant) != 0) {
+						if (exactName) {
+							if (elementName.equals(prefix)) {
+								fields.add(typeField);
+								break;
+							}
+						} else if (elementName.startsWith(prefix)) {
+							fields.add(typeField);
+						}
+					} else { // variable
+						String tmp = prefix;
+						if (!tmp.startsWith(DOLLAR)) {
+							tmp = DOLLAR + tmp;
+						}
+						if (exactName) {
+							if (elementName.equals(tmp)) {
+								fields.add(typeField);
+								break;
+							}
+						} else if (elementName.startsWith(tmp)) {
+							fields.add(typeField);
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+			if (DLTKCore.DEBUG_COMPLETION) {
+				e.printStackTrace();
+			}
+		}
+		return fields.toArray(new IField[fields.size()]);
+	}
+

@@ -1,0 +1,26 @@
+	/**
+	 * Return workspace or method fields depending on current position: whether we are inside method or in global scope.
+	 * @param sourceModule
+	 * @param offset
+	 * @param prefix
+	 * @param mask
+	 * @return
+	 */
+	public static IModelElement[] getGlobalOrMethodFields(ISourceModule sourceModule, int offset, String prefix, int mask) {
+		try {
+			IModelElement enclosingElement = sourceModule.getElementAt(offset);
+			if (enclosingElement instanceof IField) {
+				enclosingElement = enclosingElement.getParent();
+			}
+			if (enclosingElement instanceof IMethod) {
+				IMethod method = (IMethod) enclosingElement;
+				return getMethodFields(method, prefix, mask);
+			}
+		} catch (ModelException e) {
+			if (DLTKCore.DEBUG_COMPLETION) {
+				e.printStackTrace();
+			}
+		}
+		return getGlobalFields(sourceModule, prefix, mask);
+	}
+

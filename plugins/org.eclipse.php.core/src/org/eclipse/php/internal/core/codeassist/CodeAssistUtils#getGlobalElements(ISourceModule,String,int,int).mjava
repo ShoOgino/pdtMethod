@@ -1,0 +1,43 @@
+	/**
+	 * This method searches in the project scope for all elements of specified type that match the given prefix.
+	 * If currentFileOnly parameter is <code>true</code>, the search scope for variables will contain only the source module.
+	 * If the project doesn't exist, workspace scope is used.
+	 * 
+	 * @param sourceModule Current source module
+	 * @param prefix Element name or prefix
+	 * @param elementType Element type from {@link IDLTKSearchConstants}
+	 * @param mask
+	 * @return
+	 */
+	private static IModelElement[] getGlobalElements(ISourceModule sourceModule, String prefix, int elementType, int mask) {
+
+		IDLTKLanguageToolkit toolkit = PHPLanguageToolkit.getDefault();
+
+		boolean isVariable = elementType == IDLTKSearchConstants.FIELD && prefix.startsWith("$"); //$NON-NLS-1$
+
+		IScriptProject scriptProject = sourceModule.getScriptProject();
+		if (!ScriptProject.hasScriptNature(scriptProject.getProject())) {
+			return getSourceModuleElements(sourceModule, prefix, elementType, mask);
+		}
+
+		IDLTKSearchScope scope;
+		if ((mask & ONLY_CURRENT_FILE) != 0) {
+			scope = SearchEngine.createSearchScope(sourceModule);
+		} else {
+			if (scriptProject != null) {
+				scope = SearchEngine.createSearchScope(scriptProject);
+			} else {
+				scope = SearchEngine.createWorkspaceScope(toolkit);
+			}
+		}
+
+		if ((mask & EXACT_NAME) == 0 & (mask & ONLY_CURRENT_FILE) == 0 && isVariable) {
+			// search variables using mixin model:
+			PHPMixinModel mixinModel = scriptProject == null ? PHPMixinModel.getWorkspaceInstance() : PHPMixinModel.getInstance(scriptProject);
+			IModelElement[] variables = mixinModel.getVariable(prefix + WILDCARD, null, null, scope);
+			return variables == null ? EMPTY : filterOtherFilesElements(sourceModule, variables);
+		}
+
+		return getGlobalElements(sourceModule, scope, prefix, elementType, mask);
+	}
+

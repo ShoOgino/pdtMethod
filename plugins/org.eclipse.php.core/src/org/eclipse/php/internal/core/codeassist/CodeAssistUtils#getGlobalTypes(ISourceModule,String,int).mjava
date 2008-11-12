@@ -1,0 +1,30 @@
+	/**
+	 * This method searches for all classes in the project scope that match the given prefix.
+	 * If the project doesn't exist, workspace scope is used.
+	 * 
+	 * @param sourceModule Current source module
+	 * @param prefix Field name
+	 * @param mask
+	 */
+	public static IType[] getGlobalTypes(ISourceModule sourceModule, String prefix, int mask) {
+		IModelElement[] elements = getGlobalElements(sourceModule, prefix, IDLTKSearchConstants.TYPE, mask);
+		List<IType> filteredElements = new LinkedList<IType>();
+		for (IModelElement c : elements) {
+			IType type = (IType) c;
+			try {
+				if ((mask & ONLY_INTERFACES) != 0 && (type.getFlags() & Modifiers.AccInterface) == 0) {
+					continue;
+				}
+				if ((mask & ONLY_CLASSES) != 0 && (type.getFlags() & Modifiers.AccInterface) != 0) {
+					continue;
+				}
+				filteredElements.add(type);
+			} catch (ModelException e) {
+				if (DLTKCore.DEBUG_COMPLETION) {
+					e.printStackTrace();
+				}
+			}
+		}
+		return filteredElements.toArray(new IType[filteredElements.size()]);
+	}
+

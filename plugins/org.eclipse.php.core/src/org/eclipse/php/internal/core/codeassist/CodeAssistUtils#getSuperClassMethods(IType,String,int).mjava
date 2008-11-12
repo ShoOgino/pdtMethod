@@ -1,0 +1,49 @@
+	/**
+	 * This method finds all ancestor methods that match the given prefix.
+	 * @param type
+	 * @param prefix
+	 * @param mask
+	 * @return
+	 */
+	public static IMethod[] getSuperClassMethods(IType type, String prefix, int mask) {
+		final Set<IMethod> methods = new TreeSet<IMethod>(new AlphabeticComparator());
+		try {
+			if (type.getSuperClasses() != null) {
+				if (prefix.length() == 0) {
+					ITypeHierarchy superTypeHierarchy = type.newSupertypeHierarchy(null);
+					IType[] allSuperclasses = superTypeHierarchy.getAllSuperclasses(type);
+					for (IType superClass : allSuperclasses) {
+						for (IMethod method : superClass.getMethods()) {
+							methods.add(method);
+						}
+					}
+				} else {
+					SearchEngine searchEngine = new SearchEngine();
+					IDLTKSearchScope scope = SearchEngine.createSuperHierarchyScope(type);
+
+					int matchRule;
+					boolean exactName = (mask & EXACT_NAME) != 0;
+					if (prefix.length() == 0 && !exactName) {
+						prefix = WILDCARD;
+						matchRule = SearchPattern.R_PATTERN_MATCH;
+					} else {
+						matchRule = exactName ? SearchPattern.R_EXACT_MATCH : SearchPattern.R_CAMELCASE_MATCH | SearchPattern.R_PREFIX_MATCH;
+					}
+
+					SearchPattern pattern = SearchPattern.createPattern(prefix, IDLTKSearchConstants.METHOD, IDLTKSearchConstants.DECLARATIONS, matchRule, PHPLanguageToolkit.getDefault());
+
+					searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
+						public void acceptSearchMatch(SearchMatch match) throws CoreException {
+							methods.add((IMethod) match.getElement());
+						}
+					}, null);
+				}
+			}
+		} catch (Exception e) {
+			if (DLTKCore.DEBUG_COMPLETION) {
+				e.printStackTrace();
+			}
+		}
+		return methods.toArray(new IMethod[methods.size()]);
+	}
+

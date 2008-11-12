@@ -28,26 +28,37 @@
 		}
 
 		IType[] types = CodeAssistUtils.getTypesFor(sourceModule, statementText, startFunctionPosition, offset, line, determineObjsFromOtherFiles());
-
-		if (hasWhitespaceAtEnd && functionName.length() > 0) {
-			// check if current position is between the end of a function call and open bracket.
-			return CodeAssistUtils.isClassFunctionCall(sourceModule, types, functionName);
-		}
-
-		if (isClassTriger) {
-			if (isParent) {
-				if (types != null) { //$NON-NLS-1$
+		if (types != null) {
+			if (hasWhitespaceAtEnd && functionName.length() > 0) {
+				// check if current position is between the end of a function call and open bracket.
+				return CodeAssistUtils.isClassFunctionCall(sourceModule, types, functionName);
+			}
+	
+			if (isClassTriger) {
+				if (isParent) {
+					// Collect parents:
+					Set<IType> parents = new HashSet<IType>();
+					for (IType type : types) {
+						try {
+							ITypeHierarchy hierarchy = type.newSupertypeHierarchy(null);
+							parents.addAll(Arrays.asList(hierarchy.getAllSuperclasses(type)));
+						} catch (ModelException e) {
+							if (DLTKCore.DEBUG_COMPLETION) {
+								e.printStackTrace();
+							}
+						}
+					}
+					showClassCall(offset, parents.toArray(new IType[parents.size()]), functionName, false, false);
+				} else {
 					showClassStaticCall(offset, types, functionName);
 				}
 			} else {
-				showClassStaticCall(offset, types, functionName);
+				String parent = statementText.toString().substring(0, statementText.toString().lastIndexOf(OBJECT_FUNCTIONS_TRIGGER)).trim();
+				boolean isThisVar = parent.equals("$this"); //$NON-NLS-1$
+				//boolean addVariableDollar = parent.endsWith("()");
+				boolean addVariableDollar = false;
+				showClassCall(offset, types, functionName, isThisVar, addVariableDollar);
 			}
-		} else {
-			String parent = statementText.toString().substring(0, statementText.toString().lastIndexOf(OBJECT_FUNCTIONS_TRIGGER)).trim();
-			boolean isThisVar = parent.equals("$this"); //$NON-NLS-1$
-			//boolean addVariableDollar = parent.endsWith("()");
-			boolean addVariableDollar = false;
-			showClassCall(offset, types, functionName, isThisVar, addVariableDollar);
 		}
 		return true;
 	}

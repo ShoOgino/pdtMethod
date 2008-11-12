@@ -3,11 +3,14 @@
 
 		boolean showNonStrictOptions = showNonStrictOptions();
 
+		int mask = 0;
+		if (requestor.isContextInformationMode()) {
+			mask |= CodeAssistUtils.EXACT_NAME;
+		}
 		int relevanceMethod = RELEVANCE_METHOD;
 		if (!prefix.startsWith(DOLLAR)) {
 			for (IType type : className) {
-				IMethod[] classMethods = CodeAssistUtils.getClassMethods(type, prefix, requestor.isContextInformationMode());
-
+				IMethod[] classMethods = CodeAssistUtils.getClassMethods(type, prefix, mask);
 				for (IMethod method : classMethods) {
 					try {
 						if ((!isPHP5 || showNonStrictOptions || (method.getFlags() & Modifiers.AccStatic) != 0) && (method.getFlags() & IPHPModifiers.Internal) == 0) {
@@ -25,7 +28,7 @@
 		int relevanceConst = RELEVANCE_CONST;
 		int relevanceVar = RELEVANCE_VAR;
 		for (IType type : className) {
-			IField[] classFields = CodeAssistUtils.getClassFields(type, prefix, requestor.isContextInformationMode(), true);
+			IField[] classFields = CodeAssistUtils.getClassFields(type, prefix, mask);
 			for (IField field : classFields) {
 				try {
 					int flags = field.getFlags();

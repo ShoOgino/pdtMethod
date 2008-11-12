@@ -1,11 +1,14 @@
 	protected void showClassList(String prefix, int offset, States state) {
 		this.setSourceRange(offset - prefix.length(), offset);
-
 		int relevanceClass = RELEVANCE_CLASS;
 
 		switch (state) {
 			case NEW:
-				IType[] types = CodeAssistUtils.getOnlyClasses(sourceModule, prefix, requestor.isContextInformationMode());
+				int mask = CodeAssistUtils.ONLY_CLASSES;
+				if (requestor.isContextInformationMode()) {
+					mask |= CodeAssistUtils.EXACT_NAME;
+				}
+				IType[] types = CodeAssistUtils.getGlobalTypes(sourceModule, prefix, mask);
 				IType enclosingClass = null;
 				try {
 					IModelElement enclosingElement = sourceModule.getElementAt(offset);
@@ -62,11 +65,15 @@
 				}
 				break;
 			case INSTANCEOF:
-				IModelElement[] typeElements = CodeAssistUtils.getGlobalClasses(sourceModule, prefix, requestor.isContextInformationMode());
-				for (IModelElement typeElement : typeElements) {
+				mask = 0;
+				if (requestor.isContextInformationMode()) {
+					mask |= CodeAssistUtils.EXACT_NAME;
+				}
+				IType[] typeElements = CodeAssistUtils.getGlobalTypes(sourceModule, prefix, mask);
+				for (IType typeElement : typeElements) {
 					try {
-						if ((((IType) typeElement).getFlags() & IPHPModifiers.Internal) == 0) {
-							reportType((IType) typeElement, relevanceClass--, EMPTY);
+						if ((typeElement.getFlags() & IPHPModifiers.Internal) == 0) {
+							reportType(typeElement, relevanceClass--, EMPTY);
 						}
 					} catch (ModelException e) {
 						if (DLTKCore.DEBUG_COMPLETION) {
@@ -85,11 +92,15 @@
 				}
 				break;
 			case CATCH:
-				typeElements = CodeAssistUtils.getGlobalClasses(sourceModule, prefix, requestor.isContextInformationMode());
-				for (IModelElement typeElement : typeElements) {
+				mask = 0;
+				if (requestor.isContextInformationMode()) {
+					mask |= CodeAssistUtils.EXACT_NAME;
+				}
+				typeElements = CodeAssistUtils.getGlobalTypes(sourceModule, prefix, mask);
+				for (IType typeElement : typeElements) {
 					try {
-						if ((((IType) typeElement).getFlags() & IPHPModifiers.Internal) == 0) {
-							reportType((IType) typeElement, relevanceClass--, EMPTY);
+						if ((typeElement.getFlags() & IPHPModifiers.Internal) == 0) {
+							reportType(typeElement, relevanceClass--, EMPTY);
 						}
 					} catch (ModelException e) {
 						if (DLTKCore.DEBUG_COMPLETION) {

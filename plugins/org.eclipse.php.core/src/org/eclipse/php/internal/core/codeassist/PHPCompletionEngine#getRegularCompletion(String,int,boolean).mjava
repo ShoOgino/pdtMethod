@@ -54,7 +54,11 @@
 					IModelElement enclosingElement = sourceModule.getElementAt(offset);
 					if (enclosingElement instanceof IMethod) {
 						IMethod method = (IMethod) enclosingElement;
-						variables.addAll(Arrays.asList(CodeAssistUtils.getMethodFields(method, prefix, requestor.isContextInformationMode())));
+						int mask = 0;
+						if (requestor.isContextInformationMode()) {
+							mask |= CodeAssistUtils.EXACT_NAME;
+						}
+						variables.addAll(Arrays.asList(CodeAssistUtils.getMethodFields(method, prefix, mask)));
 					}
 				} catch (ModelException e) {
 					if (DLTKCore.DEBUG_COMPLETION) {
@@ -63,7 +67,14 @@
 				}
 
 				// Complete global scope variables:
-				variables.addAll(Arrays.asList(CodeAssistUtils.getGlobalFields(sourceModule, prefix, requestor.isContextInformationMode(), !showVarsFromOtherFiles())));
+				int mask = 0;
+				if (requestor.isContextInformationMode()) {
+					mask |= CodeAssistUtils.EXACT_NAME;
+				}
+				if (!showVarsFromOtherFiles()) {
+					mask |= CodeAssistUtils.ONLY_CURRENT_FILE;
+				}
+				variables.addAll(Arrays.asList(CodeAssistUtils.getGlobalFields(sourceModule, prefix, mask)));
 				
 				for (IModelElement var : variables) {
 					IField field = (IField) var;
@@ -96,7 +107,15 @@
 		}
 
 		if (!inClass) {
-			IModelElement[] functions = CodeAssistUtils.getGlobalMethods(sourceModule, prefix, requestor.isContextInformationMode(), currentFileOnly);
+			int mask = 0;
+			if (requestor.isContextInformationMode()) {
+				mask |= CodeAssistUtils.EXACT_NAME;
+			}
+			if (currentFileOnly) {
+				mask |= CodeAssistUtils.ONLY_CURRENT_FILE;
+			}
+			
+			IModelElement[] functions = CodeAssistUtils.getGlobalMethods(sourceModule, prefix, mask);
 			for (IModelElement function : functions) {
 				try {
 					if ((((IMethod) function).getFlags() & IPHPModifiers.Internal) == 0) {
@@ -110,7 +129,17 @@
 			}
 
 			if (showConstantAssist()) {
-				IModelElement[] constants = CodeAssistUtils.getGlobalFields(sourceModule, prefix, requestor.isContextInformationMode(), currentFileOnly && !showVarsFromOtherFiles(), constantsCaseSensitive());
+				mask = 0;
+				if (requestor.isContextInformationMode()) {
+					mask |= CodeAssistUtils.EXACT_NAME;
+				}
+				if (currentFileOnly && !showVarsFromOtherFiles()) {
+					mask |= CodeAssistUtils.ONLY_CURRENT_FILE;
+				}
+				if (constantsCaseSensitive()) {
+					mask |= CodeAssistUtils.CASE_SENSITIVE;
+				}
+				IModelElement[] constants = CodeAssistUtils.getGlobalFields(sourceModule, prefix, mask);
 				for (IModelElement constant : constants) {
 					try {
 						if ((((IField) constant).getFlags() & Modifiers.AccConstant) != 0) {
@@ -127,11 +156,18 @@
 
 		if (!inClass) {
 			if (showClassNamesInGlobalCompletion()) {
-				IModelElement[] classes = CodeAssistUtils.getGlobalClasses(sourceModule, prefix, requestor.isContextInformationMode(), currentFileOnly);
-				for (IModelElement type : classes) {
+				int mask = 0;
+				if (requestor.isContextInformationMode()) {
+					mask |= CodeAssistUtils.EXACT_NAME;
+				}
+				if (currentFileOnly) {
+					mask |= CodeAssistUtils.ONLY_CURRENT_FILE;
+				}
+				IType[] classes = CodeAssistUtils.getGlobalTypes(sourceModule, prefix, mask);
+				for (IType type : classes) {
 					try {
-						if ((((IType) type).getFlags() & IPHPModifiers.Internal) == 0) {
-							reportType((IType) type, relevanceClass--, PAAMAYIM_NEKUDOTAIM);
+						if ((type.getFlags() & IPHPModifiers.Internal) == 0) {
+							reportType(type, relevanceClass--, PAAMAYIM_NEKUDOTAIM);
 						}
 					} catch (ModelException e) {
 						if (DLTKCore.DEBUG_COMPLETION) {

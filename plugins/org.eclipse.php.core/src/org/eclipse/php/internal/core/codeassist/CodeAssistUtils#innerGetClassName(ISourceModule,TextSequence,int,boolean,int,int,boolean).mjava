@@ -40,7 +40,7 @@
 		// if its object call calc the object type.
 		if (className.length() > 0 && className.charAt(0) == '$') {
 			int statementStart = offset - statementText.length();
-			return getVariableType(sourceModule, className, statementStart, line, determineObjectFromOtherFile);
+			return getVariableType(sourceModule, className, statementStart, line);
 		}
 		// if its function call calc the return type.
 		if (statementText.charAt(propertyEndPosition - 1) == ')') {
@@ -50,14 +50,14 @@
 			String functionName = statementText.subSequence(functionNameStart, functionNameEnd).toString();
 			IType classData = getContainerClassData(sourceModule, offset);
 			if (classData != null) { //if its a clss function
-				return getFunctionReturnType(classData, functionName, determineObjectFromOtherFile);
+				return getFunctionReturnType(classData, functionName);
 			}
 
 			// if its a non class function
 			Set<IType> returnTypes = new LinkedHashSet<IType>();
-			IModelElement[] functions = getGlobalMethods(sourceModule, functionName, true);
+			IModelElement[] functions = getGlobalMethods(sourceModule, functionName, EXACT_NAME);
 			for (IModelElement function : functions) {
-				IType[] types = getFunctionReturnType((IMethod) function, determineObjectFromOtherFile);
+				IType[] types = getFunctionReturnType((IMethod) function);
 				if (types != null) {
 					returnTypes.addAll(Arrays.asList(types));
 				}

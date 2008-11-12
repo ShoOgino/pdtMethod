@@ -1,0 +1,40 @@
+	/**
+	 * This method searches for all fields that where declared in the specified method
+	 * 
+	 * @param method Method to look at
+	 * @param prefix Field name
+	 * @param mask
+	 */
+	public static IModelElement[] getMethodFields(IMethod method, String prefix, int mask) {
+
+		SearchEngine searchEngine = new SearchEngine();
+		IDLTKLanguageToolkit toolkit = PHPLanguageToolkit.getDefault();
+		IDLTKSearchScope scope = SearchEngine.createSearchScope(new IModelElement[] { method }, toolkit);
+
+		int matchRule;
+		boolean exactName = (mask & EXACT_NAME) != 0;
+		if (prefix.length() == 0 && !exactName) {
+			prefix = WILDCARD;
+			matchRule = SearchPattern.R_PATTERN_MATCH;
+		} else {
+			matchRule = exactName ? SearchPattern.R_EXACT_MATCH : SearchPattern.R_CAMELCASE_MATCH | SearchPattern.R_PREFIX_MATCH;
+		}
+
+		SearchPattern pattern = SearchPattern.createPattern(prefix, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, matchRule, toolkit);
+
+		final Set<IModelElement> elements = new TreeSet<IModelElement>(new AlphabeticComparator());
+		try {
+			searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
+				public void acceptSearchMatch(SearchMatch match) throws CoreException {
+					IModelElement element = (IModelElement) match.getElement();
+					elements.add(element);
+				}
+			}, null);
+		} catch (CoreException e) {
+			if (DLTKCore.DEBUG_COMPLETION) {
+				e.printStackTrace();
+			}
+		}
+		return elements.toArray(new IModelElement[elements.size()]);
+	}
+
