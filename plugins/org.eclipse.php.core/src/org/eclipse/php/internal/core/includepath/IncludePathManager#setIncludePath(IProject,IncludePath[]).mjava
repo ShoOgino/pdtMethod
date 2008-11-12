@@ -3,8 +3,8 @@
 	 * @param project
 	 * @param includePathEntries Ordered include path entries
 	 */
-	public void setIncludePath(IProject project, IncludePath[] includePathEntries) {
-		StringBuilder buf = new StringBuilder();
+	public void setIncludePath(final IProject project, IncludePath[] includePathEntries) {
+		final StringBuilder buf = new StringBuilder();
 		for (int i = 0; i < includePathEntries.length; ++i) {
 			IncludePath includePath = includePathEntries[i];
 			if (includePath.isBuildpath()) {
@@ -18,6 +18,13 @@
 				buf.append(PREF_SEP);
 			}
 		}
-		CorePreferencesSupport.getInstance().setProjectSpecificPreferencesValue(PREF_KEY, buf.toString(), project);
+		WorkspaceJob job = new WorkspaceJob("Modifying Include Path") {
+			public IStatus runInWorkspace(IProgressMonitor monitor) throws CoreException {
+				CorePreferencesSupport.getInstance().setProjectSpecificPreferencesValue(PREF_KEY, buf.toString(), project);
+				return Status.OK_STATUS;
+			}
+		};
+		job.setRule(project.getWorkspace().getRoot());
+		job.schedule();
 	}
 
