@@ -1,0 +1,18 @@
+	public void selectionChanged(SelectionChangedEvent event) {
+		textViewer.removeSelectionChangedListener(this);
+		final long delay = PHPCorePlugin.getDefault().getPluginPreferences().getLong(PHPCoreConstants.CODEASSIST_AUTOACTIVATION_DELAY);
+		new Timer("Temporary Completion Delay").schedule(new TimerTask() {
+			public void run() {
+				textViewer.getControl().getDisplay().asyncExec(new Runnable() {
+					public void run() {
+						BusyIndicator.showWhile(textViewer.getControl().getDisplay(), new Runnable() {
+							public void run() {
+								textViewer.doOperation(ISourceViewer.CONTENTASSIST_PROPOSALS);
+							}
+						});
+					}
+				});
+			}
+		}, delay);
+	}
+
