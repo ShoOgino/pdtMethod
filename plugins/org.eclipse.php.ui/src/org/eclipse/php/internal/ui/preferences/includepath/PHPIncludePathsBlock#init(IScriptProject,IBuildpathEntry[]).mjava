@@ -1,0 +1,46 @@
+	/**
+	 * Initializes the include path for the given project. Multiple calls to init
+	 * are allowed, but all existing settings will be cleared and replace by the
+	 * given or default paths.
+	 * 
+	 * @param jproject
+	 *            The java project to configure. Does not have to exist.
+	 * @param outputLocation
+	 *            The output location to be set in the page. If
+	 *            <code>null</code> is passed, jdt default settings are used, or
+	 *            - if the project is an existing script project- the output
+	 *            location of the existing project
+	 * @param buildpathEntries
+	 *            The include path entries to be set in the page. If
+	 *            <code>null</code> is passed, jdt default settings are used, or
+	 *            - if the project is an existing script project - the buildpath
+	 *            entries of the existing project
+	 */
+	public void init(IScriptProject jproject, IBuildpathEntry[] buildpathEntries) {
+		fCurrScriptProject = jproject;
+
+		List<BPListElement> newBuildpath = new ArrayList<BPListElement>();
+		IProject project = fCurrScriptProject.getProject();
+
+		IncludePath[] includePathEntries = IncludePathManager.getInstance().getIncludePath(project);
+		for (IncludePath entry : includePathEntries) {
+			Object includePathEntry = entry.getEntry();
+
+			if (includePathEntry instanceof IBuildpathEntry) {
+				IBuildpathEntry bpEntry = (IBuildpathEntry) includePathEntry;
+				newBuildpath.add(BPListElement.createFromExisting(bpEntry, fCurrScriptProject));
+			} else {
+				IResource resource = (IResource) includePathEntry;
+				newBuildpath.add(new BPListElement(fCurrScriptProject, IBuildpathEntry.BPE_SOURCE, resource.getFullPath(), resource, false));
+			}
+
+		}
+
+		// inits the dialog field
+		fBuildPathDialogField.enableButton(project.exists());
+		fBuildPathList.setElements(newBuildpath);
+		//	fBuildPathList.setCheckedElements(newBuildpath);
+		initializeTimeStamps();
+		updateUI();
+	}
+
