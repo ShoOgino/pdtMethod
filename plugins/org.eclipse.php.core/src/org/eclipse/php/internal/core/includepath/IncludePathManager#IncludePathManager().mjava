@@ -4,7 +4,7 @@
 			public void elementChanged(ElementChangedEvent event) {
 				processChildren(event.getDelta());
 			}
-			
+
 			private void processChildren(IModelElementDelta delta) {
 				IModelElement element = delta.getElement();
 				try {
@@ -13,17 +13,17 @@
 						IProject project = scriptProject.getProject();
 						IncludePath[] includePathEntries = getIncludePath(project);
 						List<IncludePath> newEntries = new LinkedList<IncludePath>(Arrays.asList(includePathEntries));
-						
+
 						IBuildpathEntry[] rawBuildpath = scriptProject.getRawBuildpath();
-						
+
 						// This is a workaround to the lack of information about buildpath changes in delta:
 						boolean changed = false;
-						
+
 						// Calculate added entries: 
 						for (IBuildpathEntry entry : rawBuildpath) {
 							boolean added = true;
 							for (IncludePath includePath : includePathEntries) {
-								if (includePath.isBuildpath() && entry == includePath.getEntry()) {
+								if (includePath.isBuildpath() && entry.equals(includePath.getEntry())) {
 									added = false;
 									break;
 								}
@@ -33,19 +33,19 @@
 								changed = true;
 							}
 						}
-						
+
 						// Calculate removed entries:
 						List<IncludePath> entriesToRemove = new LinkedList<IncludePath>();
 						for (IncludePath includePath : includePathEntries) {
 							boolean removed = true;
 							for (IBuildpathEntry entry : rawBuildpath) {
 								if (includePath.isBuildpath()) {
-									if (entry == includePath.getEntry()) {
+									if (entry.equals(includePath.getEntry())) {
 										removed = false;
 										break;
 									}
 								} else {
-									if (entry.getPath().isPrefixOf(((IResource)includePath.getEntry()).getFullPath())) {
+									if (entry.getPath().isPrefixOf(((IResource) includePath.getEntry()).getFullPath())) {
 										removed = false;
 										break;
 									}
@@ -63,7 +63,7 @@
 						if (changed) {
 							setIncludePath(project, newEntries.toArray(new IncludePath[newEntries.size()]));
 						}
-						
+
 					} else {
 						IModelElementDelta[] children = delta.getAffectedChildren();
 						for (IModelElementDelta child : children) {

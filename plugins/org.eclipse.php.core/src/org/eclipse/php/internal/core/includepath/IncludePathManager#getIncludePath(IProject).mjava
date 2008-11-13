@@ -7,6 +7,15 @@
 
 		List<IncludePath> includePathEntries = new LinkedList<IncludePath>();
 
+		IBuildpathEntry[] buildpath = null;
+		try {
+			buildpath = DLTKCore.create(project).getRawBuildpath();
+		} catch (ModelException e) {
+			if (DLTKCore.DEBUG) {
+				e.printStackTrace();
+			}
+		}
+
 		String includePath = CorePreferencesSupport.getInstance().getProjectSpecificPreferencesValue(PREF_KEY, null, project);
 		if (includePath != null) {
 			while (includePath != null) {
@@ -29,34 +38,24 @@
 						if (resource != null) {
 							includePathEntries.add(new IncludePath(resource));
 						}
-					} else {
-						IBuildpathEntry[] buildpath;
-						try {
-							buildpath = DLTKCore.create(project).getRawBuildpath();
-							for (IBuildpathEntry entry : buildpath) {
-								if (entry.getEntryKind() == kind && entry.getPath().equals(new Path(path))) {
+					} else if (buildpath != null) {
+						for (IBuildpathEntry entry : buildpath) {
+							if (entry.getEntryKind() == kind) {
+								IPath localPath = EnvironmentPathUtils.getLocalPath(entry.getPath());
+								if (localPath.equals(new Path(path))) {
 									includePathEntries.add(new IncludePath(entry));
+									break;
 								}
 							}
-						} catch (ModelException e) {
-							if (DLTKCore.DEBUG) {
-								e.printStackTrace();
-							}
 						}
+
 					}
 				}
 			}
-		} else { // by default include path equals to the build path
-			try {
-				IBuildpathEntry[] buildpath = DLTKCore.create(project).getRawBuildpath();
-				for (IBuildpathEntry entry : buildpath) {
-					if (isBuildpathAllowed(entry)) {
-						includePathEntries.add(new IncludePath(entry));
-					}
-				}
-			} catch (ModelException e) {
-				if (DLTKCore.DEBUG) {
-					e.printStackTrace();
+		} else if (buildpath != null) { // by default include path equals to the build path
+			for (IBuildpathEntry entry : buildpath) {
+				if (isBuildpathAllowed(entry)) {
+					includePathEntries.add(new IncludePath(entry));
 				}
 			}
 		}
