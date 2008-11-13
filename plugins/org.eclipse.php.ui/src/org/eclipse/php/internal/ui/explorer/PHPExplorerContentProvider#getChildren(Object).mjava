@@ -1,13 +1,13 @@
 	@Override
 	public Object[] getChildren(Object parentElement) {
 		try {
-		// Handles SourceModule and downwards as well as ExternalProjectFragments (i.e language model)
-		if (parentElement instanceof ISourceModule || !(parentElement instanceof IOpenable) || parentElement instanceof ExternalProjectFragment) {
-			if (parentElement instanceof IFolder) {
-				return ((IFolder) parentElement).members();
-		}
-			return super.getChildren(parentElement);
-		}
+			// Handles SourceModule and downwards as well as ExternalProjectFragments (i.e language model)
+			if (parentElement instanceof ISourceModule || !(parentElement instanceof IOpenable) || parentElement instanceof ExternalProjectFragment) {
+				if (parentElement instanceof IFolder) {
+					return ((IFolder) parentElement).members();
+				}
+				return super.getChildren(parentElement);
+			}
 
 			if (parentElement instanceof IOpenable) {
 				IResource resource = ((IOpenable) parentElement).getResource();
@@ -26,7 +26,14 @@
 					}
 					// Adding External libraries to the treeview :
 					if (parentElement instanceof IScriptProject) {
-						Object[] projectChildren = getProjectFragments((IScriptProject) parentElement);
+						IScriptProject project = (IScriptProject) parentElement;
+						// Add include path node
+						IncludePath[] includePath = includePathManager.getIncludePath(project.getProject());
+						IncludePathContainer incPathContainer = new IncludePathContainer(project, includePath);
+						returnChlidren.add(incPathContainer);
+
+						// Add the language library
+						Object[] projectChildren = getProjectFragments(project);
 						for (Object modelElement : projectChildren) {
 							//adding only "external" fragments (so we won't double-add source-folders we get on the resource-wise visiting
 							if (modelElement instanceof BuildPathContainer) {
