@@ -8,17 +8,19 @@
 	public static IField[] getClassFields(IType type, String prefix, int mask) {
 		boolean exactName = (mask & EXACT_NAME) != 0;
 		boolean searchConstants = (mask & ONLY_VARIABLES) == 0;
-		
+
 		final Set<IField> fields = new TreeSet<IField>(new AlphabeticComparator());
 		try {
 			List<IType> searchTypes = new LinkedList<IType>();
-			searchTypes.add(type);
 
 			if (prefix.length() == 0) {
+				searchTypes.add(type);
+
 				ITypeHierarchy superTypeHierarchy = type.newSupertypeHierarchy(null);
 				IType[] allSuperclasses = superTypeHierarchy.getAllSuperclasses(type);
 				searchTypes.addAll(Arrays.asList(allSuperclasses));
-			} else {
+				
+			} else if (type.getSuperClasses() != null) {
 				SearchEngine searchEngine = new SearchEngine();
 				IDLTKSearchScope scope;
 				SearchPattern pattern;
@@ -31,22 +33,11 @@
 					matchRule = exactName ? SearchPattern.R_EXACT_MATCH : SearchPattern.R_CAMELCASE_MATCH | SearchPattern.R_PREFIX_MATCH;
 				}
 
-				if (type.getSuperClasses() != null) {
-					scope = SearchEngine.createSuperHierarchyScope(type);
+				scope = SearchEngine.createSuperHierarchyScope(type);
 
-					if (searchConstants) {
-						// search for constants in hierarchy
-						pattern = SearchPattern.createPattern(prefix, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, matchRule, PHPLanguageToolkit.getDefault());
-
-						searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
-							public void acceptSearchMatch(SearchMatch match) throws CoreException {
-								fields.add((IField) match.getElement());
-							}
-						}, null);
-					}
-
-					// search for variables in hierarchy
-					pattern = SearchPattern.createPattern(DOLLAR + prefix, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, matchRule, PHPLanguageToolkit.getDefault());
+				if (searchConstants) {
+					// search for constants in hierarchy
+					pattern = SearchPattern.createPattern(prefix, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, matchRule, PHPLanguageToolkit.getDefault());
 
 					searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
 						public void acceptSearchMatch(SearchMatch match) throws CoreException {
@@ -54,6 +45,18 @@
 						}
 					}, null);
 				}
+
+				// search for variables in hierarchy
+				pattern = SearchPattern.createPattern(DOLLAR + prefix, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, matchRule, PHPLanguageToolkit.getDefault());
+
+				searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
+					public void acceptSearchMatch(SearchMatch match) throws CoreException {
+						fields.add((IField) match.getElement());
+					}
+				}, null);
+
+			} else {
+				searchTypes.add(type);
 			}
 
 			for (IType searchType : searchTypes) {
