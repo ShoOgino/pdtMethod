@@ -1,7 +1,18 @@
-	private IEditorPart getEditor(IEditorInput fEditorInput) {
-		IWorkbenchWindow[] workbenchWindows = UIPlugin.getDefault().getWorkbench().getWorkbenchWindows();
-		IEditorPart findEditor = workbenchWindows[0].getActivePage().findEditor(fEditorInput);
-
-		return findEditor;
+	private IEditorPart getEditor(IEditorInput editorInput) {
+		final IWorkbenchPage activePage[] = new IWorkbenchPage[1];
+		Display.getDefault().syncExec(new Runnable() { // needs UI thread to retrieve active page
+			public void run() {
+				activePage[0] = DLTKUIPlugin.getActivePage();
+			}
+		});
+		IEditorPart editor = null;
+		if (activePage[0] != null) {
+			if (editorInput != null) {
+				editor = activePage[0].findEditor(editorInput);
+			} else {
+				editor = activePage[0].getActiveEditor(); // workaround for external files editor
+			}
+		}
+		return editor;
 	}
 

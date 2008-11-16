@@ -1,31 +1,39 @@
 	public void validate(IRegion dirtyRegion, IValidationContext helper, IReporter reporter) {
 		// install editors
-		if (fEditor == null ) {
+		if (fEditor == null) {
 			install(helper);
 			if (fEditor == null) {
 				return;
 			}
-		}	
-		
-		final ISourceModule unit = fManager.getWorkingCopy(fEditor.getEditorInput());
-		if (unit == null) {
-			return;
 		}
 
-		try {
-			reconcile(true);
-		} finally {
-			// Always notify listeners, see https://bugs.eclipse.org/bugs/show_bug.cgi?id=55969 for the final solution
+		final IModelElement modelElement = ((PHPStructuredEditor) fEditor).getModelElement();
+		if (modelElement instanceof ISourceModule) {
+			final Program ast[] = new Program[1];
 			try {
-				if (fIsScriptReconcilingListener) {
-					IProgressMonitor pm = fProgressMonitor;
-					if (pm == null)
-						pm = new NullProgressMonitor();
-					fJavaReconcilingListener.reconciled(fAST, !fNotify, pm);
-				}
+				SafeRunner.run(new ISafeRunnable() {
+					public void run() throws ModelException {
+						ast[0] = reconcile((ISourceModule) modelElement, true);
+					}
+
+					public void handleException(Throwable ex) {
+						IStatus status = new Status(IStatus.ERROR, PHPUiPlugin.ID, IStatus.OK, "Error in php Core during reconcile", ex); //$NON-NLS-1$
+						PHPCorePlugin.getDefault().getLog().log(status);
+					}
+				});
 			} finally {
-				fNotify = true;
+				// Always notify listeners, see https://bugs.eclipse.org/bugs/show_bug.cgi?id=55969 for the final solution
+				try {
+					if (fIsScriptReconcilingListener) {
+						IProgressMonitor pm = fProgressMonitor;
+						if (pm == null)
+							pm = new NullProgressMonitor();
+						fJavaReconcilingListener.reconciled(ast[0], !fNotify, pm);
+					}
+				} finally {
+					fNotify = true;
+				}
 			}
 		}
-	}	
+	}
 
