@@ -6,26 +6,46 @@
 				IContainer container = (IContainer) parentElement;
 				IResource[] members = container.members();
 				for (IResource member : members) {
-					if (member.isAccessible() && !isResourceFiltered(member)) {
-						r.add(member);
+					if (member instanceof IContainer && member.isAccessible() && !isResourceFiltered(member)) {
+						if (member instanceof IProject) { // show only PHP projects
+							IProject project = (IProject) member;
+							if (project.hasNature(PHPNature.ID)) {
+								r.add(member);
+							}
+						} else {
+							r.add(member);
+						}
+					}
+				}
+				// Add include paths:
+				if (parentElement instanceof IProject) {
+					IProject project = (IProject) parentElement;
+					IncludePath[] includePath = IncludePathManager.getInstance().getIncludePath(project);
+					for (IncludePath path : includePath) {
+						if (path.isBuildpath()) {
+							IBuildpathEntry buildpathEntry = (IBuildpathEntry) path.getEntry();
+							if (buildpathEntry.getEntryKind() == IBuildpathEntry.BPE_LIBRARY || buildpathEntry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
+								r.add(buildpathEntry);
+							}
+						}
 					}
 				}
 				return r.toArray();
 			} else if (parentElement instanceof IBuildpathEntry) {
-				IBuildpathEntry IBuildpathEntry = (IBuildpathEntry) parentElement;
-				IPath path = IBuildpathEntry.getPath();
+				IBuildpathEntry buildpathEntry = (IBuildpathEntry) parentElement;
+				IPath path = buildpathEntry.getPath();
 				File file = null;
-				if (IBuildpathEntry.getEntryKind() == IBuildpathEntry.BPE_LIBRARY) {
+				if (buildpathEntry.getEntryKind() == IBuildpathEntry.BPE_LIBRARY) {
 					file = path.toFile();
 				}
-				 else if (IBuildpathEntry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
+				 else if (buildpathEntry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
 					path = DLTKCore.getResolvedVariablePath(path);
 					if (path != null) {
 						file = path.toFile();
 					}
 				}
 				if (file != null) {
-					return getChildren(new IncPathFile(IBuildpathEntry, file));
+					return getChildren(new IncPathFile(buildpathEntry, file));
 				}
 			} else if (parentElement instanceof IncPathFile) {
 				IncPathFile ipFile = (IncPathFile) parentElement;
