@@ -2,20 +2,24 @@
 	public IContentAssistProcessor[] getContentAssistProcessors(ISourceViewer sourceViewer, String partitionType) {
 		IContentAssistProcessor[] processors = null;
 
-		if (partitionType == PHPPartitionTypes.PHP_DEFAULT) {
-			ArrayList<IContentAssistProcessor> processorsList = getPHPProcessors(partitionType, (PHPStructuredTextViewer) sourceViewer);
-			processors = new IContentAssistProcessor[processorsList.size()];
-			processorsList.toArray(processors);
-		} else {
-			ArrayList<IContentAssistProcessor> phpDocProcessors = getPHPProcessors(partitionType, (PHPStructuredTextViewer) sourceViewer);
-			IContentAssistProcessor[] superProcessors = super.getContentAssistProcessors(sourceViewer, partitionType);
-			if (superProcessors != null) {
-				for (IContentAssistProcessor processor : superProcessors) {
-					phpDocProcessors.add(processor);
+		if (sourceViewer instanceof PHPStructuredTextViewer) {
+			if (partitionType == PHPPartitionTypes.PHP_DEFAULT) {
+				ArrayList<IContentAssistProcessor> processorsList = getPHPProcessors(partitionType, (PHPStructuredTextViewer) sourceViewer);
+				processors = new IContentAssistProcessor[processorsList.size()];
+				processorsList.toArray(processors);
+			} else {
+				ArrayList<IContentAssistProcessor> phpDocProcessors = getPHPProcessors(partitionType, (PHPStructuredTextViewer) sourceViewer);
+				IContentAssistProcessor[] superProcessors = super.getContentAssistProcessors(sourceViewer, partitionType);
+				if (superProcessors != null) {
+					for (IContentAssistProcessor processor : superProcessors) {
+						phpDocProcessors.add(processor);
+					}
 				}
+				processors = new IContentAssistProcessor[phpDocProcessors.size()];
+				phpDocProcessors.toArray(processors);
 			}
-			processors = new IContentAssistProcessor[phpDocProcessors.size()];
-			phpDocProcessors.toArray(processors);
+		} else {
+			processors = new IContentAssistProcessor[0];
 		}
 		return processors;
 	}
