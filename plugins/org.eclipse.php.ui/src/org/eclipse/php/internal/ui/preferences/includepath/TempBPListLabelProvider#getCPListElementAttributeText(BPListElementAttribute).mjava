@@ -1,0 +1,121 @@
+	public String getCPListElementAttributeText(BPListElementAttribute attrib) {
+
+		String notAvailable = NewWizardMessages.CPListLabelProvider_none;
+		String key = attrib.getKey();
+		if (key.equals(BPListElement.EXCLUSION)) {
+			String arg = null;
+			IPath[] patterns = (IPath[]) attrib.getValue();
+			if (patterns != null && patterns.length > 0) {
+				int patternsCount = 0;
+				StringBuffer buf = new StringBuffer();
+				for (int i = 0; i < patterns.length; i++) {
+					String pattern = patterns[i].toString();
+					if (pattern.length() > 0) {
+						if (patternsCount > 0) {
+							buf
+									.append(NewWizardMessages.CPListLabelProvider_exclusion_filter_separator);
+						}
+						buf.append(pattern);
+						patternsCount++;
+					}
+				}
+				if (patternsCount > 0) {
+					arg = buf.toString();
+				} else {
+					arg = notAvailable;
+				}
+			} else {
+				arg = notAvailable;
+			}
+			return Messages
+					.format(
+							NewWizardMessages.CPListLabelProvider_exclusion_filter_label,
+							new String[] { arg });
+		} else if (key.equals(BPListElement.INCLUSION)) {
+			String arg = null;
+			IPath[] patterns = (IPath[]) attrib.getValue();
+			if (patterns != null && patterns.length > 0) {
+				int patternsCount = 0;
+				StringBuffer buf = new StringBuffer();
+				for (int i = 0; i < patterns.length; i++) {
+					String pattern = patterns[i].toString();
+					if (pattern.length() > 0) {
+						if (patternsCount > 0) {
+							buf
+									.append(NewWizardMessages.CPListLabelProvider_inclusion_filter_separator);
+						}
+						buf.append(pattern);
+						patternsCount++;
+					}
+				}
+				if (patternsCount > 0) {
+					arg = buf.toString();
+				} else {
+					arg = notAvailable;
+				}
+			} else {
+				arg = NewWizardMessages.CPListLabelProvider_all;
+			}
+			return Messages
+					.format(
+							NewWizardMessages.CPListLabelProvider_inclusion_filter_label,
+							new String[] { arg });
+		} else if (key.equals(BPListElement.ACCESSRULES)) {
+			IAccessRule[] rules = (IAccessRule[]) attrib.getValue();
+			int nRules = rules != null ? rules.length : 0;
+
+			int parentKind = attrib.getParent().getEntryKind();
+			if (parentKind == IBuildpathEntry.BPE_PROJECT) {
+				Boolean combined = (Boolean) attrib.getParent().getAttribute(
+						BPListElement.COMBINE_ACCESSRULES);
+				if (nRules > 0) {
+					if (combined.booleanValue()) {
+						return Messages
+								.format(
+										NewWizardMessages.CPListLabelProvider_project_access_rules_combined,
+										String.valueOf(nRules));
+					} else {
+						return Messages
+								.format(
+										NewWizardMessages.CPListLabelProvider_project_access_rules_not_combined,
+										String.valueOf(nRules));
+					}
+				} else {
+					return NewWizardMessages.CPListLabelProvider_project_access_rules_no_rules;
+				}
+			} else if (parentKind == IBuildpathEntry.BPE_CONTAINER) {
+				if (nRules > 0) {
+					return Messages
+							.format(
+									NewWizardMessages.CPListLabelProvider_container_access_rules,
+									String.valueOf(nRules));
+				} else {
+					return NewWizardMessages.CPListLabelProvider_container_no_access_rules;
+				}
+			} else {
+				if (nRules > 0) {
+					return Messages
+							.format(
+									NewWizardMessages.CPListLabelProvider_access_rules_enabled,
+									String.valueOf(nRules));
+				} else {
+					return NewWizardMessages.CPListLabelProvider_access_rules_disabled;
+				}
+			}
+		}
+		if (DLTKCore.DEBUG) {
+			System.err.println("Add native library support"); //$NON-NLS-1$
+		}
+		// } else if (key.equals(CPListElement.NATIVE_LIB_PATH)) {
+		// String arg= (String) attrib.getValue();
+		// if (arg == null) {
+		// arg= notAvailable;
+		// }
+		// return
+		// Messages.format(NewWizardMessages.
+		// CPListLabelProvider_native_library_path,
+		// new String[] { arg });
+		// }
+		return notAvailable;
+	}
+
