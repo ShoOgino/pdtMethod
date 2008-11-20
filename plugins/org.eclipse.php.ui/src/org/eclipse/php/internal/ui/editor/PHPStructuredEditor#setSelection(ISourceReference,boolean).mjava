@@ -4,12 +4,15 @@
 		ISelection selection = getSelectionProvider().getSelection();
 		if (selection instanceof TextSelection) {
 			TextSelection textSelection = (TextSelection) selection;
-			// PR 39995: [navigation] Forward history cleared after going back
-			// in navigation history:
-			// mark only in navigation history if the cursor is being moved
-			// (which it isn't if
-			// this is called from a PostSelectionEvent that should only update
-			// the magnet)
+			if (textSelection instanceof IStructuredSelection) {
+				Object firstElement = ((IStructuredSelection)textSelection).getFirstElement();
+				if (firstElement instanceof IImplForPhp) {
+					((IImplForPhp)firstElement).setModelElement(getModelElement());
+				}
+			}
+			// PR 39995: [navigation] Forward history cleared after going back in navigation history:
+			// mark only in navigation history if the cursor is being moved (which it isn't if
+			// this is called from a PostSelectionEvent that should only update the magnet)
 			if (moveCursor && (textSelection.getOffset() != 0 || textSelection.getLength() != 0))
 				markInNavigationHistory();
 		}
