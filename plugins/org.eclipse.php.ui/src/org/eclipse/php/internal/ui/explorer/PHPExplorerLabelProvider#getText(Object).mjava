@@ -1,0 +1,47 @@
+	/*
+	 * (non-Javadoc)
+	 * @see org.eclipse.dltk.internal.ui.navigator.ScriptExplorerLabelProvider#getText(java.lang.Object)
+	 * 
+	 * Override the default text - do not display a full path for a folder
+	 */
+	@Override
+	public String getText(Object element) {
+		if (element instanceof ExternalProjectFragment) {
+			 return ((ExternalProjectFragment) element).toStringWithAncestors();
+		}
+		
+		if (element instanceof IncludePath){
+			Object entry = ((IncludePath)element).getEntry();
+			
+			// An included PHP project
+			if (entry instanceof IBuildpathEntry) {
+				if (((IBuildpathEntry) entry).getEntryKind() == IBuildpathEntry.BPE_PROJECT) {
+					return ((IBuildpathEntry) entry).getPath().lastSegment();
+				}
+				String path = ((IBuildpathEntry) entry).getPath().toString();
+				return path.substring(path.lastIndexOf(IPath.DEVICE_SEPARATOR) + 1);
+			}
+			if (entry instanceof ExternalProjectFragment) {
+				 return ((ExternalProjectFragment) entry).toStringWithAncestors();
+			}
+
+			if (entry instanceof IResource) {
+				return (((IResource) entry). getFullPath().toString()).substring(1);
+			}
+			
+			return null;		
+		}
+//		if (element instanceof IFolder) {
+//			String segments2 = ((IFolder) element).getLocation().toString();
+//			
+//			String[] segments = ((IFolder) element).getLocation().segments();
+//			String name = null ;
+//			for (String seg : segments) {
+//				name += seg + "\\";
+//			}
+//			//name = name.
+//			return name;
+//		}
+		return super.getText(element);
+	}
+
