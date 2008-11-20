@@ -1,0 +1,32 @@
+	public boolean run(DropTargetEvent event, IEditorPart targetEditor) {
+
+		if (!(targetEditor instanceof PHPStructuredEditor))
+			return super.run(event, targetEditor);
+		
+		final String[] fileNames = (String[]) event.data;
+		if (fileNames == null || fileNames.length == 0) {
+			return false;
+		}
+		
+		// default behavior
+		PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
+			public void run() {
+				for (int i = 0; i < fileNames.length; ++i) {
+					IFile file = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(fileNames[i]));
+					if (file != null) {
+						try {
+							EditorUtility.openInEditor(file, true);
+						} catch (PartInitException e) {
+							Logger.logException(e);
+						}
+					} else {
+						if (new File(fileNames[i]).exists()) {
+							EditorUtility.openFileInEditor(fileNames[i], 0);
+						}
+					}
+				}
+			}
+		});
+		return true;
+	}
+
