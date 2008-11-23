@@ -1,0 +1,27 @@
+	/**
+	 * Adds the given entries to Include Path 
+	 * @param scriptProject
+	 * @param entries
+	 * @throws ModelException
+	 */
+	public void addEntriesToIncludePath(IProject project, List<IBuildpathEntry> entries) {
+		IncludePathManager includePathManager = IncludePathManager.getInstance();
+
+		List<IncludePath> includePathEntries = new ArrayList<IncludePath>();
+		for (IBuildpathEntry buildpathEntry : entries) {
+			if (buildpathEntry.getEntryKind() == IBuildpathEntry.BPE_SOURCE) {
+				IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(buildpathEntry.getPath());
+				if (resource != null) {
+					includePathEntries.add(new IncludePath(resource));
+				}
+			} else {
+				includePathEntries.add(new IncludePath(buildpathEntry));
+			}
+		}
+		modifyingIncludePath = true;
+		// update the include path for this project
+		includePathManager.setIncludePath(project, includePathEntries.toArray(new IncludePath[includePathEntries.size()]));
+		
+		modifyingIncludePath = false;
+	}
+

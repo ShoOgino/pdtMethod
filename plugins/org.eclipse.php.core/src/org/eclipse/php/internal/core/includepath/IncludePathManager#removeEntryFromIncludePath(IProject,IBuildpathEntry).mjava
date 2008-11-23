@@ -1,0 +1,39 @@
+	/**
+	 * Removes the given entry from the include path (according to the path)
+	 * @param scriptProject
+	 * @param buildpathEntry
+	 * @throws ModelException 
+	 */
+	public void removeEntryFromIncludePath(IProject project, IBuildpathEntry buildpathEntry) throws ModelException {
+
+		IncludePathManager includepathManager = IncludePathManager.getInstance();
+		IncludePath[] includePathEntries = includepathManager.getIncludePath(project);
+		List<IncludePath> newIncludePathEntries = new ArrayList<IncludePath>();
+
+		// go over the entries and compare the path.
+		// if it is the same as the given entry, it won't be added to the list.
+		for (IncludePath entry : includePathEntries) {
+			Object includePathEntry = entry.getEntry();
+			IPath resourcePath = null;
+			if (includePathEntry instanceof IBuildpathEntry) {
+				IBuildpathEntry bpEntry = (IBuildpathEntry) includePathEntry;
+				resourcePath = bpEntry.getPath();
+			} else {
+				IResource resource = (IResource) includePathEntry;
+				resourcePath = resource.getFullPath();
+			}
+
+			if (resourcePath != null && !resourcePath.toString().equals(buildpathEntry.getPath().toString())) {
+				newIncludePathEntries.add(entry);
+			}
+
+		}
+
+		modifyingIncludePath = true;
+		// update the include path for this project
+		includepathManager.setIncludePath(project, newIncludePathEntries.toArray(new IncludePath[newIncludePathEntries.size()]));
+
+		modifyingIncludePath = false;
+
+	}
+
