@@ -1,0 +1,38 @@
+	/**
+	 * The purpose of this method is to adapt the include path according to the entries removed from the build path.
+	 * If the user removed from the build path source folders that are in the include path,
+	 * he will not get code completion and other functionality for this sources.
+	 * The user is prompted and asked if he wants to remove the relevant sources from the include path as well
+	 * see bug#255930
+	 */
+	private void adaptIncludePath() {
+		PHPBuildPathSourcePage buildPathSourcePage = (PHPBuildPathSourcePage) fSourceContainerPage;
+
+		boolean shouldRemoveFromIncludePath = buildPathSourcePage.shouldRemoveFromIncludePath();
+
+		if (!shouldRemoveFromIncludePath) {
+			return;
+		}
+
+		// get the source elements that the user removed in the source tab
+		List<BPListElement> removedElements = buildPathSourcePage.getRemovedElements();
+
+		List<IBuildpathEntry> buildPathEntries = new ArrayList<IBuildpathEntry>();
+		IProject project = fCurrScriptProject.getProject();
+
+		//in case there are any, the user is prompted with a question 
+		if (removedElements.size() > 0) {
+			for (BPListElement listElement : removedElements) {
+				buildPathEntries.add(listElement.getBuildpathEntry());
+			}
+			// if the user chose to, the relevant entries are removed from the include path 
+			try {
+				for (IBuildpathEntry buildpathEntry : buildPathEntries) {
+					IncludePathManager.getInstance().removeEntryFromIncludePath(project, buildpathEntry);
+				}
+			} catch (ModelException e) {
+				Logger.logException("Failed adding entries to build path", e); ////$NON-NLS-1$
+			}
+		}
+	}
+

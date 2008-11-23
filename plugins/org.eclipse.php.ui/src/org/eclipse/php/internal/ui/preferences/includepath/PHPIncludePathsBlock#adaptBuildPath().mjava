@@ -1,0 +1,33 @@
+	/**
+	 * The purpose of this method is to adapt the build path according to the entries added to the include path.
+	 * If the user added to the include path source folders that are not in (or contained in) the build path,
+	 * he will not get code completion and other functionality for this sources.
+	 * THe user is prompted and asked if he wants to add the relevant sources to the build path as well
+	 * see bug#255930
+	 */
+	private void adaptBuildPath() {
+		PHPIncludePathSourcePage includePathSourcePage = (PHPIncludePathSourcePage) fSourceContainerPage;
+
+		boolean shouldAddToBuildPath = includePathSourcePage.shouldAddToBuildPath();
+		if (!shouldAddToBuildPath) {
+			return;
+		}
+
+		// get the source elements that the user added in the source tab
+		List<BPListElement> addedElements = includePathSourcePage.getAddedElements();
+		List<IBuildpathEntry> buildPathEntries = new ArrayList<IBuildpathEntry>();
+
+		//in case there are any, the user is prompted with a question 
+		if (addedElements.size() > 0) {
+			for (BPListElement listElement : addedElements) {
+				buildPathEntries.add(listElement.getBuildpathEntry());
+			}
+			// if the user chose to, the relevant entries are added to the buildpath 
+			try {
+				IncludePathManager.getInstance().addEntriesToBuildPath(fCurrScriptProject, buildPathEntries);
+			} catch (ModelException e) {
+				Logger.logException("Failed adding entries to build path", e); ////$NON-NLS-1$
+			}
+		}
+	}
+

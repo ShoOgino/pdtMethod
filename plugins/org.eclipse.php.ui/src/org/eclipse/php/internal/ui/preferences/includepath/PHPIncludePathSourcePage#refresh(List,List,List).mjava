@@ -1,0 +1,39 @@
+	protected void refresh(List insertedElements, List removedElements, List modifiedElements) {
+		fFoldersList.addElements(insertedElements);
+
+		// for each added source entry, check if it is already a part of the buildpath
+		// in case it is not, add the entry to the added elements list 
+		// and ask the user if he would like to add it to the build path as well
+
+		for (Iterator iterator = insertedElements.iterator(); iterator.hasNext();) {
+			BPListElement element = (BPListElement) iterator.next();
+			if (!IncludePathUtils.isContainedInBuildpath(element.getPath(), fCurrJProject)) {
+				fAddedElements.add(element);
+			}
+		}
+
+		if (fAddedElements.size() > 0) {
+			addToBuildPath = IncludePathUtils.openConfirmationDialog(getShell(), PHPUIMessages.getString("IncludePath.AddEntryTitle"), PHPUIMessages.getString("IncludePath.AddEntryToBuildPathMessage")); //$NON-NLS-1$ ////$NON-NLS-2$
+		}
+
+		for (Iterator iter = insertedElements.iterator(); iter.hasNext();) {
+			BPListElement element = (BPListElement) iter.next();
+			fFoldersList.expandElement(element, 3);
+		}
+
+		fFoldersList.removeElements(removedElements);
+
+		fRemovedElements.addAll(removedElements);
+
+		for (Iterator iter = modifiedElements.iterator(); iter.hasNext();) {
+			BPListElement element = (BPListElement) iter.next();
+			fFoldersList.refresh(element);
+			fFoldersList.expandElement(element, 3);
+		}
+
+		fFoldersList.refresh(); // does enforce the order of the entries.
+		if (!insertedElements.isEmpty()) {
+			fFoldersList.postSetSelection(new StructuredSelection(insertedElements));
+		}
+	}
+
