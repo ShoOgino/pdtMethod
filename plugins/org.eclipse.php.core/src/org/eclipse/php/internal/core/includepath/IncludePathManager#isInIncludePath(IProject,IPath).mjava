@@ -1,0 +1,40 @@
+	/**
+	 * Returns whether the given path is in the include definitions
+	 * Meaning if one of the entries in the include path has the same path of this resource
+	 * @param project
+	 * @param resourcePath
+	 * @return
+	 */
+	public static boolean isInIncludePath(IProject project, IPath entryPath) {
+		
+		boolean result = false;
+		
+		if(entryPath == null){
+			return false;
+		}
+					
+		IncludePathManager includepathManager = IncludePathManager.getInstance();
+		IncludePath[] includePathEntries = includepathManager.getIncludePaths(project);
+		
+		// go over the entries and compare the path.
+		// checks if the path for one of the entries equals to the given one
+		for (IncludePath entry : includePathEntries) {
+			Object includePathEntry = entry.getEntry();
+			IPath resourcePath = null;
+			if (includePathEntry instanceof IBuildpathEntry) {
+				IBuildpathEntry bpEntry = (IBuildpathEntry) includePathEntry;
+				resourcePath = bpEntry.getPath();
+			} else {
+				IResource resource = (IResource) includePathEntry;
+				resourcePath = resource.getFullPath();
+			}
+			
+			if(resourcePath != null && resourcePath.toString().equals(entryPath.toString())){
+				result = true;
+				break;
+			}			
+
+		}
+		return result;
+	}
+

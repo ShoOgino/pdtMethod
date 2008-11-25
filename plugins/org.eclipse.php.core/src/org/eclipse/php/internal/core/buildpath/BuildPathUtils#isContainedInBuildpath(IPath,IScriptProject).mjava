@@ -1,0 +1,41 @@
+	/**
+	 * Returns whether the given path is "under" the buildpath definitions
+	 * Meaning if one of the entries in the build path has the same path or contains this resource
+	 * @param project
+	 * @param resourcePath
+	 * @return
+	 */
+	public static boolean isContainedInBuildpath(IPath resourcePath, IScriptProject project) {
+		
+		boolean result = false;
+		
+		if(resourcePath == null){
+			return false;
+		}
+		
+				
+		IBuildpathEntry[] buildpath = null;
+		try {
+			buildpath = project.getRawBuildpath();
+		} catch (ModelException e) {
+			if (DLTKCore.DEBUG) {
+				e.printStackTrace();
+			}
+			return false;
+		}	
+		
+
+		// go over the build path entries and for each one of the "sources"
+		// check if they are the same as the given include path entry or if they contain it 
+		for (IBuildpathEntry buildpathEntry : buildpath) {
+			if (buildpathEntry.getEntryKind() == IBuildpathEntry.BPE_SOURCE){
+				IPath buildPathEntryPath = buildpathEntry.getPath();
+				if (buildPathEntryPath.isPrefixOf(resourcePath) || resourcePath.toString().equals(buildPathEntryPath.toString())){
+					result = true;
+				}
+			}
+		}
+		
+		return result;
+	}
+
