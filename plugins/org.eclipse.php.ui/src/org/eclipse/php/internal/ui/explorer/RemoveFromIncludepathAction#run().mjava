@@ -1,0 +1,29 @@
+	/**
+	 * {@inheritDoc}
+	 */
+	public void run() {
+
+		final IScriptProject project;
+		Object object = fSelectedElements.get(0);
+		if (object instanceof ExternalProjectFragment) {
+			ExternalProjectFragment projFragment = (ExternalProjectFragment) object;
+			IScriptProject scriptProject = projFragment.getScriptProject();
+			try {
+				IncludePathManager.getInstance().removeEntryFromBuildPath(scriptProject, projFragment.getBuildpathEntry());
+			} catch (ModelException e) {
+				Logger.logException("Could not remove buildPathEntry", e);
+			}
+		} else if (object instanceof IProjectFragment) {
+			IProjectFragment root = (IProjectFragment) object;
+			project = root.getScriptProject();
+		} else {
+			IncludePath includePath = (IncludePath) object;
+			try {
+				if (includePath.isBuildpath())
+					IncludePathManager.getInstance().removeEntryFromIncludePath(includePath.getProject(), (IBuildpathEntry) (includePath.getEntry()));
+			} catch (ModelException e) {
+				Logger.logException("Could not remove buildPathEntry", e);
+			}
+		}
+	}
+

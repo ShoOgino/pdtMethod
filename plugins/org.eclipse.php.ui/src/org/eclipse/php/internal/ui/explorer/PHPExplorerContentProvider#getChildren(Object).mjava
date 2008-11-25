@@ -2,20 +2,33 @@
 	public Object[] getChildren(Object parentElement) {
 		try {
 			// Handles SourceModule and downwards as well as ExternalProjectFragments (i.e language model)
+			if (parentElement instanceof IncludePath) {
+				Object entry = ((IncludePath) parentElement).getEntry();
+				if (entry instanceof IBuildpathEntry) {
+					ArrayList<Object> res;
+					IScriptProject scriptProject = DLTKCore.create(((IncludePath) parentElement).getProject());
+					IProjectFragment[] findProjectFragments = scriptProject.findProjectFragments((IBuildpathEntry) entry);
+					for (IProjectFragment projectFragment : findProjectFragments) {
+						//can be only one
+						return getChildren(projectFragment);
+					}
+					return getChildren(((BuildpathEntry) entry).getPath());
+				}
+			}
+
 			if (parentElement instanceof ISourceModule || !(parentElement instanceof IOpenable) || parentElement instanceof ExternalProjectFragment) {
 				if (parentElement instanceof IFolder) {
 					return ((IFolder) parentElement).members();
 				}
 
-				
 				return super.getChildren(parentElement);
 			}
 
 			if (parentElement instanceof IOpenable) {
 				if (parentElement instanceof ExternalScriptFolder) {
-					return ((ExternalScriptFolder) parentElement).getChildren();
+					return super.getChildren(parentElement);
 				}
-				
+
 				IResource resource = ((IOpenable) parentElement).getResource();
 				if (resource instanceof IContainer) {
 
@@ -34,8 +47,8 @@
 					if (parentElement instanceof IScriptProject) {
 						IScriptProject project = (IScriptProject) parentElement;
 						// Add include path node
-						IncludePath[] includePath = includePathManager.getIncludePath(project.getProject());
-						IncludePathContainer incPathContainer = new IncludePathContainer(project, includePath);
+						IncludePath[] includePaths = includePathManager.getIncludePaths(project.getProject());
+						IncludePathContainer incPathContainer = new IncludePathContainer(project, includePaths);
 						returnChlidren.add(incPathContainer);
 
 						// Add the language library

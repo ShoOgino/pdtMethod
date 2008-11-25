@@ -1,0 +1,26 @@
+	private IProject getProjectFromSelectedElement(Object firstElement) {
+		if (firstElement instanceof IModelElement) {
+			IModelElement element = (IModelElement) firstElement;
+			IProjectFragment root = ScriptModelUtil.getProjectFragment(element);
+
+			if (root != null && root != element && root.isArchive()) {
+				return null;
+			}
+			IScriptProject project = element.getScriptProject();
+			if (project != null) {
+				return project.getProject();
+			}
+			return null;
+		} else if (firstElement instanceof IncludePath) {
+			return ((IncludePath) firstElement).getProject();
+		} else if (firstElement instanceof IncludePathContainer) {
+			return ((BuildPathContainer) firstElement).getScriptProject().getProject();
+		} else if (firstElement instanceof IAdaptable) {
+			IResource res = (IResource) ((IAdaptable) firstElement).getAdapter(IResource.class);
+			if (res != null) {
+				return res.getProject();
+			}
+		}
+		return null;
+	}
+
