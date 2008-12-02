@@ -2,9 +2,22 @@
 	 * @see org.eclipse.jface.preference.IPreferencePage#performOk()
 	 */
 	public boolean performOk() {
-		if (fConfigurationBlock != null && !fConfigurationBlock.performOk()) {
-			return false;
+		IPreferenceStore store = getPreferenceStore();
+		for (int i = 0; i < fRadioButtons.size(); i++) {
+			Button button = (Button) fRadioButtons.get(i);
+			if (button.getSelection()) {
+				String[] info = (String[]) button.getData();
+				store.setValue(info[0], info[1]);
+			}
 		}
+		for (int i = 0; i < fTextControls.size(); i++) {
+			Text text = (Text) fTextControls.get(i);
+			String key = (String) text.getData();
+			store.setValue(key, text.getText());
+		}
+
+		PHPUiPlugin.getDefault().savePluginPreferences();
 		return super.performOk();
+
 	}
 
