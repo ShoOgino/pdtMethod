@@ -1,0 +1,31 @@
+		public void update(Observable o, Object arg) {
+			final IWorkspace workspace = DLTKUIPlugin.getWorkspace();
+			final String name = getNameGroup().getName();
+			// check whether the project name field is empty
+			if (name.length() == 0) {
+				setErrorMessage(null);
+				setMessage(NewWizardMessages.ScriptProjectWizardFirstPage_Message_enterProjectName);
+				setPageComplete(false);
+				return;
+			}
+			// check whether the project name is valid
+			final IStatus nameStatus = workspace.validateName(name,
+					IResource.PROJECT);
+			if (!nameStatus.isOK()) {
+				setErrorMessage(nameStatus.getMessage());
+				setPageComplete(false);
+				return;
+			}
+			// check whether project already exists
+			final IProject handle = getProjectHandle();
+			if (handle.exists()) {
+				setErrorMessage(NewWizardMessages.ScriptProjectWizardFirstPage_Message_projectAlreadyExists);
+				setPageComplete(false);
+				return;
+			}
+			
+			setPageComplete(true);
+			setErrorMessage(null);
+			setMessage(null);
+		}
+

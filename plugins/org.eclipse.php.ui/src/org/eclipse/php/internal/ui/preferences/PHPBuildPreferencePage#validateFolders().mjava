@@ -1,0 +1,47 @@
+	private void validateFolders() {
+		boolean useFolders= fFoldersAsSourceFolder.getSelection();
+
+		fSrcFolderNameText.setEnabled(useFolders);
+		fBinFolderNameText.setEnabled(useFolders);
+		fSrcFolderNameLabel.setEnabled(useFolders);
+		fBinFolderNameLabel.setEnabled(useFolders);
+		if (useFolders) {
+			String srcName= fSrcFolderNameText.getText();
+			String binName= fBinFolderNameText.getText();
+			if (srcName.length() + binName.length() == 0) {
+				updateStatus(new StatusInfo(IStatus.ERROR,  PreferencesMessages.NewJavaProjectPreferencePage_folders_error_namesempty));
+				return;
+			}
+			IWorkspace workspace= PHPUiPlugin.getWorkspace();
+			IProject dmy= workspace.getRoot().getProject("project"); //$NON-NLS-1$
+
+			IStatus status;
+			IPath srcPath= dmy.getFullPath().append(srcName);
+			if (srcName.length() != 0) {
+				status= workspace.validatePath(srcPath.toString(), IResource.FOLDER);
+				if (!status.isOK()) {
+					String message= Messages.format(PreferencesMessages.NewJavaProjectPreferencePage_folders_error_invalidsrcname, status.getMessage());
+					updateStatus(new StatusInfo(IStatus.ERROR, message));
+					return;
+				}
+			}
+			IPath binPath= dmy.getFullPath().append(binName);
+			if (binName.length() != 0) {
+				status= workspace.validatePath(binPath.toString(), IResource.FOLDER);
+				if (!status.isOK()) {
+					String message= Messages.format(PreferencesMessages.NewJavaProjectPreferencePage_folders_error_invalidbinname, status.getMessage());
+					updateStatus(new StatusInfo(IStatus.ERROR, message));
+					return;
+				}
+			}
+//			IClasspathEntry entry= JavaCore.newSourceEntry(srcPath);
+//			status= JavaConventions.validateClasspath(JavaCore.create(dmy), new IClasspathEntry[] { entry }, binPath);
+//			if (!status.isOK()) {
+//				String message= PreferencesMessages.NewJavaProjectPreferencePage_folders_error_invalidcp;
+//				updateStatus(new StatusInfo(IStatus.ERROR, message));
+//				return;
+//			}
+		}
+		updateStatus(new StatusInfo()); // set to OK
+	}
+
