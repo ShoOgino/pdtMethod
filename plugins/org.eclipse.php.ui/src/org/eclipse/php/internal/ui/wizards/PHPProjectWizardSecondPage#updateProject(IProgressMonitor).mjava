@@ -1,4 +1,4 @@
-	final void updateProject(IProgressMonitor monitor) throws CoreException, InterruptedException {
+	protected void updateProject(IProgressMonitor monitor) throws CoreException, InterruptedException {
 
 		fCurrProject = fFirstPage.getProjectHandle();
 		fCurrProjectLocation = getProjectLocationURI();
@@ -35,7 +35,7 @@
 					IDLTKLanguageToolkit toolkit = DLTKLanguageManager.getLanguageToolkit(getScriptNature());
 					final BuildpathDetector detector = createBuildpathDetector(monitor, toolkit);
 					entries = detector.getBuildpath();
-					
+
 				} else {
 					monitor.worked(20);
 				}
@@ -43,7 +43,7 @@
 				IPreferenceStore store = getPreferenceStore();
 				IPath srcPath = new Path(store.getString(PreferenceConstants.SRCBIN_SRCNAME));
 				IPath binPath = new Path(store.getString(PreferenceConstants.SRCBIN_BINNAME));
-				
+
 				if (srcPath.segmentCount() > 0) {
 					IFolder folder = fCurrProject.getFolder(srcPath);
 					CoreUtility.createFolder(folder, true, true, new SubProgressMonitor(monitor, 10));
@@ -64,17 +64,17 @@
 				// InterpreterEnvironment library.
 				List cpEntries = new ArrayList();
 				cpEntries.add(DLTKCore.newSourceEntry(projectPath.append(srcPath)));
-				
+
 				entries = (IBuildpathEntry[]) cpEntries.toArray(new IBuildpathEntry[cpEntries.size()]);
-				includepathEntries = new IncludePath[]{new IncludePath(fCurrProject.getFolder(srcPath),fCurrProject)};
-				} else {
+				includepathEntries = new IncludePath[] { new IncludePath(fCurrProject.getFolder(srcPath), fCurrProject) };
+			} else {
 				IPath projectPath = fCurrProject.getFullPath();
 				List cpEntries = new ArrayList();
 				cpEntries.add(DLTKCore.newSourceEntry(projectPath));
-				
+
 				entries = (IBuildpathEntry[]) cpEntries.toArray(new IBuildpathEntry[cpEntries.size()]);
-				includepathEntries =  new IncludePath[]{new IncludePath(fCurrProject,fCurrProject)};
-				
+				includepathEntries = new IncludePath[] { new IncludePath(fCurrProject, fCurrProject) };
+
 				monitor.worked(20);
 			}
 			if (monitor.isCanceled()) {
@@ -82,21 +82,17 @@
 			}
 			
 			init(DLTKCore.create(fCurrProject), entries, false);
-			
-			configureScriptProject(new SubProgressMonitor(monitor, 30));
-			
+			configureScriptProject(new SubProgressMonitor(monitor, 30));		
+
 			//Adding natures other then PHP which is addedas default
-			if(fFirstPage.fJavaScriptSupportGroup.shouldSupportJavaScript()){
-				//TODO : need to add JS support
+			if (fFirstPage.fJavaScriptSupportGroup.shouldSupportJavaScript()) {
+				JsWebNature.addJsNature(fCurrProject, new SubProgressMonitor(monitor, 1));
 			}
-			
+
 			//adding build paths:
-			getScriptProject().setRawBuildpath(entries,new NullProgressMonitor());
+			getScriptProject().setRawBuildpath(entries, new NullProgressMonitor());
 			//adding include paths:
 			IncludePathManager.getInstance().setIncludePath(fCurrProject, includepathEntries);
-
-			
-			
 
 		} finally {
 			monitor.done();
