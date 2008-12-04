@@ -1,0 +1,31 @@
+	final void doRemoveProject(IProgressMonitor monitor) throws InvocationTargetException {
+		final boolean noProgressMonitor = (fCurrProjectLocation == null); // inside
+		// workspace
+		if (monitor == null || noProgressMonitor) {
+			monitor = new NullProgressMonitor();
+		}
+		monitor.beginTask(NewWizardMessages.ScriptProjectWizardSecondPage_operation_remove, 3);
+		try {
+			try {
+				URI projLoc = fCurrProject.getLocationURI();
+
+				boolean removeContent = !fKeepContent && fCurrProject.isSynchronized(IResource.DEPTH_INFINITE);
+				fCurrProject.delete(removeContent, false, new SubProgressMonitor(monitor, 2));
+
+				restoreExistingFiles(projLoc, new SubProgressMonitor(monitor, 1));
+			} finally {
+				CoreUtility.enableAutoBuild(fIsAutobuild.booleanValue()); // fIsAutobuild
+				// must
+				// be
+				// set
+				fIsAutobuild = null;
+			}
+		} catch (CoreException e) {
+			throw new InvocationTargetException(e);
+		} finally {
+			monitor.done();
+			fCurrProject = null;
+			fKeepContent = false;
+		}
+	}
+

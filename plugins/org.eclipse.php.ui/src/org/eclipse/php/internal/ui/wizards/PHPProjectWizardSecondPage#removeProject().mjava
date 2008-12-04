@@ -1,0 +1,22 @@
+	private void removeProject() {
+		if (fCurrProject == null || !fCurrProject.exists()) {
+			return;
+		}
+
+		IRunnableWithProgress op = new IRunnableWithProgress() {
+			public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
+				doRemoveProject(monitor);
+			}
+		};
+
+		try {
+			getContainer().run(true, true, new WorkspaceModifyDelegatingOperation(op));
+		} catch (InvocationTargetException e) {
+			final String title = NewWizardMessages.ScriptProjectWizardSecondPage_error_remove_title;
+			final String message = NewWizardMessages.ScriptProjectWizardSecondPage_error_remove_message;
+			ExceptionHandler.handle(e, getShell(), title, message);
+		} catch (InterruptedException e) {
+			// cancel pressed
+		}
+	}
+

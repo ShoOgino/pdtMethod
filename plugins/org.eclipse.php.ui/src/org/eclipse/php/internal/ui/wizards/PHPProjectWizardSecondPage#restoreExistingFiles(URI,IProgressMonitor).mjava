@@ -1,0 +1,25 @@
+	private void restoreExistingFiles(URI projectLocation, IProgressMonitor monitor) throws CoreException {
+		int ticks = ((fDotProjectBackup != null ? 1 : 0) + (fDotBuildpathBackup != null ? 1 : 0)) * 2;
+		monitor.beginTask("", ticks); //$NON-NLS-1$
+		try {
+			if (fDotProjectBackup != null) {
+				IFileStore projectFile = EFS.getStore(projectLocation).getChild(FILENAME_PROJECT);
+				projectFile.delete(EFS.NONE, new SubProgressMonitor(monitor, 1));
+				copyFile(fDotProjectBackup, projectFile, new SubProgressMonitor(monitor, 1));
+			}
+		} catch (IOException e) {
+			IStatus status = new Status(IStatus.ERROR, DLTKUIPlugin.PLUGIN_ID, IStatus.ERROR, NewWizardMessages.ScriptProjectWizardSecondPage_problem_restore_project, e);
+			throw new CoreException(status);
+		}
+		try {
+			if (fDotBuildpathBackup != null) {
+				IFileStore buildpathFile = EFS.getStore(projectLocation).getChild(FILENAME_BUILDPATH);
+				buildpathFile.delete(EFS.NONE, new SubProgressMonitor(monitor, 1));
+				copyFile(fDotBuildpathBackup, buildpathFile, new SubProgressMonitor(monitor, 1));
+			}
+		} catch (IOException e) {
+			IStatus status = new Status(IStatus.ERROR, DLTKUIPlugin.PLUGIN_ID, IStatus.ERROR, NewWizardMessages.ScriptProjectWizardSecondPage_problem_restore_buildpath, e);
+			throw new CoreException(status);
+		}
+	}
+

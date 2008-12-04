@@ -1,0 +1,31 @@
+	private void changeToNewProject() {
+		fKeepContent = fFirstPage.getDetect();
+
+		final IRunnableWithProgress op = new IRunnableWithProgress() {
+			public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
+				try {
+					if (fIsAutobuild == null) {
+						fIsAutobuild = Boolean.valueOf(CoreUtility.enableAutoBuild(false));
+					}
+					updateProject(monitor);
+				} catch (CoreException e) {
+					throw new InvocationTargetException(e);
+				} catch (OperationCanceledException e) {
+					throw new InterruptedException();
+				} finally {
+					monitor.done();
+				}
+			}
+		};
+
+		try {
+			getContainer().run(true, false, new WorkspaceModifyDelegatingOperation(op));
+		} catch (InvocationTargetException e) {
+			final String title = NewWizardMessages.ScriptProjectWizardSecondPage_error_title;
+			final String message = NewWizardMessages.ScriptProjectWizardSecondPage_error_message;
+			ExceptionHandler.handle(e, getShell(), title, message);
+		} catch (InterruptedException e) {
+			// cancel pressed
+		}
+	}
+
