@@ -26,7 +26,7 @@
 
 			createProject(fCurrProject, fCurrProjectLocation, new SubProgressMonitor(monitor, 20));
 
-			IBuildpathEntry[] entries = null;
+			IBuildpathEntry[] buildpathEntries = null;
 			IncludePath[] includepathEntries = null;
 
 			if (fFirstPage.getDetect()) {
@@ -34,12 +34,13 @@
 
 					IDLTKLanguageToolkit toolkit = DLTKLanguageManager.getLanguageToolkit(getScriptNature());
 					final BuildpathDetector detector = createBuildpathDetector(monitor, toolkit);
-					entries = detector.getBuildpath();
+					buildpathEntries = detector.getBuildpath();
 
 				} else {
 					monitor.worked(20);
 				}
-			} else if (fFirstPage.isSrc()) {
+			} else if (fFirstPage.hasPhpSourceFolder()) {
+				//need to create sub-folders and set special build/include paths
 				IPreferenceStore store = getPreferenceStore();
 				IPath srcPath = new Path(store.getString(PreferenceConstants.SRCBIN_SRCNAME));
 				IPath binPath = new Path(store.getString(PreferenceConstants.SRCBIN_BINNAME));
@@ -65,14 +66,15 @@
 				List cpEntries = new ArrayList();
 				cpEntries.add(DLTKCore.newSourceEntry(projectPath.append(srcPath)));
 
-				entries = (IBuildpathEntry[]) cpEntries.toArray(new IBuildpathEntry[cpEntries.size()]);
+				buildpathEntries = (IBuildpathEntry[]) cpEntries.toArray(new IBuildpathEntry[cpEntries.size()]);
 				includepathEntries = new IncludePath[] { new IncludePath(fCurrProject.getFolder(srcPath), fCurrProject) };
 			} else {
+				//flat project layout
 				IPath projectPath = fCurrProject.getFullPath();
 				List cpEntries = new ArrayList();
 				cpEntries.add(DLTKCore.newSourceEntry(projectPath));
 
-				entries = (IBuildpathEntry[]) cpEntries.toArray(new IBuildpathEntry[cpEntries.size()]);
+				buildpathEntries = (IBuildpathEntry[]) cpEntries.toArray(new IBuildpathEntry[cpEntries.size()]);
 				includepathEntries = new IncludePath[] { new IncludePath(fCurrProject, fCurrProject) };
 
 				monitor.worked(20);
@@ -80,17 +82,19 @@
 			if (monitor.isCanceled()) {
 				throw new OperationCanceledException();
 			}
-			
-			init(DLTKCore.create(fCurrProject), entries, false);
-			configureScriptProject(new SubProgressMonitor(monitor, 30));		
 
-			//Adding natures other then PHP which is addedas default
-			if (fFirstPage.fJavaScriptSupportGroup.shouldSupportJavaScript()) {
-				JsWebNature.addJsNature(fCurrProject, new SubProgressMonitor(monitor, 1));
-			}
+			init(DLTKCore.create(fCurrProject), buildpathEntries, false);
+			configureScriptProject(new SubProgressMonitor(monitor, 30));
 
-			//adding build paths:
-			getScriptProject().setRawBuildpath(entries, new NullProgressMonitor());
+			//checking and adding JS nature,libs, include path if needed
+			addJsSupport(monitor);
+
+			// setting PHP4/5 and ASP-Tags :
+			setPhpLangOptions();
+
+			//adding build paths, and language-Container:
+			getScriptProject().setRawBuildpath(buildpathEntries, new NullProgressMonitor());
+			LanguageModelInitializer.enableLanguageModelFor(getScriptProject());
 			//adding include paths:
 			IncludePathManager.getInstance().setIncludePath(fCurrProject, includepathEntries);
 
