@@ -16,7 +16,7 @@
 						enclosingElement = enclosingElement.getParent();
 					}
 					if (enclosingElement instanceof IMethod) {
-						IModelElement parent = ((IMethod)enclosingElement).getParent();
+						IModelElement parent = ((IMethod) enclosingElement).getParent();
 						if (parent instanceof IType) {
 							enclosingClass = (IType) parent;
 						}
@@ -26,16 +26,24 @@
 						e.printStackTrace();
 					}
 				}
-				
+
 				for (IType type : types) {
-					try {
-						IMethod ctor = null;
-						for (IMethod method : type.getMethods()) {
-							if (method.isConstructor()) {
-								ctor = method;
-								break;
+					IMethod ctor = null;
+					if (requestor.isContextInformationMode()) {
+						try {
+							for (IMethod method : type.getMethods()) {
+								if (method.isConstructor()) {
+									ctor = method;
+									break;
+								}
+							}
+						} catch (ModelException e) {
+							if (DLTKCore.DEBUG_COMPLETION) {
+								e.printStackTrace();
 							}
 						}
+					}
+					try {
 						if (ctor != null) {
 							if ((ctor.getFlags() & IPHPModifiers.AccPrivate) == 0 || type.equals(enclosingClass)) {
 								FakeMethod ctorMethod = new FakeMethod((ModelElement) type, type.getElementName()) {

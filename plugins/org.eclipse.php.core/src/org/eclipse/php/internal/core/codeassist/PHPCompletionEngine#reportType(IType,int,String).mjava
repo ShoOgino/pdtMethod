@@ -2,7 +2,7 @@
 		if (relevance < 1) {
 			relevance = 1;
 		}
-		
+
 		String elementName = type.getElementName();
 		char[] name = elementName.toCharArray();
 
@@ -11,45 +11,45 @@
 		if (!requestor.isIgnored(CompletionProposal.TYPE_REF)) {
 			CompletionProposal proposal = createProposal(CompletionProposal.TYPE_REF, actualCompletionPosition);
 			
-			try {
-				for (IMethod method : type.getMethods()) {
-					if (method.isConstructor()) {
-						String[] params = method.getParameters();
-						if (params != null && params.length > 0) {
-							char[][] args = new char[params.length][];
-							for (int i = 0; i < params.length; ++i) {
-								args[i] = params[i].toCharArray();
+			if (requestor.isContextInformationMode()) {
+				try {
+					for (IMethod method : type.getMethods()) {
+						if (method.isConstructor()) {
+							String[] params = method.getParameters();
+							if (params != null && params.length > 0) {
+								char[][] args = new char[params.length][];
+								for (int i = 0; i < params.length; ++i) {
+									args[i] = params[i].toCharArray();
+								}
+								proposal.setParameterNames(args);
 							}
-							proposal.setParameterNames(args);
+							break;
 						}
-						break;
 					}
-				}
-			} catch (ModelException e) {
-				if (DLTKCore.DEBUG_COMPLETION) {
-					e.printStackTrace();
+				} catch (ModelException e) {
+					if (DLTKCore.DEBUG_COMPLETION) {
+						e.printStackTrace();
+					}
 				}
 			}
 
 			proposal.setModelElement(type);
 			proposal.setName(name);
-			
+
 			if (type instanceof FakeGroupType) {
-				proposal.setCompletion(elementName.substring(0, elementName.length()-1).toCharArray());
+				proposal.setCompletion(elementName.substring(0, elementName.length() - 1).toCharArray());
 				relevance = 10000001;
-			}
-			else if (hasPaamayimNekudotaimAtEnd && PAAMAYIM_NEKUDOTAIM == suffix) {
+			} else if (hasPaamayimNekudotaimAtEnd && PAAMAYIM_NEKUDOTAIM == suffix) {
 				proposal.setCompletion(elementName.toCharArray());
-			}
-			else {
+			} else {
 				proposal.setCompletion((elementName + suffix).toCharArray());
 			}
-			
+
 			try {
 				proposal.setFlags(type.getFlags());
 			} catch (ModelException e) {
 			}
-			
+
 			int replaceStart = this.startPosition - this.offset;
 			int replaceEnd = this.endPosition - this.offset;
 			if (wordEndOffset > replaceStart && replaceEnd < wordEndOffset) {
@@ -58,7 +58,7 @@
 				replaceEnd--;
 			}
 			proposal.setReplaceRange(replaceStart, replaceEnd);
-			
+
 			proposal.setRelevance(relevance);
 			this.requestor.accept(proposal);
 			if (DEBUG) {
