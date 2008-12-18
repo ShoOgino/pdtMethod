@@ -33,23 +33,31 @@
 			return new ITypeBinding[0];
 		}
 
-		ArrayList<ITypeBinding> interfaces = new ArrayList<ITypeBinding>();
+		final ArrayList<ITypeBinding> interfaces = new ArrayList<ITypeBinding>();
 		for (IModelElement element : elements) {
 			IType type = (IType) element;
 			try {
-				ITypeHierarchy supertypeHierarchy = type.newSupertypeHierarchy(new NullProgressMonitor());
-				IType[] superTypes = supertypeHierarchy.getSupertypes(type);
-				if (superTypes != null) {
-					for (IType superType : superTypes) {
-						if ((superType.getFlags() & Modifiers.AccInterface) != 0) {
-							interfaces.add(resolver.getTypeBinding(superType));
-						}
-					}
-				}
-			} catch (ModelException e) {
-				Logger.logException(e);
-			}
+				SearchEngine searchEngine = new SearchEngine();
+				IDLTKSearchScope scope = SearchEngine.createSearchScope(type.getScriptProject());
 
+				String[] superClassNames = type.getSuperClasses();
+				for (String superClass : superClassNames) {
+					int matchRule = SearchPattern.R_EXACT_MATCH;
+					SearchPattern pattern = SearchPattern.createPattern(superClass, IDLTKSearchConstants.TYPE, IDLTKSearchConstants.DECLARATIONS, matchRule, PHPLanguageToolkit.getDefault());
+					searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
+						public void acceptSearchMatch(SearchMatch match) throws CoreException {
+							IType t = (IType) match.getElement();
+							if ((t.getFlags() & Modifiers.AccInterface) != 0) {
+								interfaces.add(resolver.getTypeBinding(t));
+							}
+						}
+					}, null);
+				}
+			} catch (CoreException e) {
+				if (DLTKCore.DEBUG) {
+					e.printStackTrace();
+				}
+			}
 		}
 		return interfaces.toArray(new ITypeBinding[interfaces.size()]);
 	}
