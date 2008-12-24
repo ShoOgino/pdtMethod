@@ -1,7 +1,20 @@
 	protected String buildPathForClass(IType type) throws ModelException {
-		ISourceModule sourceModule = type.getSourceModule();
-		ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule);
-		TypeDeclaration typeDeclaration = PHPModelUtils.getNodeByClass(moduleDeclaration, type);
-		return getPHPDocLink(typeDeclaration);
+		String path = null;
+		if (type != null) {
+			ISourceModule sourceModule = type.getSourceModule();
+			ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule);
+			TypeDeclaration typeDeclaration = PHPModelUtils.getNodeByClass(moduleDeclaration, type);
+			path = getPHPDocLink(typeDeclaration);
+
+			if (path == null) {
+
+				String className = type.getElementName(); //$NON-NLS-1$
+				path = (String) getPHPEntityPathMap().get(className.toLowerCase());
+				if (path == null) {
+					path = buildPathForClass(type.getElementName());
+				}
+			}
+		}
+		return path;
 	}
 
