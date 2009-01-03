@@ -7,9 +7,20 @@
 
 		Set<PHPDocField> docs = new HashSet<PHPDocField>();
 		for (IType type : types) {
-			IModelElement[] elements = PHPMixinModel.getInstance(type.getScriptProject()).getVariableDoc(variableName, null, type.getElementName());
-			for (IModelElement e : elements) {
-				docs.add((PHPDocField) e);
+			try {
+				// we look in whole hiearchy
+				ITypeHierarchy superHierarchy = type.newSupertypeHierarchy(null);
+				IType[] superTypes = superHierarchy.getAllTypes();
+				for (IType superType : superTypes) {
+					IModelElement[] elements = PHPMixinModel.getInstance(type.getScriptProject()).getVariableDoc(variableName, null, superType.getElementName());
+					for (IModelElement e : elements) {
+						docs.add((PHPDocField) e);
+					}
+				}
+			} catch (ModelException e) {
+				if (DLTKCore.DEBUG) {
+					e.printStackTrace();
+				}
 			}
 		}
 
