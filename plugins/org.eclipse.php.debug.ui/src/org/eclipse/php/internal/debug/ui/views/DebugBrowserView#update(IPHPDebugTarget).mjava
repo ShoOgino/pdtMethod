@@ -6,16 +6,17 @@
 	        IPHPDebugTarget oldTarget = fTarget;
 	        int oldcount = fUpdateCount;
 	        fTarget = target;
-	        String output = ""; //$NON-NLS-1$
+	        
+	        DebugOutput debugOutput = null;
 	        if (fTarget != null ) {
 	           	if ((fTarget.isSuspended()) || (fTarget.isTerminated())) {
-	           		DebugOutput outputBuffer = fTarget.getOutputBuffer();
-	           		fUpdateCount = outputBuffer.getUpdateCount();
+	           		debugOutput = fTarget.getOutputBuffer();
+	           		fUpdateCount = debugOutput.getUpdateCount();
 
 	           		// check if output hasn't been updated
-	           		if (fTarget == oldTarget && fUpdateCount == oldcount) return;
-
-	           		output = outputBuffer.toString();
+	           		if (fTarget == oldTarget && fUpdateCount == oldcount) {
+	           			return;
+	           		}
 	           	} else {
 	           		// Not Suspended or Terminated
 
@@ -27,14 +28,23 @@
 	           		return;
 	           	}
 	        }
-	        int startIdx = output.indexOf("\r\n\r\n"); //$NON-NLS-1$
-	        if (startIdx == -1) {
-	        	startIdx = output.indexOf("\r\n"); //$NON-NLS-1$
+	        
+	        if (debugOutput != null) {
+	        	String contentType = debugOutput.getContentType();
+	        	if (contentType != null && !contentType.startsWith("text")) {
+	        		return; // we don't show garbage anymore
+	        	}
+	        	String output = debugOutput.toString();
+		        // Skip headers
+		        int startIdx = output.indexOf("\r\n\r\n"); //$NON-NLS-1$
+		        if (startIdx == -1) {
+		        	startIdx = output.indexOf("\r\n"); //$NON-NLS-1$
+		        }
+		        if (startIdx != -1) {
+		        	output = output.substring(startIdx + 2);
+		        }
+		        swtBrowser.setText(output);
 	        }
-	        if (startIdx != -1) {
-	        	output = output.substring(startIdx + 2);
-	        }
-        	swtBrowser.setText(output);
         }
     }
 
