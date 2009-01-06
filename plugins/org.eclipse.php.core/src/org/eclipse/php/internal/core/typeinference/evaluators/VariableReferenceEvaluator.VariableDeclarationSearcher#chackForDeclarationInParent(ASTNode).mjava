@@ -1,0 +1,36 @@
+		protected void chackForDeclarationInParent(ASTNode parent) {
+			if (parent instanceof IfStatement || parent instanceof WhileStatement) {
+				Expression condition = null;
+				if (parent instanceof IfStatement) {
+					condition = ((IfStatement)parent).getCondition();
+				} else {
+					condition = ((WhileStatement)parent).getCondition();
+				}
+				if (condition instanceof InstanceOfExpression) {
+					InstanceOfExpression i = (InstanceOfExpression) condition;
+					Expression variable = i.getExpr();
+					if (variable instanceof VariableReference) {
+						VariableReference variableReference = (VariableReference) variable;
+							if (variableName.equals(variableReference.getName())) {
+							while (declarations.size() > level) {
+								declarations.removeLast();
+							}
+							declarations.addLast(i.getClassName());
+						}
+					}
+				}
+			}
+			else if (parent instanceof CatchClause) {
+				CatchClause catchClause = (CatchClause) parent;
+				if (catchClause.getVariable().getName().equals(variableName)) {
+					declarations.addLast(catchClause);
+				}
+			}
+			else if (parent instanceof ForEachStatement) {
+				ForEachStatement foreachStatement = (ForEachStatement) parent;
+				if (foreachStatement.getValue() instanceof SimpleReference && ((SimpleReference)foreachStatement.getValue()).getName().equals(variableName)) {
+					declarations.addLast(foreachStatement);
+				}
+			} 
+		}
+
