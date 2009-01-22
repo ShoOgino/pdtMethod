@@ -1,61 +1,16 @@
 	public void debug(ILaunch launch) throws DebugException {
-		exception = null;
+
 		IDebugParametersInitializer parametersInitializer = DebugParametersInitializersRegistry.getBestMatchDebugParametersInitializer(launch);
-		final String encodedURL = parametersInitializer.getRequestURL(launch).replaceAll(" ", "%20");
-		boolean runWithDebug = true;
-		try {
-			runWithDebug = launch.getLaunchConfiguration().getAttribute(IPHPDebugConstants.RUN_WITH_DEBUG_INFO, true);
-		} catch (CoreException e1) {
-		}
 
-		final String debugQuery;
-		if (!runWithDebug && ILaunchManager.RUN_MODE.equals(launch.getLaunchMode())) {
-			debugQuery = encodedURL;
-		} else {
-			String query = parametersInitializer.generateQuery(launch);
-			if (encodedURL.indexOf('?') == -1) {
-				debugQuery = encodedURL + '?' + query;
-			} else {
-				debugQuery = encodedURL + '&' + query;
-			}
-		}
-
-		if (isDebugMode) {
-			System.out.println("debugQuery = " + debugQuery);
-		}
 		boolean openInBrowser = false;
 		try {
 			openInBrowser = launch.getLaunchConfiguration().getAttribute(IPHPDebugConstants.OPEN_IN_BROWSER, false);
-		} catch (Throwable t) {
-			Logger.logException("Error obtaining the 'openInBrowser' configuration.", t);
+		} catch (CoreException e) {
 		}
 		if (openInBrowser) {
-			// Start the debug session by openning a browser that will actually trigger the URL connection
-			// to the debug server.
-
-			Display.getDefault().syncExec(new Runnable() {
-				public void run() {
-					try {
-						int browserStyle = IWorkbenchBrowserSupport.LOCATION_BAR | IWorkbenchBrowserSupport.NAVIGATION_BAR | IWorkbenchBrowserSupport.STATUS;
-						PlatformUI.getWorkbench().getBrowserSupport().createBrowser(browserStyle, null, encodedURL, debugQuery).openURL(new URL(debugQuery));
-					} catch (Throwable t) {
-						Logger.logException("Error initializing the web browser.", t);
-						String errorMessage = PHPDebugCoreMessages.Debugger_Unexpected_Error_1;
-						exception = new DebugException(new Status(IStatus.ERROR, PHPDebugPlugin.getID(), IPHPDebugConstants.INTERNAL_ERROR, errorMessage, t));
-					}
-				}
-			});
-			if (exception != null) {
-				throw exception;
-			}
+			openBrowser(launch, parametersInitializer);
 		} else {
-			try {
-				connect(new URL(debugQuery));
-			} catch (java.net.MalformedURLException e) {
-				Logger.logException("Malformed URL Exception " + debugQuery, e); //Debugger_Unexpected_Error
-				String errorMessage = PHPDebugCoreMessages.Debugger_Unexpected_Error_1;
-				throw new DebugException(new Status(IStatus.ERROR, PHPDebugPlugin.getID(), IPHPDebugConstants.INTERNAL_ERROR, errorMessage, e));
-			}
+			openUrlConnection(launch, parametersInitializer);
 		}
 	}
 

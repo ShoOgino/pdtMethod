@@ -1,0 +1,67 @@
+	/**
+	 * Start the debug session by openning a browser that will actually trigger the URL connection
+	 * to the debug server.
+	 * @param launch
+	 * @param parametersInitializer
+	 * @throws DebugException
+	 */
+	protected void openBrowser(ILaunch launch, IDebugParametersInitializer parametersInitializer) throws DebugException {
+
+		boolean runWithDebug = true;
+		try {
+			runWithDebug = launch.getLaunchConfiguration().getAttribute(IPHPDebugConstants.RUN_WITH_DEBUG_INFO, true);
+		} catch (CoreException e) {
+			// nothing to do
+		}
+
+		URL requestURL = parametersInitializer.getRequestURL(launch);
+		if (runWithDebug || !ILaunchManager.RUN_MODE.equals(launch.getLaunchMode())) {
+			try {
+				String query = PHPLaunchUtilities.generateQuery(launch, parametersInitializer);
+				String url = requestURL.toString();
+				if (url.indexOf('?') == -1) {
+					url = url + '?' + query;
+				} else {
+					url = url + '&' + query;
+				}
+				requestURL = new URL(url);
+			} catch (MalformedURLException e) {
+				Logger.logException(e);
+				String errorMessage = PHPDebugCoreMessages.Debugger_Unexpected_Error_1;
+				throw new DebugException(new Status(IStatus.ERROR, PHPDebugPlugin.getID(), IPHPDebugConstants.INTERNAL_ERROR, errorMessage, e));
+			}
+		}
+
+		final DebugException[] exception = new DebugException[1];
+		final URL debugURL = requestURL;
+		Display.getDefault().syncExec(new Runnable() {
+			public void run() {
+				try {
+					int browserStyle = IWorkbenchBrowserSupport.LOCATION_BAR | IWorkbenchBrowserSupport.NAVIGATION_BAR | IWorkbenchBrowserSupport.STATUS;
+
+					StringBuilder browserTitle = new StringBuilder(debugURL.getProtocol()).append("://").append(debugURL.getHost());
+					if (debugURL.getPort() != -1) {
+						browserTitle.append(':').append(debugURL.getPort());
+					}
+					browserTitle.append(debugURL.getPath());
+
+					IWorkbenchBrowserSupport browserSupport = PlatformUI.getWorkbench().getBrowserSupport();
+					IWebBrowser browser = browserSupport.createBrowser(browserStyle, null, browserTitle.toString(), browserTitle.toString());
+
+					if (PHPDebugPlugin.DEBUG) {
+						System.out.println("Opening URL in a browser: " + debugURL.toString());
+					}
+					browser.openURL(debugURL);
+
+				} catch (Throwable t) {
+					Logger.logException("Error initializing the web browser.", t);
+					String errorMessage = PHPDebugCoreMessages.Debugger_Unexpected_Error_1;
+					exception[0] = new DebugException(new Status(IStatus.ERROR, PHPDebugPlugin.getID(), IPHPDebugConstants.INTERNAL_ERROR, errorMessage, t));
+				}
+			}
+		});
+		if (exception[0] != null) {
+			throw exception[0];
+		}
+	}
+
