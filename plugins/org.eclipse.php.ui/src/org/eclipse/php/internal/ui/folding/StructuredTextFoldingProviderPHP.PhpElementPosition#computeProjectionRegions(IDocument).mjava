@@ -2,46 +2,46 @@
 		 * @see org.eclipse.jface.text.source.projection.IProjectionPosition#computeFoldingRegions(org.eclipse.jface.text.IDocument)
 		 */
 		public IRegion[] computeProjectionRegions(IDocument document) throws BadLocationException {
-			int nameStart= offset;
+			int nameStart = offset;
 			try {
 				/* The member's name range may not be correct. However,
 				 * reconciling would trigger another element delta which would
 				 * lead to reentrant situations. Therefore, we optimistically
 				 * assume that the name range is correct, but double check the
 				 * received lines below. */
-				ISourceRange nameRange= fMember.getNameRange();
+				ISourceRange nameRange = fMember.getNameRange();
 				if (nameRange != null)
-					nameStart= nameRange.getOffset();
+					nameStart = nameRange.getOffset();
 
 			} catch (ModelException e) {
 				// ignore and use default
 			}
 
-			int firstLine= document.getLineOfOffset(offset);
-			int captionLine= document.getLineOfOffset(nameStart);
-			int lastLine= document.getLineOfOffset(offset + length);
+			int firstLine = document.getLineOfOffset(offset);
+			int captionLine = document.getLineOfOffset(nameStart);
+			int lastLine = document.getLineOfOffset(offset + length);
 
 			/* see comment above - adjust the caption line to be inside the
 			 * entire folded region, and rely on later element deltas to correct
 			 * the name range. */
 			if (captionLine < firstLine)
-				captionLine= firstLine;
+				captionLine = firstLine;
 			if (captionLine > lastLine)
-				captionLine= lastLine;
+				captionLine = lastLine;
 
 			IRegion preRegion;
 			if (firstLine < captionLine) {
-				int preOffset= document.getLineOffset(firstLine);
-				IRegion preEndLineInfo= document.getLineInformation(captionLine);
-				int preEnd= preEndLineInfo.getOffset();
-				preRegion= new Region(preOffset, preEnd - preOffset);
+				int preOffset = document.getLineOffset(firstLine);
+				IRegion preEndLineInfo = document.getLineInformation(captionLine);
+				int preEnd = preEndLineInfo.getOffset();
+				preRegion = new Region(preOffset, preEnd - preOffset);
 			} else {
-				preRegion= null;
+				preRegion = null;
 			}
 
 			if (captionLine < lastLine) {
-				int postOffset= document.getLineOffset(captionLine + 1);
-				IRegion postRegion= new Region(postOffset, offset + length - postOffset);
+				int postOffset = document.getLineOffset(captionLine + 1);
+				IRegion postRegion = new Region(postOffset, offset + length - postOffset);
 
 				if (preRegion == null)
 					return new IRegion[] { postRegion };

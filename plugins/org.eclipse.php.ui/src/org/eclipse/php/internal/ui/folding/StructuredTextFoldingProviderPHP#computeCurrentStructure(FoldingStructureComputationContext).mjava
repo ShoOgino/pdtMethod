@@ -1,29 +1,29 @@
 	private Map<IModelElement, Object> computeCurrentStructure(FoldingStructureComputationContext ctx) {
-		Map<IModelElement, Object> map= new HashMap<IModelElement, Object>();
-		ProjectionAnnotationModel model= ctx.getModel();
-		Iterator e= model.getAnnotationIterator();
+		Map<IModelElement, Object> map = new HashMap<IModelElement, Object>();
+		ProjectionAnnotationModel model = ctx.getModel();
+		Iterator e = model.getAnnotationIterator();
 		while (e.hasNext()) {
-			Object annotation= e.next();
+			Object annotation = e.next();
 			if (annotation instanceof PhpProjectionAnnotation) {
-				PhpProjectionAnnotation java= (PhpProjectionAnnotation) annotation;
-				Position position= model.getPosition(java);
+				PhpProjectionAnnotation java = (PhpProjectionAnnotation) annotation;
+				Position position = model.getPosition(java);
 				Assert.isNotNull(position);
-				List<Tuple> list= (List<Tuple>) map.get(java.getElement());
+				List<Tuple> list = (List<Tuple>) map.get(java.getElement());
 				if (list == null) {
-					list= new ArrayList<Tuple>(2);
+					list = new ArrayList<Tuple>(2);
 					map.put(java.getElement(), list);
 				}
 				list.add(new Tuple(java, position));
 			}
 		}
 
-		Comparator comparator= new Comparator() {
+		Comparator comparator = new Comparator() {
 			public int compare(Object o1, Object o2) {
 				return ((Tuple) o1).position.getOffset() - ((Tuple) o2).position.getOffset();
 			}
 		};
-		for (Iterator<Object> it= map.values().iterator(); it.hasNext();) {
-			List list= (List) it.next();
+		for (Iterator<Object> it = map.values().iterator(); it.hasNext();) {
+			List list = (List) it.next();
 			Collections.sort(list, comparator);
 		}
 		return map;

@@ -13,28 +13,27 @@
 		private boolean shouldIgnoreDelta(IModelElement ast, IModelElementDelta delta) {
 			if (ast == null)
 				return false; // can't compute
-				
+
 			final IFile resource = (IFile) ast.getResource();
-			
-			IDocument document= getDocument();
+
+			IDocument document = getDocument();
 			if (document == null)
 				return false; // can't compute
 
-			PHPStructuredEditor editor= fEditor;
+			PHPStructuredEditor editor = fEditor;
 			if (editor == null || editor.getCachedSelectedRange() == null)
 				return false; // can't compute
-			
-			
-			int caretLine= 0;
+
+			int caretLine = 0;
 			try {
-				caretLine= document.getLineOfOffset(editor.getCachedSelectedRange().x) + 1; 
+				caretLine = document.getLineOfOffset(editor.getCachedSelectedRange().x) + 1;
 			} catch (BadLocationException x) {
 				return false; // can't compute
 			}
-			
+
 			if (caretLine > 0) {
 				try {
-					IMarker[] problems = resource.findMarkers( DefaultProblem.MARKER_TYPE_PROBLEM, false, IResource.DEPTH_INFINITE);
+					IMarker[] problems = resource.findMarkers(DefaultProblem.MARKER_TYPE_PROBLEM, false, IResource.DEPTH_INFINITE);
 					for (int i = 0; i < problems.length; i++) {
 						final IMarker marker = problems[i];
 						final boolean isInCaret = isCaretLine(caretLine, IMarker.LINE_NUMBER, marker);
@@ -43,7 +42,7 @@
 							return true;
 						}
 					}
-					
+
 				} catch (CoreException e) {
 					return false;
 				}

@@ -15,31 +15,31 @@
 		if (deletions.isEmpty() || (additions.isEmpty() && changes.isEmpty()))
 			return;
 
-		List<PhpProjectionAnnotation> newDeletions= new ArrayList<PhpProjectionAnnotation>();
-		List<PhpProjectionAnnotation> newChanges= new ArrayList<PhpProjectionAnnotation>();
+		List<PhpProjectionAnnotation> newDeletions = new ArrayList<PhpProjectionAnnotation>();
+		List<PhpProjectionAnnotation> newChanges = new ArrayList<PhpProjectionAnnotation>();
 
-		Iterator<PhpProjectionAnnotation> deletionIterator= deletions.iterator();
+		Iterator<PhpProjectionAnnotation> deletionIterator = deletions.iterator();
 		while (deletionIterator.hasNext()) {
-			PhpProjectionAnnotation deleted= deletionIterator.next();
-			Position deletedPosition= ctx.getModel().getPosition(deleted);
+			PhpProjectionAnnotation deleted = deletionIterator.next();
+			Position deletedPosition = ctx.getModel().getPosition(deleted);
 			if (deletedPosition == null)
 				continue;
-			
-			Tuple deletedTuple= new Tuple(deleted, deletedPosition);
 
-			Tuple match= findMatch(deletedTuple, changes, null, ctx);
-			boolean addToDeletions= true; 
+			Tuple deletedTuple = new Tuple(deleted, deletedPosition);
+
+			Tuple match = findMatch(deletedTuple, changes, null, ctx);
+			boolean addToDeletions = true;
 			if (match == null) {
-				match= findMatch(deletedTuple, additions.keySet(), additions, ctx);
-				addToDeletions= false;
+				match = findMatch(deletedTuple, additions.keySet(), additions, ctx);
+				addToDeletions = false;
 			}
-			
+
 			if (match != null) {
-				IModelElement element= match.annotation.getElement();
+				IModelElement element = match.annotation.getElement();
 				deleted.setElement(element);
 				deletedPosition.setLength(match.position.getLength());
 				if (deletedPosition instanceof PhpElementPosition && element instanceof IMember) {
-					PhpElementPosition jep= (PhpElementPosition) deletedPosition;
+					PhpElementPosition jep = (PhpElementPosition) deletedPosition;
 					jep.setMember((IMember) element);
 				}
 

@@ -14,42 +14,42 @@
 	 */
 	protected final IRegion[] computeProjectionRanges(ISourceReference reference, FoldingStructureComputationContext ctx) {
 		try {
-			ISourceRange range= reference.getSourceRange();
+			ISourceRange range = reference.getSourceRange();
 			if (!SourceRange.isAvailable(range))
 				return new IRegion[0];
 
-			String contents= reference.getSource();
+			String contents = reference.getSource();
 			if (contents == null)
 				return new IRegion[0];
 
-			List<IRegion> regions= new ArrayList<IRegion>();
+			List<IRegion> regions = new ArrayList<IRegion>();
 			if (!ctx.isHeaderChecked()) {
 				ctx.setHeaderChecked();
-				IRegion headerComment= computeHeaderComment(ctx);
+				IRegion headerComment = computeHeaderComment(ctx);
 				if (headerComment != null) {
 					regions.add(headerComment);
 					ctx.setHasHeaderComment();
 				}
 			}
 
-			final int shift= range.getOffset();
-			ICommentScanner scanner= ctx.getScanner();
+			final int shift = range.getOffset();
+			ICommentScanner scanner = ctx.getScanner();
 			scanner.resetTo(shift);
-			
-			int start= shift;
 
-			start= scanner.computePreviousComment();
+			int start = shift;
+
+			start = scanner.computePreviousComment();
 
 			if (start != shift) {
-				start= scanner.getCurrentCommentStartPosition();
-				int end= scanner.getCurrentCommentEndPosition();
+				start = scanner.getCurrentCommentStartPosition();
+				int end = scanner.getCurrentCommentEndPosition();
 				regions.add(new Region(start, end - start));
 			}
 
 			// shift -> start
 			regions.add(new Region(shift, range.getLength()));
 
-			IRegion[] result= new IRegion[regions.size()];
+			IRegion[] result = new IRegion[regions.size()];
 			regions.toArray(result);
 			return result;
 		} catch (ModelException e) {
