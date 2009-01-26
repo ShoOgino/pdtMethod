@@ -1,0 +1,60 @@
+	public boolean visit(LambdaFunctionDeclaration lambdaFunctionDeclaration) {
+		if (!hasChildrenChanges(lambdaFunctionDeclaration)) {
+			return doVisitUnchangedChildren(lambdaFunctionDeclaration);
+		}
+
+		// Reference
+		RewriteEvent event = getEvent(lambdaFunctionDeclaration, LambdaFunctionDeclaration.IS_REFERENCE_PROPERTY);
+		if (event != null && event.getChangeKind() == RewriteEvent.REPLACED) {
+			boolean isReference = (Boolean) event.getNewValue();
+
+			try {
+				TextEditGroup editGroup = getEditGroup(event);
+				// we need to remove everything between the word 'function' to the start of the function's
+				// name and then place a blank or an &.
+				int startDeletionFrom = lambdaFunctionDeclaration.getStart() + 8; // 8 is the 'function' keyword length
+				int startOffset = getLeftParenthesesStartPosition(startDeletionFrom);
+				doTextRemove(startDeletionFrom, startOffset - startDeletionFrom, editGroup);
+				if (isReference) {
+					// we need to insert the &
+					doTextInsert(startDeletionFrom, " & ", editGroup);
+				} else {
+					doTextInsert(startDeletionFrom, " ", editGroup);
+				}
+			} catch (CoreException e) {
+				handleException(e);
+			}
+		}
+
+		// Parameters
+		if (isChanged(lambdaFunctionDeclaration, LambdaFunctionDeclaration.FORMAL_PARAMETERS_PROPERTY)) {
+			try {
+				int startDeletionFrom = lambdaFunctionDeclaration.getStart() + 8; // 8 is the 'function' keyword length
+				int startOffset = getLeftParenthesesStartPosition(startDeletionFrom);
+				rewriteNodeList(lambdaFunctionDeclaration, LambdaFunctionDeclaration.FORMAL_PARAMETERS_PROPERTY, startOffset, "", ", "); //$NON-NLS-1$ //$NON-NLS-2$
+			} catch (CoreException e) {
+				handleException(e);
+			}
+		} else {
+			voidVisit(lambdaFunctionDeclaration, LambdaFunctionDeclaration.FORMAL_PARAMETERS_PROPERTY);
+		}
+		
+		// Lexical vars
+		if (isChanged(lambdaFunctionDeclaration, LambdaFunctionDeclaration.LEXICAL_VARIABLES_PROPERTY)) {
+			try {
+				int startDeletionFrom = lambdaFunctionDeclaration.getStart() + 8; // 8 is the 'function' keyword length
+				int startOffset = getRightBraceStartPosition(startDeletionFrom) + 1;
+				rewriteNodeList(lambdaFunctionDeclaration, LambdaFunctionDeclaration.LEXICAL_VARIABLES_PROPERTY, startOffset, " as ", ", "); //$NON-NLS-1$ //$NON-NLS-2$
+			} catch (CoreException e) {
+				handleException(e);
+			}
+		} else {
+			voidVisit(lambdaFunctionDeclaration, LambdaFunctionDeclaration.LEXICAL_VARIABLES_PROPERTY);
+		}
+		
+		// Body
+		rewriteRequiredNode(lambdaFunctionDeclaration, LambdaFunctionDeclaration.BODY_PROPERTY);
+		
+		return false;
+	}
+
