@@ -1,12 +1,18 @@
 	public boolean endvisit(TypeDeclaration type) throws Exception {
-		// Check whether this node is a namespace without block. In this case we don't
-		// pop it back until we meet another namespace declaration or EOF in order to place
-		// following statements under it.
-		if (pendingNsDeclaration == null && type instanceof NamespaceDeclaration) {
+		if (type instanceof NamespaceDeclaration) {
 			NamespaceDeclaration namespaceDecl = (NamespaceDeclaration) type;
-			if (namespaceDecl.getBody().getStatements().size() == 0) {
-				pendingNsDeclaration = namespaceDecl;
+			if (namespaceDecl.getName() == NamespaceDeclaration.GLOBAL) { // we don't handle global namespaces
 				return true;
+			}
+			
+			// Check whether this node is a namespace without block. In this case we don't
+			// pop it back until we meet another namespace declaration or EOF in order to place
+			// following statements under it.
+			if (pendingNsDeclaration == null) {
+				if (namespaceDecl.getBody().getStatements().size() == 0) {
+					pendingNsDeclaration = namespaceDecl;
+					return true;
+				}
 			}
 		}
 		
