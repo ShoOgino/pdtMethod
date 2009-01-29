@@ -124,8 +124,10 @@
 			IModelElement[] functions = CodeAssistUtils.getGlobalMethods(sourceModule, prefix, mask);
 			for (IModelElement function : functions) {
 				try {
-					if ((((IMethod) function).getFlags() & IPHPModifiers.Internal) == 0) {
-						reportMethod((IMethod) function, relevanceMethod--);
+					IMethod method = (IMethod) function;
+					int flags = method.getFlags();
+					if (!PHPFlags.isInternal(flags)) {
+						reportMethod(method, relevanceMethod--);
 					}
 				} catch (ModelException e) {
 					if (DLTKCore.DEBUG_COMPLETION) {
@@ -172,8 +174,13 @@
 				IType[] classes = CodeAssistUtils.getGlobalTypes(sourceModule, prefix, mask);
 				for (IType type : classes) {
 					try {
-						if ((type.getFlags() & IPHPModifiers.Internal) == 0) {
-							reportType(type, relevanceClass--, PAAMAYIM_NEKUDOTAIM);
+						int flags = type.getFlags();
+						if (!PHPFlags.isInternal(flags)) {
+							if (PHPFlags.isNamespace(flags)) {
+								reportType(type, relevanceClass--, NS_SEPARATOR);
+							} else {
+								reportType(type, relevanceClass--, PAAMAYIM_NEKUDOTAIM);
+							}
 						}
 					} catch (ModelException e) {
 						if (DLTKCore.DEBUG_COMPLETION) {
