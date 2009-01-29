@@ -15,7 +15,7 @@
 
 		for (IType type : className) {
 			if (!prefix.startsWith(DOLLAR)) {
-				IMethod[] methods = CodeAssistUtils.getClassMethods(type, prefix, mask);
+				IMethod[] methods = CodeAssistUtils.getTypeMethods(type, prefix, mask);
 				for (IMethod method : methods) {
 					try {
 						int flags = method.getFlags();
@@ -25,7 +25,7 @@
 							}
 						}
 						if ((members & STATIC_MEMBERS) != 0) {
-							if ((!isPHP5 || showNonStrictOptions || PHPFlags.isStatic(flags)) && !PHPFlags.isInternal(flags)) {
+							if ((phpVersion.isLessThan(PHPVersion.PHP5) || showNonStrictOptions || PHPFlags.isStatic(flags)) && !PHPFlags.isInternal(flags)) {
 								reportMethod(method, relevanceMethod--);
 							}
 						}
@@ -37,7 +37,7 @@
 				}
 			}
 
-			IModelElement[] fields = CodeAssistUtils.getClassFields(type, prefix, mask);
+			IModelElement[] fields = CodeAssistUtils.getTypeFields(type, prefix, mask);
 			int relevanceVar = RELEVANCE_VAR;
 			int relevanceConst = RELEVANCE_CONST;
 			for (IModelElement element : fields) {
@@ -56,7 +56,7 @@
 						}
 					}
 					if ((members & STATIC_MEMBERS) != 0) {
-						if (isConstant || !isPHP5 || showNonStrictOptions || (flags & Modifiers.AccStatic) != 0) {
+						if (isConstant || phpVersion.isLessThan(PHPVersion.PHP5) || showNonStrictOptions || (flags & Modifiers.AccStatic) != 0) {
 							if (isConstant) {
 								reportField(field, relevanceConst--, false);
 							} else {

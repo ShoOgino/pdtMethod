@@ -15,15 +15,22 @@
 		if (endPosition < 2) {
 			return EMPTY_TYPES;
 		}
+		
 		String triggerText = statementText.subSequence(endPosition - 2, endPosition).toString();
 		if (triggerText.equals(OBJECT_FUNCTIONS_TRIGGER)) {
-		} else if (triggerText.equals(CLASS_FUNCTIONS_TRIGGER)) {
+		}
+		else if (triggerText.equals(PAAMAYIM_NEKUDOTAIM)) {
 			isClassTriger = true;
-		} else {
+		}
+		else if (triggerText.endsWith(NS_SEPARATOR)) {
+			triggerText = NS_SEPARATOR;
+			isClassTriger = true;
+		}
+		else {
 			return EMPTY_TYPES;
 		}
 
-		int propertyEndPosition = PHPTextSequenceUtilities.readBackwardSpaces(statementText, endPosition - 2);
+		int propertyEndPosition = PHPTextSequenceUtilities.readBackwardSpaces(statementText, endPosition - triggerText.length());
 		int lastObjectOperator = PHPTextSequenceUtilities.getPrivousTriggerIndex(statementText, propertyEndPosition);
 
 		if (lastObjectOperator == -1) {
@@ -31,7 +38,7 @@
 			return innerGetClassName(sourceModule, statementText, propertyEndPosition, isClassTriger, offset, line);
 		}
 
-		int propertyStartPosition = PHPTextSequenceUtilities.readForwardSpaces(statementText, lastObjectOperator + 2);
+		int propertyStartPosition = PHPTextSequenceUtilities.readForwardSpaces(statementText, lastObjectOperator + triggerText.length());
 		String propertyName = statementText.subSequence(propertyStartPosition, propertyEndPosition).toString();
 		IType[] types = getTypesFor(sourceModule, statementText, propertyStartPosition, offset, line);
 
