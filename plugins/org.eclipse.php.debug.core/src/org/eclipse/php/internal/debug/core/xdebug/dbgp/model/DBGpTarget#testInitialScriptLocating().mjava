@@ -42,16 +42,24 @@
 						else {
 							// this was a remotely initiated launch as we don't have a scriptName
 							try {
-								DebugSearchEngine.find(pathMapper, initScript, null, this);
+								PathEntry pe = DebugSearchEngine.find(pathMapper, initScript, null, this);
+								if (pe != null) {
+									Object container = pe.getContainer();
+									if (container != null && container instanceof IResource) {
+										IResource res = (IResource)container;
+										IProject prj = res.getProject();
+										PHPSourceLookupDirector dir = (PHPSourceLookupDirector)getLaunch().getSourceLocator();
+										//ISourceContainer[] containers = new ISourceContainer[] {new ProjectSourceContainer(prj, false)};
+										ISourceContainer[] containers = new ISourceContainer[] {new PHPCompositeSourceContainer(prj, null)};									
+										dir.setSourceContainers(containers);
+									}
+								}
 							} catch (Exception e) {
 							}
-							
 						}
-						
 					}
 				}
 			}
-
 		}
 	}
 
