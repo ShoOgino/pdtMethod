@@ -1,0 +1,36 @@
+	/**
+	 * handle a Remotely Initiated launch debug session
+	 * @param initScript the initial script being executed
+	 */
+	
+	private void handleRemoteSessionInitiation(String initScript) {
+		try {
+			PathEntry pe = DebugSearchEngine.find(pathMapper, initScript, null, this);
+			if (pe != null) {
+				Object container = pe.getContainer();
+				if (container != null && container instanceof IResource) {
+					IResource res = (IResource)container;
+					IProject prj = res.getProject();
+					PHPSourceLookupDirector dir = (PHPSourceLookupDirector)getLaunch().getSourceLocator();
+					//ISourceContainer[] containers = new ISourceContainer[] {new ProjectSourceContainer(prj, false)};
+					ISourceContainer[] containers = new ISourceContainer[] {new PHPCompositeSourceContainer(prj, null)};									
+					dir.setSourceContainers(containers);
+				}
+			}
+			else {
+				//either no file was found, or the user pressed the stop debugger 
+				if (isTerminated() == false) {
+					// stop wasn't pressed
+					Display.getDefault().asyncExec(new Runnable() {
+						public void run() {
+							MessageDialog.openError(Display.getDefault().getActiveShell(), PHPDebugCoreMessages.XDebugMessage_debugError, "No appropriate file located or no file selected. Debug Terminated"); 
+						}
+					});
+					session.endSession();
+					terminateDebugTarget(true);
+				}
+			}
+		} catch (Exception e) {
+		}
+	}
+
