@@ -7,7 +7,7 @@
 		}
 		if (mode.equals(ILaunchManager.DEBUG_MODE)) {
 			if (XDebugLaunchListener.getInstance().isWebLaunchActive()) {
-				displayErrorMessage("Web Launch Already Running");
+				displayErrorMessage(PHPDebugCoreMessages.XDebug_WebLaunchConfigurationDelegate_0);
 				DebugPlugin.getDefault().getLaunchManager().removeLaunch(launch);
 				return;
 			}
@@ -15,10 +15,10 @@
 		}
 
 		// Resolve the Server
-		Server server = ServersManager.getServer(configuration.getAttribute(Server.NAME, ""));
+		Server server = ServersManager.getServer(configuration.getAttribute(Server.NAME, "")); //$NON-NLS-1$
 		if (server == null) {
-			Logger.log(Logger.ERROR, "Launch configuration could not find server");
-			displayErrorMessage("Could not launch.\nInvalid server configuration.");
+			Logger.log(Logger.ERROR, "Launch configuration could not find server"); //$NON-NLS-1$
+			displayErrorMessage(PHPDebugCoreMessages.XDebug_WebLaunchConfigurationDelegate_1); //$NON-NLS-1$
 			DebugPlugin.getDefault().getLaunchManager().removeLaunch(launch);
 			return;
 		}
@@ -31,7 +31,7 @@
 			proj = ResourcesPlugin.getWorkspace().getRoot().getProject(filePath.segment(0));
 		} catch (Throwable t) {
 			if (proj == null) {
-				Logger.logException("Could not execute the debug (Project is null).", t);
+				Logger.logException("Could not execute the debug (Project is null).", t); //$NON-NLS-1$
 				DebugPlugin.getDefault().getLaunchManager().removeLaunch(launch);
 				return;
 			}
@@ -61,7 +61,7 @@
 		// Generate a session id for this launch and start the listener
 		// then create the start and stop debug URLs
 		String[] startStopURLs;
-		String baseURL = new String(configuration.getAttribute(Server.BASE_URL, "").getBytes());
+		String baseURL = new String(configuration.getAttribute(Server.BASE_URL, "").getBytes()); //$NON-NLS-1$
 		IDBGpDebugTarget target = null;
 
 		if (mode.equals(ILaunchManager.DEBUG_MODE)) {
@@ -70,7 +70,7 @@
 			if (DBGpProxyHandler.instance.useProxy()) {
 				ideKey = DBGpProxyHandler.instance.getCurrentIdeKey();
 				if (DBGpProxyHandler.instance.registerWithProxy() == false) {
-					displayErrorMessage("Unable to connect to proxy\n" + DBGpProxyHandler.instance.getErrorMsg());
+					displayErrorMessage(PHPDebugCoreMessages.XDebug_WebLaunchConfigurationDelegate_2 + DBGpProxyHandler.instance.getErrorMsg()); 
 					DebugPlugin.getDefault().getLaunchManager().removeLaunch(launch);
 					return;					
 				}
@@ -100,7 +100,7 @@
 
 		// load the URL into the appropriate web browser
 		IProgressMonitor subMonitor = new SubProgressMonitor(monitor, 30);
-		subMonitor.beginTask("Launching browser", 10);
+		subMonitor.beginTask(PHPDebugCoreMessages.XDebug_WebLaunchConfigurationDelegate_3, 10); //$NON-NLS-1$
 
 		Display.getDefault().syncExec(new Runnable() {
 			public void run() {
@@ -111,7 +111,7 @@
 						DBGpUtils.openInternalBrowserView(startURL);
 					}
 				} catch (Exception t) {
-					Logger.logException("Error initializing the web browser.", t);
+					Logger.logException("Error initializing the web browser.", t); //$NON-NLS-1$
 					exception[0] = t;
 				}
 			}
@@ -123,7 +123,7 @@
 		if (exception[0] == null) {
 			if (mode.equals(ILaunchManager.DEBUG_MODE)) {
 				launch.addDebugTarget(target);
-				subMonitor.subTask("waiting for XDebug session");
+				subMonitor.subTask(PHPDebugCoreMessages.XDebug_WebLaunchConfigurationDelegate_4); //$NON-NLS-1$
 				target.waitForInitialSession((DBGpBreakpointFacade) IDELayerFactory.getIDELayer(), XDebugPreferenceMgr.createSessionPreferences(), monitor);
 			}
 			else {
@@ -132,7 +132,7 @@
 			}
 		} else {
 			// display an error about not being able to launch a browser
-			Logger.logException("we have an exception on the browser", exception[0]);
+			Logger.logException("we have an exception on the browser", exception[0]); //$NON-NLS-1$
 			if (mode.equals(ILaunchManager.DEBUG_MODE)) {
 				DBGpSessionHandler.getInstance().removeSessionListener((IDBGpSessionListener)target);
 			}
