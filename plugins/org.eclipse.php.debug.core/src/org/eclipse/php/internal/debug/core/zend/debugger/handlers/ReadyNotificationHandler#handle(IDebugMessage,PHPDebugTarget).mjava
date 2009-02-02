@@ -2,24 +2,25 @@
 		ReadyNotification readyNotification = (ReadyNotification) message;
 
 		String currentFile = readyNotification.getFileName();
-		if (debugTarget.isStepFiltersEnabled()) {
-			String localPath = ((RemoteDebugger) debugTarget.getRemoteDebugger()).convertToLocalFilename(currentFile);
-			if (DebugStepFilterController.getInstance().isFiltered(localPath)) {// file is filtered
-				try {
-					if (!isBreakPointExistInFile(debugTarget, currentFile)) {//file has a B.P
-						// skip this step and continue the next 'Step Into'
-						debugTarget.getRemoteDebugger().stepInto();
-						return;
+		try {
+			if (debugTarget.isStepFiltersEnabled()) {
+				String localPath = ((RemoteDebugger) debugTarget.getRemoteDebugger()).convertToLocalFilename(currentFile);
+				if (DebugStepFilterController.getInstance().isFiltered(localPath)) {// file is filtered
+					try {
+						if (!isBreakPointExistInFile(debugTarget, currentFile)) {//file has a B.P
+							// skip this step and continue the next 'Step Into'
+							debugTarget.getRemoteDebugger().stepInto();
+							return;
+						}
+					} catch (CoreException ce) {
+						PHPDebugPlugin.log(ce);
 					}
-				} catch (CoreException ce) {
-					return;
 				}
 			}
+		} finally {
+			int currentLine = readyNotification.getLineNumber();
+			IDebugHandler debugHandler = debugTarget.getRemoteDebugger().getDebugHandler();
+			debugHandler.ready(currentFile, currentLine);
 		}
-
-		int currentLine = readyNotification.getLineNumber();
-		IDebugHandler debugHandler = debugTarget.getRemoteDebugger().getDebugHandler();
-		debugHandler.ready(currentFile, currentLine);
-
 	}
 
