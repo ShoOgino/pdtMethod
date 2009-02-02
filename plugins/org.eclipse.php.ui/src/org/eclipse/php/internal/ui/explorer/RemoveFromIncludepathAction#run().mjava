@@ -3,7 +3,6 @@
 	 */
 	public void run() {
 
-		final IScriptProject project;
 		Object object = fSelectedElements.get(0);
 		if (object instanceof ExternalProjectFragment) {
 			ExternalProjectFragment projFragment = (ExternalProjectFragment) object;
@@ -15,12 +14,25 @@
 			}
 		} else if (object instanceof IProjectFragment) {
 			IProjectFragment root = (IProjectFragment) object;
-			project = root.getScriptProject();
 		} else {
+			assert object instanceof IncludePath; 
+
 			IncludePath includePath = (IncludePath) object;
 			try {
 				if (includePath.isBuildpath())
 					IncludePathManager.getInstance().removeEntryFromIncludePath(includePath.getProject(), (IBuildpathEntry) (includePath.getEntry()));
+				else {
+					IProject proj = includePath.getProject();
+					IncludePathManager manager = IncludePathManager.getInstance();
+					IncludePath[] paths = manager.getIncludePaths(proj);
+					List<IncludePath> entries = new ArrayList<IncludePath>();
+					for (IncludePath path : paths) {
+						if (!path.equals(includePath)) {
+							entries.add(path);
+						}
+					}
+					manager.setIncludePath(proj, entries.toArray(new IncludePath[entries.size()]));
+				}
 			} catch (ModelException e) {
 				Logger.logException("Could not remove buildPathEntry", e);
 			}
