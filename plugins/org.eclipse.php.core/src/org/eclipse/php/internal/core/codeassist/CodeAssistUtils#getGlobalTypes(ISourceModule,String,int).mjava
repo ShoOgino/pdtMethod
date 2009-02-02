@@ -7,6 +7,39 @@
 	 * @param mask
 	 */
 	public static IType[] getGlobalTypes(ISourceModule sourceModule, String prefix, int mask) {
+
+		if ((mask & ONLY_NAMESPACES) == 0) {
+			// Check whether the type name has a namespace prefix:
+			int nsIdx = prefix.lastIndexOf(NS_SEPARATOR);
+			if (nsIdx != -1) {
+				String nsName = prefix.substring(0, nsIdx);
+				prefix = prefix.substring(nsIdx + 1);
+
+				IType[] namespaces = getGlobalTypes(sourceModule, nsName, EXACT_NAME | ONLY_NAMESPACES);
+				List<IType> types = new LinkedList<IType>();
+				for (IType ns : namespaces) {
+					try {
+						for (IType t : ns.getTypes()) {
+							String typeName = t.getElementName();
+							if ((mask & EXACT_NAME) != 0) {
+								if (typeName.equalsIgnoreCase(prefix)) {
+									types.add(t);
+									break;
+								}
+							} else if (startsWithIgnoreCase(typeName, prefix)) {
+								types.add(t);
+							}
+						}
+					} catch (ModelException e) {
+						if (DLTKCore.DEBUG_COMPLETION) {
+							e.printStackTrace();
+						}
+					}
+				}
+				return types.toArray(new IType[types.size()]);
+			}
+		}
+
 		IModelElement[] elements = getGlobalElements(sourceModule, prefix, IDLTKSearchConstants.TYPE, mask);
 		List<IType> filteredElements = new LinkedList<IType>();
 		for (IModelElement c : elements) {

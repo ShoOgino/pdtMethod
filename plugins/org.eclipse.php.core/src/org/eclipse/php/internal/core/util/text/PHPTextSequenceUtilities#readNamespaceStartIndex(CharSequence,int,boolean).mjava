@@ -1,0 +1,36 @@
+	public static int readNamespaceStartIndex(CharSequence textSequence, int startPosition, boolean includeDollar) {
+		boolean onBackslash = false;
+		boolean onWhitespace = false;
+		
+		while (startPosition > 0) {
+			char ch = textSequence.charAt(startPosition - 1);
+			if (!Character.isLetterOrDigit(ch) && ch != '_') {
+				if (ch == '\\') {
+					if (onBackslash) {
+						break;
+					}
+					onBackslash = true;
+					onWhitespace = false;
+				}
+				else if (Character.isWhitespace(ch)) {
+					onWhitespace = true;
+					onBackslash = false;
+				}
+				else {
+					break;
+				}
+			} else {
+				if (onWhitespace) {
+					break;
+				}
+				onBackslash = false;
+				onWhitespace = false;
+			}
+			startPosition--;
+		}
+		if (includeDollar && startPosition > 0 && textSequence.charAt(startPosition - 1) == '$') {
+			startPosition--;
+		}
+		return readForwardSpaces(textSequence, startPosition);
+	}
+

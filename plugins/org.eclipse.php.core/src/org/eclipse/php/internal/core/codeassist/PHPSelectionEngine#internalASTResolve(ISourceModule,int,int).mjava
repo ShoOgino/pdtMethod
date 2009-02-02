@@ -108,13 +108,18 @@
 				}
 				// Class/Interface reference:
 				else if (node instanceof TypeReference) {
-					return PHPTypeInferenceUtils.getModelElements(new PHPClassType(((TypeReference) node).getName()), (ISourceModuleContext) context);
+					String name = ((TypeReference) node).getName();
+					IType[] globalTypes = CodeAssistUtils.getGlobalTypes(sourceModule, name, CodeAssistUtils.EXACT_NAME);
+					if (globalTypes == null || globalTypes.length == 0) { // This can be a constant in PHP 5.3
+						return CodeAssistUtils.getGlobalFields(sourceModule, name, CodeAssistUtils.EXACT_NAME);
+					}
+					return globalTypes;
 				}
 				else if (node instanceof ClassInstanceCreation) {
 					ClassInstanceCreation newNode = (ClassInstanceCreation) node;
 					Expression className = newNode.getClassName();
 					if (className instanceof SimpleReference) {
-						return PHPTypeInferenceUtils.getModelElements(new PHPClassType(((SimpleReference) className).getName()), (ISourceModuleContext) context);
+						return CodeAssistUtils.getGlobalTypes(sourceModule, ((SimpleReference) node).getName(), CodeAssistUtils.EXACT_NAME);
 					}
 				}
 			}

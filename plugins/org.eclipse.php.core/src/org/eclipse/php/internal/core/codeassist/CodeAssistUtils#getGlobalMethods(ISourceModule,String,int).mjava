@@ -7,23 +7,16 @@
 	 * @param mask
 	 */
 	public static IModelElement[] getGlobalMethods(ISourceModule sourceModule, String prefix, int mask) {
+		// Check whether the method has a namespace prefix:
 		int nsIdx = prefix.lastIndexOf(NS_SEPARATOR);
 		if (nsIdx != -1) {
 			String nsName = prefix.substring(0, nsIdx);
 			prefix = prefix.substring(nsIdx + 1);
-			
-			IType[] namespaces = getGlobalTypes(sourceModule, nsName, EXACT_NAME);
+
+			IType[] namespaces = getGlobalTypes(sourceModule, nsName, EXACT_NAME | ONLY_NAMESPACES);
 			List<IModelElement> methods = new LinkedList<IModelElement>();
 			for (IType ns : namespaces) {
-				try {
-					if (PHPFlags.isNamespace(ns.getFlags())) {
-						methods.addAll(Arrays.asList(getTypeMethods(ns, prefix, mask)));
-					}
-				} catch (ModelException e) {
-					if (DLTKCore.DEBUG_COMPLETION) {
-						e.printStackTrace();
-					}
-				}
+				methods.addAll(Arrays.asList(getTypeMethods(ns, prefix, mask)));
 			}
 			return methods.toArray(new IModelElement[methods.size()]);
 		}
