@@ -8,16 +8,27 @@
 	 */
 	public static IType[] getGlobalTypes(ISourceModule sourceModule, String prefix, int mask) {
 
-		if ((mask & ONLY_NAMESPACES) == 0) {
+		if ((mask & EXCLUDE_CLASSES) == 0 || (mask & EXCLUDE_INTERFACES) == 0) {
 			// Check whether the type name has a namespace prefix:
 			int nsIdx = prefix.lastIndexOf(NS_SEPARATOR);
 			if (nsIdx != -1) {
 				String nsName = prefix.substring(0, nsIdx);
 				prefix = prefix.substring(nsIdx + 1);
 
-				IType[] namespaces = getGlobalTypes(sourceModule, nsName, EXACT_NAME | ONLY_NAMESPACES);
+				IType[] namespaces = getGlobalTypes(sourceModule, nsName, EXCLUDE_CLASSES | EXCLUDE_INTERFACES);
 				List<IType> types = new LinkedList<IType>();
+
 				for (IType ns : namespaces) {
+					if (prefix.length() == 0 && ns.getElementName().equalsIgnoreCase(nsName)) {
+						continue;
+					}
+					types.add(ns);
+				}
+				
+				for (IType ns : namespaces) {
+					if (!ns.getElementName().equalsIgnoreCase(nsName)) {
+						continue;
+					}
 					try {
 						for (IType t : ns.getTypes()) {
 							String typeName = t.getElementName();
@@ -46,13 +57,13 @@
 			IType type = (IType) c;
 			try {
 				int flags = type.getFlags();
-				if ((mask & ONLY_INTERFACES) != 0 && !PHPFlags.isInterface(flags)) {
+				if ((mask & EXCLUDE_CLASSES) != 0 && PHPFlags.isClass(flags)) {
 					continue;
 				}
-				if ((mask & ONLY_CLASSES) != 0 && (PHPFlags.isInterface(flags) || PHPFlags.isNamespace(flags))) {
+				if ((mask & EXCLUDE_INTERFACES) != 0 && PHPFlags.isInterface(flags)) {
 					continue;
 				}
-				if ((mask & ONLY_NAMESPACES) != 0 && !PHPFlags.isNamespace(flags)) {
+				if ((mask & EXCLUDE_NAMESPACES) != 0 && PHPFlags.isNamespace(flags)) {
 					continue;
 				}
 				filteredElements.add(type);

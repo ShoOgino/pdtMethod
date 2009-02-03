@@ -1,0 +1,40 @@
+	public boolean isValid(ISourceModule sourceModule, int offset, CompletionRequestor requestor) {
+		
+		if (!super.isValid(sourceModule, offset, requestor)) {
+			return false;
+		}
+		if (hasWhitespaceBeforeCursor()) { 
+			return false;
+		}
+		
+		TextSequence statementText = getStatementText();
+		int statementLength = statementText.length();
+		int tagEnd = PHPTextSequenceUtilities.readBackwardSpaces(statementText, statementLength);
+		int tagStart = PHPTextSequenceUtilities.readIdentifierStartIndex(getPhpVersion(), getStatementText(), tagEnd, true);
+		
+		tagName = statementText.subSequence(tagStart, tagEnd).toString();
+		
+		tagStart = statementText.length() - getTagName().length();
+		if (tagStart <= 0 || statementText.charAt(tagStart - 1) != '@') {
+			return false; // this is not a tag
+		}
+
+		tagStart--;
+		
+		// verify that only whitespaces and '*' before the tag
+		boolean founeX = false;
+		for (; tagStart > 0; tagStart--) {
+			if (!Character.isWhitespace(statementText.charAt(tagStart - 1))) {
+				if (founeX || statementText.charAt(tagStart - 1) != '*') {
+					break;
+				}
+				founeX = true;
+			}
+		}
+		if (!founeX) {
+			return false;
+		}
+		
+		return true;
+	}
+

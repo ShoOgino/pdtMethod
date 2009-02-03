@@ -1,0 +1,25 @@
+	/**
+	 * Determines the partition type of the code where cursor is located.
+	 * @param regionCollection Text region collection
+	 * @param phpScriptRegion PHP script region
+	 * @param offset
+	 * @return partition type (see {@link PHPRegionTypes})
+	 * @throws BadLocationException
+	 */
+	protected String determinePartitionType(ITextRegionCollection regionCollection, IPhpScriptRegion phpScriptRegion, int offset) throws BadLocationException {
+
+		int internalOffset = offset - regionCollection.getStartOffset() - phpScriptRegion.getStart() - 1;
+		String partitionType = phpScriptRegion.getPartition(internalOffset);
+
+		//if we are at the begining of multi-line comment or docBlock then we should get completion.
+		if (partitionType == PHPPartitionTypes.PHP_MULTI_LINE_COMMENT || partitionType == PHPPartitionTypes.PHP_DOC) {
+			String regionType = phpScriptRegion.getPhpToken(internalOffset).getType();
+			if (regionType == PHPRegionTypes.PHP_COMMENT_START || regionType == PHPRegionTypes.PHPDOC_COMMENT_START) {
+				if (phpScriptRegion.getPhpToken(internalOffset).getStart() == internalOffset) {
+					partitionType = phpScriptRegion.getPartition(internalOffset - 1);
+				}
+			}
+		}
+		return partitionType;
+	}
+

@@ -1,0 +1,27 @@
+	public void complete(ISourceModule module, int position, int i) {
+		
+		relevanceKeyword = RELEVANCE_KEYWORD;
+		relevanceMethod = RELEVANCE_METHOD;
+		relevanceClass = RELEVANCE_CLASS;
+		relevanceVar = RELEVANCE_VAR;
+		relevanceConst = RELEVANCE_CONST;
+		
+		try {
+			ICompletionContextResolver resolver = CompletionContextResolver.getActive();
+			ICompletionContext context = resolver.resolve(
+				(org.eclipse.dltk.core.ISourceModule) module.getModelElement(), position, requestor);
+			
+			if (context != null) {
+				ICompletionStrategyFactory completionStrategyFactory = CompletionStrategyFactory.getActive();
+				ICompletionStrategy completionStrategy = completionStrategyFactory.create(context);
+				if (completionStrategy != null) {
+					completionStrategy.apply(context, this);
+				}
+			}
+		} catch (Exception e) {
+			if (DLTKCore.DEBUG) {
+				e.printStackTrace();
+			}
+		}
+	}
+

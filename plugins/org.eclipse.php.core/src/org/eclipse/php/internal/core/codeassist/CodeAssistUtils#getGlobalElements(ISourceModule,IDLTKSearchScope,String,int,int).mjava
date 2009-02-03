@@ -31,17 +31,16 @@
 				// Build the mixin request key:
 				String[] elementNames;
 				if (elementType == IDLTKSearchConstants.TYPE) {
-					if ((mask & ONLY_CLASSES) != 0) {
-						elementNames = mixinModel.findKeys(new StringBuilder(prefix).append(WILDCARD).append(PHPMixinParser.CLASS_SUFFIX).toString());
-					} else if ((mask & ONLY_INTERFACES) != 0) {
-						elementNames = mixinModel.findKeys(new StringBuilder(prefix).append(WILDCARD).append(PHPMixinParser.INTERFACE_SUFFIX).toString());
-					} else {
-						String[] classNames = mixinModel.findKeys(new StringBuilder(prefix).append(WILDCARD).append(PHPMixinParser.CLASS_SUFFIX).toString());
-						String[] interfaceNames = mixinModel.findKeys(new StringBuilder(prefix).append(WILDCARD).append(PHPMixinParser.INTERFACE_SUFFIX).toString());
-						elementNames = new String[classNames.length + interfaceNames.length];
-						System.arraycopy(classNames, 0, elementNames, 0, classNames.length);
-						System.arraycopy(interfaceNames, 0, elementNames, classNames.length, interfaceNames.length);
+					
+					List<String> elementNamesList = new LinkedList<String>();
+					if ((mask & EXCLUDE_CLASSES) == 0) {
+						elementNamesList.addAll(Arrays.asList(mixinModel.findKeys(new StringBuilder(prefix).append(WILDCARD).append(PHPMixinParser.CLASS_SUFFIX).toString())));
 					}
+					if ((mask & EXCLUDE_INTERFACES) == 0) {
+						elementNamesList.addAll(Arrays.asList(mixinModel.findKeys(new StringBuilder(prefix).append(WILDCARD).append(PHPMixinParser.INTERFACE_SUFFIX).toString())));
+					}
+					elementNames = elementNamesList.toArray(new String[elementNamesList.size()]);
+					
 				} else {
 					elementNames = mixinModel.findKeys(new StringBuilder(MixinModel.SEPARATOR).append(prefix).append(WILDCARD).toString());
 				}

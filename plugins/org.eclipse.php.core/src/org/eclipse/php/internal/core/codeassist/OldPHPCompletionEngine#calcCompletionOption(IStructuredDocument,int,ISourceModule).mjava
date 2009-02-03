@@ -104,7 +104,7 @@
 		String type = internalPHPRegion.getType();
 		int totalLength = statementText.length();
 		int endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statementText, totalLength); // read whitespace
-		int startPosition = PHPTextSequenceUtilities.readIdentifierStartIndex(statementText, endPosition, true);
+		int startPosition = PHPTextSequenceUtilities.readIdentifierStartIndex(phpVersion, statementText, endPosition, true);
 		String lastWord = statementText.subSequence(startPosition, endPosition).toString();
 		hasWhitespaceAtEnd = totalLength != endPosition;
 
@@ -120,7 +120,7 @@
 			}
 			if (statementText.charAt(tagStart) == TAG_SIGN) {
 				++tagStart;
-				int tagEnd = PHPTextSequenceUtilities.readIdentifierEndIndex(statementText, tagStart, false);
+				int tagEnd = PHPTextSequenceUtilities.readIdentifierEndIndex(phpVersion, statementText, tagStart, false);
 				String tagName = statementText.subSequence(tagStart, tagEnd).toString();
 
 				wordEndOffset = offset;
@@ -169,17 +169,13 @@
 
 			int line = document.getLineOfOffset(offset);
 
-			if (isNamespaceElementCompletion(statementText, offset, line, lastWord, startPosition)) {
-				return;
-			}
-
 			if (isClassFunctionCompletion(statementText, offset, line, lastWord, startPosition)) {
 				// the current position is in class function.
 				return;
 			}
 
 			endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statementText, startPosition); // read whitespace
-			startPosition = PHPTextSequenceUtilities.readIdentifierStartIndex(statementText, endPosition, true);
+			startPosition = PHPTextSequenceUtilities.readIdentifierStartIndex(phpVersion, statementText, endPosition, true);
 			String firstWord = statementText.subSequence(startPosition, endPosition).toString();
 
 			ITextRegion nextRegion = internalPHPRegion;
@@ -212,6 +208,10 @@
 
 			if (hasWhitespaceAtEnd && CodeAssistUtils.isFunctionCall(lastWord, sourceModule.getScriptProject())) {
 				// the current position is between the end of a function call and open bracket.
+				return;
+			}
+			
+			if (isNamespaceElementCompletion(statementText, offset, line, lastWord, startPosition)) {
 				return;
 			}
 

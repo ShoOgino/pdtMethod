@@ -1,0 +1,47 @@
+	public boolean isValid(ISourceModule sourceModule, int offset, CompletionRequestor requestor) {
+		if (sourceModule == null) {
+			throw new IllegalArgumentException();
+		}
+
+		this.requestor = requestor;
+		this.sourceModule = sourceModule;
+		this.phpVersion = PhpVersionProjectPropertyHandler.getVersion(sourceModule.getScriptProject().getProject());
+
+		try {
+			this.document = determineDocument(sourceModule, requestor);
+			if (this.document != null) {
+
+				structuredDocumentRegion = determineStructuredDocumentRegion(document, offset);
+				if (structuredDocumentRegion != null) {
+
+					regionCollection = determineRegionCollection(document, structuredDocumentRegion, offset);
+					if (regionCollection != null) {
+
+						phpScriptRegion = determinePhpRegion(document, regionCollection, offset);
+						if (phpScriptRegion != null) {
+
+							partitionType = determinePartitionType(regionCollection, phpScriptRegion, offset);
+							if (partitionType != null) {
+
+								statementText = PHPTextSequenceUtilities.getStatement(offset, structuredDocumentRegion, true);
+
+								// determine whether there are whitespaces before the cursor
+								int statementLength = statementText.length();
+								int statementEnd = PHPTextSequenceUtilities.readBackwardSpaces(statementText, statementLength);
+								whitespaceBeforeCursor = statementLength != statementEnd;
+
+								return true;
+							}
+						}
+					}
+				}
+			}
+
+		} catch (Exception e) {
+			if (DLTKCore.DEBUG_COMPLETION) {
+				e.printStackTrace();
+			}
+		}
+		return false;
+	}
+

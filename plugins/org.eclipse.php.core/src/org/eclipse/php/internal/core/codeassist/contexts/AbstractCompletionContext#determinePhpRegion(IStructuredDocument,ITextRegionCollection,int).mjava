@@ -1,0 +1,27 @@
+	/**
+	 * Determines the PHP script region of PHP code where completion was requested
+	 * @return php script region or <code>null</code> in case it could not be determined
+	 */
+	protected IPhpScriptRegion determinePhpRegion(IStructuredDocument document, ITextRegionCollection regionCollection, int offset) {
+		ITextRegion textRegion = determineTextRegion(document, regionCollection, offset);
+		IPhpScriptRegion phpScriptRegion = null;
+
+		if (textRegion != null) {
+			if (textRegion.getType() == PHPRegionContext.PHP_OPEN) {
+				return null;
+			} else if (textRegion.getType() == PHPRegionContext.PHP_CLOSE) {
+				if (regionCollection.getStartOffset(textRegion) == offset) {
+					textRegion = regionCollection.getRegionAtCharacterOffset(offset - 1);
+				} else {
+					return null;
+				}
+			}
+		}
+
+		if (textRegion instanceof IPhpScriptRegion) {
+			phpScriptRegion = (IPhpScriptRegion) textRegion;
+		}
+
+		return phpScriptRegion;
+	}
+
