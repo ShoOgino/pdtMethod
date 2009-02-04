@@ -1,0 +1,21 @@
+	public boolean isValid(ISourceModule sourceModule, int offset, CompletionRequestor requestor) {
+		if (!super.isValid(sourceModule, offset, requestor)) {
+			return false;
+		}
+		
+		TextSequence statementText = getStatementText();
+		int functionStart = getFunctionStart();
+		
+		for (int i = statementText.length() - 1; i >= functionStart; i--) {
+			if (statementText.charAt(i) == '(') {
+				return false;
+			}
+		}
+		
+		declaringClass = CodeAssistUtils.getContainerClassData(getSourceModule(), statementText.getOriginalOffset(functionStart));
+		if (declaringClass == null) {
+			return false;
+		}
+		return true;
+	}
+

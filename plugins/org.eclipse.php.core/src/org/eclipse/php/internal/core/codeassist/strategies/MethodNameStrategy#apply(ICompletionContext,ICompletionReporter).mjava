@@ -1,0 +1,61 @@
+	public void apply(ICompletionContext context, ICompletionReporter reporter) throws BadLocationException {
+		if (!(context instanceof MethodNameContext)) {
+			return;
+		}
+		
+		MethodNameContext concreteContext = (MethodNameContext) context;
+		CompletionRequestor requestor = concreteContext.getCompletionRequestor();
+
+		String prefix = concreteContext.getPrefix();
+
+		int mask = 0;
+		if (requestor.isContextInformationMode()) {
+			mask |= CodeAssistUtils.EXACT_NAME;
+		}
+		
+		IType declaringClass = concreteContext.getDeclaringClass();
+		SourceRange replaceRange = getReplacementRange(concreteContext);
+		
+		IMethod[] superClassMethods = CodeAssistUtils.getSuperClassMethods(declaringClass, prefix, mask);
+		for (IMethod superMethod : superClassMethods) {
+			if (declaringClass.getMethod(superMethod.getElementName()).exists()) {
+				continue;
+			}
+			try {
+				int flags = superMethod.getFlags();
+				if (!PHPFlags.isFinal(flags) && !PHPFlags.isPrivate(flags) && !PHPFlags.isStatic(flags) && !PHPFlags.isInternal(flags)) {
+					reporter.reportMethod(superMethod, "", replaceRange);
+				}
+			} catch (ModelException e) {
+				if (DLTKCore.DEBUG_COMPLETION) {
+					e.printStackTrace();
+				}
+			}
+		}
+
+		PHPVersion phpVersion = concreteContext.getPhpVersion();
+
+		// Add magic methods:
+		List<String> functions = new LinkedList<String>();
+		functions.addAll(Arrays.asList(MAGIC_METHODS));
+		if (phpVersion.isGreaterThan(PHPVersion.PHP4)) {
+			functions.addAll(Arrays.asList(MAGIC_METHODS_PHP5));
+		}
+		
+		// Add constructors:
+		functions.add(declaringClass.getElementName());
+		if (phpVersion.isGreaterThan(PHPVersion.PHP4)) {
+			functions.add("__construct");
+			functions.add("__destruct");
+		}
+
+		for (String function : functions) {
+			if (CodeAssistUtils.startsWithIgnoreCase(function, prefix)) {
+				if (!requestor.isContextInformationMode() || function.length() == prefix.length()) {
+					FakeMethod fakeMethod = new FakeMethod((ModelElement) declaringClass, function);
+					reporter.reportMethod(fakeMethod, "", replaceRange);
+				}
+			}
+		}
+	}
+
