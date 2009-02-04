@@ -1,5 +1,9 @@
-	public void completeGlobalVariables(AbstractCompletionContext context, ICompletionReporter reporter, String prefix) throws BadLocationException {
-		CompletionRequestor requestor = context.getCompletionRequestor();
+	public void apply(ICompletionContext context, ICompletionReporter reporter) throws BadLocationException {
+		
+		AbstractCompletionContext abstractContext = (AbstractCompletionContext) context;
+		String prefix = abstractContext.getPrefix();
+		
+		CompletionRequestor requestor = abstractContext.getCompletionRequestor();
 
 		int mask = 0;
 		if (requestor.isContextInformationMode()) {
@@ -8,8 +12,9 @@
 		if (!showVarsFromOtherFiles()) {
 			mask |= CodeAssistUtils.ONLY_CURRENT_FILE;
 		}
+		
 		Set<IModelElement> variables = new TreeSet<IModelElement>(new CodeAssistUtils.AlphabeticComparator());
-		variables.addAll(Arrays.asList(CodeAssistUtils.getGlobalFields(context.getSourceModule(), prefix, mask)));
+		variables.addAll(Arrays.asList(CodeAssistUtils.getGlobalFields(abstractContext.getSourceModule(), prefix, mask)));
 		
 		SourceRange replaceRange = getReplacementRange(context);
 
@@ -20,10 +25,9 @@
 		for (String variable : PHP_VARIABLES) {
 			if (variable.startsWith(prefix)) {
 				if (!requestor.isContextInformationMode() || variable.length() == prefix.length()) {
-					reporter.reportField(new FakeField((ModelElement) context.getSourceModule(), variable, 0, 0), "", replaceRange); //NON-NLS-1
+					reporter.reportField(new FakeField((ModelElement) abstractContext.getSourceModule(), variable, 0, 0), "", replaceRange); //NON-NLS-1
 				}
 			}
 		}
-		return;
 	}
 
