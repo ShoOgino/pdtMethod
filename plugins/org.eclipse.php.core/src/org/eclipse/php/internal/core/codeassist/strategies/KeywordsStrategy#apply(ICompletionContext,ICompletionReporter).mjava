@@ -1,0 +1,15 @@
+	public void apply(ICompletionContext context, ICompletionReporter reporter) throws BadLocationException {
+		
+		AbstractCompletionContext concreteContext = (AbstractCompletionContext) context;
+		ISourceModule sourceModule = concreteContext.getSourceModule();
+		String prefix = concreteContext.getPrefix();
+		SourceRange replaceRange = getReplacementRange(concreteContext);
+		
+		Collection<KeywordData> keywordsList = PHPKeywords.getInstance(sourceModule.getScriptProject().getProject()).findByPrefix(prefix);
+		for (KeywordData keyword : keywordsList) {
+			if (!filterKeyword(keyword)) {
+				reporter.reportKeyword(keyword.name, keyword.suffix, replaceRange);
+			}
+		}
+	}
+
