@@ -2,6 +2,42 @@
 		if (!super.isValid(sourceModule, offset, requestor)) {
 			return false;
 		}
-		return false;
+		try {
+			ITextRegion phpToken = getPHPToken();
+			
+			TextSequence statementText = getStatementText();
+			int length = statementText.length();
+			int endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statementText, length);
+			int startPosition = PHPTextSequenceUtilities.readIdentifierStartIndex(getPhpVersion(), statementText, endPosition, true);
+			
+			hasQuotes = false;
+			
+			if (PHPPartitionTypes.isPHPQuotesState(phpToken.getType())) {
+				hasQuotes = true;
+
+				endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statementText, startPosition);
+				if (endPosition == 0 || (statementText.charAt(endPosition - 1) != '\"' && statementText.charAt(endPosition - 1) != '\'')) {
+					return false;
+				}
+				startPosition = endPosition - 1;
+			}
+			endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statementText, startPosition);
+			if (endPosition == 0 || statementText.charAt(endPosition - 1) != '[') {
+				return false;
+			}
+			
+			endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statementText, endPosition - 1);
+			startPosition = PHPTextSequenceUtilities.readIdentifierStartIndex(getPhpVersion(), statementText, endPosition, true);
+			arrayVarName = statementText.subSequence(startPosition, endPosition).toString();
+			if (!arrayVarName.startsWith("$")) {
+				return false;
+			}
+			
+		} catch (BadLocationException e) {
+			if (DLTKCore.DEBUG_COMPLETION) {
+				e.printStackTrace();
+			}
+		}
+		return true;
 	}
 
