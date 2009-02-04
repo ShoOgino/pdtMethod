@@ -1,3 +1,71 @@
 	public void reportType(IType type, String suffix, SourceRange replaceRange) {
+		if (processedElements.contains(type)) {
+			return;
+		}
+		processedElements.add(type);
+
+		noProposal = false;
+		
+		if (!requestor.isIgnored(CompletionProposal.TYPE_REF)) {
+
+			CompletionProposal proposal = createProposal(CompletionProposal.TYPE_REF, actualCompletionPosition);
+
+			// Support parameter names for constructor:
+			if (requestor.isContextInformationMode()) {
+				try {
+					for (IMethod method : type.getMethods()) {
+						if (method.isConstructor()) {
+							String[] params = method.getParameters();
+							if (params != null && params.length > 0) {
+								char[][] args = new char[params.length][];
+								for (int i = 0; i < params.length; ++i) {
+									args[i] = params[i].toCharArray();
+								}
+								proposal.setParameterNames(args);
+							}
+							break;
+						}
+					}
+				} catch (ModelException e) {
+					if (DLTKCore.DEBUG_COMPLETION) {
+						e.printStackTrace();
+					}
+				}
+			}
+
+			String elementName = type.getElementName();
+			String completionName = elementName;
+			
+			proposal.setModelElement(type);
+			proposal.setName(elementName.toCharArray());
+
+			int relevance = nextClassRelevance();
+			
+			if (type instanceof FakeGroupType) {
+				// remove '*' from the fake group type name
+				completionName = elementName.substring(0, elementName.length() - 1);
+
+				// put groups on the top of list
+				relevance = RELEVANCE_KEYWORD + 1;
+			}
+			proposal.setCompletion((completionName + suffix).toCharArray());
+
+			try {
+				proposal.setFlags(type.getFlags());
+			} catch (ModelException e) {
+				if (DLTKCore.DEBUG_COMPLETION) {
+					e.printStackTrace();
+				}
+			}
+
+			proposal.setReplaceRange(replaceRange.getOffset(), replaceRange.getOffset() + replaceRange.getLength());
+			proposal.setRelevance(relevance);
+			
+			this.requestor.accept(proposal);
+			
+			if (DEBUG) {
+				this.printDebug(proposal);
+			}
+		}
 	}
 
