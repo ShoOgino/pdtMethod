@@ -1,20 +1,14 @@
 	public void apply(ICompletionContext context, ICompletionReporter reporter) throws BadLocationException {
 		
 		AbstractCompletionContext abstractContext = (AbstractCompletionContext) context;
-		CompletionRequestor requestor = abstractContext.getCompletionRequestor();
-
-		int mask = 0;
-		if (requestor.isContextInformationMode()) {
-			mask |= CodeAssistUtils.EXACT_NAME;
-		}
-		String prefix = abstractContext.getPrefix();
-		IType[] classes = CodeAssistUtils.getGlobalTypes(abstractContext.getSourceModule(), prefix, mask);
 		SourceRange replacementRange = getReplacementRange(abstractContext);
 
-		for (IType type : classes) {
+		IType[] types = getTypes(abstractContext);
+		IElementFilter elementFilter = getElementFilter();
+		for (IType type : types) {
 			try {
-				if (!PHPFlags.isInternal(type.getFlags())) {
-					reporter.reportType(type, " ", replacementRange);
+				if (!PHPFlags.isInternal(type.getFlags()) && (elementFilter == null || !elementFilter.filter(type))) {
+					reporter.reportType(type, getSuffix(), replacementRange);
 				}
 			} catch (ModelException e) {
 				if (DLTKCore.DEBUG_COMPLETION) {
@@ -22,6 +16,5 @@
 				}
 			}
 		}
-		
 	}
 

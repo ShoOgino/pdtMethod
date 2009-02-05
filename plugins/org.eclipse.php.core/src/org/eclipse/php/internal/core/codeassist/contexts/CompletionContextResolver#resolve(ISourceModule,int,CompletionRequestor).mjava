@@ -1,9 +1,15 @@
-	public ICompletionContext[] resolve(ISourceModule sourceModule, int offset, CompletionRequestor requestor) throws BadLocationException, ResourceAlreadyExists, IOException, CoreException {
+	public ICompletionContext[] resolve(ISourceModule sourceModule, int offset, CompletionRequestor requestor) {
 		List<ICompletionContext> result = new LinkedList<ICompletionContext>();
 		// find correct completion contexts according to known information:
 		for (ICompletionContext context : contexts) {
-			if (context.isValid(sourceModule, offset, requestor)) {
-				result.add(context);
+			try {
+				if (context.isValid(sourceModule, offset, requestor)) {
+					result.add(context);
+				}
+			} catch (Exception e) {
+				if (DLTKCore.DEBUG_COMPLETION) {
+					e.printStackTrace(); // allow processing of other contexts
+				}
 			}
 		}
 		
