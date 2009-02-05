@@ -1,0 +1,27 @@
+	public boolean isValid(ISourceModule sourceModule, int offset, CompletionRequestor requestor) {
+		if (!super.isValid(sourceModule, offset, requestor)) {
+			return false;
+		}
+
+		TextSequence statementText = getStatementText();
+		int totalLength = statementText.length();
+		int endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statementText, totalLength); // read whitespace
+		int startPosition = PHPTextSequenceUtilities.readIdentifierStartIndex(statementText, endPosition, true);
+
+		startPosition = PHPTextSequenceUtilities.readBackwardSpaces(statementText, startPosition);
+		if (startPosition <= 2) { // there's no trigger of length less than 2 characters
+			return false;
+		}
+
+		String triggerText = statementText.subSequence(startPosition - 2, startPosition).toString();
+		if (triggerText.equals("->")) {
+			triggerType = Trigger.OBJECT;
+		} else if (triggerText.equals("::")) {
+			triggerType = Trigger.CLASS;
+		} else {
+			return false;
+		}
+
+		return true;
+	}
+
