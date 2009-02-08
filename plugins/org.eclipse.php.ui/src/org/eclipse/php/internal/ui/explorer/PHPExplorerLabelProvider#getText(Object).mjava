@@ -6,6 +6,7 @@
 	 */
 	@Override
 	public String getText(Object element) {
+
 		if (element instanceof ExternalProjectFragment) {
 			return ((ExternalProjectFragment) element).toStringWithAncestors();
 		}
@@ -15,10 +16,13 @@
 
 			// An included PHP project
 			if (entry instanceof IBuildpathEntry) {
-				if (((IBuildpathEntry) entry).getEntryKind() == IBuildpathEntry.BPE_PROJECT) {
-					return ((IBuildpathEntry) entry).getPath().lastSegment();
+				IBuildpathEntry iBuildpathEntry = (IBuildpathEntry) entry;
+				if (iBuildpathEntry.getEntryKind() == IBuildpathEntry.BPE_PROJECT) {
+					return iBuildpathEntry.getPath().lastSegment();
+				} if (iBuildpathEntry.getEntryKind() == IBuildpathEntry.BPE_CONTAINER) {
+					return getEntryDescription(element, iBuildpathEntry);
 				} else {
-					IPath localPath = EnvironmentPathUtils.getLocalPath(((IBuildpathEntry) entry).getPath());
+					IPath localPath = EnvironmentPathUtils.getLocalPath(iBuildpathEntry.getPath());
 					return localPath.toOSString();
 				}
 			}
