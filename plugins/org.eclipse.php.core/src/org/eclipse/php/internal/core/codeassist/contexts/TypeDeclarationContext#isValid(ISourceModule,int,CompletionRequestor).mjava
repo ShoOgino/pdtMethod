@@ -1,0 +1,32 @@
+	public boolean isValid(ISourceModule sourceModule, int offset, CompletionRequestor requestor) {
+		if (!super.isValid(sourceModule, offset, requestor)) {
+			return false;
+		}
+		
+		TextSequence statementText = getStatementText();
+		typeEnd = PHPTextSequenceUtilities.isInClassDeclaration(statementText);
+		if (typeEnd == -1) {
+			return false;
+		}
+		
+		// check if we are in the class identifier part.
+		typeIdentifierEnd = 0;
+		for (; typeIdentifierEnd < statementText.length(); typeIdentifierEnd++) {
+			if (!Character.isLetterOrDigit(statementText.charAt(typeIdentifierEnd))) {
+				break;
+			}
+		}
+		// we are in class identifier part.
+		if (typeIdentifierEnd == statementText.length()) {
+			return true;
+		}
+		
+		extendsMatcher = EXTENDS_PATTERN.matcher(statementText);
+		hasExtends = extendsMatcher.find();
+		
+		implementsMatcher = IMPLEMENTS_PATTERN.matcher(statementText);
+		hasImplements = implementsMatcher.find();
+		
+		return true;
+	}
+

@@ -1,0 +1,17 @@
+	public void apply(ICompletionContext context, ICompletionReporter reporter) throws BadLocationException {
+		if (!(context instanceof ClassDeclarationKeywordContext)) {
+			return;
+		}
+
+		ClassDeclarationKeywordContext concreteContext = (ClassDeclarationKeywordContext) context;
+		SourceRange replaceRange = getReplacementRange(concreteContext);
+		String prefix = concreteContext.getPrefix();
+
+		if (CodeAssistUtils.startsWithIgnoreCase("extends", prefix)) {
+			reporter.reportKeyword("extends", getSuffix(concreteContext), replaceRange);
+		}
+		if (CodeAssistUtils.startsWithIgnoreCase("implements", prefix) && concreteContext.getPhpVersion().isGreaterThan(PHPVersion.PHP4)) {
+			reporter.reportKeyword("implements", getSuffix(concreteContext), replaceRange);
+		}
+	}
+
