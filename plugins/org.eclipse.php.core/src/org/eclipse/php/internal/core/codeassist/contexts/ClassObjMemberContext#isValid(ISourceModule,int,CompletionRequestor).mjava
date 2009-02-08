@@ -2,6 +2,21 @@
 		if (!super.isValid(sourceModule, offset, requestor)) {
 			return false;
 		}
-		return false;
+		if (getTriggerType() != Trigger.OBJECT) {
+			return false;
+		}
+		
+		isThisCall = false;
+		
+		int elementStart = getElementStart();
+		int lhsIndex = elementStart - "$this".length() - getTriggerType().getName().length();
+		if (lhsIndex == 0) {
+			TextSequence statementText = getStatementText();
+			String parentText = statementText.subSequence(0, elementStart - getTriggerType().getName().length()).toString();
+			if (parentText.equals("$this")) { //$NON-NLS-1$
+				isThisCall = true;
+			}
+		}
+		return true;
 	}
 

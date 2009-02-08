@@ -6,19 +6,24 @@
 		TextSequence statementText = getStatementText();
 		int totalLength = statementText.length();
 		int endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statementText, totalLength); // read whitespace
-		int startPosition = PHPTextSequenceUtilities.readIdentifierStartIndex(statementText, endPosition, true);
+		elementStart = PHPTextSequenceUtilities.readIdentifierStartIndex(statementText, endPosition, true);
 
-		startPosition = PHPTextSequenceUtilities.readBackwardSpaces(statementText, startPosition);
-		if (startPosition <= 2) { // there's no trigger of length less than 2 characters
+		elementStart = PHPTextSequenceUtilities.readBackwardSpaces(statementText, elementStart);
+		if (elementStart <= 2) { // there's no trigger of length less than 2 characters
 			return false;
 		}
 
-		String triggerText = statementText.subSequence(startPosition - 2, startPosition).toString();
+		String triggerText = statementText.subSequence(elementStart - 2, elementStart).toString();
 		if (triggerText.equals("->")) {
 			triggerType = Trigger.OBJECT;
 		} else if (triggerText.equals("::")) {
 			triggerType = Trigger.CLASS;
 		} else {
+			return false;
+		}
+		
+		types = CodeAssistUtils.getTypesFor(sourceModule, statementText, elementStart, offset);
+		if (types == null || types.length == 0) {
 			return false;
 		}
 
