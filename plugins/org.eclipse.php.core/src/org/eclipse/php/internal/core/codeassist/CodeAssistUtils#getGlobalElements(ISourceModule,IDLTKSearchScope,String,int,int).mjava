@@ -8,7 +8,7 @@
 	 * @param elementType Element type from {@link IDLTKSearchConstants}
 	 * @return
 	 */
-	private static IModelElement[] getGlobalElements(final ISourceModule sourceModule, final IDLTKSearchScope scope, String prefix, final int elementType, int mask) {
+	private static IModelElement[] getGlobalElements(final ISourceModule sourceModule, final IDLTKSearchScope scope, String prefix, final int elementType, final int mask) {
 
 		IDLTKLanguageToolkit toolkit = PHPLanguageToolkit.getDefault();
 
@@ -31,7 +31,7 @@
 				// Build the mixin request key:
 				String[] elementNames;
 				if (elementType == IDLTKSearchConstants.TYPE) {
-					
+
 					List<String> elementNamesList = new LinkedList<String>();
 					if ((mask & EXCLUDE_CLASSES) == 0) {
 						elementNamesList.addAll(Arrays.asList(mixinModel.findKeys(new StringBuilder(prefix).append(WILDCARD).append(PHPMixinParser.CLASS_SUFFIX).toString())));
@@ -40,7 +40,7 @@
 						elementNamesList.addAll(Arrays.asList(mixinModel.findKeys(new StringBuilder(prefix).append(WILDCARD).append(PHPMixinParser.INTERFACE_SUFFIX).toString())));
 					}
 					elementNames = elementNamesList.toArray(new String[elementNamesList.size()]);
-					
+
 				} else {
 					elementNames = mixinModel.findKeys(new StringBuilder(MixinModel.SEPARATOR).append(prefix).append(WILDCARD).toString());
 				}
@@ -154,6 +154,20 @@
 							if (element instanceof SourceModule) {
 								return;
 							}
+
+							if (element instanceof IField) {
+								try {
+									int flags = ((IField) element).getFlags();
+									if (((mask & EXCLUDE_CONSTANTS) != 0 && PHPFlags.isConstant(flags)) || ((mask & EXCLUDE_VARIABLES) != 0 && !PHPFlags.isConstant(flags))) {
+										return;
+									}
+								} catch (ModelException e) {
+									if (DLTKCore.DEBUG_COMPLETION) {
+										e.printStackTrace();
+									}
+								}
+							}
+
 							IModelElement parent = element.getParent();
 							// Global scope elements in PHP are those, which are not defined in class body,
 							// or it is a variable, and its parent - source module
