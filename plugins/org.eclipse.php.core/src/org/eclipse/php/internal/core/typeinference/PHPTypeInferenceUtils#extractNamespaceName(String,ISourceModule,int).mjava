@@ -1,0 +1,76 @@
+	/**
+	 * Extracts the namespace name from the specified element name and resolves it using USE statements that present in the file.
+	 * @param elementName The name of the element, like: \A\B or A\B\C.
+	 * @param sourceModule Source module where the element is referenced
+	 * @param offset The offset where element is referenced
+	 * @return namespace name or <code>null</code> in case there's no namespace prefix in the element. In case of global namespace
+	 * 		this method returns an empty string: <code>""</code>
+	 */
+	public static String extractNamespaceName(String elementName, ISourceModule sourceModule, final int offset) {
+
+		boolean isGlobal = false;
+		if (elementName.charAt(0) == '\\') {
+			isGlobal = true;
+			elementName = elementName.substring(1);
+		}
+
+		int nsIndex = elementName.lastIndexOf('\\');
+		if (nsIndex != -1) {
+
+			String namespace = elementName.substring(0, nsIndex);
+			
+			if (!isGlobal && namespace.indexOf('\\') == -1) {
+				// it can be an alias - try to find relevant USE statement
+				final String namespaceAlias = namespace;
+				final String namespaceSource[] = new String[1];
+				ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule);
+				try {
+					moduleDeclaration.traverse(new ASTVisitor() {
+						boolean found;
+
+						public boolean visit(Statement s) throws Exception {
+							if (s instanceof UseStatement) {
+								UseStatement useStatement = (UseStatement) s;
+								for (UsePart usePart : useStatement.getParts()) {
+									String alias = usePart.alias;
+									if (alias == null) {
+										// In case there's no alias - the alias is the last segment of the namespace name:
+										int i = usePart.namespace.lastIndexOf('\\');
+										if (i != -1) {
+											alias = usePart.namespace.substring(i + 1);
+										} else {
+											// The use statement with non-compound name has no effect, but it may happen:
+											alias = usePart.namespace;
+										}
+									}
+									if (namespaceAlias.equalsIgnoreCase(alias)) {
+										namespaceSource[0] = usePart.namespace;
+										found = true;
+										break;
+									}
+								}
+							}
+							return visitGeneral(s);
+						}
+
+						public boolean visitGeneral(ASTNode node) throws Exception {
+							if (found || node.sourceStart() > offset) {
+								return false;
+							}
+							return super.visitGeneral(node);
+						}
+					});
+				} catch (Exception e) {
+					Logger.logException(e);
+					return null;
+				}
+				if (namespaceSource[0] != null) {
+					namespace = namespaceSource[0];
+				}
+			}
+			return namespace;
+		}
+		
+		return null;
+	}
+

@@ -1,10 +1,4 @@
-	/**
-	 * Converts IEvaluatedType to IModelElement, if found. This method filters elements using file network dependencies.
-	 * @param evaluatedType Evaluated type
-	 * @return model elements
-	 */
-	public static IModelElement[] getModelElements(IEvaluatedType evaluatedType, ISourceModuleContext context) {
-		IModelElement[] elements = null;
+	private static IModelElement[] internalGetModelElements(IEvaluatedType evaluatedType, ISourceModuleContext context, int offset) {
 		ISourceModule sourceModule = context.getSourceModule();
 
 		if (evaluatedType instanceof ModelClassType) {
@@ -29,20 +23,27 @@
 				}
 				return result.toArray(new IModelElement[result.size()]);
 			} else {
-				IDLTKSearchScope scope = SearchEngine.createSearchScope(scriptProject);
-				elements = PHPMixinModel.getInstance(scriptProject).getType(((PHPClassType) evaluatedType).getTypeName(), scope);
+				try {
+					return getTypes(evaluatedType.getTypeName(), sourceModule, offset);
+				} catch (ModelException e) {
+					if (DLTKCore.DEBUG) {
+						e.printStackTrace();
+					}
+				}
 			}
 		} else if (evaluatedType instanceof AmbiguousType) {
 			List<IModelElement> tmpList = new LinkedList<IModelElement>();
 			IEvaluatedType[] possibleTypes = ((AmbiguousType) evaluatedType).getPossibleTypes();
 			for (IEvaluatedType possibleType : possibleTypes) {
-				IModelElement[] tmpArray = getModelElements(possibleType, context);
+				IModelElement[] tmpArray = internalGetModelElements(possibleType, context, offset);
 				if (tmpArray != null) {
 					tmpList.addAll(Arrays.asList(tmpArray));
 				}
 			}
-			elements = tmpList.toArray(new IModelElement[tmpList.size()]);
+			// the elements are filtered already
+			return tmpList.toArray(new IModelElement[tmpList.size()]);
 		}
-		return PHPModelUtils.filterElements(sourceModule, elements);
+		
+		return null;
 	}
 

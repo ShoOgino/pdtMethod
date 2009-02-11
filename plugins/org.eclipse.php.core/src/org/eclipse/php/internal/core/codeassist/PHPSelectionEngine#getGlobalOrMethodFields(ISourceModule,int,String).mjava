@@ -5,8 +5,9 @@
 	 * @param prefix
 	 * @param mask
 	 * @return
+	 * @throws ModelException 
 	 */
-	public static IModelElement[] getGlobalOrMethodFields(ISourceModule sourceModule, int offset, String prefix, int mask) {
+	private static IModelElement[] getGlobalOrMethodFields(ISourceModule sourceModule, int offset, String prefix) throws ModelException {
 		try {
 			IModelElement enclosingElement = sourceModule.getElementAt(offset);
 			if (enclosingElement instanceof IField) {
@@ -14,13 +15,13 @@
 			}
 			if (enclosingElement instanceof IMethod) {
 				IMethod method = (IMethod) enclosingElement;
-				return getMethodFields(method, prefix, mask);
+				return CodeAssistUtils.getMethodFields(method, prefix, CodeAssistUtils.EXACT_NAME);
 			}
 		} catch (ModelException e) {
 			if (DLTKCore.DEBUG_COMPLETION) {
 				e.printStackTrace();
 			}
 		}
-		return getGlobalFields(sourceModule, prefix, mask);
+		return PHPTypeInferenceUtils.getFields(prefix, sourceModule, offset);
 	}
 

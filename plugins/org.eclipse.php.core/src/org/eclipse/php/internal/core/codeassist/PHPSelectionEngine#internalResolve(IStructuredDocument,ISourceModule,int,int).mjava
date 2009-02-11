@@ -38,24 +38,41 @@
 					String nextWord = sDoc.get(container.getStartOffset() + phpScriptRegion.getStart() + nextRegion.getStart(), nextRegion.getTextLength());
 
 					if (elementName.length() > 0) {
-						IType containerClass = CodeAssistUtils.getContainerClassData(sourceModule, offset);
+						IType containerType = PHPModelUtils.getCurrentType(sourceModule, offset);
+						if (containerType == null) {
+							containerType = PHPModelUtils.getCurrentNamespace(sourceModule, offset);
+						}
 
 						// If we are in function declaration:
 						if (FUNCTION.equalsIgnoreCase(prevWord)) { //$NON-NLS-1$
-							if (containerClass != null) {
-								return getClassMethod(containerClass, elementName);
+							if (containerType != null) {
+								IMethod typeMethod = PHPModelUtils.getTypeMethod(containerType, elementName);
+								if (typeMethod != null) {
+									return new IMethod[] { typeMethod };
+								}
+								return EMPTY;
 							}
 							return getFunction(sourceModule, elementName);
 						}
 
 						// If we are in class declaration:
 						if (CLASS.equalsIgnoreCase(prevWord) || INTERFACE.equalsIgnoreCase(prevWord)) { //$NON-NLS-1$ //$NON-NLS-2$
+							if (containerType != null) {
+								if (containerType.getElementName().equalsIgnoreCase(elementName)) {
+									containerType = PHPModelUtils.getCurrentNamespace(sourceModule, offset);
+								}
+								IType typeType = PHPModelUtils.getTypeType(containerType, elementName);
+								if (typeType != null) {
+									return new IType[] { typeType };
+								}
+								return EMPTY;
+							}
 							return getClass(sourceModule, elementName);
 						}
 
 						// Class instantiation:
 						if (NEW.equalsIgnoreCase(prevWord)) { //$NON-NLS-1$
-							return CodeAssistUtils.getGlobalTypes(sourceModule, elementName, CodeAssistUtils.EXACT_NAME | CodeAssistUtils.EXCLUDE_INTERFACES);
+							return extractClasses(PHPTypeInferenceUtils.getTypes(elementName, sourceModule, offset));
 						}
 
 						// Handle extends and implements:
@@ -63,7 +80,7 @@
 						boolean isClassDeclaration = false;
 						if (statement.length() > 6 && (CLASS.equals(statement.subSequence(0, 5).toString()) && (isClassDeclaration = true) || statement.length() > 10 && INTERFACE.equals(statement.subSequence(0, 9).toString()))) { //$NON-NLS-1$ //$NON-NLS-2$
 
-							IModelElement[] generalizationTypes = getGeneralizationTypes(sourceModule, isClassDeclaration, prevWord, elementName);
+							IModelElement[] generalizationTypes = getGeneralizationTypes(sourceModule, isClassDeclaration, prevWord, elementName, offset);
 							if (generalizationTypes != null) {
 								return generalizationTypes;
 							}
@@ -76,7 +93,7 @@
 							int preListWordStart = PHPTextSequenceUtilities.readIdentifierStartIndex(statement, preListWordEnd, false);
 							String preListWord = statement.subSequence(preListWordStart, preListWordEnd).toString();
 
-							generalizationTypes = getGeneralizationTypes(sourceModule, isClassDeclaration, preListWord, elementName);
+							generalizationTypes = getGeneralizationTypes(sourceModule, isClassDeclaration, preListWord, elementName, offset);
 							if (generalizationTypes != null) {
 								return generalizationTypes;
 							}
@@ -103,30 +120,41 @@
 							}
 
 							// If we are in var definition:
-							if (containerClass != null) {
+							if (containerType != null) {
 								if (VAR.equalsIgnoreCase(prevWord) || PRIVATE.equalsIgnoreCase(prevWord) || STATIC.equalsIgnoreCase(prevWord) || PUBLIC.equalsIgnoreCase(prevWord) || PROTECTED.equalsIgnoreCase(prevWord)) { //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
-
-									return getClassField(containerClass, elementName);
+									IField typeField = PHPModelUtils.getTypeField(containerType, elementName);
+									if (typeField != null) {
+										return new IField[] { typeField };
+									}
+									return EMPTY;
 								}
 								if (THIS.equalsIgnoreCase(elementName)) { //$NON-NLS-1$
-									return new IModelElement[] { containerClass };
+									return new IModelElement[] { containerType };
 								}
 							}
 
-							IModelElement[] elements = CodeAssistUtils.getGlobalOrMethodFields(sourceModule, offset, elementName, CodeAssistUtils.EXACT_NAME);
+							IModelElement[] elements = getGlobalOrMethodFields(sourceModule, offset, elementName);
 							return PHPModelUtils.filterElements(sourceModule, elements);
 						}
 
 						// If we are at class constant definition:
-						if (containerClass != null) {
+						if (containerType != null) {
 							if (CONST.equalsIgnoreCase(prevWord)) { //$NON-NLS-1$
-								return getClassField(containerClass, elementName);
+								IField typeField = PHPModelUtils.getTypeField(containerType, elementName);
+								if (typeField != null) {
+									return new IField[] { typeField };
+								}
+								return EMPTY;
 							}
 						}
 
 						// We are at class trigger:
-						if (PAAMAYIM_NEKUDOTAIM.equals(nextWord) || NS_SEPARATOR.equals(nextWord)) { //$NON-NLS-1$
-							return PHPModelUtils.filterElements(sourceModule, CodeAssistUtils.getGlobalTypes(sourceModule, elementName, CodeAssistUtils.EXACT_NAME));
+						if (PAAMAYIM_NEKUDOTAIM.equals(nextWord)) { //$NON-NLS-1$
+							return PHPModelUtils.filterElements(sourceModule, 
+								PHPTypeInferenceUtils.getTypes(elementName, sourceModule, offset));
+						}
+						if (NS_SEPARATOR.equals(nextWord)) { //$NON-NLS-1$
+							return PHPTypeInferenceUtils.getNamespaces(elementName, sourceModule);
 						}
 
 						IType[] types = CodeAssistUtils.getTypesFor(sourceModule, statement, startPosition, offset);
@@ -140,7 +168,7 @@
 								}
 								return methods.toArray(new IMethod[methods.size()]);
 							}
-							return PHPModelUtils.filterElements(sourceModule, CodeAssistUtils.getGlobalMethods(sourceModule, elementName, CodeAssistUtils.EXACT_NAME));
+							return PHPModelUtils.filterElements(sourceModule, PHPTypeInferenceUtils.getMethods(elementName, sourceModule, offset));
 						}
 
 						if (types != null && types.length > 0) {
@@ -149,7 +177,10 @@
 								if (PAAMAYIM_NEKUDOTAIM.equals(trigger) && elementName.charAt(0) != '$') { //$NON-NLS-1$
 									List<IModelElement> fields = new LinkedList<IModelElement>();
 									for (IType t : types) {
-										fields.addAll(Arrays.asList(getClassField(t, elementName)));
+										IField typeField = PHPModelUtils.getTypeField(t, elementName);
+										if (typeField != null) {
+											fields.add(typeField);
+										}
 									}
 									return fields.toArray(new IModelElement[fields.size()]);
 								}
@@ -177,14 +208,13 @@
 						}
 
 						// This can be only global constant, if we've reached here:
-						IModelElement[] constants = PHPModelUtils.filterElements(sourceModule, CodeAssistUtils.getGlobalFields(sourceModule, elementName, CodeAssistUtils.EXACT_NAME));
+						IModelElement[] constants = PHPModelUtils.filterElements(sourceModule, PHPTypeInferenceUtils.getFields(elementName, sourceModule, offset));
 						if (constants.length > 0) {
 							return constants;
 						}
 
 						// Return class if nothing else found.
-						IModelElement[] elements = CodeAssistUtils.getGlobalTypes(sourceModule, elementName, CodeAssistUtils.EXACT_NAME);
-						return PHPModelUtils.filterElements(sourceModule, elements);
+						return PHPModelUtils.filterElements(sourceModule, PHPTypeInferenceUtils.getTypes(elementName, sourceModule, offset));
 					}
 				}
 			}

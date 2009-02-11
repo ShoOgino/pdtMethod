@@ -1,0 +1,40 @@
+	/**
+	 * This method returns method corresponding to its name and the file where it was referenced.
+	 * The method name may contain also the namespace part, like: A\B\foo() or \A\B\foo()
+	 * @param methodName Tye fully qualified method name
+	 * @param sourceModule The file where the element is referenced
+	 * @param offset The offset where the element is referenced
+	 * @return a list of relevant IMethod elements, or <code>null</code> in case there's no IMethod found
+	 * @throws ModelException 
+	 */
+	public static IMethod[] getMethods(String methodName, ISourceModule sourceModule, int offset) throws ModelException {
+		if (methodName == null || methodName.length() == 0) {
+			return null;
+		}
+		String namespace = extractNamespaceName(methodName, sourceModule, offset);
+		methodName = extractElementName(methodName, namespace);
+		if (namespace != null) {
+			if (namespace.length() > 0) {
+				IMethod namespaceMethod = getNamespaceMethod(namespace, methodName, sourceModule);
+				if (namespaceMethod != null) {
+					return new IMethod[] { namespaceMethod };
+				}
+				return null;
+			}
+			// it's a global reference: \foo()
+		} else {
+			// look for the element in current namespace:
+			IType currentNamespace = getCurrentNamespace(sourceModule, offset);
+			if (currentNamespace != null) {
+				namespace = currentNamespace.getElementName();
+				IMethod namespaceMethod = getNamespaceMethod(namespace, methodName, sourceModule);
+				if (namespaceMethod != null) {
+					return new IMethod[] { namespaceMethod };
+				}
+				// For functions and constants, PHP will fall back to global functions or constants if a namespaced function or constant does not exist:
+				return getGlobalMethods(methodName, sourceModule);
+			}
+		}
+		return getGlobalMethods(methodName, sourceModule);
+	}
+

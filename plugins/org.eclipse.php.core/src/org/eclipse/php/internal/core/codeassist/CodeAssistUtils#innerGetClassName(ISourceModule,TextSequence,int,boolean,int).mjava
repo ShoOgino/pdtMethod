@@ -7,12 +7,12 @@
 		String className = statementText.subSequence(classNameStart, propertyEndPosition).toString();
 		if (isClassTriger) {
 			if (className.equals(SELF)) { //$NON-NLS-1$
-				IType classData = getContainerClassData(sourceModule, offset - 6); //the offset before self::
+				IType classData = PHPModelUtils.getCurrentType(sourceModule, offset - 6); //the offset before self::
 				if (classData != null) {
 					return new IType[] { classData };
 				}
 			} else if (className.equals("parent")) { //$NON-NLS-1$
-				IType classData = getContainerClassData(sourceModule, offset - 8); //the offset before parent::
+				IType classData = PHPModelUtils.getCurrentType(sourceModule, offset - 8); //the offset before parent::
 				if (classData != null) {
 					return new IType[] { classData };
 				}
@@ -22,7 +22,7 @@
 				ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule, null);
 				BasicContext context = new BasicContext(sourceModule, moduleDeclaration);
 				IEvaluatedType type = new PHPClassType(className);
-				return modelElementsToTypes(PHPTypeInferenceUtils.getModelElements(type, context));
+				return modelElementsToTypes(PHPTypeInferenceUtils.getModelElements(type, context, offset));
 			}
 		}
 		//check for $GLOBALS['myVar'] scenario
@@ -48,16 +48,16 @@
 			int functionNameStart = PHPTextSequenceUtilities.readIdentifierStartIndex(statementText, functionNameEnd, false);
 
 			String functionName = statementText.subSequence(functionNameStart, functionNameEnd).toString();
-			IType classData = getContainerClassData(sourceModule, offset);
+			IType classData = PHPModelUtils.getCurrentType(sourceModule, offset);
 			if (classData != null) { //if its a clss function
-				return getFunctionReturnType(classData, functionName);
+				return getFunctionReturnType(classData, functionName, offset);
 			}
 
 			// if its a non class function
 			Set<IType> returnTypes = new LinkedHashSet<IType>();
 			IModelElement[] functions = getGlobalMethods(sourceModule, functionName, EXACT_NAME);
 			for (IModelElement function : functions) {
-				IType[] types = getFunctionReturnType((IMethod) function);
+				IType[] types = getFunctionReturnType((IMethod) function, offset);
 				if (types != null) {
 					returnTypes.addAll(Arrays.asList(types));
 				}

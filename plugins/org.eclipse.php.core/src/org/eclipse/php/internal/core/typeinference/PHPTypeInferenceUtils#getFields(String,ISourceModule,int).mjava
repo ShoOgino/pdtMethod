@@ -1,0 +1,42 @@
+	/**
+	 * This method returns field corresponding to its name and the file where it was referenced.
+	 * The field name may contain also the namespace part, like: A\B\C or \A\B\C
+	 * @param fieldName Tye fully qualified field name
+	 * @param sourceModule The file where the element is referenced
+	 * @param offset The offset where the element is referenced
+	 * @return a list of relevant IField elements, or <code>null</code> in case there's no IField found
+	 * @throws ModelException 
+	 */
+	public static IField[] getFields(String fieldName, ISourceModule sourceModule, int offset) throws ModelException {
+		if (fieldName == null || fieldName.length() == 0) {
+			return null;
+		}
+		if (!fieldName.startsWith("$")) { // variables are not supported by namespaces in PHP 5.3
+			String namespace = extractNamespaceName(fieldName, sourceModule, offset);
+			fieldName = extractElementName(fieldName, namespace);
+			if (namespace != null) {
+				if (namespace.length() > 0) {
+					IField namespaceField = getNamespaceField(namespace, fieldName, sourceModule);
+					if (namespaceField != null) {
+						return new IField[] { namespaceField };
+					}
+					return null;
+				}
+				// it's a global reference: \C
+			} else {
+				// look for the element in current namespace:
+				IType currentNamespace = getCurrentNamespace(sourceModule, offset);
+				if (currentNamespace != null) {
+					namespace = currentNamespace.getElementName();
+					IField namespaceField = getNamespaceField(namespace, fieldName, sourceModule);
+					if (namespaceField != null) {
+						return new IField[] { namespaceField };
+					}
+					// For functions and constants, PHP will fall back to global functions or constants if a namespaced function or constant does not exist:
+					return getGlobalFields(fieldName, sourceModule);
+				}
+			}
+		}
+		return getGlobalFields(fieldName, sourceModule);
+	}
+

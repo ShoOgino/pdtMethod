@@ -1,0 +1,39 @@
+	/**
+	 * This method returns type corresponding to its name and the file where it was referenced.
+	 * The type name may contain also the namespace part, like: A\B\C or \A\B\C
+	 * @param typeName Tye fully qualified type name
+	 * @param sourceModule The file where the element is referenced
+	 * @param offset The offset where the element is referenced
+	 * @return a list of relevant IType elements, or <code>null</code> in case there's no IType found
+	 * @throws ModelException 
+	 */
+	public static IType[] getTypes(String typeName, ISourceModule sourceModule, int offset) throws ModelException {
+		if (typeName == null || typeName.length() == 0) {
+			return null;
+		}
+		String namespace = extractNamespaceName(typeName, sourceModule, offset);
+		typeName = extractElementName(typeName, namespace);
+		if (namespace != null) {
+			if (namespace.length() > 0) {
+				IType namespaceType = getNamespaceType(namespace, typeName, sourceModule);
+				if (namespaceType != null) {
+					return new IType[] { namespaceType };
+				}
+				return null;
+			}
+			// it's a global reference: \A
+		} else {
+			// look for the element in current namespace:
+			IType currentNamespace = getCurrentNamespace(sourceModule, offset);
+			if (currentNamespace != null) {
+				namespace = currentNamespace.getElementName();
+				IType namespaceType = getNamespaceType(namespace, typeName, sourceModule);
+				if (namespaceType != null) {
+					return new IType[] { namespaceType };
+				}
+				return null;
+			}
+		}
+		return getGlobalTypes(typeName, sourceModule);
+	}
+

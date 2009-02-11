@@ -2,7 +2,16 @@
 		if (declarations.isEmpty()) {
 			if (s.getKind() == ASTNodeKinds.NAMESPACE_DECLARATION) {
 				if (program.getStatements().size() > 0 && !metBracketedNSDecl && !metUnbracketedNSDecl) {
-					reportError(new ASTError(s.sourceStart(), s.sourceEnd()), "Namespace declaration statement has to be the very first statement in the script");
+					boolean justDeclarationNodes = true;
+					for (Object statement : program.getStatements()) {
+						if (((Statement)statement).getKind() != ASTNodeKinds.DECLARE_STATEMENT) {
+							justDeclarationNodes = false;
+							break;
+						}
+					}
+					if (!justDeclarationNodes) {
+						reportError(new ASTError(s.sourceStart(), s.sourceEnd()), "Namespace declaration statement has to be the very first statement in the script");
+					}
 				}
 			}
 			

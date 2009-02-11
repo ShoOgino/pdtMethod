@@ -1,0 +1,26 @@
+	/**
+	 * This method returns namespace elements (IType) by specified name. The name must be fully qualified name (not alias)
+	 * @param namespace Namespace name
+	 * @param sourceModule The file where the namespace is referenced from
+	 * @return namespace element array
+	 */
+	public static IType[] getNamespaces(String namespace, ISourceModule sourceModule) {
+		final List<IType> namespaces = new LinkedList<IType>();
+		SearchEngine searchEngine = new SearchEngine();
+		SearchPattern pattern = SearchPattern.createPattern(namespace, IDLTKSearchConstants.TYPE, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH, PHPLanguageToolkit.getDefault());
+		try {
+			IDLTKSearchScope scope = SearchEngine.createSearchScope(sourceModule.getScriptProject());
+			searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
+				public void acceptSearchMatch(SearchMatch match) throws CoreException {
+					IType element = (IType) match.getElement();
+					if (PHPFlags.isNamespace(element.getFlags())) {
+						namespaces.add(element);
+					}
+				}
+			}, null);
+		} catch (CoreException e) {
+			Logger.logException(e);
+		}
+		return (IType[]) namespaces.toArray(new IType[namespaces.size()]);
+	}
+

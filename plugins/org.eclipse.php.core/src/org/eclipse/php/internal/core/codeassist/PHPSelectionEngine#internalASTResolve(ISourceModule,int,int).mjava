@@ -23,7 +23,7 @@
 					if (callExpression.getReceiver() != null) {
 						IEvaluatedType receiverType = PHPTypeInferenceUtils.resolveExpression(sourceModule, parsedUnit, context, callExpression.getReceiver());
 						if (receiverType != null) {
-							IModelElement[] elements = PHPTypeInferenceUtils.getModelElements(receiverType, (ISourceModuleContext) context);
+							IModelElement[] elements = PHPTypeInferenceUtils.getModelElements(receiverType, (ISourceModuleContext) context, offset);
 							List<IModelElement> methods = new LinkedList<IModelElement>();
 							if (elements != null) {
 								for (IModelElement element : elements) {
@@ -36,7 +36,7 @@
 							return methods.toArray(new IModelElement[methods.size()]);
 						}
 					} else {
-						return PHPModelUtils.filterElements(sourceModule, CodeAssistUtils.getGlobalMethods(sourceModule, callExpression.getName(), CodeAssistUtils.EXACT_NAME));
+						return PHPModelUtils.filterElements(sourceModule, PHPTypeInferenceUtils.getMethods(callExpression.getName(), sourceModule, offset));
 					}
 				}
 				// Static field or constant access:
@@ -54,14 +54,17 @@
 					if (fieldName != null && dispatch.getDispatcher() != null) {
 						IEvaluatedType dispatcherType = PHPTypeInferenceUtils.resolveExpression(sourceModule, parsedUnit, context, dispatch.getDispatcher());
 						if (dispatcherType != null) {
-							IModelElement[] elements = PHPTypeInferenceUtils.getModelElements(dispatcherType, (ISourceModuleContext) context);
+							IModelElement[] elements = PHPTypeInferenceUtils.getModelElements(dispatcherType, (ISourceModuleContext) context, offset);
 							List<IModelElement> fields = new LinkedList<IModelElement>();
 							if (elements != null) {
 								for (IModelElement element : elements) {
 									if (element instanceof IType) {
 										IType type = (IType) element;
 										try {
-											fields.addAll(Arrays.asList(getClassField(type, fieldName)));
+											IField typeField = PHPModelUtils.getTypeField(type, fieldName);
+											if (typeField != null) {
+												fields.add(typeField);
+											}
 										} catch (ModelException e) {
 											if (DLTKCore.DEBUG_SELECTION) {
 												e.printStackTrace();
@@ -85,15 +88,21 @@
 					if (fieldName != null && fieldAccess.getDispatcher() != null) {
 						IEvaluatedType dispatcherType = PHPTypeInferenceUtils.resolveExpression(sourceModule, parsedUnit, context, fieldAccess.getDispatcher());
 						if (dispatcherType != null) {
-							IModelElement[] elements = PHPTypeInferenceUtils.getModelElements(dispatcherType, (ISourceModuleContext) context);
+							IModelElement[] elements = PHPTypeInferenceUtils.getModelElements(dispatcherType, (ISourceModuleContext) context, offset);
 							List<IModelElement> fields = new LinkedList<IModelElement>();
 							if (elements != null) {
 								for (IModelElement element : elements) {
 									if (element instanceof IType) {
 										IType type = (IType) element;
 										try {
-											fields.addAll(Arrays.asList(getClassField(type, fieldName)));
-											fields.addAll(Arrays.asList(getClassField(type, '$' + fieldName)));
+											IField typeField = PHPModelUtils.getTypeField(type, fieldName);
+											if (typeField != null) {
+												fields.add(typeField);
+											}
+											typeField = PHPModelUtils.getTypeField(type, '$' + fieldName);
+											if (typeField != null) {
+												fields.add(typeField);
+											}
 										} catch (ModelException e) {
 											if (DLTKCore.DEBUG_SELECTION) {
 												e.printStackTrace();
@@ -109,9 +118,9 @@
 				// Class/Interface reference:
 				else if (node instanceof TypeReference) {
 					String name = ((TypeReference) node).getName();
-					IType[] globalTypes = CodeAssistUtils.getGlobalTypes(sourceModule, name, CodeAssistUtils.EXACT_NAME);
+					IType[] globalTypes = PHPTypeInferenceUtils.getTypes(name, sourceModule, offset);
 					if (globalTypes == null || globalTypes.length == 0) { // This can be a constant in PHP 5.3
-						return CodeAssistUtils.getGlobalFields(sourceModule, name, CodeAssistUtils.EXACT_NAME);
+						return PHPTypeInferenceUtils.getFields(name, sourceModule, offset);
 					}
 					return globalTypes;
 				}
@@ -119,7 +128,7 @@
 					ClassInstanceCreation newNode = (ClassInstanceCreation) node;
 					Expression className = newNode.getClassName();
 					if (className instanceof SimpleReference) {
-						return CodeAssistUtils.getGlobalTypes(sourceModule, ((SimpleReference) node).getName(), CodeAssistUtils.EXACT_NAME);
+						return PHPTypeInferenceUtils.getTypes(((SimpleReference) className).getName(), sourceModule, offset);
 					}
 				}
 			}

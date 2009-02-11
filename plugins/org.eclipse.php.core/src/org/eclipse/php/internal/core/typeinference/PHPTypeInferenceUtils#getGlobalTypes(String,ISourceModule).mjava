@@ -1,0 +1,29 @@
+	/**
+	 * This method returns type elements (IType) by the specified name. Namespaces are excluded.
+	 * The element must be declared in a global scope.
+	 * 
+	 * @param typeName Type name
+	 * @param sourceModule The file where the type is referenced from
+	 * @return type element array
+	 */
+	public static IType[] getGlobalTypes(String typeName, ISourceModule sourceModule) {
+		final List<IType> types = new LinkedList<IType>();
+		SearchEngine searchEngine = new SearchEngine();
+		IDLTKSearchScope scope = SearchEngine.createSearchScope(sourceModule.getScriptProject());
+		SearchPattern pattern = SearchPattern.createPattern(typeName, IDLTKSearchConstants.TYPE, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH, PHPLanguageToolkit.getDefault());
+		try {
+			searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
+				public void acceptSearchMatch(SearchMatch match) throws CoreException {
+					IType element = (IType) match.getElement();
+					if (!PHPFlags.isNamespace(element.getFlags())) {
+						types.add(element);
+					}
+				}
+			}, null);
+		} catch (CoreException e) {
+			Logger.logException(e);
+			return null;
+		}
+		return (IType[]) types.toArray(new IType[types.size()]);
+	}
+
