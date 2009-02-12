@@ -1,0 +1,50 @@
+	private static  void collectAbstractMethodsInHierarchy(ITypeBinding curr, List<IMethodBinding> methodsToOverride, Set<String> overridenMethodsNames) {
+
+		Set<IMethodBinding> tempMethods = new TreeSet<IMethodBinding>();
+		
+		// start of current IType method pass
+		if(curr != null) {
+			if (PHPFlags.isInterface(curr.getModifiers())) {
+				for (IMethodBinding methodBinding : curr.getDeclaredMethods()) {
+					if (!overridenMethodsNames.contains(methodBinding.getName())) {
+						methodsToOverride.add(methodBinding);
+						overridenMethodsNames.add(methodBinding.getName());
+					}
+				}
+			}
+			
+			//an abstract class
+			else if (PHPFlags.isAbstract(curr.getModifiers())) {
+				for (IMethodBinding methodBinding : curr.getDeclaredMethods()) {
+					if (!PHPFlags.isAbstract(methodBinding.getModifiers())) {
+						overridenMethodsNames.add(methodBinding.getName());
+					}else if (!overridenMethodsNames.contains(methodBinding.getName())) {
+						methodsToOverride.add(methodBinding);
+						overridenMethodsNames.add(methodBinding.getName());
+					}
+				}
+			}
+	
+			else {//add existing methods to exclude list
+				for (IMethodBinding methodBinding : curr.getDeclaredMethods()) {
+					if (!overridenMethodsNames.contains(methodBinding.getName())) {
+						overridenMethodsNames.add(methodBinding.getName());
+					}
+				}
+			}
+			
+			// end of current IType method pass
+			
+			//this class has a superclass
+			ITypeBinding superClassBinding = curr.getSuperclass();
+			if (superClassBinding != null && superClassBinding.getName() != null) {
+				collectAbstractMethodsInHierarchy(superClassBinding, methodsToOverride, overridenMethodsNames);;
+			}
+			//this class has interfaces
+			ITypeBinding[] interfaceBindings = curr.getInterfaces();
+			for(ITypeBinding interfaceBinding : interfaceBindings) {
+				collectAbstractMethodsInHierarchy(superClassBinding, methodsToOverride, overridenMethodsNames);;
+			}
+		}
+	}
+
