@@ -3,7 +3,7 @@
 		IType[] types = typedGoal.getTypes();
 
 		if (types == null) {
-			InstanceContext context = (InstanceContext) typedGoal.getContext();
+			TypeContext context = (TypeContext) typedGoal.getContext();
 			types = getTypes(context.getInstanceType(), context.getSourceModule());
 		}
 
@@ -30,9 +30,9 @@
 									SourceRefElement sourceRefElement = (SourceRefElement) element;
 									ISourceRange sourceRange = sourceRefElement.getSourceRange();
 	
-									ClassDeclarationSearcher searcher = new ClassDeclarationSearcher(sourceModule, moduleDeclaration, sourceRange.getOffset(), sourceRange.getLength(), null);
+									ClassDeclarationSearcher searcher = new ClassDeclarationSearcher(sourceModule, typeDeclaration, sourceRange.getOffset(), sourceRange.getLength(), null);
 									try {
-										typeDeclaration.traverse(searcher);
+										moduleDeclaration.traverse(searcher);
 										if (searcher.getResult() != null) {
 											subGoals.add(new ExpressionTypeGoal(searcher.getContext(), searcher.getResult()));
 										}
@@ -63,9 +63,9 @@
 					TypeDeclaration typeDeclaration = PHPModelUtils.getNodeByClass(moduleDeclaration, type);
 
 					// try to search declarations of type "self::$var ="
-					ClassDeclarationSearcher searcher = new ClassDeclarationSearcher(sourceModule, moduleDeclaration, 0, 0, variableName);
+					ClassDeclarationSearcher searcher = new ClassDeclarationSearcher(sourceModule, typeDeclaration, 0, 0, variableName);
 					try {
-						typeDeclaration.traverse(searcher);
+						moduleDeclaration.traverse(searcher);
 						Map<ASTNode, IContext> staticDeclarations = searcher.getStaticDeclarations();
 						for (ASTNode node : staticDeclarations.keySet()) {
 							subGoals.add(new ExpressionTypeGoal(staticDeclarations.get(node), node));

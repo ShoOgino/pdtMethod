@@ -1,19 +1,21 @@
 		public boolean visit(Expression e) throws Exception {
-			if (e instanceof Assignment) {
-				if (e.sourceStart() == offset && e.sourceEnd() - e.sourceStart() == length) {
-					result = ((Assignment) e).getValue();
-					context = contextStack.peek();
-				} else if (variableName != null) {
-					Assignment assignment = (Assignment) e;
-					Expression left = assignment.getVariable();
-					Expression right = assignment.getValue();
-					if (left instanceof StaticFieldAccess) {
-						StaticFieldAccess fieldAccess = (StaticFieldAccess) left;
-						Expression dispatcher = fieldAccess.getDispatcher();
-						if (dispatcher instanceof TypeReference && "self".equals(((TypeReference) dispatcher).getName())) { //$NON-NLS-1$
-							Expression field = fieldAccess.getField();
-							if (field instanceof VariableReference && variableName.equals(((VariableReference) field).getName())) {
-								staticDeclarations.put(right, contextStack.peek());
+			if (typeDeclaration.sourceStart() < e.sourceStart() && typeDeclaration.sourceEnd() > e.sourceEnd()) {
+				if (e instanceof Assignment) {
+					if (e.sourceStart() == offset && e.sourceEnd() - e.sourceStart() == length) {
+						result = ((Assignment) e).getValue();
+						context = contextStack.peek();
+					} else if (variableName != null) {
+						Assignment assignment = (Assignment) e;
+						Expression left = assignment.getVariable();
+						Expression right = assignment.getValue();
+						if (left instanceof StaticFieldAccess) {
+							StaticFieldAccess fieldAccess = (StaticFieldAccess) left;
+							Expression dispatcher = fieldAccess.getDispatcher();
+							if (dispatcher instanceof TypeReference && "self".equals(((TypeReference) dispatcher).getName())) { //$NON-NLS-1$
+								Expression field = fieldAccess.getField();
+								if (field instanceof VariableReference && variableName.equals(((VariableReference) field).getName())) {
+									staticDeclarations.put(right, contextStack.peek());
+								}
 							}
 						}
 					}

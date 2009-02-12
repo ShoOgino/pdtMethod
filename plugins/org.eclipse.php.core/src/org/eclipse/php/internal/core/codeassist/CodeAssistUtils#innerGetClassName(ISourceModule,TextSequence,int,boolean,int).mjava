@@ -2,8 +2,10 @@
 	 * Getting an instance and finding its type.
 	 */
 	private static IType[] innerGetClassName(ISourceModule sourceModule, TextSequence statementText, int propertyEndPosition, boolean isClassTriger, int offset) {
+		
+		PHPVersion phpVersion = PhpVersionProjectPropertyHandler.getVersion(sourceModule.getScriptProject().getProject());
 
-		int classNameStart = PHPTextSequenceUtilities.readIdentifierStartIndex(statementText, propertyEndPosition, true);
+		int classNameStart = PHPTextSequenceUtilities.readIdentifierStartIndex(phpVersion, statementText, propertyEndPosition, true);
 		String className = statementText.subSequence(classNameStart, propertyEndPosition).toString();
 		if (isClassTriger) {
 			if (className.equals(SELF)) { //$NON-NLS-1$
@@ -20,9 +22,13 @@
 
 			if (className.length() > 0) {
 				ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule, null);
-				BasicContext context = new BasicContext(sourceModule, moduleDeclaration);
+				FileContext context = new FileContext(sourceModule, moduleDeclaration, offset);
 				IEvaluatedType type = new PHPClassType(className);
-				return modelElementsToTypes(PHPTypeInferenceUtils.getModelElements(type, context, offset));
+				IModelElement[] modelElements = PHPTypeInferenceUtils.getModelElements(type, context, offset);
+				if (modelElements != null) {
+					return modelElementsToTypes(modelElements);
+				}
+				return EMPTY_TYPES;
 			}
 		}
 		//check for $GLOBALS['myVar'] scenario
@@ -45,7 +51,7 @@
 		// if its function call calc the return type.
 		if (statementText.charAt(propertyEndPosition - 1) == ')') {
 			int functionNameEnd = getFunctionNameEndOffset(statementText, propertyEndPosition - 1);
-			int functionNameStart = PHPTextSequenceUtilities.readIdentifierStartIndex(statementText, functionNameEnd, false);
+			int functionNameStart = PHPTextSequenceUtilities.readIdentifierStartIndex(phpVersion, statementText, functionNameEnd, false);
 
 			String functionName = statementText.subSequence(functionNameStart, functionNameEnd).toString();
 			IType classData = PHPModelUtils.getCurrentType(sourceModule, offset);

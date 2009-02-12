@@ -8,49 +8,6 @@
 	 */
 	public static IType[] getGlobalTypes(ISourceModule sourceModule, String prefix, int mask) {
 
-		if ((mask & EXCLUDE_CLASSES) == 0 || (mask & EXCLUDE_INTERFACES) == 0) {
-			// Check whether the type name has a namespace prefix:
-			int nsIdx = prefix.lastIndexOf(NS_SEPARATOR);
-			if (nsIdx != -1) {
-				String nsName = prefix.substring(0, nsIdx);
-				prefix = prefix.substring(nsIdx + 1);
-
-				IType[] namespaces = getGlobalTypes(sourceModule, nsName, EXCLUDE_CLASSES | EXCLUDE_INTERFACES);
-				List<IType> types = new LinkedList<IType>();
-
-				for (IType ns : namespaces) {
-					if (prefix.length() == 0 && ns.getElementName().equalsIgnoreCase(nsName)) {
-						continue;
-					}
-					types.add(ns);
-				}
-
-				for (IType ns : namespaces) {
-					if (!ns.getElementName().equalsIgnoreCase(nsName)) {
-						continue;
-					}
-					try {
-						for (IType t : ns.getTypes()) {
-							String typeName = t.getElementName();
-							if ((mask & EXACT_NAME) != 0) {
-								if (typeName.equalsIgnoreCase(prefix)) {
-									types.add(t);
-									break;
-								}
-							} else if (startsWithIgnoreCase(typeName, prefix)) {
-								types.add(t);
-							}
-						}
-					} catch (ModelException e) {
-						if (DLTKCore.DEBUG_COMPLETION) {
-							e.printStackTrace();
-						}
-					}
-				}
-				return types.toArray(new IType[types.size()]);
-			}
-		}
-
 		IModelElement[] elements = getGlobalElements(sourceModule, prefix, IDLTKSearchConstants.TYPE, mask);
 		List<IType> filteredElements = new LinkedList<IType>();
 		for (IModelElement c : elements) {

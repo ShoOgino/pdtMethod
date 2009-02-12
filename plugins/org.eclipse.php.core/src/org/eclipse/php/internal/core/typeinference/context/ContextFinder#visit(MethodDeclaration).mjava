@@ -1,0 +1,15 @@
+	@SuppressWarnings("unchecked")
+	public boolean visit(MethodDeclaration node) throws Exception {
+		List<String> argumentsList = new LinkedList<String>();
+		List<IEvaluatedType> argTypes = new LinkedList<IEvaluatedType>();
+		List<Argument> args = node.getArguments();
+		for (Argument a : args) {
+			argumentsList.add(a.getName());
+			argTypes.add(UnknownType.INSTANCE);
+		}
+		IContext parent = contextStack.peek();
+		ModuleDeclaration rootNode = ((ISourceModuleContext) parent).getRootNode();
+		contextStack.push(new MethodContext(parent, sourceModule, rootNode, node, argumentsList.toArray(new String[argumentsList.size()]), argTypes.toArray(new IEvaluatedType[argTypes.size()])));
+		return visitGeneral(node);
+	}
+

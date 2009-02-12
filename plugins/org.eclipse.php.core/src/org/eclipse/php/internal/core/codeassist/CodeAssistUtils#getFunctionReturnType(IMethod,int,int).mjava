@@ -8,24 +8,21 @@
 	public static IType[] getFunctionReturnType(IMethod method, int mask, int offset) {
 		PHPTypeInferencer typeInferencer = new PHPTypeInferencer();
 
-		IEvaluatedType classType = null;
-		if (method.getDeclaringType() != null) {
-			classType = new PHPClassType(method.getDeclaringType().getElementName());
-		}
 		org.eclipse.dltk.core.ISourceModule sourceModule = method.getSourceModule();
 		ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule, null);
-		BasicContext sourceModuleContext = new BasicContext(sourceModule, moduleDeclaration);
+		FileContext fileContext = new FileContext(sourceModule, moduleDeclaration, offset);
 
-		InstanceContext instanceContext = new InstanceContext(sourceModuleContext, classType);
+		IType currentType = PHPModelUtils.getCurrentType(sourceModule, offset);
+		TypeContext instanceContext = new TypeContext(fileContext, currentType == null ? null : new PHPClassType(currentType.getElementName()));
+		
 		IEvaluatedType evaluatedType;
 		IModelElement[] modelElements;
-
 		boolean usePhpDoc = (mask & USE_PHPDOC) != 0;
 		if (usePhpDoc) {
 			PHPDocMethodReturnTypeGoal phpDocGoal = new PHPDocMethodReturnTypeGoal(instanceContext, method.getElementName());
 			evaluatedType = typeInferencer.evaluateTypePHPDoc(phpDocGoal, 3000);
 
-			modelElements = PHPTypeInferenceUtils.getModelElements(evaluatedType, sourceModuleContext, offset);
+			modelElements = PHPTypeInferenceUtils.getModelElements(evaluatedType, fileContext, offset);
 			if (modelElements != null) {
 				return modelElementsToTypes(modelElements);
 			}
@@ -33,7 +30,7 @@
 
 		MethodElementReturnTypeGoal methodGoal = new MethodElementReturnTypeGoal(instanceContext, method);
 		evaluatedType = typeInferencer.evaluateType(methodGoal);
-		modelElements = PHPTypeInferenceUtils.getModelElements(evaluatedType, sourceModuleContext, offset);
+		modelElements = PHPTypeInferenceUtils.getModelElements(evaluatedType, fileContext, offset);
 		if (modelElements != null) {
 			return modelElementsToTypes(modelElements);
 		}
