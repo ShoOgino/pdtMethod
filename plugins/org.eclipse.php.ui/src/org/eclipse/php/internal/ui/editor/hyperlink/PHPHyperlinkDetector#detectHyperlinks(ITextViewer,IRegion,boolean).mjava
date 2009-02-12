@@ -11,18 +11,13 @@
 			return null;
 		}
 		
+		PHPVersion phpVersion = PhpVersionProjectPropertyHandler.getVersion(input.getScriptProject().getProject());
+		boolean namespacesSupported = phpVersion.isGreaterThan(PHPVersion.PHP5); // PHP 5.3 and greater
+
 		IDocument document = textViewer.getDocument();
 		int offset = region.getOffset();
 		try {
-			while (offset > 0 && !Character.isJavaIdentifierPart(document.getChar(offset))) {
-				--offset;
-			}
-		} catch (BadLocationException e) {
-			Logger.logException(e);
-		}
-
-		try {
-			IRegion wordRegion = ScriptWordFinder.findWord(document, offset);
+			IRegion wordRegion = findWord(document, offset, namespacesSupported);
 			if (wordRegion == null)
 				return null;
 
