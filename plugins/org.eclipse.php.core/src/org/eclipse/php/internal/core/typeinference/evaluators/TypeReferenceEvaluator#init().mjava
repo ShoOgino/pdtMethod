@@ -72,9 +72,21 @@
 			}
 		} else {
 			String parentNamespace = null;
+			
+			// Check current context - if we are under some namespace:
 			if (context instanceof INamespaceContext) {
 				parentNamespace = ((INamespaceContext) context).getNamespace();
 			}
+			
+			// If the namespace was prefixed explicitly - use it:
+			if (typeReference instanceof FullyQualifiedReference) {
+				String extractedNamespace = PHPTypeInferenceUtils.extractNamespaceName(((FullyQualifiedReference) typeReference).getFullyQualifiedName()
+					, ((ISourceModuleContext)context).getSourceModule(), typeReference.sourceStart());
+				if (extractedNamespace != null) {
+					parentNamespace = extractedNamespace;
+				}
+			}
+			
 			if (parentNamespace != null) {
 				result = new PHPClassType(parentNamespace, className);
 			} else {
