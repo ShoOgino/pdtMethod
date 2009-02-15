@@ -1,0 +1,18 @@
+	public boolean isValid(ISourceModule sourceModule, int offset, CompletionRequestor requestor) {
+		if (!super.isValid(sourceModule, offset, requestor)) {
+			return false;
+		}
+
+		// global statement context may contain only identifier characters:
+		TextSequence statementText = getStatementText();
+		PHPVersion phpVersion = getPhpVersion();
+		for (int i = 0; i < statementText.length(); ++i) {
+			char ch = statementText.charAt(i);
+			if (!Character.isJavaIdentifierPart(ch) && (phpVersion.isLessThan(PHPVersion.PHP5_3) || ch != NamespaceReference.NAMESPACE_SEPARATOR)) {
+				return false;
+			}
+		}
+		
+		return true;
+	}
+
