@@ -17,11 +17,9 @@
 		if (project != null) {
 			IncludePath[] path = PHPSearchEngine.buildIncludePath(project);
 			List<String> includePath = new ArrayList<String>(path.length);
-			
 			for (IncludePath pathObject : path) {
 				if (pathObject.isBuildpath()) {
 					IBuildpathEntry entry = (IBuildpathEntry) pathObject.getEntry();
-					
 					if (entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
 						IPath entryPath = DLTKCore.getResolvedVariablePath(entry.getPath());
 						includePath.add(entryPath.toFile().getAbsolutePath());
@@ -35,6 +33,23 @@
 							}
 						} else {
 							includePath.add(entryPath.toOSString());
+						}
+					} else if (entry.getEntryKind() == IBuildpathEntry.BPE_CONTAINER) {
+						try {
+							// Retries the local paths from the container  
+							final IScriptProject scriptProject = DLTKCore.create(project);
+							final IBuildpathContainer buildpathContainer = DLTKCore.getBuildpathContainer(entry.getPath(), scriptProject);
+							final IBuildpathEntry[] buildpathEntries = buildpathContainer.getBuildpathEntries(scriptProject);
+							if (buildpathEntries != null) {
+								for (IBuildpathEntry iBuildpathEntry : buildpathEntries) {
+									final IPath localPath = EnvironmentPathUtils.getLocalPath(iBuildpathEntry.getPath());
+									includePath.add(localPath.toOSString());
+								}
+
+							}
+
+						} catch (ModelException e) {
+							Logger.logException(e);
 						}
 					}
 				} else {
@@ -54,12 +69,11 @@
 			if (debuggerFile.exists()) {
 				modifyDebuggerExtensionPath(tempIniFile, debuggerFile.getAbsolutePath());
 			}
-			
 			modifyExtensionDir(tempIniFile, debuggerFile.getParentFile().getAbsolutePath());
 		}
-		
+
 		if (PHPDebugPlugin.DEBUG) {
-			System.out.println ("\nPHP.ini contents:\n---------------------");
+			System.out.println("\nPHP.ini contents:\n---------------------");
 			try {
 				BufferedReader r = new BufferedReader(new FileReader(tempIniFile));
 				String line;
@@ -71,7 +85,7 @@
 			} catch (IOException e) {
 			}
 		}
-		
+
 		return tempIniFile;
 	}
 
