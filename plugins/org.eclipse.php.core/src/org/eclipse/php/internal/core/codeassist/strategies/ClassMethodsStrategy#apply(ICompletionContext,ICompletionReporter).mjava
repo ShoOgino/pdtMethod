@@ -14,11 +14,7 @@
 		String prefix = concreteContext.getPrefix();
 		SourceRange replaceRange = getReplacementRange(concreteContext);
 		
-		boolean showStaticMembers = showStaticMembers(concreteContext);
-		boolean showNonStaticMembers = showNonStaticMembers(concreteContext);
-		boolean showNonStrictOptions = showNonStrictOptions();
-		boolean isThisCall = ((context instanceof ClassObjMemberContext) && ((ClassObjMemberContext)context).isThisCall());
-		boolean isParentCall = ((context instanceof ClassStaticMemberContext) && ((ClassStaticMemberContext)context).isParentCall());
+		boolean isParentCall = isParentCall(concreteContext);
 		
 		String suffix = getSuffix(concreteContext);
 		
@@ -28,17 +24,8 @@
 
 			for (IMethod method : methods) {
 				try {
-					int flags = method.getFlags();
-					if (showNonStaticMembers) {
-						if (!PHPFlags.isInternal(flags) && (showNonStrictOptions || isThisCall || !PHPFlags.isPrivate(flags))) {
-							reporter.reportMethod((IMethod) method, suffix, replaceRange);
-						}
-					}
-					if (showStaticMembers) {
-						if ((concreteContext.getPhpVersion().isLessThan(PHPVersion.PHP5)
-								|| showNonStrictOptions || PHPFlags.isStatic(flags)) && !PHPFlags.isInternal(flags)) {
-							reporter.reportMethod((IMethod) method, suffix, replaceRange);
-						}
+					if (!isFiltered(method, concreteContext)) {
+						reporter.reportMethod((IMethod) method, suffix, replaceRange);
 					}
 				} catch (ModelException e) {
 					if (DLTKCore.DEBUG_COMPLETION) {
