@@ -1,0 +1,62 @@
+	/**
+	 * Adds/Creates the php ini file according to the project include path settings.
+	 * @param phpIniFile null or already existing ini file
+	 * @param project
+	 * @return the ini file
+	 */
+	public static File createPhpIniByProject(File phpIniFile, IProject project) {
+		
+		File tempIniFile = createTemporaryPHPINIFile(phpIniFile);
+		
+		// Modify include path:
+		if (project != null) {
+			IncludePath[] path = PHPSearchEngine.buildIncludePath(project);
+			List<String> includePath = new ArrayList<String>(path.length);
+			for (IncludePath pathObject : path) {
+				if (pathObject.isBuildpath()) {
+					IBuildpathEntry entry = (IBuildpathEntry) pathObject.getEntry();
+					if (entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
+						IPath entryPath = DLTKCore.getResolvedVariablePath(entry.getPath());
+						includePath.add(entryPath.toFile().getAbsolutePath());
+					} else if (entry.getEntryKind() == IBuildpathEntry.BPE_PROJECT || entry.getEntryKind() == IBuildpathEntry.BPE_SOURCE || entry.getEntryKind() == IBuildpathEntry.BPE_LIBRARY) {
+						IPath entryPath = EnvironmentPathUtils.getLocalPath(entry.getPath());
+						IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(entryPath);
+						if (resource != null) {
+							IPath location = resource.getLocation();
+							if (location != null) {
+								includePath.add(location.toOSString());
+							}
+						} else {
+							includePath.add(entryPath.toOSString());
+						}
+					} else if (entry.getEntryKind() == IBuildpathEntry.BPE_CONTAINER) {
+						try {
+							// Retries the local paths from the container  
+							final IScriptProject scriptProject = DLTKCore.create(project);
+							final IBuildpathContainer buildpathContainer = DLTKCore.getBuildpathContainer(entry.getPath(), scriptProject);
+							final IBuildpathEntry[] buildpathEntries = buildpathContainer.getBuildpathEntries(scriptProject);
+							if (buildpathEntries != null) {
+								for (IBuildpathEntry iBuildpathEntry : buildpathEntries) {
+									final IPath localPath = EnvironmentPathUtils.getLocalPath(iBuildpathEntry.getPath());
+									includePath.add(localPath.toOSString());
+								}
+
+							}
+
+						} catch (ModelException e) {
+							Logger.logException(e);
+						}
+					}
+				} else {
+					IContainer container = (IContainer) pathObject.getEntry();
+					IPath location = container.getLocation();
+					if (location != null) {
+						includePath.add(location.toOSString());
+					}
+				}
+			}
+			modifyIncludePath(tempIniFile, includePath.toArray(new String[includePath.size()]));
+		}
+		return tempIniFile;
+	}
+
