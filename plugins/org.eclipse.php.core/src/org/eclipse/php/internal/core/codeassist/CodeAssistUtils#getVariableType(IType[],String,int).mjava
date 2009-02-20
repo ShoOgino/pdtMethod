@@ -8,7 +8,7 @@
 	public static IType[] getVariableType(IType[] types, String propertyName, int offset) {
 		if (types != null) {
 			for (IType type : types) {
-				PHPClassType classType = new PHPClassType(type.getElementName());
+				PHPClassType classType = PHPTypeInferenceUtils.createEvaluatedType(type);
 				IField[] fields = getTypeFields(type, propertyName, CASE_SENSITIVE | EXCLUDE_CONSTANTS);
 
 				ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(type.getSourceModule(), null);
@@ -28,9 +28,9 @@
 					PHPDocClassVariableGoal phpDocGoal = new PHPDocClassVariableGoal(typeContext, variableName);
 					IEvaluatedType evaluatedType = typeInferencer.evaluateTypePHPDoc(phpDocGoal, 3000);
 
-					IModelElement[] modelElements = PHPTypeInferenceUtils.getModelElements(evaluatedType, fileContext, offset);
+					IType[] modelElements = PHPTypeInferenceUtils.getModelElements(evaluatedType, fileContext, offset);
 					if (modelElements != null) {
-						return modelElementsToTypes(modelElements);
+						return modelElements;
 					}
 
 					ClassVariableDeclarationGoal goal = new ClassVariableDeclarationGoal(fileContext, types, variableName);
@@ -38,7 +38,7 @@
 
 					modelElements = PHPTypeInferenceUtils.getModelElements(evaluatedType, fileContext, offset);
 					if (modelElements != null) {
-						return modelElementsToTypes(modelElements);
+						return modelElements;
 					}
 				}
 			}

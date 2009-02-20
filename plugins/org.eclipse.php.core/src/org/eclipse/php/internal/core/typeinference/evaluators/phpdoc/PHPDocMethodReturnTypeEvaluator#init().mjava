@@ -1,54 +1,24 @@
 	public IGoal[] init() {
 		PHPDocMethodReturnTypeGoal typedGoal = (PHPDocMethodReturnTypeGoal) goal;
-		IContext context = goal.getContext();
-		String methodName = typedGoal.getMethodName();
-
-		TypeContext typedGontext = (TypeContext) context;
-		IEvaluatedType instanceType = typedGontext.getInstanceType();
+		ISourceModuleContext context = (ISourceModuleContext) goal.getContext();
+		IMethod method = typedGoal.getMethod();
 
 		Set<PHPDocField> docs = new HashSet<PHPDocField>();
 
-		if (instanceType instanceof PHPClassType || instanceType instanceof AmbiguousType) {
-
-			List<IType> types = new LinkedList<IType>();
-			if (instanceType instanceof AmbiguousType) {
-				AmbiguousType ambiguousType = (AmbiguousType) instanceType;
-				IScriptProject scriptProject = typedGontext.getSourceModule().getScriptProject();
-				IDLTKSearchScope scope = SearchEngine.createSearchScope(scriptProject);
-				for (IEvaluatedType type : ambiguousType.getPossibleTypes()) {
-					if (type instanceof PHPClassType) {
-						PHPClassType classType = (PHPClassType) type;
-						IModelElement[] classes = PHPMixinModel.getInstance(scriptProject).getType(classType.getTypeName(), scope);
-						for (IModelElement c : classes) {
-							types.add((IType) c);
-						}
-					}
+		if (method.getDeclaringType() != null) {
+			try {
+				for (PHPDocField doc : PHPModelUtils.getTypeHierarchyMethodDoc(method.getDeclaringType(), method.getElementName(), null)) {
+					docs.add(doc);
 				}
-			} else {
-				IScriptProject scriptProject = typedGontext.getSourceModule().getScriptProject();
-				IDLTKSearchScope scope = SearchEngine.createSearchScope(scriptProject);
-				PHPClassType classType = (PHPClassType) instanceType;
-				IModelElement[] classes = PHPMixinModel.getInstance(scriptProject).getType(classType.getTypeName(), scope);
-				for (IModelElement c : classes) {
-					types.add((IType) c);
-				}
-			}
-
-			for (IType type : types) {
-				try {
-					for (PHPDocField doc : PHPModelUtils.getTypeHierarchyMethodDoc(type, methodName, null)) {
-						docs.add(doc);
-					}
-				} catch (CoreException e) {
-					if (DLTKCore.DEBUG) {
-						e.printStackTrace();
-					}
+			} catch (CoreException e) {
+				if (DLTKCore.DEBUG) {
+					e.printStackTrace();
 				}
 			}
 		} else {
-			IScriptProject scriptProject = typedGontext.getSourceModule().getScriptProject();
+			IScriptProject scriptProject = context.getSourceModule().getScriptProject();
 			IDLTKSearchScope scope = SearchEngine.createSearchScope(scriptProject);
-			IModelElement[] elements = PHPMixinModel.getInstance(scriptProject).getFunctionDoc(methodName, scope);
+			IModelElement[] elements = PHPMixinModel.getInstance(scriptProject).getFunctionDoc(method.getElementName(), scope);
 			for (IModelElement e : elements) {
 				docs.add((PHPDocField) e);
 			}
@@ -56,7 +26,7 @@
 
 		PHPDocField docFromSameFile = null;
 		for (PHPDocField doc : docs) {
-			if (doc.getSourceModule().equals(typedGontext.getSourceModule())) {
+			if (doc.getSourceModule().equals(context.getSourceModule())) {
 				docFromSameFile = doc;
 				break;
 			}

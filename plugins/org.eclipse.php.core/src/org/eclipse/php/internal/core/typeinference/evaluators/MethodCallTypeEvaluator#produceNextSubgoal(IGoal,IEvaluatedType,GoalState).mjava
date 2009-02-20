@@ -26,14 +26,30 @@
 		// we've evaluated receiver, lets evaluate the method return type now (using PHP Doc first):
 		if (state == STATE_GOT_RECEIVER) {
 			state = STATE_WAITING_METHOD_PHPDOC;
-			return new PHPDocMethodReturnTypeGoal(new TypeContext((ISourceModuleContext) goal.getContext(), receiverType), expression.getName());
+			TypeContext context = new TypeContext((ISourceModuleContext) goal.getContext(), receiverType);
+			IModelElement[] types = PHPTypeInferenceUtils.getModelElements(receiverType, (ISourceModuleContext) goal.getContext(), 0);
+			String methodName = expression.getName();
+			for (IModelElement type : types) {
+				IMethod method;
+				try {
+					method = PHPModelUtils.getTypeMethod((IType) type, methodName);
+					if (method != null) {
+						return new PHPDocMethodReturnTypeGoal(context, method);
+					}
+				} catch (ModelException e) {
+					if (DLTKCore.DEBUG) {
+						e.printStackTrace();
+					}
+				}
+			}
 		}
 		if (state == STATE_WAITING_METHOD_PHPDOC) {
 			if (goalState != GoalState.PRUNED && previousResult != null && previousResult != UnknownType.INSTANCE) {
 				result = previousResult;
 			}
 			state = STATE_WAITING_METHOD;
-			return new MethodReturnTypeGoal(new TypeContext((ISourceModuleContext) goal.getContext(), receiverType), expression.getName(), new IEvaluatedType[0] /* arguments are not interesting us */);
+			TypeContext context = new TypeContext((ISourceModuleContext) goal.getContext(), receiverType);
+			return new MethodReturnTypeGoal(context, expression.getName(), new IEvaluatedType[0] /* arguments are not interesting us */);
 		}
 		if (state == STATE_WAITING_METHOD) {
 			if (goalState != GoalState.PRUNED && previousResult != null && previousResult != UnknownType.INSTANCE) {

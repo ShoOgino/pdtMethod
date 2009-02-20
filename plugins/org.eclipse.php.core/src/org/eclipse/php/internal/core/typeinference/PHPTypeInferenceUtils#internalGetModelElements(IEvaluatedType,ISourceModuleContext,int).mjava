@@ -1,13 +1,13 @@
-	private static IModelElement[] internalGetModelElements(IEvaluatedType evaluatedType, ISourceModuleContext context, int offset) {
+	private static IType[] internalGetModelElements(IEvaluatedType evaluatedType, ISourceModuleContext context, int offset) {
 		ISourceModule sourceModule = context.getSourceModule();
 
 		if (evaluatedType instanceof ModelClassType) {
-			return new IModelElement[] { ((ModelClassType) evaluatedType).getTypeDeclaration() };
+			return new IType[] { ((ModelClassType) evaluatedType).getTypeDeclaration() };
 		}
 		if (evaluatedType instanceof PHPClassType) {
 			IScriptProject scriptProject = sourceModule.getScriptProject();
 			if (!ScriptProject.hasScriptNature(scriptProject.getProject())) {
-				List<IModelElement> result = new LinkedList<IModelElement>();
+				List<IType> result = new LinkedList<IType>();
 				try {
 					IType[] types = sourceModule.getTypes();
 					for (IType t : types) {
@@ -21,7 +21,7 @@
 						e.printStackTrace();
 					}
 				}
-				return result.toArray(new IModelElement[result.size()]);
+				return result.toArray(new IType[result.size()]);
 			} else {
 				try {
 					return getTypes(evaluatedType.getTypeName(), sourceModule, offset);
@@ -32,16 +32,16 @@
 				}
 			}
 		} else if (evaluatedType instanceof AmbiguousType) {
-			List<IModelElement> tmpList = new LinkedList<IModelElement>();
+			List<IType> tmpList = new LinkedList<IType>();
 			IEvaluatedType[] possibleTypes = ((AmbiguousType) evaluatedType).getPossibleTypes();
 			for (IEvaluatedType possibleType : possibleTypes) {
-				IModelElement[] tmpArray = internalGetModelElements(possibleType, context, offset);
+				IType[] tmpArray = internalGetModelElements(possibleType, context, offset);
 				if (tmpArray != null) {
 					tmpList.addAll(Arrays.asList(tmpArray));
 				}
 			}
 			// the elements are filtered already
-			return tmpList.toArray(new IModelElement[tmpList.size()]);
+			return tmpList.toArray(new IType[tmpList.size()]);
 		}
 		
 		return null;

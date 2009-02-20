@@ -10,29 +10,27 @@
 
 		org.eclipse.dltk.core.ISourceModule sourceModule = method.getSourceModule();
 		ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule, null);
-		FileContext fileContext = new FileContext(sourceModule, moduleDeclaration, offset);
 
-		IType currentType = PHPModelUtils.getCurrentType(sourceModule, offset);
-		TypeContext instanceContext = new TypeContext(fileContext, currentType == null ? null : new PHPClassType(currentType.getElementName()));
+		IContext context = ASTUtils.findContext(sourceModule, moduleDeclaration, offset);
 		
 		IEvaluatedType evaluatedType;
-		IModelElement[] modelElements;
+		IType[] modelElements;
 		boolean usePhpDoc = (mask & USE_PHPDOC) != 0;
 		if (usePhpDoc) {
-			PHPDocMethodReturnTypeGoal phpDocGoal = new PHPDocMethodReturnTypeGoal(instanceContext, method.getElementName());
+			PHPDocMethodReturnTypeGoal phpDocGoal = new PHPDocMethodReturnTypeGoal(context, method);
 			evaluatedType = typeInferencer.evaluateTypePHPDoc(phpDocGoal, 3000);
 
-			modelElements = PHPTypeInferenceUtils.getModelElements(evaluatedType, fileContext, offset);
+			modelElements = PHPTypeInferenceUtils.getModelElements(evaluatedType, (ISourceModuleContext) context, offset);
 			if (modelElements != null) {
-				return modelElementsToTypes(modelElements);
+				return modelElements;
 			}
 		}
 
-		MethodElementReturnTypeGoal methodGoal = new MethodElementReturnTypeGoal(instanceContext, method);
+		MethodElementReturnTypeGoal methodGoal = new MethodElementReturnTypeGoal(context, method);
 		evaluatedType = typeInferencer.evaluateType(methodGoal);
-		modelElements = PHPTypeInferenceUtils.getModelElements(evaluatedType, fileContext, offset);
+		modelElements = PHPTypeInferenceUtils.getModelElements(evaluatedType, (ISourceModuleContext) context, offset);
 		if (modelElements != null) {
-			return modelElementsToTypes(modelElements);
+			return modelElements;
 		}
 		return EMPTY_TYPES;
 	}
