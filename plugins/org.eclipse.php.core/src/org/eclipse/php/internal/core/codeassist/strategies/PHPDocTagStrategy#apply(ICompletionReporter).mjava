@@ -1,0 +1,23 @@
+	public void apply(ICompletionReporter reporter) throws BadLocationException {
+		ICompletionContext context = getContext();
+		if (!(context instanceof PHPDocTagContext)) {
+			return;
+		}
+		PHPDocTagContext tagContext = (PHPDocTagContext) context;
+		String tagName = tagContext.getTagName();
+		CompletionRequestor requestor = tagContext.getCompletionRequestor();
+
+		SourceRange replaceRange = getReplacementRange(tagContext);
+		String suffix = ""; //$NON-NLS-1$
+
+		for (String nextTag : PHPDOC_TAGS) {
+			if (CodeAssistUtils.startsWithIgnoreCase(nextTag, tagName)) {
+				if (!requestor.isContextInformationMode() || nextTag.length() == tagName.length()) {
+
+					// Tags are reported like keywords:
+					reporter.reportKeyword(nextTag, suffix, replaceRange);
+				}
+			}
+		}
+	}
+

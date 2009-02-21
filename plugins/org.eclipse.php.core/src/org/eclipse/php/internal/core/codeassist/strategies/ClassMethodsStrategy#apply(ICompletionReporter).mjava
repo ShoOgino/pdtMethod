@@ -1,0 +1,39 @@
+	public void apply(ICompletionReporter reporter) throws BadLocationException {
+		ICompletionContext context = getContext();
+		if (!(context instanceof ClassMemberContext)) {
+			return;
+		}
+
+		ClassMemberContext concreteContext = (ClassMemberContext) context;
+		CompletionRequestor requestor = concreteContext.getCompletionRequestor();
+
+		int mask = 0;
+		if (requestor.isContextInformationMode()) {
+			mask |= CodeAssistUtils.EXACT_NAME;
+		}
+
+		String prefix = concreteContext.getPrefix();
+		SourceRange replaceRange = getReplacementRange(concreteContext);
+		
+		boolean isParentCall = isParentCall(concreteContext);
+		
+		String suffix = getSuffix(concreteContext);
+		
+		for (IType type : concreteContext.getLhsTypes()) {
+			IMethod[] methods = isParentCall ? CodeAssistUtils.getSuperClassMethods(type, prefix, mask) 
+				: CodeAssistUtils.getTypeMethods(type, prefix, mask);
+
+			for (IMethod method : methods) {
+				try {
+					if (!isFiltered(method, concreteContext)) {
+						reporter.reportMethod((IMethod) method, suffix, replaceRange);
+					}
+				} catch (ModelException e) {
+					if (DLTKCore.DEBUG_COMPLETION) {
+						e.printStackTrace();
+					}
+				}
+			}
+		}
+	}
+

@@ -1,0 +1,26 @@
+	public void apply(ICompletionReporter reporter) throws BadLocationException {
+		ICompletionContext context = getContext();
+		if (!showConstantAssist()) {
+			return;
+		}
+
+		AbstractCompletionContext abstractContext = (AbstractCompletionContext) context;
+		CompletionRequestor requestor = abstractContext.getCompletionRequestor();
+
+		int mask = CodeAssistUtils.EXCLUDE_VARIABLES;
+		if (requestor.isContextInformationMode()) {
+			mask |= CodeAssistUtils.EXACT_NAME;
+		}
+		if (constantsCaseSensitive()) {
+			mask |= CodeAssistUtils.CASE_SENSITIVE;
+		}
+
+		String prefix = abstractContext.getPrefix();
+		SourceRange replaceRange = getReplacementRange(abstractContext);
+
+		IModelElement[] constants = CodeAssistUtils.getGlobalFields(abstractContext.getSourceModule(), prefix, mask);
+		for (IModelElement constant : constants) {
+			reporter.reportField((IField) constant, "", replaceRange, false);
+		}
+	}
+

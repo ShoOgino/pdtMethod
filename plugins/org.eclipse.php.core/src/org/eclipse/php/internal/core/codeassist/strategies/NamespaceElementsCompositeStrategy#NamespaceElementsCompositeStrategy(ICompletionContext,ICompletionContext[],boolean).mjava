@@ -1,0 +1,29 @@
+	public NamespaceElementsCompositeStrategy(ICompletionContext context, ICompletionContext[] allContexts, boolean isGlobalNamespace) {
+
+		boolean hasNewClassContext = false;
+		for (ICompletionContext c : allContexts) {
+			if (c instanceof ClassInstantiationContext) {
+				hasNewClassContext = true;
+				break;
+			}
+		}
+
+		if (isGlobalNamespace) {
+			if (!hasNewClassContext) {
+				strategies.add(new GlobalTypesStrategy(context));
+				strategies.add(new GlobalFunctionsStrategy(context));
+				strategies.add(new GlobalConstantsStrategy(context));
+			} else {
+				strategies.add(new ClassInstantiationStrategy(context));
+			}
+		} else {
+			if (!hasNewClassContext) {
+				strategies.add(new NamespaceTypesStrategy(context));
+				strategies.add(new NamespaceFunctionsStrategy(context));
+				strategies.add(new NamespaceConstantsStrategy(context));
+			} else {
+				strategies.add(new NamespaceClassInstantiationStrategy(context));
+			}
+		}
+	}
+

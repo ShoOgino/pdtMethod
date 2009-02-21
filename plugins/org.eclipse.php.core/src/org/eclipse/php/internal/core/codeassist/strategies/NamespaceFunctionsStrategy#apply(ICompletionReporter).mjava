@@ -1,0 +1,26 @@
+	public void apply(ICompletionReporter reporter) throws BadLocationException {
+		ICompletionContext context = getContext();
+		if (!(context instanceof NamespaceMemberContext)) {
+			return;
+		}
+
+		NamespaceMemberContext concreteContext = (NamespaceMemberContext) context;
+		String prefix = concreteContext.getPrefix();
+		String suffix = getSuffix(concreteContext);
+		SourceRange replaceRange = getReplacementRange(concreteContext);
+
+		for (IType ns : concreteContext.getNamespaces()) {
+			try {
+				for (IMethod method : ns.getMethods()) {
+					if (CodeAssistUtils.startsWithIgnoreCase(method.getElementName(), prefix)) {
+						reporter.reportMethod(method, suffix, replaceRange);
+					}
+				}
+			} catch (ModelException e) {
+				if (DLTKCore.DEBUG_COMPLETION) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+

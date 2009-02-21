@@ -1,0 +1,25 @@
+	public void apply(ICompletionReporter reporter) throws BadLocationException {
+		
+		ICompletionContext context = getContext();
+		AbstractCompletionContext abstractContext = (AbstractCompletionContext) context;
+		SourceRange replacementRange = getReplacementRange(abstractContext);
+
+		IType[] types = getTypes(abstractContext);
+		IElementFilter elementFilter = getElementFilter();
+		String suffix = getSuffix(abstractContext);
+		String nsSuffix = getNSSuffix(abstractContext);
+		
+		for (IType type : types) {
+			try {
+				int flags = type.getFlags();
+				if (!PHPFlags.isInternal(flags) && (elementFilter == null || !elementFilter.filter(type))) {
+					reporter.reportType(type, PHPFlags.isNamespace(flags) ? nsSuffix : suffix, replacementRange);
+				}
+			} catch (ModelException e) {
+				if (DLTKCore.DEBUG_COMPLETION) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
