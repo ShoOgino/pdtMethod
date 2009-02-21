@@ -6,7 +6,7 @@
 	 * @return method phpdoc element or <code>null</code> in case it couldn't be found
 	 * @throws CoreException
 	 */
-	public static PHPDocField[] getTypeHierarchyMethodDoc(IType type, String name, IProgressMonitor monitor) throws CoreException {
+	public static PHPDocBlock[] getTypeHierarchyMethodDoc(IType type, String name, IProgressMonitor monitor) throws CoreException {
 		if (name == null) {
 			throw new NullPointerException();
 		}
@@ -14,18 +14,17 @@
 		final IDLTKSearchScope scope = SearchEngine.createSuperHierarchyScope(type);
 		SearchPattern pattern = SearchPattern.createPattern(name, IDLTKSearchConstants.METHOD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH, PHPLanguageToolkit.getDefault());
 
-		final List<PHPDocField> docs = new LinkedList<PHPDocField>();
+		final List<PHPDocBlock> docs = new LinkedList<PHPDocBlock>();
 		new SearchEngine().search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
 			public void acceptSearchMatch(SearchMatch match) throws CoreException {
 				IMethod method = (IMethod) match.getElement();
-				IScriptProject scriptProject = method.getScriptProject();
-				IModelElement[] methodDoc = PHPMixinModel.getInstance(scriptProject).getMethodDoc(method.getDeclaringType().getElementName(), method.getElementName(), SearchEngine.createSearchScope(scriptProject));
-				for (IModelElement doc : methodDoc) {
-					docs.add((PHPDocField) doc);
+				PHPDocBlock docBlock = PHPModelUtils.getDocBlock(method);
+				if (docBlock != null) {
+					docs.add(docBlock);
 				}
 			}
 		}, monitor);
 
-		return docs.toArray(new PHPDocField[docs.size()]);
+		return docs.toArray(new PHPDocBlock[docs.size()]);
 	}
 
