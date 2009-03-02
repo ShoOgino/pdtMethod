@@ -7,24 +7,6 @@
 	 * @return method element array
 	 */
 	public static IMethod[] getGlobalMethods(String methodName, ISourceModule sourceModule) {
-		final List<IMethod> methods = new LinkedList<IMethod>();
-		SearchEngine searchEngine = new SearchEngine();
-		IDLTKSearchScope scope = SearchEngine.createSearchScope(sourceModule.getScriptProject());
-		SearchPattern pattern = SearchPattern.createPattern(methodName, IDLTKSearchConstants.METHOD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH, PHPLanguageToolkit.getDefault());
-		try {
-			searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
-				public void acceptSearchMatch(SearchMatch match) throws CoreException {
-					IMethod element = (IMethod) match.getElement();
-					IModelElement parent = element.getParent();
-					if (parent instanceof ISourceModule || parent instanceof IMethod || parent instanceof IType && PHPFlags.isNamespace(((IType) parent).getFlags())) {
-						methods.add(element);
-					}
-				}
-			}, null);
-		} catch (CoreException e) {
-			Logger.logException(e);
-			return null;
-		}
-		return (IMethod[]) methods.toArray(new IMethod[methods.size()]);
+		return getGlobalMethods(methodName, SearchEngine.createSearchScope(sourceModule.getScriptProject()));
 	}
 

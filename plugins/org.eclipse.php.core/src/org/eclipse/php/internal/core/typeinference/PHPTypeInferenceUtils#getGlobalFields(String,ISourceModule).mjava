@@ -7,24 +7,6 @@
 	 * @return field element array
 	 */
 	public static IField[] getGlobalFields(String fieldName, ISourceModule sourceModule) {
-		final List<IField> fields = new LinkedList<IField>();
-		SearchEngine searchEngine = new SearchEngine();
-		IDLTKSearchScope scope = SearchEngine.createSearchScope(sourceModule.getScriptProject());
-		SearchPattern pattern = SearchPattern.createPattern(fieldName, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH | SearchPattern.R_CASE_SENSITIVE, PHPLanguageToolkit.getDefault());
-		try {
-			searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
-				public void acceptSearchMatch(SearchMatch match) throws CoreException {
-					IField element = (IField) match.getElement();
-					IModelElement parent = element.getParent();
-					if (parent instanceof ISourceModule || parent instanceof IType && PHPFlags.isNamespace(((IType) parent).getFlags())) {
-						fields.add(element);
-					}
-				}
-			}, null);
-		} catch (CoreException e) {
-			Logger.logException(e);
-			return null;
-		}
-		return (IField[]) fields.toArray(new IField[fields.size()]);
+		return getGlobalFields(fieldName, SearchEngine.createSearchScope(sourceModule.getScriptProject()));
 	}
 

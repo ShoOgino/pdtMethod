@@ -1,0 +1,29 @@
+	/**
+	 * This method returns field elements (IField) by specified name.
+	 * The element must be declared in a global scope.
+	 * 
+	 * @param fieldName Field name
+	 * @param scope Search scope
+	 * @return field element array
+	 */
+	public static IField[] getGlobalFields(String fieldName, IDLTKSearchScope scope) {
+		final List<IField> fields = new LinkedList<IField>();
+		SearchEngine searchEngine = new SearchEngine();
+		SearchPattern pattern = SearchPattern.createPattern(fieldName, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH | SearchPattern.R_CASE_SENSITIVE, PHPLanguageToolkit.getDefault());
+		try {
+			searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
+				public void acceptSearchMatch(SearchMatch match) throws CoreException {
+					IField element = (IField) match.getElement();
+					IModelElement parent = element.getParent();
+					if (parent instanceof ISourceModule || parent instanceof IType && PHPFlags.isNamespace(((IType) parent).getFlags())) {
+						fields.add(element);
+					}
+				}
+			}, null);
+		} catch (CoreException e) {
+			Logger.logException(e);
+			return null;
+		}
+		return (IField[]) fields.toArray(new IField[fields.size()]);
+	}
+
