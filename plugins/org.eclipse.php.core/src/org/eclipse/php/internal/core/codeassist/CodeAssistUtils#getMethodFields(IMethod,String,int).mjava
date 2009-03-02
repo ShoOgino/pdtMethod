@@ -5,7 +5,7 @@
 	 * @param prefix Field name
 	 * @param mask
 	 */
-	public static IModelElement[] getMethodFields(IMethod method, String prefix, int mask) {
+	public static IModelElement[] getMethodFields(final IMethod method, String prefix, int mask) {
 
 		SearchEngine searchEngine = new SearchEngine();
 		IDLTKLanguageToolkit toolkit = PHPLanguageToolkit.getDefault();
@@ -20,13 +20,12 @@
 			matchRule = exactName ? SearchPattern.R_EXACT_MATCH : SearchPattern.R_CAMELCASE_MATCH | SearchPattern.R_PREFIX_MATCH;
 		}
 
+		final Set<String> processedVars = new HashSet<String>();
+		
 		SearchPattern pattern = SearchPattern.createPattern(prefix, IDLTKSearchConstants.FIELD, IDLTKSearchConstants.DECLARATIONS, matchRule, toolkit);
-
 		final Set<IModelElement> elements = new TreeSet<IModelElement>(new AlphabeticComparator());
 		try {
 			searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
-				private Set<String> processedVars = new HashSet<String>();
-
 				public void acceptSearchMatch(SearchMatch match) throws CoreException {
 					IModelElement element = (IModelElement) match.getElement();
 					String elementName = element.getElementName();
@@ -41,6 +40,36 @@
 				e.printStackTrace();
 			}
 		}
+		
+		// collect global variables
+		ModuleDeclaration rootNode = SourceParserUtil.getModuleDeclaration(method.getSourceModule());
+		try {
+			MethodDeclaration methodDeclaration = PHPModelUtils.getNodeByMethod(rootNode, method);
+			final String varPrefix = prefix;
+			methodDeclaration.traverse(new ASTVisitor() {
+				public boolean visit(Statement s) throws Exception {
+					if (s instanceof GlobalStatement) {
+						GlobalStatement globalStatement = (GlobalStatement) s;
+						for (Expression e : globalStatement.getVariables()) {
+							if (e instanceof VariableReference) {
+								VariableReference varReference = (VariableReference) e;
+								String varName = varReference.getName();
+								if (varName.startsWith(varPrefix) && !processedVars.contains(varName)) {
+									elements.add(new FakeField((ModelElement) method, varName, e.sourceStart(), e.sourceEnd() - e.sourceStart()));
+									processedVars.add(varName);
+								}
+							}
+						}
+					}
+					return super.visit(s);
+				}
+			});
+		} catch (Exception e) {
+			if (DLTKCore.DEBUG_COMPLETION) {
+				e.printStackTrace();
+			}
+		}
+		
 		return elements.toArray(new IModelElement[elements.size()]);
 	}
 
