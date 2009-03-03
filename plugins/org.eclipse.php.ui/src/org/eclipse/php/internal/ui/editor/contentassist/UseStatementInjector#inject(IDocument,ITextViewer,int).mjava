@@ -1,0 +1,77 @@
+	/**
+	 * Inserts USE statement into beginning of the document, or after the last USE statement.
+	 * @param document
+	 * @param textViewer
+	 * @param offset
+	 * @return new offset
+	 */
+	public int inject(IDocument document, ITextViewer textViewer, int offset) {
+		IModelElement modelElement = proposal.getModelElement();
+
+		// add use statement if needed:
+		IType namespace = PHPModelUtils.getCurrentNamespace(modelElement);
+		if (namespace != null) {
+
+			// find source module of the current editor:
+			if (textViewer instanceof PHPStructuredTextViewer) {
+				ITextEditor textEditor = ((PHPStructuredTextViewer) textViewer).getTextEditor();
+				if (textEditor instanceof PHPStructuredEditor) {
+					IModelElement editorElement = ((PHPStructuredEditor) textEditor).getModelElement();
+					if (editorElement != null) {
+						ISourceModule sourceModule = ((ModelElement) editorElement).getSourceModule();
+
+						ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule);
+
+						// find existing use statement:
+						String namespaceName = namespace.getElementName();
+						UsePart usePart = ASTUtils.findUseStatementByNamespace(moduleDeclaration, namespaceName, offset);
+						if (usePart == null) {
+
+							// find the place where to insert the use statement:
+							int insertOffset = -1;
+
+							UseStatement[] useStatements = ASTUtils.getUseStatements(moduleDeclaration, offset);
+							if (useStatements.length > 0) {
+								// insert after last use statement:
+								insertOffset = useStatements[useStatements.length - 1].sourceEnd();
+							} else {
+								insertOffset = findPhpBlockOffset((IStructuredDocument) document);
+							}
+
+							if (insertOffset > 0) {
+								String useStatement = new StringBuilder("\nuse ").append(namespaceName).append(";").toString();
+								try {
+									document.replace(insertOffset, 0, useStatement);
+								} catch (BadLocationException e) {
+									if (DLTKCore.DEBUG_COMPLETION) {
+										e.printStackTrace();
+									}
+								}
+
+								// update replacement string: add namespace alias prefix
+								int i = namespaceName.lastIndexOf(NamespaceReference.NAMESPACE_SEPARATOR);
+								String alias = namespaceName;
+								if (i != -1) {
+									alias = namespaceName.substring(i + 1);
+								}
+
+								String namespacePrefix = alias + NamespaceReference.NAMESPACE_SEPARATOR;
+								String replacementString = proposal.getReplacementString();
+								if (!replacementString.startsWith(namespacePrefix)) {
+									replacementString = namespacePrefix + replacementString;
+									proposal.setReplacementString(replacementString);
+								}
+
+								int replacementOffset = proposal.getReplacementOffset() + useStatement.length();
+								offset += useStatement.length();
+								proposal.setReplacementOffset(replacementOffset);
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		return offset;
+	}
+
