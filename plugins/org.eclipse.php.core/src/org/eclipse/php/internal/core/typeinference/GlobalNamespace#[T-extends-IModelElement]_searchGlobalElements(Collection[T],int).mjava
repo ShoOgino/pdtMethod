@@ -1,0 +1,28 @@
+	protected <T extends IModelElement> void searchGlobalElements(final Collection<T> result, int searchFor) throws ModelException {
+		SearchEngine engine = new SearchEngine();
+		IDLTKSearchScope scope = SearchEngine.createSearchScope(getParent(), IDLTKSearchScope.SOURCES);
+		SearchParticipant[] participants = new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() };
+		SearchPattern pattern = SearchPattern.createPattern("*", searchFor, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_PATTERN_MATCH, PHPLanguageToolkit.getDefault());
+		try {
+			engine.search(pattern, participants, scope, new SearchRequestor() {
+				@SuppressWarnings("unchecked")
+				public void acceptSearchMatch(SearchMatch match) throws CoreException {
+					T element = (T) match.getElement();
+					if (PHPModelUtils.getCurrentNamespace(element) != null) {
+						return;
+					}
+					IModelElement parent = element.getParent();
+					if (parent instanceof IType) {
+						return; // The element is a class/interface member
+					}
+					if (parent instanceof IMethod && element instanceof IField) {
+						return; // The element is a local function variable
+					}
+					result.add(element);
+				}
+			}, new NullProgressMonitor());
+		} catch (CoreException e) {
+			throw new ModelException(e);
+		}
+	}
+
