@@ -1,0 +1,25 @@
+	protected Object[] getAllNamespaces(final IScriptProject project) throws ModelException {
+		final List<IType> namespaces = new LinkedList<IType>();
+
+		SearchEngine engine = new SearchEngine();
+		IDLTKSearchScope scope = SearchEngine.createSearchScope(project, IDLTKSearchScope.SOURCES);
+		SearchParticipant[] participants = new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() };
+		SearchPattern pattern = SearchPattern.createPattern("*", IDLTKSearchConstants.TYPE, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_PATTERN_MATCH, PHPLanguageToolkit.getDefault());
+		try {
+			engine.search(pattern, participants, scope, new SearchRequestor() {
+				public void acceptSearchMatch(SearchMatch match) throws CoreException {
+					Object element = match.getElement();
+					if (element instanceof IType) {
+						IType type = (IType) element;
+						if (PHPFlags.isNamespace(type.getFlags())) {
+							namespaces.add(type);
+						}
+					}
+				}
+			}, new NullProgressMonitor());
+		} catch (CoreException e) {
+			throw new ModelException(e);
+		}
+		return namespaces.toArray();
+	}
+

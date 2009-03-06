@@ -1,4 +1,3 @@
-	@Override
 	public Object[] getChildren(Object parentElement) {
 
 		if (parentElement instanceof IncludePath) {
@@ -6,14 +5,12 @@
 			if (entry instanceof IBuildpathEntry) {
 				return getBuildPathEntryChildren(parentElement, entry);
 			}
-		} 
+		}
 		try {
 
 			// aggregate php projects and non php projects (includes closed ones)
 			if (parentElement instanceof IScriptModel) {
-				return StandardModelElementContentProvider.concatenate(
-					getScriptProjects((IScriptModel) parentElement), 
-					getNonPhpProjects((IScriptModel) parentElement));
+				return StandardModelElementContentProvider.concatenate(getScriptProjects((IScriptModel) parentElement), getNonPhpProjects((IScriptModel) parentElement));
 			}
 
 			// Handles SourceModule and downwards as well as ExternalProjectFragments (i.e language model)
@@ -36,18 +33,25 @@
 					if (!resource.isAccessible()) {
 						return NO_CHILDREN;
 					}
-
-					IResource[] resChildren = ((IContainer) resource).members();
+					
 					ArrayList<Object> returnChlidren = new ArrayList<Object>();
-
-					for (IResource resource2 : resChildren) {
-						IModelElement modelElement = DLTKCore.create(resource2);
-						if (modelElement != null) {
-							returnChlidren.add(modelElement);
-						} else {
-							returnChlidren.add(resource2);
+					
+					boolean groupByNamespace = PHPUiPlugin.getDefault().getPreferenceStore().getBoolean(PreferenceConstants.EXPLORER_GROUP_BY_NAMESPACES);
+					if (groupByNamespace && parentElement instanceof IScriptProject && supportsNamespaces((IScriptProject) parentElement)) {
+						returnChlidren.add(new GlobalNamespace((IScriptProject) parentElement));
+						returnChlidren.addAll(Arrays.asList(getAllNamespaces((IScriptProject) parentElement)));
+					} else {
+						IResource[] resChildren = ((IContainer) resource).members();
+						for (IResource resource2 : resChildren) {
+							IModelElement modelElement = DLTKCore.create(resource2);
+							if (modelElement != null) {
+								returnChlidren.add(modelElement);
+							} else {
+								returnChlidren.add(resource2);
+							}
 						}
 					}
+					
 					// Adding External libraries to the treeview :
 					if (parentElement instanceof IScriptProject) {
 						IScriptProject project = (IScriptProject) parentElement;
