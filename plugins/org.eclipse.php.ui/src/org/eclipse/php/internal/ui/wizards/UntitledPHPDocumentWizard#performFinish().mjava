@@ -4,9 +4,16 @@
 	public boolean performFinish() {
 		IFileStore fileStore = queryFileStore();
 		IEditorInput input = createEditorInput(fileStore);
+		
+		//delete on exit
+		if(input instanceof NonExistingPHPFileEditorInput){
+			File f = ((NonExistingPHPFileEditorInput)input).getPath(input).toFile();
+			f.deleteOnExit();
+		}
+		
 		IWorkbenchPage page = fWindow.getActivePage();
 		try {
-			IEditorPart editor = page.openEditor(input, PHPUiConstants.PHP_EDITOR_ID);
+			IEditorPart editor = page.openEditor(input, UNTITLED_EDITOR_ID);
 			StructuredTextEditor textEditor = null;
 			if (editor instanceof StructuredTextEditor) {
 				textEditor = (StructuredTextEditor) editor;
@@ -28,12 +35,18 @@
 			document.set(compiledTemplate.string);
 			documentProvider.saveDocument(null, textEditor.getEditorInput(), document, true);
 			textEditor.selectAndReveal(compiledTemplate.offset, 0);
+			
+			// set document dirty
+			document.replace(0, 0, "");	
 		} catch (PartInitException e) {
 			Logger.logException(e);
 			return false;
 		} catch (CoreException e) {
 			Logger.logException(e);
 			return false;
+		}catch (BadLocationException e) {
+			Logger.logException(e);
+			return true;
 		}
 		return true;
 	}
