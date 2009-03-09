@@ -1,18 +1,27 @@
 	protected Object[] getAllNamespaces(final IScriptProject project) throws ModelException {
-		final List<IType> namespaces = new LinkedList<IType>();
-
 		SearchEngine engine = new SearchEngine();
 		IDLTKSearchScope scope = SearchEngine.createSearchScope(project, IDLTKSearchScope.SOURCES);
 		SearchParticipant[] participants = new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() };
 		SearchPattern pattern = SearchPattern.createPattern("*", IDLTKSearchConstants.TYPE, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_PATTERN_MATCH, PHPLanguageToolkit.getDefault());
+		final Map<String, List<IType>> processedNamespaces = new HashMap<String, List<IType>>();
 		try {
 			engine.search(pattern, participants, scope, new SearchRequestor() {
 				public void acceptSearchMatch(SearchMatch match) throws CoreException {
+
 					Object element = match.getElement();
 					if (element instanceof IType) {
 						IType type = (IType) element;
+						String elementName = type.getElementName();
+
 						if (PHPFlags.isNamespace(type.getFlags())) {
-							namespaces.add(type);
+							List<IType> result;
+							if (!processedNamespaces.containsKey(elementName)) {
+								result = new LinkedList<IType>();
+								processedNamespaces.put(elementName, result);
+							} else {
+								result = processedNamespaces.get(elementName);
+							}
+							result.add(type);
 						}
 					}
 				}
@@ -20,6 +29,12 @@
 		} catch (CoreException e) {
 			throw new ModelException(e);
 		}
-		return namespaces.toArray();
+		
+		List<IType> result = new LinkedList<IType>();
+		for (String namespaceName : processedNamespaces.keySet()) {
+			List<IType> list = processedNamespaces.get(namespaceName);
+			result.add(new NamespaceNode(project, namespaceName, list.toArray(new IType[list.size()])));
+		}
+		return result.toArray();
 	}
 
