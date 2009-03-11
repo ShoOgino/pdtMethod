@@ -1,4 +1,19 @@
 	public Object[] getElements(Object parent) {
-		return getChildren(parent);
+		Object[] children = getChildren(parent);
+		
+		if (parent instanceof ISourceModule) {
+			ISourceModule sourceModule = (ISourceModule) parent;
+
+			PHPVersion phpVersion = PhpVersionProjectPropertyHandler.getVersion(sourceModule.getScriptProject().getProject());
+			if (phpVersion.isGreaterThan(PHPVersion.PHP5)) {
+				
+				// if namespaces are supported, add use statements node:
+				Object[] newChildren = new Object[children.length + 1];
+				newChildren[0] = new UseStatementsNode(sourceModule);
+				System.arraycopy(children, 0, newChildren, 1, children.length);
+				children = newChildren;
+			}
+		}
+		return children;
 	}
 
