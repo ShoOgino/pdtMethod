@@ -19,57 +19,44 @@
 					IModelElement editorElement = ((PHPStructuredEditor) textEditor).getModelElement();
 					if (editorElement != null) {
 						ISourceModule sourceModule = ((ModelElement) editorElement).getSourceModule();
-						
-						String namespaceName = namespace.getElementName();
-						
-						IType currentNamespace = PHPModelUtils.getCurrentNamespace(sourceModule, offset);
-						if (currentNamespace != null && currentNamespace.getElementName().equals(namespaceName)) {
-							// no need to insert USE statement as we are already in the required namespace:
-							return offset;
-						}
 
-						ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule);
+						try {
+							String namespaceName = namespace.getElementName();
+							ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule);
+							TextEdit edits = null;
 
-						// find existing use statement:
-						UsePart usePart = ASTUtils.findUseStatementByNamespace(moduleDeclaration, namespaceName, offset);
-						if (usePart == null) {
+							// find existing use statement:
+							UsePart usePart = ASTUtils.findUseStatementByNamespace(moduleDeclaration, namespaceName, offset);
+							if (usePart == null) {
+								ASTParser parser = ASTParser.newParser(sourceModule);
+								parser.setSource(document.get().toCharArray());
 
-							// find the place where to insert the use statement:
-							int insertOffset = -1;
+								Program program = parser.createAST(null);
+								program.recordModifications();
 
-							UseStatement[] useStatements = ASTUtils.getUseStatements(moduleDeclaration, offset);
-							if (useStatements.length > 0) {
-								// insert after last use statement:
-								insertOffset = useStatements[useStatements.length - 1].sourceEnd();
-							} else if (currentNamespace != null) {
-								// insert after the namespace statement:
-								try {
-									TypeDeclaration namespaceNode = PHPModelUtils.getNodeByClass(moduleDeclaration, currentNamespace);
-									Statement firstStatement = (Statement) namespaceNode.getStatements().get(0);
-									insertOffset = firstStatement.sourceStart() - 1;
-									while (insertOffset > 0 && Character.isWhitespace(document.getChar(insertOffset))) {
-										insertOffset--;
+								AST ast = program.getAST();
+
+								NamespaceName newNamespaceName = ast.newNamespaceName(createIdentifiers(ast, namespaceName), false, false);
+								UseStatementPart newUseStatementPart = ast.newUseStatementPart(newNamespaceName, null);
+								org.eclipse.php.internal.core.ast.nodes.UseStatement newUseStatement = ast.newUseStatement(Arrays.asList(new UseStatementPart[] { newUseStatementPart }));
+
+								NamespaceDeclaration currentNamespace = getCurrentNamespace(program, offset);
+								if (currentNamespace != null) {
+									if (namespaceName.equals(getNamespaceName(currentNamespace))) {
+										return offset; // don't insert USE statement for current namespace
 									}
-									insertOffset++;
-								} catch (Exception e) {
-									if (DLTKCore.DEBUG_COMPLETION) {
-										e.printStackTrace();
-									}
+
+									// insert in the beginning of the current namespace:
+									currentNamespace.getBody().statements().add(0, newUseStatement);
+								} else {
+									// insert in the beginning of the document:
+									program.statements().add(0, newUseStatement);
 								}
-							} else {
-								insertOffset = findPhpBlockOffset((IStructuredDocument) document);
+								edits = program.rewrite(document, null);
+								edits.apply(document);
 							}
 
-							if (insertOffset > 0) {
-								String useStatement = new StringBuilder("\nuse ").append(namespaceName).append(";").toString();
-								try {
-									document.replace(insertOffset, 0, useStatement);
-								} catch (BadLocationException e) {
-									if (DLTKCore.DEBUG_COMPLETION) {
-										e.printStackTrace();
-									}
-								}
-
+							if (needsAliasPrepend(modelElement)) {
 								// update replacement string: add namespace alias prefix
 								int i = namespaceName.lastIndexOf(NamespaceReference.NAMESPACE_SEPARATOR);
 								String alias = namespaceName;
@@ -79,7 +66,7 @@
 
 								String namespacePrefix = alias + NamespaceReference.NAMESPACE_SEPARATOR;
 								String replacementString = proposal.getReplacementString();
-								
+
 								// Remove fully qualified namespace prefix form the replacement string:
 								if (replacementString.startsWith(namespaceName)) {
 									replacementString = replacementString.substring(namespaceName.length());
@@ -87,23 +74,28 @@
 										replacementString = replacementString.substring(1);
 									}
 								}
-								
+
 								// Add alias to the replacement string:
 								if (!replacementString.startsWith(namespacePrefix)) {
 									replacementString = namespacePrefix + replacementString;
 								}
 								proposal.setReplacementString(replacementString);
+							}
 
-								int replacementOffset = proposal.getReplacementOffset() + useStatement.length();
-								offset += useStatement.length();
+							if (edits != null) {
+								int replacementOffset = proposal.getReplacementOffset() + edits.getLength();
+								offset += edits.getLength();
 								proposal.setReplacementOffset(replacementOffset);
 							}
+
+						} catch (Exception e) {
+							Logger.logException(e);
 						}
 					}
 				}
 			}
 		}
-		
+
 		return offset;
 	}
 
