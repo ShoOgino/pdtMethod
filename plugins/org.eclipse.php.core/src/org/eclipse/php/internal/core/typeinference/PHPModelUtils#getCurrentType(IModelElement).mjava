@@ -4,9 +4,17 @@
 	 * @param offset The offset where current namespace is requested
 	 * @return type element, or <code>null</code> if the scope not a class or interface scope
 	 */
-	public static IType getCurrentType(ISourceModule sourceModule, int offset) {
+	public static IType getCurrentType(IModelElement element) {
 		try {
-			getCurrentType(sourceModule.getElementAt(offset));
+			while (element != null) {
+				if (element instanceof IType) {
+					if (!PHPFlags.isNamespace(((IType) element).getFlags())) {
+						return (IType) element;
+					}
+					break;
+				}
+				element = element.getParent();
+			}
 		} catch (ModelException e) {
 			Logger.logException(e);
 		}
