@@ -1,20 +1,7 @@
 	protected Object[] getChildren() {
 		if (ProjectOutlineContentProvider.scripProject != null) {
-			ArrayList<IProjectFragment> projectFragments = new ArrayList<IProjectFragment>();
 
-			// getting project's fragments
-			try {
-				for (IProjectFragment projectFragment : (((IScriptProject) ProjectOutlineContentProvider.scripProject).getProjectFragments())) {
-					if (projectFragment != null && !projectFragment.isExternal()) { //adding only non-external resources
-						projectFragments.add(projectFragment);
-					}
-				}
-			} catch (ModelException e) {
-				Logger.logException(e);
-			}
-			PHPMixinModel mixinModel = PHPMixinModel.getInstance((IScriptProject) ProjectOutlineContentProvider.scripProject);
-			// foreach fragment getting its children, 
-			// and then merging them into last fragments list
+			IDLTKSearchScope scope = SearchEngine.createSearchScope(ProjectOutlineContentProvider.scripProject, IDLTKSearchScope.SOURCES);
 
 			TreeSet<IModelElement> childrenList = new TreeSet<IModelElement>(new Comparator<IModelElement>() {
 				public int compare(IModelElement o1, IModelElement o2) {
@@ -25,28 +12,32 @@
 
 				}
 			});
+			switch (this) {
+				case GROUP_NAMESPACES:
+					childrenList.addAll(Arrays.asList(PHPTypeInferenceUtils.getAllNamespaces(scope)));
+					break;
 
-			for (IProjectFragment projectFragment : projectFragments) {
-				IDLTKSearchScope scope = SearchEngine.createSearchScope(projectFragment);
-				IModelElement[] children = null;
+				case GROUP_CLASSES:
+					childrenList.addAll(Arrays.asList(PHPTypeInferenceUtils.getAllTypes(scope)));
+					break;
 
-				switch (this) {
-					case GROUP_CLASSES:
-						children = mixinModel.getType(ASTRIX_STRING, scope);
-						break;
+				case GROUP_FUNCTIONS:
+					childrenList.addAll(Arrays.asList(PHPTypeInferenceUtils.getAllFunctions(scope)));
+					break;
 
-					case GROUP_FUNCTIONS:
-						children = mixinModel.getFunction(ASTRIX_STRING, scope);
-						break;
-
-					case GROUP_CONSTANTS:
-						children = mixinModel.getConstant(ASTRIX_STRING, null, scope);
-						break;
-				}
-
-				childrenList.addAll(Arrays.asList(children));
+				case GROUP_CONSTANTS:
+					IField[] fields = PHPTypeInferenceUtils.getAllFields(scope);
+					for (IField iField : fields) {
+						try {
+							if (PHPFlags.isConstant(iField.getFlags())) {
+								childrenList.add(iField);
+							}
+						} catch (ModelException e) {
+							Logger.logException(e);
+						}
+					}
+					break;
 			}
-
 			return childrenList.toArray();
 		}
 
