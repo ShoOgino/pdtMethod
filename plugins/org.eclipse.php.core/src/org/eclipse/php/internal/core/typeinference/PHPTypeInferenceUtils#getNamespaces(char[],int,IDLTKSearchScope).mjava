@@ -1,27 +1,24 @@
 	/**
-	 * This method returns all types (classes and interfaces).
+	 * This method returns namespaces by prefix.
 	 * As this method can be heavy FakeType is returned.
 	 * 
-	 * @param prefix Type prefix
+	 * @param prefix Namespace prefix
 	 * @param matchRule Search match rule
 	 * @param scope Search scope
-	 * @return type element array
+	 * @return namespace element array
 	 */
-	public static IType[] getAllTypes(char[] prefix, int matchRule, final IDLTKSearchScope scope) {
+	public static IType[] getNamespaces(char[] prefix, int matchRule, final IDLTKSearchScope scope) {
 		final Collection<IType> elements = new LinkedList<IType>();
-		
+
 		final HandleFactory handleFactory = new HandleFactory();
 		SearchEngine searchEngine = new SearchEngine();
-		
+
 		try {
 			searchEngine.searchAllTypeNames(null, 0, prefix, matchRule, IDLTKSearchConstants.DECLARATIONS, scope, new TypeNameRequestor() {
 				public void acceptType(int modifiers, char[] packageName, char[] simpleTypeName, char[][] enclosingTypeNames, String path) {
-					if (!PHPFlags.isNamespace(modifiers)) {
+					if (PHPFlags.isNamespace(modifiers)) {
 						Openable openable = handleFactory.createOpenable(path, scope);
 						ModelElement parent = openable;
-						if (enclosingTypeNames.length > 0) {
-							parent = new FakeType(openable, new String(enclosingTypeNames[0]), Modifiers.AccNameSpace);
-						}
 						elements.add(new FakeType(parent, new String(simpleTypeName), modifiers));
 					}
 				}
@@ -29,7 +26,7 @@
 		} catch (ModelException e) {
 			Logger.logException(e);
 		}
-		
+
 		return (IType[]) elements.toArray(new IType[elements.size()]);
 	}
 

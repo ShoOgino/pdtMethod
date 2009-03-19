@@ -1,0 +1,27 @@
+	public boolean isValid(ISourceModule sourceModule, int offset, CompletionRequestor requestor) {
+		if (!super.isValid(sourceModule, offset, requestor)) {
+			return false;
+		}
+		if (getPhpVersion().isLessThan(PHPVersion.PHP5_3)) {
+			return false;
+		}
+		try {
+			char[] prefix = getPrefix().toCharArray();
+			boolean isNamespace = false;
+			for (int i = 0; i < prefix.length; ++i) {
+				if (prefix[i] == NamespaceReference.NAMESPACE_SEPARATOR) {
+					isNamespace = true;
+					continue;
+				}
+				if (!Character.isJavaIdentifierPart(prefix[i])) {
+					isNamespace = false;
+					break;
+				}
+			}
+			return isNamespace;
+
+		} catch (BadLocationException e) {
+		}
+		return false;
+	}
+

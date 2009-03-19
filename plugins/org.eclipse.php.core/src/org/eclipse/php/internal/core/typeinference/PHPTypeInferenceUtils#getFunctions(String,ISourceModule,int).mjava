@@ -1,21 +1,22 @@
 	/**
-	 * This method returns method corresponding to its name and the file where it was referenced.
-	 * The method name may contain also the namespace part, like: A\B\foo() or \A\B\foo()
-	 * @param methodName Tye fully qualified method name
+	 * This method returns function corresponding to its name and the file where it was referenced.
+	 * The function name may contain also the namespace part, like: A\B\foo() or \A\B\foo()
+	 * 
+	 * @param functionName The fully qualified function name
 	 * @param sourceModule The file where the element is referenced
 	 * @param offset The offset where the element is referenced
 	 * @return a list of relevant IMethod elements, or <code>null</code> in case there's no IMethod found
 	 * @throws ModelException 
 	 */
-	public static IMethod[] getMethods(String methodName, ISourceModule sourceModule, int offset) throws ModelException {
-		if (methodName == null || methodName.length() == 0) {
+	public static IMethod[] getFunctions(String functionName, ISourceModule sourceModule, int offset) throws ModelException {
+		if (functionName == null || functionName.length() == 0) {
 			return null;
 		}
-		String namespace = extractNamespaceName(methodName, sourceModule, offset);
-		methodName = extractElementName(methodName);
+		String namespace = extractNamespaceName(functionName, sourceModule, offset);
+		functionName = extractElementName(functionName);
 		if (namespace != null) {
 			if (namespace.length() > 0) {
-				IMethod namespaceMethod = getNamespaceMethod(namespace, methodName, sourceModule);
+				IMethod namespaceMethod = getNamespaceFunction(namespace, functionName, sourceModule);
 				if (namespaceMethod != null) {
 					return new IMethod[] { namespaceMethod };
 				}
@@ -27,14 +28,14 @@
 			IType currentNamespace = getCurrentNamespace(sourceModule, offset);
 			if (currentNamespace != null) {
 				namespace = currentNamespace.getElementName();
-				IMethod namespaceMethod = getNamespaceMethod(namespace, methodName, sourceModule);
+				IMethod namespaceMethod = getNamespaceFunction(namespace, functionName, sourceModule);
 				if (namespaceMethod != null) {
 					return new IMethod[] { namespaceMethod };
 				}
 				// For functions and constants, PHP will fall back to global functions or constants if a namespaced function or constant does not exist:
-				return getFunctions(methodName, sourceModule);
+				return getFunctions(functionName, SearchEngine.createSearchScope(sourceModule.getScriptProject()));
 			}
 		}
-		return getFunctions(methodName, sourceModule);
+		return getFunctions(functionName, SearchEngine.createSearchScope(sourceModule.getScriptProject()));
 	}
 
