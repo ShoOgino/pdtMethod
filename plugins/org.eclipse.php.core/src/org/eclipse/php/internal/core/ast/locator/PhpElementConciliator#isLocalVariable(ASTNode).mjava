@@ -1,27 +1,24 @@
 	private static boolean isLocalVariable(ASTNode locateNode) {
 		assert locateNode != null;
+		Variable parent = null;
 		// check if it is an identifier
-		if (locateNode.getType() != ASTNode.IDENTIFIER) {
+		if (locateNode.getType() == ASTNode.IDENTIFIER) {
+			parent = (Variable) ((Identifier) locateNode).getParent();
+		} else if (locateNode.getType() == ASTNode.VARIABLE) {
+			parent = (Variable) locateNode;
+		} else {
 			return false;
 		}
-		final Identifier targetIdentifier = (Identifier) locateNode;
-
-		if (targetIdentifier.getParent().getType() != ASTNode.VARIABLE) {
-			return false;
-		}
-
-		Variable parent = (Variable) targetIdentifier.getParent();
 
 		// check for not variables / or $this / or field declaration
-		if (!parent.isDollared() || targetIdentifier.getName().equals(THIS) || parent.getType() == ASTNode.FIELD_DECLARATION) {
+		if (!parent.isDollared() || parent.equals(THIS) || parent.getType() == ASTNode.FIELD_DECLARATION) {
 			return false;
 		}
-		
+
 		// check for static variables
 		if (parent.isDollared() && parent.getParent() != null && parent.getParent().getType() == ASTNode.STATIC_FIELD_ACCESS) {
 			return false;
 		}
-		
 
 		ASTNode node = parent;
 		while (node != null) {

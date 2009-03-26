@@ -2,15 +2,20 @@
 	 * Identifies a dispatch usage
 	 * @param locateNode
 	 */
-	private static boolean isDispatch(ASTNode node) {
-		assert node != null;
+	private static boolean isDispatch(ASTNode locateNode) {
+		assert locateNode != null;
 
+		ASTNode parent = null;
 		// check if it is an identifier
-		if (node.getType() != ASTNode.IDENTIFIER) {
+		if (locateNode.getType() == ASTNode.IDENTIFIER) {
+			parent = (Variable) ((Identifier) locateNode).getParent();
+			parent = parent.getParent();
+			
+		} else if (locateNode.getType() == ASTNode.SINGLE_FIELD_DECLARATION) {
+			parent = (SingleFieldDeclaration) locateNode;
+		} else {
 			return false;
 		}
-
-		ASTNode parent = node.getParent();
 
 		// check if it is a method declaration
 		if (parent.getType() == ASTNode.FUNCTION_DECLARATION) {
@@ -23,23 +28,24 @@
 			}
 			return false;
 		}
+		
+		
 
-		if (parent.getType() == ASTNode.VARIABLE) {
+		if (parent.getType() == ASTNode.SINGLE_FIELD_DECLARATION) {
 
 			// check for $this variable
-			final Identifier id = (Identifier) node;
-			final Variable variable = (Variable) parent;
+			final SingleFieldDeclaration variable = (SingleFieldDeclaration) parent;
 
-			if (id.getName().equals(THIS) && variable.isDollared()) {
-				return false;
-			}
+//			if (!variable. || variable.equals(THIS)) {
+//				return false;
+//			}
 
 			if (parent.getParent().getType() == ASTNode.FIELD_DECLARATION || parent.getParent().getType() == ASTNode.SINGLE_FIELD_DECLARATION) {
 				return true;
 			}
 		}
 
-		if(parent.getType() == ASTNode.CONSTANT_DECLARATION)
+		if (parent.getType() == ASTNode.CONSTANT_DECLARATION)
 			return true;
 
 		// check if it is a dispatch
