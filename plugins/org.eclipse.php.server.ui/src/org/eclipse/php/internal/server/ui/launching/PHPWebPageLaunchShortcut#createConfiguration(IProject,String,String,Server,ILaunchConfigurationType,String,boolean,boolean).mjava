@@ -1,12 +1,16 @@
-	/**
-	 * Create & return a new configuration
-	 */
-	static ILaunchConfiguration createConfiguration(IProject project, String fileName, Server server, ILaunchConfigurationType configType, String mode) throws CoreException {
+	static ILaunchConfiguration createConfiguration(IProject project, String fileName, String selectedURL, Server server, ILaunchConfigurationType configType, String mode, boolean breakAtFirstLine, boolean showDebugDialog) throws CoreException {
 		ILaunchConfiguration config = null;
 		if (!FileUtils.resourceExists(fileName)) {
 			return null;
 		}
-		String URL = server.getBaseURL() + new Path(fileName).toString();
+
+		String URL = null;
+		if (selectedURL != null) {
+			URL = selectedURL;
+		} else {
+			URL = server.getBaseURL() + new Path(fileName).toString();
+		}
+		
 		ILaunchConfigurationWorkingCopy wc = configType.newInstance(null, getNewConfigurationName(fileName));
 
 		// Set the debugger ID and the configuration delegate for this launch configuration
@@ -20,17 +24,18 @@
 		wc.setAttribute(Server.BASE_URL, URL);
 		wc.setAttribute(IPHPDebugConstants.RUN_WITH_DEBUG_INFO, PHPDebugPlugin.getDebugInfoOption());
 		wc.setAttribute(IPHPDebugConstants.OPEN_IN_BROWSER, PHPDebugPlugin.getOpenInBrowserOption());
-		wc.setAttribute(IDebugParametersKeys.FIRST_LINE_BREAKPOINT, PHPProjectPreferences.getStopAtFirstLine(project));
+		wc.setAttribute(IDebugParametersKeys.FIRST_LINE_BREAKPOINT, breakAtFirstLine);
 
 		// Display a dialog for selecting the URL.
-		String title = (ILaunchManager.DEBUG_MODE.equals(mode) ? "Debug PHP Web Page" : (ILaunchManager.PROFILE_MODE.equals(mode) ? "Profile PHP Web Page" : "Run PHP Web Page"));
-		PHPWebPageURLLaunchDialog launchDialog = new PHPWebPageURLLaunchDialog(wc, server, title);
-		launchDialog.setBlockOnOpen(true);
-		if (launchDialog.open() == PHPWebPageURLLaunchDialog.OK) {
-			// Save the user-given URL as part of the launch configuration.
-			config = wc.doSave();
-			return config;
+		if (showDebugDialog) {
+			String title = (ILaunchManager.DEBUG_MODE.equals(mode) ? "Debug PHP Web Page" : (ILaunchManager.PROFILE_MODE.equals(mode) ? "Profile PHP Web Page" : "Run PHP Web Page"));
+			PHPWebPageURLLaunchDialog launchDialog = new PHPWebPageURLLaunchDialog(wc, server, title);
+			launchDialog.setBlockOnOpen(true);
+			if (launchDialog.open() == PHPWebPageURLLaunchDialog.CANCEL) {
+				return null;
+			}
 		}
-		return null;
+		config = wc.doSave();
+		return config;
 	}
 

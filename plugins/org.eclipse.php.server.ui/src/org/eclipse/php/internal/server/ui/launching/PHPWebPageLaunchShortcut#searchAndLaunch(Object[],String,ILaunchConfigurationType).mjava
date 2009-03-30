@@ -30,11 +30,6 @@
 					}
 				}
 
-				if (phpPathString == null) {
-					// Could not find target to launch
-					throw new CoreException(new Status(IStatus.ERROR, PHPDebugUIPlugin.ID, IStatus.OK, PHPDebugUIMessages.launch_failure_no_target, null));
-				}
-
 				Server defaultServer = ServersManager.getDefaultServer(project);
 				if (defaultServer == null) {
 					PHPDebugPlugin.createDefaultPHPServer();
@@ -44,9 +39,31 @@
 						throw new CoreException(new Status(IStatus.ERROR, PHPDebugUIPlugin.ID, IStatus.OK, "Could not create a defualt server for the launch.", null));
 					}
 				}
+				
+				boolean breakAtFirstLine = PHPProjectPreferences.getStopAtFirstLine(project);
+				String selectedURL = null;
+				boolean showDebugDialog = true;
+				if (obj instanceof IScriptProject) {
+					final PHPWebPageLaunchDialog dialog = new PHPWebPageLaunchDialog(mode, (IScriptProject) obj);
+					final int open = dialog.open();
+					if (open == PHPWebPageLaunchDialog.OK) {
+						defaultServer = dialog.getServer();
+						selectedURL = dialog.getPhpPathString();
+						phpPathString = dialog.getFilename();
+						breakAtFirstLine = dialog.isBreakAtFirstLine();
+						showDebugDialog = false;
+					} else {
+						continue;
+					}
+				}
+
+				if (phpPathString == null) {
+					// Could not find target to launch
+					throw new CoreException(new Status(IStatus.ERROR, PHPDebugUIPlugin.ID, IStatus.OK, PHPDebugUIMessages.launch_failure_no_target, null));
+				}
 
 				// Launch the app
-				ILaunchConfiguration config = findLaunchConfiguration(project, phpPathString, defaultServer, mode, configType);
+				ILaunchConfiguration config = findLaunchConfiguration(project, phpPathString, selectedURL, defaultServer, mode, configType, breakAtFirstLine, showDebugDialog);
 				if (config != null) {
 					DebugUITools.launch(config, mode);
 				} else {
