@@ -1,0 +1,70 @@
+	private static boolean checkGlobalIdentifier(ASTNode locateNode) {
+		// check if it is a GLOBALS['a'] direction
+		if (locateNode.getType() == ASTNode.SCALAR) {
+			Scalar scalar = (Scalar) locateNode;
+			return checkGLOBALS(scalar);
+		}
+
+		// check if it is an identifier
+		if (locateNode.getType() != ASTNode.IDENTIFIER) {
+			return false;
+		}
+
+		final Identifier targetIdentifier = ((Identifier) locateNode);
+
+		ASTNode parent = locateNode.getParent();
+		if (parent.getType() != ASTNode.VARIABLE) {
+			return false;
+		}
+
+		final Variable variable = (Variable) parent;
+		// if it is not a dollared variable - it is not a global one
+		if (!variable.isDollared() || variable.getParent().getType() == ASTNode.FIELD_DECLARATION) {
+			return false;
+		}
+
+		// ignore static memeber call
+		if (parent.getParent().getType() == ASTNode.STATIC_FIELD_ACCESS) {
+			final StaticFieldAccess staticFieldAccess = (StaticFieldAccess) parent.getParent();
+			if (staticFieldAccess.getMember() == variable) {
+				return false;
+			}
+		}
+
+		if (parent.getParent().getLocationInParent() == FieldsDeclaration.FIELDS_PROPERTY) {
+			return false;
+		}
+
+		// check if declared global in function
+		while (parent != null) {
+			// if the variable was used inside a function
+			if (parent.getType() == ASTNode.FUNCTION_DECLARATION) {
+				// global declaration detection
+				final int end = parent.getEnd();
+				class GlobalSeacher extends ApplyAll {
+					public int offset = end;
+
+					public boolean apply(ASTNode node) {
+						if (offset != end) {
+							return false;
+						}
+
+						if (node.getType() == ASTNode.GLOBAL_STATEMENT) {
+							GlobalStatement globalStatement = (GlobalStatement) node;
+							if (checkGlobal(targetIdentifier, globalStatement)) {
+								offset = globalStatement.getStart();
+							}
+						}
+
+						return true;
+					}
+				}
+				GlobalSeacher searchGlobal = new GlobalSeacher();
+				parent.accept(searchGlobal);
+				return searchGlobal.offset <= targetIdentifier.getStart();
+			}
+			parent = parent.getParent();
+		}
+		return parent == null;
+	}
+
