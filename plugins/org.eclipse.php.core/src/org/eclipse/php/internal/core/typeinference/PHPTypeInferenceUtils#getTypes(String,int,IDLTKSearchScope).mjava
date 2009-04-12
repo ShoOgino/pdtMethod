@@ -1,0 +1,52 @@
+	/**
+	 * This method returns types (classes, interfaces and namespaces).
+	 * As this method can be heavy FakeType is returned.
+	 * 
+	 * @param prefix Type prefix
+	 * @param matchRule Search match rule
+	 * @param scope Search scope
+	 * @return type element array
+	 */
+	public static IType[] getTypes(String prefix, int matchRule, final IDLTKSearchScope scope) {
+
+		final Collection<IType> elements = new LinkedList<IType>();
+		SearchEngine searchEngine = new SearchEngine();
+
+		if ((matchRule & SearchPattern.R_EXACT_MATCH) != 0) {
+			try {
+				SearchPattern pattern = SearchPattern.createPattern(prefix, IDLTKSearchConstants.TYPE, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH, PHPLanguageToolkit.getDefault());
+				searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
+					public void acceptSearchMatch(SearchMatch match) throws CoreException {
+						IType element = (IType) match.getElement();
+						if (!PHPFlags.isNamespace(element.getFlags())) {
+							elements.add(element);
+						}
+					}
+				}, null);
+			} catch (CoreException e) {
+				Logger.logException(e);
+				return null;
+			}
+		} else {
+			try {
+				final HandleFactory handleFactory = new HandleFactory();
+				searchEngine.searchAllTypeNames(null, 0, prefix.toCharArray(), matchRule, IDLTKSearchConstants.DECLARATIONS, scope, new TypeNameRequestor() {
+					public void acceptType(int modifiers, char[] packageName, char[] simpleTypeName, char[][] enclosingTypeNames, String path) {
+						Openable openable = handleFactory.createOpenable(path, scope);
+						ModelElement parent = openable;
+						if (enclosingTypeNames.length > 0) {
+							parent = new FakeType(openable, new String(enclosingTypeNames[0]), Modifiers.AccNameSpace);
+						}
+						if (parent != null) {
+							elements.add(new FakeType(parent, new String(simpleTypeName), modifiers));
+						}
+					}
+				}, IDLTKSearchConstants.WAIT_UNTIL_READY_TO_SEARCH, null);
+			} catch (ModelException e) {
+				Logger.logException(e);
+			}
+		}
+
+		return (IType[]) elements.toArray(new IType[elements.size()]);
+	}
+

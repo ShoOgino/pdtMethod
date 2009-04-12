@@ -138,18 +138,30 @@
 		if (pattern != null) {
 			try {
 				if (elementType == IDLTKSearchConstants.TYPE) {
-					elements.addAll(Arrays.asList(PHPTypeInferenceUtils.getTypes(prefix.toCharArray(), pattern.getMatchRule(), scope)));
+					elements.addAll(Arrays.asList(PHPTypeInferenceUtils.getTypes(prefix, pattern.getMatchRule(), scope)));
+				} else if (elementType == IDLTKSearchConstants.METHOD) {
+					elements.addAll(Arrays.asList(PHPTypeInferenceUtils.getFunctions(prefix, pattern.getMatchRule(), scope)));
 				} else {
-					searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
-						public void acceptSearchMatch(SearchMatch match) throws CoreException {
+					if ((mask & EXCLUDE_CONSTANTS) == 0 && (mask & ONLY_CURRENT_FILE) == 0 && !prefix.startsWith(DOLLAR)) {
+						// workaround for fast searching global constants:
+						MixinModel mixinModel = PHPMixinModel.getInstance(sourceModule.getScriptProject()).getRawModel();
+						if (!prefix.endsWith(WILDCARD)) {
+							prefix += WILDCARD;
+						}
+						String[] keys = mixinModel.findKeys(MixinModel.SEPARATOR + prefix + PHPMixinParser.CONSTANT_SUFFIX);
+						for (String key : keys) {
+							String name = key.substring(1, key.indexOf(PHPMixinParser.CONSTANT_SUFFIX));
+							elements.add(new FakeField((ModelElement) sourceModule, name, Modifiers.AccConstant));
+						}
+					} else {
+						searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
+							public void acceptSearchMatch(SearchMatch match) throws CoreException {
 
-							IModelElement element = (IModelElement) match.getElement();
-							// sometimes method reference is found instead of declaration (seems to be a bug in search engine):
-							if (element instanceof SourceModule) {
-								return;
-							}
-
-							if (element instanceof IField) {
+								IModelElement element = (IModelElement) match.getElement();
+								// sometimes method reference is found instead of declaration (seems to be a bug in search engine):
+								if (!(element instanceof IField)) {
+									return;
+								}
 								try {
 									int flags = ((IField) element).getFlags();
 									if (((mask & EXCLUDE_CONSTANTS) != 0 && PHPFlags.isConstant(flags)) || ((mask & EXCLUDE_VARIABLES) != 0 && !PHPFlags.isConstant(flags))) {
@@ -160,18 +172,18 @@
 										e.printStackTrace();
 									}
 								}
-							}
 
-							IModelElement parent = element.getParent();
-							if (parent instanceof IType && !PHPFlags.isNamespace(((IType)parent).getFlags())) {
-								return; // The element is a class/interface member
+								IModelElement parent = element.getParent();
+								if (parent instanceof IType && !PHPFlags.isNamespace(((IType) parent).getFlags())) {
+									return; // The element is a class/interface member
+								}
+								if (parent instanceof IMethod) {
+									return; // The element is a local function variable
+								}
+								elements.add(element);
 							}
-							if (parent instanceof IMethod && element instanceof IField) {
-								return; // The element is a local function variable
-							}
-							elements.add(element);
-						}
-					}, null);
+						}, null);
+					}
 				}
 			} catch (CoreException e) {
 				if (DLTKCore.DEBUG_COMPLETION) {

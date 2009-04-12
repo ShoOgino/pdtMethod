@@ -2,24 +2,18 @@
 	 * Getting an instance and finding its type.
 	 */
 	private static IType[] innerGetClassName(ISourceModule sourceModule, TextSequence statementText, int propertyEndPosition, boolean isClassTriger, int offset) {
-		
+
 		PHPVersion phpVersion = PhpVersionProjectPropertyHandler.getVersion(sourceModule.getScriptProject().getProject());
 
 		int classNameStart = PHPTextSequenceUtilities.readIdentifierStartIndex(phpVersion, statementText, propertyEndPosition, true);
 		String className = statementText.subSequence(classNameStart, propertyEndPosition).toString();
 		if (isClassTriger) {
-			if (className.equals(SELF)) { //$NON-NLS-1$
-				IType classData = PHPModelUtils.getCurrentType(sourceModule, offset - 6); //the offset before self::
-				if (classData != null) {
-					return new IType[] { classData };
-				}
-			} else if (className.equals("parent")) { //$NON-NLS-1$
-				IType classData = PHPModelUtils.getCurrentType(sourceModule, offset - 8); //the offset before parent::
+			if ("self".equals(className) || "parent".equals(className) || (phpVersion.isGreaterThan(PHPVersion.PHP5) && "static".equals(className))) {
+				IType classData = PHPModelUtils.getCurrentType(sourceModule, offset - className.length() - 2); //the offset before "self::", "parent::" or "static::"
 				if (classData != null) {
 					return new IType[] { classData };
 				}
 			}
-
 			if (className.length() > 0) {
 				ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule, null);
 				FileContext context = new FileContext(sourceModule, moduleDeclaration, offset);
