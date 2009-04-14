@@ -146,7 +146,32 @@
 			if (fHierarchyPresenter != null) {
 				fHierarchyPresenter.showInformation();
 			}
-		} else {
+		} else if(operation == DELETE){
+			StyledText textWidget= getTextWidget();
+			if (textWidget == null)
+				return;
+			ITextSelection textSelection= null;
+				if (redraws()) {
+					try {
+						textSelection= (ITextSelection) getSelection();
+						int length= textSelection.getLength();
+						if (!textWidget.getBlockSelection() && (length == 0 || length == textWidget.getSelectionRange().y))
+							getTextWidget().invokeAction(ST.DELETE_NEXT);
+						else
+							deleteSelection(textSelection, textWidget);
+
+						if(fireSelectionChanged ){
+							Point range= textWidget.getSelectionRange();
+							fireSelectionChanged(range.x, range.y);
+						}
+
+					} catch (BadLocationException x) {
+						// ignore
+					}
+				}
+		}
+		else
+		{
 			super.doOperation(operation);
 		}
 	}
