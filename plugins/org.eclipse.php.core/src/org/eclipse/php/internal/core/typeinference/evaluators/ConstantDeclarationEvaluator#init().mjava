@@ -2,7 +2,7 @@
 		ConstantDeclarationGoal typedGoal = (ConstantDeclarationGoal) goal;
 		String constantName = typedGoal.getConstantName();
 		String typeName = typedGoal.getTypeName();
-		
+
 		IDLTKSearchScope scope = null;
 		IScriptProject scriptProject = null;
 		ISourceModuleContext sourceModuleContext = (ISourceModuleContext) goal.getContext();
@@ -11,8 +11,23 @@
 			scope = SearchEngine.createSearchScope(scriptProject);
 		}
 
-		PHPMixinModel mixinModel = scriptProject == null ? PHPMixinModel.getWorkspaceInstance() : PHPMixinModel.getInstance(scriptProject);
-		IModelElement[] elements = mixinModel.getConstant(constantName, typeName, scope);
+		if (scope == null) {
+			scope = SearchEngine.createWorkspaceScope(PHPLanguageToolkit.getDefault());
+		}
+		IType[] types = PHPTypeInferenceUtils.getTypes(typeName, scope);
+		Set<IModelElement> elements = new HashSet<IModelElement>();
+		for (IType type : types) {
+			try {
+				IField field = type.getField(constantName);
+				if (field.exists() && PHPFlags.isConstant(field.getFlags())) {
+					elements.add(field);
+				}
+			} catch (ModelException e) {
+				if (DLTKCore.DEBUG) {
+					e.printStackTrace();
+				}
+			}
+		}
 
 		Map<ISourceModule, SortedSet<ISourceRange>> offsets = new HashMap<ISourceModule, SortedSet<ISourceRange>>();
 

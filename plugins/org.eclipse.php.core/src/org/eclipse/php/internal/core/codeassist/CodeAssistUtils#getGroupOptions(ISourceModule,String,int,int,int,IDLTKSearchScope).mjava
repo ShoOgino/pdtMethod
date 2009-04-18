@@ -1,0 +1,69 @@
+	private static IModelElement[] getGroupOptions(ISourceModule sourceModule, String prefix, int elementType, int mask, int matchRule, IDLTKSearchScope scope) {
+		List<IModelElement> elements = new LinkedList<IModelElement>();
+		Set<String> groups = new HashSet<String>();
+
+		// Build the mixin request key:
+		if (elementType == IDLTKSearchConstants.TYPE) {
+			IType[] classesAndInterfaces = PHPTypeInferenceUtils.getClassesAndInterfaces(prefix, matchRule, scope);
+			try {
+				for (IType type : classesAndInterfaces) {
+					int flags = type.getFlags();
+					if ((mask & EXCLUDE_CLASSES) == 0 && PHPFlags.isClass(flags)) {
+						elements.add(type);
+					}
+					if ((mask & EXCLUDE_INTERFACES) == 0 && PHPFlags.isInterface(flags)) {
+						elements.add(type);
+					}
+				}
+			} catch (ModelException e) {
+				if (DLTKCore.DEBUG_COMPLETION) {
+					e.printStackTrace();
+				}
+			}
+		} else {
+			elements.addAll(Arrays.asList(PHPTypeInferenceUtils.getFunctions(prefix, matchRule, scope)));
+		}
+
+		// Calculate minimal namespaces:
+		int prefixLength = prefix.length();
+		for (IModelElement element : elements) {
+			String elementName = element.getElementName();
+			int nsIdx = elementName.substring(prefixLength).indexOf('_');
+			if ((nsIdx >= 0 && prefixLength > 0 || prefixLength == 0 && nsIdx > 0) && nsIdx < elementName.length() - 1) {
+				groups.add(elementName.substring(0, prefixLength + nsIdx));
+			}
+		}
+
+		// Calclulate classes to search:
+		List<String> filteredGroups = new LinkedList<String>();
+		for (String group : groups) {
+			List<String> filteredElements = new LinkedList<String>();
+			for (IModelElement element : elements) {
+				String elementName = element.getElementName();
+				if (elementName.startsWith(group)) {
+					int underscore = elementName.lastIndexOf('_');
+					if (underscore == group.length()) {
+						filteredElements.add(elementName);
+					}
+				}
+			}
+			if (filteredElements.size() == 1) {
+				filteredGroups.add(group);
+			}
+		}
+		for (String filteredGroup : filteredGroups) {
+			groups.remove(filteredGroup);
+		}
+
+		List<IModelElement> groupElements = new LinkedList<IModelElement>();
+		for (String group : groups) {
+			String fakeElementName = new StringBuilder(group).append("_*").toString();
+			if (elementType == IDLTKSearchConstants.TYPE) {
+				groupElements.add(new FakeGroupType((ModelElement) sourceModule, fakeElementName));
+			} else if (elementType == IDLTKSearchConstants.METHOD) {
+				groupElements.add(new FakeGroupMethod((ModelElement) sourceModule, fakeElementName));
+			}
+		}
+		return (IModelElement[]) groupElements.toArray(new IModelElement[groupElements.size()]);
+	}
+

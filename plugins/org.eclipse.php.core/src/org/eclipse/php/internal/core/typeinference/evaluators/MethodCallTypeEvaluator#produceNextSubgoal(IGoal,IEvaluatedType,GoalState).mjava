@@ -17,6 +17,7 @@
 		// receiver must been evaluated now, lets evaluate method return type:
 		if (state == STATE_WAITING_RECEIVER) {
 			receiverType = previousResult;
+			previousResult = null;
 			if (receiverType == null) {
 				return null;
 			}
@@ -26,39 +27,63 @@
 		// we've evaluated receiver, lets evaluate the method return type now (using PHP Doc first):
 		if (state == STATE_GOT_RECEIVER) {
 			state = STATE_WAITING_METHOD_PHPDOC;
-			TypeContext context = new TypeContext((ISourceModuleContext) goal.getContext(), receiverType);
-			IModelElement[] types = PHPTypeInferenceUtils.getModelElements(receiverType, (ISourceModuleContext) goal.getContext(), 0);
-			if (types != null) {
-				String methodName = expression.getName();
-				for (IModelElement type : types) {
-					IMethod method;
-					try {
-						method = PHPModelUtils.getTypeMethod((IType) type, methodName);
-						if (method != null) {
-							return new PHPDocMethodReturnTypeGoal(context, method);
-						}
-					} catch (ModelException e) {
-						if (DLTKCore.DEBUG) {
-							e.printStackTrace();
+			if (receiverType == null) {
+				IMethod[] functions = PHPTypeInferenceUtils.getFunctions(expression.getName(), SearchEngine.createSearchScope(((ISourceModuleContext) goal.getContext()).getSourceModule().getScriptProject()));
+				for (IMethod method : functions) {
+					return new PHPDocMethodReturnTypeGoal(new FileContext((ISourceModuleContext) goal.getContext()), method);
+				}
+			} else {
+				TypeContext context = new TypeContext((ISourceModuleContext) goal.getContext(), receiverType);
+				IType[] types = PHPTypeInferenceUtils.getModelElements(receiverType, (ISourceModuleContext) goal.getContext(), 0);
+				if (types != null) {
+					String methodName = expression.getName();
+					for (IType type : types) {
+						try {
+							IMethod method = PHPModelUtils.getTypeMethod(type, methodName);
+							if (method == null) {
+								IMethod[] hierarchyMethods = PHPModelUtils.getTypeHierarchyMethod(type, methodName, null);
+								if (hierarchyMethods.length > 0) {
+									method = hierarchyMethods[0];
+								}
+							}
+							if (method != null) {
+								return new PHPDocMethodReturnTypeGoal(context, method);
+							}
+						} catch (CoreException e) {
+							if (DLTKCore.DEBUG) {
+								e.printStackTrace();
+							}
 						}
 					}
 				}
 			}
 		}
+		
+		// PHPDoc logic is done, start evaluating 'return' statements here:
 		if (state == STATE_WAITING_METHOD_PHPDOC) {
 			if (goalState != GoalState.PRUNED && previousResult != null && previousResult != UnknownType.INSTANCE) {
 				result = previousResult;
+				previousResult = null;
 			}
 			state = STATE_WAITING_METHOD;
-			TypeContext context = new TypeContext((ISourceModuleContext) goal.getContext(), receiverType);
-			return new MethodReturnTypeGoal(context, expression.getName(), new IEvaluatedType[0] /* arguments are not interesting us */);
+			if (receiverType == null) {
+				IMethod[] functions = PHPTypeInferenceUtils.getFunctions(expression.getName(), SearchEngine.createSearchScope(((ISourceModuleContext) goal.getContext()).getSourceModule().getScriptProject()));
+				for (IMethod method : functions) {
+					return new MethodElementReturnTypeGoal(new FileContext((ISourceModuleContext) goal.getContext()), method);
+				}
+			} else {
+				TypeContext context = new TypeContext((ISourceModuleContext) goal.getContext(), receiverType);
+				return new MethodReturnTypeGoal(context, expression.getName(), new IEvaluatedType[0] /* arguments are not interesting us */);
+			}
 		}
+		
 		if (state == STATE_WAITING_METHOD) {
 			if (goalState != GoalState.PRUNED && previousResult != null && previousResult != UnknownType.INSTANCE) {
 				if (result != null) {
 					result = PHPTypeInferenceUtils.combineTypes(Arrays.asList(new IEvaluatedType[] { result, previousResult }));
 				} else {
 					result = previousResult;
+					previousResult = null;
 				}
 			}
 		}

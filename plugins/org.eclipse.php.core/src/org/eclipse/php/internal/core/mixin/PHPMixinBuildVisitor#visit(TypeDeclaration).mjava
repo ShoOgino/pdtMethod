@@ -1,26 +1,5 @@
 	public boolean visit(TypeDeclaration decl) throws Exception {
-		if (decl instanceof NamespaceDeclaration/* && ((NamespaceDeclaration) decl).isGlobal()*/) {
-			return true;
-		}
-
-		IType obj = null;
-		if (moduleAvailable) {
-			IModelElement elementFor = findModelElementFor(decl);
-			obj = (IType) elementFor;
-		}
-
-		String name = decl.getName();
-		Scope scope = scopes.peek();
-		String newKey;
-		if (decl.getKind() == ASTNodeKinds.INTERFACE_DECLARATION) {
-			newKey = scope.reportInterface(name, obj);
-			// we report internal elements as they are under class always:
-			newKey = newKey.replace(PHPMixinParser.INTERFACE_SUFFIX, PHPMixinParser.CLASS_SUFFIX);
-		} else {
-			newKey = scope.reportType(name, obj);
-		}
-		scopes.push(new ClassScope(decl, newKey));
-
+		parentStack.push(decl);
 		return visitGeneral(decl);
 	}
 

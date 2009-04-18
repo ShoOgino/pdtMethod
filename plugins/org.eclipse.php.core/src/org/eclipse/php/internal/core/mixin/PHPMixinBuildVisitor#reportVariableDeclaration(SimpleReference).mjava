@@ -1,10 +1,41 @@
 	/**
-	 * Report variable declaration in the current scope
+	 * Report variable declaration in the given scope
 	 * @param var Variable declaration. Can either contain dollar or not (in case of field access declaration)
 	 * @return new model key
 	 * @throws Exception
 	 */
-	protected String reportVariableDeclaration(SimpleReference var) throws Exception {
-		return reportVariableDeclaration(var, scopes.peek());
+	protected void reportVariableDeclaration(SimpleReference var) throws Exception {
+		// Check whether this variable is global (that means it was previously declared as global):
+		boolean globalVariable = false;
+		if (!parentStack.isEmpty()) {
+			ASTNode parent = parentStack.peek();
+			if (parent instanceof MethodDeclaration) {
+				if (var instanceof VariableReference) {
+					Set<String> globalVars = globalVariables.peek();
+					if (globalVars.contains(var.getName())) {
+						globalVariable = true;
+					}
+				}
+			} else if (parent instanceof ModuleDeclaration) {
+				globalVariable = true;
+			}
+		}
+		if (!globalVariable) {
+			return;
+		}
+
+		IField obj = null;
+		String name = var.getName();
+		if (moduleAvailable) {
+			IModelElement element = findModelElementFor(var);
+			if (element instanceof IField) {
+				obj = (IField) element;
+			}
+		}
+		if (obj == null && sourceModule != null) {
+			obj = new FakeField((ModelElement) sourceModule, name, var.sourceStart(), var.sourceEnd() - var.sourceStart());
+		}
+
+		sourceModuleScope.reportVariable(name, obj);
 	}
 
