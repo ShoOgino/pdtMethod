@@ -1,0 +1,33 @@
+	/**
+	 * Creates test file with the specified content and calculates the source range
+	 * for the selection. Selection characters themself are stripped off.
+	 * 
+	 * @param data File data
+	 * @return offset where's the offset character set. 
+	 * @throws Exception
+	 */
+	protected static SourceRange createFile(String data) throws Exception {
+		int left = data.indexOf(SELECTION_CHAR);
+		if (left == -1) {
+			throw new IllegalArgumentException("Selection characters are not set");
+		}
+		// replace the left character
+		data = data.substring(0, left) + data.substring(left + 1);
+
+		int right = data.indexOf(SELECTION_CHAR);
+		if (right == -1) {
+			throw new IllegalArgumentException("Selection is not closed");
+		}
+		data = data.substring(0, right) + data.substring(right + 1);
+
+		testFile = project.getFile("test.php");
+		testFile.create(new ByteArrayInputStream(data.getBytes()), true, null);
+		project.refreshLocal(IResource.DEPTH_INFINITE, null);
+		project.build(IncrementalProjectBuilder.INCREMENTAL_BUILD, null);
+
+		waitForAutoBuild();
+		waitForIndexer(project);
+
+		return new SourceRange(left, right - left);
+	}
+

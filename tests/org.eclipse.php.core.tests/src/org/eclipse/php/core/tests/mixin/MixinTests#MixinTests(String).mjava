@@ -1,0 +1,93 @@
+	@SuppressWarnings("unchecked")
+	public MixinTests(String testsDirectory) {
+		super(testsDirectory);
+
+		final MixinModel model = new MixinModel(PHPLanguageToolkit.getDefault());
+		try {
+
+			tests = new MixinTest("PHP Mixin Tests");
+
+			Enumeration<String> entryPaths = Activator.getDefault().getBundle().getEntryPaths(testsDirectory);
+			while (entryPaths.hasMoreElements()) {
+				final String path = (String) entryPaths.nextElement();
+				URL entry = Activator.getDefault().getBundle().getEntry(path);
+				try {
+					entry.openStream().close();
+				} catch (Exception e) {
+					continue;
+				}
+				int pos = path.lastIndexOf('/');
+				final String name = (pos >= 0 ? path.substring(pos + 1) : path);
+
+				if (!name.endsWith(".php")) {
+					continue;
+				}
+
+				addTest(new TestCase(name) {
+
+					private Collection<IAssertion> assertions = new LinkedList<IAssertion>();
+
+					public void setUp() {
+					}
+
+					class GetElementAssertion implements IAssertion {
+
+						private final String key;
+
+						public GetElementAssertion(String key) {
+							this.key = key;
+						}
+
+						public void check() throws Exception {
+							IMixinElement mixinElement = model.get(key);
+							if (mixinElement == null) {
+								throw new AssertionFailedError("Key " + key + " not found");
+							}
+
+							Object[] allObjects = mixinElement.getAllObjects();
+
+							if (allObjects == null || allObjects.length == 0) {
+								throw new AssertionFailedError("Key " + key + " has null or empty object set");
+							}
+
+							for (int i = 0; i < allObjects.length; i++) {
+								if (allObjects[i] == null) {
+									throw new AssertionFailedError("Key " + key + " has null object at index " + i);
+								}
+								PHPMixinElementInfo info = (PHPMixinElementInfo) allObjects[i];
+								if (info.getObject() == null) {
+									throw new AssertionFailedError("Key " + key + " has info with a null object at index " + i + " (kind=" + info.getKind() + ")");
+								}
+							}
+						}
+					}
+
+					protected void runTest() throws Throwable {
+						String content = loadContent(path);
+						String[] lines = content.split("\n");
+						int lineOffset = 0;
+						for (int i = 0; i < lines.length; i++) {
+							String line = lines[i].trim();
+							if (line.startsWith("/* MIXIN")) {
+								for (int j = i + 1; j < lines.length; ++j) {
+									line = lines[j].trim();
+									if ("*/".equals(line)) {
+										break;
+									}
+									assertions.add(new GetElementAssertion(line));
+								}
+							}
+							lineOffset += lines[i].length() + 1;
+						}
+
+						Assert.isLegal(assertions.size() > 0);
+
+						tests.executeTest(assertions);
+					}
+				});
+			}
+		} finally {
+			model.stop();
+		}
+	}
+

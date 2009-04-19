@@ -1,0 +1,28 @@
+	/**
+	 * Creates test file with the specified content and calculates the offset at 
+	 * OFFSET_CHAR. Offset character itself is stripped off.
+	 * 
+	 * @param data File data
+	 * @return offset where's the offset character set. 
+	 * @throws Exception
+	 */
+	protected static int createFile(String data) throws Exception {
+		int offset = data.lastIndexOf(OFFSET_CHAR);
+		if (offset == -1) {
+			throw new IllegalArgumentException("Offset character is not set");
+		}
+
+		// replace the offset character
+		data = data.substring(0, offset) + data.substring(offset + 1);
+
+		testFile = project.getFile("test.php");
+		testFile.create(new ByteArrayInputStream(data.getBytes()), true, null);
+		project.refreshLocal(IResource.DEPTH_INFINITE, null);
+		project.build(IncrementalProjectBuilder.INCREMENTAL_BUILD, null);
+
+		waitForAutoBuild();
+		waitForIndexer(project);
+
+		return offset;
+	}
+
