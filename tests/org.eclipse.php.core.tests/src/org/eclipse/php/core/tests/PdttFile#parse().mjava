@@ -9,30 +9,13 @@
 		STATES state = null;
 		while (line != null) {
 			if (line.startsWith("--")) {
-				if (line.equalsIgnoreCase("--TEST--")) {
-					state = STATES.TEST;
-				} else if (line.equalsIgnoreCase("--FILE--")) {
-					state = STATES.FILE;
-				} else if (line.equalsIgnoreCase("--EXPECT--")) {
-					state = STATES.EXPECT;
-				} else {
+				state = parseStateLine(line);
+				if (state == null) {
 					throw new Exception("Wrong state: " + line);
 				}
 			} else {
 				if (state != null) {
-					switch (state) {
-						case TEST:
-							this.description = line;
-							break;
-						case FILE:
-							this.file += (line + "\n");
-							break;
-						case EXPECT:
-							this.expected += (line + "\n");
-							break;
-						default:
-							break;
-					}
+					onState(state, line);
 				}
 			}
 			line = bReader.readLine();

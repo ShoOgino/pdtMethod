@@ -1,0 +1,59 @@
+	public static Test suite() {
+
+		TestSuite suite = new TestSuite("Type Inference Tests");
+
+		for (final PHPVersion phpVersion : TESTS.keySet()) {
+			TestSuite phpVerSuite = new TestSuite(phpVersion.getAlias());
+			
+			for (String testsDirectory : TESTS.get(phpVersion)) {
+
+				for (final String fileName : getPDTTFiles(testsDirectory)) {
+					try {
+						final PdttFile pdttFile = new PdttFile(fileName);
+						final String pruner = getPrunerType(pdttFile);
+						
+						phpVerSuite.addTest(new TypeInferenceTests(phpVersion.getAlias() + " - /" + fileName) {
+
+							protected void setUp() throws Exception {
+								// set the project version
+								PhpVersionProjectPropertyHandler.setVersion(phpVersion, project);
+							}
+
+							protected void tearDown() throws Exception {
+							}
+
+							protected void runTest() throws Throwable {
+								String criteriaFunction = new File(fileName).getName().replaceAll("\\.pdtt", "");
+								String code = pdttFile.getFile();
+								
+								IEvaluatedType evaluatedType = findEvaluatedType(code, criteriaFunction, pruner);
+								
+								Assert.assertNotNull("Can't evaluate type for: " + code, evaluatedType);
+								Assert.assertEquals(pdttFile.getExpected().trim(), evaluatedType.getTypeName().trim());
+							}
+						});
+					} catch (final Exception e) {
+						phpVerSuite.addTest(new TestCase(fileName) { // dummy test indicating PDTT file parsing failure
+								protected void runTest() throws Throwable {
+									throw e;
+								}
+							});
+					}
+				}
+			}
+			suite.addTest(phpVerSuite);
+		}
+
+		// Create a setup wrapper
+		TestSetup setup = new TestSetup(suite) {
+			protected void setUp() throws Exception {
+				setUpSuite();
+			}
+
+			protected void tearDown() throws Exception {
+				tearDownSuite();
+			}
+		};
+		return setup;
+	}
+

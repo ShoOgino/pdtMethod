@@ -1,0 +1,42 @@
+	protected IEvaluatedType findEvaluatedType(String code, String criteriaFunction, String pruner) throws Exception {
+		IFile file = project.getFile("dummy.php");
+		if (file.exists()) {
+			file.setContents(new ByteArrayInputStream(code.getBytes()), true, false, null);
+		} else {
+			file.create(new ByteArrayInputStream(code.getBytes()), true, null);
+		}
+
+		try {
+			project.build(IncrementalProjectBuilder.INCREMENTAL_BUILD, null);
+			
+			waitForAutoBuild();
+			waitForIndexer(project);
+
+			ISourceModule sourceModule = DLTKCore.createSourceModuleFrom(file);
+			ModuleDeclaration moduleDecl = SourceParserUtil.getModuleDeclaration(sourceModule);
+
+			ASTNodeSearcher searcher = new ASTNodeSearcher(sourceModule, criteriaFunction);
+			moduleDecl.traverse(searcher);
+			
+			Assert.assertNotNull("Method call " + criteriaFunction + "() in code: " + code, searcher.getResult());
+			Assert.assertNotNull("Can't find context for " + criteriaFunction + "() in code: " + code, searcher.getContext());
+			
+			ExpressionTypeGoal goal = new ExpressionTypeGoal(searcher.getContext(), searcher.getResult());
+
+			if ("phpdocGoals".equals(pruner)) {
+				return typeInferenceEngine.evaluateTypeHeavy(goal, ENGINE_TIMEOUT);
+			}
+			if ("heavyGoals".equals(pruner)) {
+				return typeInferenceEngine.evaluateTypePHPDoc(goal, ENGINE_TIMEOUT);
+			}
+			return typeInferenceEngine.evaluateType(goal, ENGINE_TIMEOUT);
+
+		} finally {
+			try {
+				file.delete(true, null);
+			} catch (Exception e) {
+				// do not handle - may be it's currently in use
+			}
+		}
+	}
+
