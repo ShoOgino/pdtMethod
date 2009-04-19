@@ -1,0 +1,48 @@
+	public static Test suite() {
+
+		TestSuite suite = new TestSuite("Auto Code Assist Tests");
+
+		for (final PHPVersion phpVersion : TESTS.keySet()) {
+			TestSuite phpVerSuite = new TestSuite(phpVersion.getAlias());
+
+			for (String testsDirectory : TESTS.get(phpVersion)) {
+
+				for (final String fileName : getPDTTFiles(testsDirectory)) {
+					try {
+						final PdttFile pdttFile = new PdttFile(fileName);
+						phpVerSuite.addTest(new DomParserTests(phpVersion.getAlias() + " - /" + fileName) {
+
+							protected void runTest() throws Throwable {
+								ASTParser newParser = ASTParser.newParser(phpVersion);
+								newParser.setSource(pdttFile.getFile().trim().toCharArray());
+								Program program = newParser.createAST(new NullProgressMonitor());
+								
+								assertContents(pdttFile.getExpected(), program.toString());
+							}
+						});
+					} catch (final Exception e) {
+						// dummy test indicating PDTT file parsing failure
+						phpVerSuite.addTest(new TestCase(fileName) {
+							protected void runTest() throws Throwable {
+								throw e;
+							}
+						});
+					}
+				}
+			}
+			suite.addTest(phpVerSuite);
+		}
+
+		// Create a setup wrapper
+		TestSetup setup = new TestSetup(suite) {
+			protected void setUp() throws Exception {
+				setUpSuite();
+			}
+
+			protected void tearDown() throws Exception {
+				tearDownSuite();
+			}
+		};
+		return setup;
+	}
+
