@@ -1,0 +1,21 @@
+	public void testMethodInvocationBinding() throws Exception {
+		String str = "<?php class MyClass { function foo(){} } $a = new MyClass(); $a->foo(); ?>";
+		Program program = createAndParse(str);
+
+		ExpressionStatement statement = (ExpressionStatement) program.statements().get(2);
+		MethodInvocation methodInvocation = (MethodInvocation) statement.getExpression();
+
+		IMethodBinding methodBinding = methodInvocation.resolveMethodBinding();
+		Assert.assertTrue(methodBinding.getName().equals("foo"));
+
+		ITypeBinding declaringClass = methodBinding.getDeclaringClass();
+		Assert.assertNotNull(declaringClass);
+		Assert.assertTrue(declaringClass.getName().equals("MyClass"));
+
+		Assert.assertTrue(methodBinding.isConstructor() == false);
+
+		ITypeBinding[] parameterTypes = methodBinding.getParameterTypes();
+		Assert.assertNotNull(parameterTypes);
+		Assert.assertTrue(parameterTypes.length == 0);
+	}
+

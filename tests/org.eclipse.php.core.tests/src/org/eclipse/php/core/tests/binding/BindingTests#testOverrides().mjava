@@ -1,0 +1,14 @@
+	public void testOverrides() throws Exception {
+		// create a file and get the program's root
+		String content = "<? interface B { function foo(); } class A implements /**/B { public $value; private $pValue; function foo() { $a = new A(); $b = /**/$a; } function boo() {} function foo($g) {} } ?>";
+		int index = locateElement(content);
+		ITypeBinding type = getTypeBinding(content);
+		IMethodBinding[] interfaceBMethods = type.getDeclaredMethods();
+
+		type = getTypeBinding(content, index + 4);
+		IMethodBinding[] classAMethods = type.getDeclaredMethods();
+		Assert.assertTrue("Should override", classAMethods[0].overrides(interfaceBMethods[0]));
+		Assert.assertFalse("Should NOT override", classAMethods[1].overrides(interfaceBMethods[0]));
+		Assert.assertTrue("Should override", classAMethods[2].overrides(interfaceBMethods[0]));
+	}
+

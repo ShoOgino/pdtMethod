@@ -1,0 +1,16 @@
+	protected Program createAndParse(String code) throws Exception {
+		IFile testFile = project.getFile("test.php");
+		testFile.create(new ByteArrayInputStream(code.getBytes()), true, null);
+		project.refreshLocal(IResource.DEPTH_INFINITE, null);
+		project.build(IncrementalProjectBuilder.INCREMENTAL_BUILD, null);
+
+		Activator.waitForAutoBuild();
+		Activator.waitForIndexer(project);
+
+		PHPVersion version = PhpVersionProjectPropertyHandler.getVersion();
+		ISourceModule sourceModule = null;
+		sourceModule = DLTKCore.createSourceModuleFrom(testFile);
+		ASTParser parser = ASTParser.newParser(new InputStreamReader(testFile.getContents()), version, false, sourceModule);
+		return parser.createAST(new NullProgressMonitor());
+	}
+
