@@ -1,0 +1,14 @@
+	// This test checks how buildpath changes are propogated to the include path:
+	public void testIncludePathGetAfterBPChange2() throws Exception {
+		String libraryPath = Platform.OS_WIN32.equals(Platform.getOS()) ? "C:\\Projects\\MyLibrary" : "/var/www/MyLibrary";
+		scriptProject.setRawBuildpath(new IBuildpathEntry[] {
+			DLTKCore.newExtLibraryEntry(EnvironmentPathUtils.getFullPath(LocalEnvironment.getInstance(), new Path(libraryPath))) 
+		}, null);
+		
+		IncludePath[] includePath = IncludePathManager.getInstance().getIncludePaths(project);
+		
+		Assert.assertTrue(includePath.length == 1);
+		Assert.assertTrue(includePath[0].isBuildpath());
+		Assert.assertEquals(EnvironmentPathUtils.getLocalPath(((IBuildpathEntry)includePath[0].getEntry()).getPath()).toOSString(), libraryPath);
+	}
+
