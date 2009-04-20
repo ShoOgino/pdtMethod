@@ -2,8 +2,9 @@
 	 * This callback is called while processing state section
 	 * @param state
 	 * @param line
+	 * @throws Exception 
 	 */
-	protected void onState(STATES state, String line) {
+	protected void onState(STATES state, String line) throws Exception {
 		switch (state) {
 			case TEST:
 				this.description = line;
@@ -15,10 +16,13 @@
 				this.expected += (line + "\n");
 				break;
 			case CONFIG:
-				if (this.configuration == null) {
-					this.configuration = "";
+				int i = line.indexOf(':');
+				if (i == -1) {
+					throw new Exception("Wrong option in --CONFIG-- section: " + line);
 				}
-				this.configuration += (line + "\n");
+				String key = line.substring(0, i);
+				String value = line.substring(i + 1);
+				this.config.put(key.trim(), value.trim());
 				break;
 			default:
 				break;

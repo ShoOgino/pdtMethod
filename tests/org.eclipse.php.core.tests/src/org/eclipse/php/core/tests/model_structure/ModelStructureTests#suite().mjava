@@ -1,0 +1,62 @@
+	public static Test suite() {
+
+		TestSuite suite = new TestSuite("Auto Code Assist Tests");
+
+		for (final PHPVersion phpVersion : TESTS.keySet()) {
+			TestSuite phpVerSuite = new TestSuite(phpVersion.getAlias());
+			
+			for (String testsDirectory : TESTS.get(phpVersion)) {
+
+				for (final String fileName : getPDTTFiles(testsDirectory)) {
+					try {
+						final PdttFile pdttFile = new PdttFile(fileName);
+						phpVerSuite.addTest(new ModelStructureTests(phpVersion.getAlias() + " - /" + fileName) {
+
+							protected void setUp() throws Exception {
+								// set the project version
+								PhpVersionProjectPropertyHandler.setVersion(phpVersion, project);
+							}
+
+							protected void tearDown() throws Exception {
+								if (testFile != null) {
+									testFile.delete(true, null);
+									testFile = null;
+								}
+							}
+
+							protected void runTest() throws Throwable {
+								ISourceModule sourceModule = createFile(pdttFile.getFile());
+								
+								ByteArrayOutputStream stream = new ByteArrayOutputStream();
+								PrintStream printStream = new PrintStream(stream);
+								sourceModule.accept(new PrintVisitor(printStream));
+								printStream.close();
+								
+								assertContents(pdttFile.getExpected(), stream.toString());
+							}
+						});
+					} catch (final Exception e) {
+						phpVerSuite.addTest(new TestCase(fileName) { // dummy test indicating PDTT file parsing failure
+								protected void runTest() throws Throwable {
+									throw e;
+								}
+							});
+					}
+				}
+			}
+			suite.addTest(phpVerSuite);
+		}
+
+		// Create a setup wrapper
+		TestSetup setup = new TestSetup(suite) {
+			protected void setUp() throws Exception {
+				setUpSuite();
+			}
+
+			protected void tearDown() throws Exception {
+				tearDownSuite();
+			}
+		};
+		return setup;
+	}
+
