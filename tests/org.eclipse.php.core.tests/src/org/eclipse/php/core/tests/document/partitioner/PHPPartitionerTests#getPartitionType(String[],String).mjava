@@ -1,0 +1,51 @@
+	/**
+	 * This method invokes the partitioner, and returns the partition type of each marker
+	 * @param markers Strings to be looked for in the file, which have the same partiotion type
+	 * @param preferOpenPartitions
+	 * @return a Vector of partition types, all are expected to be with the same type
+	 * @throws Exception
+	 */
+	private ArrayList<String> getPartitionType(String[] markers, String testDataFile) throws Exception {
+		// offset from beginning of stream
+		int offset = 0;
+
+		ArrayList<String> results = new ArrayList<String>();
+
+		// init files
+		IFile inFile = getProject(PROJECT_NAME).getFile(testDataFile);
+
+		// open streams
+		InputStreamReader inStream = new InputStreamReader(inFile.getContents());
+		BufferedReader reader = new BufferedReader(inStream);
+
+		final IStructuredModel modelForEdit = StructuredModelManager.getModelManager().getModelForEdit(inFile);
+		try {
+			final IStructuredDocument structuredDocument = modelForEdit.getStructuredDocument();
+
+			// create the partitioner
+			final PHPStructuredTextPartitioner structuredTextPartitioner = new PHPStructuredTextPartitioner();
+			structuredTextPartitioner.connect(structuredDocument);
+
+			// go over the file, one line at a time, and search for the markers 
+			String curLine = reader.readLine();
+			while (curLine != null) {
+				for (int i = 0; i < markers.length; i++) {
+					int lineOffset = curLine.indexOf(markers[i]);
+					// if marker was found in current line, get partition type
+					if (lineOffset != -1) {
+						ITypedRegion partition = structuredTextPartitioner.getPartition(offset + lineOffset);
+						results.add(partition.getType());
+					}
+				}
+				// update global offset
+				offset += curLine.length() + endLine;
+				curLine = reader.readLine();
+			}
+		} finally {
+			if (modelForEdit != null) {
+				modelForEdit.releaseFromEdit();
+			}
+		}
+		return results;
+	}
+
