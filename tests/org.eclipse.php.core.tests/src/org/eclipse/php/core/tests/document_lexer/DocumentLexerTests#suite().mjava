@@ -1,0 +1,56 @@
+	public static Test suite() {
+
+		TestSuite suite = new TestSuite("Document Lexer Tests");
+
+		for (final PHPVersion phpVersion : TESTS.keySet()) {
+			TestSuite phpVerSuite = new TestSuite(phpVersion.getAlias());
+			
+			for (String testsDirectory : TESTS.get(phpVersion)) {
+
+				for (final String fileName : getPDTTFiles(testsDirectory)) {
+					try {
+						final PdttFile pdttFile = new PdttFile(fileName);
+						phpVerSuite.addTest(new DocumentLexerTests(phpVersion.getAlias() + " - /" + fileName) {
+
+							protected void runTest() throws Throwable {
+								
+								AbstractPhpLexer lexer = PhpLexerFactory.createLexer(new ByteArrayInputStream(pdttFile.getFile().trim().getBytes()), phpVersion);
+								int inScriptingState = lexer.getClass().getField("ST_PHP_IN_SCRIPTING").getInt(lexer); // different lexers have different state codes
+								lexer.initialize(inScriptingState);
+
+								StringBuilder actualBuf = new StringBuilder();
+								String tokenType = lexer.yylex();
+								while (tokenType != null) {
+									actualBuf.append(tokenType).append('|').append(lexer.yytext()).append('|').append(lexer.yystate()).append('\n');
+									tokenType = lexer.yylex();
+								}
+								
+								assertContents(pdttFile.getExpected(), actualBuf.toString());
+							}
+						});
+					} catch (final Exception e) {
+						// dummy test indicating PDTT file parsing failure
+						phpVerSuite.addTest(new TestCase(fileName) {
+							protected void runTest() throws Throwable {
+								throw e;
+							}
+						});
+					}
+				}
+			}
+			suite.addTest(phpVerSuite);
+		}
+
+		// Create a setup wrapper
+		TestSetup setup = new TestSetup(suite) {
+			protected void setUp() throws Exception {
+				setUpSuite();
+			}
+
+			protected void tearDown() throws Exception {
+				tearDownSuite();
+			}
+		};
+		return setup;
+	}
+
