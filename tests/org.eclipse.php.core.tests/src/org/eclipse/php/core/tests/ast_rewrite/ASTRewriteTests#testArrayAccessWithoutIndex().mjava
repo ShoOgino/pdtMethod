@@ -1,0 +1,14 @@
+	public void testArrayAccessWithoutIndex() throws Exception {
+		String str = "<?php $a[]; ?>";
+		initialize(str);
+		
+		List<ArrayAccess> arrayAccess = getAllOfType(program, ArrayAccess.class);
+		Assert.assertTrue("Unexpected list size.", arrayAccess.size() == 1);
+		arrayAccess.get(0).setName(ast.newVariable("b"));
+		// FIXME - We need to fix the ArrayAccess implementation to reflect any dollared property change
+		// on the inner Variable. Also, this might need a fix to the initial creation of the ArrayAccess by the parser.
+		// arrayAccess.get(0).setIsDollared(false) should also work after that fix.
+		rewrite();
+		checkResult("<?php $b[]; ?>");
+	}
+

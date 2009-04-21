@@ -1,0 +1,18 @@
+	public void testComment() throws Exception {
+		String str = "<?php\n class A { \n\tpublic function foo(int $a){}\n }?> ";
+		initialize(str);
+		
+		List<Block> blocks = getAllOfType(program, Block.class);
+		Assert.assertTrue("Unexpected list size.", blocks.size() == 2);
+		AST astRoot = program.getAST();
+		ASTRewrite rewrite = ASTRewrite.create(astRoot);
+		Block block = blocks.get(0);
+		ListRewrite listRewrite = rewrite.getListRewrite(block, Block.STATEMENTS_PROPERTY);
+		ASTNode placeHolder = rewrite.createStringPlaceholder("//mycomment", ASTNode.COMMENT);
+		listRewrite.insertFirst(placeHolder, null);
+
+		TextEdit textEdits = rewrite.rewriteAST(document, null);
+		textEdits.apply(document);
+		checkResult("<?php\n class A { \n	//mycomment\n	public function foo(int $a){}\n }?> ");
+	}
+

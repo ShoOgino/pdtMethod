@@ -1,0 +1,25 @@
+	/**
+	 * @param reader stringReader of inputstream
+	 * @param goldenName
+	 * @param str 
+	 * @throws Exception 
+	 */
+	public void parseAndCompare(String string, String expected, ICodeManiplator manipulator) throws Exception {
+		IDocument document = new Document(string);
+		Program program = initialize(document);
+
+		manipulator.manipulate(program);
+		rewrite(program, document);
+
+		expected = expected.replaceAll("[\r\n]+", "\n").trim();
+		String actual = document.get().replaceAll("[\r\n]+", "\n").trim();
+		if (!expected.equals(actual)) {
+			StringBuilder buf = new StringBuilder();
+			buf.append("\nEXPECTED:\n-----------\n");
+			buf.append(expected);
+			buf.append("\nACTUAL:\n-----------\n");
+			buf.append(actual);
+			Assert.fail(buf.toString());
+		}
+	}
+

@@ -1,0 +1,13 @@
+	public void testTryCatchStatement() throws Exception {
+		String str = "<?php try { $error = 'Always throw this error'; } catch (Exception $e) { echo ''; }  ?>";
+		initialize(str);
+		
+		List<TryStatement> statements = getAllOfType(program, TryStatement.class);
+		Assert.assertTrue("Unexpected list size.", statements.size() == 1);
+		Block newBlock = ast.newBlock();
+		newBlock.statements().add(ast.newEchoStatement(ast.newScalar("'Hello'")));
+		statements.get(0).catchClauses().add(ast.newCatchClause(ast.newIdentifier("Boobo"), ast.newVariable("b"), newBlock));
+		rewrite();
+		checkResult("<?php try { $error = 'Always throw this error'; } catch (Exception $e) { echo ''; }catch (Boobo $b) {\necho 'Hello';\n}\n  ?>");
+	}
+

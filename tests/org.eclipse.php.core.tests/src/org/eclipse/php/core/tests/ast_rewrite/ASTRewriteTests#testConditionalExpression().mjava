@@ -1,0 +1,13 @@
+	public void testConditionalExpression() throws Exception {
+		String str = "<?php (bool)$a ? 3 : 4;?>";
+		initialize(str);
+		
+		List<ConditionalExpression> conditional = getAllOfType(program, ConditionalExpression.class);
+		Assert.assertTrue("Unexpected list size.", conditional.size() == 1);
+		((CastExpression) conditional.get(0).getCondition()).setExpression(ast.newVariable("b"));
+		conditional.get(0).setIfFalse(ast.newScalar("100"));
+		conditional.get(0).setIfTrue(ast.newScalar("200"));
+		rewrite();
+		checkResult("<?php (bool)$b ? 200 : 100;?>");
+	}
+
