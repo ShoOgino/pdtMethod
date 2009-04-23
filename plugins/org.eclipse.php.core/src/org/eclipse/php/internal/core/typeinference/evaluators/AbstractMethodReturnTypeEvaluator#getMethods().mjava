@@ -1,0 +1,33 @@
+	protected IMethod[] getMethods() {
+		AbstractMethodReturnTypeGoal typedGoal = (AbstractMethodReturnTypeGoal) goal;
+		ISourceModule sourceModule = ((ISourceModuleContext) goal.getContext()).getSourceModule();
+		IType[] types = typedGoal.getTypes();
+		String methodName = typedGoal.getMethodName();
+		
+		List<IMethod> methods = new LinkedList<IMethod>();
+		if (types == null) {
+			methods.addAll(Arrays.asList(PHPTypeInferenceUtils.getFunctions(methodName, SearchEngine.createSearchScope(sourceModule.getScriptProject()))));
+		} else {
+			try {
+				for (IType type : types) {
+					IMethod method = PHPModelUtils.getTypeMethod(type, methodName);
+					if (method == null) {
+						IMethod[] hierarchyMethods = PHPModelUtils.getTypeHierarchyMethod(type, methodName, null);
+						if (hierarchyMethods.length > 0) {
+							method = hierarchyMethods[0];
+						}
+					}
+					if (method != null) {
+						methods.add(method);
+					}
+				}
+			} catch (CoreException e) {
+				if (DLTKCore.DEBUG) {
+					e.printStackTrace();
+				}
+			}
+		}
+		
+		return (IMethod[]) methods.toArray(new IMethod[methods.size()]);
+	}
+

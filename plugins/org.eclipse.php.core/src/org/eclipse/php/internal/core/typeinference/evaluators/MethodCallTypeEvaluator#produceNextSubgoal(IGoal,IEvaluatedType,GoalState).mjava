@@ -27,36 +27,7 @@
 		// we've evaluated receiver, lets evaluate the method return type now (using PHP Doc first):
 		if (state == STATE_GOT_RECEIVER) {
 			state = STATE_WAITING_METHOD_PHPDOC;
-			if (receiverType == null) {
-				IMethod[] functions = PHPTypeInferenceUtils.getFunctions(expression.getName(), SearchEngine.createSearchScope(((ISourceModuleContext) goal.getContext()).getSourceModule().getScriptProject()));
-				for (IMethod method : functions) {
-					return new PHPDocMethodReturnTypeGoal(new FileContext((ISourceModuleContext) goal.getContext()), method);
-				}
-			} else {
-				TypeContext context = new TypeContext((ISourceModuleContext) goal.getContext(), receiverType);
-				IType[] types = PHPTypeInferenceUtils.getModelElements(receiverType, (ISourceModuleContext) goal.getContext(), 0);
-				if (types != null) {
-					String methodName = expression.getName();
-					for (IType type : types) {
-						try {
-							IMethod method = PHPModelUtils.getTypeMethod(type, methodName);
-							if (method == null) {
-								IMethod[] hierarchyMethods = PHPModelUtils.getTypeHierarchyMethod(type, methodName, null);
-								if (hierarchyMethods.length > 0) {
-									method = hierarchyMethods[0];
-								}
-							}
-							if (method != null) {
-								return new PHPDocMethodReturnTypeGoal(context, method);
-							}
-						} catch (CoreException e) {
-							if (DLTKCore.DEBUG) {
-								e.printStackTrace();
-							}
-						}
-					}
-				}
-			}
+			return new PHPDocMethodReturnTypeGoal(typedGoal.getContext(), receiverType, expression.getName());
 		}
 		
 		// PHPDoc logic is done, start evaluating 'return' statements here:
@@ -66,15 +37,7 @@
 				previousResult = null;
 			}
 			state = STATE_WAITING_METHOD;
-			if (receiverType == null) {
-				IMethod[] functions = PHPTypeInferenceUtils.getFunctions(expression.getName(), SearchEngine.createSearchScope(((ISourceModuleContext) goal.getContext()).getSourceModule().getScriptProject()));
-				for (IMethod method : functions) {
-					return new MethodElementReturnTypeGoal(new FileContext((ISourceModuleContext) goal.getContext()), method);
-				}
-			} else {
-				TypeContext context = new TypeContext((ISourceModuleContext) goal.getContext(), receiverType);
-				return new MethodReturnTypeGoal(context, expression.getName(), new IEvaluatedType[0] /* arguments are not interesting us */);
-			}
+			return new MethodElementReturnTypeGoal(typedGoal.getContext(), receiverType, expression.getName());
 		}
 		
 		if (state == STATE_WAITING_METHOD) {

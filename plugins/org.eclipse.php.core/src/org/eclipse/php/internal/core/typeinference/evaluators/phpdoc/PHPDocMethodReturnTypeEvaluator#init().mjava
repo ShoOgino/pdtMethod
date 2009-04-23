@@ -1,31 +1,19 @@
 	public IGoal[] init() {
-		PHPDocMethodReturnTypeGoal typedGoal = (PHPDocMethodReturnTypeGoal) goal;
-		IMethod method = typedGoal.getMethod();
-
 		Set<PHPDocBlock> docs = new HashSet<PHPDocBlock>();
-		if (method.getDeclaringType() != null) {
-			try {
-				for (PHPDocBlock doc : PHPModelUtils.getTypeHierarchyMethodDoc(method.getDeclaringType(), method.getElementName(), null)) {
-					docs.add(doc);
-				}
-			} catch (CoreException e) {
-				if (DLTKCore.DEBUG) {
-					e.printStackTrace();
-				}
-			}
-		} else {
+		for (IMethod method : getMethods()) {
 			PHPDocBlock docBlock = PHPModelUtils.getDocBlock(method);
 			if (docBlock != null) {
 				docs.add(docBlock);
 			}
 		}
+
 		for (PHPDocBlock doc : docs) {
 			for (PHPDocTag tag : doc.getTags()) {
 				if (tag.getTagKind() == PHPDocTag.RETURN) {
 					// @return datatype1|datatype2|...
 					for (SimpleReference reference : tag.getReferences()) {
-						final String[] types = PIPE_PATTERN.split(reference.getName());
-						for (String typeName : types) {
+						final String[] typesNames = PIPE_PATTERN.split(reference.getName());
+						for (String typeName : typesNames) {
 							IEvaluatedType type = PHPSimpleTypes.fromString(typeName);
 							if (type == null) {
 								type = new PHPClassType(typeName);

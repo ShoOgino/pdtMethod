@@ -1,43 +1,55 @@
 	public IGoal[] init() {
-		MethodReturnTypeGoal typedGoal = getTypedGoal();
-		TypeContext typedContext = getTypedContext();
+		MethodElementReturnTypeGoal goal = (MethodElementReturnTypeGoal) getGoal();
+		String methodName = goal.getMethodName();
 
-		final Set<IMethod> methods = new HashSet<IMethod>();
+		final List<IGoal> subGoals = new LinkedList<IGoal>();
 
-		String methodName = typedGoal.getMethodName();
-		IType[] types = getTypes(typedContext.getInstanceType(), typedContext);
+		ISourceModule sourceModule = ((ISourceModuleContext) goal.getContext()).getSourceModule();
+		ModuleDeclaration module = SourceParserUtil.getModuleDeclaration(sourceModule);
 
-		if (types.length == 0) {
-			IScriptProject scriptProject = typedContext.getSourceModule().getScriptProject();
-			IDLTKSearchScope scope = SearchEngine.createSearchScope(scriptProject);
-			IMethod[] functions = PHPTypeInferenceUtils.getFunctions(methodName, scope);
-			for (IMethod function : functions) {
-				methods.add(function);
+		for (IMethod method : getMethods()) {
+			MethodDeclaration decl = null;
+			try {
+				decl = PHPModelUtils.getNodeByMethod(module, method);
+			} catch (ModelException e) {
+				if (DLTKCore.DEBUG) {
+					e.printStackTrace();
+				}
 			}
-		} else {
-			for (IType type : types) {
-				try {
-					IMethod method = type.getMethod(methodName);
-					if (method.exists()) {
-						methods.add(method);
-					} else {
-						IMethod[] elements = PHPModelUtils.getTypeHierarchyMethod(type, methodName, null);
-						for (IMethod m : elements) {
-							methods.add(m);
+			if (decl != null) {
+				final IContext innerContext = ASTUtils.findContext(sourceModule, module, decl);
+
+				ASTVisitor visitor = new ASTVisitor() {
+					public boolean visitGeneral(ASTNode node) throws Exception {
+						if (node instanceof ReturnStatement) {
+							ReturnStatement statement = (ReturnStatement) node;
+							Expression expr = statement.getExpr();
+							if (expr == null) {
+								evaluated.add(PHPSimpleTypes.VOID);
+							} else {
+								subGoals.add(new ExpressionTypeGoal(innerContext, expr));
+							}
 						}
+						return super.visitGeneral(node);
 					}
-				} catch (CoreException e) {
+				};
+
+				try {
+					decl.traverse(visitor);
+				} catch (Exception e) {
 					if (DLTKCore.DEBUG) {
 						e.printStackTrace();
 					}
 				}
+				if (decl.getBody() != null) {
+					subGoals.add(new ExpressionTypeGoal(innerContext, decl.getBody()));
+				}
+			}
+			if (method != null) {
+				resolveMagicMethodDeclaration(method, methodName);
 			}
 		}
 
-		final List<IGoal> subGoals = new ArrayList<IGoal>(methods.size());
-		for (IMethod method : methods) {
-			subGoals.add(new MethodElementReturnTypeGoal(typedContext, method));
-		}
 		return subGoals.toArray(new IGoal[subGoals.size()]);
 	}
 
