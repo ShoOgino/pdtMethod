@@ -3,10 +3,16 @@
 		ISourceModule sourceModule = ((ISourceModuleContext) goal.getContext()).getSourceModule();
 		IType[] types = typedGoal.getTypes();
 		String methodName = typedGoal.getMethodName();
-		
+
 		List<IMethod> methods = new LinkedList<IMethod>();
 		if (types == null) {
-			methods.addAll(Arrays.asList(PHPTypeInferenceUtils.getFunctions(methodName, SearchEngine.createSearchScope(sourceModule.getScriptProject()))));
+			try {
+				methods.addAll(Arrays.asList(PHPTypeInferenceUtils.getFunctions(methodName, sourceModule, 0)));
+			} catch (ModelException e) {
+				if (DLTKCore.DEBUG) {
+					e.printStackTrace();
+				}
+			}
 		} else {
 			try {
 				for (IType type : types) {
@@ -27,7 +33,7 @@
 				}
 			}
 		}
-		
+
 		return (IMethod[]) methods.toArray(new IMethod[methods.size()]);
 	}
 

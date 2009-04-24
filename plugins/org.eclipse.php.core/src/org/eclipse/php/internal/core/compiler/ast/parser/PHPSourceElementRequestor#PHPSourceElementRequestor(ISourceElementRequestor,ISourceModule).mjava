@@ -1,5 +1,16 @@
 	public PHPSourceElementRequestor(ISourceElementRequestor requestor, ISourceModule sourceModule) {
 		super(requestor);
+		
+		IProject project = null;
+		if (sourceModule instanceof IModelElement) {
+			project = ((IModelElement) sourceModule).getScriptProject().getProject();
+		} else {
+			IFolder folder = ResourcesPlugin.getWorkspace().getRoot().getFolder(sourceModule.getScriptFolder());
+			if (folder != null) {
+				project = folder.getProject();
+			}
+		}
+		phpVersion = PhpVersionProjectPropertyHandler.getVersion(project);
 
 		// Load PHP source element requester extensions
 		IConfigurationElement[] elements = Platform.getExtensionRegistry().getConfigurationElementsFor(PHPCorePlugin.ID, "phpSourceElementRequestors");
