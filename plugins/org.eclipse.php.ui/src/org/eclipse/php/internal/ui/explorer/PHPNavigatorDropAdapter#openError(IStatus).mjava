@@ -1,0 +1,30 @@
+    /**
+     * Opens an error dialog if necessary.  Takes care of
+     * complex rules necessary for making the error dialog look nice.
+     */
+    private void openError(IStatus status) {
+        if (status == null) {
+			return;
+		}
+
+        String genericTitle = ResourceNavigatorMessages.DropAdapter_title;
+        int codes = IStatus.ERROR | IStatus.WARNING;
+
+        //simple case: one error, not a multistatus
+        if (!status.isMultiStatus()) {
+            ErrorDialog
+                    .openError(getShell(), genericTitle, null, status, codes);
+            return;
+        }
+
+        //one error, single child of multistatus
+        IStatus[] children = status.getChildren();
+        if (children.length == 1) {
+            ErrorDialog.openError(getShell(), status.getMessage(), null,
+                    children[0], codes);
+            return;
+        }
+        //several problems
+        ErrorDialog.openError(getShell(), genericTitle, null, status, codes);
+    }
+
