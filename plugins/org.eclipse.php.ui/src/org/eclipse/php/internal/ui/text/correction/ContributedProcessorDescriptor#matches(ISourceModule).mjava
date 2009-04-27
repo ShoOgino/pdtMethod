@@ -1,0 +1,33 @@
+	private boolean matches(ISourceModule cunit) {
+//		if (fRequiredSourceLevel != null) {
+//			String current= cunit.getJavaProject().getOption(JavaCore.COMPILER_SOURCE, true);
+//			if (JavaModelUtil.isVersionLessThan(current, fRequiredSourceLevel)) {
+//				return false;
+//			}
+//		}
+
+		if (fStatus != null) {
+			return fStatus.booleanValue();
+		}
+
+		IConfigurationElement[] children= fConfigurationElement.getChildren(ExpressionTagNames.ENABLEMENT);
+		if (children.length == 1) {
+			try {
+				ExpressionConverter parser= ExpressionConverter.getDefault();
+				Expression expression= parser.perform(children[0]);
+				EvaluationContext evalContext= new EvaluationContext(null, cunit);
+				evalContext.addVariable("compilationUnit", cunit); //$NON-NLS-1$
+				IScriptProject javaProject= cunit.getScriptProject();
+				String[] natures= javaProject.getProject().getDescription().getNatureIds();
+				evalContext.addVariable("projectNatures", Arrays.asList(natures)); //$NON-NLS-1$
+//				evalContext.addVariable("sourceLevel", javaProject.getOption(JavaCore.COMPILER_SOURCE, true)); //$NON-NLS-1$
+				return expression.evaluate(evalContext) == EvaluationResult.TRUE;
+			} catch (CoreException e) {
+				PHPUiPlugin.log(e);
+			}
+			return false;
+		}
+		fStatus= Boolean.FALSE;
+		return false;
+	}
+

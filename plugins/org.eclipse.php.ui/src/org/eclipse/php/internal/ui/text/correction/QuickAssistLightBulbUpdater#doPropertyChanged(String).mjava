@@ -1,0 +1,25 @@
+	protected void doPropertyChanged(String property) {
+		if (property.equals(PreferenceConstants.EDITOR_QUICKASSIST_LIGHTBULB)) {
+			if (isSetInPreferences()) {
+				ISourceModule cu= getCompilationUnit();
+				if (cu != null) {
+					installSelectionListener();
+					Point point= fViewer.getSelectedRange();
+					Program astRoot = null;
+					try {
+						astRoot = SharedASTProvider.getAST(cu, SharedASTProvider.WAIT_ACTIVE_ONLY, null);
+					} catch (ModelException e) {
+						PHPUiPlugin.log(e);
+					} catch (IOException e) {
+						PHPUiPlugin.log(e);
+					}
+					if (astRoot != null) {
+						doSelectionChanged(point.x, point.y, astRoot);
+					}
+				}
+			} else {
+				uninstallSelectionListener();
+			}
+		}
+	}
+

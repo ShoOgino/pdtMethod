@@ -1,0 +1,25 @@
+	public Object getProcessor(ISourceModule cunit, Class<?> expectedType) {
+		if (matches(cunit)) {
+			if (fProcessorInstance == null) {
+				try {
+					Object extension= fConfigurationElement.createExecutableExtension(CLASS);
+					if (expectedType.isInstance(extension)) {
+						fProcessorInstance= extension;
+					} else {
+						String message= "Invalid extension to " + fConfigurationElement.getName() //$NON-NLS-1$
+						+ ". Must extends '" + expectedType.getName() + "'." + fConfigurationElement.getContributor().getName(); //$NON-NLS-1$ //$NON-NLS-2$
+						PHPUiPlugin.log(new Status(IStatus.ERROR, PHPUiPlugin.ID, message));
+						fStatus= Boolean.FALSE;
+						return null;
+					}
+				} catch (CoreException e) {
+					PHPUiPlugin.log(e);
+					fStatus= Boolean.FALSE;
+					return null;
+				}
+			}
+			return fProcessorInstance;
+		}
+		return null;
+	}
+

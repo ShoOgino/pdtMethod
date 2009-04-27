@@ -10,7 +10,7 @@
 		if (model == null)
 			return;
 
-		boolean hasAssistLightbulb = false;// TODO - fStore.getBoolean(PreferenceConstants.EDITOR_QUICKASSIST_LIGHTBULB);
+		boolean hasAssistLightbulb = fStore.getBoolean(PreferenceConstants.EDITOR_QUICKASSIST_LIGHTBULB);
 
 		Iterator iter = model.getAnnotationIterator();
 		int layer = Integer.MIN_VALUE;
@@ -32,27 +32,28 @@
 				continue;
 
 			boolean isReadOnly = fTextEditor instanceof ITextEditorExtension && ((ITextEditorExtension) fTextEditor).isEditorInputReadOnly();
-			if (!isReadOnly && hasCorrections(annotation)) {
+			if (!isReadOnly && (((hasAssistLightbulb && annotation instanceof AssistAnnotation) || PHPCorrectionProcessor.hasCorrections(annotation)))) {
 				fPosition = position;
 				fAnnotation = annotation;
 				fHasCorrection = true;
 				layer = annotationLayer;
 				continue;
-			}
-			AnnotationPreference preference = fAnnotationPreferenceLookup.getAnnotationPreference(annotation);
-			if (preference == null)
-				continue;
+			} else if (!fHasCorrection) {
+				AnnotationPreference preference = fAnnotationPreferenceLookup.getAnnotationPreference(annotation);
+				if (preference == null)
+					continue;
 
-			String key = preference.getVerticalRulerPreferenceKey();
-			if (key == null)
-				continue;
+				String key = preference.getVerticalRulerPreferenceKey();
+				if (key == null)
+					continue;
 
-			// if (fStore.getBoolean(key)) {
-			if (annotation instanceof OverrideIndicatorManager.OverrideIndicator) {
-				fPosition = position;
-				fAnnotation = annotation;
-				fHasCorrection = false;
-				layer = annotationLayer;
+				// if (fStore.getBoolean(key)) {
+				if (annotation instanceof OverrideIndicatorManager.OverrideIndicator) {
+					fPosition = position;
+					fAnnotation = annotation;
+					fHasCorrection = false;
+					layer = annotationLayer;
+				}
 			}
 		}
 	}

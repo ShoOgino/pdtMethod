@@ -1,0 +1,46 @@
+	/*
+	 * @see IContentAssistProcessor#computeCompletionProposals(ITextViewer, int)
+	 */
+	public ICompletionProposal[] computeQuickAssistProposals(IQuickAssistInvocationContext quickAssistContext) {
+
+		ICompletionProposal[] res = null;
+
+		ISourceViewer viewer = quickAssistContext.getSourceViewer();
+		if (viewer instanceof PHPStructuredTextViewer) {
+
+			PHPStructuredTextViewer textViewer = (PHPStructuredTextViewer) viewer;
+			initAssistant(textViewer);
+
+			int documentOffset = quickAssistContext.getOffset();
+
+			IEditorPart part = fAssistant.getEditor();
+
+			ISourceModule cu = DLTKUIPlugin.getEditorInputModelElement(part.getEditorInput());
+			IAnnotationModel model = DLTKUIPlugin.getDocumentProvider().getAnnotationModel(part.getEditorInput());
+
+			int length = viewer != null ? viewer.getSelectedRange().y : 0;
+			AssistContext context = new AssistContext(cu, viewer, part, documentOffset, length, SharedASTProvider.WAIT_YES);
+
+			Annotation[] annotations = fAssistant.getAnnotationsAtOffset();
+
+			fErrorMessage = null;
+			if (model != null && annotations != null) {
+				ArrayList proposals = new ArrayList(10);
+				IStatus status = collectProposals(context, model, annotations, true, !fAssistant.isUpdatedOffset(), proposals);
+				res = (ICompletionProposal[]) proposals.toArray(new ICompletionProposal[proposals.size()]);
+				if (!status.isOK()) {
+					fErrorMessage = status.getMessage();
+					PHPUiPlugin.log(status);
+				}
+			}
+		}
+
+		if (res == null || res.length == 0) {
+			return new ICompletionProposal[] { new ChangeCorrectionProposal(CorrectionMessages.NoCorrectionProposal_description, new NullChange(""), 0, null) }; //$NON-NLS-1$
+		}
+		if (res.length > 1) {
+			Arrays.sort(res, new CompletionProposalComparator());
+		}
+		return res;
+	}
+

@@ -1,0 +1,55 @@
+	/**
+	 * Show completions at caret position. If current
+	 * position does not contain quick fixes look for
+	 * next quick fix on same line by moving from left
+	 * to right and restarting at end of line if the
+	 * beginning of the line is reached.
+	 *
+	 * @see IQuickAssistAssistant#showPossibleQuickAssists()
+	 */
+	public String showPossibleQuickAssists() {
+		boolean isReinvoked= false;
+		fIsProblemLocationAvailable= false;
+
+		if (fIsCompletionActive) {
+			if (isUpdatedOffset()) {
+				isReinvoked= true;
+				restorePosition();
+				hide();
+				fIsProblemLocationAvailable= true;
+			}
+		}
+
+		fPosition= null;
+		fCurrentAnnotations= null;
+
+		if (fViewer == null || fViewer.getDocument() == null)
+			// Let superclass deal with this
+			return super.showPossibleQuickAssists();
+
+
+		ArrayList resultingAnnotations= new ArrayList(20);
+		try {
+			Point selectedRange= fViewer.getSelectedRange();
+			int currOffset= selectedRange.x;
+			int currLength= selectedRange.y;
+			boolean goToClosest= (currLength == 0) && !isReinvoked;
+
+			int newOffset= collectQuickFixableAnnotations(fEditor, currOffset, goToClosest, resultingAnnotations);
+			if (newOffset != currOffset) {
+				storePosition(currOffset, currLength);
+				fViewer.setSelectedRange(newOffset, 0);
+				fViewer.revealRange(newOffset, 0);
+				fIsProblemLocationAvailable= true;
+				if (fIsCompletionActive) {
+					hide();
+				}
+			}
+		} catch (BadLocationException e) {
+			PHPUiPlugin.log(e);
+		}
+		fCurrentAnnotations= (Annotation[]) resultingAnnotations.toArray(new Annotation[resultingAnnotations.size()]);
+
+		return super.showPossibleQuickAssists();
+	}
+

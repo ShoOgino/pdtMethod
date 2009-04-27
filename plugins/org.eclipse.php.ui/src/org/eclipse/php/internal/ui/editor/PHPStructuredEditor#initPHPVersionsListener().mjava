@@ -1,9 +1,9 @@
 	private void initPHPVersionsListener() {
-		if (phpVersionListener != null) {
+		if (fPhpVersionListener != null) {
 			return;
 		}
 
-		phpVersionListener = new IPreferencesPropagatorListener() {
+		fPhpVersionListener = new IPreferencesPropagatorListener() {
 			public void preferencesEventOccured(PreferencesPropagatorEvent event) {
 				try {
 					// get the structured document and go over its regions
@@ -31,27 +31,29 @@
 			}
 		};
 
-		PhpVersionChangedHandler.getInstance().addPhpVersionChangedListener(phpVersionListener);
+		PhpVersionChangedHandler.getInstance().addPhpVersionChangedListener(fPhpVersionListener);
 
-		propertyChangeListener = new IPropertyChangeListener() {
-			public void propertyChange(org.eclipse.core.runtime.Preferences.PropertyChangeEvent event) {
-				String property = event.getProperty();
+		fPreferencesListener = new IPreferenceChangeListener() {
+			
+			public void preferenceChange(PreferenceChangeEvent event) {
+				String property = event.getKey();
 				if (PHPCoreConstants.CODEASSIST_AUTOACTIVATION.equals(property) || PHPCoreConstants.CODEASSIST_AUTOACTIVATION_DELAY.equals(property) || PHPCoreConstants.CODEASSIST_AUTOINSERT.equals(property)) {
 					ISourceViewer sourceViewer = getSourceViewer();
 					if (sourceViewer != null) {
 						PHPStructuredTextViewerConfiguration configuration = (PHPStructuredTextViewerConfiguration) getSourceViewerConfiguration();
 						if (configuration != null) {
 							StructuredContentAssistant contentAssistant = (StructuredContentAssistant) configuration.getPHPContentAssistant(sourceViewer);
-							Preferences preferences = PHPCorePlugin.getDefault().getPluginPreferences();
-							contentAssistant.enableAutoActivation(preferences.getBoolean(PHPCoreConstants.CODEASSIST_AUTOACTIVATION));
-							contentAssistant.setAutoActivationDelay(preferences.getInt(PHPCoreConstants.CODEASSIST_AUTOACTIVATION_DELAY));
-							contentAssistant.enableAutoInsert(preferences.getBoolean(PHPCoreConstants.CODEASSIST_AUTOINSERT));
+							
+							IPreferencesService preferencesService = Platform.getPreferencesService();
+							contentAssistant.enableAutoActivation(preferencesService.getBoolean(PHPCorePlugin.ID, PHPCoreConstants.CODEASSIST_AUTOACTIVATION, false, null));
+							contentAssistant.setAutoActivationDelay(preferencesService.getInt(PHPCorePlugin.ID, PHPCoreConstants.CODEASSIST_AUTOACTIVATION_DELAY, 0, null));
+							contentAssistant.enableAutoInsert(preferencesService.getBoolean(PHPCorePlugin.ID, PHPCoreConstants.CODEASSIST_AUTOINSERT, false, null));
 						}
 					}
 				}
 			}
 		};
 
-		PHPCorePlugin.getDefault().getPluginPreferences().addPropertyChangeListener(propertyChangeListener);
+		new InstanceScope().getNode(PHPCorePlugin.ID).addPreferenceChangeListener(fPreferencesListener);
 	}
 
