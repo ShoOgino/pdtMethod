@@ -1,0 +1,28 @@
+	public static String trimIndentation(String source, int tabWidth, int indentWidth, boolean considerFirstLine) {
+		try {
+			ILineTracker tracker= new DefaultLineTracker();
+			tracker.set(source);
+			int size= tracker.getNumberOfLines();
+			if (size == 1)
+				return source;
+			String lines[]= new String[size];
+			for (int i= 0; i < size; i++) {
+				IRegion region= tracker.getLineInformation(i);
+				int offset= region.getOffset();
+				lines[i]= source.substring(offset, offset + region.getLength());
+			}
+			Strings.trimIndentation(lines, tabWidth, indentWidth, considerFirstLine);
+			StringBuffer result= new StringBuffer();
+			int last= size - 1;
+			for (int i= 0; i < size; i++) {
+				result.append(lines[i]);
+				if (i < last)
+					result.append(tracker.getLineDelimiter(i));
+			}
+			return result.toString();
+		} catch (BadLocationException e) {
+			Assert.isTrue(false,"Can not happend"); //$NON-NLS-1$
+			return null;
+		}
+	}
+

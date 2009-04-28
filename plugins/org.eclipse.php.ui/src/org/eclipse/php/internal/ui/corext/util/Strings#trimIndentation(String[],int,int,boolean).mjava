@@ -1,0 +1,43 @@
+	/**
+	 * Removes the common number of indents from all lines. If a line
+	 * only consists out of white space it is ignored. If <code>
+	 * considerFirstLine</code> is false the first line will be ignored.
+	 * @param lines the lines
+	 * @param tabWidth the size of one tab in space equivalents
+	 * @param indentWidth the size of the indent in space equivalents
+	 * @param considerFirstLine If <code> considerFirstLine</code> is false the first line will be ignored.
+	 * @since 3.1
+	 */
+	public static void trimIndentation(String[] lines, int tabWidth, int indentWidth, boolean considerFirstLine) {
+		String[] toDo= new String[lines.length];
+		// find indentation common to all lines
+		int minIndent= Integer.MAX_VALUE; // very large
+		for (int i= considerFirstLine ? 0 : 1; i < lines.length; i++) {
+			String line= lines[i];
+			if (containsOnlyWhitespaces(line))
+				continue;
+			toDo[i]= line;
+			int indent= computeIndentUnits(line, tabWidth, indentWidth);
+			if (indent < minIndent) {
+				minIndent= indent;
+			}
+		}
+
+		if (minIndent > 0) {
+			// remove this indent from all lines
+			for (int i= considerFirstLine ? 0 : 1; i < toDo.length; i++) {
+				String s= toDo[i];
+				if (s != null)
+					lines[i]= trimIndent(s, minIndent, tabWidth, indentWidth);
+				else {
+					String line= lines[i];
+					int indent= computeIndentUnits(line, tabWidth, indentWidth);
+					if (indent > minIndent)
+						lines[i]= trimIndent(line, minIndent, tabWidth, indentWidth);
+					else
+						lines[i]= trimLeadingTabsAndSpaces(line);
+				}
+			}
+		}
+	}
+
