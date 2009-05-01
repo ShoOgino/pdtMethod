@@ -1,0 +1,24 @@
+	/**
+	 * This method is used for later initialization. This trick should release plug-in start-up.
+	 * @param context
+	 */
+	void initializeAfterStart(final BundleContext context) {
+		Job job = new Job("") {
+			protected IStatus run(IProgressMonitor monitor) {
+				
+				PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
+					public void run() {
+						DNDUtils.initEditorSiteExternalDrop();
+						processCommandLine(context);
+					}
+				});
+				
+				if (PlatformUI.isWorkbenchRunning()) {
+					new InitializeAfterLoadJob().schedule(); // must be last call in start() method
+				}
+				return Status.OK_STATUS;
+			}
+		};
+		job.schedule(Job.LONG);
+	}
+
