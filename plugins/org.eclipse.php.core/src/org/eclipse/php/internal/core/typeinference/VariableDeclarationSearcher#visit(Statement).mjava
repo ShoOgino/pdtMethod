@@ -1,0 +1,36 @@
+	public boolean visit(Statement node) throws Exception {
+		if (!interesting(node)) {
+			return visitGeneral(node);
+		}
+		if (node instanceof GlobalStatement) {
+			GlobalStatement globalStatement = (GlobalStatement) node;
+
+			for (Expression variable : globalStatement.getVariables()) {
+				if (variable instanceof VariableReference) {
+
+					VariableReference variableReference = (VariableReference) variable;
+					LinkedList<ASTNode> declList = getDeclList(variableReference.getName());
+
+					// remove all declarations, since global statement overrides them
+					for (int i = 0; i < declList.size(); ++i) {
+						declList.set(i, null);
+					}
+					return visitGeneral(node);
+				}
+			}
+		} else if (node instanceof FormalParameter) {
+			FormalParameter parameter = (FormalParameter) node;
+			LinkedList<ASTNode> declList = getDeclList(parameter.getName());
+			declList.clear();
+			declList.addLast(node);
+			return visitGeneral(node);
+		}
+
+		ASTNode parent = nodesStack.peek();
+		if (parent instanceof IfStatement || parent instanceof ForStatement || parent instanceof ForEachStatement || parent instanceof SwitchCase || parent instanceof WhileStatement) {
+			increaseBlockLevel();
+			chackForDeclarationInParent(parent);
+		}
+		return visitGeneral(node);
+	}
+
