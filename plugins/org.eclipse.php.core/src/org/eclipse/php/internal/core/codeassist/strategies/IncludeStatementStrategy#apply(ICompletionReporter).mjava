@@ -1,0 +1,28 @@
+	public void apply(ICompletionReporter reporter) throws Exception {
+		ICompletionContext context = getContext();
+		if (!(context instanceof IncludeStatementContext)) {
+			return;
+		}
+
+		IncludeStatementContext includeContext = (IncludeStatementContext) context;
+		String prefix = includeContext.getPrefix();
+		String suffix = getSuffix(includeContext);
+		SourceRange replaceRange = getReplacementRange(includeContext);
+		
+		final ISourceModule sourceModule = includeContext.getSourceModule();
+		if (sourceModule == null || sourceModule.getScriptProject() == null) {
+			if (DLTKCore.DEBUG_COMPLETION) {
+				System.out.println("Unable to locate source module or project"); //$NON-NLS-1$
+			}
+			return;
+		}
+		
+		final IScriptProject scriptProject = sourceModule.getScriptProject();
+		final IncludePath[] includePaths = IncludePathManager.getInstance().getIncludePaths(scriptProject.getProject());
+		
+		for (IncludePath includePath : includePaths) {
+			reportOnContainer(includePath, prefix, reporter, suffix, replaceRange);
+		}
+
+	}
+

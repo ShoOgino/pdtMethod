@@ -1,0 +1,41 @@
+	private void reportOnContainer(IncludePath includePath, String prefix, ICompletionReporter reporter, String suffix, SourceRange replaceRange) {
+		
+		final boolean buildpath = includePath.isBuildpath();
+		final Object entry = includePath.getEntry();
+		
+		IPath prefixPath = new Path(prefix);
+		if (!buildpath && entry instanceof IContainer) {
+			IContainer container = (IContainer) entry;
+			IResource[] members;
+			try {
+				IPath removeLastSegments = prefixPath;
+				IPath lastSegmant = new Path("");
+				if (prefixPath.segmentCount() != 0 && !prefix.endsWith("\\") && !prefix.endsWith("/")) {
+					removeLastSegments = prefixPath.removeLastSegments(1);
+					lastSegmant = new Path(prefixPath.lastSegment());
+				}
+				if (removeLastSegments.segmentCount() > 0) {
+					container = container.getFolder(removeLastSegments);
+				}
+				
+				members = container.members();
+				for (IResource resource : members) {
+					final IPath relative = resource.getFullPath().makeRelativeTo(container.getFullPath());
+					if (isPrefix(lastSegmant, relative)) {
+						if (resource.getType() == IResource.FILE) {
+							if (PHPToolkitUtil.isPhpFile((IFile) resource)) {
+								reporter.reportResource(resource, (IContainer) entry, suffix, replaceRange);
+							}
+						} else {
+								reporter.reportResource(resource, (IContainer) entry, suffix, replaceRange);	
+						}
+					}
+				}
+			} catch (CoreException e) {
+				if (DLTKCore.DEBUG_COMPLETION) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
