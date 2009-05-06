@@ -1,18 +1,22 @@
-	public boolean visit(Expression node) throws Exception {
-		if (!interesting(node)) {
-			return visitGeneral(node);
-		}
-		if (node instanceof Assignment) {
-			return visit((Assignment) node);
-		}
-		if (node instanceof Block) {
-			return visit((Block) node);
+	public final boolean visit(Expression node) throws Exception {
+		if (!isInteresting(node)) {
+			return false;
 		}
 		ASTNode parent = nodesStack.peek();
-		if (parent instanceof ConditionalExpression) {
-			increaseBlockLevel();
-			chackForDeclarationInParent(parent);
+		if (isConditional(parent)) {
+			getScope().enterInnerBlock((Statement) parent);
 		}
-		return visitGeneral(node);
+		
+		if (node instanceof Assignment) {
+			Expression variable = ((Assignment)node).getVariable();
+			if (variable instanceof VariableReference) {
+				VariableReference varReference = (VariableReference) variable;
+				getScope().addDeclaration(varReference.getName(), node);
+			}
+		}
+		
+		postProcess(node);
+		
+		return super.visit(node);
 	}
 

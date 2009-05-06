@@ -1,36 +1,45 @@
-	public boolean visit(Statement node) throws Exception {
-		if (!interesting(node)) {
-			return visitGeneral(node);
-		}
-		if (node instanceof GlobalStatement) {
-			GlobalStatement globalStatement = (GlobalStatement) node;
-
-			for (Expression variable : globalStatement.getVariables()) {
-				if (variable instanceof VariableReference) {
-
-					VariableReference variableReference = (VariableReference) variable;
-					LinkedList<ASTNode> declList = getDeclList(variableReference.getName());
-
-					// remove all declarations, since global statement overrides them
-					for (int i = 0; i < declList.size(); ++i) {
-						declList.set(i, null);
-					}
-					return visitGeneral(node);
-				}
-			}
-		} else if (node instanceof FormalParameter) {
-			FormalParameter parameter = (FormalParameter) node;
-			LinkedList<ASTNode> declList = getDeclList(parameter.getName());
-			declList.clear();
-			declList.addLast(node);
-			return visitGeneral(node);
+	public final boolean visit(Statement node) throws Exception {
+		if (!isInteresting(node)) {
+			return false;
 		}
 
 		ASTNode parent = nodesStack.peek();
-		if (parent instanceof IfStatement || parent instanceof ForStatement || parent instanceof ForEachStatement || parent instanceof SwitchCase || parent instanceof WhileStatement) {
-			increaseBlockLevel();
-			chackForDeclarationInParent(parent);
+		if (isConditional(parent)) {
+			getScope().enterInnerBlock((Statement) parent);
 		}
-		return visitGeneral(node);
+		
+		if (node instanceof GlobalStatement) {
+			GlobalStatement globalStatement = (GlobalStatement) node;
+			for (Expression variable : globalStatement.getVariables()) {
+				if (variable instanceof VariableReference) {
+					VariableReference varReference = (VariableReference) variable;
+					getScope().addDeclaration(varReference.getName(), globalStatement);
+				}
+			}
+		}
+		else if (node instanceof FormalParameter) {
+			FormalParameter parameter = (FormalParameter) node;
+			getScope().addDeclaration(parameter.getName(), parameter);
+		}
+		else if (node instanceof CatchClause) {
+			CatchClause clause = (CatchClause) node;
+			VariableReference varReference = clause.getVariable();
+			getScope().addDeclaration(varReference.getName(), clause);
+		}
+		else if (node instanceof ForEachStatement) {
+			ForEachStatement foreachStatement = (ForEachStatement) node;
+			if (foreachStatement.getValue() instanceof SimpleReference) {
+				String variableName = ((SimpleReference) foreachStatement.getValue()).getName();
+				getScope().addDeclaration(variableName, foreachStatement);
+			}
+			if (foreachStatement.getKey() instanceof SimpleReference) {
+				String variableName = ((SimpleReference) foreachStatement.getKey()).getName();
+				getScope().addDeclaration(variableName, foreachStatement);
+			}
+		}
+		
+		postProcess(node);
+		
+		return super.visit(node);
 	}
 

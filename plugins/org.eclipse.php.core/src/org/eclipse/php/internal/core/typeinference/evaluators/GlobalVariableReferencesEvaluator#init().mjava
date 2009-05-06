@@ -50,16 +50,14 @@
 				SortedSet<ISourceRange> fileOffsets = offsets.get(sourceModule);
 
 				if (!fileOffsets.isEmpty()) {
-					GlobalVariableDeclarationSearcher varSearcher = new GlobalVariableDeclarationSearcher(sourceModule, fileOffsets, variableName);
+					GlobalReferenceDeclSearcher varSearcher = new GlobalReferenceDeclSearcher(sourceModule, fileOffsets, variableName);
 					try {
 						moduleDeclaration.traverse(varSearcher);
 
-						Map<IContext, LinkedList<ASTNode>> contextToDeclarationMap = varSearcher.getContextToDeclarationMap();
-						Iterator<IContext> contextIt = contextToDeclarationMap.keySet().iterator();
-						while (contextIt.hasNext()) {
-							IContext c = contextIt.next();
-							for (ASTNode declaration : contextToDeclarationMap.get(c)) {
-								subGoals.add(new VariableDeclarationGoal(c, declaration));
+						DeclarationScope[] scopes = varSearcher.getScopes();
+						for (DeclarationScope s : scopes) {
+							for (Declaration decl : s.getDeclarations(variableName)) {
+								subGoals.add(new VariableDeclarationGoal(s.getContext(), decl.getNode()));
 							}
 						}
 					} catch (Exception e) {
