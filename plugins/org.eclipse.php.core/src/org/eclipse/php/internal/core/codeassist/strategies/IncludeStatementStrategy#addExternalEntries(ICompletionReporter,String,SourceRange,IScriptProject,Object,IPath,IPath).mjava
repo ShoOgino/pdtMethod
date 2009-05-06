@@ -1,0 +1,33 @@
+	private void addExternalEntries(ICompletionReporter reporter, String suffix, SourceRange replaceRange, IScriptProject project, final Object entry, IPath prefixPathFolder, IPath lastSegmant) throws ModelException {
+		switch (((IBuildpathEntry) entry).getEntryKind()) {
+			case IBuildpathEntry.BPE_CONTAINER:
+				final IProjectFragment[] findProjectFragments = project.findProjectFragments((IBuildpathEntry) entry);
+				for (IProjectFragment projectFragment : findProjectFragments) {
+					
+					// add folders 
+					IModelElement[] children = projectFragment.getChildren();
+					for (IModelElement element : children) {
+						if (element instanceof ScriptFolder) {
+							final IPath relative = ((ScriptFolder) element).getRelativePath();
+							if (relative.segmentCount() != 0 && isLastSegmantPrefix(lastSegmant, relative) && isPathPrefix(prefixPathFolder, relative)) {
+								reporter.reportResource(element, relative, suffix, replaceRange);
+							}
+						}
+					}
+
+					// add files
+					final IScriptFolder scriptFolder = projectFragment.getScriptFolder(prefixPathFolder);
+					children = scriptFolder.getChildren();
+					for (IModelElement element : children) {
+						final IPath relative = element.getPath().makeRelativeTo(projectFragment.getPath());
+						if (isLastSegmantPrefix(lastSegmant, relative)) {
+							reporter.reportResource(element, relative, suffix, replaceRange);
+						}
+					}
+				}
+				break;
+			default:
+
+		}
+	}
+
