@@ -5,12 +5,21 @@
 	 */
 	private static boolean isConstant(ASTNode locateNode) {
 		assert locateNode != null;
-
+		Scalar scalar = null;
 		// check if it is an identifier
 		if (locateNode.getType() != ASTNode.SCALAR) {
-			return false;
+			if (locateNode.getType() == ASTNode.IDENTIFIER && "define".equals(((Identifier) locateNode).getName())) {
+				FunctionInvocation inv = (FunctionInvocation) locateNode.getParent().getParent();
+				List<Expression> parameters = inv.parameters();
+				if (parameters != null && parameters.size() > 0) {
+					scalar = (Scalar) parameters.get(0);
+				}
+			} else {
+				return false;
+			}
+		} else {
+			scalar = (Scalar) locateNode;
 		}
-		final Scalar scalar = (Scalar) locateNode;
 
 		// if it is not a dollared variable - it is not a global one
 		if (scalar.getScalarType() != Scalar.TYPE_STRING || scalar.getStringValue() == null) {
@@ -25,7 +34,11 @@
 		}
 
 		// check if it is part of define
-		final ASTNode previous = locateNode.getParent();
+		ASTNode previous = locateNode.getParent();
+		if (previous.getType() == ASTNode.FUNCTION_NAME) {
+			previous = previous.getParent();
+		}
+
 		if (previous.getType() != ASTNode.FUNCTION_INVOCATION) {
 			return false;
 		}

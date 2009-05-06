@@ -4,16 +4,21 @@
 	 */
 	private static boolean isFunction(ASTNode locateNode) {
 		assert locateNode != null;
+		ASTNode parent = null;
+		Identifier targetIdentifier = null;
 
-		// check if it is an identifier
-		if (locateNode.getType() != ASTNode.IDENTIFIER) {
+		if (locateNode.getType() == ASTNode.FUNCTION_DECLARATION) {
+			parent = ((FunctionDeclaration) locateNode);
+			targetIdentifier = ((FunctionDeclaration) locateNode).getFunctionName();
+		} else if (locateNode.getType() == ASTNode.IDENTIFIER && !"define".equals(((Identifier) locateNode).getName())) {
+			targetIdentifier = (Identifier) locateNode;
+			parent = targetIdentifier.getParent();
+		} else {
 			return false;
 		}
-		final Identifier targetIdentifier = (Identifier) locateNode;
 
 		// check if it is a function
-		final ASTNode parent = targetIdentifier.getParent();
-		if (parent.getType() != ASTNode.FUNCTION_DECLARATION && parent.getType() != ASTNode.FUNCTION_NAME) {
+		if (parent.getType() != ASTNode.FUNCTION_DECLARATION && parent.getType() != ASTNode.FUNCTION_NAME || parent.getParent().getType() == ASTNode.METHOD_DECLARATION) {
 			return false;
 		}
 
