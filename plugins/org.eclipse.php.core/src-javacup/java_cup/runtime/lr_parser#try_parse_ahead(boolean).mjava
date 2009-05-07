@@ -1,0 +1,69 @@
+  /** Do a simulated parse forward (a "parse ahead") from the current 
+   *  stack configuration using stored lookahead input and a virtual parse
+   *  stack.  Return true if we make it all the way through the stored 
+   *  lookahead input without error. This basically simulates the action of 
+   *  parse() using only our saved "parse ahead" input, and not executing any 
+   *  actions.
+   *
+   * @param debug should we produce debugging messages as we parse.
+   */
+  protected boolean try_parse_ahead(boolean debug)
+    throws java.lang.Exception
+    {
+      int act;
+      short lhs, rhs_size;
+
+      /* create a virtual stack from the real parse stack */
+      virtual_parse_stack vstack = new virtual_parse_stack(stack);
+
+      /* parse until we fail or get past the lookahead input */
+      for (;;)
+	{
+	  /* look up the action from the current state (on top of stack) */
+	  act = get_action(vstack.top(), cur_err_token().sym);
+
+	  /* if its an error, we fail */
+	  if (act == 0) return false;
+
+	  /* > 0 encodes a shift */
+	  if (act > 0)
+	    {
+	      /* push the new state on the stack */
+	      vstack.push(act-1);
+
+	      if (debug) debug_message("# Parse-ahead shifts Symbol #" + 
+		       cur_err_token().sym + " into state #" + (act-1));
+
+	      /* advance simulated input, if we run off the end, we are done */
+	      if (!advance_lookahead()) return true;
+	    }
+	  /* < 0 encodes a reduce */
+	  else
+	    {
+	      /* if this is a reduce with the start production we are done */
+	      if ((-act)-1 == start_production()) 
+		{
+		  if (debug) debug_message("# Parse-ahead accepts");
+		  return true;
+		}
+
+	      /* get the lhs Symbol and the rhs size */
+	      lhs = production_tab[(-act)-1][0];
+	      rhs_size = production_tab[(-act)-1][1];
+
+	      /* pop handle off the stack */
+	      for (int i = 0; i < rhs_size; i++)
+		vstack.pop();
+
+	      if (debug) 
+		debug_message("# Parse-ahead reduces: handle size = " + 
+	          rhs_size + " lhs = #" + lhs + " from state #" + vstack.top());
+
+	      /* look up goto and push it onto the stack */
+	      vstack.push(get_reduce(vstack.top(), lhs));
+	      if (debug) 
+		debug_message("# Goto state #" + vstack.top());
+	    }
+	}
+    }
+
