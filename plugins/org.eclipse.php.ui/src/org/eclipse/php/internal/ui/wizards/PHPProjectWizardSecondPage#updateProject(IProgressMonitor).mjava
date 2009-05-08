@@ -1,6 +1,8 @@
 	protected void updateProject(IProgressMonitor monitor) throws CoreException, InterruptedException {
 
-		fCurrProject = fFirstPage.getProjectHandle();
+		IProject projectHandle = fFirstPage.getProjectHandle();
+		IScriptProject create = DLTKCore.create(projectHandle);
+		super.init(create, null, false);
 		fCurrProjectLocation = getProjectLocationURI();
 
 		if (monitor == null) {
@@ -16,7 +18,7 @@
 			if (fCurrProjectLocation == null) { // inside workspace
 				try {
 					URI rootLocation = ResourcesPlugin.getWorkspace().getRoot().getLocationURI();
-					realLocation = new URI(rootLocation.getScheme(), null, Path.fromPortableString(rootLocation.getPath()).append(fCurrProject.getName()).toString(), null);
+					realLocation = new URI(rootLocation.getScheme(), null, Path.fromPortableString(rootLocation.getPath()).append(getProject().getName()).toString(), null);
 				} catch (URISyntaxException e) {
 					Assert.isTrue(false, "Can't happen"); //$NON-NLS-1$
 				}
@@ -24,14 +26,14 @@
 
 			rememberExistingFiles(realLocation);
 
-			createProject(fCurrProject, fCurrProjectLocation, new SubProgressMonitor(monitor, 20));
+			createProject(getProject(), fCurrProjectLocation, new SubProgressMonitor(monitor, 20));
 
 			IBuildpathEntry[] buildpathEntries = null;
 			IncludePath[] includepathEntries = null;
 
 			if (fFirstPage.getDetect()) {
 				includepathEntries = setProjectBaseIncludepath();
-				if (!fCurrProject.getFile(FILENAME_BUILDPATH).exists()) {
+				if (!getProject().getFile(FILENAME_BUILDPATH).exists()) {
 
 					IDLTKLanguageToolkit toolkit = DLTKLanguageManager.getLanguageToolkit(getScriptNature());
 					final BuildpathDetector detector = createBuildpathDetector(monitor, toolkit);
@@ -47,20 +49,20 @@
 				IPath binPath = new Path(store.getString(PreferenceConstants.SRCBIN_BINNAME));
 
 				if (srcPath.segmentCount() > 0) {
-					IFolder folder = fCurrProject.getFolder(srcPath);
+					IFolder folder = getProject().getFolder(srcPath);
 					CoreUtility.createFolder(folder, true, true, new SubProgressMonitor(monitor, 10));
 				} else {
 					monitor.worked(10);
 				}
 
 				if (binPath.segmentCount() > 0) {
-					IFolder folder = fCurrProject.getFolder(binPath);
+					IFolder folder = getProject().getFolder(binPath);
 					CoreUtility.createFolder(folder, true, true, new SubProgressMonitor(monitor, 10));
 				} else {
 					monitor.worked(10);
 				}
 
-				final IPath projectPath = fCurrProject.getFullPath();
+				final IPath projectPath = getProject().getFullPath();
 
 				// configure the buildpath entries, including the default
 				// InterpreterEnvironment library.
@@ -68,10 +70,10 @@
 				cpEntries.add(DLTKCore.newSourceEntry(projectPath.append(srcPath)));
 
 				buildpathEntries = (IBuildpathEntry[]) cpEntries.toArray(new IBuildpathEntry[cpEntries.size()]);
-				includepathEntries = new IncludePath[] { new IncludePath(fCurrProject.getFolder(srcPath), fCurrProject) };
+				includepathEntries = new IncludePath[] { new IncludePath(getProject().getFolder(srcPath), getProject()) };
 			} else {
 				//flat project layout
-				IPath projectPath = fCurrProject.getFullPath();
+				IPath projectPath = getProject().getFullPath();
 				List cpEntries = new ArrayList();
 				cpEntries.add(DLTKCore.newSourceEntry(projectPath));
 
@@ -84,7 +86,7 @@
 				throw new OperationCanceledException();
 			}
 
-			init(DLTKCore.create(fCurrProject), buildpathEntries, false);
+			init(DLTKCore.create(getProject()), buildpathEntries, false);
 			configureScriptProject(new SubProgressMonitor(monitor, 30));
 
 			//checking and adding JS nature,libs, include path if needed
@@ -100,7 +102,7 @@
 			LanguageModelInitializer.enableLanguageModelFor(getScriptProject());
 			//init, and adding include paths:
 			getBuildPathsBlock().init(getScriptProject(), new IBuildpathEntry[] {});
-			IncludePathManager.getInstance().setIncludePath(fCurrProject, includepathEntries);
+			IncludePathManager.getInstance().setIncludePath(getProject(), includepathEntries);
 
 		} finally {
 			monitor.done();
