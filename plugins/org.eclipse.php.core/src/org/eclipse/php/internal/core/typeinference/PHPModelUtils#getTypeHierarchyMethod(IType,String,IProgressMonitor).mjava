@@ -11,15 +11,22 @@
 			throw new NullPointerException();
 		}
 
-		IDLTKSearchScope scope = SearchEngine.createSuperHierarchyScope(type);
-		SearchPattern pattern = SearchPattern.createPattern(name, IDLTKSearchConstants.METHOD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH, PHPLanguageToolkit.getDefault());
-
 		final List<IMethod> methods = new LinkedList<IMethod>();
-		new SearchEngine().search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
-			public void acceptSearchMatch(SearchMatch match) throws CoreException {
-				methods.add((IMethod) match.getElement());
+		if (type.getSuperClasses() != null && type.getSuperClasses().length > 0) {
+			IDLTKSearchScope scope = SearchEngine.createSuperHierarchyScope(type);
+			SearchPattern pattern = SearchPattern.createPattern(name, IDLTKSearchConstants.METHOD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH, PHPLanguageToolkit.getDefault());
+	
+			new SearchEngine().search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
+				public void acceptSearchMatch(SearchMatch match) throws CoreException {
+					methods.add((IMethod) match.getElement());
+				}
+			}, monitor);
+		} else {
+			IMethod method = type.getMethod(name);
+			if (method.exists()) {
+				methods.add(method);
 			}
-		}, monitor);
+		}
 
 		return methods.toArray(new IMethod[methods.size()]);
 	}

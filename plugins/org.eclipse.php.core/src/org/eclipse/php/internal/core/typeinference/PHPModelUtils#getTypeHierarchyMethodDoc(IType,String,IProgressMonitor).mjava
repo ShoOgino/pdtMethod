@@ -11,20 +11,14 @@
 			throw new NullPointerException();
 		}
 
-		final IDLTKSearchScope scope = SearchEngine.createSuperHierarchyScope(type);
-		SearchPattern pattern = SearchPattern.createPattern(name, IDLTKSearchConstants.METHOD, IDLTKSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH, PHPLanguageToolkit.getDefault());
-
 		final List<PHPDocBlock> docs = new LinkedList<PHPDocBlock>();
-		new SearchEngine().search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
-			public void acceptSearchMatch(SearchMatch match) throws CoreException {
-				IMethod method = (IMethod) match.getElement();
-				PHPDocBlock docBlock = PHPModelUtils.getDocBlock(method);
-				if (docBlock != null) {
-					docs.add(docBlock);
-				}
+		
+		for (IMethod method : getTypeHierarchyMethod(type, name, monitor)) {
+			PHPDocBlock docBlock = PHPModelUtils.getDocBlock(method);
+			if (docBlock != null) {
+				docs.add(docBlock);
 			}
-		}, monitor);
-
+		}
 		return docs.toArray(new PHPDocBlock[docs.size()]);
 	}
 
