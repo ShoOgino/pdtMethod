@@ -51,7 +51,7 @@
 					if (file != null && file.exists()) {
 						for (IncludePath includePath : includePaths) {
 							if (includePath.getEntry() instanceof IContainer) {
-								IContainer container = (IContainer)includePath.getEntry();
+								IContainer container = (IContainer) includePath.getEntry();
 								if (container.getFullPath().isPrefixOf(file.getFullPath())) {
 									localFile[0] = new PathEntry(file.getFullPath().toString(), Type.WORKSPACE, file.getParent());
 									pathMapper.addEntry(remoteFile, localFile[0]);
@@ -113,26 +113,39 @@
 									}
 								}
 							}
-						}
-						else if (entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
+						} else if (entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
 							entryPath = DLTKCore.getResolvedVariablePath(entryPath);
 							if (entryPath != null) {
 								File entryDir = entryPath.toFile();
 								find(entryDir, abstractPath, entry, results);
 							}
+						} else if (entry.getEntryKind() == IBuildpathEntry.BPE_CONTAINER) {
+							IScriptProject project = DLTKCore.create(currentProject);
+							try {
+								IBuildpathContainer buildpathContainer = DLTKCore.getBuildpathContainer(entry.getPath(), project);
+								IBuildpathEntry[] buildpathEntries = buildpathContainer.getBuildpathEntries(project);
+								if (buildpathEntries != null && buildpathEntries.length > 0) {
+									entryPath = EnvironmentPathUtils.getLocalPath(buildpathEntries[0].getPath());
+									if (entryPath != null) {
+										find(entryPath.toFile(), abstractPath, entry, results);
+									}
+								}
+							} catch (ModelException e) {
+								PHPDebugPlugin.log(e);
+							}
+
 						}
 					}
 				}
 
-				boolean foundInWorkspace = results.size()> 0;
+				boolean foundInWorkspace = results.size() > 0;
 
 				//search in opened editors
 				searchOpenedEditors(results, abstractPath);
 
 				if (!foundInWorkspace && results.size() == 1 && abstractPath.equals(results.getFirst().getAbstractPath())) {
 					localFile[0] = results.getFirst();
-				}
-				else if (results.size() > 0) {
+				} else if (results.size() > 0) {
 					Collections.sort(results, new BestMatchPathComparator(abstractPath));
 					localFile[0] = filterItems(abstractPath, results.toArray(new PathEntry[results.size()]), debugTarget);
 					if (localFile[0] != null) {
