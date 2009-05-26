@@ -1,0 +1,44 @@
+	private Object[] getContainerPackageFragmentRoots(PackageFragmentRootContainer container, boolean createFolder) {
+
+		Object[] children = container.getChildren();
+		if (children == null)
+			return new Object[0];
+
+		ArrayList<IJavaScriptElement> allChildren = new ArrayList<IJavaScriptElement>();
+		ArrayList expanded = new ArrayList();
+		expanded.addAll(Arrays.asList(children));
+
+		if (expanded == null || expanded.size() < 1)
+			return new Object[0];
+
+		Object next = expanded.remove(0);
+
+		while (next != null) {
+			try {
+				if (next instanceof IPackageFragment) {
+					expanded.addAll(Arrays.asList(((IPackageFragment) next).getChildren()));
+				} else if (next instanceof IPackageFragmentRoot) {
+					expanded.addAll(Arrays.asList(((IPackageFragmentRoot) next).getChildren()));
+				} else if (next instanceof IClassFile) {
+					List<IJavaScriptElement> newChildren = Arrays.asList(((IClassFile) next).getChildren());
+					allChildren.removeAll(newChildren);
+					allChildren.addAll(newChildren);
+				} else if (next instanceof IJavaScriptUnit) {
+					List<IJavaScriptElement> newChildren = Arrays.asList(((IJavaScriptUnit) next).getChildren());
+					allChildren.removeAll(newChildren);
+					allChildren.addAll(newChildren);
+
+				}
+			} catch (JavaScriptModelException ex) {
+				Logger.logException(ex);
+			}
+
+			if (expanded.size() > 0)
+				next = expanded.remove(0);
+			else
+				next = null;
+		}
+
+		return allChildren.toArray();
+	}
+
