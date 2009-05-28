@@ -1,0 +1,29 @@
+	/* (non-Javadoc)
+	 * @see org.eclipse.jdt.internal.ui.text.correction.ChangeCorrectionProposal#performChange(org.eclipse.jface.text.IDocument, org.eclipse.ui.IEditorPart)
+	 */
+	protected void performChange(IEditorPart part, IDocument document) throws CoreException {
+		try {
+			super.performChange(part, document);
+			if (part == null) {
+				return;
+			}
+
+			if (fLinkedProposalModel != null) {
+				if (fLinkedProposalModel.hasLinkedPositions() && part instanceof PHPStructuredEditor) {
+					// enter linked mode
+					ITextViewer viewer= ((PHPStructuredEditor) part).getViewer();
+					new LinkedProposalModelPresenter().enterLinkedMode(viewer, part, fLinkedProposalModel);
+				} else if (part instanceof ITextEditor) {
+					LinkedProposalPositionGroup.PositionInformation endPosition= fLinkedProposalModel.getEndPosition();
+					if (endPosition != null) {
+						// select a result
+						int pos= endPosition.getOffset() + endPosition.getLength();
+						((ITextEditor) part).selectAndReveal(pos, 0);
+					}
+				}
+			}
+		} catch (BadLocationException e) {
+			throw new CoreException(DLTKUIStatus.createError(IStatus.ERROR, e));
+		}
+	}
+

@@ -1,0 +1,66 @@
+	public void enterLinkedMode(ITextViewer viewer, IEditorPart editor, LinkedProposalModel linkedProposalModel) throws BadLocationException {
+		IDocument document = viewer.getDocument();
+
+		LinkedModeModel model = new LinkedModeModel();
+		boolean added = false;
+
+		Iterator iterator = linkedProposalModel.getPositionGroupIterator();
+		while (iterator.hasNext()) {
+			LinkedProposalPositionGroup curr = (LinkedProposalPositionGroup) iterator.next();
+
+			LinkedPositionGroup group = new LinkedPositionGroup();
+
+			LinkedProposalPositionGroup.PositionInformation[] positions = curr.getPositions();
+			if (positions.length > 0) {
+				LinkedProposalPositionGroup.Proposal[] linkedModeProposals = curr.getProposals();
+				if (linkedModeProposals.length <= 1) {
+					for (int i = 0; i < positions.length; i++) {
+						LinkedProposalPositionGroup.PositionInformation pos = positions[i];
+						if (pos.getOffset() != -1) {
+							group.addPosition(new LinkedPosition(document, pos.getOffset(), pos.getLength(), pos.getSequenceRank()));
+						}
+					}
+				} else {
+					LinkedPositionProposalImpl[] proposalImpls = new LinkedPositionProposalImpl[linkedModeProposals.length];
+					for (int i = 0; i < linkedModeProposals.length; i++) {
+						proposalImpls[i] = new LinkedPositionProposalImpl(linkedModeProposals[i], model);
+					}
+
+					for (int i = 0; i < positions.length; i++) {
+						LinkedProposalPositionGroup.PositionInformation pos = positions[i];
+						if (pos.getOffset() != -1) {
+							group.addPosition(new ProposalPosition(document, pos.getOffset(), pos.getLength(), pos.getSequenceRank(), proposalImpls));
+						}
+					}
+				}
+				model.addGroup(group);
+				added = true;
+			}
+		}
+
+		model.forceInstall();
+
+		if (editor instanceof PHPStructuredEditor) {
+			model.addLinkingListener(new EditorHighlightingSynchronizer((PHPStructuredEditor) editor));
+		}
+
+		if (added) { // only set up UI if there are any positions set
+			LinkedModeUI ui = new EditorLinkedModeUI(model, viewer);
+			LinkedProposalPositionGroup.PositionInformation endPosition = linkedProposalModel.getEndPosition();
+			if (endPosition != null && endPosition.getOffset() != -1) {
+				ui.setExitPosition(viewer, endPosition.getOffset() + endPosition.getLength(), 0, Integer.MAX_VALUE);
+			} else {
+				int cursorPosition = viewer.getSelectedRange().x;
+				if (cursorPosition != 0) {
+					ui.setExitPosition(viewer, cursorPosition, 0, Integer.MAX_VALUE);
+				}
+			}
+			ui.setExitPolicy(new LinkedModeExitPolicy());
+			ui.enter();
+
+			IRegion region = ui.getSelectedRegion();
+			viewer.setSelectedRange(region.getOffset(), region.getLength());
+			viewer.revealRange(region.getOffset(), region.getLength());
+		}
+	}
+

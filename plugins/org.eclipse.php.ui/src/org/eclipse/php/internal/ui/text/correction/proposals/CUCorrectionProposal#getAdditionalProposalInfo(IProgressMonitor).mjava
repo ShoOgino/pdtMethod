@@ -1,0 +1,72 @@
+	public Object getAdditionalProposalInfo(IProgressMonitor monitor) {
+
+		final StringBuffer buf= new StringBuffer();
+
+		try {
+			final TextChange change= getTextChange();
+
+			change.setKeepPreviewEdits(true);
+			final IDocument previewContent= change.getPreviewDocument(monitor);
+			final TextEdit rootEdit= change.getPreviewEdit(change.getEdit());
+
+			class EditAnnotator extends TextEditVisitor {
+				private int fWrittenToPos = 0;
+
+				public void unchangedUntil(int pos) {
+					if (pos > fWrittenToPos) {
+						appendContent(previewContent, fWrittenToPos, pos, buf, true);
+						fWrittenToPos = pos;
+					}
+				}
+
+				public boolean visit(MoveTargetEdit edit) {
+					return true; //rangeAdded(edit);
+				}
+
+				public boolean visit(CopyTargetEdit edit) {
+					return true; //return rangeAdded(edit);
+				}
+
+				public boolean visit(InsertEdit edit) {
+					return rangeAdded(edit);
+				}
+
+				public boolean visit(ReplaceEdit edit) {
+					if (edit.getLength() > 0)
+						return rangeAdded(edit);
+					return rangeRemoved(edit);
+				}
+
+				public boolean visit(MoveSourceEdit edit) {
+					return rangeRemoved(edit);
+				}
+
+				public boolean visit(DeleteEdit edit) {
+					return rangeRemoved(edit);
+				}
+
+				private boolean rangeRemoved(TextEdit edit) {
+					unchangedUntil(edit.getOffset());
+					return false;
+				}
+
+				private boolean rangeAdded(TextEdit edit) {
+					unchangedUntil(edit.getOffset());
+					buf.append("<b>"); //$NON-NLS-1$
+					appendContent(previewContent, edit.getOffset(), edit.getExclusiveEnd(), buf, false);
+					buf.append("</b>"); //$NON-NLS-1$
+					fWrittenToPos = edit.getExclusiveEnd();
+					return false;
+				}
+			}
+			EditAnnotator ea = new EditAnnotator();
+			rootEdit.accept(ea);
+
+			// Final pre-existing region
+			ea.unchangedUntil(previewContent.getLength());
+		} catch (CoreException e) {
+			PHPUiPlugin.log(e);
+		}
+		return buf.toString();
+	}
+

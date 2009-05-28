@@ -1,0 +1,29 @@
+		/*
+		 * @see org.eclipse.jface.text.contentassist.ICompletionProposalExtension2#validate(org.eclipse.jface.text.IDocument, int, org.eclipse.jface.text.DocumentEvent)
+		 */
+		public boolean validate(IDocument document, int offset, DocumentEvent event) {
+			// ignore event
+			String insert = getDisplayString();
+
+			int off;
+			LinkedPosition pos = fLinkedPositionModel.findPosition(new LinkedPosition(document, offset, 0));
+			if (pos != null) {
+				off = pos.getOffset();
+			} else {
+				off = Math.max(0, offset - insert.length());
+			}
+			int length = offset - off;
+
+			if (offset <= document.getLength()) {
+				try {
+					String content = document.get(off, length);
+					if (insert.startsWith(content))
+						return true;
+				} catch (BadLocationException e) {
+					PHPUiPlugin.log(e);
+					// and ignore and return false
+				}
+			}
+			return false;
+		}
+
