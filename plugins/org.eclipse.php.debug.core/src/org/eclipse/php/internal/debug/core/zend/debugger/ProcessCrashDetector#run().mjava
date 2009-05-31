@@ -3,29 +3,14 @@
 	 * @see java.lang.Runnable#run()
 	 */
 	public void run() {
-		final StringBuilder builder = new StringBuilder();
-		String str = null;
 		try {
-			while ((str = errorStream.readLine()) != null) {
-				builder.append(str);
-				builder.append('\n');
-			}
-//			if(builder.length() > 0) {
-//				Display.getDefault().asyncExec(new Runnable() {
-//					public void run() {
-//						MessageDialog.openError(Display.getDefault().getActiveShell(), PHPDebugCoreMessages.Debugger_General_Error, builder.toString());
-//					}
-//				});
-//			}
-		} catch (IOException ioe) {
-		}finally{
-			try {
-				errorStream.close();
-			} catch (IOException e) {
-			}
-		}
-		try {
-			int exitValue = process.exitValue();
+			StreamGobbler errorGobbler = new StreamGobbler(process.getErrorStream());
+			StreamGobbler inputGobbler = new StreamGobbler(process.getInputStream());
+			
+			errorGobbler.start();
+			inputGobbler.start();
+			
+			int exitValue = process.waitFor();
 			if (exitValue > 255 || exitValue < 0) {
 				PHPLaunchUtilities.showDebuggerErrorMessage(PHPDebugCoreMessages.Debugger_General_Error, PHPDebugCoreMessages.Debugger_Error_Crash_Message);
 			}
