@@ -19,13 +19,17 @@
 		
 		String suffix = getSuffix(concreteContext);
 		
+		PHPVersion phpVersion = concreteContext.getPhpVersion();
+		Set<String> magicMethods = new HashSet<String>();
+		magicMethods.addAll(Arrays.asList(PHPMagicMethods.getMethods(phpVersion)));
+		
 		for (IType type : concreteContext.getLhsTypes()) {
 			IMethod[] methods = isParentCall ? CodeAssistUtils.getSuperClassMethods(type, prefix, mask) 
 				: CodeAssistUtils.getTypeMethods(type, prefix, mask);
 
 			for (IMethod method : methods) {
 				try {
-					if (!isFiltered(method, concreteContext)) {
+					if (!magicMethods.contains(method.getElementName()) && !isFiltered(method, concreteContext)) {
 						reporter.reportMethod((IMethod) method, suffix, replaceRange);
 					}
 				} catch (ModelException e) {
