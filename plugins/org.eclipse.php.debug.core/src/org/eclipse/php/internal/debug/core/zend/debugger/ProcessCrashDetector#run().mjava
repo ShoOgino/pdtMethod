@@ -4,8 +4,10 @@
 	 */
 	public void run() {
 		try {
-			StreamGobbler errorGobbler = new StreamGobbler(process.getErrorStream());
-			StreamGobbler inputGobbler = new StreamGobbler(process.getInputStream());
+			StreamGobbler errorGobbler = new StreamGobbler(process.getErrorStream(), true);
+			StreamGobbler inputGobbler = new StreamGobbler(process.getInputStream(), false);
+			
+			ConsolePlugin.getDefault().getConsoleManager().addConsoleListener(this);
 			
 			errorGobbler.start();
 			inputGobbler.start();
@@ -15,6 +17,8 @@
 				PHPLaunchUtilities.showDebuggerErrorMessage(PHPDebugCoreMessages.Debugger_General_Error, PHPDebugCoreMessages.Debugger_Error_Crash_Message);
 			}
 		} catch (Throwable t) {
+		} finally {
+			ConsolePlugin.getDefault().getConsoleManager().removeConsoleListener(this);
 		}
 	}
 

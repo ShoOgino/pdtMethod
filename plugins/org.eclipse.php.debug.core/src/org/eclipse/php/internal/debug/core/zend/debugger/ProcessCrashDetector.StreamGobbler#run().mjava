@@ -2,9 +2,37 @@
 			try {
 				InputStreamReader isr = new InputStreamReader(is);
 				BufferedReader br = new BufferedReader(isr);
-				while (br.readLine() != null);
+				
+				String line;
+				while ((line = br.readLine()) != null) {
+					if (console != null) {
+						if (os == null) {
+							os = console.newOutputStream();
+							if (isError) {
+								Display.getDefault().syncExec(new Runnable() {
+									public void run() {
+										os.setColor(DebugUIPlugin.getPreferenceColor(IDebugPreferenceConstants.CONSOLE_SYS_ERR_COLOR));
+									}
+								});
+							}
+						}
+						os.write(buf.toString());
+						os.write(line + '\n');
+						buf.delete(0, buf.length());
+					} else {
+						buf.append(line).append('\n');
+					}
+				}
 			} catch (IOException ioe) {
-				ioe.printStackTrace();
+				PHPDebugPlugin.log(ioe);
+			} finally {
+				if (os != null) {
+					try {
+						os.close();
+					} catch (IOException e) {
+						PHPDebugPlugin.log(e);
+					}
+				}
 			}
 		}
 
