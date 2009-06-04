@@ -46,7 +46,7 @@
 
 			case CONTENTASSIST_PROPOSALS:
 				// Handle javascript content assist when there is no support (instead of printing the stack trace)
-				if (config != null) {
+				if (fViewerConfiguration != null) {
 					IProject project = null;
 					boolean isJavaScriptRegion = false;
 					boolean hasJavaScriptNature = true;
@@ -66,9 +66,19 @@
 						}
 
 						// Check if the containing project has JS nature or not
-						if (textEditor instanceof PHPStructuredEditor) {
-							IModelElement modelElement = ((PHPStructuredEditor) textEditor).getModelElement();
+						if (fTextEditor instanceof PHPStructuredEditor) {
+							PHPStructuredEditor phpEditor = (PHPStructuredEditor) fTextEditor;
+							IModelElement modelElement = phpEditor.getModelElement();
 
+							// Wait until the editor is fully reconciled:
+							// https://bugs.eclipse.org/bugs/show_bug.cgi?id=278992
+							while (fDirtyStateUpdater != null && fDirtyStateUpdater.isModelDirty()) {
+								try {
+									Thread.sleep(50);
+								} catch (InterruptedException e) {
+								}
+							}
+							
 							if (modelElement != null) {
 								IScriptProject scriptProject = modelElement.getScriptProject();
 								project = scriptProject.getProject();
@@ -100,8 +110,8 @@
 				}
 
 				// notifing the processors that the next request for completion is an explicit request
-				if (config != null) {
-					PHPStructuredTextViewerConfiguration structuredTextViewerConfiguration = (PHPStructuredTextViewerConfiguration) config;
+				if (fViewerConfiguration != null) {
+					PHPStructuredTextViewerConfiguration structuredTextViewerConfiguration = (PHPStructuredTextViewerConfiguration) fViewerConfiguration;
 					IContentAssistProcessor[] all = structuredTextViewerConfiguration.getContentAssistProcessors(this, PHPPartitionTypes.PHP_DEFAULT);
 					for (IContentAssistProcessor element : all) {
 						if (element instanceof PHPCompletionProcessor) {
@@ -142,7 +152,7 @@
 						else
 							deleteSelection(textSelection, textWidget);
 
-						if (fireSelectionChanged) {
+						if (fFireSelectionChanged) {
 							Point range = textWidget.getSelectionRange();
 							fireSelectionChanged(range.x, range.y);
 						}
