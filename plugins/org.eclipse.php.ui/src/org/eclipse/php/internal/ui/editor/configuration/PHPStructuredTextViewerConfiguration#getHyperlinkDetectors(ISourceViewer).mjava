@@ -1,8 +1,8 @@
-	@Override
 	public IHyperlinkDetector[] getHyperlinkDetectors(ISourceViewer sourceViewer) {
 		if (!fPreferenceStore.getBoolean(AbstractDecoratedTextEditorPreferenceConstants.EDITOR_HYPERLINKS_ENABLED))
 			return null;
 
+		// Create proxy to prevent throwing of errors in case there's an exception occurred in hyperlink detector:
 		List<IHyperlinkDetector> detectors = new LinkedList<IHyperlinkDetector>();
 		IHyperlinkDetector[] inheritedDetectors = super.getHyperlinkDetectors(sourceViewer);
 		if (inheritedDetectors != null) {
@@ -12,30 +12,12 @@
 						try {
 							return detector.detectHyperlinks(textViewer, region, canShowMultipleHyperlinks);
 						} catch (Throwable e) {
-							// fail safe hyperlink detector - prevent others from failing
 						}
 						return null;
 					}
-
 				});
 			}
 		}
-
-		if (sourceViewer instanceof PHPStructuredTextViewer) {
-			detectors.add(new PHPHyperlinkDetector(((PHPStructuredTextViewer) sourceViewer).getTextEditor()));
-		}
-		IConfigurationElement[] elements = Platform.getExtensionRegistry().getConfigurationElementsFor(HYPERLINK_DETECTOR_EXT);
-		for (int i = 0; i < elements.length; i++) {
-			IConfigurationElement element = elements[i];
-			if (element.getName().equals("detector")) { //$NON-NLS-1$
-				ElementCreationProxy ecProxy = new ElementCreationProxy(element, HYPERLINK_DETECTOR_EXT);
-				IHyperlinkDetectorForPHP detector = (IHyperlinkDetectorForPHP) ecProxy.getObject();
-				if (detector != null) {
-					detectors.add(detector);
-				}
-			}
-		}
-
 		return detectors.toArray(new IHyperlinkDetector[detectors.size()]);
 	}
 
