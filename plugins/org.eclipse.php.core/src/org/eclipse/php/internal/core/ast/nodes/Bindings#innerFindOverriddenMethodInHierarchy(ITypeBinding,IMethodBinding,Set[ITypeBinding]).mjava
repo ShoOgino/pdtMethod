@@ -1,0 +1,26 @@
+	public static IMethodBinding innerFindOverriddenMethodInHierarchy(ITypeBinding type, IMethodBinding binding, Set<ITypeBinding> processedTypes) {
+		if (!processedTypes.add(type)) {
+			return null;
+		}
+		
+		IMethodBinding method = findOverriddenMethodInType(type, binding);
+		if (method != null)
+			return method;
+		ITypeBinding superClass = type.getSuperclass();
+		if (superClass != null) {
+			method = findOverriddenMethodInHierarchy(superClass, binding);
+			if (method != null) {
+				return method;
+			}
+		}
+		ITypeBinding[] interfaces = type.getInterfaces();
+		if (interfaces != null) {
+			for (int i = 0; i < interfaces.length; i++) {
+				method = findOverriddenMethodInHierarchy(interfaces[i], binding);
+				if (method != null)
+					return method;
+			}
+		}
+		return null;
+	}
+
