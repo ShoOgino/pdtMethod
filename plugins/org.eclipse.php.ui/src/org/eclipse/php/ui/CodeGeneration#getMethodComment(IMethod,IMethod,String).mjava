@@ -14,6 +14,7 @@
 	 */
 	public static String getMethodComment(IMethod method, IMethod overridden, String lineDelimiter) throws CoreException {
 		//FIXME - 'retType' should be initialized to null after the 'getReturnType will be functional, so void/c'tor will not have 'return' tag
+
 		String retType = "unknown_type";
 		String[] typeParameterNames = null;
 		String[] parameterTypes = null;
@@ -42,8 +43,11 @@
 				int i = 0;
 				for (ASTNode node : formalParameters) {
 					FormalParameter formalParameter = (FormalParameter) node;
-					String typeName = ((Identifier) formalParameter.getParameterType()).getName();
-					parameterTypes[i++] = typeName;
+					Expression parameterType = formalParameter.getParameterType();
+					if (parameterType != null) {
+						String typeName = ((Identifier) parameterType).getName();
+						parameterTypes[i++] = typeName;
+					}
 				}
 			}
 			
@@ -73,11 +77,17 @@
 		} catch (IOException e) {
 			Logger.logException(e);
 		}
-		String[] paramNames = method.getParameters();// ParameterNames();
+		
+		String[] paramNames = method.getParameters();
 		// add parameter type before parameter name
 		for (int i = 0; i < paramNames.length; i++) {
 			if (null != parameterTypes && null != parameterTypes[i]) {
 				paramNames[i] = parameterTypes[i] + " " + paramNames[i];
+//			} else {
+//				String parameterType = detectFromHungarianNotation(paramNames[i]);
+//				if (parameterType != null) {
+//					paramNames[i] = parameterType + " " + paramNames[i];
+//				}
 			}
 		}
 		IType declaringType = method.getDeclaringType();
