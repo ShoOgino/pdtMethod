@@ -1,0 +1,23 @@
+	private void install(final IProject project) {
+		IProgressService service = null;
+		if (fPart != null) {
+			service = (IProgressService) fPart.getSite().getService(IProgressService.class);
+		}
+		if (service == null) {
+			doInstall(project, null);
+		} else {
+			IRunnableWithProgress runnable = new IRunnableWithProgress() {
+				public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
+					doInstall(project, monitor);
+				}
+			};
+			try {
+				service.run(false, false, runnable);
+			} catch (InvocationTargetException e) {
+				Logger.logException(e);
+			} catch (InterruptedException e) {
+				Logger.logException(e);
+			}
+		}
+	}
+
