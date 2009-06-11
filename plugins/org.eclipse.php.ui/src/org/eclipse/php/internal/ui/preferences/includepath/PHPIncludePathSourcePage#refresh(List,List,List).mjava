@@ -1,4 +1,7 @@
 	protected void refresh(List insertedElements, List removedElements, List modifiedElements) {
+
+		fAddedElements.clear();
+
 		fFoldersList.addElements(insertedElements);
 
 		// for each added source entry, check if it is already a part of the buildpath
@@ -14,6 +17,9 @@
 
 		if (fAddedElements.size() > 0) {
 			addToBuildPath = IncludePathUtils.openConfirmationDialog(getShell(), PHPUIMessages.getString("IncludePath.AddEntryTitle"), PHPUIMessages.getString("IncludePath.AddEntryToBuildPathMessage")); //$NON-NLS-1$ ////$NON-NLS-2$
+			for (IChangeListener listener : addedElementListeners) {
+				listener.update(true);
+			}
 		}
 
 		for (Iterator iter = insertedElements.iterator(); iter.hasNext();) {
@@ -22,8 +28,6 @@
 		}
 
 		fFoldersList.removeElements(removedElements);
-
-		fRemovedElements.addAll(removedElements);
 
 		for (Iterator iter = modifiedElements.iterator(); iter.hasNext();) {
 			BPListElement element = (BPListElement) iter.next();
