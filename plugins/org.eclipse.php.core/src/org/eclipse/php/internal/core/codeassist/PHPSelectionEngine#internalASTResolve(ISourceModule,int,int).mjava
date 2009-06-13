@@ -38,7 +38,7 @@
 					} else {
 						SimpleReference callName = callExpression.getCallName();
 						String methodName = callName instanceof FullyQualifiedReference ? ((FullyQualifiedReference)callName).getFullyQualifiedName() : callName.getName();
-						IMethod[] methods = PHPTypeInferenceUtils.getFunctions(methodName, sourceModule, offset);
+						IMethod[] methods = PHPModelUtils.getFunctions(methodName, sourceModule, offset);
 						Collection<IMethod> filtered = PHPModelUtils.filterElements(sourceModule, Arrays.asList(methods));
 						return (IMethod[]) filtered.toArray(new IMethod[filtered.size()]);
 					}
@@ -121,17 +121,17 @@
 				}
 				else if (node instanceof NamespaceReference) {
 					String name = ((NamespaceReference) node).getName();
-					return PHPTypeInferenceUtils.getNamespaceOf(name + NamespaceReference.NAMESPACE_SEPARATOR, sourceModule, offset);
+					return PHPModelUtils.getNamespaceOf(name + NamespaceReference.NAMESPACE_SEPARATOR, sourceModule, offset);
 				}
 				// Class/Interface reference:
 				else if (node instanceof TypeReference) {
 					String name = (node instanceof FullyQualifiedReference) ? ((FullyQualifiedReference) node).getFullyQualifiedName() : ((TypeReference) node).getName();
-					IType[] types = PHPTypeInferenceUtils.getTypes(name, sourceModule, offset);
+					IType[] types = PHPModelUtils.getTypes(name, sourceModule, offset);
 					if (types == null || types.length == 0) {
 						// This can be a constant or namespace in PHP 5.3:
-						types = PHPTypeInferenceUtils.getNamespaces(name, SearchPattern.R_EXACT_MATCH, SearchEngine.createSearchScope(sourceModule.getScriptProject()));
+						types = PHPModelUtils.getNamespaces(name, SearchPattern.R_EXACT_MATCH, SearchEngine.createSearchScope(sourceModule.getScriptProject()));
 						if (types == null || types.length == 0) {
-							return PHPTypeInferenceUtils.getFields(name, sourceModule, offset);
+							return PHPModelUtils.getFields(name, sourceModule, offset);
 						}
 					}
 					return types;
@@ -141,7 +141,7 @@
 					Expression className = newNode.getClassName();
 					if (className instanceof SimpleReference) {
 						String name = (node instanceof FullyQualifiedReference) ? ((FullyQualifiedReference) node).getFullyQualifiedName() : ((SimpleReference) node).getName();
-						return getConstructorsIfAny(extractClasses(PHPTypeInferenceUtils.getTypes(name, sourceModule, offset)));
+						return getConstructorsIfAny(extractClasses(PHPModelUtils.getTypes(name, sourceModule, offset)));
 					}
 				}
 			}
