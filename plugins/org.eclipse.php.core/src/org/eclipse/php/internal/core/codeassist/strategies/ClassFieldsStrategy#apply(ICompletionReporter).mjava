@@ -16,19 +16,18 @@
 		SourceRange replaceRange = getReplacementRange(concreteContext);
 
 		for (IType type : concreteContext.getLhsTypes()) {
-			IModelElement[] fields = CodeAssistUtils.getTypeFields(type, prefix, mask);
+			try {
+				ITypeHierarchy hierarchy = getCompanion().getSuperTypeHierarchy(type, null);
+				IModelElement[] fields = CodeAssistUtils.getTypeFields(type, hierarchy, prefix, mask);
 
-			for (IModelElement element : fields) {
-				IField field = (IField) element;
-				try {
+				for (IModelElement element : fields) {
+					IField field = (IField) element;
 					if (!isFiltered(field, concreteContext)) {
 						reporter.reportField(field, getSuffix(), replaceRange, concreteContext.getTriggerType() == Trigger.OBJECT);
 					}
-				} catch (ModelException e) {
-					if (DLTKCore.DEBUG_COMPLETION) {
-						e.printStackTrace();
-					}
 				}
+			} catch (ModelException e) {
+				PHPCorePlugin.log(e);
 			}
 		}
 	}

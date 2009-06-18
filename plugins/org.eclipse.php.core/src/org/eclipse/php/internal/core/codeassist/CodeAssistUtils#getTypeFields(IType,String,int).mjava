@@ -1,63 +1,11 @@
 	/**
 	 * This method finds all class fields that match the given prefix.
-	 * @param type
-	 * @param prefix
-	 * @param mask
+	 * @param type Type to search fields within
+	 * @param prefix Field prefix
+	 * @param mask Search mask
 	 * @return
 	 */
 	public static IField[] getTypeFields(IType type, String prefix, int mask) {
-		boolean exactName = (mask & EXACT_NAME) != 0;
-		boolean searchConstants = (mask & EXCLUDE_CONSTANTS) == 0;
-
-		final Set<IField> fields = new TreeSet<IField>(new AlphabeticComparator());
-		try {
-			List<IType> searchTypes = new LinkedList<IType>();
-
-			searchTypes.add(type);
-			if (type.getSuperClasses() != null && type.getSuperClasses().length > 0) {
-				ITypeHierarchy superTypeHierarchy = type.newSupertypeHierarchy(null);
-				IType[] allSuperclasses = superTypeHierarchy.getAllSuperclasses(type);
-				searchTypes.addAll(Arrays.asList(allSuperclasses));
-			}
-			for (IType searchType : searchTypes) {
-				IField[] typeFields = searchType.getFields();
-
-				for (IField typeField : typeFields) {
-					String elementName = typeField.getElementName();
-					int flags = typeField.getFlags();
-					if (PHPFlags.isConstant(flags)) {
-						if (!searchConstants) {
-							continue;
-						}
-						if (exactName) {
-							if (elementName.equals(prefix)) {
-								fields.add(typeField);
-								break;
-							}
-						} else if (elementName.startsWith(prefix)) {
-							fields.add(typeField);
-						}
-					} else { // variable
-						String tmp = prefix;
-						if (!tmp.startsWith(DOLLAR)) {
-							tmp = DOLLAR + tmp;
-						}
-						if (exactName) {
-							if (elementName.equals(tmp)) {
-								fields.add(typeField);
-								break;
-							}
-						} else if (startsWithIgnoreCase(elementName, tmp)) {
-							fields.add(typeField);
-						}
-					}
-				}
-			}
-		} catch (Exception e) {
-			if (DLTKCore.DEBUG_COMPLETION) {
-				e.printStackTrace();
-			}
-		}
-		return fields.toArray(new IField[fields.size()]);
+		return getTypeFields(type, null, prefix, mask);
 	}
 
