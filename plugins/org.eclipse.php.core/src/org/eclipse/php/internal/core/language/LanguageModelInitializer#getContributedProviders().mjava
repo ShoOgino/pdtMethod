@@ -1,0 +1,20 @@
+	static ILanguageModelProvider[] getContributedProviders() {
+		if (LanguageModelInitializer.providers == null) {
+			List<ILanguageModelProvider> providers = new LinkedList<ILanguageModelProvider>();
+			providers.add(new DefaultLanguageModelProvider()); // add default
+			
+			IConfigurationElement[] elements = Platform.getExtensionRegistry().getConfigurationElementsFor("org.eclipse.php.core.languageModelProviders");
+			for (IConfigurationElement element : elements) {
+				if (element.getName().equals("provider")) {
+					try {
+						providers.add((ILanguageModelProvider) element.createExecutableExtension("class"));
+					} catch (CoreException e) {
+						PHPCorePlugin.log(e);
+					}
+				}
+			}
+			LanguageModelInitializer.providers = (ILanguageModelProvider[]) providers.toArray(new ILanguageModelProvider[providers.size()]);
+		}
+		return LanguageModelInitializer.providers;
+	}
+

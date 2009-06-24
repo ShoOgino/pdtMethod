@@ -1,0 +1,32 @@
+	public IBuildpathEntry[] getBuildpathEntries(IScriptProject project) {
+		if (buildPathEntries == null) {
+			try {
+				List<IBuildpathEntry> entries = new LinkedList<IBuildpathEntry>();
+				for (ILanguageModelProvider provider : LanguageModelInitializer.getContributedProviders()) {
+					IPath path = provider.getPath(project);
+					if (path != null) {
+						IEnvironment environment = EnvironmentManager.getEnvironment(project);
+						if (environment != null) {
+							path = EnvironmentPathUtils.getFullPath(environment, path);
+						}
+						entries.add(
+							DLTKCore.newLibraryEntry(
+								path,
+								BuildpathEntry.NO_ACCESS_RULES,
+								BuildpathEntry.NO_EXTRA_ATTRIBUTES,
+								BuildpathEntry.INCLUDE_ALL,
+								BuildpathEntry.EXCLUDE_NONE,
+								false,
+								true
+							)
+						);
+					}
+				}
+				buildPathEntries = (IBuildpathEntry[]) entries.toArray(new IBuildpathEntry[entries.size()]);
+			} catch (Exception e) {
+				Logger.logException(e);
+			}
+		}
+		return buildPathEntries;
+	}
+
