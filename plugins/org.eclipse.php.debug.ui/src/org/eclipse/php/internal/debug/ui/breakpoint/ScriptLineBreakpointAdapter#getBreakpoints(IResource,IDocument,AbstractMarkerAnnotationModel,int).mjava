@@ -1,0 +1,32 @@
+	private IBreakpoint[] getBreakpoints(IResource resource, IDocument document, AbstractMarkerAnnotationModel model, int lineNumber) {
+		List markers = new ArrayList();
+		if (resource != null && model != null && resource.exists()) {
+			try {
+				IMarker[] allMarkers = resource.findMarkers(IBreakpoint.LINE_BREAKPOINT_MARKER, true, IResource.DEPTH_ZERO);
+				if (allMarkers != null) {
+					for (int i = 0; i < allMarkers.length; i++) {
+						Position p = model.getMarkerPosition(allMarkers[i]);
+						int markerLine = -1;
+						try {
+							markerLine = document.getLineOfOffset(p.getOffset());
+						} catch (BadLocationException e1) {
+						}
+						if (markerLine == lineNumber) {
+							markers.add(allMarkers[i]);
+						}
+					}
+				}
+			} catch (CoreException x) {
+			}
+		}
+		IBreakpointManager manager = DebugPlugin.getDefault().getBreakpointManager();
+		List breakpoints = new ArrayList(markers.size());
+		for (int i = 0; i < markers.size(); i++) {
+			IBreakpoint breakpoint = manager.getBreakpoint((IMarker) markers.get(i));
+			if (breakpoint != null) {
+				breakpoints.add(breakpoint);
+			}
+		}
+		return (IBreakpoint[]) breakpoints.toArray(new IBreakpoint[0]);
+	}
+

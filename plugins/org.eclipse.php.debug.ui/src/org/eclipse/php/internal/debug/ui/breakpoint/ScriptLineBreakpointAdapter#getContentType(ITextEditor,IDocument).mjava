@@ -1,0 +1,35 @@
+	protected String getContentType(ITextEditor editor, IDocument document) {
+		IModelManager mgr = StructuredModelManager.getModelManager();
+		String contentType = null;
+
+		IDocumentProvider provider = editor.getDocumentProvider();
+		if (provider instanceof IDocumentProviderExtension4) {
+			try {
+				IContentType type = ((IDocumentProviderExtension4) provider).getContentType(editor.getEditorInput());
+				if (type != null)
+					contentType = type.getId();
+			} catch (CoreException e) {
+				/*
+				 * A failure accessing the underlying store really isn't
+				 * interesting, although it can be a problem for
+				 * IStorageEditorInputs.
+				 */
+			}
+		}
+
+		if (contentType == null) {
+			IStructuredModel model = null;
+			try {
+				model = mgr.getExistingModelForRead(document);
+				if (model != null) {
+					contentType = model.getContentTypeIdentifier();
+				}
+			} finally {
+				if (model != null) {
+					model.releaseFromRead();
+				}
+			}
+		}
+		return contentType;
+	}
+

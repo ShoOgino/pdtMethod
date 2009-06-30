@@ -1,0 +1,36 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.eclipse.debug.ui.actions.IToggleBreakpointsTarget#toggleLineBreakpoints(org.eclipse.ui.IWorkbenchPart,
+	 *      org.eclipse.jface.viewers.ISelection)
+	 */
+	public void toggleLineBreakpoints(IWorkbenchPart part, ISelection selection) throws CoreException {
+		ITextEditor editor = (ITextEditor) part.getAdapter(ITextEditor.class);
+		if (selection instanceof ITextSelection) {
+			ITextSelection textSelection = (ITextSelection) selection;
+			IDocument document = editor.getDocumentProvider().getDocument(editor.getEditorInput());
+			int lineNumber = -1;
+			try {
+				lineNumber = document.getLineOfOffset(textSelection.getOffset());
+			} catch (BadLocationException e) {
+			}
+			if (lineNumber >= 0) {
+
+				IResource resource = getResource(editor.getEditorInput());
+				AbstractMarkerAnnotationModel model = getAnnotationModel(editor);
+				IBreakpoint[] breakpoints = getBreakpoints(resource, document, model, lineNumber);
+				if (breakpoints.length > 0) {
+					IBreakpointManager breakpointManager = DebugPlugin.getDefault().getBreakpointManager();
+					for (int i = 0; i < breakpoints.length; i++) {
+						breakpoints[i].getMarker().delete();
+						breakpointManager.removeBreakpoint(breakpoints[i], true);
+					}
+				} else {
+					createBreakpoints(editor, lineNumber + 1);
+				}
+
+			}
+		}
+
+	}
+

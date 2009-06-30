@@ -1,0 +1,62 @@
+	public final IResource getResource(IEditorInput input) {
+		IResource resource = null;
+
+		if (input instanceof IFileEditorInput)
+			resource = ((IFileEditorInput) input).getFile();
+		if (resource == null)
+			resource = (IResource) input.getAdapter(IFile.class);
+		if (resource == null)
+			resource = (IResource) input.getAdapter(IResource.class);
+
+		IEditorPart editorPart = null;
+		if (resource == null) {
+			IWorkbench workbench = SSEUIPlugin.getDefault().getWorkbench();
+			if (workbench != null) {
+				IWorkbenchWindow window = workbench.getActiveWorkbenchWindow();
+				if (window != null) {
+					IPartService service = window.getPartService();
+					if (service != null) {
+						Object part = service.getActivePart();
+						if (part != null && part instanceof IEditorPart) {
+							editorPart = (IEditorPart) part;
+							if (editorPart != null) {
+								IStructuredModel model = null;
+								ITextEditor textEditor = null;
+								try {
+									if (editorPart instanceof ITextEditor) {
+										textEditor = (ITextEditor) editorPart;
+									}
+									if (textEditor == null) {
+										textEditor = (ITextEditor) editorPart.getAdapter(ITextEditor.class);
+									}
+									if (textEditor != null) {
+										IDocument textDocument = textEditor.getDocumentProvider().getDocument(input);
+										model = StructuredModelManager.getModelManager().getExistingModelForRead(textDocument);
+										if (model != null) {
+											resource = BreakpointProviderBuilder.getInstance().getResource(input, model.getContentTypeIdentifier(), getFileExtension(input));
+										}
+									}
+									if (resource == null) {
+										IBreakpointProvider[] providers = BreakpointProviderBuilder.getInstance().getBreakpointProviders(editorPart, null, getFileExtension(input));
+										for (int i = 0; i < providers.length && resource == null; i++) {
+											resource = providers[i].getResource(input);
+										}
+									}
+								} catch (Exception e) {
+									Logger.logException(e);
+								} finally {
+									if (model != null) {
+										model.releaseFromRead();
+									}
+								}
+							}
+
+						}
+					}
+				}
+
+			}
+		}
+		return resource;
+	}
+
