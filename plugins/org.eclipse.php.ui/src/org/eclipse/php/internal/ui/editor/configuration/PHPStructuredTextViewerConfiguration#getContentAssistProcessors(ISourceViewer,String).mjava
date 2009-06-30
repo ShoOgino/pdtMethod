@@ -3,20 +3,23 @@
 		IContentAssistProcessor[] processors = null;
 
 		if (sourceViewer instanceof PHPStructuredTextViewer) {
+
+			ITextEditor textEditor = ((PHPStructuredTextViewer)sourceViewer).getTextEditor();
+			if (phpCompletionProcessor == null) {
+				phpCompletionProcessor = new PHPCompletionProcessor(textEditor, (ContentAssistant) getPHPContentAssistant(sourceViewer), PHPPartitionTypes.PHP_DEFAULT);
+			}
+			
 			if (partitionType == PHPPartitionTypes.PHP_DEFAULT) {
-				ArrayList<IContentAssistProcessor> processorsList = getPHPProcessors(partitionType, (PHPStructuredTextViewer) sourceViewer);
-				processors = new IContentAssistProcessor[processorsList.size()];
-				processorsList.toArray(processors);
+				processors = new IContentAssistProcessor[] { phpCompletionProcessor };
 			} else {
-				ArrayList<IContentAssistProcessor> phpDocProcessors = getPHPProcessors(partitionType, (PHPStructuredTextViewer) sourceViewer);
 				IContentAssistProcessor[] superProcessors = super.getContentAssistProcessors(sourceViewer, partitionType);
 				if (superProcessors != null) {
-					for (IContentAssistProcessor processor : superProcessors) {
-						phpDocProcessors.add(processor);
-					}
+					processors = new IContentAssistProcessor[superProcessors.length + 1];
+					System.arraycopy(superProcessors, 0, processors, 0, superProcessors.length);
+					processors[superProcessors.length] = phpCompletionProcessor;
+				} else {
+					processors = new IContentAssistProcessor[] { phpCompletionProcessor };
 				}
-				processors = new IContentAssistProcessor[phpDocProcessors.size()];
-				phpDocProcessors.toArray(processors);
 			}
 		} else {
 			processors = new IContentAssistProcessor[0];
