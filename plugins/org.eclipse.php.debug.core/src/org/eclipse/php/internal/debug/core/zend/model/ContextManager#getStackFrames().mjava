@@ -1,4 +1,71 @@
 	public IStackFrame[] getStackFrames() throws DebugException {
-		return getStackFrames(false);
+
+		// check to see if eclipse is getting the same stack frames again.
+		PHPstack stack = fDebugger.getCallStack();
+		PHPThread thread = (PHPThread) fTarget.getThreads()[0];
+		StackLayer[] layers = stack.getLayers();
+
+		fFramesInitLock.acquire();
+		try {
+			if (fPreviousFrames == null) {
+				fPreviousFrames = applyDebugFilters(createNewFrames(layers, thread));
+				DefaultExpressionsManager expressionsManager = fTarget.getExpressionManager();
+				if (expressionsManager != null) {
+					expressionsManager.clear();
+				}
+
+				fVariables.clear();
+				IVariable[] variables = createVariables();
+				for (IStackFrame frame : fPreviousFrames) {
+					fVariables.put(frame, variables);
+				}
+
+				fSuspendCount = fTarget.getSuspendCount();
+				return fPreviousFrames;
+			}
+		} finally {
+			fFramesInitLock.release();
+		}
+
+		if (fSuspendCount == fTarget.getSuspendCount()) {
+			return fPreviousFrames;
+		}
+
+		// check to see if layers are the same as the previous thread
+		fSuspendCount = fTarget.getSuspendCount();
+		boolean layersSame = compareLayers(layers, fPreviousLayers);
+		if (layersSame) {
+			// Update top of the stack frame:
+			PHPStackFrame originalFrame = (PHPStackFrame) fPreviousFrames[0];
+			int topID = originalFrame.getIdentifier();
+			String fileName = originalFrame.getAbsoluteFileName();
+			String sourceFile = originalFrame.getSourceName();
+
+			fVariables.remove(fPreviousFrames[0]);
+			fPreviousFrames[0] = new PHPStackFrame(
+				thread, fileName, (layers.length == 1) ? "" : fPreviousFrames[1].getName(), fTarget.getLastStop(), topID, sourceFile);
+
+			fVariables.put(fPreviousFrames[0], createVariables());
+
+		} else {
+			if (layers.length == 1 && layers[0].getCalledFileName().endsWith(DUMMY_PHP_FILE)) {
+				fDebugger.finish();//reached dummy file --> finish debug !
+			} else {
+				fPreviousFrames = applyDebugFilters(createNewFrames(layers, thread));
+
+				IVariable[] variables = null;
+				for (IStackFrame frame : fPreviousFrames) {
+					if (!fVariables.containsKey(frame)) {
+						if (variables == null) {
+							variables = createVariables();
+						}
+						fVariables.put(frame, variables);
+					}
+				}
+
+				fSuspendCount = fTarget.getSuspendCount();
+			}
+		}
+		return fPreviousFrames;
 	}
 
