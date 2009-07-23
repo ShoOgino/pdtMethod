@@ -1,13 +1,17 @@
 	/**
 	 * Performs the reconcile and returns the AST if it was computed.
 	 * 
-	 * @param unit the compilation unit
-	 * @param initialReconcile <code>true</code> if this is the initial reconcile
+	 * @param unit
+	 *            the compilation unit
+	 * @param initialReconcile
+	 *            <code>true</code> if this is the initial reconcile
 	 * @return the AST or <code>null</code> if none
-	 * @throws JavaModelException if the original Java element does not exist
+	 * @throws JavaModelException
+	 *             if the original Java element does not exist
 	 * @since 3.4
 	 */
-	private Program reconcile(ISourceModule unit, boolean initialReconcile) throws ModelException {
+	private Program reconcile(ISourceModule unit, boolean initialReconcile)
+			throws ModelException {
 		/* fix for missing cancel flag communication */
 		IProblemRequestorExtension extension = getProblemRequestorExtension();
 		if (extension != null) {
@@ -17,25 +21,28 @@
 
 		try {
 			// TODO : create ast if needed
-			boolean isASTNeeded = initialReconcile || PHPUiPlugin.getDefault().getASTProvider().isActive(unit);
+			boolean isASTNeeded = initialReconcile
+					|| PHPUiPlugin.getDefault().getASTProvider().isActive(unit);
 			// reconcile
 			synchronized (unit) {
 				unit.reconcile(true, null, fProgressMonitor);
 			}
 			if (isASTNeeded) {
-				PHPVersion phpVersion = ProjectOptions.getPhpVersion(unit.getScriptProject().getProject());
+				PHPVersion phpVersion = ProjectOptions.getPhpVersion(unit
+						.getScriptProject().getProject());
 				ASTParser newParser = ASTParser.newParser(phpVersion, unit);
 				Program createdAST = newParser.createAST(null);
 				if (createdAST != null && document != null) {
 					createdAST.setSourceModule(unit);
-					createdAST.setSourceRange(0, document.getLength());					
+					createdAST.setSourceRange(0, document.getLength());
 					createdAST.setLineEndTable(lineEndTable(document));
 				}
 				return createdAST;
 			}
 
 		} catch (OperationCanceledException ex) {
-			Assert.isTrue(fProgressMonitor == null || fProgressMonitor.isCanceled());
+			Assert.isTrue(fProgressMonitor == null
+					|| fProgressMonitor.isCanceled());
 
 		} catch (Exception e) {
 			throw new ModelException(e, IStatus.ERROR);
