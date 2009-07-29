@@ -1,12 +1,14 @@
 	public void apply(ICompletionReporter reporter) throws BadLocationException {
-		
+
 		ICompletionContext context = getContext();
 		AbstractCompletionContext concreteContext = (AbstractCompletionContext) context;
-		CompletionRequestor requestor = concreteContext.getCompletionRequestor();
-		
+		CompletionRequestor requestor = concreteContext
+				.getCompletionRequestor();
+
 		IType enclosingClass = null;
 		try {
-			IModelElement enclosingElement = concreteContext.getSourceModule().getElementAt(concreteContext.getOffset());
+			IModelElement enclosingElement = concreteContext.getSourceModule()
+					.getElementAt(concreteContext.getOffset());
 			while (enclosingElement instanceof IField) {
 				enclosingElement = enclosingElement.getParent();
 			}
@@ -19,15 +21,13 @@
 		} catch (ModelException e) {
 			PHPCorePlugin.log(e);
 		}
-		
+
 		SourceRange replaceRange = getReplacementRange(context);
-		String defaultSuffix = getSuffix(concreteContext);
+		String suffix = getSuffix(concreteContext);
 
 		IType[] types = getTypes(concreteContext);
 		for (IType type : types) {
 
-			String suffix = type instanceof FakeGroupType ? "" : defaultSuffix;
-			
 			IMethod ctor = null;
 			if (requestor.isContextInformationMode()) {
 				try {
@@ -41,19 +41,19 @@
 					PHPCorePlugin.log(e);
 				}
 			}
-			
+
 			try {
-				int flags = type.getFlags();
-				if (PHPFlags.isAbstract(flags)) {
-					continue;
-				}
-				
 				if (ctor != null) {
-					if (!PHPFlags.isPrivate(ctor.getFlags()) || type.equals(enclosingClass)) {
+					if (!PHPFlags.isPrivate(ctor.getFlags())
+							|| type.equals(enclosingClass)) {
 						ISourceRange sourceRange = type.getSourceRange();
-						FakeMethod ctorMethod = new FakeMethod((ModelElement) type, type.getElementName(), 
-							sourceRange.getOffset(), sourceRange.getLength(), sourceRange.getOffset(), sourceRange.getLength()) {
-							public boolean isConstructor() throws ModelException {
+						FakeMethod ctorMethod = new FakeMethod(
+								(ModelElement) type, type.getElementName(),
+								sourceRange.getOffset(), sourceRange
+										.getLength(), sourceRange.getOffset(),
+								sourceRange.getLength()) {
+							public boolean isConstructor()
+									throws ModelException {
 								return true;
 							}
 						};
@@ -61,15 +61,13 @@
 						reporter.reportMethod(ctorMethod, suffix, replaceRange);
 					}
 				} else {
-					if (!PHPFlags.isInternal(flags) && PHPFlags.isClass(flags)) {
-						reporter.reportType(type, suffix, replaceRange);
-					}
+					reporter.reportType(type, suffix, replaceRange);
 				}
 			} catch (ModelException e) {
 				PHPCorePlugin.log(e);
 			}
 		}
-		
+
 		addSelf(concreteContext, reporter);
 	}
 

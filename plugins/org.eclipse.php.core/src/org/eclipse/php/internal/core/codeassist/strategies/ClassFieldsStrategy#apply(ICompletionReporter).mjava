@@ -5,30 +5,36 @@
 		}
 
 		ClassMemberContext concreteContext = (ClassMemberContext) context;
-		CompletionRequestor requestor = concreteContext.getCompletionRequestor();
-
-		int mask = 0;
-		if (requestor.isContextInformationMode()) {
-			mask |= CodeAssistUtils.EXACT_NAME;
-		}
+		CompletionRequestor requestor = concreteContext
+				.getCompletionRequestor();
 
 		String prefix = concreteContext.getPrefix();
 		SourceRange replaceRange = getReplacementRange(concreteContext);
 
+		Set<IField> result = new TreeSet<IField>(
+				new CodeAssistUtils.AlphabeticComparator());
 		for (IType type : concreteContext.getLhsTypes()) {
 			try {
-				ITypeHierarchy hierarchy = getCompanion().getSuperTypeHierarchy(type, null);
-				IModelElement[] fields = CodeAssistUtils.getTypeFields(type, hierarchy, prefix, mask);
+				ITypeHierarchy hierarchy = getCompanion()
+						.getSuperTypeHierarchy(type, null);
 
-				for (IModelElement element : fields) {
-					IField field = (IField) element;
+				IField[] fields = PHPModelUtils.getTypeHierarchyField(type,
+						hierarchy, prefix,
+						requestor.isContextInformationMode(), null);
+
+				for (IField field : removeOverriddenElements(Arrays
+						.asList(fields))) {
 					if (!isFiltered(field, concreteContext)) {
-						reporter.reportField(field, getSuffix(), replaceRange, concreteContext.getTriggerType() == Trigger.OBJECT);
+						result.add(field);
 					}
 				}
-			} catch (ModelException e) {
+			} catch (CoreException e) {
 				PHPCorePlugin.log(e);
 			}
+		}
+		for (IField field : result) {
+			reporter.reportField(field, getSuffix(), replaceRange,
+					concreteContext.getTriggerType() == Trigger.OBJECT);
 		}
 	}
 

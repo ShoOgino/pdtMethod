@@ -1,44 +1,58 @@
 	/**
-	 * Returns a list of bindings representing all the fields declared
-	 * as members of this class or interface type.
+	 * Returns a list of bindings representing all the fields declared as
+	 * members of this class or interface type.
 	 * 
-	 * <p>These include public, protected, default (package-private) access,
-	 * and private fields declared by the class, but excludes inherited fields.
-	 * Fields from binary types that reference unresolvable types may not be included.</p>
-	 *
-	 * <p>Returns an empty list if the class or interface declares no fields,
-	 * and for other kinds of type bindings that do not directly have members.</p>
-	 *
-	 * <p>The resulting bindings are in no particular order.</p>
-	 *
-	 * @return the list of bindings for the field members of this type,
-	 *   or the empty list if this type does not have field members
+	 * <p>
+	 * These include public, protected, default (package-private) access, and
+	 * private fields declared by the class, but excludes inherited fields.
+	 * Fields from binary types that reference unresolvable types may not be
+	 * included.
+	 * </p>
+	 * 
+	 * <p>
+	 * Returns an empty list if the class or interface declares no fields, and
+	 * for other kinds of type bindings that do not directly have members.
+	 * </p>
+	 * 
+	 * <p>
+	 * The resulting bindings are in no particular order.
+	 * </p>
+	 * 
+	 * @return the list of bindings for the field members of this type, or the
+	 *         empty list if this type does not have field members
 	 */
 	public IVariableBinding[] getDeclaredFields() {
 		if (isUnknown()) {
 			return new IVariableBinding[0];
 		}
-		if (isClass()) {
-			List<IVariableBinding> variableBindings = new ArrayList<IVariableBinding>();
 
-			for (IModelElement element : this.elements) {
-				IType type = (IType) element;
-				try {
-					IField[] fields = type.getFields();
-					for (int i = 0; i < fields.length; i++) {
-						IVariableBinding variableBinding = resolver.getVariableBinding(fields[i]);
-						if (variableBinding != null) {
-							variableBindings.add(variableBinding);
+		if (fields == null) {
+			if (isClass()) {
+				List<IVariableBinding> variableBindings = new ArrayList<IVariableBinding>();
+
+				for (IModelElement element : this.elements) {
+					IType type = (IType) element;
+					try {
+						IField[] fields = type.getFields();
+						for (int i = 0; i < fields.length; i++) {
+							IVariableBinding variableBinding = resolver
+									.getVariableBinding(fields[i]);
+							if (variableBinding != null) {
+								variableBindings.add(variableBinding);
+							}
+						}
+					} catch (ModelException e) {
+						if (DLTKCore.DEBUG) {
+							e.printStackTrace();
 						}
 					}
-				} catch (ModelException e) {
-					if (DLTKCore.DEBUG) {
-						e.printStackTrace();
-					}
 				}
+				fields = variableBindings
+						.toArray(new IVariableBinding[variableBindings.size()]);
+			} else {
+				fields = new IVariableBinding[0];
 			}
-			return variableBindings.toArray(new IVariableBinding[variableBindings.size()]);
 		}
-		return new IVariableBinding[0];
+		return fields;
 	}
 

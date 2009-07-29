@@ -1,13 +1,16 @@
 	/**
 	 * This method finds types for the receiver in the statement text.
+	 * 
 	 * @param sourceModule
 	 * @param statementText
 	 * @param endPosition
 	 * @param offset
 	 * @return
 	 */
-	public static IType[] getTypesFor(ISourceModule sourceModule, TextSequence statementText, int endPosition, int offset) {
-		endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statementText, endPosition); // read whitespace
+	public static IType[] getTypesFor(ISourceModule sourceModule,
+			TextSequence statementText, int endPosition, int offset) {
+		endPosition = PHPTextSequenceUtilities.readBackwardSpaces(
+				statementText, endPosition); // read whitespace
 
 		boolean isClassTriger = false;
 
@@ -15,7 +18,8 @@
 			return EMPTY_TYPES;
 		}
 
-		String triggerText = statementText.subSequence(endPosition - 2, endPosition).toString();
+		String triggerText = statementText.subSequence(endPosition - 2,
+				endPosition).toString();
 		if (triggerText.equals(OBJECT_FUNCTIONS_TRIGGER)) {
 		} else if (triggerText.equals(PAAMAYIM_NEKUDOTAIM)) {
 			isClassTriger = true;
@@ -23,17 +27,24 @@
 			return EMPTY_TYPES;
 		}
 
-		int propertyEndPosition = PHPTextSequenceUtilities.readBackwardSpaces(statementText, endPosition - triggerText.length());
-		int lastObjectOperator = PHPTextSequenceUtilities.getPrivousTriggerIndex(statementText, propertyEndPosition);
+		int propertyEndPosition = PHPTextSequenceUtilities.readBackwardSpaces(
+				statementText, endPosition - triggerText.length());
+		int lastObjectOperator = PHPTextSequenceUtilities
+				.getPrivousTriggerIndex(statementText, propertyEndPosition);
 
 		if (lastObjectOperator == -1) {
-			// if there is no "->" or "::" in the left sequence then we need to calc the object type
-			return innerGetClassName(sourceModule, statementText, propertyEndPosition, isClassTriger, offset);
+			// if there is no "->" or "::" in the left sequence then we need to
+			// calc the object type
+			return innerGetClassName(sourceModule, statementText,
+					propertyEndPosition, isClassTriger, offset);
 		}
 
-		int propertyStartPosition = PHPTextSequenceUtilities.readForwardSpaces(statementText, lastObjectOperator + triggerText.length());
-		String propertyName = statementText.subSequence(propertyStartPosition, propertyEndPosition).toString();
-		IType[] types = getTypesFor(sourceModule, statementText, propertyStartPosition, offset);
+		int propertyStartPosition = PHPTextSequenceUtilities.readForwardSpaces(
+				statementText, lastObjectOperator + triggerText.length());
+		String propertyName = statementText.subSequence(propertyStartPosition,
+				propertyEndPosition).toString();
+		IType[] types = getTypesFor(sourceModule, statementText,
+				propertyStartPosition, offset);
 
 		int bracketIndex = propertyName.indexOf('(');
 
@@ -44,7 +55,8 @@
 
 		String functionName = propertyName.substring(0, bracketIndex).trim();
 		Set<IType> result = new LinkedHashSet<IType>();
-		IType[] returnTypes = getFunctionReturnType(types, functionName, sourceModule, offset);
+		IType[] returnTypes = getFunctionReturnType(types, functionName,
+				sourceModule, offset);
 		if (returnTypes != null) {
 			result.addAll(Arrays.asList(returnTypes));
 		}

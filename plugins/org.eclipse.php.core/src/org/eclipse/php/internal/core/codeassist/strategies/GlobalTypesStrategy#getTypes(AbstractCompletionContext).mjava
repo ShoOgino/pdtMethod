@@ -7,15 +7,32 @@
 	 */
 	protected IType[] getTypes(AbstractCompletionContext context)
 			throws BadLocationException {
-		int mask = 0;
-		if (context.getCompletionRequestor().isContextInformationMode()) {
-			mask |= CodeAssistUtils.EXACT_NAME;
-		}
+
 		String prefix = context.getPrefix();
 		if (prefix.startsWith("$")) {
-			return new IType[0];
+			return EMPTY;
 		}
-		return CodeAssistUtils.getGlobalTypes(context.getSourceModule(),
-				prefix, mask);
+
+		IDLTKSearchScope scope = createSearchScope();
+		if (context.getCompletionRequestor().isContextInformationMode()) {
+			return PhpModelAccess.getDefault().findTypes(prefix,
+					MatchRule.EXACT, trueFlag,
+					falseFlag | IPHPModifiers.Internal, scope, null);
+		}
+
+		Set<IType> result = new TreeSet<IType>(new AlphabeticComparator());
+		if (prefix.length() > 1 && prefix.toUpperCase().equals(prefix)) {
+			// Search by camel-case
+			IType[] types = PhpModelAccess.getDefault().findTypes(prefix,
+					MatchRule.CAMEL_CASE, trueFlag,
+					falseFlag | IPHPModifiers.Internal, scope, null);
+			result.addAll(Arrays.asList(types));
+		}
+		IType[] types = PhpModelAccess.getDefault().findTypes(prefix,
+				MatchRule.PREFIX, trueFlag, falseFlag | IPHPModifiers.Internal,
+				scope, null);
+		result.addAll(Arrays.asList(types));
+
+		return (IType[]) result.toArray(new IType[result.size()]);
 	}
 

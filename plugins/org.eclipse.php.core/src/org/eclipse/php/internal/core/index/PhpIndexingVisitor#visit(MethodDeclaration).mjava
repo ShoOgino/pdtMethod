@@ -1,0 +1,72 @@
+	@SuppressWarnings("unchecked")
+	public boolean visit(MethodDeclaration method) throws Exception {
+		fNodes.push(method);
+		methodGlobalVars.add(new HashSet<String>());
+
+		Declaration parentDeclaration = null;
+		if (!declarations.empty()) {
+			parentDeclaration = declarations.peek();
+		}
+		declarations.push(method);
+
+		// In case we are entering a nested element - just add to the deferred
+		// list
+		// and get out of the nested element visiting process
+		if (parentDeclaration instanceof MethodDeclaration) {
+			deferredDeclarations.add(method);
+			return visitGeneral(method);
+		}
+
+		if (parentDeclaration instanceof InterfaceDeclaration) {
+			method.setModifier(Modifiers.AccAbstract);
+		}
+
+		int modifiers = method.getModifiers();
+		String methodName = method.getName();
+
+		// Determine whether this method represents constructor:
+		if (methodName.equalsIgnoreCase(CONSTRUCTOR_NAME)
+				|| (parentDeclaration instanceof ClassDeclaration && methodName
+						.equalsIgnoreCase(((ClassDeclaration) parentDeclaration)
+								.getName()))) {
+			modifiers |= IPHPModifiers.Constructor;
+		}
+
+		// Check whether this method is marked as @internal
+		if (method instanceof IPHPDocAwareDeclaration) {
+			IPHPDocAwareDeclaration phpDocAwareDeclaration = (IPHPDocAwareDeclaration) method;
+			PHPDocBlock phpDoc = phpDocAwareDeclaration.getPHPDoc();
+			if (phpDoc != null && phpDoc.getTags(PHPDocTag.INTERNAL).length > 0) {
+				modifiers |= IPHPModifiers.Internal;
+			}
+		}
+
+		if (parentDeclaration == null
+				|| (parentDeclaration instanceof TypeDeclaration && parentDeclaration == fCurrentNamespace)) {
+			modifiers |= Modifiers.AccGlobal;
+		}
+
+		StringBuilder metadata = new StringBuilder();
+		List<Argument> arguments = method.getArguments();
+		if (arguments != null) {
+			Iterator<Argument> i = arguments.iterator();
+			while (i.hasNext()) {
+				Argument arg = (Argument) i.next();
+				metadata.append(arg.getName());
+				if (i.hasNext()) {
+					metadata.append(",");
+				}
+			}
+		}
+
+		// Add method declaration:
+		requestor.addDeclaration(IModelElement.METHOD, modifiers, method
+				.sourceStart(), method.sourceEnd() - method.sourceStart(),
+				method.getNameStart(), method.getNameEnd()
+						- method.getNameStart(), methodName,
+				metadata.length() == 0 ? null : metadata.toString(),
+				fCurrentQualifier, fCurrentParent);
+
+		return visitGeneral(method);
+	}
+

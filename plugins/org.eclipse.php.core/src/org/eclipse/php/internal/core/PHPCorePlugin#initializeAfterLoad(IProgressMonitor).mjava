@@ -30,29 +30,34 @@
 	 *                indicates the reason of the failure
 	 * @since 3.1
 	 */
-	public static void initializeAfterLoad(IProgressMonitor monitor) throws CoreException {
+	public static void initializeAfterLoad(IProgressMonitor monitor)
+			throws CoreException {
 		try {
 			if (monitor != null) {
-				monitor.beginTask(CoreMessages.PHPCorePlugin_initializingPHPToolkit, 100);
+				monitor.beginTask(
+						CoreMessages.PHPCorePlugin_initializingPHPToolkit, 100);
 			}
 			// dummy query for waiting until the indexes are ready
-			SearchEngine engine = new SearchEngine();
-			IDLTKSearchScope scope = SearchEngine.createWorkspaceScope(PHPLanguageToolkit.getDefault());
+			IDLTKSearchScope scope = SearchEngine
+					.createWorkspaceScope(PHPLanguageToolkit.getDefault());
 			try {
 				if (monitor != null) {
-					monitor.subTask(CoreMessages.PHPCorePlugin_initializingSearchEngine);
+					monitor
+							.subTask(CoreMessages.PHPCorePlugin_initializingSearchEngine);
 				}
-				engine.searchAllMethodNames("@$%#^".toCharArray(), SearchPattern.R_EXACT_MATCH, IDLTKSearchConstants.DECLARATIONS,
-					scope, new MethodNameRequestor() {
-					},
-					// will not activate index query caches if indexes are
-					// not ready, since it would take to long
-					// to wait until indexes are fully rebuild
-					IDLTKSearchConstants.CANCEL_IF_NOT_READY_TO_SEARCH,
-					monitor == null ? null : new SubProgressMonitor(monitor, 49) // 49% of the time is spent in the dummy search
-				);
-			} catch (ModelException e) {
-				// /search failed: ignore
+
+				PhpModelAccess.getDefault().findMethods(null, MatchRule.PREFIX,
+						Modifiers.AccGlobal, 0, scope, monitor);
+				monitor.worked(50);
+
+				PhpModelAccess.getDefault().findTypes(null, MatchRule.PREFIX,
+						Modifiers.AccGlobal, 0, scope, monitor);
+				monitor.worked(25);
+
+				PhpModelAccess.getDefault().findFields(null, MatchRule.PREFIX,
+						Modifiers.AccGlobal, 0, scope, monitor);
+				monitor.worked(25);
+
 			} catch (OperationCanceledException e) {
 				if (monitor != null && monitor.isCanceled()) {
 					throw e;

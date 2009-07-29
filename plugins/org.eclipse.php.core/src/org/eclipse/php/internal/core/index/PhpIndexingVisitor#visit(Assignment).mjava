@@ -1,0 +1,36 @@
+	public boolean visit(Assignment assignment) throws Exception {
+		Expression left = assignment.getVariable();
+		if (left instanceof FieldAccess) { // class variable ($this->a = .)
+			FieldAccess fieldAccess = (FieldAccess) left;
+			Expression dispatcher = fieldAccess.getDispatcher();
+			if (dispatcher instanceof VariableReference
+					&& "$this".equals(((VariableReference) dispatcher).getName())) { //$NON-NLS-1$
+				Expression field = fieldAccess.getField();
+				if (field instanceof SimpleReference) {
+					SimpleReference var = (SimpleReference) field;
+					int modifiers = Modifiers.AccPublic;
+					int offset = var.sourceStart();
+					int length = var.sourceEnd() - offset;
+					requestor.addDeclaration(IModelElement.FIELD, modifiers,
+							offset, length, offset, length,
+							'$' + var.getName(), null, fCurrentQualifier,
+							fCurrentParent);
+				}
+			}
+		} else if (left instanceof VariableReference) {
+			int modifiers = Modifiers.AccPublic | Modifiers.AccGlobal;
+			if (!declarations.empty()
+					&& declarations.peek() instanceof MethodDeclaration
+					&& !methodGlobalVars.peek().contains(
+							((VariableReference) left).getName())) {
+				return visitGeneral(assignment);
+			}
+			int offset = left.sourceStart();
+			int length = left.sourceEnd() - offset;
+			requestor.addDeclaration(IModelElement.FIELD, modifiers, offset,
+					length, offset, length, ((VariableReference) left)
+							.getName(), null, null, null);
+		}
+		return visitGeneral(assignment);
+	}
+

@@ -1,29 +1,36 @@
 	public void complete(ISourceModule module, int position, int i) {
 
+		ModelManager.getModelManager().getIndexManager().waitUntilReady();
+
 		relevanceKeyword = RELEVANCE_KEYWORD;
 		relevanceMethod = RELEVANCE_METHOD;
 		relevanceClass = RELEVANCE_CLASS;
 		relevanceVar = RELEVANCE_VAR;
 		relevanceConst = RELEVANCE_CONST;
-		
+
 		try {
-			ICompletionContextResolver[] contextResolvers = CompletionContextResolver.getActive();
-			ICompletionStrategyFactory[] strategyFactories = CompletionStrategyFactory.getActive();
-			
+			ICompletionContextResolver[] contextResolvers = CompletionContextResolver
+					.getActive();
+			ICompletionStrategyFactory[] strategyFactories = CompletionStrategyFactory
+					.getActive();
+
 			CompletionCompanion companion = new CompletionCompanion();
-			org.eclipse.dltk.core.ISourceModule sourceModule = (org.eclipse.dltk.core.ISourceModule) module.getModelElement();
+			org.eclipse.dltk.core.ISourceModule sourceModule = (org.eclipse.dltk.core.ISourceModule) module
+					.getModelElement();
 
 			for (ICompletionContextResolver resolver : contextResolvers) {
-				ICompletionContext[] contexts = resolver.resolve(sourceModule, position, requestor, companion);
+				ICompletionContext[] contexts = resolver.resolve(sourceModule,
+						position, requestor, companion);
 
 				if (contexts != null) {
 					for (ICompletionStrategyFactory factory : strategyFactories) {
-						ICompletionStrategy[] strategies = factory.create(contexts);
-						
+						ICompletionStrategy[] strategies = factory
+								.create(contexts);
+
 						if (strategies != null) {
 							for (ICompletionStrategy strategy : strategies) {
 								strategy.init(companion);
-								
+
 								try {
 									strategy.apply(this);
 								} catch (Exception e) {

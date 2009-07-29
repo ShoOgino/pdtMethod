@@ -1,0 +1,32 @@
+	/**
+	 * This method returns method declared unders specified namespace
+	 * 
+	 * @param namespace
+	 *            Namespace name
+	 * @param prefix
+	 *            Function name or prefix
+	 * @param exactName
+	 *            Whether the type name is exact or it is prefix
+	 * @param sourceModule
+	 *            Source module where the function is referenced
+	 * @param monitor
+	 *            Progress monitor
+	 * @throws ModelException
+	 */
+	public static IMethod[] getNamespaceFunction(String namespace,
+			String prefix, boolean exactName, ISourceModule sourceModule,
+			IProgressMonitor monitor) throws ModelException {
+
+		IDLTKSearchScope scope = SearchEngine.createSearchScope(sourceModule
+				.getScriptProject());
+		IType[] namespaces = PhpModelAccess.getDefault().findTypes(namespace,
+				MatchRule.EXACT, Modifiers.AccNameSpace, 0, scope, monitor);
+
+		List<IMethod> result = new LinkedList<IMethod>();
+		for (IType ns : namespaces) {
+			result.addAll(Arrays.asList(PHPModelUtils.getTypeMethod(ns, prefix,
+					exactName)));
+		}
+		return (IMethod[]) result.toArray(new IMethod[result.size()]);
+	}
+

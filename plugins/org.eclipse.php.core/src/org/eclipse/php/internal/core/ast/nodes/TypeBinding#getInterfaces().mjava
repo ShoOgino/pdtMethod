@@ -2,66 +2,74 @@
 	 * Returns a list of type bindings representing the direct superinterfaces
 	 * of the class, interface, or enum type represented by this type binding.
 	 * <p>
-	 * If this type binding represents a class or enum type, the return value
-	 * is an array containing type bindings representing all interfaces
-	 * directly implemented by this class. The number and order of the interface
-	 * objects in the array corresponds to the number and order of the interface
-	 * names in the <code>implements</code> clause of the original declaration
-	 * of this type.
+	 * If this type binding represents a class or enum type, the return value is
+	 * an array containing type bindings representing all interfaces directly
+	 * implemented by this class. The number and order of the interface objects
+	 * in the array corresponds to the number and order of the interface names
+	 * in the <code>implements</code> clause of the original declaration of this
+	 * type.
 	 * </p>
 	 * <p>
-	 * If this type binding represents an interface, the array contains
-	 * type bindings representing all interfaces directly extended by this
-	 * interface. The number and order of the interface objects in the array
-	 * corresponds to the number and order of the interface names in the
-	 * <code>extends</code> clause of the original declaration of this interface.
+	 * If this type binding represents an interface, the array contains type
+	 * bindings representing all interfaces directly extended by this interface.
+	 * The number and order of the interface objects in the array corresponds to
+	 * the number and order of the interface names in the <code>extends</code>
+	 * clause of the original declaration of this interface.
 	 * </p>
 	 * <p>
 	 * If the class or enum implements no interfaces, or the interface extends
 	 * no interfaces, or if this type binding represents an array type, a
-	 * primitive type, the null type, a type variable, an annotation type,
-	 * a wildcard type, or a capture binding, this method returns an array of
+	 * primitive type, the null type, a type variable, an annotation type, a
+	 * wildcard type, or a capture binding, this method returns an array of
 	 * length 0.
 	 * </p>
-	 *
+	 * 
 	 * @return the list of type bindings for the interfaces extended by this
-	 *   class or enum, or interfaces extended by this interface, or otherwise
-	 *   the empty list
+	 *         class or enum, or interfaces extended by this interface, or
+	 *         otherwise the empty list
 	 */
 	public ITypeBinding[] getInterfaces() {
 		if (isUnknown()) {
 			return new ITypeBinding[0];
 		}
 
-		final ArrayList<ITypeBinding> interfaces = new ArrayList<ITypeBinding>();
-		for (IModelElement element : elements) {
-			IType type = (IType) element;
-			try {
-				SearchEngine searchEngine = new SearchEngine();
-				IDLTKSearchScope scope = SearchEngine.createSearchScope(type.getScriptProject());
+		if (this.interfaces == null) {
+			final ArrayList<ITypeBinding> interfaces = new ArrayList<ITypeBinding>();
+			for (IModelElement element : elements) {
+				IType type = (IType) element;
+				try {
+					IDLTKSearchScope scope = SearchEngine
+							.createSearchScope(type.getScriptProject());
 
-				String[] superClassNames = type.getSuperClasses();
+					String[] superClassNames = type.getSuperClasses();
 
-				if (superClassNames != null) {
-					for (String superClass : superClassNames) {
-						int matchRule = SearchPattern.R_EXACT_MATCH;
-						SearchPattern pattern = SearchPattern.createPattern(superClass, IDLTKSearchConstants.TYPE, IDLTKSearchConstants.DECLARATIONS, matchRule, PHPLanguageToolkit.getDefault());
-						searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, scope, new SearchRequestor() {
-							public void acceptSearchMatch(SearchMatch match) throws CoreException {
-								IType t = (IType) match.getElement();
-								if ((t.getFlags() & Modifiers.AccInterface) != 0) {
-									interfaces.add(resolver.getTypeBinding(t));
-								}
+					if (superClassNames != null) {
+						StringBuilder buf = new StringBuilder();
+						for (int i = 0; i < superClassNames.length; ++i) {
+							if (i > 0) {
+								buf.append(',');
 							}
-						}, null);
+							buf.append(superClassNames[i]);
+						}
+						if (buf.length() > 0) {
+							IType[] types = PhpModelAccess.getDefault()
+									.findTypes(buf.toString(), MatchRule.SET,
+											Modifiers.AccInterface, 0, scope,
+											null);
+							for (IType t : types) {
+								interfaces.add(resolver.getTypeBinding(t));
+							}
+						}
+					}
+				} catch (CoreException e) {
+					if (DLTKCore.DEBUG) {
+						e.printStackTrace();
 					}
 				}
-			} catch (CoreException e) {
-				if (DLTKCore.DEBUG) {
-					e.printStackTrace();
-				}
 			}
+			this.interfaces = interfaces.toArray(new ITypeBinding[interfaces
+					.size()]);
 		}
-		return interfaces.toArray(new ITypeBinding[interfaces.size()]);
+		return this.interfaces;
 	}
 

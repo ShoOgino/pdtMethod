@@ -1,44 +1,56 @@
 	/**
 	 * Returns a list of method bindings representing all the methods and
-	 * constructors declared for this class, interface or annotation
-	 * type.
-	 * <p>These include public, protected, default (package-private) access,
-	 * and private methods Synthetic methods and constructors may or may not be
-	 * included. Returns an empty list if the class or interface
-	 * type declares no methods or constructors, if the annotation type declares
-	 * no members, or if this type binding represents some other kind of type
-	 * binding. Methods from binary types that reference unresolvable types may
-	 * not be included.</p>
-	 * <p>The resulting bindings are in no particular order.</p>
-	 *
+	 * constructors declared for this class, interface or annotation type.
+	 * <p>
+	 * These include public, protected, default (package-private) access, and
+	 * private methods Synthetic methods and constructors may or may not be
+	 * included. Returns an empty list if the class or interface type declares
+	 * no methods or constructors, if the annotation type declares no members,
+	 * or if this type binding represents some other kind of type binding.
+	 * Methods from binary types that reference unresolvable types may not be
+	 * included.
+	 * </p>
+	 * <p>
+	 * The resulting bindings are in no particular order.
+	 * </p>
+	 * 
 	 * @return the list of method bindings for the methods and constructors
-	 *   declared by this class, interface, or annotation type,
-	 *   or the empty list if this type does not declare any methods or constructors
+	 *         declared by this class, interface, or annotation type, or the
+	 *         empty list if this type does not declare any methods or
+	 *         constructors
 	 */
 	public IMethodBinding[] getDeclaredMethods() {
 		if (isUnknown()) {
 			return new IMethodBinding[0];
 		}
-		if (isClass()) {
-			List<IMethodBinding> methodBindings = new ArrayList<IMethodBinding>();
-			for (IModelElement element : this.elements) {
-				IType type = (IType) element;
-				try {
-					IMethod[] methods = type.getMethods();
-					if (methods != null) {
-						for (int i = 0; i < methods.length; i++) {
-							IMethodBinding methodBinding = resolver.getMethodBinding(methods[i]);
-							methodBindings.add(methodBinding);
+
+		if (methods == null) {
+			if (isClass()) {
+				List<IMethodBinding> methodBindings = new ArrayList<IMethodBinding>();
+				for (IModelElement element : this.elements) {
+					IType type = (IType) element;
+					try {
+						IMethod[] methods = type.getMethods();
+						if (methods != null) {
+							for (int i = 0; i < methods.length; i++) {
+								IMethodBinding methodBinding = resolver
+										.getMethodBinding(methods[i]);
+								methodBindings.add(methodBinding);
+							}
+						}
+					} catch (ModelException e) {
+						if (DLTKCore.DEBUG) {
+							e.printStackTrace();
 						}
 					}
-				} catch (ModelException e) {
-					if (DLTKCore.DEBUG) {
-						e.printStackTrace();
-					}
 				}
+				methods = methodBindings
+						.toArray(new IMethodBinding[methodBindings.size()]);
+			} else {
+				methods = new IMethodBinding[0]; // TODO - Implement
+				// IMethodBinding
 			}
-			return methodBindings.toArray(new IMethodBinding[methodBindings.size()]);
 		}
-		return new IMethodBinding[0]; // TODO - Implement IMethodBinding
+		return methods;
 	}
 

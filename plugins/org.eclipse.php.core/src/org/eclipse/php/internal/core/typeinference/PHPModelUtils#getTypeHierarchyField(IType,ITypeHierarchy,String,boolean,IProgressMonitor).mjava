@@ -1,0 +1,30 @@
+	/**
+	 * Finds field by name in the class hierarchy
+	 * 
+	 * @param type
+	 *            Class element
+	 * @param hierarchy
+	 *            Cached type hierarchy
+	 * @param prefix
+	 *            Field name or prefix
+	 * @param exactName
+	 *            Whether the name is exact or it is prefix
+	 * @param monitor
+	 *            Progress monitor
+	 * @throws CoreException
+	 */
+	public static IField[] getTypeHierarchyField(IType type,
+			ITypeHierarchy hierarchy, String prefix, boolean exactName,
+			IProgressMonitor monitor) throws CoreException {
+		if (prefix == null) {
+			throw new NullPointerException();
+		}
+		final List<IField> fields = new LinkedList<IField>();
+		fields.addAll(Arrays.asList(getTypeField(type, prefix, exactName)));
+		if (type.getSuperClasses() != null && type.getSuperClasses().length > 0) {
+			fields.addAll(Arrays.asList(getSuperTypeHierarchyField(type,
+					hierarchy, prefix, exactName, monitor)));
+		}
+		return fields.toArray(new IField[fields.size()]);
+	}
+

@@ -1,0 +1,67 @@
+	/**
+	 * This method returns type corresponding to its name and the file where it
+	 * was referenced. The type name may contain also the namespace part, like:
+	 * A\B\C or \A\B\C
+	 * 
+	 * @param typeName
+	 *            Tye fully qualified type name
+	 * @param sourceModule
+	 *            The file where the element is referenced
+	 * @param offset
+	 *            The offset where the element is referenced
+	 * @param monitor
+	 *            Progress monitor
+	 * @return a list of relevant IType elements, or <code>null</code> in case
+	 *         there's no IType found
+	 * @throws ModelException
+	 */
+	public static IType[] getTypes(String typeName, ISourceModule sourceModule,
+			int offset, IProgressMonitor monitor) throws ModelException {
+		if (typeName == null || typeName.length() == 0) {
+			return null;
+		}
+
+		String namespace = extractNamespaceName(typeName, sourceModule, offset);
+		typeName = extractElementName(typeName);
+		if (namespace != null) {
+			if (namespace.length() > 0) {
+				IType[] types = getNamespaceType(namespace, typeName, true,
+						sourceModule, monitor);
+				if (types.length > 0) {
+					return types;
+				}
+				return null;
+			}
+			// it's a global reference: \A
+		} else {
+			// look for the element in current namespace:
+			IType currentNamespace = getCurrentNamespace(sourceModule, offset);
+			if (currentNamespace != null) {
+				namespace = currentNamespace.getElementName();
+				IType[] types = getNamespaceType(namespace, typeName, true,
+						sourceModule, monitor);
+				if (types.length > 0) {
+					return types;
+				}
+				return null;
+			}
+		}
+
+		IDLTKSearchScope scope = SearchEngine.createSearchScope(sourceModule
+				.getScriptProject());
+		IType[] types = PhpModelAccess.getDefault().findTypes(typeName,
+				MatchRule.EXACT, 0, 0, scope, null);
+
+		List<IType> result = new ArrayList<IType>(types.length);
+		for (IType type : types) {
+			if (getCurrentNamespace(type) == null) {
+				result.add(type);
+			}
+		}
+
+		Collection<IType> filteredElements = filterElements(sourceModule,
+				result);
+		return (IType[]) filteredElements.toArray(new IType[filteredElements
+				.size()]);
+	}
+

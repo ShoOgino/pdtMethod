@@ -11,34 +11,46 @@
 		String prefix = arrayContext.getPrefix();
 
 		// report server variables:
-		if (arrayVarName.equals("$_SERVER") || arrayVarName.equals("$HTTP_SERVER_VARS")) { //NON-NLS-1 //NON-NLS-2
+		if (arrayVarName.equals("$_SERVER")
+				|| arrayVarName.equals("$HTTP_SERVER_VARS")) { // NON-NLS-1
+			// //NON-NLS-2
 			reportVariables(reporter, arrayContext, SERVER_VARS, prefix);
 		}
 		// report session variables:
-		else if (arrayVarName.equals("$_SESSION") || arrayVarName.equals("$HTTP_SESSION_VARS")) { //NON-NLS-1 //NON-NLS-2
+		else if (arrayVarName.equals("$_SESSION")
+				|| arrayVarName.equals("$HTTP_SESSION_VARS")) { // NON-NLS-1
+			// //NON-NLS-2
 			reportVariables(reporter, arrayContext, SESSION_VARS, prefix);
 		}
 		// report global variables in special globals array:
-		else if (arrayVarName.equals("$GLOBALS")) { //NON-NLS-1
-			int mask = CodeAssistUtils.EXCLUDE_CONSTANTS;
+		else if (arrayVarName.equals("$GLOBALS")) { // NON-NLS-1
+
+			MatchRule matchRule = MatchRule.PREFIX;
 			if (requestor.isContextInformationMode()) {
-				mask |= CodeAssistUtils.EXACT_NAME;
+				matchRule = MatchRule.EXACT;
 			}
-			IModelElement[] elements = CodeAssistUtils.getGlobalFields(arrayContext.getSourceModule(), prefix, mask);
+			IDLTKSearchScope scope = createSearchScope();
+			IField[] elements = PhpModelAccess.getDefault().findFields(prefix,
+					matchRule, Modifiers.AccGlobal, Modifiers.AccConstant,
+					scope, null);
+
 			SourceRange replaceRange = getReplacementRange(arrayContext);
 			for (IModelElement element : elements) {
 				IField field = (IField) element;
 				try {
 					ISourceRange sourceRange = field.getSourceRange();
-					FakeField fakeField = new FakeField((ModelElement) field.getParent(), field.getElementName().substring(1), sourceRange.getOffset(), sourceRange.getLength());
-					reporter.reportField(fakeField, "", replaceRange, true); //NON-NLS-1
+					FakeField fakeField = new FakeField((ModelElement) field
+							.getParent(), field.getElementName().substring(1),
+							sourceRange.getOffset(), sourceRange.getLength());
+					reporter.reportField(fakeField, "", replaceRange, true); // NON-NLS-1
 				} catch (ModelException e) {
 					PHPCorePlugin.log(e);
 				}
 			}
 
 			PHPVersion phpVersion = arrayContext.getPhpVersion();
-			reportVariables(reporter, arrayContext, PHPVariables.getVariables(phpVersion), prefix, true);
+			reportVariables(reporter, arrayContext, PHPVariables
+					.getVariables(phpVersion), prefix, true);
 		}
 	}
 
