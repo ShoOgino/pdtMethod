@@ -8,12 +8,13 @@
 			}
 		}
 
-		// JavaScript nodes 
+		// JavaScript nodes
 		if (parentElement instanceof ProjectLibraryRoot) {
 			return ((ProjectLibraryRoot) parentElement).getChildren();
 		}
 		if (parentElement instanceof PackageFragmentRootContainer) {
-			return getContainerPackageFragmentRoots((PackageFragmentRootContainer) parentElement, true);
+			return getContainerPackageFragmentRoots(
+					(PackageFragmentRootContainer) parentElement, true);
 		}
 
 		try {
@@ -22,13 +23,19 @@
 				return NO_CHILDREN;
 			}
 
-			// aggregate php projects and non php projects (includes closed ones)
+			// aggregate php projects and non php projects (includes closed
+			// ones)
 			if (parentElement instanceof IScriptModel) {
-				return StandardModelElementContentProvider.concatenate(getScriptProjects((IScriptModel) parentElement), getNonPhpProjects((IScriptModel) parentElement));
+				return StandardModelElementContentProvider.concatenate(
+						getScriptProjects((IScriptModel) parentElement),
+						getNonPhpProjects((IScriptModel) parentElement));
 			}
 
-			// Handles SourceModule and downwards as well as ExternalProjectFragments (i.e language model)
-			if (parentElement instanceof ISourceModule || !(parentElement instanceof IOpenable) || parentElement instanceof ExternalProjectFragment) {
+			// Handles SourceModule and downwards as well as
+			// ExternalProjectFragments (i.e language model)
+			if (parentElement instanceof ISourceModule
+					|| !(parentElement instanceof IOpenable)
+					|| parentElement instanceof ExternalProjectFragment) {
 				if (parentElement instanceof IFolder) {
 					return ((IFolder) parentElement).members();
 				}
@@ -43,21 +50,32 @@
 				IResource resource = ((IOpenable) parentElement).getResource();
 				if (resource instanceof IContainer) {
 
-					// contributed by Toshihiro Izumi 
+					// contributed by Toshihiro Izumi
 					if (!resource.isAccessible()) {
 						return NO_CHILDREN;
 					}
 
 					ArrayList<Object> returnChlidren = new ArrayList<Object>();
 
-					boolean groupByNamespace = PHPUiPlugin.getDefault().getPreferenceStore().getBoolean(PreferenceConstants.EXPLORER_GROUP_BY_NAMESPACES);
-					if (groupByNamespace && parentElement instanceof IScriptProject && supportsNamespaces((IScriptProject) parentElement)) {
-						returnChlidren.add(new GlobalNamespace((IScriptProject) parentElement));
-						returnChlidren.addAll(Arrays.asList(getAllNamespaces((IScriptProject) parentElement)));
+					boolean groupByNamespace = PHPUiPlugin
+							.getDefault()
+							.getPreferenceStore()
+							.getBoolean(
+									PreferenceConstants.EXPLORER_GROUP_BY_NAMESPACES);
+					if (groupByNamespace
+							&& parentElement instanceof IScriptProject
+							&& supportsNamespaces((IScriptProject) parentElement)) {
+						returnChlidren.add(new GlobalNamespace(
+								(IScriptProject) parentElement));
+						returnChlidren
+								.addAll(Arrays
+										.asList(getAllNamespaces((IScriptProject) parentElement)));
 					} else {
-						IResource[] resChildren = ((IContainer) resource).members();
+						IResource[] resChildren = ((IContainer) resource)
+								.members();
 						for (IResource resource2 : resChildren) {
-							IModelElement modelElement = DLTKCore.create(resource2);
+							IModelElement modelElement = DLTKCore
+									.create(resource2);
 							if (modelElement != null) {
 								returnChlidren.add(modelElement);
 							} else {
@@ -72,21 +90,29 @@
 						IProject project = scriptProject.getProject();
 
 						// Add include path node
-						IncludePath[] includePaths = IncludePathManager.getInstance().getIncludePaths(project);
-						IncludePathContainer incPathContainer = new IncludePathContainer(scriptProject, includePaths);
+						IncludePath[] includePaths = IncludePathManager
+								.getInstance().getIncludePaths(project);
+						IncludePathContainer incPathContainer = new IncludePathContainer(
+								scriptProject, includePaths);
 						returnChlidren.add(incPathContainer);
 
 						// Add the language library
 						Object[] projectChildren = getProjectFragments(scriptProject);
 						for (Object modelElement : projectChildren) {
-							if (modelElement instanceof BuildPathContainer && ((BuildPathContainer) modelElement).getBuildpathEntry().getPath().equals(LanguageModelInitializer.LANGUAGE_CONTAINER_PATH)) {
+							if (modelElement instanceof BuildPathContainer
+									&& ((BuildPathContainer) modelElement)
+											.getBuildpathEntry()
+											.getPath()
+											.equals(
+													LanguageModelInitializer.LANGUAGE_CONTAINER_PATH)) {
 								returnChlidren.add(modelElement);
 							}
 						}
 
 						boolean hasJsNature = JsNature.hasNature(project);
 						if (hasJsNature) {
-							ProjectLibraryRoot projectLibs = new ProjectLibraryRoot(JavaScriptCore.create(project));
+							ProjectLibraryRoot projectLibs = new ProjectLibraryRoot(
+									JavaScriptCore.create(project));
 							returnChlidren.add(projectLibs);
 						}
 					}

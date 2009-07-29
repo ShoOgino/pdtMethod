@@ -1,5 +1,7 @@
 	/**
-	 * This method overrides WST since sometimes we get a subset of the document and NOT the whole document, although the case is FORMAT_DOCUMENT. In all other cases we call the parent method.
+	 * This method overrides WST since sometimes we get a subset of the document
+	 * and NOT the whole document, although the case is FORMAT_DOCUMENT. In all
+	 * other cases we call the parent method.
 	 */
 	@Override
 	public void doOperation(int operation) {
@@ -10,160 +12,184 @@
 		int topLine = getTextWidget().getTopIndex();
 
 		switch (operation) {
-			case FORMAT_DOCUMENT:
+		case FORMAT_DOCUMENT:
+			try {
+				setRedraw(false);
+				// begin recording
+				beginRecording(FORMAT_DOCUMENT_TEXT, FORMAT_DOCUMENT_TEXT,
+						cursorPosition, selectionLength);
+
+				// format the whole document !
+				IRegion region = new Region(0, getDocument().getLength());
+				if (fContentFormatter instanceof IContentFormatterExtension) {
+					IContentFormatterExtension extension = (IContentFormatterExtension) fContentFormatter;
+					IFormattingContext context = new FormattingContext();
+					context.setProperty(
+							FormattingContextProperties.CONTEXT_DOCUMENT,
+							Boolean.TRUE);
+					context.setProperty(
+							FormattingContextProperties.CONTEXT_REGION, region);
+					extension.format(getDocument(), context);
+				} else {
+					fContentFormatter.format(getDocument(), region);
+				}
+			} finally {
+				// end recording
+				selection = getTextWidget().getSelection();
+
+				selectionLength = selection.y - selection.x;
+				endRecording(cursorPosition, selectionLength);
+				// return the cursor to its original position after the
+				// formatter change its position.
+				getTextWidget().setSelection(cursorPosition);
+				getTextWidget().setTopIndex(topLine);
+				setRedraw(true);
+			}
+			return;
+
+		case PASTE:
+			super.doOperation(operation);
+			return;
+
+		case CONTENTASSIST_PROPOSALS:
+			// Handle javascript content assist when there is no support
+			// (instead of printing the stack trace)
+			if (fViewerConfiguration != null) {
+				IProject project = null;
+				boolean isJavaScriptRegion = false;
+				boolean hasJavaScriptNature = true;
 				try {
-					setRedraw(false);
-					// begin recording
-					beginRecording(FORMAT_DOCUMENT_TEXT, FORMAT_DOCUMENT_TEXT, cursorPosition, selectionLength);
-
-					// format the whole document !
-					IRegion region = new Region(0, getDocument().getLength());
-					if (fContentFormatter instanceof IContentFormatterExtension) {
-						IContentFormatterExtension extension = (IContentFormatterExtension) fContentFormatter;
-						IFormattingContext context = new FormattingContext();
-						context.setProperty(FormattingContextProperties.CONTEXT_DOCUMENT, Boolean.TRUE);
-						context.setProperty(FormattingContextProperties.CONTEXT_REGION, region);
-						extension.format(getDocument(), context);
-					} else {
-						fContentFormatter.format(getDocument(), region);
+					// Resolve the partition type
+					IStructuredDocument sDoc = (IStructuredDocument) getDocument();
+					// get the "real" offset - adjusted according to the
+					// projection
+					int selectionOffset = getSelectedRange().x;
+					IStructuredDocumentRegion sdRegion = sDoc
+							.getRegionAtCharacterOffset(selectionOffset);
+					if (sdRegion == null) {
+						super.doOperation(operation);
+						return;
 					}
-				} finally {
-					// end recording
-					selection = getTextWidget().getSelection();
+					ITextRegion textRegion = sdRegion
+							.getRegionAtCharacterOffset(selectionOffset);
+					if (textRegion instanceof ForeignRegion) {
+						isJavaScriptRegion = (textRegion.getType() == DOMRegionContext.BLOCK_TEXT);
+					}
 
-					selectionLength = selection.y - selection.x;
-					endRecording(cursorPosition, selectionLength);
-					// return the cursor to its original position after the formatter change its position.
-					getTextWidget().setSelection(cursorPosition);
-					getTextWidget().setTopIndex(topLine);
-					setRedraw(true);
-				}
-				return;
-				
-			case PASTE:
-				super.doOperation(operation);
-				return;
+					// Check if the containing project has JS nature or not
+					if (fTextEditor instanceof PHPStructuredEditor) {
+						PHPStructuredEditor phpEditor = (PHPStructuredEditor) fTextEditor;
+						IModelElement modelElement = phpEditor
+								.getModelElement();
 
-			case CONTENTASSIST_PROPOSALS:
-				// Handle javascript content assist when there is no support (instead of printing the stack trace)
-				if (fViewerConfiguration != null) {
-					IProject project = null;
-					boolean isJavaScriptRegion = false;
-					boolean hasJavaScriptNature = true;
-					try {
-						// Resolve the partition type
-						IStructuredDocument sDoc = (IStructuredDocument) getDocument();
-						// get the "real" offset - adjusted according to the projection
-						int selectionOffset = getSelectedRange().x;
-						IStructuredDocumentRegion sdRegion = sDoc.getRegionAtCharacterOffset(selectionOffset);
-						if (sdRegion == null) {
-							super.doOperation(operation);
-							return;
-						}
-						ITextRegion textRegion = sdRegion.getRegionAtCharacterOffset(selectionOffset);
-						if (textRegion instanceof ForeignRegion) {
-							isJavaScriptRegion = (textRegion.getType() == DOMRegionContext.BLOCK_TEXT);
-						}
-
-						// Check if the containing project has JS nature or not
-						if (fTextEditor instanceof PHPStructuredEditor) {
-							PHPStructuredEditor phpEditor = (PHPStructuredEditor) fTextEditor;
-							IModelElement modelElement = phpEditor.getModelElement();
-
-							// Wait until the editor is fully reconciled:
-							// https://bugs.eclipse.org/bugs/show_bug.cgi?id=278992
-							while (fDirtyStateUpdater != null && fDirtyStateUpdater.isModelDirty()) {
-								try {
-									Thread.sleep(50);
-								} catch (InterruptedException e) {
-								}
-							}
-							
-							if (modelElement != null) {
-								IScriptProject scriptProject = modelElement.getScriptProject();
-								project = scriptProject.getProject();
-								if (project != null && project.isAccessible() && project.getNature(JavaScriptCore.NATURE_ID) == null) {
-									hasJavaScriptNature = false;
-								}
+						if (modelElement != null) {
+							IScriptProject scriptProject = modelElement
+									.getScriptProject();
+							project = scriptProject.getProject();
+							if (project != null
+									&& project.isAccessible()
+									&& project
+											.getNature(JavaScriptCore.NATURE_ID) == null) {
+								hasJavaScriptNature = false;
 							}
 						}
+					}
 
-						// open dialog if required
-						if (isJavaScriptRegion && !hasJavaScriptNature) {
-							Shell activeWorkbenchShell = PHPUiPlugin.getActiveWorkbenchShell();
-							// Pop a question dialog - if the user selects 'Yes' JS Support is added, otherwise no change
-							int addJavaScriptSupport = OptionalMessageDialog.open("PROMPT_ADD_JAVASCRIPT_SUPPORT", activeWorkbenchShell, PHPUIMessages.getString("PHPStructuredTextViewer.0"), null, PHPUIMessages.getString("PHPStructuredTextViewer.1"), OptionalMessageDialog.QUESTION, new String[] {
-								IDialogConstants.YES_LABEL, IDialogConstants.NO_LABEL }, 0); //$NON-NLS-1$
+					// open dialog if required
+					if (isJavaScriptRegion && !hasJavaScriptNature) {
+						Shell activeWorkbenchShell = PHPUiPlugin
+								.getActiveWorkbenchShell();
+						// Pop a question dialog - if the user selects 'Yes' JS
+						// Support is added, otherwise no change
+						int addJavaScriptSupport = OptionalMessageDialog
+								.open(
+										"PROMPT_ADD_JAVASCRIPT_SUPPORT",
+										activeWorkbenchShell,
+										PHPUIMessages
+												.getString("PHPStructuredTextViewer.0"),
+										null,
+										PHPUIMessages
+												.getString("PHPStructuredTextViewer.1"),
+										OptionalMessageDialog.QUESTION,
+										new String[] {
+												IDialogConstants.YES_LABEL,
+												IDialogConstants.NO_LABEL }, 0); //$NON-NLS-1$
 
-							// run the JSDT action for adding the JS nature
-							if (addJavaScriptSupport == 0 && project != null) {
-								SetupProjectsWizzard wiz = new SetupProjectsWizzard();
-								wiz.selectionChanged(null, new StructuredSelection(project));
-								wiz.run(null);
-							}
-							return;
+						// run the JSDT action for adding the JS nature
+						if (addJavaScriptSupport == 0 && project != null) {
+							SetupProjectsWizzard wiz = new SetupProjectsWizzard();
+							wiz.selectionChanged(null, new StructuredSelection(
+									project));
+							wiz.run(null);
 						}
+						return;
+					}
 
-					} catch (CoreException e) {
-						Logger.logException(e);
+				} catch (CoreException e) {
+					Logger.logException(e);
+				}
+			}
+
+			// notifing the processors that the next request for completion is
+			// an explicit request
+			if (fViewerConfiguration != null) {
+				PHPStructuredTextViewerConfiguration structuredTextViewerConfiguration = (PHPStructuredTextViewerConfiguration) fViewerConfiguration;
+				IContentAssistProcessor[] all = structuredTextViewerConfiguration
+						.getContentAssistProcessors(this,
+								PHPPartitionTypes.PHP_DEFAULT);
+				for (IContentAssistProcessor element : all) {
+					if (element instanceof PHPCompletionProcessor) {
+						((PHPCompletionProcessor) element).setExplicit(true);
 					}
 				}
+			}
+			super.doOperation(operation);
+			return;
 
-				// notifing the processors that the next request for completion is an explicit request
-				if (fViewerConfiguration != null) {
-					PHPStructuredTextViewerConfiguration structuredTextViewerConfiguration = (PHPStructuredTextViewerConfiguration) fViewerConfiguration;
-					IContentAssistProcessor[] all = structuredTextViewerConfiguration.getContentAssistProcessors(this, PHPPartitionTypes.PHP_DEFAULT);
-					for (IContentAssistProcessor element : all) {
-						if (element instanceof PHPCompletionProcessor) {
-							((PHPCompletionProcessor) element).setExplicit(true);
-						}
+		case SHOW_OUTLINE:
+			if (fOutlinePresenter != null) {
+				fOutlinePresenter.showInformation();
+			}
+			return;
+
+		case SHIFT_LEFT:
+			shift(false, false, true);
+			return;
+
+		case SHOW_HIERARCHY:
+			if (fHierarchyPresenter != null) {
+				fHierarchyPresenter.showInformation();
+			}
+			return;
+
+		case DELETE:
+			StyledText textWidget = getTextWidget();
+			if (textWidget == null)
+				return;
+			ITextSelection textSelection = null;
+			if (redraws()) {
+				try {
+					textSelection = (ITextSelection) getSelection();
+					int length = textSelection.getLength();
+					if (!textWidget.getBlockSelection()
+							&& (length == 0 || length == textWidget
+									.getSelectionRange().y))
+						getTextWidget().invokeAction(ST.DELETE_NEXT);
+					else
+						deleteSelection(textSelection, textWidget);
+
+					if (fFireSelectionChanged) {
+						Point range = textWidget.getSelectionRange();
+						fireSelectionChanged(range.x, range.y);
 					}
-				}
-				super.doOperation(operation);
-				return;
-				
-			case SHOW_OUTLINE:
-				if (fOutlinePresenter != null) {
-					fOutlinePresenter.showInformation();
-				}
-				return;
-				
-			case SHIFT_LEFT:
-				shift(false, false, true);
-				return;
-				
-			case SHOW_HIERARCHY:
-				if (fHierarchyPresenter != null) {
-					fHierarchyPresenter.showInformation();
-				}
-				return;
-				
-			case DELETE:
-				StyledText textWidget = getTextWidget();
-				if (textWidget == null)
-					return;
-				ITextSelection textSelection = null;
-				if (redraws()) {
-					try {
-						textSelection = (ITextSelection) getSelection();
-						int length = textSelection.getLength();
-						if (!textWidget.getBlockSelection() && (length == 0 || length == textWidget.getSelectionRange().y))
-							getTextWidget().invokeAction(ST.DELETE_NEXT);
-						else
-							deleteSelection(textSelection, textWidget);
 
-						if (fFireSelectionChanged) {
-							Point range = textWidget.getSelectionRange();
-							fireSelectionChanged(range.x, range.y);
-						}
-
-					} catch (BadLocationException x) {
-						// ignore
-					}
+				} catch (BadLocationException x) {
+					// ignore
 				}
-				return;
+			}
+			return;
 		}
-		
+
 		super.doOperation(operation);
 	}
 

@@ -1,43 +1,50 @@
 	protected Object[] getChildren() {
 		if (ProjectOutlineContentProvider.scripProject != null) {
 
-			IDLTKSearchScope scope = SearchEngine.createSearchScope(ProjectOutlineContentProvider.scripProject, IDLTKSearchScope.SOURCES);
+			IDLTKSearchScope scope = SearchEngine.createSearchScope(
+					ProjectOutlineContentProvider.scripProject,
+					IDLTKSearchScope.SOURCES);
 
-			TreeSet<IModelElement> childrenList = new TreeSet<IModelElement>(new Comparator<IModelElement>() {
-				public int compare(IModelElement o1, IModelElement o2) {
-					int res = o1.getElementName().compareTo(o2.getElementName());
-					if (res == 0) {
-						return (o1.getPath().toOSString() + o1.getElementName()).compareTo(o2.getPath().toOSString() + o2.getElementName());
-					}
-					return res;
-
-				}
-			});
-			switch (this) {
-				case GROUP_NAMESPACES:
-					childrenList.addAll(Arrays.asList(PHPModelUtils.getAllNamespaces(scope)));
-					break;
-
-				case GROUP_CLASSES:
-					childrenList.addAll(Arrays.asList(PHPModelUtils.getAllClassesAndInterfaces(scope)));
-					break;
-
-				case GROUP_FUNCTIONS:
-					childrenList.addAll(Arrays.asList(PHPModelUtils.getAllFunctions(scope)));
-					break;
-
-				case GROUP_CONSTANTS:
-					IField[] fields = PHPModelUtils.getAllFields(scope);
-					for (IField iField : fields) {
-						try {
-							if (PHPFlags.isConstant(iField.getFlags())) {
-								childrenList.add(iField);
+			TreeSet<IModelElement> childrenList = new TreeSet<IModelElement>(
+					new Comparator<IModelElement>() {
+						public int compare(IModelElement o1, IModelElement o2) {
+							int res = o1.getElementName().compareTo(
+									o2.getElementName());
+							if (res == 0) {
+								return (o1.getPath().toOSString() + o1
+										.getElementName()).compareTo(o2
+										.getPath().toOSString()
+										+ o2.getElementName());
 							}
-						} catch (ModelException e) {
-							Logger.logException(e);
+							return res;
+
 						}
-					}
-					break;
+					});
+			switch (this) {
+			case GROUP_NAMESPACES:
+				childrenList.addAll(Arrays.asList(PhpModelAccess.getDefault()
+						.findTypes(null, MatchRule.PREFIX,
+								Modifiers.AccNameSpace, 0, scope, null)));
+				break;
+
+			case GROUP_CLASSES:
+				childrenList.addAll(Arrays.asList(PhpModelAccess.getDefault()
+						.findTypes(null, MatchRule.PREFIX, 0,
+								Modifiers.AccNameSpace, scope, null)));
+				break;
+
+			case GROUP_FUNCTIONS:
+				childrenList.addAll(Arrays.asList(PhpModelAccess.getDefault()
+						.findMethods(null, MatchRule.PREFIX,
+								Modifiers.AccGlobal, 0, scope, null)));
+				break;
+
+			case GROUP_CONSTANTS:
+				childrenList.addAll(Arrays.asList(PhpModelAccess.getDefault()
+						.findFields(null, MatchRule.PREFIX,
+								Modifiers.AccConstant | Modifiers.AccGlobal, 0,
+								scope, null)));
+				break;
 			}
 			return childrenList.toArray();
 		}
