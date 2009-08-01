@@ -1,0 +1,42 @@
+	private static void internalGetUnimplementedMethods(IType type,
+			HashSet<String> nonAbstractMethods,
+			HashMap<String, IMethod> abstractMethods,
+			Set<String> processedTypes, IProgressMonitor monitor)
+			throws ModelException {
+
+		int typeFlags = type.getFlags();
+		for (IMethod method : type.getMethods()) {
+			String methodName = method.getElementName();
+			int methodFlags = method.getFlags();
+			boolean isAbstract = PHPFlags.isAbstract(methodFlags);
+			if (isAbstract || PHPFlags.isInterface(typeFlags)) {
+				if (!abstractMethods.containsKey(methodName)) {
+					abstractMethods.put(methodName, method);
+				}
+			} else if (!isAbstract) {
+				nonAbstractMethods.add(methodName);
+			}
+		}
+
+		IDLTKSearchScope scope = SearchEngine.createSearchScope(type
+				.getScriptProject());
+		String[] superClasses = type.getSuperClasses();
+		if (superClasses != null) {
+			for (String superClass : superClasses) {
+				if (!processedTypes.add(superClass)) {
+					continue;
+				}
+				IType[] superTypes = PhpModelAccess.getDefault().findTypes(
+						superClass, MatchRule.EXACT, 0, Modifiers.AccNameSpace,
+						scope, null);
+				Collection<IType> filteredTypes = PHPModelUtils.filterElements(
+						type.getSourceModule(), Arrays.asList(superTypes));
+				for (IType superType : filteredTypes) {
+					internalGetUnimplementedMethods(superType,
+							nonAbstractMethods, abstractMethods,
+							processedTypes, monitor);
+				}
+			}
+		}
+	}
+
