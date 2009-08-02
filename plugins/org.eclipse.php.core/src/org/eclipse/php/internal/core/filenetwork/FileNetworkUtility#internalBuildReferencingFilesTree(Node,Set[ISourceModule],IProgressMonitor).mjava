@@ -1,15 +1,26 @@
 	private static void internalBuildReferencingFilesTree(Node root,
 			Set<ISourceModule> processedFiles, IProgressMonitor monitor) {
 
+		if (monitor != null && monitor.isCanceled()) {
+			return;
+		}
+
 		ISourceModule file = root.getFile();
 
-		IDLTKSearchScope scope = SearchEngine.createSearchScope(file
-				.getScriptProject());
+		IDLTKSearchScope scope;
+		if (file instanceof ExternalSourceModule) {
+			scope = SearchEngine.createWorkspaceScope(DLTKLanguageManager
+					.getLanguageToolkit(file));
+		} else {
+			scope = SearchEngine.createSearchScope(file.getScriptProject());
+		}
 
-		// Find all includes to the current source module in mixin:
 		IField[] includes = PhpModelAccess.getDefault().findIncludes(
-				file.getPath().lastSegment(), scope);
+				file.getPath().lastSegment(), MatchRule.EXACT, scope);
 		for (IField include : includes) {
+			if (monitor != null && monitor.isCanceled()) {
+				return;
+			}
 
 			// Candidate that includes the original source module:
 			ISourceModule referencingFile = include.getSourceModule();
