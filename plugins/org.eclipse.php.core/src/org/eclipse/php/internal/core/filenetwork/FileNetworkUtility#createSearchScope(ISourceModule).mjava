@@ -1,0 +1,33 @@
+	private static IDLTKSearchScope createSearchScope(ISourceModule file) {
+		if (LanguageModelInitializer.isLanguageModelElement(file)) {
+			return null;
+		}
+		if (file instanceof ExternalSourceModule) {
+			try {
+				IProjectFragment fileFragment = ((ExternalSourceModule) file)
+						.getProjectFragment();
+				List<IModelElement> scopeElements = new LinkedList<IModelElement>();
+				scopeElements.add(fileFragment);
+
+				IScriptProject[] scriptProjects = ModelManager
+						.getModelManager().getModel().getScriptProjects();
+				for (IScriptProject scriptProject : scriptProjects) {
+					for (IProjectFragment fragment : scriptProject
+							.getProjectFragments()) {
+						if (fragment.equals(fileFragment)) {
+							scopeElements.add(scriptProject);
+						}
+					}
+				}
+				return SearchEngine.createSearchScope(scopeElements
+						.toArray(new IModelElement[scopeElements.size()]),
+						IDLTKSearchScope.SOURCES, PHPLanguageToolkit
+								.getDefault());
+			} catch (ModelException e) {
+				return null;
+			}
+		}
+		return SearchEngine.createSearchScope(file.getScriptProject(),
+				IDLTKSearchScope.SOURCES);
+	}
+
