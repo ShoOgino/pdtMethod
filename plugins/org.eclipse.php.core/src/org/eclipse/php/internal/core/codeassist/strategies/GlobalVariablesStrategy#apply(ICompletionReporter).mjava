@@ -16,10 +16,19 @@
 			matchRule = MatchRule.EXACT;
 		}
 
-		IDLTKSearchScope scope = createSearchScope();
-		IField[] fields = PhpModelAccess.getDefault().findFields(prefix,
-				matchRule, Modifiers.AccGlobal, Modifiers.AccConstant, scope,
-				null);
+		IField[] fields;
+		if (showVarsFromOtherFiles()) {
+			IDLTKSearchScope scope = createSearchScope();
+			fields = PhpModelAccess.getDefault().findFields(prefix, matchRule,
+					Modifiers.AccGlobal, Modifiers.AccConstant, scope, null);
+		} else {
+			try {
+				fields = abstractContext.getSourceModule().getFields();
+			} catch (ModelException e) {
+				PHPCorePlugin.log(e);
+				return;
+			}
+		}
 
 		SourceRange replaceRange = getReplacementRange(context);
 		for (IModelElement var : fields) {
