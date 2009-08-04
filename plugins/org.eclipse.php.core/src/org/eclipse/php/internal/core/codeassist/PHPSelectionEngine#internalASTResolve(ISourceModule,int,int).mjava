@@ -180,7 +180,9 @@
 						}
 					}
 					return types;
-				} else if (node instanceof ClassInstanceCreation) {
+				}
+				// 'new' statement
+				else if (node instanceof ClassInstanceCreation) {
 					ClassInstanceCreation newNode = (ClassInstanceCreation) node;
 					Expression className = newNode.getClassName();
 					if (className instanceof SimpleReference) {
@@ -189,6 +191,15 @@
 								: ((SimpleReference) className).getName();
 						return getConstructorsIfAny(extractClasses(PHPModelUtils
 								.getTypes(name, sourceModule, offset, null)));
+					}
+				}
+				// Class name in declaration
+				else if (node instanceof TypeDeclaration
+						|| node instanceof MethodDeclaration) {
+					IModelElement element = sourceModule.getElementAt(node
+							.sourceStart());
+					if (element != null) {
+						return new IModelElement[] { element };
 					}
 				}
 			}
