@@ -3,6 +3,28 @@
 		if (res) {
 			BasicNewProjectResourceWizard.updatePerspective(fConfigElement);
 			selectAndReveal(fLastPage.getScriptProject().getProject());
+
+			WizardModel model = fFirstPage.getWizardData();
+			if (model != null) {
+
+				model.putObject(SELECTED_PROJECT, fLastPage.getScriptProject()
+						.getProject());
+
+				IRunnableWithProgress run = (IRunnableWithProgress) Platform
+						.getAdapterManager().getAdapter(model,
+								IRunnableWithProgress.class);
+
+				if (run != null) {
+					try {
+						getContainer().run(true, false, run);
+					} catch (InvocationTargetException e) {
+						handleFinishException(getShell(), e);
+						return false;
+					} catch (InterruptedException e) {
+						return false;
+					}
+				}
+			}
 		}
 		return res;
 	}
