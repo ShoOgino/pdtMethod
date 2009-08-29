@@ -1,0 +1,57 @@
+	public static void checkStubVilidaty(InputStream bis) throws IOException {
+		boolean stubHasBeenFound = false;
+		int n = -1;
+		// this is record for whether read a byte from the stream or not
+		int currentByte = -1;
+		// if currentByte is equal to char '_',we will not read the next
+		// byte
+		while (!stubHasBeenFound
+				&& (currentByte == PharConstants.Underline || (n = bis.read()) != -1)) {
+			if (n == PharConstants.Underline) {
+				boolean match = false;
+				int j = 1;
+				for (; j < PharConstants.STUB_ENDS.length && n != -1; j++) {
+					if ((n = bis.read()) == PharConstants.STUB_ENDS[j]) {
+						if (j == PharConstants.STUB_ENDS.length - 1) {
+							match = true;
+						}
+					} else {
+						break;
+					}
+				}
+
+				if (match) {
+					// i = i + ENDS.length;
+					if (bis.available() > 0) {
+						j = 0;
+						match = false;
+						for (; j < PharConstants.STUB_TAIL.length && n != -1; j++) {
+							n = bis.read();
+							if (n == PharConstants.STUB_TAIL[j]) {
+								if (j == PharConstants.STUB_TAIL.length - 1) {
+									match = true;
+								}
+							} else {
+								break;
+							}
+						}
+						if (bis.available() == 0) {
+							stubHasBeenFound = match;
+						} else if (bis.available() == 2
+								&& bis.read() == PharConstants.R
+								&& bis.read() == PharConstants.N) {
+							stubHasBeenFound = match;
+						}
+					} else {
+						stubHasBeenFound = match;
+					}
+
+				}
+			}
+		}
+		if (!stubHasBeenFound) {
+			PharUtil.throwIOException(Messages.Stub_Invalid);
+		}
+
+	}
+

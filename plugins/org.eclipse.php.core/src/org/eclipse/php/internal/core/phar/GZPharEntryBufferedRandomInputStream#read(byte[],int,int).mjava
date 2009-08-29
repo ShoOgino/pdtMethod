@@ -1,0 +1,30 @@
+	@Override
+	public int read(byte[] b, int off, int len) throws IOException {
+		int result = 0;
+		if (headerIndex < header.length) {
+			int j = 0;
+			for (; headerIndex < header.length && j < len; headerIndex++, j++) {
+				b[off + j] = (byte) ((header[headerIndex] + 256) % 256);
+			}
+			// all header have been read
+			if (j < len) {
+				result = super.read(b, off + j, len - j);
+				result = j + result;
+			} else {
+				result = j;
+			}
+		} else {
+			result = super.read(b, off, len);
+		}
+		// if reach the end,we read from tailer
+		if (result < len && tailerIndex < tailer.length) {
+			int j = 0;
+			for (; tailerIndex < tailer.length && result + j < len; tailerIndex++, j++) {
+				b[result + j] = (byte) ((tailer[tailerIndex] + 256) % 256);
+				;
+			}
+			result = j + result;
+		}
+		return result;
+	}
+

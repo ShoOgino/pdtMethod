@@ -1,0 +1,29 @@
+	/**
+	 * Skips ahead to the position of the given entry in the file.
+	 * 
+	 * @param entry
+	 * @returns false if the entry has already been passed
+	 * @throws TarException
+	 * @throws IOException
+	 */
+	boolean skipToEntry(TarEntry entry) throws TarException, IOException {
+		int bytestoskip = entry.filepos - bytesread;
+		if (bytestoskip < 0) {
+			return false;
+		}
+		while (bytestoskip > 0) {
+			long ret = in.skip(bytestoskip);
+			if (ret < 0) {
+				throw new IOException("early end of stream"); //$NON-NLS-1$
+			}
+			bytestoskip -= ret;
+			bytesread += ret;
+		}
+		filepos = entry.filepos;
+		nextEntry = 0;
+		nextEOF = 0;
+		// Read next header to seek to file data.
+		getNextEntry();
+		return true;
+	}
+

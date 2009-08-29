@@ -1,0 +1,23 @@
+	/**
+	 * Create an instance of this class.
+	 * 
+	 * @param filename
+	 *            java.lang.String
+	 * @param compress
+	 *            boolean
+	 * @exception java.io.IOException
+	 */
+	public TarFileExporter(PharPackage pharPackage) throws IOException {
+		super(pharPackage);
+		OutputStream os = fileContentStream;
+		if (PharConstants.BZ2_COMPRESSED == pharPackage.getCompressType()) {
+			// i think here should be CBZip2OutputStream,but it does not work
+			// and CBZip2OutputStreamForPhar works well.
+			// i do not know why
+			os = new CBZip2OutputStreamForPhar(os);
+		} else if (PharConstants.GZ_COMPRESSED == pharPackage.getCompressType()) {
+			os = new GZIPOutputStream(os);
+		}
+		outputStream = new TarOutputStream(os);
+	}
+

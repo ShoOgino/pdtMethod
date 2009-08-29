@@ -1,0 +1,137 @@
+	protected void getEntries() throws IOException, PharException {
+		byte[] buffer;
+		// PharEntry[] entries = new PharEntry[ fileNumber];
+
+		for (int j = 0; j < fileNumber; j++) {
+			buffer = new byte[4];
+			PharEntry pharEntry = new PharEntry();
+			read(bis, buffer);
+			int fileNameLength = getInt(buffer);
+
+			// file Name
+			String fileName = null;
+			if (fileNameLength > 0) {
+				buffer = new byte[fileNameLength];
+				read(bis, buffer);
+				fileName = getString(buffer);
+				pharEntry.setName(fileName);
+				buffer = new byte[4];
+			}
+
+			read(bis, buffer);
+			pharEntry.setSizeByte(buffer);
+
+			// read(bis, buffer);
+			pharEntry.setSize(getInt(buffer));
+
+			read(bis, buffer);
+			pharEntry.setTime(getInt(buffer));
+
+			read(bis, buffer);
+			pharEntry.setCsize(getInt(buffer));
+
+			read(bis, buffer);
+			pharEntry.setCrcByte(buffer);
+
+			read(bis, buffer);
+			pharEntry.setBitMappedFlag(buffer);
+
+			read(bis, buffer);
+			int metaFileLength = getInt(buffer);
+
+			// file Name
+			String metaFileData = null;
+			if (metaFileLength > 0) {
+				buffer = new byte[metaFileLength];
+				read(bis, buffer);
+				metaFileData = getString(buffer);
+				pharEntry.setMetadata(metaFileData);
+
+			}
+
+			pharEntryList.add(pharEntry);
+			pharEntryMap.put(pharEntry.getName(), pharEntry);
+		}
+		for (int j = 0; j < pharEntryList.size(); j++) {
+
+			PharEntry pharEntry = pharEntryList.get(j);
+			if (j == 0) {
+				pharEntry.setPosition(currentIndex);
+			} else {
+				pharEntry.setPosition(pharEntryList.get(j - 1).getEnd());
+			}
+
+		}
+
+		stubEntry = new PharEntry();
+		stubEntry.setName(PharConstants.STUB_PATH);
+		// pharEntry.setSizeByte(buffer);
+		stubEntry.setSize(stubLength);
+		stubEntry.setCsize(stubLength);
+		// pharEntry.setCrcByte(buffer);
+		stubEntry.setBitMappedFlag(PharConstants.Default_Entry_Bitmap);
+		stubEntry.setPosition(0);
+		pharEntryList.add(stubEntry);
+		pharEntryMap.put(stubEntry.getName(), stubEntry);
+
+		signatureEntry = new PharEntry();
+		signatureEntry.setName(PharConstants.SIGNATURE_PATH);
+		// pharEntry.setSizeByte(buffer);
+
+		// pharEntry.setCrcByte(buffer);
+		signatureEntry.setBitMappedFlag(PharConstants.Default_Entry_Bitmap);
+
+		int signatureLength = bis.available();
+		if (fileNumber == 0) {// no file,so the manifest's end is the
+			// signature's begin
+			signatureEntry.setPosition(currentIndex);
+
+		} else {
+			signatureEntry.setPosition(pharEntryList.get(fileNumber - 1)
+					.getEnd());
+			PharUtil.skip(bis, pharEntryList.get(fileNumber - 1).getEnd()
+					- currentIndex);
+			signatureLength = bis.available();
+		}
+		signatureEntry.setSize(signatureLength);
+		signatureEntry.setCsize(signatureLength);
+		if (signatureLength < 24) {
+			// TODO crupt signature
+			throw new PharException(Messages.Phar_Signature_Corrupted);
+		} else {
+
+			bis.skip(signatureLength - 8);
+			buffer = new byte[4];
+			read(bis, buffer);
+			boolean found = false;
+			for (Iterator<Digest> iterator = Digest.DIGEST_MAP.values()
+					.iterator(); iterator.hasNext();) {
+				Digest digest = iterator.next();
+				if (PharUtil.byteArrayEquals(digest.getBitMap(), buffer)) {
+					if (digest.getDigest().digest().length != signatureLength - 8
+							|| !PharUtil.checkSignature(file, digest,
+									signatureEntry.getPosition())) {
+						// TODO crupt signature
+						throw new PharException(
+								Messages.Phar_Signature_Corrupted);
+					} else {
+						found = true;
+						break;
+					}
+
+				}
+			}
+			if (!found) {
+				// TODO crupt signature
+				throw new PharException(Messages.Phar_Signature_Unsupported);
+			}
+			read(bis, buffer);
+			if (!PharUtil.byteArrayEquals(PharConstants.GBMB, buffer)) {
+				// TODO crupt signature
+				throw new PharException(Messages.Phar_Signature_End);
+			}
+		}
+		pharEntryList.add(signatureEntry);
+		pharEntryMap.put(signatureEntry.getName(), signatureEntry);
+	}
+

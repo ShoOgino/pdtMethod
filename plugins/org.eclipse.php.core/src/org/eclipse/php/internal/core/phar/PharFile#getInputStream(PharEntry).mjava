@@ -1,0 +1,15 @@
+	public InputStream getInputStream(PharEntry pharEntry) throws IOException {
+		InputStream result = null;
+		InputStream is = new PharEntryBufferedRandomInputStream(file, pharEntry);
+		if (pharEntry.isCompressed()) {
+			int ctype = pharEntry.getCompressedType();
+			if (PharConstants.BZ2_COMPRESSED == ctype) {
+				is = new CBZip2InputStreamForPhar(is);
+			} else if (PharConstants.GZ_COMPRESSED == ctype) {
+				is = new GZIPInputStreamForPhar(is);
+			}
+		}
+		result = new BufferedInputStream(is);
+		return result;
+	}
+

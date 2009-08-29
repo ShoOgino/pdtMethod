@@ -1,0 +1,61 @@
+	protected void getManifest() throws IOException, PharException {
+		bytesAfterStub.add(Integer.valueOf(read(bis)));
+		bytesAfterStub.add(Integer.valueOf(read(bis)));
+		if (bytesAfterStub.get(0).intValue() == PharConstants.R
+				&& bytesAfterStub.get(1).intValue() == PharConstants.N) {
+			bytesAfterStub = bytesAfterStub.subList(2, bytesAfterStub.size());
+		}
+		stubLength = currentIndex - bytesAfterStub.size();
+		// read(bis);
+		// read(bis);
+		byte[] buffer = new byte[4];
+		for (int i = 0; i < buffer.length; i++) {
+			if (i < bytesAfterStub.size()) {
+				buffer[i] = ((Integer) bytesAfterStub.get(i)).byteValue();
+			} else {
+				buffer[i] = (byte) read(bis);
+				check(buffer[i]);
+			}
+		}
+
+		manifestLength = getInt(buffer);
+
+		read(bis, buffer);
+		fileNumber = getInt(buffer);
+
+		buffer = new byte[2];
+		read(bis, buffer);
+		version = PharUtil.getVersion(buffer);
+
+		buffer = new byte[4];
+		read(bis, buffer);
+		if ((buffer[1] & 1) != 0) {
+			hasSignature = true;
+		}
+		if ((buffer[2] & 1) != 0) {
+			hasZlibcompression = true;
+		}
+		if ((buffer[2] & 2) != 0) {
+			hasBzipcompression = true;
+		}
+
+		read(bis, buffer);
+		int aliaslength = getInt(buffer);
+		if (aliaslength > 0) {
+			buffer = new byte[aliaslength];
+			read(bis, buffer);
+			alias = getString(buffer);
+			buffer = new byte[4];
+		}
+
+		read(bis, buffer);
+		int metadatalength = getInt(buffer);
+		if (metadatalength > 0) {
+			buffer = new byte[metadatalength];
+			read(bis, buffer);
+			metadata = getString(buffer);
+			// buffer = new byte[4];
+		}
+
+	}
+

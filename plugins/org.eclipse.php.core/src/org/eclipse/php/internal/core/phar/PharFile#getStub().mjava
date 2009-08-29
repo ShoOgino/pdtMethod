@@ -1,0 +1,49 @@
+	protected void getStub() throws IOException, PharException {
+		boolean stubHasBeenFound = false;
+		int n = -1;
+		// this is record for whether read a byte from the stream or not
+		int currentByte = -1;
+		bytesAfterStub = new ArrayList<Integer>();
+		// if currentByte is equal to char '_',we will not read the next byte
+		while (!stubHasBeenFound
+				&& (currentByte == PharConstants.Underline || (n = read(bis)) != -1)) {
+			if (n == PharConstants.Underline) {
+				boolean match = false;
+				int j = 1;
+				for (; j < PharConstants.STUB_ENDS.length && n != -1; j++) {
+					if ((n = read(bis)) == PharConstants.STUB_ENDS[j]) {
+						if (j == PharConstants.STUB_ENDS.length - 1) {
+							match = true;
+						}
+					} else {
+						break;
+					}
+				}
+				stubHasBeenFound = match;
+				if (match) {
+					// i = i + ENDS.length;
+
+					j = 0;
+					match = false;
+					for (; j < PharConstants.STUB_TAIL.length && n != -1; j++) {
+						n = read(bis);
+						bytesAfterStub.add(Integer.valueOf(n));
+						if (n == PharConstants.STUB_TAIL[j]) {
+							if (j == PharConstants.STUB_TAIL.length - 1) {
+								match = true;
+							}
+						} else {
+							break;
+						}
+					}
+					if (match) {
+						bytesAfterStub.clear();
+					}
+				}
+			}
+		}
+		if (!stubHasBeenFound) {
+			PharUtil.throwPharException(Messages.Phar_No_Stub_End);
+		}
+	}
+

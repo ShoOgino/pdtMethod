@@ -1,0 +1,39 @@
+	public void write(OutputStream os) throws CoreException, IOException {
+		if (jarPackage.isStubGenerated()) {
+			os.write(PharConstants.PHP_START);
+
+			os.write(PharConstants.R);
+			os.write(PharConstants.N);
+
+			os.write(PharConstants.STUB_ENDS);
+			os.write(PharConstants.STUB_TAIL);
+
+			os.write(PharConstants.R);
+			os.write(PharConstants.N);
+		} else {
+			InputStream contentStream = jarPackage.getStubFile().getContents(
+					false);
+			try {
+				PharUtil.checkStubVilidaty(contentStream);
+			} finally {
+				if (contentStream != null) {
+					contentStream.close();
+				}
+			}
+
+			contentStream = jarPackage.getStubFile().getContents(false);
+			try {
+				int n;
+				byte[] readBuffer = new byte[4096];
+				while ((n = contentStream.read(readBuffer)) > 0) {
+					os.write(readBuffer, 0, n);
+				}
+			} finally {
+				if (contentStream != null) {
+					contentStream.close();
+				}
+			}
+		}
+
+	}
+

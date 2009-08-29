@@ -1,0 +1,27 @@
+	private void writeManifest() throws IOException {
+
+		int aliasLength = 0;
+		if (pharPackage.getAlias() != null) {
+			aliasLength = pharPackage.getAlias().length();
+		}
+		// fileNumber4 + version2 + bitmap4 + aliaslength4 + metadatalength4 =
+		// 18
+		int manifestLength = (int) (18 + aliasLength + fileDescription.length());
+		writeInt(manifestOutputStream, manifestLength);
+		writeInt(manifestOutputStream, fileNumber);
+
+		// write Version
+		manifestOutputStream.write(PharUtil.getStubVersionBytes(pharPackage
+				.getStubVersion()));
+		// manifestOutputStream.write(new byte[] { 17, 0 });
+		// writeString(manifestOutputStream,pharData.getStubVersion());
+		// write bitmap
+		manifestOutputStream.write(PharUtil.getGlobalBitmap(pharPackage));
+
+		writeInt(manifestOutputStream, aliasLength);
+		if (aliasLength != 0) {
+			writeString(manifestOutputStream, pharPackage.getAlias());
+		}
+		writeInt(manifestOutputStream, 0);
+	}
+

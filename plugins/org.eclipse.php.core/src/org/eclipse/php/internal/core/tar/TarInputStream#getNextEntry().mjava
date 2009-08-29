@@ -1,0 +1,36 @@
+	/**
+	 * Moves ahead to the next file in the tar archive and returns a TarEntry
+	 * object describing it.
+	 * 
+	 * @return the next entry in the tar file
+	 * @throws TarException
+	 * @throws IOException
+	 */
+	public TarEntry getNextEntry() throws TarException, IOException {
+		TarEntry entry = getNextEntryInternal();
+
+		if (entry != null && entry.getName().equals("././@LongLink")) { //$NON-NLS-1$
+			// This is a GNU extension for doing long filenames.
+			// We get a file called ././@LongLink which just contains
+			// the real pathname.
+			byte[] longNameData = new byte[(int) entry.getSize()];
+			int bytesread = 0;
+			while (bytesread < longNameData.length) {
+				int cur = read(longNameData, bytesread, longNameData.length
+						- bytesread);
+				if (cur < 0) {
+					throw new IOException("early end of stream"); //$NON-NLS-1$
+				}
+				bytesread += cur;
+			}
+
+			int pos = 0;
+			while (pos < longNameData.length && longNameData[pos] != 0) {
+				pos++;
+			}
+			longLinkName = new String(longNameData, 0, pos, "UTF8"); //$NON-NLS-1$
+			return getNextEntryInternal();
+		}
+		return entry;
+	}
+

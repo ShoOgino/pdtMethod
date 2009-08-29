@@ -1,0 +1,20 @@
+	/**
+	 * Close the output stream and write any necessary padding.
+	 */
+	public void close() throws IOException {
+		// Spec says to write 1024 bytes of zeros at the end.
+		byte[] zeros = new byte[1024];
+		cursize = 1024;
+		write(zeros, 0, 1024);
+
+		// Default block size for tar files is 10240, so we have to
+		// pad the end of the file to be a multiple of this size.
+		if ((byteswritten % 10240) != 0) {
+			int length = 10240 - (byteswritten % 10240);
+			cursize = length;
+			zeros = new byte[length];
+			write(zeros, 0, length);
+		}
+		super.close();
+	}
+

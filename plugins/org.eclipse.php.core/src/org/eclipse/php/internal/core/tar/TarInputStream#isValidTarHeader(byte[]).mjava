@@ -1,0 +1,44 @@
+	/**
+	 * Returns true if the header checksum is correct.
+	 * 
+	 * @param header
+	 * @return true if this header has a valid checksum
+	 */
+	private boolean isValidTarHeader(byte[] header) {
+		long fileChecksum, calculatedChecksum;
+		int pos, i;
+
+		pos = 148;
+		StringBuffer checksumString = new StringBuffer();
+		for (i = 0; i < 8; i++) {
+			if (header[pos + i] == ' ') {
+				continue;
+			}
+			if (header[pos + i] == 0
+					|| !Character.isDigit((char) header[pos + i])) {
+				break;
+			}
+			checksumString.append((char) header[pos + i]);
+		}
+		if (checksumString.length() == 0) {
+			return false;
+		}
+		if (checksumString.charAt(0) != '0') {
+			checksumString.insert(0, '0');
+		}
+		try {
+			fileChecksum = Long.decode(checksumString.toString()).longValue();
+		} catch (NumberFormatException exception) {
+			// This is not valid if it cannot be parsed
+			return false;
+		}
+
+		// Blank out the checksum.
+		for (i = 0; i < 8; i++) {
+			header[pos + i] = ' ';
+		}
+		calculatedChecksum = headerChecksum(header);
+
+		return (fileChecksum == calculatedChecksum);
+	}
+

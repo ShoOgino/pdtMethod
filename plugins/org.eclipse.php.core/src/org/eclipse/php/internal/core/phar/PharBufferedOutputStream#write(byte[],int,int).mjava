@@ -1,0 +1,21 @@
+	public void write(byte[] b, int off, int len) throws IOException {
+
+		// if currentStart is true,it should initialize the currentOutputStream
+		// depends on the method of currentEntry
+		if (currentStart) {
+			currentStart = false;
+			if (currentEntry.getMethod() == PharConstants.NONE_COMPRESSED) {
+				currentOutputStream = fileContentStream;
+			} else if (currentEntry.getMethod() == PharConstants.BZ2_COMPRESSED) {
+				currentOutputStream = new CBZip2OutputStreamForPhar(
+						fileContentStream);
+			} else if (currentEntry.getMethod() == PharConstants.GZ_COMPRESSED) {
+				currentOutputStream = new GZIPOutputStreamForPhar(
+						fileContentStream);
+			}
+			currentOutputStream = new CRCableOutputStream(currentOutputStream);
+		}
+
+		currentOutputStream.write(b, off, len);
+	}
+

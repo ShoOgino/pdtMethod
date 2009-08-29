@@ -1,0 +1,47 @@
+	/**
+	 * Create a new TarFile for the given file.
+	 * 
+	 * @param file
+	 * @throws TarException
+	 * @throws IOException
+	 */
+	public TarFile(File file) throws TarException, IOException {
+		this.file = file;
+
+		InputStream in = new FileInputStream(file);
+		// First, check if it's a GZIPInputStream.
+		try {
+			in = new GZIPInputStream(in);
+		} catch (IOException e) {
+			// If it is not compressed we close
+			// the old one and recreate
+			in.close();
+			in = new FileInputStream(file);
+			try {
+				in = new CBZip2InputStream(in);
+			} catch (IOException e1) {
+				// If it is not compressed we close
+				// the old one and recreate
+				in.close();
+				in = new FileInputStream(file);
+				try {
+					in.read();
+					in.read();
+					in = new CBZip2InputStream(in);
+				} catch (IOException e2) {
+					// If it is not compressed we close
+					// the old one and recreate
+					in.close();
+					in = new FileInputStream(file);
+				}
+			}
+		}
+		try {
+			entryEnumerationStream = new TarInputStream(in);
+		} catch (TarException ex) {
+			in.close();
+			throw ex;
+		}
+		curEntry = entryEnumerationStream.getNextEntry();
+	}
+
