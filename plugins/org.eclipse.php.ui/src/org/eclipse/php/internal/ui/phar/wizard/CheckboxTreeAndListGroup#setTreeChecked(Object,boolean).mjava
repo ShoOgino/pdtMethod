@@ -1,0 +1,34 @@
+	/**
+	 * Sets the checked state of the passed tree element appropriately, and do
+	 * so recursively to all of its child tree elements as well
+	 * 
+	 * @param treeElement
+	 * @param state
+	 */
+	protected void setTreeChecked(Object treeElement, boolean state) {
+
+		if (treeElement.equals(fCurrentTreeSelection)) {
+			fListViewer.setAllChecked(state);
+		}
+
+		if (state) {
+			Object[] listItems = getListElements(treeElement);
+			List listItemsChecked = new ArrayList();
+			for (int i = 0; i < listItems.length; ++i)
+				listItemsChecked.add(listItems[i]);
+
+			fCheckedStateStore.put(treeElement, listItemsChecked);
+		} else
+			fCheckedStateStore.remove(treeElement);
+
+		setWhiteChecked(treeElement, state);
+		fTreeViewer.setChecked(treeElement, state);
+		fTreeViewer.setGrayed(treeElement, false);
+
+		// now logically check/uncheck all children as well
+		Object[] children = getTreeChildren(treeElement);
+		for (int i = 0; i < children.length; ++i) {
+			setTreeChecked(children[i], state);
+		}
+	}
+

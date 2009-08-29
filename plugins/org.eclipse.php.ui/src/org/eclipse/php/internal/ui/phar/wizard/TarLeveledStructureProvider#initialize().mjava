@@ -1,0 +1,29 @@
+	/**
+	 * Initializes this object's children table based on the contents of the
+	 * specified source file.
+	 */
+	protected void initialize() {
+		children = new HashMap(1000);
+
+		children.put(root, new ArrayList());
+		Enumeration entries = tarFile.entries();
+		while (entries.hasMoreElements()) {
+			TarEntry entry = (TarEntry) entries.nextElement();
+			IPath path = new Path(entry.getName()).addTrailingSeparator();
+
+			if (entry.getFileType() == TarEntry.DIRECTORY) {
+				createContainer(path);
+			} else {
+				// Ensure the container structure for all levels above this is
+				// initialized
+				// Once we hit a higher-level container that's already added we
+				// need go no further
+				int pathSegmentCount = path.segmentCount();
+				if (pathSegmentCount > 1) {
+					createContainer(path.uptoSegment(pathSegmentCount - 1));
+				}
+				createFile(entry);
+			}
+		}
+	}
+

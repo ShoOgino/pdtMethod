@@ -8,12 +8,16 @@
 				try {
 					// get the structured document and go over its regions
 					// in case of PhpScriptRegion reparse the region text
-					IDocument doc = getDocumentProvider().getDocument(getEditorInput());
+					IDocument doc = getDocumentProvider().getDocument(
+							getEditorInput());
 					if (doc instanceof IStructuredDocument) {
-						IStructuredDocumentRegion[] sdRegions = ((IStructuredDocument) doc).getStructuredDocumentRegions();
+						IStructuredDocumentRegion[] sdRegions = ((IStructuredDocument) doc)
+								.getStructuredDocumentRegions();
 						for (IStructuredDocumentRegion element : sdRegions) {
-							Iterator regionsIt = element.getRegions().iterator();
-							reparseRegion(doc, regionsIt, element.getStartOffset());
+							Iterator regionsIt = element.getRegions()
+									.iterator();
+							reparseRegion(doc, regionsIt, element
+									.getStartOffset());
 						}
 						PHPStructuredTextViewer textViewer = (PHPStructuredTextViewer) getTextViewer();
 						textViewer.reconcile();
@@ -23,7 +27,8 @@
 			}
 
 			public IProject getProject() {
-				IScriptProject scriptProject = PHPStructuredEditor.this.getProject();
+				IScriptProject scriptProject = PHPStructuredEditor.this
+						.getProject();
 				if (scriptProject != null) {
 					return scriptProject.getProject();
 				}
@@ -31,29 +36,52 @@
 			}
 		};
 
-		PhpVersionChangedHandler.getInstance().addPhpVersionChangedListener(fPhpVersionListener);
+		PhpVersionChangedHandler.getInstance().addPhpVersionChangedListener(
+				fPhpVersionListener);
 
 		fPreferencesListener = new IPreferenceChangeListener() {
-			
+
 			public void preferenceChange(PreferenceChangeEvent event) {
 				String property = event.getKey();
-				if (PHPCoreConstants.CODEASSIST_AUTOACTIVATION.equals(property) || PHPCoreConstants.CODEASSIST_AUTOACTIVATION_DELAY.equals(property) || PHPCoreConstants.CODEASSIST_AUTOINSERT.equals(property)) {
+				if (PHPCoreConstants.CODEASSIST_AUTOACTIVATION.equals(property)
+						|| PHPCoreConstants.CODEASSIST_AUTOACTIVATION_DELAY
+								.equals(property)
+						|| PHPCoreConstants.CODEASSIST_AUTOINSERT
+								.equals(property)) {
 					ISourceViewer sourceViewer = getSourceViewer();
 					if (sourceViewer != null) {
 						PHPStructuredTextViewerConfiguration configuration = (PHPStructuredTextViewerConfiguration) getSourceViewerConfiguration();
 						if (configuration != null) {
-							StructuredContentAssistant contentAssistant = (StructuredContentAssistant) configuration.getPHPContentAssistant(sourceViewer);
-							
-							IPreferencesService preferencesService = Platform.getPreferencesService();
-							contentAssistant.enableAutoActivation(preferencesService.getBoolean(PHPCorePlugin.ID, PHPCoreConstants.CODEASSIST_AUTOACTIVATION, false, null));
-							contentAssistant.setAutoActivationDelay(preferencesService.getInt(PHPCorePlugin.ID, PHPCoreConstants.CODEASSIST_AUTOACTIVATION_DELAY, 0, null));
-							contentAssistant.enableAutoInsert(preferencesService.getBoolean(PHPCorePlugin.ID, PHPCoreConstants.CODEASSIST_AUTOINSERT, false, null));
+							StructuredContentAssistant contentAssistant = (StructuredContentAssistant) configuration
+									.getPHPContentAssistant(sourceViewer);
+
+							IPreferencesService preferencesService = Platform
+									.getPreferencesService();
+							contentAssistant
+									.enableAutoActivation(preferencesService
+											.getBoolean(
+													PHPCorePlugin.ID,
+													PHPCoreConstants.CODEASSIST_AUTOACTIVATION,
+													false, null));
+							contentAssistant
+									.setAutoActivationDelay(preferencesService
+											.getInt(
+													PHPCorePlugin.ID,
+													PHPCoreConstants.CODEASSIST_AUTOACTIVATION_DELAY,
+													0, null));
+							contentAssistant
+									.enableAutoInsert(preferencesService
+											.getBoolean(
+													PHPCorePlugin.ID,
+													PHPCoreConstants.CODEASSIST_AUTOINSERT,
+													false, null));
 						}
 					}
 				}
 			}
 		};
 
-		new InstanceScope().getNode(PHPCorePlugin.ID).addPreferenceChangeListener(fPreferencesListener);
+		new InstanceScope().getNode(PHPCorePlugin.ID)
+				.addPreferenceChangeListener(fPreferencesListener);
 	}
 

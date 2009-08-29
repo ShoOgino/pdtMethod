@@ -1,0 +1,34 @@
+	/**
+	 * Creates a new container tar entry with the specified name, iff it has not
+	 * already been created. If the parent of the given element does not already
+	 * exist it will be recursively created as well.
+	 * 
+	 * @param pathname
+	 *            The path representing the container
+	 * @return The element represented by this pathname (it may have already
+	 *         existed)
+	 */
+	protected PharEntry createContainer(IPath pathname) {
+		PharEntry existingEntry = (PharEntry) directoryEntryCache.get(pathname);
+		if (existingEntry != null) {
+			return existingEntry;
+		}
+
+		PharEntry parent;
+		if (pathname.segmentCount() == 1) {
+			parent = root;
+		} else {
+			parent = createContainer(pathname.removeLastSegments(1));
+		}
+		PharEntry newEntry = new PharEntry();
+		newEntry.setName(pathname.toString());
+		// newEntry.setFileType(TarEntry.DIRECTORY);
+		directoryEntryCache.put(pathname, newEntry);
+		List childList = new ArrayList();
+		children.put(newEntry, childList);
+
+		List parentChildList = (List) children.get(parent);
+		parentChildList.add(newEntry);
+		return newEntry;
+	}
+

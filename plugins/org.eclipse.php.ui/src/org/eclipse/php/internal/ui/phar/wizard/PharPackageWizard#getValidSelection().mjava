@@ -1,0 +1,35 @@
+	/**
+	 * Gets the current workspace page selection and converts it to a valid
+	 * selection for this wizard: - resources and projects are OK - CUs are OK -
+	 * Java projects are OK - Source package fragments and source packages
+	 * fragement roots are ok - Java elements below a CU are converted to their
+	 * CU - all other input elements are ignored
+	 * 
+	 * @return a valid structured selection based on the current selection
+	 */
+	protected IStructuredSelection getValidSelection() {
+		ISelection currentSelection = PHPUiPlugin.getActiveWorkbenchWindow()
+				.getSelectionService().getSelection();
+		if (currentSelection instanceof IStructuredSelection) {
+			IStructuredSelection structuredSelection = (IStructuredSelection) currentSelection;
+			List selectedElements = new ArrayList(structuredSelection.size());
+			Iterator iter = structuredSelection.iterator();
+			while (iter.hasNext()) {
+				Object selectedElement = iter.next();
+				if (selectedElement instanceof IProject)
+					addProject(selectedElements, (IProject) selectedElement);
+				else if (selectedElement instanceof IResource)
+					addResource(selectedElements, (IResource) selectedElement);
+				else if (selectedElement instanceof IScriptProject) {
+					addProject(selectedElements,
+							((IScriptProject) selectedElement).getProject());
+				} else if (selectedElement instanceof IModelElement)
+					addJavaElement(selectedElements,
+							(IModelElement) selectedElement);
+
+			}
+			return new StructuredSelection(selectedElements);
+		} else
+			return StructuredSelection.EMPTY;
+	}
+

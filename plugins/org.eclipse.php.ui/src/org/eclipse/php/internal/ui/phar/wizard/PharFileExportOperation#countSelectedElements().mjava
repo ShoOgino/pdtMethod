@@ -1,0 +1,38 @@
+	/**
+	 * Answers the number of file resources specified by the JAR package.
+	 * 
+	 * @return int
+	 */
+	private int countSelectedElements() {
+		Set enclosingJavaProjects = new HashSet(10);
+		int count = 0;
+
+		int n = fJarPackage.getElements().length;
+		for (int i = 0; i < n; i++) {
+			Object element = fJarPackage.getElements()[i];
+
+			IScriptProject javaProject = getEnclosingJavaProject(element);
+			if (javaProject != null)
+				enclosingJavaProjects.add(javaProject);
+
+			IResource resource = null;
+			if (element instanceof IModelElement) {
+				IModelElement je = (IModelElement) element;
+				resource = je.getResource();
+				if (resource == null) {
+					continue;
+				}
+			} else if (element instanceof IResource) {
+				resource = (IResource) element;
+			}
+			if (resource != null) {
+				if (resource.getType() == IResource.FILE)
+					count++;
+				else
+					count += getTotalChildCount((IContainer) resource);
+			}
+		}
+
+		return count;
+	}
+

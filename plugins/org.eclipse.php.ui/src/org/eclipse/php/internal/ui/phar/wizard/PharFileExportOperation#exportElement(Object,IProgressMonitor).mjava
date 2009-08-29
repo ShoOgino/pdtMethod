@@ -1,0 +1,107 @@
+	/**
+	 * Exports the passed resource to the JAR file
+	 * 
+	 * @param element
+	 *            the resource or JavaElement to export
+	 * @param progressMonitor
+	 *            the progress monitor
+	 * @throws InterruptedException
+	 *             thrown on cancel
+	 */
+	private void exportElement(Object element, IProgressMonitor progressMonitor)
+			throws InterruptedException {
+		int leadSegmentsToRemove = 1;
+		IProjectFragment pkgRoot = null;
+		boolean isInJavaProject = false;
+		IResource resource = null;
+		// ITypeRoot typeRootElement= null;
+		IScriptProject jProject = null;
+		if (element instanceof IModelElement) {
+			isInJavaProject = true;
+			IModelElement je = (IModelElement) element;
+			jProject = je.getScriptProject();
+			try {
+				pkgRoot = jProject.getProjectFragment(je
+						.getCorrespondingResource());
+			} catch (ModelException e) {
+				e.printStackTrace();
+			}
+			resource = je.getResource();
+		} else if (element instanceof IResource) {
+			resource = (IResource) element;
+		} else {
+			return;
+		}
+
+		if (!resource.isAccessible()) {
+			addWarning("", null);
+			return;
+		}
+
+		if (!isInJavaProject) {
+			// check if it's a Java resource
+			try {
+				isInJavaProject = resource.getProject().hasNature(PHPNature.ID);
+			} catch (CoreException ex) {
+				addWarning("", ex);
+				return;
+			}
+			if (isInJavaProject) {
+				// IModelElement je= DLTKCore.create(resource);
+				// if (je instanceof ITypeRoot && je.exists()) {
+				// exportElement(je, progressMonitor);
+				// return;
+				// }
+
+				jProject = DLTKCore.create(resource.getProject());
+				try {
+					IProjectFragment pkgFragment = jProject
+							.findProjectFragment(resource.getFullPath()
+									.removeLastSegments(1));
+					if (pkgFragment != null)
+						pkgRoot = pkgFragment;
+					else
+						pkgRoot = findPackageFragmentRoot(jProject, resource
+								.getFullPath().removeLastSegments(1));
+				} catch (ModelException ex) {
+					addWarning("", ex);
+					return;
+				}
+			}
+		}
+
+		if (pkgRoot != null && jProject != null) {
+			leadSegmentsToRemove = pkgRoot.getPath().segmentCount();
+			boolean isOnBuildPath;
+			isOnBuildPath = jProject.isOnBuildpath(resource);
+			if (!isOnBuildPath
+					|| (!pkgRoot.getElementName().equals(
+							IProjectFragment.DEFAULT_PACKAGE_ROOT)))
+				leadSegmentsToRemove--;
+		}
+
+		IPath destinationPath = resource.getFullPath().removeFirstSegments(
+				leadSegmentsToRemove);
+
+		if (resource.getType() == IResource.FILE) {
+
+			exportResource(progressMonitor, resource, destinationPath);
+
+			progressMonitor.worked(1);
+			ModalContext.checkCanceled(progressMonitor);
+
+		} else {
+
+			if (fJarPackage.areDirectoryEntriesIncluded()) {
+
+				exportResource(progressMonitor, resource, destinationPath
+						.append(File.separator));
+
+				progressMonitor.worked(1);
+				ModalContext.checkCanceled(progressMonitor);
+			}
+			exportContainer(progressMonitor, (IContainer) resource);
+		}
+
+	}
+

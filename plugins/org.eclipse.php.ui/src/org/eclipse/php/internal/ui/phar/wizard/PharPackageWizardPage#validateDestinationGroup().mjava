@@ -1,0 +1,55 @@
+	/*
+	 * Overrides method from WizardDataTransferPage
+	 */
+	protected boolean validateDestinationGroup() {
+		if (fDestinationNamesCombo.getText().length() == 0) {
+			// Clear error
+			if (getErrorMessage() != null)
+				setErrorMessage(null);
+			if (getMessage() != null)
+				setMessage(null);
+			return false;
+		}
+		if (pharData.getAbsolutePharLocation().toString().endsWith("/")) { //$NON-NLS-1$
+			setErrorMessage("the name of the phar must be set");
+			fDestinationNamesCombo.setFocus();
+			return false;
+		}
+		// Check if the Jar is put into the workspace and conflicts with the
+		// containers
+		// exported. If the workspace isn't on the local files system we are
+		// fine since
+		// the Phar is always created in the local file system
+		IPath workspaceLocation = ResourcesPlugin.getWorkspace().getRoot()
+				.getLocation();
+		if (workspaceLocation != null
+				&& workspaceLocation.isPrefixOf(pharData
+						.getAbsolutePharLocation())) {
+			int segments = workspaceLocation.matchingFirstSegments(pharData
+					.getAbsolutePharLocation());
+			IPath path = pharData.getAbsolutePharLocation()
+					.removeFirstSegments(segments);
+			IResource resource = ResourcesPlugin.getWorkspace().getRoot()
+					.findMember(path);
+			if (resource != null && resource.getType() == IResource.FILE) {
+				// test if included
+				if (contains(asResources(pharData.getElements()),
+						(IFile) resource)) {
+					setErrorMessage("the phar should not be include in the resource that will be exported");
+					return false;
+				}
+			}
+		}
+		// Inform user about relative directory
+		String currentMessage = getMessage();
+		if (!(new File(fDestinationNamesCombo.getText()).isAbsolute())) {
+			if (currentMessage == null)
+				setMessage(currentMessage, IMessageProvider.INFORMATION);
+		} else {
+			if (currentMessage != null)
+				setMessage(currentMessage);
+		}
+		return ensureTargetFileIsValid(pharData.getAbsolutePharLocation()
+				.toFile());
+	}
+

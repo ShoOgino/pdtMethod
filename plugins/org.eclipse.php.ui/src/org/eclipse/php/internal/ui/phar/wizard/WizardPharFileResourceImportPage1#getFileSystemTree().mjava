@@ -1,0 +1,35 @@
+	/**
+	 * Answer the root FileSystemElement that represents the contents of the
+	 * currently-specified .zip file. If this FileSystemElement is not currently
+	 * defined then create and return it.
+	 */
+	protected MinimizedFileSystemElement getFileSystemTree() {
+		disposeStructureProvider();
+		// TODO FOR PHAR
+		if (ArchiveFileManipulations.isPharFile(sourceNameField.getText())) {
+			PharFile sourceTarFile = getSpecifiedPharSourceFile();
+			if (sourceTarFile == null) {
+				return null;
+			}
+			structureProvider = new PharLeveledStructureProvider(sourceTarFile);
+			return selectFiles(structureProvider.getRoot(), structureProvider);
+		}
+
+		if (ArchiveFileManipulations.isTarFile(sourceNameField.getText())) {
+			TarFile sourceTarFile = getSpecifiedTarSourceFile();
+			if (sourceTarFile == null) {
+				return null;
+			}
+			structureProvider = new TarLeveledStructureProvider(sourceTarFile);
+			return selectFiles(structureProvider.getRoot(), structureProvider);
+		}
+
+		ZipFile sourceFile = getSpecifiedZipSourceFile();
+		if (sourceFile == null) {
+			return null;
+		}
+
+		structureProvider = new ZipLeveledStructureProvider(sourceFile);
+		return selectFiles(structureProvider.getRoot(), structureProvider);
+	}
+

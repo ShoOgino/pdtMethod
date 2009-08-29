@@ -1,0 +1,47 @@
+	/**
+	 * Shows the UI to select new external JAR or ZIP archive entries. The
+	 * dialog returns the selected entry paths or <code>null</code> if the
+	 * dialog has been canceled. The dialog does not apply any changes.
+	 * 
+	 * @param shell
+	 *            The parent shell for the dialog.
+	 * @return Returns the new buildpath container entry paths or
+	 *         <code>null</code> if the dialog has been canceled by the user.
+	 */
+	public static IPath[] chooseExternalArchiveEntries(Shell shell,
+			IEnvironment environment) {
+		String lastUsedPath = DLTKUIPlugin.getDefault().getDialogSettings()
+				.get(IUIConstants.DIALOGSTORE_LASTEXTZIP);
+		if (lastUsedPath == null) {
+			lastUsedPath = ""; //$NON-NLS-1$
+		}
+		FileDialog dialog = new FileDialog(shell, SWT.MULTI);
+		dialog
+				.setText(Messages.BuildPathDialogAccess_ExtZIPArchiveDialog_new_title);
+		dialog.setFilterExtensions(PHPArchiveFileFilter.FILTER_EXTENSIONS);
+		dialog.setFilterPath(lastUsedPath);
+		// IEnvironmentUI ui = (IEnvironmentUI) environment
+		// .getAdapter(IEnvironmentUI.class);
+		// String res = ui.selectFile(shell, IEnvironmentUI.ARCHIVE);
+		// if (res == null) {
+		// return null;
+		// }
+		dialog.open();
+		String[] fileNames = dialog.getFileNames();
+		int nChosen = fileNames.length;
+
+		IPath filterPath = Path.fromOSString(dialog.getFilterPath());
+		// IPath[] elems = new IPath[1];
+		// elems[0] = EnvironmentPathUtils.getFullPath(environment, new
+		// Path(res));
+		IPath[] elems = new IPath[nChosen];
+		for (int i = 0; i < nChosen; i++) {
+			elems[i] = filterPath.append(fileNames[i]).makeAbsolute();
+			elems[i] = EnvironmentPathUtils.getFullPath(environment, elems[i]);
+		}
+		DLTKUIPlugin.getDefault().getDialogSettings().put(
+				IUIConstants.DIALOGSTORE_LASTEXTZIP, dialog.getFilterPath());
+
+		return elems;
+	}
+

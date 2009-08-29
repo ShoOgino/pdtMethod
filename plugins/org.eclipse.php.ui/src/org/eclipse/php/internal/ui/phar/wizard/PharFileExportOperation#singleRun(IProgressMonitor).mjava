@@ -1,0 +1,32 @@
+	private void singleRun(IProgressMonitor progressMonitor)
+			throws InvocationTargetException, InterruptedException {
+		try {
+			if (!preconditionsOK())
+				throw new InvocationTargetException(null, "");
+			int totalWork = countSelectedElements();
+			progressMonitor.beginTask("", totalWork); //$NON-NLS-1$
+
+			fJarBuilder = PharExportHelper.createPlainPharBuilder(fJarPackage);
+			// fJarBuilder = new PlainPharBuilder();
+			fJarBuilder.open(fJarPackage, fParentShell, fStatus);
+			fJarBuilder.writeStub(fJarBuilder.getStubProvider().create(
+					fJarPackage), progressMonitor);
+			exportSelectedElements(progressMonitor);
+			fJarBuilder.writeSignature(progressMonitor);
+			// if (getStatus().getSeverity() != IStatus.ERROR) {
+			// progressMonitor.subTask("");
+			// saveFiles();
+			// }
+		} catch (CoreException ex) {
+			addToStatus(ex);
+		} finally {
+			try {
+				if (fJarBuilder != null)
+					fJarBuilder.close();
+			} catch (CoreException ex) {
+				addToStatus(ex);
+			}
+			progressMonitor.done();
+		}
+	}
+

@@ -1,0 +1,36 @@
+	/**
+	 * Callback that's invoked when the checked status of an item in the list is
+	 * changed by the user. Do not try and update the hierarchy if we are
+	 * building the initial list.
+	 * 
+	 * @param listElement
+	 * @param state
+	 * @param updatingFromSelection
+	 */
+	protected void listItemChecked(Object listElement, boolean state,
+			boolean updatingFromSelection) {
+		List checkedListItems = (List) fCheckedStateStore
+				.get(fCurrentTreeSelection);
+
+		if (state) {
+			if (checkedListItems == null) {
+				// since the associated tree item has gone from 0 -> 1 checked
+				// list items, tree checking may need to be updated
+				grayCheckHierarchy(fCurrentTreeSelection);
+				checkedListItems = (List) fCheckedStateStore
+						.get(fCurrentTreeSelection);
+			}
+			checkedListItems.add(listElement);
+		} else {
+			checkedListItems.remove(listElement);
+			if (checkedListItems.isEmpty()) {
+				// since the associated tree item has gone from 1 -> 0 checked
+				// list items, tree checking may need to be updated
+				ungrayCheckHierarchy(fCurrentTreeSelection);
+			}
+		}
+
+		if (updatingFromSelection)
+			updateHierarchy(fCurrentTreeSelection);
+	}
+

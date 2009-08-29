@@ -1,0 +1,26 @@
+	@Override
+	public boolean performFinish() {
+		pharPackage.setElements(pharPackageWizardPage
+				.getSelectedElementsWithoutContainedChildren());
+
+		if (!executeExportOperation(new PharFileExportOperation(pharPackage,
+				getShell())))
+			return false;
+
+		// Save the dialog settings
+		if (fHasNewDialogSettings) {
+			IDialogSettings workbenchSettings = PHPUiPlugin.getDefault()
+					.getDialogSettings();
+			IDialogSettings section = workbenchSettings
+					.addNewSection(DIALOG_SETTINGS_KEY);
+			setDialogSettings(section);
+		}
+		IWizardPage[] pages = getPages();
+		for (int i = 0; i < getPageCount(); i++) {
+			IWizardPage page = pages[i];
+			if (page instanceof IPharWizardPage)
+				((IPharWizardPage) page).finish();
+		}
+		return true;
+	}
+

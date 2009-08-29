@@ -1,0 +1,41 @@
+	/**
+	 * Import the resources with extensions as specified by the user
+	 */
+	protected boolean importResources(List fileSystemObjects) {
+		// TODO FOR PHAR
+		ILeveledImportStructureProvider importStructureProvider = null;
+		if (ArchiveFileManipulations.isPharFile(sourceNameField.getText())) {
+			if (ensurePharSourceIsValid()) {
+				PharFile pharFile = getSpecifiedPharSourceFile();
+				importStructureProvider = new PharLeveledStructureProvider(
+						pharFile);
+			}
+		} else if (ArchiveFileManipulations
+				.isTarFile(sourceNameField.getText())) {
+			if (ensureTarSourceIsValid()) {
+				TarFile tarFile = getSpecifiedTarSourceFile();
+				importStructureProvider = new TarLeveledStructureProvider(
+						tarFile);
+			}
+		} else if (ensureZipSourceIsValid()) {
+			ZipFile zipFile = getSpecifiedZipSourceFile();
+			importStructureProvider = new ZipLeveledStructureProvider(zipFile);
+		}
+
+		if (importStructureProvider == null) {
+			return false;
+		}
+
+		ImportOperation operation = new ImportOperation(getContainerFullPath(),
+				importStructureProvider.getRoot(), importStructureProvider,
+				this, fileSystemObjects);
+
+		operation.setContext(getShell());
+		if (!executeImportOperation(operation))
+			return false;
+
+		ArchiveFileManipulations.closeStructureProvider(
+				importStructureProvider, getShell());
+		return true;
+	}
+

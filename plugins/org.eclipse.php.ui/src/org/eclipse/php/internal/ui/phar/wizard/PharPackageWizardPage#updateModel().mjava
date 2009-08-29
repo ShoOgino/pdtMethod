@@ -1,0 +1,90 @@
+	protected void updateModel() {
+
+		pharData.setElements(getSelectedElements());
+		// destination
+		String comboText = fDestinationNamesCombo.getText();
+		IPath path = Path.fromOSString(comboText);
+		// add surfix
+		if (path.segmentCount() > 0 && ensureTargetFileIsValid(path.toFile())
+				&& path.getFileExtension() == null) {
+			if (pharCompressRadio.getSelection()) {
+				if (!"phar".equals(path.getFileExtension())) {
+					path = path.addFileExtension("phar");
+				}
+			} else if (zipCompressRadio.getSelection()) {
+				if (!"zip".equals(path.getFileExtension())) {
+					path = path.addFileExtension("zip");
+				}
+			} else if (tarCompressRadio.getSelection()) {
+				String fileName = path.lastSegment();
+				if (noneCompressTypePhar.getSelection()) {
+					if (!"tar".equals(path.getFileExtension())) {
+						path = path.addFileExtension("tar");
+					}
+				} else if (zlibCompressTypePhar.getSelection()) {
+					if (!fileName.endsWith(".tar.gz")) {
+						path = path.addFileExtension("tar.gz");
+					}
+				} else if (bzipCompressTypePhar.getSelection()) {
+					if (!fileName.endsWith(".tar.bz2")) {
+						path = path.addFileExtension("tar.bz2");
+					}
+				}
+
+			}
+		}
+
+		pharData.setPharLocation(path);
+		pharData.setOverwrite(fOverwriteCheckbox.getSelection());
+		// pharData.setIncludeDirectoryEntries(fIncludeDirectoryEntriesCheckbox
+		// .getSelection());
+		if (fGenerateManifestRadioButton.getSelection()) {
+			pharData.setStubGenerated(true);
+		} else {
+			pharData.setStubGenerated(false);
+
+			if (fManifestFileText.getText() != null) {
+				pharData.setStubLocation(new Path(fManifestFileText.getText()));
+			} else {
+				pharData.setStubLocation(new Path(""));
+				setErrorMessage("Manifest file must not be null");
+			}
+		}
+
+		if (pharCompressRadio.getSelection()) {
+			noneCompressTypePhar.setText("none");
+			zlibCompressTypePhar.setText("gz");
+			bzipCompressTypePhar.setVisible(true);
+
+			pharData.setExportType(PharConstants.PHAR);
+
+		} else if (zipCompressRadio.getSelection()) {
+			setZipExportType();
+
+			pharData.setExportType(PharConstants.ZIP);
+
+			if (bzipCompressTypePhar.getSelection()) {
+				zlibCompressTypePhar.setSelection(true);
+				bzipCompressTypePhar.setSelection(false);
+			}
+
+		} else if (tarCompressRadio.getSelection()) {
+			noneCompressTypePhar.setText("none");
+			zlibCompressTypePhar.setText("gz");
+			bzipCompressTypePhar.setVisible(true);
+
+			pharData.setExportType(PharConstants.TAR);
+
+		}
+
+		if (noneCompressTypePhar.getSelection()) {
+			pharData.setCompressType(PharConstants.NONE_COMPRESSED);
+		} else if (zlibCompressTypePhar.getSelection()) {
+			pharData.setCompressType(PharConstants.GZ_COMPRESSED);
+		} else if (bzipCompressTypePhar.getSelection()) {
+			pharData.setCompressType(PharConstants.BZ2_COMPRESSED);
+		}
+
+		pharData.setUseSignature(fUseSignatureCheckbox.getSelection());
+	}
+

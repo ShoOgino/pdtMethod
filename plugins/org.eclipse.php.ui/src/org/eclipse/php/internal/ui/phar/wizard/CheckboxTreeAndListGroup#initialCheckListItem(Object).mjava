@@ -1,0 +1,26 @@
+	/**
+	 * Sets the initial checked state of the passed list element to true.
+	 * 
+	 * @param element
+	 */
+	public void initialCheckListItem(Object element) {
+		Object parent = fTreeContentProvider.getParent(element);
+		// if the php files are the direct children of a project,
+		// even when they are selected,but they will not choosen by default,
+		// so make the parent of these php files is ScriptProject instead of
+		// ScriptFolder is ok
+		if (element instanceof SourceModule && parent instanceof ScriptFolder) {
+			SourceModule sourceModule = (SourceModule) element;
+			ScriptFolder scriptFolder = (ScriptFolder) parent;
+			if (scriptFolder.getPath().segmentCount() == 1) {
+				parent = sourceModule.getScriptProject();
+				// element = sourceModule.getResource();
+			}
+		}
+		fCurrentTreeSelection = parent;
+		// As this is not done from the UI then set the box for updating from
+		// the selection to false
+		listItemChecked(element, true, false);
+		updateHierarchy(parent);
+	}
+

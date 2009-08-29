@@ -2,11 +2,14 @@
 	 * Creates the script project and sets the configured build path and output
 	 * location. If the project already exists only build paths are updated.
 	 */
-	public static void flush(List buildpathEntries, IScriptProject javaProject, IProgressMonitor monitor) throws CoreException, OperationCanceledException {
+	public static void flush(List buildpathEntries, IScriptProject javaProject,
+			IProgressMonitor monitor) throws CoreException,
+			OperationCanceledException {
 		if (monitor == null) {
 			monitor = new NullProgressMonitor();
 		}
-		monitor.setTaskName(NewWizardMessages.BuildPathsBlock_operationdesc_Script);
+		monitor
+				.setTaskName(NewWizardMessages.BuildPathsBlock_operationdesc_Script);
 		monitor.beginTask("", buildpathEntries.size() * 4 + 4); //$NON-NLS-1$
 		try {
 			IProject project = javaProject.getProject();
@@ -20,9 +23,11 @@
 			List<IBuildpathEntry> newBuildPathEntries = new ArrayList<IBuildpathEntry>();
 			List<IBuildpathEntry> newIncludePathEntries = new ArrayList<IBuildpathEntry>();
 
-			// go over the dialog entries. collect all of the source entries for the include path array 
+			// go over the dialog entries. collect all of the source entries for
+			// the include path array
 			// and the rest for the build path array
-			for (Iterator<IBuildpathEntry> iter = buildpathEntries.iterator(); iter.hasNext();) {
+			for (Iterator<IBuildpathEntry> iter = buildpathEntries.iterator(); iter
+					.hasNext();) {
 				BPListElement entry = (BPListElement) iter.next();
 				newIncludePathEntries.add(entry.getBuildpathEntry());
 				if (entry.getEntryKind() != IBuildpathEntry.BPE_SOURCE) {
@@ -30,16 +35,20 @@
 				}
 
 				IResource res = entry.getResource();
-				if (res instanceof IFolder && entry.getLinkTarget() == null && !res.exists()) {
-					CoreUtility.createFolder((IFolder) res, true, true, new SubProgressMonitor(monitor, 1));
+				if (res instanceof IFolder && entry.getLinkTarget() == null
+						&& !res.exists()) {
+					CoreUtility.createFolder((IFolder) res, true, true,
+							new SubProgressMonitor(monitor, 1));
 				} else {
 					monitor.worked(1);
 				}
 			}
-			if(newBuildPathEntries.size() > 0){
-				BuildPathUtils.addEntriesToBuildPath(javaProject, newBuildPathEntries);
-			}			
-			IncludePathManager.getInstance().addEntriesToIncludePath(project, newIncludePathEntries);
+			if (newBuildPathEntries.size() > 0) {
+				BuildPathUtils.addEntriesToBuildPath(javaProject,
+						newBuildPathEntries);
+			}
+			IncludePathManager.getInstance().addEntriesToIncludePath(project,
+					newIncludePathEntries);
 
 		} finally {
 			monitor.done();

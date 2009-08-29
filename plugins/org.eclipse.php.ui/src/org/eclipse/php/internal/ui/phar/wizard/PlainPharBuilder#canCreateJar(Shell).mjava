@@ -1,0 +1,37 @@
+	/**
+	 * Checks if the JAR file can be overwritten. If the JAR package setting
+	 * does not allow to overwrite the JAR then a dialog will ask the user
+	 * again.
+	 * 
+	 * @param parent
+	 *            the parent for the dialog, or <code>null</code> if no dialog
+	 *            should be presented
+	 * @return <code>true</code> if it is OK to create the JAR
+	 */
+	protected boolean canCreateJar(Shell parent) {
+		File file = fJarPackage.getAbsolutePharLocation().toFile();
+		if (file.exists()) {
+			if (!file.canWrite())
+				return false;
+			if (fJarPackage.allowOverwrite())
+				return true;
+			return parent != null
+					&& PharUIUtil.askForOverwritePermission(parent, fJarPackage
+							.getAbsolutePharLocation(), true);
+		}
+
+		// Test if directory exists
+		String path = file.getAbsolutePath();
+		int separatorIndex = path.lastIndexOf(File.separator);
+		if (separatorIndex == -1) // i.e.- default directory, which is fine
+			return true;
+		File directory = new File(path.substring(0, separatorIndex));
+		if (!directory.exists()) {
+			if (PharUIUtil.askToCreateDirectory(parent, directory))
+				return directory.mkdirs();
+			else
+				return false;
+		}
+		return true;
+	}
+
