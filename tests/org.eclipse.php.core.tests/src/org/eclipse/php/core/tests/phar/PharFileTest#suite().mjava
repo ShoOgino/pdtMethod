@@ -1,0 +1,47 @@
+	public static Test suite() {
+
+		TestSuite suite = new TestSuite("Auto Code Assist Tests");
+
+		for (final PHPVersion phpVersion : TESTS.keySet()) {
+			TestSuite phpVerSuite = new TestSuite(phpVersion.getAlias());
+
+			for (String testsDirectory : TESTS.get(phpVersion)) {
+
+				for (final String fileName : getPDTTFiles(testsDirectory)) {
+					try {
+						final PharFile pharFile = new PharFile(new File(
+								fileName));
+						phpVerSuite.addTest(new SamplePharTest(phpVersion
+								.getAlias()
+								+ " - /" + fileName, pharFile, phpVersion));
+					} catch (final Exception e) {
+						phpVerSuite.addTest(new TestCase(fileName) { // dummy
+																		// test
+																		// indicating
+																		// PDTT
+																		// file
+																		// parsing
+																		// failure
+									protected void runTest() throws Throwable {
+										throw e;
+									}
+								});
+					}
+				}
+			}
+			suite.addTest(phpVerSuite);
+		}
+
+		// Create a setup wrapper
+		TestSetup setup = new TestSetup(suite) {
+			protected void setUp() throws Exception {
+				setUpSuite();
+			}
+
+			protected void tearDown() throws Exception {
+				tearDownSuite();
+			}
+		};
+		return setup;
+	}
+
