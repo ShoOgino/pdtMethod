@@ -1,8 +1,13 @@
 	/*
 	 * Don't use this method directly, use CodeGeneration.
-	 * @see org.eclipse.jdt.ui.CodeGeneration#getMethodComment(ICompilationUnit, String, String, String[], String[], String, String[], IMethod, String)
+	 * 
+	 * @see org.eclipse.jdt.ui.CodeGeneration#getMethodComment(ICompilationUnit,
+	 * String, String, String[], String[], String, String[], IMethod, String)
 	 */
-	public static String getMethodComment(IScriptProject sp, String typeName, String methodName, String[] paramNames, String retTypeSig, String[] typeParameterNames, IMethod target, boolean delegate, String lineDelimiter) throws CoreException {
+	public static String getMethodComment(IScriptProject sp, String typeName,
+			String methodName, String[] paramNames, String retTypeSig,
+			String[] typeParameterNames, IMethod target, boolean delegate,
+			String lineDelimiter) throws CoreException {
 		String templateName = CodeTemplateContextType.METHODCOMMENT_ID;
 		if (retTypeSig == null) {
 			templateName = CodeTemplateContextType.CONSTRUCTORCOMMENT_ID;
@@ -16,21 +21,31 @@
 		if (template == null) {
 			return null;
 		}
-		CodeTemplateContext context = new CodeTemplateContext(template.getContextTypeId(), sp, lineDelimiter);
-		//context.setCompilationUnitVariables(sp);
+		CodeTemplateContext context = new CodeTemplateContext(template
+				.getContextTypeId(), sp, lineDelimiter);
+		// context.setCompilationUnitVariables(sp);
 		context.setVariable(CodeTemplateContextType.ENCLOSING_TYPE, typeName);
-		context.setVariable(CodeTemplateContextType.ENCLOSING_METHOD, methodName);
+		context.setVariable(CodeTemplateContextType.ENCLOSING_METHOD,
+				methodName);
 
 		if (retTypeSig != null) {
-			context.setVariable(CodeTemplateContextType.RETURN_TYPE, retTypeSig);
+			context
+					.setVariable(CodeTemplateContextType.RETURN_TYPE,
+							retTypeSig);
 		}
 		if (target != null) {
-			String targetTypeName = target.getDeclaringType().getFullyQualifiedName(".");
+			String targetTypeName = target.getDeclaringType()
+					.getFullyQualifiedName(".");
 			String[] targetParamTypeNames = getParameterTypeNamesForSeeTag(target);
 			if (delegate)
-				context.setVariable(CodeTemplateContextType.SEE_TO_TARGET_TAG, getSeeTag(targetTypeName, methodName, targetParamTypeNames));
+				context.setVariable(CodeTemplateContextType.SEE_TO_TARGET_TAG,
+						getSeeTag(targetTypeName, methodName,
+								targetParamTypeNames));
 			else
-				context.setVariable(CodeTemplateContextType.SEE_TO_OVERRIDDEN_TAG, getSeeTag(targetTypeName, methodName, targetParamTypeNames));
+				context.setVariable(
+						CodeTemplateContextType.SEE_TO_OVERRIDDEN_TAG,
+						getSeeTag(targetTypeName, methodName,
+								targetParamTypeNames));
 		}
 		TemplateBuffer buffer;
 		try {
@@ -48,7 +63,9 @@
 		if (Strings.containsOnlyWhitespaces(str)) {
 			return null;
 		}
-		TemplateVariable position = findVariable(buffer, CodeTemplateContextType.TAGS); // look if Javadoc tags have to be added
+		TemplateVariable position = findVariable(buffer,
+				CodeTemplateContextType.TAGS); // look if Javadoc tags have to
+												// be added
 		if (position == null) {
 			return str;
 		}
@@ -59,9 +76,12 @@
 		int[] tagOffsets = position.getOffsets();
 		for (int i = tagOffsets.length - 1; i >= 0; i--) { // from last to first
 			try {
-				insertTag(document, tagOffsets[i], position.getLength(), paramNames, returnType, typeParameterNames, false, lineDelimiter);
+				insertTag(document, tagOffsets[i], position.getLength(),
+						paramNames, returnType, typeParameterNames, false,
+						lineDelimiter);
 			} catch (BadLocationException e) {
-				throw new CoreException(DLTKUIStatus.createError(IStatus.ERROR, e));
+				throw new CoreException(DLTKUIStatus.createError(IStatus.ERROR,
+						e));
 			}
 		}
 		return document.get();
