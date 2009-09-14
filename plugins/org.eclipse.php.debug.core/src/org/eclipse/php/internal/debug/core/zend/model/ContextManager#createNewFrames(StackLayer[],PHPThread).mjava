@@ -1,34 +1,63 @@
 	private IStackFrame[] createNewFrames(StackLayer[] layers, PHPThread thread)
 			throws DebugException {
+
+		boolean layersSame = false;
+		if (fPreviousLayers != null) {
+			layersSame = compareLayers(layers, fPreviousLayers);
+		}
+
 		RemoteDebugger remoteDebugger = (RemoteDebugger) fDebugger;
-		String cwd = remoteDebugger.getCurrentWorkingDirectory();
+		String cwd = null;
 		String currentScript = null;
+
+		if (!layersSame) {
+			cwd = remoteDebugger.getCurrentWorkingDirectory();
+		}
 
 		IStackFrame[] frames = new IStackFrame[((layers.length - 1) * 2) + 1];
 		int frameCt = ((layers.length - 1) * 2 + 1);
 		for (int i = 1; i < layers.length; i++) {
 
 			String sName = layers[i].getCallerFileName();
-			String rName = remoteDebugger.convertToLocalFilename(sName, cwd,
-					frameCt < frames.length ? ((PHPStackFrame) frames[frameCt])
-							.getSourceName() : null);
-			if (rName == null) {
-				rName = sName;
+			String rName;
+			if (layersSame) {
+				rName = fPreviousLayers[i].getResolvedCallerFileName();
+			} else {
+				rName = remoteDebugger
+						.convertToLocalFilename(
+								sName,
+								cwd,
+								frameCt < frames.length ? ((PHPStackFrame) frames[frameCt])
+										.getSourceName()
+										: null);
+				if (rName == null) {
+					rName = sName;
+				}
+				layers[i].setResolvedCallerFileName(rName);
 			}
+
 			frames[frameCt - 1] = new PHPStackFrame(thread, sName, layers[i]
 					.getCallerFunctionName(),
-					layers[i].getCallerLineNumber() + 1, frameCt, rName);
+					layers[i].getCallerLineNumber() + 1, frameCt, rName,
+					layers[i - 1].getVariables());
 			frameCt--;
 
 			sName = layers[i].getCalledFileName();
-			rName = remoteDebugger.convertToLocalFilename(sName, cwd, rName);
-			if (rName == null) {
-				rName = sName;
+			if (layersSame) {
+				rName = fPreviousLayers[i].getResolvedCalledFileName();
+			} else {
+				rName = remoteDebugger
+						.convertToLocalFilename(sName, cwd, rName);
+				if (rName == null) {
+					rName = sName;
+				}
+				layers[i].setResolvedCalledFileName(rName);
 			}
+
 			frames[frameCt - 1] = new PHPStackFrame(thread, sName, layers[i]
 					.getCalledFunctionName(),
 					layers[i].getCalledLineNumber() + 1, frameCt, layers[i],
-					rName);
+					rName, layers[i].getVariables());
 			frameCt--;
 
 			if (!layers[i].getCalledFileName()
@@ -44,7 +73,8 @@
 		}
 		frames[0] = new PHPStackFrame(thread, fTarget.getLastFileName(),
 				(layers.length == 1) ? "" : frames[1].getName(), fTarget
-						.getLastStop(), frameCt, resolvedFile);
+						.getLastStop(), frameCt, resolvedFile,
+				getLocalVariables());
 		fPreviousLayers = layers;
 		return frames;
 	}
