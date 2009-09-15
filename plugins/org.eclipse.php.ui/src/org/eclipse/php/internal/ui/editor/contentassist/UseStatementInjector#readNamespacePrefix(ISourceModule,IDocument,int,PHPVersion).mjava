@@ -1,0 +1,45 @@
+	private String readNamespacePrefix(ISourceModule sourceModule,
+			IDocument document, int offset, PHPVersion phpVersion) {
+
+		IStructuredDocumentRegion sRegion = ((IStructuredDocument) document)
+				.getRegionAtCharacterOffset(offset);
+		if (sRegion != null) {
+			ITextRegion tRegion = sRegion.getRegionAtCharacterOffset(offset);
+
+			ITextRegionCollection container = sRegion;
+			if (tRegion instanceof ITextRegionContainer) {
+				container = (ITextRegionContainer) tRegion;
+				tRegion = container.getRegionAtCharacterOffset(offset);
+			}
+
+			if (tRegion.getType() == PHPRegionContext.PHP_CONTENT) {
+				IPhpScriptRegion phpScriptRegion = (IPhpScriptRegion) tRegion;
+				try {
+					tRegion = phpScriptRegion.getPhpToken(offset
+							- container.getStartOffset()
+							- phpScriptRegion.getStart());
+				} catch (BadLocationException e) {
+					return null;
+				}
+
+				// Determine element name:
+				int elementStart = container.getStartOffset()
+						+ phpScriptRegion.getStart() + tRegion.getStart();
+				TextSequence statement = PHPTextSequenceUtilities.getStatement(
+						elementStart + tRegion.getLength(), sRegion, true);
+				int endPosition = PHPTextSequenceUtilities.readBackwardSpaces(
+						statement, statement.length());
+				int startPosition = PHPTextSequenceUtilities
+						.readIdentifierStartIndex(phpVersion, statement,
+								endPosition, true);
+				String elementName = statement.subSequence(startPosition,
+						endPosition).toString();
+				if (elementName.length() > 0) {
+					return PHPModelUtils.extractNamespaceName(elementName,
+							sourceModule, offset);
+				}
+			}
+		}
+		return null;
+	}
+
