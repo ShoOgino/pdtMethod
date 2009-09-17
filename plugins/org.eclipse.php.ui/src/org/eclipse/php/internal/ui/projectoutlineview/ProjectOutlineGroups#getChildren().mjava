@@ -22,9 +22,26 @@
 					});
 			switch (this) {
 			case GROUP_NAMESPACES:
-				childrenList.addAll(Arrays.asList(PhpModelAccess.getDefault()
-						.findTypes(null, MatchRule.PREFIX,
-								Modifiers.AccNameSpace, 0, scope, null)));
+				IType[] namespaces = PhpModelAccess.getDefault().findTypes(
+						null, MatchRule.PREFIX, Modifiers.AccNameSpace, 0,
+						scope, null);
+				Map<String, List<IType>> nsByName = new HashMap<String, List<IType>>();
+				for (IType namespace : namespaces) {
+					String namespaceName = namespace.getElementName();
+					List<IType> nsList = nsByName.get(namespaceName);
+					if (nsList == null) {
+						nsList = new LinkedList<IType>();
+						nsByName.put(namespaceName, nsList);
+					}
+					nsList.add(namespace);
+				}
+				for (String namespaceName : nsByName.keySet()) {
+					List<IType> nsList = nsByName.get(namespaceName);
+					childrenList.add(new NamespaceNode(
+							ProjectOutlineContentProvider.scripProject,
+							namespaceName, nsList.toArray(new IType[nsList
+									.size()])));
+				}
 				break;
 
 			case GROUP_CLASSES:
