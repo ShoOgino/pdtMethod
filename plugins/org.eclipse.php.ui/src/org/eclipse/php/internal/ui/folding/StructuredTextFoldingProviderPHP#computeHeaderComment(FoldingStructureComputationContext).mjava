@@ -1,34 +1,47 @@
-	private IRegion computeHeaderComment(FoldingStructureComputationContext ctx) throws ModelException {
-		final IStructuredDocument document = (IStructuredDocument) ctx.getDocument();
-		IStructuredDocumentRegion sdRegion = document.getFirstStructuredDocumentRegion();
+	private IRegion computeHeaderComment(FoldingStructureComputationContext ctx)
+			throws ModelException {
+		final IStructuredDocument document = (IStructuredDocument) ctx
+				.getDocument();
+		IStructuredDocumentRegion sdRegion = document
+				.getFirstStructuredDocumentRegion();
 		int i = 0;
-		while (sdRegion != null && sdRegion.getType() != PHPRegionTypes.PHP_CONTENT && i++ < 40) {
+		while (sdRegion != null
+				&& sdRegion.getType() != PHPRegionTypes.PHP_CONTENT && i++ < 40) {
 			sdRegion = sdRegion.getNext();
 		}
 
-		if (sdRegion == null || sdRegion.getType() != PHPRegionTypes.PHP_CONTENT || sdRegion.getRegions().size() < 2) {
+		if (sdRegion == null
+				|| sdRegion.getType() != PHPRegionTypes.PHP_CONTENT
+				|| sdRegion.getRegions().size() < 2) {
 			return null;
 		}
 
-		final IPhpScriptRegion textRegion = (IPhpScriptRegion) sdRegion.getRegions().get(1);
+		final IPhpScriptRegion textRegion = (IPhpScriptRegion) sdRegion
+				.getRegions().get(1);
 		try {
 			ITextRegion phpToken = textRegion.getPhpToken(0);
 			i = 0;
-			while (phpToken != null && phpToken.getType() != PHPRegionTypes.PHPDOC_COMMENT_START && i++ < 3) {
+			while (phpToken != null
+					&& phpToken.getType() != PHPRegionTypes.PHPDOC_COMMENT_START
+					&& i++ < 3) {
 				phpToken = textRegion.getPhpToken(phpToken.getEnd() + 1);
 			}
-			if (phpToken == null || phpToken.getType() != PHPRegionTypes.PHPDOC_COMMENT_START) {
+			if (phpToken == null
+					|| phpToken.getType() != PHPRegionTypes.PHPDOC_COMMENT_START) {
 				return null;
 			}
 			int start = phpToken.getStart();
 			ITextRegion lastToken = null;
-			while (lastToken != phpToken && phpToken != null && phpToken.getType() != PHPRegionTypes.PHPDOC_COMMENT_END) {
+			while (lastToken != phpToken && phpToken != null
+					&& phpToken.getType() != PHPRegionTypes.PHPDOC_COMMENT_END) {
 				phpToken = textRegion.getPhpToken(phpToken.getEnd() + 1);
 			}
 
-			if (phpToken != null && phpToken.getType() == PHPRegionTypes.PHPDOC_COMMENT_END) {
+			if (phpToken != null
+					&& phpToken.getType() == PHPRegionTypes.PHPDOC_COMMENT_END) {
 				int end = phpToken.getEnd();
-				return new Region(sdRegion.getStartOffset() + textRegion.getStart() + start, end - start);
+				return new Region(sdRegion.getStartOffset()
+						+ textRegion.getStart() + start, end - start);
 			}
 			return null;
 
@@ -36,42 +49,50 @@
 			return null;
 		}
 
-		//		ISourceRange range= ctx.getFirstType().getSourceRange();
-		//		if (range == null)
-		//			return null;
-		//		int start= 0;
-		//		int end= range.getOffset();
-		/* code adapted from CommentFormattingStrategy:
-		 * scan the header content up to the first type. Once a comment is
-		 * found, accumulate any additional comments up to the stop condition.
-		 * The stop condition is reaching a package declaration, import container,
-		 * or the end of the input.
+		// ISourceRange range= ctx.getFirstType().getSourceRange();
+		// if (range == null)
+		// return null;
+		// int start= 0;
+		// int end= range.getOffset();
+		/*
+		 * code adapted from CommentFormattingStrategy: scan the header content
+		 * up to the first type. Once a comment is found, accumulate any
+		 * additional comments up to the stop condition. The stop condition is
+		 * reaching a package declaration, import container, or the end of the
+		 * input.
 		 */
-		//		IScanner scanner= ctx.getScanner();
-		//		scanner.resetTo(start, end);
+		// IScanner scanner= ctx.getScanner();
+		// scanner.resetTo(start, end);
 		//
-		//		int headerStart= -1;
-		//		int headerEnd= -1;
-		//		try {
-		//			boolean foundComment= false;
-		//			int terminal= scanner.getNextToken();
-		//			while (terminal != ITerminalSymbols.TokenNameEOF && !(terminal == ITerminalSymbols.TokenNameclass || terminal == ITerminalSymbols.TokenNameinterface || terminal == ITerminalSymbols.TokenNameenum || (foundComment && (terminal == ITerminalSymbols.TokenNameimport || terminal == ITerminalSymbols.TokenNamepackage)))) {
+		// int headerStart= -1;
+		// int headerEnd= -1;
+		// try {
+		// boolean foundComment= false;
+		// int terminal= scanner.getNextToken();
+		// while (terminal != ITerminalSymbols.TokenNameEOF && !(terminal ==
+		// ITerminalSymbols.TokenNameclass || terminal ==
+		// ITerminalSymbols.TokenNameinterface || terminal ==
+		// ITerminalSymbols.TokenNameenum || (foundComment && (terminal ==
+		// ITerminalSymbols.TokenNameimport || terminal ==
+		// ITerminalSymbols.TokenNamepackage)))) {
 		//
-		//				if (terminal == ITerminalSymbols.TokenNameCOMMENT_JAVADOC || terminal == ITerminalSymbols.TokenNameCOMMENT_BLOCK || terminal == ITerminalSymbols.TokenNameCOMMENT_LINE) {
-		//					if (!foundComment)
-		//						headerStart= scanner.getCurrentTokenStartPosition();
-		//					headerEnd= scanner.getCurrentTokenEndPosition();
-		//					foundComment= true;
-		//				}
-		//				terminal= scanner.getNextToken();
-		//			}
+		// if (terminal == ITerminalSymbols.TokenNameCOMMENT_JAVADOC || terminal
+		// == ITerminalSymbols.TokenNameCOMMENT_BLOCK || terminal ==
+		// ITerminalSymbols.TokenNameCOMMENT_LINE) {
+		// if (!foundComment)
+		// headerStart= scanner.getCurrentTokenStartPosition();
+		// headerEnd= scanner.getCurrentTokenEndPosition();
+		// foundComment= true;
+		// }
+		// terminal= scanner.getNextToken();
+		// }
 		//
 		//
-		//		} catch (InvalidInputException ex) {
-		//			return null;
-		//		}
-		//		if (end != -1) {
-		//			return new Region(start, end - start);
-		//		}
+		// } catch (InvalidInputException ex) {
+		// return null;
+		// }
+		// if (end != -1) {
+		// return new Region(start, end - start);
+		// }
 	}
 
