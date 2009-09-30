@@ -1,0 +1,37 @@
+	private void checkProjectsBeingAddedOrRemoved(IResourceDelta delta) {
+		IResource resource = delta.getResource();
+		IResourceDelta[] children = null;
+
+		switch (resource.getType()) {
+		case IResource.ROOT:
+			children = delta.getAffectedChildren();
+			break;
+		case IResource.PROJECT:
+			IProject project = (IProject) resource;
+			switch (delta.getKind()) {
+			case IResourceDelta.ADDED:
+				projectAdded(project);
+				break;
+			case IResourceDelta.CHANGED:
+				if ((delta.getFlags() & IResourceDelta.OPEN) != 0) {
+					// project opened or closed
+					if (project.isOpen()) {
+						projectAdded(project);
+					} else {
+						projectRemoved(project);
+					}
+				}
+				break;
+			case IResourceDelta.REMOVED:
+				projectRemoved(project);
+				break;
+			}
+			break;
+		}
+		if (children != null) {
+			for (int i = 0; i < children.length; i++) {
+				this.checkProjectsBeingAddedOrRemoved(children[i]);
+			}
+		}
+	}
+
