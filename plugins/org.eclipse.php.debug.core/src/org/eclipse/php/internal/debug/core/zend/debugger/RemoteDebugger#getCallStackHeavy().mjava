@@ -5,10 +5,18 @@
 		if (!this.isActive()) {
 			return null;
 		}
+
+		PHPDebugTarget debugTarget = getDebugHandler().getDebugTarget();
+		int suspendCount = debugTarget.getSuspendCount();
+		if (suspendCount == previousSuspendCount && cachedStack != null) {
+			return cachedStack;
+		}
+
 		GetCallStackRequest request = new GetCallStackRequest();
 		PHPstack remoteStack = null;
 		try {
-			GetCallStackResponse response = (GetCallStackResponse) connection.sendRequest(request);
+			GetCallStackResponse response = (GetCallStackResponse) connection
+					.sendRequest(request);
 			if (response != null) {
 				remoteStack = response.getPHPstack();
 			}
@@ -16,6 +24,10 @@
 			exc.printStackTrace();
 		}
 		convertToSystem(remoteStack);
+
+		previousSuspendCount = suspendCount;
+		cachedStack = remoteStack;
+
 		return remoteStack;
 	}
 

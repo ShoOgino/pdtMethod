@@ -1,16 +1,21 @@
 	/**
 	 * Returns local file name corresponding to the given remote path
-	 * @param remoteFile File to resolve
-	 * @param cwd Current working directory received from the debugger
-	 * @param currentScript Script that is on the top of the debug stack currently
+	 * 
+	 * @param remoteFile
+	 *            File to resolve
+	 * @param cwd
+	 *            Current working directory received from the debugger
+	 * @param currentScript
+	 *            Script that is on the top of the debug stack currently
 	 * @return local file, or <code>null</code> in case of resolving failure
 	 */
-	public String convertToLocalFilename(String remoteFile, String cwd, String currentScript) {
+	public String convertToLocalFilename(String remoteFile, String cwd,
+			String currentScript) {
 		PHPDebugTarget debugTarget = debugHandler.getDebugTarget();
 		if (debugTarget.getContextManager().isResolveBlacklisted(remoteFile)) {
 			return remoteFile;
 		}
-		
+
 		IWorkspace workspace = ResourcesPlugin.getWorkspace();
 
 		// check if this file is already local
@@ -18,11 +23,12 @@
 			return remoteFile;
 		}
 
-		// If we are running local debugger, check if "remote" file exists and return it if it does
+		// If we are running local debugger, check if "remote" file exists and
+		// return it if it does
 		if (debugTarget.isPHPCGI() && new File(remoteFile).exists()) {
-			
+
 			IFile wsFile = null;
-			IPath location = new Path(remoteFile); 
+			IPath location = new Path(remoteFile);
 			IProject[] projects = workspace.getRoot().getProjects();
 			IProject currentProject = debugTarget.getProject();
 			// set current project to higher priority:
@@ -41,13 +47,21 @@
 					continue;
 				}
 				IPath projectLocation = project.getLocation();
-				if (projectLocation != null && projectLocation.isPrefixOf(location)) {
+				if (projectLocation != null
+						&& projectLocation.isPrefixOf(location)) {
 					int segmentsToRemove = projectLocation.segmentCount();
-					wsFile = workspace.getRoot().getFile(project.getFullPath().append(location.removeFirstSegments(segmentsToRemove)));
+					wsFile = workspace
+							.getRoot()
+							.getFile(
+									project
+											.getFullPath()
+											.append(
+													location
+															.removeFirstSegments(segmentsToRemove)));
 					break;
 				}
 			}
-			
+
 			if (wsFile != null) {
 				return wsFile.getFullPath().toString();
 			} else {
@@ -55,15 +69,18 @@
 			}
 		}
 
-		String resolvedFileKey = new StringBuilder(remoteFile).append(cwd).append(currentScript).toString();
+		String resolvedFileKey = new StringBuilder(remoteFile).append(cwd)
+				.append(currentScript).toString();
 		if (!resolvedFiles.containsKey(resolvedFileKey)) {
 			String currentScriptDir = null;
 			if (currentScript != null) {
-				currentScriptDir = new Path(currentScript).removeLastSegments(1).toString();
+				currentScriptDir = new Path(currentScript)
+						.removeLastSegments(1).toString();
 			}
 
 			String resolvedFile = null;
-			PathEntry pathEntry = DebugSearchEngine.find(remoteFile, debugTarget, cwd, currentScriptDir);
+			PathEntry pathEntry = DebugSearchEngine.find(remoteFile,
+					debugTarget, cwd, currentScriptDir);
 			if (pathEntry != null) {
 				resolvedFile = pathEntry.getResolvedPath();
 			}
