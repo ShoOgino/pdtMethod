@@ -1,7 +1,7 @@
-	public Expression[] getStackVariables(PHPStackFrame stack) {
+	public Expression[] getStackVariables(PHPStackFrame stackFrame) {
 		String functionName = "";
 		try {
-			functionName = stack.getName();
+			functionName = stackFrame.getName();
 		} catch (DebugException e) {
 			// PHPStack Doesn't throw exception, just log and ignore
 			Logger.logException("Problem getting name from stack", e);
@@ -11,19 +11,21 @@
 		if (!functionName.equals("")) {
 			StackLayer stackLayer = null;
 			try {
-				for (int i = fPreviousLayers.length - 1; i >= 0; --i) {
-					StackLayer element = fPreviousLayers[i];
+				PHPstack stack = fDebugger.getCallStack();
+				StackLayer[] layers = stack.getLayers();
+
+				for (int i = layers.length - 1; i >= 0; --i) {
+					StackLayer element = layers[i];
 					if (element.getCalledFileName().equals(
-							stack.getAbsoluteFileName())
+							stackFrame.getAbsoluteFileName())
 							&& element.getCalledFunctionName().equals(
-									stack.getName())) {
+									stackFrame.getName())) {
 						stackLayer = element;
 						break;
 					}
 				}
 			} catch (DebugException e) {
 			}
-
 			if (stackLayer != null) {
 				variables = stackLayer.getVariables();
 			}

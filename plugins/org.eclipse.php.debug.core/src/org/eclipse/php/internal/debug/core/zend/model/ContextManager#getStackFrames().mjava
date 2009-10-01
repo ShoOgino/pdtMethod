@@ -2,16 +2,17 @@
 
 		// check to see if eclipse is getting the same stack frames again.
 		PHPstack stack = fDebugger.getCallStack();
-		PHPThread thread = (PHPThread) fTarget.getThreads()[0];
 		StackLayer[] layers = stack.getLayers();
+
+		PHPThread thread = (PHPThread) fTarget.getThreads()[0];
 
 		fFramesInitLock.acquire();
 		try {
-			if (fPreviousFrames == null) {
+			if (fFrames == null) {
 				IStackFrame[] newFrames = applyDebugFilters(createNewFrames(
 						layers, thread));
 				copyVariablesFromPreviousFrames(newFrames);
-				fPreviousFrames = newFrames;
+				fFrames = newFrames;
 
 				DefaultExpressionsManager expressionsManager = fTarget
 						.getExpressionManager();
@@ -19,18 +20,15 @@
 					expressionsManager.clear();
 				}
 				fSuspendCount = fTarget.getSuspendCount();
-				return fPreviousFrames;
+				return fFrames;
 			}
 		} finally {
 			fFramesInitLock.release();
 		}
 
 		if (fSuspendCount == fTarget.getSuspendCount()) {
-			return fPreviousFrames;
+			return fFrames;
 		}
-
-		// check to see if layers are the same as the previous thread
-		fSuspendCount = fTarget.getSuspendCount();
 
 		if (layers.length == 1
 				&& layers[0].getCalledFileName().endsWith(DUMMY_PHP_FILE)) {
@@ -39,11 +37,11 @@
 			IStackFrame[] newFrames = applyDebugFilters(createNewFrames(layers,
 					thread));
 			copyVariablesFromPreviousFrames(newFrames);
-			fPreviousFrames = newFrames;
-
-			fSuspendCount = fTarget.getSuspendCount();
+			fFrames = newFrames;
 		}
 
-		return fPreviousFrames;
+		fSuspendCount = fTarget.getSuspendCount();
+
+		return fFrames;
 	}
 

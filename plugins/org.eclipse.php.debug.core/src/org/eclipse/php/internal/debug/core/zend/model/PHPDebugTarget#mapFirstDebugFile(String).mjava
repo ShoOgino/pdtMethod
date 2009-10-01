@@ -1,6 +1,8 @@
 	/**
 	 * Maps first debug file in the path mapper
-	 * @param remoteFile Server file path
+	 * 
+	 * @param remoteFile
+	 *            Server file path
 	 * @return mapped path entry or <code>null</code> in case of error
 	 */
 	public PathEntry mapFirstDebugFile(String remoteFile) {
@@ -10,8 +12,10 @@
 		}
 
 		try {
-			ILaunchConfiguration launchConfiguration = getLaunch().getLaunchConfiguration();
-			PathMapper pathMapper = PathMapperRegistry.getByLaunchConfiguration(launchConfiguration);
+			ILaunchConfiguration launchConfiguration = getLaunch()
+					.getLaunchConfiguration();
+			PathMapper pathMapper = PathMapperRegistry
+					.getByLaunchConfiguration(launchConfiguration);
 
 			if (pathMapper != null) {
 				PathEntry pathEntry = pathMapper.getLocalFile(remoteFile);
@@ -19,16 +23,22 @@
 				// If such file doesn't exist in path mapper yet, add it:
 				if (pathEntry == null) {
 					// Try to find a map point:
-					String debugFileName = launchConfiguration.getAttribute(Server.FILE_NAME, (String) null);
+					String debugFileName = launchConfiguration.getAttribute(
+							Server.FILE_NAME, (String) null);
 					if (debugFileName == null) {
-						debugFileName = launchConfiguration.getAttribute(IPHPDebugConstants.ATTR_FILE, (String) null);
+						debugFileName = launchConfiguration.getAttribute(
+								IPHPDebugConstants.ATTR_FILE, (String) null);
 					}
 					if (debugFileName != null) {
-						IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(debugFileName);
+						IResource resource = ResourcesPlugin.getWorkspace()
+								.getRoot().findMember(debugFileName);
 						if (resource instanceof IFile) {
-							pathEntry = new PathEntry(debugFileName, Type.WORKSPACE, resource.getParent());
+							pathEntry = new PathEntry(debugFileName,
+									Type.WORKSPACE, resource.getParent());
 						} else if (new File(debugFileName).exists()) {
-							pathEntry = new PathEntry(debugFileName, Type.EXTERNAL, new File(debugFileName).getParentFile());
+							pathEntry = new PathEntry(debugFileName,
+									Type.EXTERNAL, new File(debugFileName)
+											.getParentFile());
 						}
 					}
 					if (pathEntry != null) {
@@ -42,13 +52,17 @@
 				}
 
 				// Assign this project to Debug Target:
-				if (getProject() == null && pathEntry != null && pathEntry.getType() == Type.WORKSPACE) {
-					IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(pathEntry.getPath());
+				if (getProject() == null && pathEntry != null
+						&& pathEntry.getType() == Type.WORKSPACE) {
+					IResource resource = ResourcesPlugin.getWorkspace()
+							.getRoot().findMember(pathEntry.getPath());
 					IProject project = resource.getProject();
 					setProject(project);
 					try {
-						ILaunchConfigurationWorkingCopy wc = launchConfiguration.getWorkingCopy();
-						wc.getAttribute(IPHPDebugConstants.PHP_Project, project.getName());
+						ILaunchConfigurationWorkingCopy wc = launchConfiguration
+								.getWorkingCopy();
+						wc.getAttribute(IPHPDebugConstants.PHP_Project, project
+								.getName());
 						wc.doSave();
 					} catch (CoreException e) {
 						PHPDebugPlugin.log(e);

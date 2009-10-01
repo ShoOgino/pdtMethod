@@ -1,28 +1,17 @@
 	private IStackFrame[] createNewFrames(StackLayer[] layers, PHPThread thread)
 			throws DebugException {
 
-		boolean layersSame = false;
-		if (fPreviousLayers != null) {
-			layersSame = compareLayers(layers, fPreviousLayers);
-		}
-
 		RemoteDebugger remoteDebugger = (RemoteDebugger) fDebugger;
 		String cwd = null;
 		String currentScript = null;
-
-		if (!layersSame) {
-			cwd = remoteDebugger.getCurrentWorkingDirectory();
-		}
 
 		IStackFrame[] frames = new IStackFrame[((layers.length - 1) * 2) + 1];
 		int frameCt = ((layers.length - 1) * 2 + 1);
 		for (int i = 1; i < layers.length; i++) {
 
 			String sName = layers[i].getCallerFileName();
-			String rName;
-			if (layersSame) {
-				rName = fPreviousLayers[i].getResolvedCallerFileName();
-			} else {
+			String rName = layers[i].getResolvedCallerFileName();
+			if (rName == null) {
 				rName = remoteDebugger
 						.convertToLocalFilename(
 								sName,
@@ -43,9 +32,8 @@
 			frameCt--;
 
 			sName = layers[i].getCalledFileName();
-			if (layersSame) {
-				rName = fPreviousLayers[i].getResolvedCalledFileName();
-			} else {
+			rName = layers[i].getResolvedCalledFileName();
+			if (rName == null) {
 				rName = remoteDebugger
 						.convertToLocalFilename(sName, cwd, rName);
 				if (rName == null) {
@@ -75,7 +63,7 @@
 				(layers.length == 1) ? "" : frames[1].getName(), fTarget
 						.getLastStop(), frameCt, resolvedFile,
 				getLocalVariables());
-		fPreviousLayers = layers;
+
 		return frames;
 	}
 

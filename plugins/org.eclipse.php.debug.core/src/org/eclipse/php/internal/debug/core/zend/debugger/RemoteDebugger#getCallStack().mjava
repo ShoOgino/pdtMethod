@@ -3,6 +3,34 @@
 	 * information.
 	 */
 	public PHPstack getCallStack() {
-		return getCallStack(true);
+		if (!this.isActive()) {
+			return null;
+		}
+
+		PHPDebugTarget debugTarget = getDebugHandler().getDebugTarget();
+		int suspendCount = debugTarget.getSuspendCount();
+		if (suspendCount == previousSuspendCount && cachedStack != null) {
+			return cachedStack;
+		}
+
+		System.out.println("GET_CALLSTACK");
+
+		GetCallStackRequest request = new GetCallStackRequest();
+		PHPstack remoteStack = null;
+		try {
+			GetCallStackResponse response = (GetCallStackResponse) connection
+					.sendRequest(request);
+			if (response != null) {
+				remoteStack = response.getPHPstack();
+			}
+		} catch (Exception exc) {
+			exc.printStackTrace();
+		}
+		convertToSystem(remoteStack);
+
+		previousSuspendCount = suspendCount;
+		cachedStack = remoteStack;
+
+		return remoteStack;
 	}
 

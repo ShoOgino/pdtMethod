@@ -1,10 +1,19 @@
 	public String getCWD() {
-		if (cachedCWD == null || !canDo(START_PROCESS_FILE_NOTIFICATION)) {
-			if (canDo(GET_CWD)) {
-				cachedCWD = getCWDNew();
-			} else {
-				cachedCWD = getCWDOld();
-			}
+		if (!this.isActive()) {
+			return null;
+		}
+
+		PHPDebugTarget debugTarget = getDebugHandler().getDebugTarget();
+		int suspendCount = debugTarget.getSuspendCount();
+		if (suspendCount == previousSuspendCount && cachedCWD != null) {
+			return cachedCWD;
+		}
+
+		System.out.println("GETCWD");
+		if (canDo(GET_CWD)) {
+			cachedCWD = getCWDNew();
+		} else {
+			cachedCWD = getCWDOld();
 		}
 		return cachedCWD;
 	}
