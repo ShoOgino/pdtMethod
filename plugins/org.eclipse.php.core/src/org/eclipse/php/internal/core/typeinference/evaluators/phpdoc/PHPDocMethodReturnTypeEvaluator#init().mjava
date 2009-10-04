@@ -1,24 +1,34 @@
 	public IGoal[] init() {
-		Set<PHPDocBlock> docs = new HashSet<PHPDocBlock>();
 		for (IMethod method : getMethods()) {
 			PHPDocBlock docBlock = PHPModelUtils.getDocBlock(method);
 			if (docBlock != null) {
-				docs.add(docBlock);
-			}
-		}
-
-		for (PHPDocBlock doc : docs) {
-			for (PHPDocTag tag : doc.getTags()) {
-				if (tag.getTagKind() == PHPDocTag.RETURN) {
-					// @return datatype1|datatype2|...
-					for (SimpleReference reference : tag.getReferences()) {
-						final String[] typesNames = PIPE_PATTERN.split(reference.getName());
-						for (String typeName : typesNames) {
-							IEvaluatedType type = PHPSimpleTypes.fromString(typeName);
-							if (type == null) {
-								type = new PHPClassType(typeName);
+				IType currentNamespace = PHPModelUtils
+						.getCurrentNamespace(method);
+				for (PHPDocTag tag : docBlock.getTags()) {
+					if (tag.getTagKind() == PHPDocTag.RETURN) {
+						// @return datatype1|datatype2|...
+						for (SimpleReference reference : tag.getReferences()) {
+							final String[] typesNames = PIPE_PATTERN
+									.split(reference.getName());
+							for (String typeName : typesNames) {
+								IEvaluatedType type = PHPSimpleTypes
+										.fromString(typeName);
+								if (type == null) {
+									if (typeName
+											.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) != -1
+											|| currentNamespace == null) {
+										type = new PHPClassType(typeName);
+									} else if (currentNamespace != null) {
+										type = new PHPClassType(
+												currentNamespace
+														.getElementName(),
+												typeName);
+									}
+								}
+								if (type != null) {
+									evaluated.add(type);
+								}
 							}
-							evaluated.add(type);
 						}
 					}
 				}
