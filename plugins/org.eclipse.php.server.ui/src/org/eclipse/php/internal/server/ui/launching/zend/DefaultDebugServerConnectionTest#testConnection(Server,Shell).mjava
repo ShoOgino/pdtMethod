@@ -5,41 +5,54 @@
 
 		// check:
 		// 1. server is available
-		// 2. dummy.php exists 
+		// 2. dummy.php exists
 		// 3. check debugger communication
 		// 4. debugger version
 		IRunnableWithProgress runnableWithProgress = new IRunnableWithProgress() {
-			public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
-				monitor.beginTask(PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_testingConnectivity"), IProgressMonitor.UNKNOWN); //$NON-NLS-1$
+			public void run(IProgressMonitor monitor)
+					throws InvocationTargetException, InterruptedException {
+				monitor
+						.beginTask(
+								PHPServerUIMessages
+										.getString("DefaultDebugServerConnectionTest_testingConnectivity"), IProgressMonitor.UNKNOWN); //$NON-NLS-1$
 
 				try {
-					//Check existence of both web server and dummy.php
+					// Check existence of both web server and dummy.php
 					checkWebServerExistence();
-					if (monitor.isCanceled()) {//exit point from the runnable after clicking 'cancel' button
+					if (monitor.isCanceled()) {// exit point from the runnable
+												// after clicking 'cancel'
+												// button
 						return;
 					}
 
 					String[] hosts = getAllLocalHostsAddresses();
-					DebugServerTestController.getInstance().addListener(DefaultDebugServerConnectionTest.this);
+					DebugServerTestController.getInstance().addListener(
+							DefaultDebugServerConnectionTest.this);
 					for (String clientHost : hosts) {
 						if (monitor.isCanceled()) {
 							return;
 						}
 						isFinished = false;
-						//Build Query String to call debugger via GET
+						// Build Query String to call debugger via GET
 						String debugQuery = generateDebugQuery(clientHost);
-						//Calling the debugger
+						// Calling the debugger
 						try {
 							activateTestDebug(monitor, clientHost, debugQuery);
-						} catch (SocketTimeoutException ste) {//debugger caused timeout
+						} catch (SocketTimeoutException ste) {// debugger caused
+																// timeout
 							if (!isFinished) {
-								String generalTimeout = NLS.bind(PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_timeOutMessage"), fURL); //$NON-NLS-1$
+								String generalTimeout = NLS
+										.bind(
+												PHPServerUIMessages
+														.getString("DefaultDebugServerConnectionTest_timeOutMessage"), fURL); //$NON-NLS-1$
 								showCustomErrorDialog(generalTimeout); //$NON-NLS-1$
 								return;
 							}
 						}
-						//the following condition test is due to immediate return, but the client host
-						//that was sent is unavailable, i.e the debugger will not return to Neon
+						// the following condition test is due to immediate
+						// return, but the client host
+						// that was sent is unavailable, i.e the debugger will
+						// not return to Neon
 						if (isFinished) {
 							break;
 						} else {
@@ -53,31 +66,49 @@
 					if (!isFinished) {
 						showCustomErrorDialog(addTimeOutsMessage("A timeout occurred when the debug server attempted to connect to the following client hosts/IPs:\n")); //$NON-NLS-1$
 					}
-				} catch (FileNotFoundException fnfe) {//dummy.php was not found
-					showCustomErrorDialog(NLS.bind(PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_theURLCouldNotBeFound"), fURL)); //$NON-NLS-1$
+				} catch (FileNotFoundException fnfe) {// dummy.php was not found
+					showCustomErrorDialog(NLS
+							.bind(
+									PHPServerUIMessages
+											.getString("DefaultDebugServerConnectionTest_theURLCouldNotBeFound"), fURL)); //$NON-NLS-1$
 					return;
 				} catch (SocketTimeoutException ste) {
 					if (!isFinished) {
-						showCustomErrorDialog(NLS.bind(PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_timeOutMessage"), fURL)); //$NON-NLS-1$
+						showCustomErrorDialog(NLS
+								.bind(
+										PHPServerUIMessages
+												.getString("DefaultDebugServerConnectionTest_timeOutMessage"), fURL)); //$NON-NLS-1$
 						return;
 					}
-				} catch (ConnectException ce) {//usually when firewall blocks
-					showCustomErrorDialog(NLS.bind(PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_webServerConnectionFailed"), fURL)); //$NON-NLS-1$
+				} catch (ConnectException ce) {// usually when firewall blocks
+					showCustomErrorDialog(NLS
+							.bind(
+									PHPServerUIMessages
+											.getString("DefaultDebugServerConnectionTest_webServerConnectionFailed"), fURL)); //$NON-NLS-1$
 					return;
-				} catch (IOException er) {//server not found / server is down
-					showCustomErrorDialog(NLS.bind(PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_webServerConnectionFailed"), fURL)); //$NON-NLS-1$
+				} catch (IOException er) {// server not found / server is down
+					showCustomErrorDialog(NLS
+							.bind(
+									PHPServerUIMessages
+											.getString("DefaultDebugServerConnectionTest_webServerConnectionFailed"), fURL)); //$NON-NLS-1$
 					return;
 				} finally {
 					removeThisListener();
 				}
 			}
 
-			private void activateTestDebug(IProgressMonitor monitor, String clientHost, String debugQuery) throws IOException {
-				monitor.subTask(NLS.bind(PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_testingCommunication"), clientHost)); //$NON-NLS-1$
+			private void activateTestDebug(IProgressMonitor monitor,
+					String clientHost, String debugQuery) throws IOException {
+				monitor
+						.subTask(NLS
+								.bind(
+										PHPServerUIMessages
+												.getString("DefaultDebugServerConnectionTest_testingCommunication"), clientHost)); //$NON-NLS-1$
 				InputStream inputStream = null;
 				try {
 					URL checkDebugURL = new URL(debugQuery);
-					final URLConnection debugConnection = checkDebugURL.openConnection();
+					final URLConnection debugConnection = checkDebugURL
+							.openConnection();
 					debugConnection.setReadTimeout(DEFAULT_TIMEOUT);
 					inputStream = debugConnection.getInputStream();
 				} finally {
@@ -87,17 +118,24 @@
 				}
 			}
 
-			private void checkWebServerExistence() throws MalformedURLException, IOException {
+			private void checkWebServerExistence()
+					throws MalformedURLException, IOException {
 				InputStream inputStream = null;
 				try {
-					//1. check base URL (http://HOST_NAME)
-					//2.check dummy file existence
+					// 1. check base URL (http://HOST_NAME)
+					// 2.check dummy file existence
 					final URL checkURL = new URL(fURL + "/dummy.php"); //$NON-NLS-1$
 					URLConnection connection = checkURL.openConnection();
 
 					connection.setConnectTimeout(5000);
 					connection.setReadTimeout(DEFAULT_TIMEOUT);
-					inputStream = connection.getInputStream();//this will fail when host not found and/or dummy.php not found (2 different exception
+					inputStream = connection.getInputStream();// this will fail
+																// when host not
+																// found and/or
+																// dummy.php not
+																// found (2
+																// different
+																// exception
 				} finally {
 					if (inputStream != null) {
 						inputStream.close();
