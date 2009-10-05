@@ -1,22 +1,27 @@
 	/**
 	 * Opens a PHP editor for file and line number
 	 * 
-	 * @throws CoreException 
+	 * @throws CoreException
 	 */
-	public static IEditorPart openInEditor(final String fileName, int lineNumber) throws CoreException {
+	public static IEditorPart openInEditor(final String fileName, int lineNumber)
+			throws CoreException {
 
 		final IWorkspace workspace = ResourcesPlugin.getWorkspace();
 		final IWorkspaceRoot root = workspace.getRoot();
 
 		// TODO - check if no error occurs with untitled php files
-		//		try {
-		//			Path errorFilePath = new Path(fileName);
-		//			if (errorFilePath.segmentCount() > 1 && errorFilePath.segment(errorFilePath.segmentCount() - 2).equalsIgnoreCase("Untitled_Documents")) {
-		//				IEditorPart editor = openInEditor(new NonExistingPHPFileEditorInput(errorFilePath), PHPUiConstants.PHP_UNTITLED_EDITOR_ID, true);
-		//				return revealInEditor(editor, lineNumber);
-		//			}
-		//		} catch (RuntimeException e) { // if new Path() fails - do nothing
-		//		}
+		// try {
+		// Path errorFilePath = new Path(fileName);
+		// if (errorFilePath.segmentCount() > 1 &&
+		// errorFilePath.segment(errorFilePath.segmentCount() -
+		// 2).equalsIgnoreCase("Untitled_Documents")) {
+		// IEditorPart editor = openInEditor(new
+		// NonExistingPHPFileEditorInput(errorFilePath),
+		// PHPUiConstants.PHP_UNTITLED_EDITOR_ID, true);
+		// return revealInEditor(editor, lineNumber);
+		// }
+		// } catch (RuntimeException e) { // if new Path() fails - do nothing
+		// }
 
 		IPath path = new Path(fileName);
 		IFile file = root.getFileForLocation(path);
@@ -44,34 +49,19 @@
 		if (!file.exists()) {
 			File localFile = new File(fileName);
 			if (localFile.exists()) {
+
 				IEditorInput editorInput = null;
-
-				// If this file is external - put it into the external files registry
-				//				if (!ExternalFilesRegistry.getInstance().isEntryExist(path.toOSString())) {
-				//					IFile localIFile = ResourcesPlugin.getWorkspace().getRoot().getFile(path);
-				//					if (!localIFile.exists()) {
-				//						IFile externalFile = ExternalFileWrapper.createFile(fileName);
-				//						ExternalFilesRegistry.getInstance().addFileEntry(fileName, externalFile);
-				//					}
-				//				}
-
-				// If this is external file:
-				//				if (ExternalFilesRegistry.getInstance().isEntryExist(path.toOSString())) {
-				//					editorInput = new FileStoreEditorInput(new LocalFile(localFile));
-				//				} else {
 				LocalFileStorage fileStorage = new LocalFileStorage(localFile);
 				fileStorage.setProject(file.getProject());
 				editorInput = new LocalFileStorageEditorInput(fileStorage);
-				//				}
 
-				//				if (editorInput != null) {
 				final IWorkbenchPage p = PHPUiPlugin.getActivePage();
 				if (p != null) {
-					IEditorPart part = openInEditor(editorInput, getEditorID(editorInput), true);
+					IEditorPart part = openInEditor(editorInput,
+							getEditorID(editorInput), true);
 					return revealInEditor(part, lineNumber);
 				}
 				return null;
-				//				}
 			}
 		}
 
@@ -81,7 +71,8 @@
 
 		final IMarker marker = file.createMarker(IMarker.TEXT);
 		marker.setAttribute(IMarker.LINE_NUMBER, lineNumber);
-		//marker.setAttribute(IDE.EDITOR_ID_ATTR, PHPUiConstants.PHP_EDITOR_ID);
+		// marker.setAttribute(IDE.EDITOR_ID_ATTR,
+		// PHPUiConstants.PHP_EDITOR_ID);
 		final IWorkbenchPage p = PHPUiPlugin.getActivePage();
 
 		IEditorPart editor = null;
