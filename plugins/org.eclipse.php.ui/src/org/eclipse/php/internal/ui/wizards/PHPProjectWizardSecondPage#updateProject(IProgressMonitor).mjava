@@ -1,4 +1,5 @@
-	protected void updateProject(IProgressMonitor monitor) throws CoreException, InterruptedException {
+	protected void updateProject(IProgressMonitor monitor)
+			throws CoreException, InterruptedException {
 
 		IProject projectHandle = fFirstPage.getProjectHandle();
 		IScriptProject create = DLTKCore.create(projectHandle);
@@ -9,7 +10,10 @@
 			monitor = new NullProgressMonitor();
 		}
 		try {
-			monitor.beginTask(NewWizardMessages.ScriptProjectWizardSecondPage_operation_initialize, 70);
+			monitor
+					.beginTask(
+							NewWizardMessages.ScriptProjectWizardSecondPage_operation_initialize,
+							70);
 			if (monitor.isCanceled()) {
 				throw new OperationCanceledException();
 			}
@@ -17,8 +21,11 @@
 			URI realLocation = fCurrProjectLocation;
 			if (fCurrProjectLocation == null) { // inside workspace
 				try {
-					URI rootLocation = ResourcesPlugin.getWorkspace().getRoot().getLocationURI();
-					realLocation = new URI(rootLocation.getScheme(), null, Path.fromPortableString(rootLocation.getPath()).append(getProject().getName()).toString(), null);
+					URI rootLocation = ResourcesPlugin.getWorkspace().getRoot()
+							.getLocationURI();
+					realLocation = new URI(rootLocation.getScheme(), null, Path
+							.fromPortableString(rootLocation.getPath()).append(
+									getProject().getName()).toString(), null);
 				} catch (URISyntaxException e) {
 					Assert.isTrue(false, "Can't happen"); //$NON-NLS-1$
 				}
@@ -26,7 +33,8 @@
 
 			rememberExistingFiles(realLocation);
 
-			createProject(getProject(), fCurrProjectLocation, new SubProgressMonitor(monitor, 20));
+			createProject(getProject(), fCurrProjectLocation,
+					new SubProgressMonitor(monitor, 20));
 
 			IBuildpathEntry[] buildpathEntries = null;
 			IncludePath[] includepathEntries = null;
@@ -35,29 +43,36 @@
 				includepathEntries = setProjectBaseIncludepath();
 				if (!getProject().getFile(FILENAME_BUILDPATH).exists()) {
 
-					IDLTKLanguageToolkit toolkit = DLTKLanguageManager.getLanguageToolkit(getScriptNature());
-					final BuildpathDetector detector = createBuildpathDetector(monitor, toolkit);
+					IDLTKLanguageToolkit toolkit = DLTKLanguageManager
+							.getLanguageToolkit(getScriptNature());
+					final BuildpathDetector detector = createBuildpathDetector(
+							monitor, toolkit);
 					buildpathEntries = detector.getBuildpath();
 
 				} else {
 					monitor.worked(20);
 				}
 			} else if (fFirstPage.hasPhpSourceFolder()) {
-				//need to create sub-folders and set special build/include paths
+				// need to create sub-folders and set special build/include
+				// paths
 				IPreferenceStore store = getPreferenceStore();
-				IPath srcPath = new Path(store.getString(PreferenceConstants.SRCBIN_SRCNAME));
-				IPath binPath = new Path(store.getString(PreferenceConstants.SRCBIN_BINNAME));
+				IPath srcPath = new Path(store
+						.getString(PreferenceConstants.SRCBIN_SRCNAME));
+				IPath binPath = new Path(store
+						.getString(PreferenceConstants.SRCBIN_BINNAME));
 
 				if (srcPath.segmentCount() > 0) {
 					IFolder folder = getProject().getFolder(srcPath);
-					CoreUtility.createFolder(folder, true, true, new SubProgressMonitor(monitor, 10));
+					CoreUtility.createFolder(folder, true, true,
+							new SubProgressMonitor(monitor, 10));
 				} else {
 					monitor.worked(10);
 				}
 
 				if (binPath.segmentCount() > 0) {
 					IFolder folder = getProject().getFolder(binPath);
-					CoreUtility.createFolder(folder, true, true, new SubProgressMonitor(monitor, 10));
+					CoreUtility.createFolder(folder, true, true,
+							new SubProgressMonitor(monitor, 10));
 				} else {
 					monitor.worked(10);
 				}
@@ -67,17 +82,21 @@
 				// configure the buildpath entries, including the default
 				// InterpreterEnvironment library.
 				List cpEntries = new ArrayList();
-				cpEntries.add(DLTKCore.newSourceEntry(projectPath.append(srcPath)));
+				cpEntries.add(DLTKCore.newSourceEntry(projectPath
+						.append(srcPath)));
 
-				buildpathEntries = (IBuildpathEntry[]) cpEntries.toArray(new IBuildpathEntry[cpEntries.size()]);
-				includepathEntries = new IncludePath[] { new IncludePath(getProject().getFolder(srcPath), getProject()) };
+				buildpathEntries = (IBuildpathEntry[]) cpEntries
+						.toArray(new IBuildpathEntry[cpEntries.size()]);
+				includepathEntries = new IncludePath[] { new IncludePath(
+						getProject().getFolder(srcPath), getProject()) };
 			} else {
-				//flat project layout
+				// flat project layout
 				IPath projectPath = getProject().getFullPath();
 				List cpEntries = new ArrayList();
 				cpEntries.add(DLTKCore.newSourceEntry(projectPath));
 
-				buildpathEntries = (IBuildpathEntry[]) cpEntries.toArray(new IBuildpathEntry[cpEntries.size()]);
+				buildpathEntries = (IBuildpathEntry[]) cpEntries
+						.toArray(new IBuildpathEntry[cpEntries.size()]);
 				includepathEntries = setProjectBaseIncludepath();
 
 				monitor.worked(20);
@@ -87,24 +106,27 @@
 			}
 
 			init(DLTKCore.create(getProject()), buildpathEntries, false);
-			
+
 			// setting PHP4/5 and ASP-Tags :
 			setPhpLangOptions();
 
 			configureScriptProject(new SubProgressMonitor(monitor, 30));
 
-			//checking and adding JS nature,libs, include path if needed
+			// checking and adding JS nature,libs, include path if needed
 			if (fFirstPage.fJavaScriptSupportGroup.shouldSupportJavaScript()) {
 				addJavaScriptNature(monitor);
 			}
 
-			//adding build paths, and language-Container:
-			getScriptProject().setRawBuildpath(buildpathEntries, new NullProgressMonitor());
+			// adding build paths, and language-Container:
+			getScriptProject().setRawBuildpath(buildpathEntries,
+					new NullProgressMonitor());
 			LanguageModelInitializer.enableLanguageModelFor(getScriptProject());
-			
-			//init, and adding include paths:
-			getBuildPathsBlock().init(getScriptProject(), new IBuildpathEntry[] {});
-			IncludePathManager.getInstance().setIncludePath(getProject(), includepathEntries);
+
+			// init, and adding include paths:
+			getBuildPathsBlock().init(getScriptProject(),
+					new IBuildpathEntry[] {});
+			IncludePathManager.getInstance().setIncludePath(getProject(),
+					includepathEntries);
 
 		} finally {
 			monitor.done();
