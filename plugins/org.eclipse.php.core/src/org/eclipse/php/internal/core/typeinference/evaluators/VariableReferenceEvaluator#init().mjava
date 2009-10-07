@@ -20,14 +20,19 @@
 		try {
 			if (context instanceof ISourceModuleContext) {
 				ISourceModuleContext typedContext = (ISourceModuleContext) context;
-				ModuleDeclaration node = typedContext.getRootNode();
+				ASTNode rootNode = typedContext.getRootNode();
+				ASTNode localScopeNode = rootNode;
+				if (context instanceof MethodContext) {
+					localScopeNode = ((MethodContext) context).getMethodNode();
+				}
 				LocalReferenceDeclSearcher varDecSearcher = new LocalReferenceDeclSearcher(
-						typedContext.getSourceModule(), variableReference);
-				node.traverse(varDecSearcher);
+						typedContext.getSourceModule(), variableReference,
+						localScopeNode);
+				rootNode.traverse(varDecSearcher);
 
 				List<IGoal> subGoals = new LinkedList<IGoal>();
 
-				List<VarComment> varComments = ((PHPModuleDeclaration) node)
+				List<VarComment> varComments = ((PHPModuleDeclaration) rootNode)
 						.getVarComments();
 				for (VarComment varComment : varComments) {
 					if (varComment.sourceStart() > variableReference

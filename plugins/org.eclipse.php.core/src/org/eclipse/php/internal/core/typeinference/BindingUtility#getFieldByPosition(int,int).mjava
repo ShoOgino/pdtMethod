@@ -14,8 +14,13 @@
 		ASTNode node = contextFinder.getNode();
 
 		if (node instanceof VariableReference) {
+			ASTNode localScopeNode = rootNode;
+			IContext context = contextFinder.getContext();
+			if (context instanceof MethodContext) {
+				localScopeNode = ((MethodContext) context).getMethodNode();
+			}
 			VariableReferenceEvaluator.LocalReferenceDeclSearcher varDecSearcher = new VariableReferenceEvaluator.LocalReferenceDeclSearcher(
-					sourceModule, (VariableReference) node);
+					sourceModule, (VariableReference) node, localScopeNode);
 			rootNode.traverse(varDecSearcher);
 
 			Declaration[] decls = varDecSearcher.getDeclarations();
