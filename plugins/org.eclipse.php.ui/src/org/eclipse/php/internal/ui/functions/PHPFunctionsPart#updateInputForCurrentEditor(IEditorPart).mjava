@@ -6,21 +6,43 @@
 				monitor.beginTask(getName(), 1);
 
 				try {
-					// retrieves the project and the content 
-					IScriptProject project = getCurrentScriptProject();
-					if (project == null) {
+					// retrieves the project and the content
+					IScriptProject scriptProject = getCurrentScriptProject();
+					if (scriptProject == null) {
 						return Status.CANCEL_STATUS;
 					}
+
+					Object newInput;
+					try {
+						IBuildpathContainer languageContainer = DLTKCore
+								.getBuildpathContainer(
+										new Path(
+												LanguageModelInitializer.CONTAINER_PATH),
+										scriptProject);
+						IBuildpathEntry[] buildpathEntries = languageContainer
+								.getBuildpathEntries(scriptProject);
+						List<IProjectFragment> fragments = new LinkedList<IProjectFragment>();
+						for (IBuildpathEntry buildpathEntry : buildpathEntries) {
+							IProjectFragment fragment = scriptProject
+									.getProjectFragment(buildpathEntry
+											.getPath().toString());
+							if (fragment != null) {
+								fragments.add(fragment);
+							}
+						}
+						newInput = (IProjectFragment[]) fragments
+								.toArray(new IProjectFragment[fragments.size()]);
+
+					} catch (ModelException e) {
+						return Status.CANCEL_STATUS;
+					}
+
 					Object currentInput = fViewer.getInput();
-					IProjectFragment[] projectFragments = project.getProjectFragments();
 
-					if (projectFragments == null || projectFragments.length <= 1) {
-						return Status.CANCEL_STATUS;
-					}
-
-					// set the language settings as input to the content provider
-					Object newInput = projectFragments[1];
-					if (!newInput.equals(currentInput) && fViewer.getContentProvider() != null) {
+					// set the language settings as input to the content
+					// provider
+					if (!newInput.equals(currentInput)
+							&& fViewer.getContentProvider() != null) {
 						fViewer.setInput(newInput);
 					}
 					return Status.OK_STATUS;
@@ -34,18 +56,23 @@
 			}
 
 			/**
-			 * Gets the project: either by searching the current open editor or (if there is no open editor) 
-			 * by searching for the first opened php project 
-			 * @return the selected project 
+			 * Gets the project: either by searching the current open editor or
+			 * (if there is no open editor) by searching for the first opened
+			 * php project
+			 * 
+			 * @return the selected project
 			 * @throws CoreException
 			 */
-			private final IScriptProject getCurrentScriptProject() throws CoreException {
-				final PHPStructuredEditor phpEditor = EditorUtility.getPHPStructuredEditor(editorPart);
+			private final IScriptProject getCurrentScriptProject()
+					throws CoreException {
+				final PHPStructuredEditor phpEditor = EditorUtility
+						.getPHPStructuredEditor(editorPart);
 				if (phpEditor != null) {
 					return phpEditor.getProject();
 				}
 
-				final IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
+				final IProject[] projects = ResourcesPlugin.getWorkspace()
+						.getRoot().getProjects();
 				for (IProject project : projects) {
 					if (PHPToolkitUtil.isPhpProject(project)) {
 						return DLTKCore.create(project);
