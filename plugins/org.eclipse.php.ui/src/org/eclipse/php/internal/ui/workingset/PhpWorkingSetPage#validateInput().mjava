@@ -1,0 +1,36 @@
+	private void validateInput() {
+		String errorMessage= null; 
+		String infoMessage= null;
+		String newText= fWorkingSetName.getText();
+
+		if (newText.equals(newText.trim()) == false)
+			errorMessage = WorkingSetMessages.PhpWorkingSetPage_warning_nameWhitespace; 
+		if (newText.equals("")) { //$NON-NLS-1$
+			if (fFirstCheck) {
+				setPageComplete(false);
+				fFirstCheck= false;
+				return;
+			}
+			else				
+				errorMessage= WorkingSetMessages.PhpWorkingSetPage_warning_nameMustNotBeEmpty; 
+		}
+
+		fFirstCheck= false;
+
+		if (errorMessage == null && (fWorkingSet == null || newText.equals(fWorkingSet.getName()) == false)) {
+			IWorkingSet[] workingSets= PlatformUI.getWorkbench().getWorkingSetManager().getWorkingSets();
+			for (int i= 0; i < workingSets.length; i++) {
+				if (newText.equals(workingSets[i].getName())) {
+					errorMessage= WorkingSetMessages.PhpWorkingSetPage_warning_workingSetExists; 
+				}
+			}
+		}
+		
+		if (!hasCheckedElement())
+			infoMessage= WorkingSetMessages.PhpWorkingSetPage_warning_resourceMustBeChecked;
+
+		setMessage(infoMessage, INFORMATION);
+		setErrorMessage(errorMessage);
+		setPageComplete(errorMessage == null);
+	}
+
