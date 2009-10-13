@@ -2,7 +2,7 @@
 	 * Finds a valid position somewhere on lineNumber in document, idoc, where a
 	 * breakpoint can be set and returns that position. -1 is returned if a
 	 * position could not be found.
-	 *
+	 * 
 	 * @param idoc
 	 * @param editorLineNumber
 	 * @return position to set breakpoint or -1 if no position could be found
@@ -22,26 +22,33 @@
 				do {
 					line = idoc.getLineInformation(editorLineNumber - 1);
 					startOffset = line.getOffset();
-					endOffset = Math.max(line.getOffset(), line.getOffset() + line.getLength());
+					endOffset = Math.max(line.getOffset(), line.getOffset()
+							+ line.getLength());
 
 					ITypedRegion[] partitions = null;
 
-					partitions = idoc.computePartitioning(startOffset, endOffset - startOffset);
+					partitions = idoc.computePartitioning(startOffset,
+							endOffset - startOffset);
 
 					for (int i = 0; i < partitions.length; ++i) {
 						partitionType = partitions[i].getType();
 						if (partitionType.equals(PHPPartitionTypes.PHP_DEFAULT)) {
 							phpPartitionVisited = true;
 							startOffset = partitions[i].getOffset();
-							linePart = idoc.get(startOffset, partitions[i].getLength()).trim();
-							if (Pattern.matches(".*[a-zA-Z0-0_]+.*", linePart) && !linePart.trim().toLowerCase().equals("<?php")) {
+							linePart = idoc.get(startOffset,
+									partitions[i].getLength()).trim();
+							if (Pattern.matches(".*[a-zA-Z0-0_]+.*", linePart)
+									&& !linePart.trim().toLowerCase().equals(
+											"<?php")) {
 								result = startOffset;
 								break;
 							}
 						}
 					}
 					++editorLineNumber;
-				} while ((!phpPartitionVisited || PHPStructuredTextPartitioner.isPHPPartitionType(partitionType)) && result == -1);
+				} while ((!phpPartitionVisited || PHPStructuredTextPartitioner
+						.isPHPPartitionType(partitionType))
+						&& result == -1);
 			} catch (BadLocationException e) {
 				result = -1;
 			}

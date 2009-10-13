@@ -1,0 +1,37 @@
+	protected IEditorInput getLineBreakpointEditorInput(Object element) {
+		ILineBreakpoint bp = (ILineBreakpoint) element;
+		IMarker marker = bp.getMarker();
+		IResource resource = marker.getResource();
+		if (resource instanceof IFile) {
+			return new FileEditorInput((IFile) resource);
+		}
+		// else
+		try {
+			final String location = (String) marker
+					.getAttribute(StructuredResourceMarkerAnnotationModel.SECONDARY_ID_KEY);
+			if (location == null) {
+				return null;
+			}
+			IPath path = Path.fromPortableString(location);
+
+			HandleFactory fac = new HandleFactory();
+			IDLTKSearchScope scope = DLTKSearchScopeFactory
+					.getInstance()
+					.createWorkspaceScope(true, PHPLanguageToolkit.getDefault());
+			Openable openable = fac.createOpenable(path.toString(), scope);
+
+			if (openable instanceof IStorage) {
+				return new ExternalStorageEditorInput((IStorage) openable);
+			}
+
+			// Support external files opened using File -> Open
+			File localFile = new File(location);
+			if (localFile.exists()) {
+				return new FileStoreEditorInput(new LocalFile(localFile));
+			}
+		} catch (CoreException e) {
+			DLTKUIPlugin.log(e);
+		}
+		return null;
+	}
+

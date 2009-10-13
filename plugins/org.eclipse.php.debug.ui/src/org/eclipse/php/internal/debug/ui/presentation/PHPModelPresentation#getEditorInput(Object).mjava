@@ -1,59 +1,27 @@
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see org.eclipse.debug.ui.ISourcePresentation#getEditorInput(java.lang.Object)
+	 * @see
+	 * org.eclipse.debug.ui.ISourcePresentation#getEditorInput(java.lang.Object)
 	 */
 	public IEditorInput getEditorInput(Object element) {
 		if (element instanceof IFile) {
 			return new FileEditorInput((IFile) element);
 		}
-		if (element instanceof PHPLineBreakpoint) {
-			PHPLineBreakpoint breakpoint = (PHPLineBreakpoint) element;
-			IMarker marker = breakpoint.getMarker();
-			IResource resource = marker.getResource();
-
-			if (resource instanceof IFile) {
-				return new FileEditorInput((IFile) resource);
-			}
-			// Breakpoints for external files are stored in workspace root:
-			else if (resource instanceof IWorkspaceRoot) {
-				try {
-					String filename = (String) marker.getAttribute(IPHPDebugConstants.STORAGE_FILE);
-					String type = (String) marker.getAttribute(IPHPDebugConstants.STORAGE_TYPE);
-
-					if (IPHPDebugConstants.STORAGE_TYPE_INCLUDE.equals(type)) {
-						String projectName = (String) marker.getAttribute(IPHPDebugConstants.STORAGE_PROJECT, "");
-						IProject project = PHPDebugUIPlugin.getProject(projectName);
-						String includeBaseDir = (String) marker.getAttribute(IPHPDebugConstants.STORAGE_INC_BASEDIR, "");
-						filename = marker.getAttribute(StructuredResourceMarkerAnnotationModel.SECONDARY_ID_KEY, filename);
-
-						File file = new File(filename);
-						LocalFileStorage lfs = new LocalFileStorage(file);
-						lfs.setProject(project);
-						lfs.setIncBaseDirName(includeBaseDir);
-						return new LocalFileStorageEditorInput(lfs);
-					} else if (IPHPDebugConstants.STORAGE_TYPE_EXTERNAL.equals(type) || IPHPDebugConstants.STORAGE_TYPE_REMOTE.equals(type)) {
-						File file = new File(filename);
-						return new FileStoreEditorInput(FileStoreFactory.createFileStore(file));
-					}
-				} catch (CoreException e) {
-					Logger.logException("Unexpected error in PHPModelPresentation", e);
-				}
-			}
+		if (element instanceof IFileHandle) {
+			return new ExternalFileEditorInput((IFileHandle) element);
 		}
-		if (element instanceof ZipEntryStorage) {
-			return new ZipEntryStorageEditorInput((ZipEntryStorage) element);
+		if (element instanceof ILineBreakpoint) {
+			return getLineBreakpointEditorInput(element);
 		}
-		if (element instanceof LocalFileStorage) {
-			return new LocalFileStorageEditorInput((LocalFileStorage) element);
-		}
-		if (element instanceof PHPSourceNotFoundInput) {
-			return new PHPSourceNotFoundEditorInput((PHPSourceNotFoundInput) element);
+		if (element instanceof IStorage) {
+			return new ExternalStorageEditorInput((IStorage) element);
 		}
 		if (element instanceof IFileStore) {
 			return new FileStoreEditorInput((IFileStore) element);
 		}
-		Logger.log(Logger.WARNING_DEBUG, "Unknown editor input type: " + element.getClass().getName());
+		Logger.log(Logger.WARNING_DEBUG, "Unknown editor input type: "
+				+ element.getClass().getName());
 		return null;
 	}
 

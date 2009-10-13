@@ -1,0 +1,31 @@
+	protected String getStackFrameText(IStackFrame frame) {
+		if (frame instanceof DBGpStackFrame) {
+			try {
+				// Fix bug #160443 (Stack frames line numbers update).
+				// Synchronize the top frame with the given values.
+				DBGpThread thread = (DBGpThread) frame.getThread();
+				DBGpStackFrame topFrame = (DBGpStackFrame) thread
+						.getTopStackFrame();
+				if (topFrame != null && topFrame.equals(frame)) {
+					frame = topFrame;
+				} // end fix
+
+				StringBuffer buffer = new StringBuffer();
+				String frameName = frame.getName();
+				if (frameName != null && frameName.length() > 0) {
+					buffer.append(frame.getName());
+					buffer.append("() "); //$NON-NLS-1$
+				}
+				buffer.append(((DBGpStackFrame) frame).getSourceName());
+				buffer.append(PHPDebugUIMessages.MPresentation_ATLine_1
+						+ (frame.getLineNumber()));
+				return buffer.toString();
+
+			} catch (DebugException e) {
+				Logger.logException(e);
+			}
+		}
+		return ""; //$NON-NLS-1$
+
+	}
+

@@ -1,97 +1,83 @@
-	public IStatus addBreakpoint(IDocument document, IEditorInput input, int editorLineNumber, int offset) throws CoreException {
-		// check if there is a valid position to set breakpoint
-		int pos = getValidPosition(document, editorLineNumber);
+	public IStatus addBreakpoint(IDocument document, IEditorInput input,
+			int lineNumber, int offset) throws CoreException {
 
-		//calculate the line number here so both workspace files AND externals will get it
+		// check if there is a valid position to set breakpoint
+		int pos = getValidPosition(document, lineNumber);
+
+		// calculate the line number here so both workspace files AND externals
+		// will get it
 		try {
-			editorLineNumber = document.getLineOfOffset(pos) + 1;
+			lineNumber = document.getLineOfOffset(pos) + 1;
 		} catch (BadLocationException e) {
 			Logger.logException(e);
-			return new Status(IStatus.ERROR, PHPDebugUIPlugin.getID(), "Invalid breakpoint locationgetRawPath();");
-
+			return new Status(IStatus.ERROR, PHPDebugUIPlugin.getID(),
+					"Invalid breakpoint");
 		}
+
 		IStatus status = null;
 		IBreakpoint point = null;
 		if (pos >= 0) {
-			IResource res = getResourceFromInput(input);
-			if (res != null && (input instanceof IFileEditorInput)) {
-				try {
-					Integer lineNumberInt = new Integer(editorLineNumber);
-					IMarker[] breakpoints = res.findMarkers(IBreakpoint.LINE_BREAKPOINT_MARKER, true, IResource.DEPTH_ZERO);
-					for (int i = 0; i < breakpoints.length; ++i) {
-						if (breakpoints[i].getAttributes().get("lineNumber").equals(lineNumberInt)) {
-							throw new BadLocationException();
-						}
-					}
-					point = PHPDebugTarget.createBreakpoint(res, editorLineNumber);
-				} catch (BadLocationException e) {
-				}
-			} else if (input instanceof IURIEditorInput || (input instanceof NonExistingPHPFileEditorInput)) {
-				Map<String, String> attributes = new HashMap<String, String>();
-				String pathName = null;
-				if (input instanceof IPlatformIndependentPathEditorInput) {
-					pathName = ((IPlatformIndependentPathEditorInput)input).getPath();
-				} else if (input instanceof IURIEditorInput) {
-					pathName = URIUtil.toPath(((IURIEditorInput) input).getURI()).toOSString();
-				} else {
-					pathName = ((NonExistingPHPFileEditorInput) input).getPath(input).toString();
-				}
-				if (res instanceof IWorkspaceRoot) {
-					// We are dealing with remote
-					attributes.put(IPHPDebugConstants.STORAGE_TYPE, IPHPDebugConstants.STORAGE_TYPE_REMOTE);
-				} else {
-					// We are dealing with storage
-					attributes.put(IPHPDebugConstants.STORAGE_TYPE, IPHPDebugConstants.STORAGE_TYPE_EXTERNAL);
-				}
-				attributes.put(IPHPDebugConstants.STORAGE_FILE, pathName);
-				attributes.put(StructuredResourceMarkerAnnotationModel.SECONDARY_ID_KEY, pathName);
 
-				try {
-					Integer lineNumberInt = new Integer(editorLineNumber);
-					IMarker[] breakpoints = res.findMarkers(IBreakpoint.LINE_BREAKPOINT_MARKER, true, IResource.DEPTH_ZERO);
-					for (int i = 0; i < breakpoints.length; ++i) {
-						if (breakpoints[i].getAttributes().get("lineNumber").equals(lineNumberInt)) {
-							throw new BadLocationException();
-						}
-					}
-					point = PHPDebugTarget.createBreakpoint(res, editorLineNumber, attributes);
-				} catch (BadLocationException e) {
+			IResource resource = getResourceFromInput(input);
+
+			Map<String, String> attributes = new HashMap<String, String>();
+			ISourceModule modelElement = DLTKUIPlugin
+					.getEditorInputModelElement(input);
+
+			if (modelElement != null) {
+				attributes.put(IMarker.LOCATION, modelElement.getPath()
+						.toString());
+			}
+
+			String secondaryId = null;
+
+			if (input instanceof IFileEditorInput) {
+
+			} else if (input instanceof IURIEditorInput
+					|| (input instanceof NonExistingPHPFileEditorInput)) {
+
+				if (input instanceof IPlatformIndependentPathEditorInput) {
+					secondaryId = ((IPlatformIndependentPathEditorInput) input)
+							.getPath();
+				} else if (input instanceof IURIEditorInput) {
+					secondaryId = URIUtil.toPath(
+							((IURIEditorInput) input).getURI()).toOSString();
+				} else {
+					secondaryId = ((NonExistingPHPFileEditorInput) input)
+							.getPath(input).toString();
 				}
 
 			} else if (input instanceof IStorageEditorInput) {
 				IStorage storage = ((IStorageEditorInput) input).getStorage();
-
-				Map<String, String> attributes = new HashMap<String, String>();
-				String fileName;
-
-				String secondaryId = storage.getFullPath().toOSString();
-				attributes.put(StructuredResourceMarkerAnnotationModel.SECONDARY_ID_KEY, secondaryId);
-
-				if (storage instanceof LocalFileStorage) {
-					attributes.put(IPHPDebugConstants.STORAGE_TYPE, IPHPDebugConstants.STORAGE_TYPE_INCLUDE);
-
-					fileName =((LocalFileStorage) storage).getName();
-					String incDir = ((LocalFileStorage) storage).getIncBaseDirName();
-					if (incDir != null) {
-						fileName = secondaryId.substring(incDir.length() + 1);
-					}
-					IProject project = ((LocalFileStorage) storage).getProject();
-					attributes.put(IPHPDebugConstants.STORAGE_PROJECT, project != null ? project.getName() : "");
-					attributes.put(IPHPDebugConstants.STORAGE_INC_BASEDIR, incDir != null ? incDir : "");
-				} else {
-					attributes.put(IPHPDebugConstants.STORAGE_TYPE, IPHPDebugConstants.STORAGE_TYPE_REMOTE);
-					fileName = storage.getName();
+				if (storage instanceof IModelElement) {
+					IModelElement element = (IModelElement) storage;
+					secondaryId = EnvironmentPathUtils.getFile(element)
+							.getFullPath().toString();
 				}
+			}
 
-				attributes.put(IPHPDebugConstants.STORAGE_FILE, fileName);
-				point = PHPDebugTarget.createBreakpoint(res, editorLineNumber, attributes);
+			if (secondaryId != null) {
+				attributes
+						.put(
+								StructuredResourceMarkerAnnotationModel.SECONDARY_ID_KEY,
+								secondaryId);
+			}
+
+			if (!checkBreakpointExists(secondaryId, resource, lineNumber)) {
+				point = PHPDebugTarget.createBreakpoint(resource, lineNumber,
+						attributes);
 			}
 		}
 		if (point == null) {
-			StatusLineMessageTimerManager.setErrorMessage(PHPDebugUIMessages.ErrorCreatingBreakpoint_1, 1000, true); // hide message after 1 second
+			// hide message after one second:
+			StatusLineMessageTimerManager.setErrorMessage(
+					PHPDebugUIMessages.ErrorCreatingBreakpoint_1, 1000, true);
 		}
 		if (status == null) {
-			status = new Status(IStatus.OK, PHPDebugUIPlugin.getID(), IStatus.OK, MessageFormat.format(PHPDebugUIMessages.BreakpointCreated_1, new Object[] {}), null);
+			status = new Status(IStatus.OK, PHPDebugUIPlugin.getID(),
+					IStatus.OK, MessageFormat.format(
+							PHPDebugUIMessages.BreakpointCreated_1,
+							new Object[] {}), null);
 		}
 		return status;
 	}

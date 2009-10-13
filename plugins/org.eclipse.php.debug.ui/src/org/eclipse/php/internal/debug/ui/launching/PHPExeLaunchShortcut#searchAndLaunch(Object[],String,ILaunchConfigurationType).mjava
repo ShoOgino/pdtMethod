@@ -1,4 +1,5 @@
-	public static void searchAndLaunch(Object[] search, String mode, ILaunchConfigurationType configType) {
+	public static void searchAndLaunch(Object[] search, String mode,
+			ILaunchConfigurationType configType) {
 		int entries = search == null ? 0 : search.length;
 		for (int i = 0; i < entries; i++) {
 			try {
@@ -24,7 +25,9 @@
 				if (obj instanceof IFile) {
 					IFile file = (IFile) obj;
 					project = file.getProject();
-					IContentType contentType = Platform.getContentTypeManager().getContentType(ContentTypeIdForPHP.ContentTypeID_PHP);
+					IContentType contentType = Platform.getContentTypeManager()
+							.getContentType(
+									ContentTypeIdForPHP.ContentTypeID_PHP);
 					if (contentType.isAssociatedWith(file.getName())) {
 						if (new File(file.getFullPath().toOSString()).exists()) {
 							phpPathString = file.getFullPath().toOSString();
@@ -32,7 +35,7 @@
 							phpPathString = file.getFullPath().toString();
 						}
 						IPath location = file.getLocation();
-						//check for non null values - EFS issues
+						// check for non null values - EFS issues
 						if (location != null) {
 							phpFileLocation = location.toOSString();
 						} else {
@@ -47,34 +50,54 @@
 
 				if (phpPathString == null) {
 					// Could not find target to launch
-					throw new CoreException(new Status(IStatus.ERROR, PHPDebugUIPlugin.ID, IStatus.OK, PHPDebugUIMessages.launch_failure_no_target, null));
+					throw new CoreException(new Status(IStatus.ERROR,
+							PHPDebugUIPlugin.ID, IStatus.OK,
+							PHPDebugUIMessages.launch_failure_no_target, null));
 				}
 
 				PHPexeItem defaultEXE = getDefaultPHPExe(project);
 				if (defaultEXE == null) {
 					defaultEXE = getWorkspaceDefaultExe();
 				}
-				String phpExeName = (defaultEXE != null) ? defaultEXE.getExecutable().getAbsolutePath().toString() : null;
+				String phpExeName = (defaultEXE != null) ? defaultEXE
+						.getExecutable().getAbsolutePath().toString() : null;
 
 				if (phpExeName == null) {
-					MessageDialog.openError(PHPDebugUIPlugin.getActiveWorkbenchShell(), PHPDebugUIMessages.launch_noexe_msg_title, PHPDebugUIMessages.launch_noexe_msg_text);
-					PreferencesUtil.createPreferenceDialogOn(PHPDebugUIPlugin.getActiveWorkbenchShell(), "org.eclipse.php.debug.ui.preferencesphps.PHPsPreferencePage", null, null).open();
+					MessageDialog.openError(PHPDebugUIPlugin
+							.getActiveWorkbenchShell(),
+							PHPDebugUIMessages.launch_noexe_msg_title,
+							PHPDebugUIMessages.launch_noexe_msg_text);
+					PreferencesUtil
+							.createPreferenceDialogOn(
+									PHPDebugUIPlugin.getActiveWorkbenchShell(),
+									"org.eclipse.php.debug.ui.preferencesphps.PHPsPreferencePage",
+									null, null).open();
 					return;
 				}
 
 				// Launch the app
-				ILaunchConfiguration config = findLaunchConfiguration(project, phpPathString, phpFileLocation, defaultEXE, mode, configType);
+				ILaunchConfiguration config = findLaunchConfiguration(project,
+						phpPathString, phpFileLocation, defaultEXE, mode,
+						configType);
 				if (config != null) {
 					DebugUITools.launch(config, mode);
 				} else {
 					// Could not find launch configuration
-					throw new CoreException(new Status(IStatus.ERROR, PHPDebugUIPlugin.ID, IStatus.OK, PHPDebugUIMessages.launch_failure_no_config, null));
+					throw new CoreException(new Status(IStatus.ERROR,
+							PHPDebugUIPlugin.ID, IStatus.OK,
+							PHPDebugUIMessages.launch_failure_no_config, null));
 				}
 			} catch (CoreException ce) {
 				final IStatus stat = ce.getStatus();
 				Display.getDefault().asyncExec(new Runnable() {
 					public void run() {
-						ErrorDialog.openError(PHPDebugUIPlugin.getActiveWorkbenchShell(), PHPDebugUIMessages.launch_failure_msg_title, PHPDebugUIMessages.launch_failure_exec_msg_text, stat);
+						ErrorDialog
+								.openError(
+										PHPDebugUIPlugin
+												.getActiveWorkbenchShell(),
+										PHPDebugUIMessages.launch_failure_msg_title,
+										PHPDebugUIMessages.launch_failure_exec_msg_text,
+										stat);
 					}
 				});
 			}
