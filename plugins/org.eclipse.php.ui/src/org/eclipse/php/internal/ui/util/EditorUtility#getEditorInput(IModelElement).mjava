@@ -1,21 +1,33 @@
-	private static IEditorInput getEditorInput(IModelElement element) {
-		// [Taken from: org.eclipse.dltk.internal.ui.editor.EditorUtility]
+	/**
+	 * Returns an editor input according to the model element. This method
+	 * differs from
+	 * {@link org.eclipse.dltk.internal.ui.editor.EditorUtility#getEditorInput}
+	 * by that that it supports files opened using File -> Open operation.
+	 * 
+	 * @throws ModelException
+	 */
+	public static final IEditorInput getEditorInput(IModelElement element)
+			throws ModelException {
 		while (element != null) {
-			if (element instanceof IExternalSourceModule) {
-				ISourceModule unit = ((ISourceModule) element).getPrimary();
-				if (unit instanceof IStorage) {
-					return new ExternalStorageEditorInput((IStorage) unit);
+			if (element instanceof ISourceModule) {
+				final ISourceModule unit = (ISourceModule) element;
+				if (unit.getScriptProject() instanceof ExternalScriptProject) {
+					PHPStructuredEditor editorPart = (PHPStructuredEditor) findOpenEditor(new IEditorLookupCondition() {
+						public boolean find(IEditorPart editorPart) {
+							return editorPart instanceof PHPStructuredEditor
+									&& ((PHPStructuredEditor) editorPart)
+											.getModelElement().equals(unit);
+						}
+					});
+					if (editorPart != null) {
+						return editorPart.getEditorInput();
+					}
 				}
-
-			} else if (element instanceof ISourceModule) {
-				ISourceModule unit = ((ISourceModule) element).getPrimary();
-				IResource resource = unit.getResource();
-				if (resource instanceof IFile)
-					return new FileEditorInput((IFile) resource);
+				break;
 			}
 			element = element.getParent();
 		}
-		return null;
-		// TODO - Handle external model elements (for external files)
+		return org.eclipse.dltk.internal.ui.editor.EditorUtility
+				.getEditorInput(element);
 	}
 

@@ -28,39 +28,45 @@
 		final IEditorInput newInput = new FileEditorInput(file);
 
 		if (provider == null) {
-			// editor has programmatically been  closed while the dialog was open
+			// editor has programmatically been closed while the dialog was open
 			return;
 		}
 
 		boolean success = false;
 		try {
 			provider.aboutToChange(newInput);
-			provider.saveDocument(progressMonitor, newInput, provider.getDocument(input), true);
+			provider.saveDocument(progressMonitor, newInput, provider
+					.getDocument(input), true);
 			success = true;
 
 		} catch (CoreException x) {
 			Logger.logException(x);
 			final IStatus status = x.getStatus();
 			if (status == null || status.getSeverity() != IStatus.CANCEL) {
-				String title = PHPUIMessages.getString("UntitledPHPEditor_saveError"); //$NON-NLS-1$
-				String msg = NLSUtility.format(PHPUIMessages.getString("UntitledPHPEditor_documentCannotBeSaved"), x.getMessage()); //$NON-NLS-1$
+				String title = PHPUIMessages
+						.getString("UntitledPHPEditor_saveError"); //$NON-NLS-1$
+				String msg = NLSUtility
+						.format(
+								PHPUIMessages
+										.getString("UntitledPHPEditor_documentCannotBeSaved"), x.getMessage()); //$NON-NLS-1$
 				MessageDialog.openError(shell, title, msg);
 			}
 		} finally {
-			// 1. close the untitled document 
+			// 1. close the untitled document
 			// 2. open the saved file from its new path
-			if (newPath != null) {
-				close(false);
-				try {
-					EditorUtility.openInEditor(newPath.toString(), 0);
-				} catch (CoreException e) {
-					Logger.logException(e);
+			close(false);
+			try {
+				IWorkbenchPage p = DLTKUIPlugin.getActivePage();
+				if (p != null) {
+					IDE.openEditor(p, newInput, PHPUiConstants.PHP_EDITOR_ID);
 				}
+			} catch (CoreException e) {
+				Logger.logException(e);
 			}
 		}
-		
-		deleteUntitledStorageFile();
-		
+
+		deleteUntitledStorageFile(file);
+
 		if (progressMonitor != null)
 			progressMonitor.setCanceled(!success);
 
