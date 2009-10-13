@@ -16,18 +16,26 @@
 			} else if (object instanceof DBGpStackFrame) {
 				fileName = ((DBGpStackFrame) object).getQualifiedFile();
 			}
+
 			if (fileName != null) {
-				File file = new File(fileName);
-				if (!file.exists()) {
-					return EMPTY;
+				HandleFactory fac = new HandleFactory();
+				IDLTKSearchScope scope = DLTKSearchScopeFactory.getInstance()
+						.createWorkspaceScope(true,
+								PHPLanguageToolkit.getDefault());
+				IPath localPath = EnvironmentPathUtils.getFile(
+						LocalEnvironment.getInstance(), new Path(fileName))
+						.getFullPath();
+				Openable openable = fac.createOpenable(localPath.toString(),
+						scope);
+				if (openable instanceof IStorage) {
+					return new Object[] { openable };
 				}
 
-				LocalFileStorage storage = new LocalFileStorage(file);
-				if (storage != null) {
-					return new Object[] { storage };
-				} else {
-					return EMPTY;
+				File file = new File(fileName);
+				if (file.exists()) {
+					return new Object[] { new LocalFile(file) };
 				}
+				return EMPTY;
 			}
 		}
 		return sourceElements;
