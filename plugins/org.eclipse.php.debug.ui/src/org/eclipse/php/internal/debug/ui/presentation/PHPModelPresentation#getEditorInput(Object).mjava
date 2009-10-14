@@ -18,7 +18,14 @@
 			return new ExternalStorageEditorInput((IStorage) element);
 		}
 		if (element instanceof IFileStore) {
-			return new FileStoreEditorInput((IFileStore) element);
+			IFileStore fileStore = (IFileStore) element;
+			NonExistingPHPFileEditorInput nonExistingEditorInput = NonExistingPHPFileEditorInput
+					.findEditorInput(new Path(fileStore.toURI().getPath()));
+			if (nonExistingEditorInput != null) {
+				return nonExistingEditorInput;
+			}
+
+			return new FileStoreEditorInput(fileStore);
 		}
 		Logger.log(Logger.WARNING_DEBUG, "Unknown editor input type: "
 				+ element.getClass().getName());

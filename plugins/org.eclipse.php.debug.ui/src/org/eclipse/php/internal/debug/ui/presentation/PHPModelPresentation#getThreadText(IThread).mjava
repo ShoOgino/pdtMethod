@@ -1,28 +1,34 @@
 	protected String getThreadText(IThread thread) {
+
+		StringBuilder buf = new StringBuilder();
+
 		IDebugTarget target = (IDebugTarget) thread.getDebugTarget();
-		String label = "";
 		try {
-			label = target.getName();
+			String targetName = target.getName();
+			targetName = resolveUntitledEditorName(targetName);
+			buf.append(targetName);
 		} catch (DebugException e) {
 			// Just log should never happen
 			Logger.logException(e);
 		}
+
 		if (thread.isStepping()) {
-			label += PHPDebugUIMessages.MPresentation_Stepping_1;
+			buf.append(PHPDebugUIMessages.MPresentation_Stepping_1);
 		} else if (thread.isSuspended()) {
 			IBreakpoint[] breakpoints = thread.getBreakpoints();
 			if (breakpoints.length == 0) {
-				label += PHPDebugUIMessages.MPresentation_Suspended_1;
+				buf.append(PHPDebugUIMessages.MPresentation_Suspended_1);
 			} else {
 				IBreakpoint breakpoint = breakpoints[0]; // there can only be
 				// one in PHP
 				if (breakpoint instanceof PHPLineBreakpoint) {
-					label += PHPDebugUIMessages.MPresentation_SLineBreakpoint_1;
+					buf
+							.append(PHPDebugUIMessages.MPresentation_SLineBreakpoint_1);
 				}
 			}
 		} else if (thread.isTerminated()) {
-			label = PHPDebugUIMessages.MPresentation_Terminated_1 + label; //$NON-NLS-1$
+			buf.append(PHPDebugUIMessages.MPresentation_Terminated_1); //$NON-NLS-1$
 		}
-		return label;
+		return buf.toString();
 	}
 
