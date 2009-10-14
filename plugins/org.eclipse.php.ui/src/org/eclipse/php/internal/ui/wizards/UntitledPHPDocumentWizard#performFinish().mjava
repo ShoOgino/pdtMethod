@@ -2,15 +2,18 @@
 	 * @see org.eclipse.jface.wizard.Wizard#performFinish()
 	 */
 	public boolean performFinish() {
-		IFileStore fileStore = queryFileStore();
-		IEditorInput input = createEditorInput(fileStore);
-		
-		//delete on exit
-		if(input instanceof NonExistingPHPFileEditorInput){
-			File f = ((NonExistingPHPFileEditorInput)input).getPath(input).toFile();
-			f.deleteOnExit();
-		}
-		
+
+		IPath stateLocation = PHPUiPlugin.getDefault().getStateLocation();
+		IPath path = stateLocation.append("/_" + new Object().hashCode()); //$NON-NLS-1$
+		IFileStore fileStore = EFS.getLocalFileSystem().getStore(path);
+
+		NonExistingPHPFileEditorInput input = new NonExistingPHPFileEditorInput(
+				fileStore, UNTITLED_PHP_DOC_PREFIX);
+
+		File realFile = ((NonExistingPHPFileEditorInput) input).getPath(input)
+				.toFile();
+		realFile.deleteOnExit();
+
 		IWorkbenchPage page = fWindow.getActivePage();
 		try {
 			IEditorPart editor = page.openEditor(input, UNTITLED_EDITOR_ID);
@@ -18,33 +21,40 @@
 			if (editor instanceof StructuredTextEditor) {
 				textEditor = (StructuredTextEditor) editor;
 			}
-			//Load the last template name used in New PHP File wizard.
-			String templateName = PHPUiPlugin.getDefault().getPreferenceStore().getString(PreferenceConstants.NEW_PHP_FILE_TEMPLATE);
+			// Load the last template name used in New PHP File wizard.
+			String templateName = PHPUiPlugin.getDefault().getPreferenceStore()
+					.getString(PreferenceConstants.NEW_PHP_FILE_TEMPLATE);
 			if (templateName == null || templateName.length() == 0) {
 				return true;
 			}
-			TemplateStore templateStore = PHPUiPlugin.getDefault().getTemplateStore();
+			TemplateStore templateStore = PHPUiPlugin.getDefault()
+					.getTemplateStore();
 			Template template = templateStore.findTemplate(templateName);
 			if (template == null) {
 				return true;
 			}
 			// compile the template and insert the text into the new document
-			CompiledTemplate compiledTemplate = PHPTemplateStore.compileTemplate(PHPUiPlugin.getDefault().getTemplateContextRegistry(), template);
-			IDocumentProvider documentProvider = textEditor.getDocumentProvider();
-			IDocument document = textEditor.getDocumentProvider().getDocument(textEditor.getEditorInput());
+			CompiledTemplate compiledTemplate = PHPTemplateStore
+					.compileTemplate(PHPUiPlugin.getDefault()
+							.getTemplateContextRegistry(), template);
+			IDocumentProvider documentProvider = textEditor
+					.getDocumentProvider();
+			IDocument document = textEditor.getDocumentProvider().getDocument(
+					textEditor.getEditorInput());
 			document.set(compiledTemplate.string);
-			documentProvider.saveDocument(null, textEditor.getEditorInput(), document, true);
+			documentProvider.saveDocument(null, textEditor.getEditorInput(),
+					document, true);
 			textEditor.selectAndReveal(compiledTemplate.offset, 0);
-			
+
 			// set document dirty
-			document.replace(0, 0, "");	
+			document.replace(0, 0, "");
 		} catch (PartInitException e) {
 			Logger.logException(e);
 			return false;
 		} catch (CoreException e) {
 			Logger.logException(e);
 			return false;
-		}catch (BadLocationException e) {
+		} catch (BadLocationException e) {
 			Logger.logException(e);
 			return true;
 		}
