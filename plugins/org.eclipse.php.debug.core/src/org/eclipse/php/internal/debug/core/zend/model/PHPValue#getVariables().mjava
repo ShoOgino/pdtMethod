@@ -4,17 +4,11 @@
 	 * @see org.eclipse.debug.core.model.IValue#getVariables()
 	 */
 	public IVariable[] getVariables() throws DebugException {
-		if (fChildren.length == 0) {
-			PHPDebugTarget debugTarget = (PHPDebugTarget) getDebugTarget();
-			ExpressionsManager expressionManager = debugTarget.getExpressionManager();
-			Expression var = fVariable;
-			if (fGlobal) {
-				String exp = "$GLOBALS[\"" + fVariable.getFullName().substring(1) + "\"]";
-				var = new DefaultExpression(exp);
+		if (fChildren == null) {
+			requestVariables();
+			if (fChildren == null) {
+				fChildren = new IVariable[0];
 			}
-			expressionManager.update(var, 1);
-			fValue = var.getValue();
-			processChildren(fValue);
 		}
 		return fChildren;
 	}
