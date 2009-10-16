@@ -1,0 +1,70 @@
+		private RefactoringStatus recursiveVerifyDestination(
+				IModelElement destination) throws ModelException {
+			Assert.isNotNull(destination);
+			if (!destination.exists())
+				return RefactoringStatus
+						.createFatalErrorStatus(RefactoringCoreMessages.ReorgPolicyFactory_doesnotexist1);
+			if (destination instanceof IScriptModel)
+				return RefactoringStatus
+						.createFatalErrorStatus(RefactoringCoreMessages.ReorgPolicyFactory_jmodel);
+			if (!(destination instanceof ISourceModule)
+					&& !ReorgUtils.isInsideSourceModule(destination))
+				return RefactoringStatus
+						.createFatalErrorStatus(RefactoringCoreMessages.ReorgPolicyFactory_cannot);
+
+			ISourceModule destinationCu = getDestinationCu(destination);
+			Assert.isNotNull(destinationCu);
+			if (destinationCu.isReadOnly())// the resource read-onliness is
+				// handled by validateEdit
+				return RefactoringStatus
+						.createFatalErrorStatus(RefactoringCoreMessages.ReorgPolicyFactory_cannot_modify);
+
+			switch (destination.getElementType()) {
+			case IModelElement.SOURCE_MODULE:
+				int[] types0 = new int[] { IModelElement.FIELD,
+						IModelElement.METHOD };
+				if (ReorgUtils.hasElementsOfType(getScriptElements(), types0))
+					return RefactoringStatus
+							.createFatalErrorStatus(RefactoringCoreMessages.ReorgPolicyFactory_cannot);
+				break;
+			// case IModelElement.PACKAGE_DECLARATION:
+			// return
+			// RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.
+			// ReorgPolicyFactory_package_decl);
+
+			// case IModelElement.IMPORT_CONTAINER:
+			// if (ReorgUtils.hasElementsNotOfType(getScriptElements(),
+			// IModelElement.IMPORT_DECLARATION))
+			// return
+			// RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.
+			// ReorgPolicyFactory_cannot);
+			// break;
+			//
+			// case IModelElement.IMPORT_DECLARATION:
+			// if (ReorgUtils.hasElementsNotOfType(getScriptElements(),
+			// IModelElement.IMPORT_DECLARATION))
+			// return
+			// RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.
+			// ReorgPolicyFactory_cannot);
+			// break;
+
+			case IModelElement.FIELD:// fall thru
+			case IModelElement.METHOD:// fall thru
+				return recursiveVerifyDestination(destination.getParent());
+
+			case IModelElement.TYPE:
+				if (DLTKCore.DEBUG) {
+					System.err.println("Add import support here..."); //$NON-NLS-1$
+				}
+				// int[] types1= new int[]{IModelElement.IMPORT_DECLARATION,
+				// IModelElement.IMPORT_CONTAINER,
+				// IModelElement.PACKAGE_DECLARATION};
+				// if (ReorgUtils.hasElementsOfType(getScriptElements(),
+				// types1))
+				// return recursiveVerifyDestination(destination.getParent());
+				break;
+			}
+
+			return new RefactoringStatus();
+		}
+

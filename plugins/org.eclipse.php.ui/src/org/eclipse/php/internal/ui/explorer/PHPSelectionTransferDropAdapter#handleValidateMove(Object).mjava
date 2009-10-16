@@ -1,0 +1,32 @@
+	private int handleValidateMove(Object target) throws ModelException {
+		if (fMoveProcessor == null) {
+			IMovePolicy policy = ReorgPolicyFactory.createMovePolicy(getResources(fElements), ReorgUtils
+					.getModelElements(fElements));
+			if (policy.canEnable())
+				fMoveProcessor = new ScriptMoveProcessor(policy);
+		}
+
+		if (!canMoveElements())
+			return DND.DROP_NONE;
+
+		if (fMoveProcessor == null)
+			return DND.DROP_NONE;
+
+		// if (!fMoveProcessor.setDestination(
+		// ReorgDestinationFactory.createDestination(target,
+		// getCurrentLocation())).isOK())
+		// return DND.DROP_NONE;
+		if (target instanceof IModelElement) {
+			if (!fMoveProcessor.setDestination((IModelElement) target).isOK()) {
+				return DND.DROP_NONE;
+			}
+		}
+		if (target instanceof IResource) {
+			if (!fMoveProcessor.setDestination((IResource) target).isOK()) {
+				return DND.DROP_NONE;
+			}
+		}
+
+		return DND.DROP_MOVE;
+	}
+

@@ -1,0 +1,39 @@
+		private Change createReferenceUpdatingMoveChange(IProgressMonitor pm)
+				throws ModelException {
+			pm.beginTask("", 2 + (fUpdateQualifiedNames ? 1 : 0)); //$NON-NLS-1$
+			try {
+				CompositeChange composite = new DynamicValidationStateChange(
+						RefactoringCoreMessages.ReorgPolicy_move);
+				composite.markAsSynthetic();
+				// XX workaround for bug 13558
+				// <workaround>
+				if (fChangeManager == null) {
+					fChangeManager = createChangeManager(
+							new SubProgressMonitor(pm, 1),
+							new RefactoringStatus()); // TODO: non-CU matches
+					// silently dropped
+					RefactoringStatus status = Checks.validateModifiesFiles(
+							getAllModifiedFiles(), null);
+					if (status.hasFatalError())
+						fChangeManager = new TextChangeManager();
+				}
+				// </workaround>
+
+				composite
+						.merge(new CompositeChange(
+								RefactoringCoreMessages.MoveRefactoring_reorganize_elements,
+								fChangeManager.getAllChanges()));
+
+				Change fileMove = createSimpleMoveChange(new SubProgressMonitor(
+						pm, 1));
+				if (fileMove instanceof CompositeChange) {
+					composite.merge(((CompositeChange) fileMove));
+				} else {
+					composite.add(fileMove);
+				}
+				return composite;
+			} finally {
+				pm.done();
+			}
+		}
+

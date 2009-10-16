@@ -1,0 +1,54 @@
+		protected RefactoringStatus verifyDestination(IModelElement modelElement)
+				throws ModelException {
+			Assert.isNotNull(modelElement);
+			if (!modelElement.exists())
+				return RefactoringStatus
+						.createFatalErrorStatus(RefactoringCoreMessages.ReorgPolicyFactory_doesnotexist0);
+			if (modelElement instanceof IScriptModel)
+				return RefactoringStatus
+						.createFatalErrorStatus(RefactoringCoreMessages.ReorgPolicyFactory_jmodel);
+
+			if (modelElement.isReadOnly())
+				return RefactoringStatus
+						.createFatalErrorStatus(RefactoringCoreMessages.ReorgPolicyFactory_readonly);
+
+			if (!modelElement.isStructureKnown())
+				return RefactoringStatus
+						.createFatalErrorStatus(RefactoringCoreMessages.ReorgPolicyFactory_structure);
+
+			if (modelElement instanceof IOpenable) {
+				IOpenable openable = (IOpenable) modelElement;
+				if (!openable.isConsistent())
+					return RefactoringStatus
+							.createFatalErrorStatus(RefactoringCoreMessages.ReorgPolicyFactory_inconsistent);
+			}
+
+			if (modelElement instanceof IProjectFragment) {
+				IProjectFragment root = (IProjectFragment) modelElement;
+				if (root.isArchive())
+					return RefactoringStatus
+							.createFatalErrorStatus(RefactoringCoreMessages.ReorgPolicyFactory_archive);
+				if (root.isExternal())
+					return RefactoringStatus
+							.createFatalErrorStatus(RefactoringCoreMessages.ReorgPolicyFactory_external);
+			}
+
+			if (ReorgUtils.isInsideSourceModule(modelElement)) {
+				return RefactoringStatus
+						.createFatalErrorStatus(RefactoringCoreMessages.ReorgPolicyFactory_cannot);
+			}
+
+			IContainer destinationAsContainer = getDestinationAsContainer();
+			if (destinationAsContainer == null
+					|| isChildOfOrEqualToAnyFolder(destinationAsContainer))
+				return RefactoringStatus
+						.createFatalErrorStatus(RefactoringCoreMessages.ReorgPolicyFactory_not_this_resource);
+
+			if (containsLinkedResources()
+					&& !ReorgUtils
+							.canBeDestinationForLinkedResources(modelElement))
+				return RefactoringStatus
+						.createFatalErrorStatus(RefactoringCoreMessages.ReorgPolicyFactory_linked);
+			return new RefactoringStatus();
+		}
+

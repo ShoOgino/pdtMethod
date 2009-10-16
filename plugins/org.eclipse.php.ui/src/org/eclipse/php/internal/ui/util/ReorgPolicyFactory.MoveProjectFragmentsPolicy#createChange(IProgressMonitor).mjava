@@ -1,0 +1,16 @@
+		public Change createChange(IProgressMonitor pm) throws ModelException {
+			IProjectFragment[] roots = getProjectFragments();
+			pm.beginTask("", roots.length); //$NON-NLS-1$
+			CompositeChange composite = new DynamicValidationStateChange(
+					RefactoringCoreMessages.ReorgPolicy_move_source_folder);
+			composite.markAsSynthetic();
+			IScriptProject destination = getDestinationScriptProject();
+			Assert.isNotNull(destination);
+			for (int i = 0; i < roots.length; i++) {
+				composite.add(createChange(roots[i], destination));
+				pm.worked(1);
+			}
+			pm.done();
+			return composite;
+		}
+

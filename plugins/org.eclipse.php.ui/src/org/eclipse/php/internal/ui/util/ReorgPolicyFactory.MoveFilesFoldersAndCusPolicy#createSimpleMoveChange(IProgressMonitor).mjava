@@ -1,0 +1,28 @@
+		private Change createSimpleMoveChange(IProgressMonitor pm) {
+			CompositeChange result = new DynamicValidationStateChange(
+					RefactoringCoreMessages.ReorgPolicy_move);
+			result.markAsSynthetic();
+			IFile[] files = getFiles();
+			IFolder[] folders = getFolders();
+			ISourceModule[] cus = getCus();
+			pm.beginTask("", files.length + folders.length + cus.length); //$NON-NLS-1$
+			for (int i = 0; i < files.length; i++) {
+				result.add(createChange(files[i]));
+				pm.worked(1);
+			}
+			if (pm.isCanceled())
+				throw new OperationCanceledException();
+			for (int i = 0; i < folders.length; i++) {
+				result.add(createChange(folders[i]));
+				pm.worked(1);
+			}
+			if (pm.isCanceled())
+				throw new OperationCanceledException();
+			for (int i = 0; i < cus.length; i++) {
+				result.add(createChange(cus[i]));
+				pm.worked(1);
+			}
+			pm.done();
+			return result;
+		}
+

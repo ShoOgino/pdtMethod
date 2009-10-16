@@ -1,0 +1,31 @@
+		public Change createChange(IProgressMonitor pm,
+				INewNameQueries copyQueries) {
+			IFile[] file = getFiles();
+			IFolder[] folders = getFolders();
+			ISourceModule[] cus = getCus();
+			pm.beginTask("", cus.length + file.length + folders.length); //$NON-NLS-1$
+			NewNameProposer nameProposer = new NewNameProposer();
+			CompositeChange composite = new DynamicValidationStateChange(
+					RefactoringCoreMessages.ReorgPolicy_copy);
+			composite.markAsSynthetic();
+			for (int i = 0; i < cus.length; i++) {
+				composite.add(createChange(cus[i], nameProposer, copyQueries));
+				pm.worked(1);
+			}
+			if (pm.isCanceled())
+				throw new OperationCanceledException();
+			for (int i = 0; i < file.length; i++) {
+				composite.add(createChange(file[i], nameProposer, copyQueries));
+				pm.worked(1);
+			}
+			if (pm.isCanceled())
+				throw new OperationCanceledException();
+			for (int i = 0; i < folders.length; i++) {
+				composite.add(createChange(folders[i], nameProposer,
+						copyQueries));
+				pm.worked(1);
+			}
+			pm.done();
+			return composite;
+		}
+

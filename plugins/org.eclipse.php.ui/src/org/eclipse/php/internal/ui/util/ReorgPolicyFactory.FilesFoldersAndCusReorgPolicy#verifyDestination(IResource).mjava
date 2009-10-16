@@ -1,0 +1,23 @@
+		protected RefactoringStatus verifyDestination(IResource resource)
+				throws ModelException {
+			Assert.isNotNull(resource);
+			if (!resource.exists() || resource.isPhantom())
+				return RefactoringStatus
+						.createFatalErrorStatus(RefactoringCoreMessages.ReorgPolicyFactory_phantom);
+			if (!resource.isAccessible())
+				return RefactoringStatus
+						.createFatalErrorStatus(RefactoringCoreMessages.ReorgPolicyFactory_inaccessible);
+			Assert.isTrue(resource.getType() != IResource.ROOT);
+
+			if (isChildOfOrEqualToAnyFolder(resource))
+				return RefactoringStatus
+						.createFatalErrorStatus(RefactoringCoreMessages.ReorgPolicyFactory_not_this_resource);
+
+			if (containsLinkedResources()
+					&& !ReorgUtils.canBeDestinationForLinkedResources(resource))
+				return RefactoringStatus
+						.createFatalErrorStatus(RefactoringCoreMessages.ReorgPolicyFactory_linked);
+
+			return new RefactoringStatus();
+		}
+

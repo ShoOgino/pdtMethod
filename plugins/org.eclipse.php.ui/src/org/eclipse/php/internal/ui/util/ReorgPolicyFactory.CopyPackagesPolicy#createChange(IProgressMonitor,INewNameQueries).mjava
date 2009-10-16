@@ -1,0 +1,18 @@
+		public Change createChange(IProgressMonitor pm,
+				INewNameQueries newNameQueries) throws ModelException {
+			NewNameProposer nameProposer = new NewNameProposer();
+			IScriptFolder[] fragments = getPackages();
+			pm.beginTask("", fragments.length); //$NON-NLS-1$
+			CompositeChange composite = new DynamicValidationStateChange(
+					RefactoringCoreMessages.ReorgPolicy_copy_package);
+			composite.markAsSynthetic();
+			IProjectFragment root = getDestinationAsProjectFragment();
+			for (int i = 0; i < fragments.length; i++) {
+				composite.add(createChange(fragments[i], root, nameProposer,
+						newNameQueries));
+				pm.worked(1);
+			}
+			pm.done();
+			return composite;
+		}
+
