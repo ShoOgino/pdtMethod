@@ -1,40 +1,42 @@
 	/**
 	 * This callback is called while processing state section
+	 * 
 	 * @param state
 	 * @param line
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	protected void onState(STATES state, String line) throws Exception {
 		switch (state) {
-			case TEST:
-				this.description = line;
-				break;
-			case FILE:
-				this.file += (line + "\n");
-				break;
-			case EXPECT:
-				this.expected += (line + "\n");
-				break;
-			case CONFIG:
-				int i = line.indexOf(':');
-				if (i == -1) {
-					throw new Exception("Wrong option in " + STATES.CONFIG.getName() + " section: " + line);
+		case TEST:
+			this.description = line;
+			break;
+		case FILE:
+			this.file += (line + "\n");
+			break;
+		case EXPECT:
+			this.expected += (line + "\n");
+			break;
+		case CONFIG:
+			int i = line.indexOf(':');
+			if (i == -1) {
+				throw new Exception("Wrong option in "
+						+ STATES.CONFIG.getName() + " section: " + line);
+			}
+			String key = line.substring(0, i);
+			String value = line.substring(i + 1);
+			this.config.put(key.trim(), value.trim());
+			break;
+		case PREFERENCES:
+			if (line != null && line.length() > 0) {
+				if (preferences == null) {
+					this.preferences = (line + "\n");
+				} else {
+					this.preferences += (line + "\n");
 				}
-				String key = line.substring(0, i);
-				String value = line.substring(i + 1);
-				this.config.put(key.trim(), value.trim());
-				break;
-			case PREFERENCES:
-				if(line != null && line.length() > 0) {
-					if(preferences == null ) {
-						this.preferences = (line + "\n");
-					}else{
-						this.preferences += (line + "\n");
-					}
-				}
-				break;
-			default:
-				break;
+			}
+			break;
+		default:
+			break;
 		}
 	}
 
