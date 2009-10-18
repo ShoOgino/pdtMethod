@@ -1,6 +1,8 @@
 	private LaunchConfigurationsTabsRegistry() {
 		IExtensionRegistry registry = Platform.getExtensionRegistry();
-		IConfigurationElement[] elements = registry.getConfigurationElementsFor(PHPDebugUIPlugin.ID, EXTENSION_POINT_NAME);
+		IConfigurationElement[] elements = registry
+				.getConfigurationElementsFor(PHPDebugUIPlugin.ID,
+						EXTENSION_POINT_NAME);
 		ArrayList mightOverride = new ArrayList(5);
 
 		for (int i = 0; i < elements.length; i++) {
@@ -10,37 +12,47 @@
 				String groupId = element.getAttribute(GROUP_ID_ATTRIBUTE);
 				String placeAfter = element.getAttribute(PLACE_AFTER_ATTRIBUTE);
 				String modes = element.getAttribute(MODES_ATTRIBUTE);
-				if (element.getNamespaceIdentifier().equals(PHPDebugUIPlugin.ID) ||
-						element.getNamespaceIdentifier().startsWith("org.eclipse.php.server.")) { //$NON-NLS-1$
-					// Make sure that extentions that exists in this plugin will appear ahead of all others
+				if (element.getNamespaceIdentifier()
+						.equals(PHPDebugUIPlugin.ID)
+						|| element.getNamespaceIdentifier().startsWith(
+								"org.eclipse.php.server.")) { //$NON-NLS-1$
+					// Make sure that extentions that exists in this plugin will
+					// appear ahead of all others
 					// when the user-class calls for getLaunchTabs().
-					factories.add(0, new TabFactory(element, groupId, id, placeAfter, modes));
+					factories.add(0, new TabFactory(element, groupId, id,
+							placeAfter, modes));
 				} else {
 					boolean override = false;
 					for (int j = 0; !override && j < factories.size(); j++) {
 						// Check for overriding id's.
-						// Override as needed when the element namespace identifier is from 
-						// an external plugin. The procedure will take the first overidden id.
+						// Override as needed when the element namespace
+						// identifier is from
+						// an external plugin. The procedure will take the first
+						// overidden id.
 						TabFactory factory = (TabFactory) factories.get(j);
 						if (id.equals(factory.id)) {
 							override = true;
-							if (!element.getNamespaceIdentifier().startsWith("org.eclipse.php.")) { //$NON-NLS-1$
+							if (!element.getNamespaceIdentifier().startsWith(
+									"org.eclipse.php.")) { //$NON-NLS-1$
 								factories.remove(j);
-								factories.add(new TabFactory(element, groupId, id, placeAfter, modes));
+								factories.add(new TabFactory(element, groupId,
+										id, placeAfter, modes));
 								break;
 							}
 						}
 					}
 					if (!override) {
-						mightOverride.add(new TabFactory(element, groupId, id, placeAfter, modes));
+						mightOverride.add(new TabFactory(element, groupId, id,
+								placeAfter, modes));
 					}
 				}
 			}
 		}
 		// Check again for overriding extensions.
-		// This check is needed since we cannot trust the extension loading order.
+		// This check is needed since we cannot trust the extension loading
+		// order.
 		for (int i = 0; i < mightOverride.size(); i++) {
-			TabFactory tag = (TabFactory)mightOverride.get(i);
+			TabFactory tag = (TabFactory) mightOverride.get(i);
 			int index = factories.indexOf(tag);
 			if (index > -1) {
 				// Found one that needs to be overidden.
@@ -50,7 +62,7 @@
 				factories.add(tag);
 			}
 		}
-		
+
 		sortFragmentsByPlace();
 	}
 

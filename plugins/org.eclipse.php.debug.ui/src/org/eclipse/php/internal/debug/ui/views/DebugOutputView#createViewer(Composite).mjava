@@ -1,29 +1,38 @@
-    /* (non-Javadoc)
-     * @see org.eclipse.debug.ui.AbstractDebugView#createViewer(org.eclipse.swt.widgets.Composite)
-     */
-    protected Viewer createViewer(Composite parent) {
-        
-    	int styles= SWT.V_SCROLL | SWT.H_SCROLL | SWT.MULTI | SWT.FULL_SELECTION;
-        fSourceViewer= new StructuredTextViewer(parent, null, null, false, styles);
-        fSourceViewer.setEditable(false);
-        getSite().getWorkbenchWindow().getSelectionService().addSelectionListener(IDebugUIConstants.ID_DEBUG_VIEW, this);
-        getSite().setSelectionProvider(fSourceViewer.getSelectionProvider());
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.eclipse.debug.ui.AbstractDebugView#createViewer(org.eclipse.swt.widgets
+	 * .Composite)
+	 */
+	protected Viewer createViewer(Composite parent) {
 
-        terminateListener = new IDebugEventSetListener() {
-        	PHPDebugTarget target;
+		int styles = SWT.V_SCROLL | SWT.H_SCROLL | SWT.MULTI
+				| SWT.FULL_SELECTION;
+		fSourceViewer = new StructuredTextViewer(parent, null, null, false,
+				styles);
+		fSourceViewer.setEditable(false);
+		getSite().getWorkbenchWindow().getSelectionService()
+				.addSelectionListener(IDebugUIConstants.ID_DEBUG_VIEW, this);
+		getSite().setSelectionProvider(fSourceViewer.getSelectionProvider());
+
+		terminateListener = new IDebugEventSetListener() {
+			PHPDebugTarget target;
+
 			public void handleDebugEvents(DebugEvent[] events) {
 				if (events != null) {
 					int size = events.length;
 					for (int i = 0; i < size; i++) {
 						Object obj = events[i].getSource();
 
-						if(!(obj instanceof PHPDebugTarget))
+						if (!(obj instanceof PHPDebugTarget))
 							continue;
 
-						if ( events[i].getKind() == DebugEvent.TERMINATE) {
-							target = (PHPDebugTarget)obj;
+						if (events[i].getKind() == DebugEvent.TERMINATE) {
+							target = (PHPDebugTarget) obj;
 							Job job = new UIJob("debug output") {
-								public IStatus runInUIThread(IProgressMonitor monitor) {
+								public IStatus runInUIThread(
+										IProgressMonitor monitor) {
 									update(target);
 									return Status.OK_STATUS;
 								}
@@ -38,6 +47,6 @@
 
 		debugViewHelper = new DebugViewHelper();
 
-        return fSourceViewer;
-    }
+		return fSourceViewer;
+	}
 

@@ -3,53 +3,78 @@
 		Preferences prefs = PHPProjectPreferences.getModelPreferences();
 		IScopeContext[] preferenceScopes = createPreferenceScopes(propertyPage);
 
-		boolean stopAtFirstLine = prefs.getBoolean(PHPDebugCorePreferenceNames.STOP_AT_FIRST_LINE);
-		String debuggerName = PHPDebuggersRegistry.getDebuggerName(prefs.getString(PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID));
+		boolean stopAtFirstLine = prefs
+				.getBoolean(PHPDebugCorePreferenceNames.STOP_AT_FIRST_LINE);
+		String debuggerName = PHPDebuggersRegistry.getDebuggerName(prefs
+				.getString(PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID));
 		String serverName = ServersManager.getDefaultServer(null).getName();
 		PHPexes exes = PHPexes.getInstance();
 		String phpExeName = PHPDebugUIMessages.PhpDebugPreferencePage_noExeDefined;
 		if (exes.hasItems(PHPDebugPlugin.getCurrentDebuggerId())) {
-			String name = exes.getDefaultItem(PHPDebugPlugin.getCurrentDebuggerId()).getName();
-			if (null != name) 
+			String name = exes.getDefaultItem(
+					PHPDebugPlugin.getCurrentDebuggerId()).getName();
+			if (null != name)
 				phpExeName = name;
 		}
-		String transferEncoding = prefs.getString(PHPDebugCorePreferenceNames.TRANSFER_ENCODING);
-		String outputEncoding = prefs.getString(PHPDebugCorePreferenceNames.OUTPUT_ENCODING);
+		String transferEncoding = prefs
+				.getString(PHPDebugCorePreferenceNames.TRANSFER_ENCODING);
+		String outputEncoding = prefs
+				.getString(PHPDebugCorePreferenceNames.OUTPUT_ENCODING);
 		loadDebuggers(fDefaultDebugger);
 		loadServers(fDefaultServer);
 		boolean exeLoaded = false;
 		// Update the values in case we have a project-specific settings.
 		if (preferenceScopes[0] instanceof ProjectScope) {
-			IEclipsePreferences node = preferenceScopes[0].getNode(getPreferenceNodeQualifier());
+			IEclipsePreferences node = preferenceScopes[0]
+					.getNode(getPreferenceNodeQualifier());
 			if (node != null && getProject(propertyPage) != null) {
-				String projectServerName = ServersManager.getDefaultServer(getProject(propertyPage)).getName();
+				String projectServerName = ServersManager.getDefaultServer(
+						getProject(propertyPage)).getName();
 				if (!projectServerName.equals("")) { //$NON-NLS-1$
-					String debuggerId = node.get(PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID, PHPDebugPlugin.getCurrentDebuggerId());
-					debuggerName = PHPDebuggersRegistry.getDebuggerName(debuggerId);
+					String debuggerId = node.get(
+							PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID,
+							PHPDebugPlugin.getCurrentDebuggerId());
+					debuggerName = PHPDebuggersRegistry
+							.getDebuggerName(debuggerId);
 					serverName = projectServerName;
-					stopAtFirstLine = node.getBoolean(PHPDebugCorePreferenceNames.STOP_AT_FIRST_LINE, stopAtFirstLine);
-					transferEncoding = node.get(PHPDebugCorePreferenceNames.TRANSFER_ENCODING, transferEncoding); //$NON-NLS-1$
-					outputEncoding = node.get(PHPDebugCorePreferenceNames.OUTPUT_ENCODING, outputEncoding); //$NON-NLS-1$
-					phpExeName = node.get(PHPDebugCorePreferenceNames.DEFAULT_PHP, phpExeName);
-					// Check that if the project had a non-defined exe, and now there is one that is valid. we set
+					stopAtFirstLine = node.getBoolean(
+							PHPDebugCorePreferenceNames.STOP_AT_FIRST_LINE,
+							stopAtFirstLine);
+					transferEncoding = node.get(
+							PHPDebugCorePreferenceNames.TRANSFER_ENCODING,
+							transferEncoding); //$NON-NLS-1$
+					outputEncoding = node.get(
+							PHPDebugCorePreferenceNames.OUTPUT_ENCODING,
+							outputEncoding); //$NON-NLS-1$
+					phpExeName = node
+							.get(PHPDebugCorePreferenceNames.DEFAULT_PHP,
+									phpExeName);
+					// Check that if the project had a non-defined exe, and now
+					// there is one that is valid. we set
 					// it with the new valid default exe.
-					if (PHPDebugUIMessages.PhpDebugPreferencePage_noExeDefined.equals(phpExeName)) {
+					if (PHPDebugUIMessages.PhpDebugPreferencePage_noExeDefined
+							.equals(phpExeName)) {
 						if (exes.hasItems(debuggerId)) {
-							phpExeName = exes.getDefaultItem(debuggerId).getName();
-							node.put(PHPDebugCorePreferenceNames.DEFAULT_PHP, phpExeName);
+							phpExeName = exes.getDefaultItem(debuggerId)
+									.getName();
+							node.put(PHPDebugCorePreferenceNames.DEFAULT_PHP,
+									phpExeName);
 							try {
 								node.flush();
 							} catch (BackingStoreException e) {
 							}
 						}
 					}
-					loadPHPExes(fDefaultPHPExe, exes.getItems(node.get(PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID, PHPDebugPlugin.getCurrentDebuggerId())));
+					loadPHPExes(fDefaultPHPExe, exes.getItems(node.get(
+							PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID,
+							PHPDebugPlugin.getCurrentDebuggerId())));
 					exeLoaded = true;
 				}
 			}
 		}
 		if (!exeLoaded) {
-			loadPHPExes(fDefaultPHPExe, exes.getItems(PHPDebugPlugin.getCurrentDebuggerId()));
+			loadPHPExes(fDefaultPHPExe, exes.getItems(PHPDebugPlugin
+					.getCurrentDebuggerId()));
 		}
 		fStopAtFirstLine.setSelection(stopAtFirstLine);
 		fDefaultDebugger.select(fDefaultDebugger.indexOf(debuggerName));
