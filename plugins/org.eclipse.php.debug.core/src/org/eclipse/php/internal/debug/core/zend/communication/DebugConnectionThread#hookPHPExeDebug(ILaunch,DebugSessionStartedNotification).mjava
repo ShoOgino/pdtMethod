@@ -1,21 +1,32 @@
 	/**
 	 * Hook a PHP executable debug session
-	 *
-	 * @param launch An {@link ILaunch}
-	 * @param startedNotification	A DebugSessionStartedNotification
+	 * 
+	 * @param launch
+	 *            An {@link ILaunch}
+	 * @param startedNotification
+	 *            A DebugSessionStartedNotification
 	 */
-	protected void hookPHPExeDebug(final ILaunch launch, DebugSessionStartedNotification startedNotification) throws CoreException {
-		ILaunchConfiguration launchConfiguration = launch.getLaunchConfiguration();
-		inputManager.setTransferEncoding(launchConfiguration.getAttribute(IDebugParametersKeys.TRANSFER_ENCODING, "")); //$NON-NLS-1$
-		inputManager.setOutputEncoding(launchConfiguration.getAttribute(IDebugParametersKeys.OUTPUT_ENCODING, "")); //$NON-NLS-1$
-		String phpExeString = launchConfiguration.getAttribute(IPHPDebugConstants.ATTR_EXECUTABLE_LOCATION, (String) null);
-		String fileNameString = launchConfiguration.getAttribute(IPHPDebugConstants.ATTR_FILE, (String) null);
-		boolean runWithDebugInfo = launchConfiguration.getAttribute(IPHPDebugConstants.RUN_WITH_DEBUG_INFO, true);
-		
+	protected void hookPHPExeDebug(final ILaunch launch,
+			DebugSessionStartedNotification startedNotification)
+			throws CoreException {
+		ILaunchConfiguration launchConfiguration = launch
+				.getLaunchConfiguration();
+		inputManager.setTransferEncoding(launchConfiguration.getAttribute(
+				IDebugParametersKeys.TRANSFER_ENCODING, "")); //$NON-NLS-1$
+		inputManager.setOutputEncoding(launchConfiguration.getAttribute(
+				IDebugParametersKeys.OUTPUT_ENCODING, "")); //$NON-NLS-1$
+		String phpExeString = launchConfiguration.getAttribute(
+				IPHPDebugConstants.ATTR_EXECUTABLE_LOCATION, (String) null);
+		String fileNameString = launchConfiguration.getAttribute(
+				IPHPDebugConstants.ATTR_FILE, (String) null);
+		boolean runWithDebugInfo = launchConfiguration.getAttribute(
+				IPHPDebugConstants.RUN_WITH_DEBUG_INFO, true);
+
 		IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
 		IProject project = null;
-		String file = launchConfiguration.getAttribute(IPHPDebugConstants.ATTR_FILE, (String) null);
-		if (file != null) { 
+		String file = launchConfiguration.getAttribute(
+				IPHPDebugConstants.ATTR_FILE, (String) null);
+		if (file != null) {
 			IResource resource = workspaceRoot.findMember(file);
 			if (resource != null) {
 				project = resource.getProject();
@@ -34,21 +45,27 @@
 			IFile fileToDebug = (IFile) res;
 			debugFileName = fileToDebug.getName();
 		}
-		
-		boolean stopAtFirstLine = PHPProjectPreferences.getStopAtFirstLine(project);
-		int requestPort = PHPDebugPlugin.getDebugPort(DebuggerCommunicationDaemon.ZEND_DEBUGGER_ID);
+
+		boolean stopAtFirstLine = PHPProjectPreferences
+				.getStopAtFirstLine(project);
+		int requestPort = PHPDebugPlugin
+				.getDebugPort(DebuggerCommunicationDaemon.ZEND_DEBUGGER_ID);
 
 		IPath phpExe = new Path(phpExeString);
 		PHPProcess process = new PHPProcess(launch, phpExe.toOSString());
 
-		debugTarget = (PHPDebugTarget) createDebugTarget(this, launch, phpExeString, debugFileName, requestPort, process, runWithDebugInfo, stopAtFirstLine, project);
+		debugTarget = (PHPDebugTarget) createDebugTarget(this, launch,
+				phpExeString, debugFileName, requestPort, process,
+				runWithDebugInfo, stopAtFirstLine, project);
 		launch.addDebugTarget(debugTarget);
 		// A fix for Linux display problem.
 		// This code will auto-expand the debugger view tree.
 		Display.getDefault().asyncExec(new Runnable() {
 			public void run() {
-				LaunchManager manager = (LaunchManager) DebugPlugin.getDefault().getLaunchManager();
-				manager.fireUpdate(new ILaunch[] { launch }, LaunchManager.ADDED);
+				LaunchManager manager = (LaunchManager) DebugPlugin
+						.getDefault().getLaunchManager();
+				manager.fireUpdate(new ILaunch[] { launch },
+						LaunchManager.ADDED);
 			}
 		});
 	}

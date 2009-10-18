@@ -1,33 +1,42 @@
 	/**
 	 * Make some preparations before debug session:
 	 * <ul>
-	 * 	<li>Adds include path
-	 * 	<li>Modifies Zend Debugger path in the PHP configuration file
+	 * <li>Adds include path
+	 * <li>Modifies Zend Debugger path in the PHP configuration file
 	 * </ul>
-	 *
-	 * @param phpIniFile PHP configuration file instance
-	 * @param phpExePath Path to the PHP executable
-	 * @param project Current project
+	 * 
+	 * @param phpIniFile
+	 *            PHP configuration file instance
+	 * @param phpExePath
+	 *            Path to the PHP executable
+	 * @param project
+	 *            Current project
 	 * @return created temporary PHP configuration file
 	 */
-	public static File prepareBeforeDebug(File phpIniFile, String phpExePath, IProject project) {
+	public static File prepareBeforeDebug(File phpIniFile, String phpExePath,
+			IProject project) {
 		File tempIniFile = createTemporaryPHPINIFile(phpIniFile);
 
 		tempIniFile = createPhpIniByProject(phpIniFile, project);
 
 		// Modify Zend Debugger extension entry:
 		if (phpIniFile != null) {
-			File debuggerFile = new File(phpIniFile.getParentFile(), Platform.OS_WIN32.equals(Platform.getOS()) ? "ZendDebugger.dll" : "ZendDebugger.so"); //$NON-NLS-1$ //$NON-NLS-2$
+			File debuggerFile = new File(
+					phpIniFile.getParentFile(),
+					Platform.OS_WIN32.equals(Platform.getOS()) ? "ZendDebugger.dll" : "ZendDebugger.so"); //$NON-NLS-1$ //$NON-NLS-2$
 			if (debuggerFile.exists()) {
-				modifyDebuggerExtensionPath(tempIniFile, debuggerFile.getAbsolutePath());
+				modifyDebuggerExtensionPath(tempIniFile, debuggerFile
+						.getAbsolutePath());
 			}
-			modifyExtensionDir(tempIniFile, new File(debuggerFile.getParentFile(), "ext").getAbsolutePath());
+			modifyExtensionDir(tempIniFile, new File(debuggerFile
+					.getParentFile(), "ext").getAbsolutePath());
 		}
 
 		if (PHPDebugPlugin.DEBUG) {
 			System.out.println("\nPHP.ini contents:\n---------------------");
 			try {
-				BufferedReader r = new BufferedReader(new FileReader(tempIniFile));
+				BufferedReader r = new BufferedReader(new FileReader(
+						tempIniFile));
 				String line;
 				while ((line = r.readLine()) != null) {
 					System.out.println(line);

@@ -1,17 +1,21 @@
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see org.eclipse.debug.core.IBreakpointListener#breakpointAdded(org.eclipse.debug.core.model.IBreakpoint)
+	 * @see
+	 * org.eclipse.debug.core.IBreakpointListener#breakpointAdded(org.eclipse
+	 * .debug.core.model.IBreakpoint)
 	 */
 	public void breakpointAdded(IBreakpoint breakpoint) {
 		// attempt to add a breakpoint under the following conditions
 		// 1. breakpoint manager enabled
 		// 2. the breakpoint is valid for the environment
 		// 3. the breakpoint is enabled
-		// 4. the debugee is suspended or running and async is supported (send immediately) 
-		// 5. the debugee is running and async not supported (defer and send later)
+		// 4. the debugee is suspended or running and async is supported (send
+		// immediately)
+		// 5. the debugee is running and async not supported (defer and send
+		// later)
 		// otherwise do not send or defer the breakpoint
-		
+
 		if (!DebugPlugin.getDefault().getBreakpointManager().isEnabled()) {
 			return;
 		}
@@ -19,12 +23,14 @@
 		if (supportsBreakpoint(breakpoint)) {
 			try {
 				if (breakpoint.isEnabled()) {
-					DBGpBreakpoint bp = bpFacade.createDBGpBreakpoint(breakpoint);
+					DBGpBreakpoint bp = bpFacade
+							.createDBGpBreakpoint(breakpoint);
 					if (isSuspended() || (asyncSupported && isRunning())) {
 						// we are suspended or async mode is supported and we
 						// are running, so send the breakpoint.
 						if (DBGpLogger.debugBP()) {
-							DBGpLogger.debug("Breakpoint Add requested immediately"); //$NON-NLS-1$
+							DBGpLogger
+									.debug("Breakpoint Add requested immediately"); //$NON-NLS-1$
 						}
 						sendBreakpointAddCmd(bp, false);
 					} else if (isRunning()) {
@@ -42,9 +48,11 @@
 						// multiple requests, so the best bet is to
 						// queue the requests until we suspend.
 						if (DBGpLogger.debugBP()) {
-							DBGpLogger.debug("Breakpoint Add deferred until suspended"); //$NON-NLS-1$
+							DBGpLogger
+									.debug("Breakpoint Add deferred until suspended"); //$NON-NLS-1$
 						}
-						DBGpBreakpointCmd bpSet = new DBGpBreakpointCmd(DBGpCommand.breakPointSet, bp);
+						DBGpBreakpointCmd bpSet = new DBGpBreakpointCmd(
+								DBGpCommand.breakPointSet, bp);
 						queueBpCmd(bpSet);
 					}
 				}

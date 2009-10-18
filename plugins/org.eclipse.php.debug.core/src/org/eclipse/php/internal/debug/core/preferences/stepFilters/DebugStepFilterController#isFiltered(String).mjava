@@ -1,6 +1,9 @@
 	/**
-	 * Checks whether the given file path is filtered in the Debug Step Filters list
-	 * @param path - a file path
+	 * Checks whether the given file path is filtered in the Debug Step Filters
+	 * list
+	 * 
+	 * @param path
+	 *            - a file path
 	 */
 	public boolean isFiltered(String path) {
 		Boolean cachedFilterResult = filtersCheckCache.get(path);
@@ -17,7 +20,8 @@
 			String filterPath = currentFilter.getPath();
 			if (currentFilter.getType() == IStepFilterTypes.PATH_PATTERN) {
 				if (filterPath.startsWith("*") && filterPath.endsWith("*")) {//*...* //$NON-NLS-1$ //$NON-NLS-2$
-					if (path.contains(filterPath.substring(1, filterPath.length() - 1))) {
+					if (path.contains(filterPath.substring(1, filterPath
+							.length() - 1))) {
 						filterResult = true;
 						break;
 					}
@@ -27,29 +31,41 @@
 						break;
 					}
 				} else if (filterPath.endsWith("*")) {//...* //$NON-NLS-1$
-					if (path.startsWith(filterPath.substring(0, filterPath.length() - 1))) {
+					if (path.startsWith(filterPath.substring(0, filterPath
+							.length() - 1))) {
 						filterResult = true;
 						break;
 					}
-				}//else, simply compare the exact path string
-				else {//check if simple path pattern
-					filterResult = FileUtils.checkIfEqualFilePaths(path, currentFilter.getPath());
+				}// else, simply compare the exact path string
+				else {// check if simple path pattern
+					filterResult = FileUtils.checkIfEqualFilePaths(path,
+							currentFilter.getPath());
 					break;
 				}
-			} else {//no '*' in filter
-				//check if the given path is inside a filtered container (folder, project etc..) 
-				if ((currentFilter.getType() == IStepFilterTypes.PHP_PROJECT) || (currentFilter.getType() == IStepFilterTypes.PHP_PROJECT_FOLDER) || (currentFilter.getType() == IStepFilterTypes.PHP_INCLUDE_PATH_LIBRARY_FOLDER)
-					|| (currentFilter.getType() == IStepFilterTypes.PHP_INCLUDE_PATH_LIBRARY)) {
-					filterResult = FileUtils.checkIfContainerOfFile(currentFilter.getPath(), path);
+			} else {// no '*' in filter
+				// check if the given path is inside a filtered container
+				// (folder, project etc..)
+				if ((currentFilter.getType() == IStepFilterTypes.PHP_PROJECT)
+						|| (currentFilter.getType() == IStepFilterTypes.PHP_PROJECT_FOLDER)
+						|| (currentFilter.getType() == IStepFilterTypes.PHP_INCLUDE_PATH_LIBRARY_FOLDER)
+						|| (currentFilter.getType() == IStepFilterTypes.PHP_INCLUDE_PATH_LIBRARY)) {
+					filterResult = FileUtils.checkIfContainerOfFile(
+							currentFilter.getPath(), path);
 					break;
 				}
-				//check if the given path is inside an include path variable container
-				else if ((currentFilter.getType() == IStepFilterTypes.PHP_INCLUDE_PATH_VAR) || currentFilter.getType() == IStepFilterTypes.PHP_INCLUDE_PATH_VAR_FOLDER) {
-					
-					IPath resolvedVariablePath = DLTKCore.getResolvedVariablePath(new Path(currentFilter.getPath()));
+				// check if the given path is inside an include path variable
+				// container
+				else if ((currentFilter.getType() == IStepFilterTypes.PHP_INCLUDE_PATH_VAR)
+						|| currentFilter.getType() == IStepFilterTypes.PHP_INCLUDE_PATH_VAR_FOLDER) {
+
+					IPath resolvedVariablePath = DLTKCore
+							.getResolvedVariablePath(new Path(currentFilter
+									.getPath()));
 					if (resolvedVariablePath != null) {
-						String includePathVarPath = resolvedVariablePath.toOSString();
-						filterResult = FileUtils.checkIfContainerOfFile(includePathVarPath, path);
+						String includePathVarPath = resolvedVariablePath
+								.toOSString();
+						filterResult = FileUtils.checkIfContainerOfFile(
+								includePathVarPath, path);
 					}
 					break;
 				}

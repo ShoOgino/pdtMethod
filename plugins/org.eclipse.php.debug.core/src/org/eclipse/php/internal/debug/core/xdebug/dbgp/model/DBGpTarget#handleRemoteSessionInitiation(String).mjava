@@ -1,30 +1,42 @@
 	/**
 	 * handle a Remotely Initiated launch debug session
-	 * @param initScript the initial script being executed
+	 * 
+	 * @param initScript
+	 *            the initial script being executed
 	 */
-	
+
 	private void handleRemoteSessionInitiation(String initScript) {
 		try {
-			PathEntry pe = DebugSearchEngine.find(pathMapper, initScript, null, this);
+			PathEntry pe = DebugSearchEngine.find(pathMapper, initScript, null,
+					this);
 			if (pe != null) {
 				Object container = pe.getContainer();
 				if (container != null && container instanceof IResource) {
-					IResource res = (IResource)container;
+					IResource res = (IResource) container;
 					IProject prj = res.getProject();
-					PHPSourceLookupDirector dir = (PHPSourceLookupDirector)getLaunch().getSourceLocator();
-					//ISourceContainer[] containers = new ISourceContainer[] {new ProjectSourceContainer(prj, false)};
-					ISourceContainer[] containers = new ISourceContainer[] {new PHPCompositeSourceContainer(prj, null)};									
+					PHPSourceLookupDirector dir = (PHPSourceLookupDirector) getLaunch()
+							.getSourceLocator();
+					// ISourceContainer[] containers = new ISourceContainer[]
+					// {new ProjectSourceContainer(prj, false)};
+					ISourceContainer[] containers = new ISourceContainer[] { new PHPCompositeSourceContainer(
+							prj, null) };
 					dir.setSourceContainers(containers);
 				}
-			}
-			else {
-				//either no file was found, or the user pressed the stop debugger 
+			} else {
+				// either no file was found, or the user pressed the stop
+				// debugger
 				if (isTerminated() == false) {
 					// stop wasn't pressed
 					Display.getDefault().asyncExec(new Runnable() {
 						public void run() {
-							//No appropriate file located or no file selected. Debug Terminated							
-							MessageDialog.openError(Display.getDefault().getActiveShell(), PHPDebugCoreMessages.XDebugMessage_debugError, PHPDebugCoreMessages.XDebug_DBGpTarget_0); 
+							// No appropriate file located or no file selected.
+							// Debug Terminated
+							MessageDialog
+									.openError(
+											Display.getDefault()
+													.getActiveShell(),
+											PHPDebugCoreMessages.XDebugMessage_debugError,
+											PHPDebugCoreMessages.XDebug_DBGpTarget_0);
 						}
 					});
 					session.endSession();

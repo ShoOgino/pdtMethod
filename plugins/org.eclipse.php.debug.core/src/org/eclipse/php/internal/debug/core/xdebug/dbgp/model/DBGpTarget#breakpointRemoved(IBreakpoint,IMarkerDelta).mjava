@@ -1,26 +1,32 @@
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see org.eclipse.debug.core.IBreakpointListener#breakpointRemoved(org.eclipse.debug.core.model.IBreakpoint,
-	 *      org.eclipse.core.resources.IMarkerDelta)
+	 * @see
+	 * org.eclipse.debug.core.IBreakpointListener#breakpointRemoved(org.eclipse
+	 * .debug.core.model.IBreakpoint, org.eclipse.core.resources.IMarkerDelta)
 	 */
 	public void breakpointRemoved(IBreakpoint breakpoint, IMarkerDelta delta) {
 		if (supportsBreakpoint(breakpoint)) {
 			DBGpBreakpoint bp = bpFacade.createDBGpBreakpoint(breakpoint);
 			if (isSuspended() || (asyncSupported && isRunning())) {
 
-				// aysnc mode and running or we are suspended so send the remove request
+				// aysnc mode and running or we are suspended so send the remove
+				// request
 				if (DBGpLogger.debugBP()) {
-					DBGpLogger.debug("Immediately removing of breakpoint with ID: " + bp.getID()); //$NON-NLS-1$
+					DBGpLogger
+							.debug("Immediately removing of breakpoint with ID: " + bp.getID()); //$NON-NLS-1$
 				}
 				sendBreakpointRemoveCmd(bp, false);
 			} else if (isRunning()) {
 
-				// running and not suspended and no async support, so we must defer the removal.
+				// running and not suspended and no async support, so we must
+				// defer the removal.
 				if (DBGpLogger.debugBP()) {
-					DBGpLogger.debug("Deferring Removing of breakpoint with ID: " + bp.getID()); //$NON-NLS-1$
+					DBGpLogger
+							.debug("Deferring Removing of breakpoint with ID: " + bp.getID()); //$NON-NLS-1$
 				}
-				DBGpBreakpointCmd bpRemove = new DBGpBreakpointCmd(DBGpCommand.breakPointRemove, bp);
+				DBGpBreakpointCmd bpRemove = new DBGpBreakpointCmd(
+						DBGpCommand.breakPointRemove, bp);
 				queueBpCmd(bpRemove);
 			}
 

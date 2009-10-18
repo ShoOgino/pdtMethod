@@ -1,11 +1,19 @@
 	/**
-	 * Searches for all local resources that match provided remote file, and returns it in best match order.
-	 * @param pathMapper Path mapper to look at
-	 * @param remoteFile Path of the file on server. This argument must not be <code>null</code>.
-	 * @param debugTarget Current debug target
+	 * Searches for all local resources that match provided remote file, and
+	 * returns it in best match order.
+	 * 
+	 * @param pathMapper
+	 *            Path mapper to look at
+	 * @param remoteFile
+	 *            Path of the file on server. This argument must not be
+	 *            <code>null</code>.
+	 * @param debugTarget
+	 *            Current debug target
 	 * @return path entry or <code>null</code> in case it could not be found
 	 */
-	public static PathEntry find(final PathMapper pathMapper, final String remoteFile, final IProject currentProject, final IDebugTarget debugTarget) {
+	public static PathEntry find(final PathMapper pathMapper,
+			final String remoteFile, final IProject currentProject,
+			final IDebugTarget debugTarget) {
 
 		final PathEntry[] localFile = new PathEntry[1];
 
@@ -20,7 +28,8 @@
 				VirtualPath abstractPath = new VirtualPath(remoteFile);
 
 				// Check whether we have an exact mapping for the remote path
-				// If so - we shouldn't proceed with search (we should have this file right in the mapped folder)
+				// If so - we shouldn't proceed with search (we should have this
+				// file right in the mapped folder)
 				VirtualPath testPath = abstractPath.clone();
 				testPath.removeLastSegment();
 				if (pathMapper.getLocalPathMapping(testPath) != null) {
@@ -31,11 +40,13 @@
 
 				IncludePath[] includePaths;
 				if (currentProject != null) {
-					includePaths = PHPSearchEngine.buildIncludePath(currentProject);
+					includePaths = PHPSearchEngine
+							.buildIncludePath(currentProject);
 				} else {
 					// Search in the whole workspace:
 					Set<IncludePath> s = new LinkedHashSet<IncludePath>();
-					IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
+					IProject[] projects = ResourcesPlugin.getWorkspace()
+							.getRoot().getProjects();
 					for (IProject project : projects) {
 						if (project.isOpen() && project.isAccessible()) {
 							PHPSearchEngine.buildIncludePath(project, s);
@@ -47,14 +58,20 @@
 				// Try to find this file in the Workspace:
 				try {
 					IPath path = Path.fromOSString(remoteFile);
-					IFile file = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(path);
+					IFile file = ResourcesPlugin.getWorkspace().getRoot()
+							.getFileForLocation(path);
 					if (file != null && file.exists()) {
 						for (IncludePath includePath : includePaths) {
 							if (includePath.getEntry() instanceof IContainer) {
-								IContainer container = (IContainer) includePath.getEntry();
-								if (container.getFullPath().isPrefixOf(file.getFullPath())) {
-									localFile[0] = new PathEntry(file.getFullPath().toString(), Type.WORKSPACE, file.getParent());
-									pathMapper.addEntry(remoteFile, localFile[0]);
+								IContainer container = (IContainer) includePath
+										.getEntry();
+								if (container.getFullPath().isPrefixOf(
+										file.getFullPath())) {
+									localFile[0] = new PathEntry(file
+											.getFullPath().toString(),
+											Type.WORKSPACE, file.getParent());
+									pathMapper.addEntry(remoteFile,
+											localFile[0]);
 									PathMapperRegistry.storeToPreferences();
 									return Status.OK_STATUS;
 								}
@@ -62,7 +79,8 @@
 						}
 					}
 				} catch (Exception e) {
-					// no need to catch - this may be due to IPath creation failure
+					// no need to catch - this may be due to IPath creation
+					// failure
 				}
 
 				// Try to find this file in the Include Path:
@@ -70,14 +88,20 @@
 				if (file.exists()) {
 					for (IncludePath includePath : includePaths) {
 						if (includePath.getEntry() instanceof IBuildpathEntry) {
-							IBuildpathEntry entry = (IBuildpathEntry) includePath.getEntry();
+							IBuildpathEntry entry = (IBuildpathEntry) includePath
+									.getEntry();
 							IPath entryPath = entry.getPath();
 							if (entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
-								entryPath = DLTKCore.getResolvedVariablePath(entryPath);
+								entryPath = DLTKCore
+										.getResolvedVariablePath(entryPath);
 							}
-							if (entryPath != null && entryPath.isPrefixOf(Path.fromOSString(remoteFile))) {
-								Type type = (entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) ? Type.INCLUDE_VAR : Type.INCLUDE_FOLDER;
-								localFile[0] = new PathEntry(file.getAbsolutePath(), type, entry);
+							if (entryPath != null
+									&& entryPath.isPrefixOf(Path
+											.fromOSString(remoteFile))) {
+								Type type = (entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) ? Type.INCLUDE_VAR
+										: Type.INCLUDE_FOLDER;
+								localFile[0] = new PathEntry(file
+										.getAbsolutePath(), type, entry);
 								pathMapper.addEntry(remoteFile, localFile[0]);
 								PathMapperRegistry.storeToPreferences();
 								return Status.OK_STATUS;
@@ -86,23 +110,28 @@
 					}
 				}
 
-				// Iterate over all include path, and search for a requested file
+				// Iterate over all include path, and search for a requested
+				// file
 				for (IncludePath includePath : includePaths) {
 					if (includePath.getEntry() instanceof IContainer) {
 						try {
-							find((IContainer) includePath.getEntry(), abstractPath, results);
+							find((IContainer) includePath.getEntry(),
+									abstractPath, results);
 						} catch (InterruptedException e) {
 							PHPDebugPlugin.log(e);
 						}
 					} else if (includePath.getEntry() instanceof IBuildpathEntry) {
-						IBuildpathEntry entry = (IBuildpathEntry) includePath.getEntry();
+						IBuildpathEntry entry = (IBuildpathEntry) includePath
+								.getEntry();
 						IPath entryPath = entry.getPath();
 						if (entry.getEntryKind() == IBuildpathEntry.BPE_LIBRARY) {
 							// We don't support lookup in archive
 							File entryDir = entryPath.toFile();
 							find(entryDir, abstractPath, entry, results);
 						} else if (entry.getEntryKind() == IBuildpathEntry.BPE_PROJECT) {
-							IResource res = ResourcesPlugin.getWorkspace().getRoot().findMember(entry.getPath().lastSegment());
+							IResource res = ResourcesPlugin.getWorkspace()
+									.getRoot().findMember(
+											entry.getPath().lastSegment());
 							if (res instanceof IProject) {
 								IProject project = (IProject) res;
 								if (project.isOpen() && project.isAccessible()) {
@@ -114,21 +143,33 @@
 								}
 							}
 						} else if (entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
-							entryPath = DLTKCore.getResolvedVariablePath(entryPath);
+							entryPath = DLTKCore
+									.getResolvedVariablePath(entryPath);
 							if (entryPath != null) {
 								File entryDir = entryPath.toFile();
 								find(entryDir, abstractPath, entry, results);
 							}
 						} else if (entry.getEntryKind() == IBuildpathEntry.BPE_CONTAINER) {
-							IScriptProject project = DLTKCore.create(currentProject == null ? includePath.getProject() : currentProject);
+							IScriptProject project = DLTKCore
+									.create(currentProject == null ? includePath
+											.getProject()
+											: currentProject);
 							try {
-								IBuildpathContainer buildpathContainer = DLTKCore.getBuildpathContainer(entry.getPath(), project);
+								IBuildpathContainer buildpathContainer = DLTKCore
+										.getBuildpathContainer(entry.getPath(),
+												project);
 								if (buildpathContainer != null) {
-									IBuildpathEntry[] buildpathEntries = buildpathContainer.getBuildpathEntries(project);
-									if (buildpathEntries != null && buildpathEntries.length > 0) {
-										entryPath = EnvironmentPathUtils.getLocalPath(buildpathEntries[0].getPath());
+									IBuildpathEntry[] buildpathEntries = buildpathContainer
+											.getBuildpathEntries(project);
+									if (buildpathEntries != null
+											&& buildpathEntries.length > 0) {
+										entryPath = EnvironmentPathUtils
+												.getLocalPath(buildpathEntries[0]
+														.getPath());
 										if (entryPath != null) {
-											find(entryPath.toFile(), abstractPath, entry, results);
+											find(entryPath.toFile(),
+													abstractPath, entry,
+													results);
 										}
 									}
 								}
@@ -142,14 +183,20 @@
 
 				boolean foundInWorkspace = results.size() > 0;
 
-				//search in opened editors
+				// search in opened editors
 				searchOpenedEditors(results, abstractPath);
 
-				if (!foundInWorkspace && results.size() == 1 && abstractPath.equals(results.getFirst().getAbstractPath())) {
+				if (!foundInWorkspace
+						&& results.size() == 1
+						&& abstractPath.equals(results.getFirst()
+								.getAbstractPath())) {
 					localFile[0] = results.getFirst();
 				} else if (results.size() > 0) {
-					Collections.sort(results, new BestMatchPathComparator(abstractPath));
-					localFile[0] = filterItems(abstractPath, results.toArray(new PathEntry[results.size()]), debugTarget);
+					Collections.sort(results, new BestMatchPathComparator(
+							abstractPath));
+					localFile[0] = filterItems(abstractPath, results
+							.toArray(new PathEntry[results.size()]),
+							debugTarget);
 					if (localFile[0] != null) {
 						pathMapper.addEntry(remoteFile, localFile[0]);
 						PathMapperRegistry.storeToPreferences();

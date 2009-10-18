@@ -3,9 +3,12 @@
 	 */
 	private void loadExtensions() {
 		final IExtensionRegistry registry = Platform.getExtensionRegistry();
-		final IConfigurationElement[] elements = registry.getConfigurationElementsFor(PHPDebugPlugin.getID(), EXTENSION_POINT_NAME);
+		final IConfigurationElement[] elements = registry
+				.getConfigurationElementsFor(PHPDebugPlugin.getID(),
+						EXTENSION_POINT_NAME);
 
-		boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows"); //$NON-NLS-1$ //$NON-NLS-2$
+		boolean isWindows = System
+				.getProperty("os.name").toLowerCase().startsWith("windows"); //$NON-NLS-1$ //$NON-NLS-2$
 
 		for (final IConfigurationElement element : elements) {
 			if (PHPEXE_TAG.equals(element.getName())) {
@@ -14,30 +17,35 @@
 				final String version = element.getAttribute(VERSION_ATTRIBUTE);
 				String debuggerID = element.getAttribute(DEBUGGER_ID_ATTRIBUTE);
 				if (debuggerID == null || debuggerID.equals("")) {
-					// The debugger id is an optional field, so in case that none was entered assign the debugger to Zend.
+					// The debugger id is an optional field, so in case that
+					// none was entered assign the debugger to Zend.
 					debuggerID = DebuggerCommunicationDaemon.ZEND_DEBUGGER_ID;
 				}
-				final boolean isDefault = "true".equalsIgnoreCase(element.getAttribute(DEFAULT_ATTRIBUTE));
+				final boolean isDefault = "true".equalsIgnoreCase(element
+						.getAttribute(DEFAULT_ATTRIBUTE));
 
 				if (isWindows)
 					location = location + ".exe"; //$NON-NLS-1$
 
-				final String pluginId = element.getDeclaringExtension().getNamespaceIdentifier();
+				final String pluginId = element.getDeclaringExtension()
+						.getNamespaceIdentifier();
 				final String finalDebuggerID = debuggerID;
 				// Filter the executable if needed.
-				boolean filterItem = WorkbenchActivityHelper.filterItem(new IPluginContribution() {
-					public String getLocalId() {
-						return finalDebuggerID;
-					}
+				boolean filterItem = WorkbenchActivityHelper
+						.filterItem(new IPluginContribution() {
+							public String getLocalId() {
+								return finalDebuggerID;
+							}
 
-					public String getPluginId() {
-						return PHPDebugPlugin.ID;
-					}
-				});
+							public String getPluginId() {
+								return PHPDebugPlugin.ID;
+							}
+						});
 				if (filterItem) {
 					continue;
 				}
-				URL url = FileLocator.find(Platform.getBundle(pluginId), new Path(location), new HashMap());
+				URL url = FileLocator.find(Platform.getBundle(pluginId),
+						new Path(location), new HashMap());
 				boolean itemFound = false;
 				if (url != null)
 					try {
@@ -45,9 +53,12 @@
 						final String filename = url.getFile();
 						final File file = new File(filename);
 						if (file.exists()) {
-							final PHPexeItem newItem = new PHPexeItem(name, file, null, debuggerID, false);
-							if (null == newItem || null == newItem.getExecutable())
-								continue; // not adding "problematic" executables
+							final PHPexeItem newItem = new PHPexeItem(name,
+									file, null, debuggerID, false);
+							if (null == newItem
+									|| null == newItem.getExecutable())
+								continue; // not adding "problematic"
+											// executables
 							newItem.setVersion(version);
 							addItem(newItem);
 							if (isDefault) {
@@ -58,7 +69,20 @@
 					} catch (final IOException e) {
 					}
 				if (!itemFound)
-					PHPDebugPlugin.getDefault().getLog().log(new Status(1, PHPDebugPlugin.getID(), 1001, "PHP executable " + location + " not found neither in plugin " + pluginId + " nor in fragments attached to it", null));
+					PHPDebugPlugin
+							.getDefault()
+							.getLog()
+							.log(
+									new Status(
+											1,
+											PHPDebugPlugin.getID(),
+											1001,
+											"PHP executable "
+													+ location
+													+ " not found neither in plugin "
+													+ pluginId
+													+ " nor in fragments attached to it",
+											null));
 			}
 		}
 	}

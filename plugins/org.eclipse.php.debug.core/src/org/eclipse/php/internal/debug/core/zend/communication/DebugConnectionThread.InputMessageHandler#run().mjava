@@ -6,7 +6,8 @@
 					try {
 						synchronized (WAIT) {
 							synchronized (READY_FOR_RESTART_LOCK) {
-								READY_FOR_RESTART_LOCK.notify(); // release one thread.
+								READY_FOR_RESTART_LOCK.notify(); // release one
+																	// thread.
 							}
 							WAIT.wait();
 						}
@@ -19,10 +20,12 @@
 					break;
 
 				try {
-					IDebugMessage newInputMessage = (IDebugMessage) inputMessageQueue.queueOut();
+					IDebugMessage newInputMessage = (IDebugMessage) inputMessageQueue
+							.queueOut();
 
 					if (PHPDebugPlugin.DEBUG) {
-						System.out.println("New message received: " + newInputMessage);
+						System.out.println("New message received: "
+								+ newInputMessage);
 					}
 
 					// do not stop until the message is processed.
@@ -34,20 +37,34 @@
 
 								DebugSessionStartedNotification sessionStartedMessage = (DebugSessionStartedNotification) newInputMessage;
 								isDebugConnectionTest = isDebugConnectionTest(sessionStartedMessage);
-								
-								if (isDebugConnectionTest) {// This is a test...
-									
-									String sourceHost = DebugConnectionThread.this.socket.getInetAddress().getHostAddress(); //$NON-NLS-1$
-									// Notify succcess
-									if (verifyProtocolID(sessionStartedMessage.getServerProtocolID())) {
-										sendRequest(new StartRequest());
-										DebugServerTestController.getInstance().notifyTestListener(new DebugServerTestEvent(sourceHost, DebugServerTestEvent.TEST_SUCCEEDED));
-									} else {
-										DebugServerTestController.getInstance().notifyTestListener(new DebugServerTestEvent(sourceHost, DebugServerTestEvent.TEST_FAILED_DEBUGER_VERSION));
-									}
-//									sendNotification(new DebugSessionClosedNotification());
 
-								} else {// Not a test - start debug (create debug target)
+								if (isDebugConnectionTest) {// This is a test...
+
+									String sourceHost = DebugConnectionThread.this.socket
+											.getInetAddress().getHostAddress(); //$NON-NLS-1$
+									// Notify succcess
+									if (verifyProtocolID(sessionStartedMessage
+											.getServerProtocolID())) {
+										sendRequest(new StartRequest());
+										DebugServerTestController
+												.getInstance()
+												.notifyTestListener(
+														new DebugServerTestEvent(
+																sourceHost,
+																DebugServerTestEvent.TEST_SUCCEEDED));
+									} else {
+										DebugServerTestController
+												.getInstance()
+												.notifyTestListener(
+														new DebugServerTestEvent(
+																sourceHost,
+																DebugServerTestEvent.TEST_FAILED_DEBUGER_VERSION));
+									}
+									// sendNotification(new
+									// DebugSessionClosedNotification());
+
+								} else {// Not a test - start debug (create
+										// debug target)
 									hookDebugSession((DebugSessionStartedNotification) newInputMessage);
 								}
 							}
@@ -60,14 +77,23 @@
 
 								if (messageHandler != null) {
 									if (PHPDebugPlugin.DEBUG) {
-										System.out.println("Creating message handler: " + messageHandler.getClass().getName().replaceFirst(".*\\.", ""));
+										System.out
+												.println("Creating message handler: "
+														+ messageHandler
+																.getClass()
+																.getName()
+																.replaceFirst(
+																		".*\\.",
+																		""));
 									}
 									// handle the request
-									messageHandler.handle(newInputMessage, debugTarget);
+									messageHandler.handle(newInputMessage,
+											debugTarget);
 
 									if (messageHandler instanceof IDebugRequestHandler) {
 										// create response
-										IDebugResponseMessage response = ((IDebugRequestHandler) messageHandler).getResponseMessage();
+										IDebugResponseMessage response = ((IDebugRequestHandler) messageHandler)
+												.getResponseMessage();
 
 										// send response
 										byteArray.reset();
@@ -81,9 +107,17 @@
 									}
 								} else if (newInputMessage instanceof IDebugResponseMessage) {
 									IDebugResponseMessage r = (IDebugResponseMessage) newInputMessage;
-									int requestId = r.getID(); // take the request ID from the response.
-									IDebugRequestMessage req = (IDebugRequestMessage) requestsTable.remove(requestId); // find the request.
-									ResponseHandler handler = responseHandlers.remove(new Integer(requestId)); // find the handler.
+									int requestId = r.getID(); // take the
+																// request ID
+																// from the
+																// response.
+									IDebugRequestMessage req = (IDebugRequestMessage) requestsTable
+											.remove(requestId); // find the
+																// request.
+									ResponseHandler handler = responseHandlers
+											.remove(new Integer(requestId)); // find
+																				// the
+																				// handler.
 									handler.handleResponse(req, r);
 								} else if (newInputMessage == STOP_MSG) {
 									synchronized (STOP_MSG) {
@@ -91,17 +125,23 @@
 										STOP_MSG.notifyAll();
 										if (shouldExit) {
 											isAlive = false;
-											inputMessageQueue.releaseReaders(); // why do we need this??
-											//notifyAll();
+											inputMessageQueue.releaseReaders(); // why
+																				// do
+																				// we
+																				// need
+																				// this??
+											// notifyAll();
 										}
 									}
 								} else if (newInputMessage == CONNECTION_CLOSED_MSG) {
 									handleConnectionClosed();
 								}
-							} else { // no debug target - probably creation of debug session hasn't succeeded
+							} else { // no debug target - probably creation of
+										// debug session hasn't succeeded
 								handleConnectionClosed();
 							}
-						} catch (Exception e) { // error processing the current message.
+						} catch (Exception e) { // error processing the current
+												// message.
 							PHPDebugPlugin.log(e);
 						}
 					}

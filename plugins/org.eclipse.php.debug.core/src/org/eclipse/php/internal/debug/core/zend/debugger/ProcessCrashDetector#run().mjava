@@ -1,29 +1,34 @@
 	/*
 	 * (non-Javadoc)
+	 * 
 	 * @see java.lang.Runnable#run()
 	 */
 	public void run() {
 		try {
-			StreamGobbler errorGobbler = new StreamGobbler(process.getErrorStream(), true);
-			StreamGobbler inputGobbler = new StreamGobbler(process.getInputStream(), false);
-			
-			ConsolePlugin.getDefault().getConsoleManager().addConsoleListener(this);
-			
+			StreamGobbler errorGobbler = new StreamGobbler(process
+					.getErrorStream(), true);
+			StreamGobbler inputGobbler = new StreamGobbler(process
+					.getInputStream(), false);
+
+			ConsolePlugin.getDefault().getConsoleManager().addConsoleListener(
+					this);
+
 			errorGobbler.start();
 			inputGobbler.start();
-			
+
 			int exitValue = process.waitFor();
 			IDebugTarget debugTarget = launch.getDebugTarget();
 			if (debugTarget != null) {
 				IProcess p = debugTarget.getProcess();
 				if (p instanceof PHPProcess) {
-					((PHPProcess)p).setExitValue(exitValue);
+					((PHPProcess) p).setExitValue(exitValue);
 				}
 			}
-			
+
 		} catch (Throwable t) {
 		} finally {
-			ConsolePlugin.getDefault().getConsoleManager().removeConsoleListener(this);
+			ConsolePlugin.getDefault().getConsoleManager()
+					.removeConsoleListener(this);
 		}
 	}
 
