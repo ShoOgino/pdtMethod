@@ -1,11 +1,12 @@
-	public static void searchAndLaunch(Object[] search, String mode, ILaunchConfigurationType configType) {
+	public static void searchAndLaunch(Object[] search, String mode,
+			ILaunchConfigurationType configType) {
 		int entries = search == null ? 0 : search.length;
 		for (int i = 0; i < entries; i++) {
 			try {
 				String phpPathString = null;
 				IProject project = null;
 				Object obj = search[i];
-				
+
 				if (obj instanceof IModelElement) {
 					IModelElement elem = (IModelElement) obj;
 					IResource res = null;
@@ -19,12 +20,14 @@
 					if (res instanceof IFile) {
 						obj = (IFile) res;
 					}
-				}				
+				}
 
 				if (obj instanceof IFile) {
 					IFile file = (IFile) obj;
 					project = file.getProject();
-					IContentType contentType = Platform.getContentTypeManager().getContentType(ContentTypeIdForPHP.ContentTypeID_PHP);
+					IContentType contentType = Platform.getContentTypeManager()
+							.getContentType(
+									ContentTypeIdForPHP.ContentTypeID_PHP);
 					if (contentType.isAssociatedWith(file.getName())) {
 						phpPathString = file.getFullPath().toString();
 					}
@@ -36,15 +39,23 @@
 					defaultServer = ServersManager.getDefaultServer(project);
 					if (defaultServer == null) {
 						// Sould not happen
-						throw new CoreException(new Status(IStatus.ERROR, PHPDebugUIPlugin.ID, IStatus.OK, "Could not create a defualt server for the launch.", null));
+						throw new CoreException(
+								new Status(
+										IStatus.ERROR,
+										PHPDebugUIPlugin.ID,
+										IStatus.OK,
+										"Could not create a defualt server for the launch.",
+										null));
 					}
 				}
-				
-				boolean breakAtFirstLine = PHPProjectPreferences.getStopAtFirstLine(project);
+
+				boolean breakAtFirstLine = PHPProjectPreferences
+						.getStopAtFirstLine(project);
 				String selectedURL = null;
 				boolean showDebugDialog = true;
 				if (obj instanceof IScriptProject) {
-					final PHPWebPageLaunchDialog dialog = new PHPWebPageLaunchDialog(mode, (IScriptProject) obj);
+					final PHPWebPageLaunchDialog dialog = new PHPWebPageLaunchDialog(
+							mode, (IScriptProject) obj);
 					final int open = dialog.open();
 					if (open == PHPWebPageLaunchDialog.OK) {
 						defaultServer = dialog.getServer();
@@ -59,22 +70,35 @@
 
 				if (phpPathString == null) {
 					// Could not find target to launch
-					throw new CoreException(new Status(IStatus.ERROR, PHPDebugUIPlugin.ID, IStatus.OK, PHPDebugUIMessages.launch_failure_no_target, null));
+					throw new CoreException(new Status(IStatus.ERROR,
+							PHPDebugUIPlugin.ID, IStatus.OK,
+							PHPDebugUIMessages.launch_failure_no_target, null));
 				}
 
 				// Launch the app
-				ILaunchConfiguration config = findLaunchConfiguration(project, phpPathString, selectedURL, defaultServer, mode, configType, breakAtFirstLine, showDebugDialog);
+				ILaunchConfiguration config = findLaunchConfiguration(project,
+						phpPathString, selectedURL, defaultServer, mode,
+						configType, breakAtFirstLine, showDebugDialog);
 				if (config != null) {
 					DebugUITools.launch(config, mode);
 				} else {
-					// Could not find launch configuration or the user cancelled.
-					// throw new CoreException(new Status(IStatus.ERROR, PHPDebugUIPlugin.ID, IStatus.OK, PHPDebugUIMessages.launch_failure_no_config, null));
+					// Could not find launch configuration or the user
+					// cancelled.
+					// throw new CoreException(new Status(IStatus.ERROR,
+					// PHPDebugUIPlugin.ID, IStatus.OK,
+					// PHPDebugUIMessages.launch_failure_no_config, null));
 				}
 			} catch (CoreException ce) {
 				final IStatus stat = ce.getStatus();
 				Display.getDefault().asyncExec(new Runnable() {
 					public void run() {
-						ErrorDialog.openError(PHPDebugUIPlugin.getActiveWorkbenchShell(), PHPDebugUIMessages.launch_failure_msg_title, PHPDebugUIMessages.launch_failure_server_msg_text, stat);
+						ErrorDialog
+								.openError(
+										PHPDebugUIPlugin
+												.getActiveWorkbenchShell(),
+										PHPDebugUIMessages.launch_failure_msg_title,
+										PHPDebugUIMessages.launch_failure_server_msg_text,
+										stat);
 					}
 				});
 			}
