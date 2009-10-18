@@ -5,13 +5,15 @@
 	 * @param delta
 	 *            the delta to process
 	 * @param runnables
-	 *            the resulting view changes as runnables (type {@link Runnable})
+	 *            the resulting view changes as runnables (type {@link Runnable}
+	 *            )
 	 * @return true is returned if the conclusion is to refresh a parent of an
 	 *         element. In that case no siblings need to be processed
 	 * @throws JavaModelException
 	 *             thrown when the access to an element failed
 	 */
-	private boolean processDelta(final IModelElementDelta delta, final Collection runnables) throws ModelException {
+	private boolean processDelta(final IModelElementDelta delta,
+			final Collection runnables) throws ModelException {
 
 		int kind = delta.getKind();
 		IModelElement element = delta.getElement();
@@ -19,38 +21,47 @@
 
 		if (kind == IModelElementDelta.ADDED) {
 
-			// if it is an IOpenable (source module and up) - refresh the view 
-			IModelElement refreshRoot = (element instanceof IOpenable) ? element.getScriptProject() : element.getParent();
+			// if it is an IOpenable (source module and up) - refresh the view
+			IModelElement refreshRoot = (element instanceof IOpenable) ? element
+					.getScriptProject()
+					: element.getParent();
 			if (null == parent) {
-				postRefresh(refreshRoot, ProjectOutlineContentProvider.ORIGINAL, element, runnables);
+				postRefresh(refreshRoot,
+						ProjectOutlineContentProvider.ORIGINAL, element,
+						runnables);
 				return false;
 			}
-			
-			// adding element if parent is not null 
+
+			// adding element if parent is not null
 			// (means it should be showed on the project outline view)
 			postAdd(parent, element, runnables);
-		
+
 		} else if (kind == IModelElementDelta.REMOVED) {
 
 			if (element instanceof IOpenable) {
 				IPath removedPath = element.getPath();
 				for (TreeItem node : fViewer.getTree().getItems()) {
-					//iterating on all 1st level (classes, constants, and functions)
+					// iterating on all 1st level (classes, constants, and
+					// functions)
 					TreeItem[] treeItems = node.getItems();
 					for (TreeItem treeItem : treeItems) {
 						// iterating on all 2nd level elements and checking :
-						// if item path is prefixed by the removed element - need to remove it.
-						if (removedPath.isPrefixOf(((IModelElement) treeItem.getData()).getPath())) {
-							postRemove((IModelElement) treeItem.getData(), runnables);
+						// if item path is prefixed by the removed element -
+						// need to remove it.
+						if (removedPath.isPrefixOf(((IModelElement) treeItem
+								.getData()).getPath())) {
+							postRemove((IModelElement) treeItem.getData(),
+									runnables);
 						}
 					}
 
 				}
 			} else {
-				//if element is not folder/project/SourceModule etc' - just need to remove it from the view
+				// if element is not folder/project/SourceModule etc' - just
+				// need to remove it from the view
 				postRemove(element, runnables);
-			} 
-			
+			}
+
 			return false;
 		}
 		handleAffectedChildren(delta, element, runnables);

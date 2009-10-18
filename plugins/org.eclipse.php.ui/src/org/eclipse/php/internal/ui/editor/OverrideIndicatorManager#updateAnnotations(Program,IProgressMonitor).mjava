@@ -1,46 +1,63 @@
 	/**
-	 * Updates the override and implements annotations based
-	 * on the given AST.
-	 *
-	 * @param ast the compilation unit AST
-	 * @param progressMonitor the progress monitor
+	 * Updates the override and implements annotations based on the given AST.
+	 * 
+	 * @param ast
+	 *            the compilation unit AST
+	 * @param progressMonitor
+	 *            the progress monitor
 	 * @since 3.0
 	 */
-	protected void updateAnnotations(Program ast, IProgressMonitor progressMonitor) {
+	protected void updateAnnotations(Program ast,
+			IProgressMonitor progressMonitor) {
 
 		if (ast == null || progressMonitor.isCanceled())
 			return;
 
-		final Map<OverrideIndicator, Position> annotationMap = new HashMap<OverrideIndicator, Position>(50);
+		final Map<OverrideIndicator, Position> annotationMap = new HashMap<OverrideIndicator, Position>(
+				50);
 
-		// don't provide override indicators to external / read only files.  
+		// don't provide override indicators to external / read only files.
 		if (ast.getSourceModule().isReadOnly()) {
 			return;
 		}
-		
+
 		ast.accept(new AbstractVisitor() {
 			/*
-			 * @see org.eclipse.jdt.core.dom.ASTVisitor#visit(org.eclipse.jdt.core.dom.MethodDeclaration)
+			 * @see
+			 * org.eclipse.jdt.core.dom.ASTVisitor#visit(org.eclipse.jdt.core
+			 * .dom.MethodDeclaration)
 			 */
 			public boolean visit(MethodDeclaration node) {
 				IMethodBinding binding = node.resolveMethodBinding();
 				if (binding != null) {
-					IMethodBinding definingMethod = Bindings.findOverriddenMethod(binding, true);
+					IMethodBinding definingMethod = Bindings
+							.findOverriddenMethod(binding, true);
 					if (definingMethod != null) {
 
-						ITypeBinding definingType = definingMethod.getDeclaringClass();
-						String qualifiedMethodName = definingType.getName() + "." + binding.getName(); //$NON-NLS-1$ [TODO - Use definingType.getQualifiedName()]
+						ITypeBinding definingType = definingMethod
+								.getDeclaringClass();
+						String qualifiedMethodName = definingType.getName()
+								+ "." + binding.getName(); //$NON-NLS-1$ [TODO - Use definingType.getQualifiedName()]
 
-						boolean isImplements = (Modifiers.AccAbstract & definingMethod.getModifiers()) != 0;
+						boolean isImplements = (Modifiers.AccAbstract & definingMethod
+								.getModifiers()) != 0;
 						String text;
 						if (isImplements)
-							text = Messages.format(PHPUIMessages.getString("OverrideIndicatorManager_implements"), qualifiedMethodName);//$NON-NLS-1$
+							text = Messages
+									.format(
+											PHPUIMessages
+													.getString("OverrideIndicatorManager_implements"), qualifiedMethodName);//$NON-NLS-1$
 						else
-							text = Messages.format(PHPUIMessages.getString("OverrideIndicatorManager_overrides"), qualifiedMethodName);//$NON-NLS-1$
+							text = Messages
+									.format(
+											PHPUIMessages
+													.getString("OverrideIndicatorManager_overrides"), qualifiedMethodName);//$NON-NLS-1$
 
 						Identifier name = node.getFunction().getFunctionName();
-						Position position = new Position(name.getStart(), name.getLength());
-						OverrideIndicator indicator = new OverrideIndicator(isImplements, text, definingMethod.getKey());
+						Position position = new Position(name.getStart(), name
+								.getLength());
+						OverrideIndicator indicator = new OverrideIndicator(
+								isImplements, text, definingMethod.getKey());
 						annotationMap.put(indicator, position);
 					}
 				}
@@ -53,16 +70,21 @@
 
 		synchronized (fAnnotationModelLockObject) {
 			if (fAnnotationModel instanceof IAnnotationModelExtension) {
-				((IAnnotationModelExtension) fAnnotationModel).replaceAnnotations(fOverrideAnnotations, annotationMap);
+				((IAnnotationModelExtension) fAnnotationModel)
+						.replaceAnnotations(fOverrideAnnotations, annotationMap);
 			} else {
 				removeAnnotations();
-				Iterator<Map.Entry<OverrideIndicator, Position>> iter = annotationMap.entrySet().iterator();
+				Iterator<Map.Entry<OverrideIndicator, Position>> iter = annotationMap
+						.entrySet().iterator();
 				while (iter.hasNext()) {
-					Map.Entry<OverrideIndicator, Position> mapEntry = iter.next();
-					fAnnotationModel.addAnnotation(mapEntry.getKey(), mapEntry.getValue());
+					Map.Entry<OverrideIndicator, Position> mapEntry = iter
+							.next();
+					fAnnotationModel.addAnnotation(mapEntry.getKey(), mapEntry
+							.getValue());
 				}
 			}
-			fOverrideAnnotations = (Annotation[]) annotationMap.keySet().toArray(new Annotation[annotationMap.keySet().size()]);
+			fOverrideAnnotations = (Annotation[]) annotationMap.keySet()
+					.toArray(new Annotation[annotationMap.keySet().size()]);
 		}
 	}
 

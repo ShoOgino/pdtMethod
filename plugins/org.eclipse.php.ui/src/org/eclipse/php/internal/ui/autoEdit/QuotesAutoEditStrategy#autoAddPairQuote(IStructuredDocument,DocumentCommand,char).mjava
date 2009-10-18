@@ -1,12 +1,17 @@
-	private void autoAddPairQuote(IStructuredDocument document, DocumentCommand command, char insertedChar) {
+	private void autoAddPairQuote(IStructuredDocument document,
+			DocumentCommand command, char insertedChar) {
 		int startOffset = command.offset;
 		int endOffset = startOffset + command.length;
 
 		try {
-			String startState = FormatterUtils.getPartitionType(document, startOffset, true);
-			String endState = FormatterUtils.getPartitionType(document, endOffset, true);
-			if (startState == PHPPartitionTypes.PHP_QUOTED_STRING || endState == PHPPartitionTypes.PHP_QUOTED_STRING) {
-				if (endOffset < document.getLength() && startOffset == endOffset) {
+			String startState = FormatterUtils.getPartitionType(document,
+					startOffset, true);
+			String endState = FormatterUtils.getPartitionType(document,
+					endOffset, true);
+			if (startState == PHPPartitionTypes.PHP_QUOTED_STRING
+					|| endState == PHPPartitionTypes.PHP_QUOTED_STRING) {
+				if (endOffset < document.getLength()
+						&& startOffset == endOffset) {
 					char nextChar = document.getChar(endOffset);
 					if (insertedChar == nextChar) {
 						char prevChar = document.getChar(startOffset - 1);
@@ -19,21 +24,33 @@
 							}
 						}
 					} else {
-						IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(startOffset);
-						ITextRegion tRegion = getPhpRegion(sdRegion, startOffset);
-						// adding a specific char to close the qoute in case the 2 following conditions fulfilled:
+						IStructuredDocumentRegion sdRegion = document
+								.getRegionAtCharacterOffset(startOffset);
+						ITextRegion tRegion = getPhpRegion(sdRegion,
+								startOffset);
+						// adding a specific char to close the qoute in case the
+						// 2 following conditions fulfilled:
 						// 1. The region ends with whitespace.
-						// 2. The command offest is located at the end of the region(include the region whitespace)
+						// 2. The command offest is located at the end of the
+						// region(include the region whitespace)
 						int regionLength = tRegion.getLength();
 						int regionTextLength = tRegion.getTextLength();
-						if (regionTextLength != regionLength && startOffset > getRegionStart(sdRegion, startOffset) + regionTextLength && shouldAddClosingBracket(document, endOffset, true)) {
+						if (regionTextLength != regionLength
+								&& startOffset > getRegionStart(sdRegion,
+										startOffset)
+										+ regionTextLength
+								&& shouldAddClosingBracket(document, endOffset,
+										true)) {
 							command.text = command.text + insertedChar;
-							//making the change in the documet ourselfs and consuming the original command
-							document.replace(command.offset, command.length, command.text);
+							// making the change in the documet ourselfs and
+							// consuming the original command
+							document.replace(command.offset, command.length,
+									command.text);
 							document.getUndoManager().disableUndoManagement();
 							document.replace(command.offset + 1, 0, ""); //$NON-NLS-1$
 							document.getUndoManager().enableUndoManagement();
-							command.offset++; //this will cause the caret to be set between the quotes.
+							command.offset++; // this will cause the caret to be
+												// set between the quotes.
 							command.length = 0;
 							command.text = ""; //$NON-NLS-1$
 						}
@@ -43,15 +60,19 @@
 			}
 			if (isQuoteAllowed(startState, insertedChar)) {
 				if ((shouldAddClosingBracket(document, endOffset, true))) {
-					int result = isMatchingCharNeeded(document, endOffset, insertedChar);
+					int result = isMatchingCharNeeded(document, endOffset,
+							insertedChar);
 					if (result == MATCHING_BRACKET_NEEDED) {
 						command.text = command.text + insertedChar;
-						//making the change in ther documet ourselfs and consuming the original command
-						document.replace(command.offset, command.length, command.text);
+						// making the change in ther documet ourselfs and
+						// consuming the original command
+						document.replace(command.offset, command.length,
+								command.text);
 						document.getUndoManager().disableUndoManagement();
 						document.replace(command.offset + 1, 0, ""); //$NON-NLS-1$
 						document.getUndoManager().enableUndoManagement();
-						command.offset++; //this will cause the caret to be set between the quotes.
+						command.offset++; // this will cause the caret to be set
+											// between the quotes.
 						command.length = 0;
 						command.text = ""; //$NON-NLS-1$
 					}

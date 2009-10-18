@@ -1,30 +1,31 @@
 	public Object getAdditionalProposalInfo(IProgressMonitor monitor) {
 
-		final StringBuffer buf= new StringBuffer();
+		final StringBuffer buf = new StringBuffer();
 
 		try {
-			final TextChange change= getTextChange();
+			final TextChange change = getTextChange();
 
 			change.setKeepPreviewEdits(true);
-			final IDocument previewContent= change.getPreviewDocument(monitor);
-			final TextEdit rootEdit= change.getPreviewEdit(change.getEdit());
+			final IDocument previewContent = change.getPreviewDocument(monitor);
+			final TextEdit rootEdit = change.getPreviewEdit(change.getEdit());
 
 			class EditAnnotator extends TextEditVisitor {
 				private int fWrittenToPos = 0;
 
 				public void unchangedUntil(int pos) {
 					if (pos > fWrittenToPos) {
-						appendContent(previewContent, fWrittenToPos, pos, buf, true);
+						appendContent(previewContent, fWrittenToPos, pos, buf,
+								true);
 						fWrittenToPos = pos;
 					}
 				}
 
 				public boolean visit(MoveTargetEdit edit) {
-					return true; //rangeAdded(edit);
+					return true; // rangeAdded(edit);
 				}
 
 				public boolean visit(CopyTargetEdit edit) {
-					return true; //return rangeAdded(edit);
+					return true; // return rangeAdded(edit);
 				}
 
 				public boolean visit(InsertEdit edit) {
@@ -53,7 +54,8 @@
 				private boolean rangeAdded(TextEdit edit) {
 					unchangedUntil(edit.getOffset());
 					buf.append("<b>"); //$NON-NLS-1$
-					appendContent(previewContent, edit.getOffset(), edit.getExclusiveEnd(), buf, false);
+					appendContent(previewContent, edit.getOffset(), edit
+							.getExclusiveEnd(), buf, false);
 					buf.append("</b>"); //$NON-NLS-1$
 					fWrittenToPos = edit.getExclusiveEnd();
 					return false;

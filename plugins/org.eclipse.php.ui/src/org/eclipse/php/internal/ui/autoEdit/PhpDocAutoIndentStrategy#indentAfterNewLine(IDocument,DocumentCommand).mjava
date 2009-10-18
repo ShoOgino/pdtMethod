@@ -1,10 +1,12 @@
 	/**
-	 * Copies the indentation of the previous line and adds a star.
-	 * If the Scriptdoc just started on this line add standard method tags
-	 * and close the Scriptdoc.
-	 *
-	 * @param d the document to work on
-	 * @param c the command to deal with
+	 * Copies the indentation of the previous line and adds a star. If the
+	 * Scriptdoc just started on this line add standard method tags and close
+	 * the Scriptdoc.
+	 * 
+	 * @param d
+	 *            the document to work on
+	 * @param c
+	 *            the command to deal with
 	 */
 	private void indentAfterNewLine(IDocument d, DocumentCommand c) {
 
@@ -18,12 +20,14 @@
 
 			int lineOffset = line.getOffset();
 			int firstNonWS = findEndOfWhiteSpace(d, lineOffset, offset);
-			Assert.isTrue(firstNonWS >= lineOffset, "indentation must not be negative"); //$NON-NLS-1$
+			Assert.isTrue(firstNonWS >= lineOffset,
+					"indentation must not be negative"); //$NON-NLS-1$
 
 			StringBuffer buf = new StringBuffer(c.text);
 			IRegion prefix = findPrefixRange(d, line);
 			String indentation = d.get(prefix.getOffset(), prefix.getLength());
-			int lengthToAdd = Math.min(offset - prefix.getOffset(), prefix.getLength());
+			int lengthToAdd = Math.min(offset - prefix.getOffset(), prefix
+					.getLength());
 
 			buf.append(indentation.substring(0, lengthToAdd));
 
@@ -32,16 +36,18 @@
 					// phpdoc started on this line
 					buf.append(" * "); //$NON-NLS-1$
 
-					if (TypingPreferences.closePhpdoc && isNewComment(d, offset)) {
+					if (TypingPreferences.closePhpdoc
+							&& isNewComment(d, offset)) {
 						c.shiftsCaret = false;
 						c.caretOffset = c.offset + buf.length();
-						String lineDelimiter = TextUtilities.getDefaultLineDelimiter(d);
+						String lineDelimiter = TextUtilities
+								.getDefaultLineDelimiter(d);
 
 						int replacementLength = 0;
 						String restOfLine = d.get(p, replacementLength);
 						String endTag = lineDelimiter + indentation + " */"; //$NON-NLS-1$
 
-						//Check if we need end tag
+						// Check if we need end tag
 						if (getCommentEnd(d, offset) > 0) {
 							endTag = "";
 						}
@@ -56,17 +62,27 @@
 							if (unit != null) {
 								try {
 									ScriptModelUtil.reconcile(unit);
-//									PHPUiPlugin.getDefault().getASTProvider().reconciled(null, unit, new NullProgressMonitor());
-									String partitionType = FormatterUtils.getPartitionType((IStructuredDocument) d, c.offset);
+									// PHPUiPlugin.getDefault().getASTProvider().reconciled(null,
+									// unit, new NullProgressMonitor());
+									String partitionType = FormatterUtils
+											.getPartitionType(
+													(IStructuredDocument) d,
+													c.offset);
 									String commentBlockBody;
-									if (partitionType.equals(PHPPartitionTypes.PHP_DOC)) {
-										commentBlockBody = createScriptdocTags(d, c, indentation, lineDelimiter, unit);
-									} else {//Multiline comment
+									if (partitionType
+											.equals(PHPPartitionTypes.PHP_DOC)) {
+										commentBlockBody = createScriptdocTags(
+												d, c, indentation,
+												lineDelimiter, unit);
+									} else {// Multiline comment
 										commentBlockBody = PHP_COMMENT_BLOCK_MID;
 									}
 									buf.append(restOfLine);
-									// only add tags if they are non-empty - the empty line has already been added above.
-									if (commentBlockBody != null && !commentBlockBody.trim().equals("*")) //$NON-NLS-1$
+									// only add tags if they are non-empty - the
+									// empty line has already been added above.
+									if (commentBlockBody != null
+											&& !commentBlockBody.trim().equals(
+													"*")) //$NON-NLS-1$
 										buf.append(commentBlockBody);
 								} catch (CoreException e) {
 									Logger.logException(e);
@@ -82,7 +98,8 @@
 				}
 			}
 
-			// move the caret behind the prefix, even if we do not have to insert it.
+			// move the caret behind the prefix, even if we do not have to
+			// insert it.
 			if (lengthToAdd < prefix.getLength())
 				c.caretOffset = offset + prefix.getLength() - lengthToAdd;
 			c.text = buf.toString();

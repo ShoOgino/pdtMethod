@@ -1,4 +1,5 @@
-	private void autoIndentAfterNewLine(final IStructuredDocument document, final DocumentCommand command) {
+	private void autoIndentAfterNewLine(final IStructuredDocument document,
+			final DocumentCommand command) {
 		try {
 			helpBuffer.setLength(0);
 			helpBuffer.append(command.text);
@@ -12,9 +13,11 @@
 			int futureCaretPosition = -1;
 
 			if (currentOffset > 0) {
-				final IAfterNewLineAutoEditStrategy autoEditStrategy = getAfterNewLineAutoEditStrategy(document, command);
+				final IAfterNewLineAutoEditStrategy autoEditStrategy = getAfterNewLineAutoEditStrategy(
+						document, command);
 				if (autoEditStrategy != null)
-					futureCaretPosition = autoEditStrategy.autoEditAfterNewLine(document, command, helpBuffer);
+					futureCaretPosition = autoEditStrategy
+							.autoEditAfterNewLine(document, command, helpBuffer);
 			}
 
 			final IRegion lineInfo = document.getLineInformation(lineNumber);
@@ -26,28 +29,32 @@
 
 			// find the first non blank char of the element.
 			int i;
-			for (i = 0; i < length && (lineText.charAt(i) == ' ' || lineText.charAt(i) == '\t'); i++)
+			for (i = 0; i < length
+					&& (lineText.charAt(i) == ' ' || lineText.charAt(i) == '\t'); i++)
 				;
 
-			// if we are in the blaks at the start of the element then select them
+			// if we are in the blaks at the start of the element then select
+			// them
 			// so they will be replaced with the MatchingBlanks.
 			if (currentOffset < startOffset + i) {
-				//if (command.length != 0) { // comment out in order to fix bug # 139437
+				// if (command.length != 0) { // comment out in order to fix bug
+				// # 139437
 				command.offset = Math.min(command.offset, startOffset);
-				//}
+				// }
 				command.length = Math.max(i, command.length);
 			}
 			command.text = helpBuffer.toString();
 
-			//if we need to put the caret at a position differnt then the end of the text
+			// if we need to put the caret at a position differnt then the end
+			// of the text
 			if (futureCaretPosition != -1) {
-				//runing the command ourselfs
+				// runing the command ourselfs
 				document.replace(command.offset, command.length, command.text);
-				//consuming the command
+				// consuming the command
 				command.length = 0;
 				command.text = ""; //$NON-NLS-1$
 				command.offset = futureCaretPosition;
-				//moving the caret position
+				// moving the caret position
 				document.getUndoManager().disableUndoManagement();
 				document.replace(command.offset, command.length, command.text);
 				document.getUndoManager().enableUndoManagement();

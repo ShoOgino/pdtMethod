@@ -1,11 +1,21 @@
 	/**
-	 * Copies the rest of the line (after the { ) into the buffer in order put the text inside the curly brackets
-	 * @return The number of characters the caret should be advanced at   
+	 * Copies the rest of the line (after the { ) into the buffer in order put
+	 * the text inside the curly brackets
+	 * 
+	 * @return The number of characters the caret should be advanced at
 	 */
-	private int copyRestOfLine(IStructuredDocument document, DocumentCommand command, StringBuffer buffer) throws BadLocationException {
+	private int copyRestOfLine(IStructuredDocument document,
+			DocumentCommand command, StringBuffer buffer)
+			throws BadLocationException {
 
 		int documentLength = document.getLength();
-		if (command.offset + command.length == documentLength) { // if we're at the end of the document then nothing to copy
+		if (command.offset + command.length == documentLength) { // if we're at
+																	// the end
+																	// of the
+																	// document
+																	// then
+																	// nothing
+																	// to copy
 			return 0;
 		}
 		int offset = command.offset;
@@ -14,8 +24,10 @@
 		int whiteSpacesAdded = 0;
 		int lengthToCopyDown = endOffset - offset;
 
-		IStructuredDocumentRegion[] structuredDocumentRegions = document.getStructuredDocumentRegions(offset, lengthToCopyDown);
-		if (structuredDocumentRegions != null && structuredDocumentRegions.length > 0) {
+		IStructuredDocumentRegion[] structuredDocumentRegions = document
+				.getStructuredDocumentRegions(offset, lengthToCopyDown);
+		if (structuredDocumentRegions != null
+				&& structuredDocumentRegions.length > 0) {
 			IStructuredDocumentRegion structuredDocumentRegion = structuredDocumentRegions[0];
 			ITextRegion firstRegion = structuredDocumentRegion.getFirstRegion();
 			ITextRegion lastRegion = structuredDocumentRegion.getLastRegion();
@@ -23,8 +35,10 @@
 			int xmlRelativeOffset = 0;
 
 			// deal with PHP block within HTML tags
-			if (!(firstRegion instanceof ContextRegion)) { //meaning "not-PHP-Resgion"
-				ITextRegion regionAtCharacterOffset = structuredDocumentRegion.getRegionAtCharacterOffset(offset);
+			if (!(firstRegion instanceof ContextRegion)) { // meaning
+															// "not-PHP-Resgion"
+				ITextRegion regionAtCharacterOffset = structuredDocumentRegion
+						.getRegionAtCharacterOffset(offset);
 				if (regionAtCharacterOffset instanceof ContextRegionContainer) {
 					ContextRegionContainer phpContext = (ContextRegionContainer) regionAtCharacterOffset;
 					lastRegion = phpContext.getLastRegion();
@@ -33,7 +47,9 @@
 				}
 
 			}
-			int absolutOffset = lastRegion.getStart() + structuredDocumentRegion.getStartOffset() + xmlRelativeOffset;
+			int absolutOffset = lastRegion.getStart()
+					+ structuredDocumentRegion.getStartOffset()
+					+ xmlRelativeOffset;
 			if (absolutOffset <= endOffset) {
 				lengthToCopyDown = absolutOffset - offset;
 				;
@@ -41,11 +57,11 @@
 		}
 		String lineEnd = document.get(offset, lengthToCopyDown);
 
-		//if there are spaces between the '{' and the text in the line 
-		//(or the end of line)then need to override them
+		// if there are spaces between the '{' and the text in the line
+		// (or the end of line)then need to override them
 		for (int i = 0; i < lineEnd.length(); i++) {
 			char c = lineEnd.charAt(i);
-			lengthToCopyDown--; //for every iteration, need copy one less char
+			lengthToCopyDown--; // for every iteration, need copy one less char
 			if (c == '\n' || c == '\r' || !Character.isWhitespace(c)) {
 				command.length += i;
 				lengthToCopyDown++; // incrementing one back...
@@ -55,10 +71,13 @@
 
 		String trimmedLineEnd = lineEnd.trim();
 		if (trimmedLineEnd.length() > 0 && trimmedLineEnd.charAt(0) == '}') {
-			//if there is a } then there is a problem with curlyCloseInsertionStrategy calc
+			// if there is a } then there is a problem with
+			// curlyCloseInsertionStrategy calc
 			// and we need to add manually another indentation.
-			int indentationSize = FormatPreferencesSupport.getInstance().getIndentationSize(document);
-			char indentationChar = FormatPreferencesSupport.getInstance().getIndentationChar(document);
+			int indentationSize = FormatPreferencesSupport.getInstance()
+					.getIndentationSize(document);
+			char indentationChar = FormatPreferencesSupport.getInstance()
+					.getIndentationChar(document);
 			for (int i = 0; i < indentationSize; i++) {
 				buffer.append(indentationChar);
 				whiteSpacesAdded++;
@@ -68,8 +87,8 @@
 			buffer.append(blanks);
 		}
 
-		//copying the rest of the line after the "{" , 
-		//using length calculated according to regionEnd or EndOfLine
+		// copying the rest of the line after the "{" ,
+		// using length calculated according to regionEnd or EndOfLine
 		offset += command.length;
 		char nextChar = document.getChar(offset);
 		for (int i = 0; lengthToCopyDown > 0; lengthToCopyDown--) {

@@ -1,30 +1,42 @@
 	/**
 	 * Creates the Scriptdoc tags for newly inserted comments.
-	 *
-	 * @param document the document
-	 * @param command the command
-	 * @param indentation the base indentation to use
-	 * @param lineDelimiter the line delimiter to use
-	 * @param unit the compilation unit shown in the editor
+	 * 
+	 * @param document
+	 *            the document
+	 * @param command
+	 *            the command
+	 * @param indentation
+	 *            the base indentation to use
+	 * @param lineDelimiter
+	 *            the line delimiter to use
+	 * @param unit
+	 *            the compilation unit shown in the editor
 	 * @return the tags to add to the document
-	 * @throws CoreException if accessing the PHP model fails
-	 * @throws BadLocationException if accessing the document fails
+	 * @throws CoreException
+	 *             if accessing the PHP model fails
+	 * @throws BadLocationException
+	 *             if accessing the document fails
 	 */
 
-	private String createScriptdocTags(IDocument document, DocumentCommand command, String indentation, String lineDelimiter, ISourceModule unit) throws CoreException, BadLocationException {
-		//searching for next element's start point
-		int nextElementOffset = getEndOfWhiteSpacesOffset(document, command.caretOffset, document.getLength());
+	private String createScriptdocTags(IDocument document,
+			DocumentCommand command, String indentation, String lineDelimiter,
+			ISourceModule unit) throws CoreException, BadLocationException {
+		// searching for next element's start point
+		int nextElementOffset = getEndOfWhiteSpacesOffset(document,
+				command.caretOffset, document.getLength());
 
 		IModelElement element = unit.getElementAt(nextElementOffset);
 		if (element == null)
 			return null;
 
-		// Checking the element we got is not the element within the "/**" was typed	
+		// Checking the element we got is not the element within the "/**" was
+		// typed
 		if (getCodeDataOffset(element) <= command.caretOffset) {
 			return null;
 		}
 		int type = element != null ? element.getElementType() : -1;
-		if (type != IModelElement.METHOD && type != IModelElement.TYPE && type != IModelElement.FIELD) {
+		if (type != IModelElement.METHOD && type != IModelElement.TYPE
+				&& type != IModelElement.FIELD) {
 			assert false;
 			return null;
 		}
@@ -32,17 +44,20 @@
 		String comment = null;
 		try {
 			switch (type) {
-				case IModelElement.TYPE:
-					comment = createTypeTags(document, command, indentation, lineDelimiter, (IType) element);
-					break;
-				case IModelElement.FIELD:
-					comment = creatFieldTags(document, command, indentation, lineDelimiter, (IField) element);
-					break;
-				case IModelElement.METHOD:
-					comment = createMethodTags(document, command, indentation, lineDelimiter, (IMethod) element);
-					break;
-				default:
-					comment = createDefaultComment(lineDelimiter);
+			case IModelElement.TYPE:
+				comment = createTypeTags(document, command, indentation,
+						lineDelimiter, (IType) element);
+				break;
+			case IModelElement.FIELD:
+				comment = creatFieldTags(document, command, indentation,
+						lineDelimiter, (IField) element);
+				break;
+			case IModelElement.METHOD:
+				comment = createMethodTags(document, command, indentation,
+						lineDelimiter, (IMethod) element);
+				break;
+			default:
+				comment = createDefaultComment(lineDelimiter);
 			}
 		} catch (CoreException e) {
 			comment = createDefaultComment(lineDelimiter);

@@ -1,16 +1,22 @@
 	/**
 	 * Returns a shared compilation unit AST for the given Java element.
 	 * <p>
-	 * Clients are not allowed to modify the AST and must synchronize all access to its nodes.
+	 * Clients are not allowed to modify the AST and must synchronize all access
+	 * to its nodes.
 	 * </p>
-	 *
-	 * @param input the Java element, must not be <code>null</code>
-	 * @param waitFlag {@link SharedASTProvider#WAIT_YES}, {@link SharedASTProvider#WAIT_NO} or
+	 * 
+	 * @param input
+	 *            the Java element, must not be <code>null</code>
+	 * @param waitFlag
+	 *            {@link SharedASTProvider#WAIT_YES},
+	 *            {@link SharedASTProvider#WAIT_NO} or
 	 *            {@link SharedASTProvider#WAIT_ACTIVE_ONLY}
-	 * @param progressMonitor the progress monitor or <code>null</code>
+	 * @param progressMonitor
+	 *            the progress monitor or <code>null</code>
 	 * @return the AST or <code>null</code> if the AST is not available
 	 */
-	public Program getAST(ISourceModule input, WAIT_FLAG waitFlag, IProgressMonitor progressMonitor) {
+	public Program getAST(ISourceModule input, WAIT_FLAG waitFlag,
+			IProgressMonitor progressMonitor) {
 		if (input == null || waitFlag == null)
 			throw new IllegalArgumentException("input or wait flag are null"); //$NON-NLS-1$
 
@@ -19,17 +25,21 @@
 
 		boolean isActiveElement;
 		synchronized (this) {
-			isActiveElement= input.equals(fActiveJavaElement);
+			isActiveElement = input.equals(fActiveJavaElement);
 			if (isActiveElement) {
 				if (fAST != null) {
 					if (DEBUG)
-						System.out.println(getThreadName() + " - " + DEBUG_PREFIX + "returning cached AST:" + toString(fAST) + " for: " + input.getElementName()); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+						System.out
+								.println(getThreadName()
+										+ " - " + DEBUG_PREFIX + "returning cached AST:" + toString(fAST) + " for: " + input.getElementName()); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
 					return fAST;
 				}
 				if (waitFlag == SharedASTProvider.WAIT_NO) {
 					if (DEBUG)
-						System.out.println(getThreadName() + " - " + DEBUG_PREFIX + "returning null (WAIT_NO) for: " + input.getElementName()); //$NON-NLS-1$ //$NON-NLS-2$
+						System.out
+								.println(getThreadName()
+										+ " - " + DEBUG_PREFIX + "returning null (WAIT_NO) for: " + input.getElementName()); //$NON-NLS-1$ //$NON-NLS-2$
 
 					return null;
 
@@ -37,11 +47,12 @@
 			}
 		}
 
-		final boolean canReturnNull= waitFlag == SharedASTProvider.WAIT_NO || (waitFlag == SharedASTProvider.WAIT_ACTIVE_ONLY && !(isActiveElement && fAST == null));
-		boolean isReconciling= false;
+		final boolean canReturnNull = waitFlag == SharedASTProvider.WAIT_NO
+				|| (waitFlag == SharedASTProvider.WAIT_ACTIVE_ONLY && !(isActiveElement && fAST == null));
+		boolean isReconciling = false;
 		if (isActiveElement) {
 			synchronized (fReconcileLock) {
-				isReconciling= isReconciling(input);
+				isReconciling = isReconciling(input);
 				if (!isReconciling && !canReturnNull)
 					aboutToBeReconciled(input);
 			}
@@ -49,12 +60,14 @@
 
 		if (isReconciling) {
 			try {
-				final ISourceModule activeElement= fReconcilingJavaElement;
+				final ISourceModule activeElement = fReconcilingJavaElement;
 
 				// Wait for AST
 				synchronized (fWaitLock) {
 					if (DEBUG)
-						System.out.println(getThreadName() + " - " + DEBUG_PREFIX + "waiting for AST for: " + input.getElementName()); //$NON-NLS-1$ //$NON-NLS-2$
+						System.out
+								.println(getThreadName()
+										+ " - " + DEBUG_PREFIX + "waiting for AST for: " + input.getElementName()); //$NON-NLS-1$ //$NON-NLS-2$
 
 					fWaitLock.wait();
 				}
@@ -63,7 +76,9 @@
 				synchronized (this) {
 					if (activeElement == fActiveJavaElement && fAST != null) {
 						if (DEBUG)
-							System.out.println(getThreadName() + " - " + DEBUG_PREFIX + "...got AST for: " + input.getElementName()); //$NON-NLS-1$ //$NON-NLS-2$
+							System.out
+									.println(getThreadName()
+											+ " - " + DEBUG_PREFIX + "...got AST for: " + input.getElementName()); //$NON-NLS-1$ //$NON-NLS-2$
 
 						return fAST;
 					}
@@ -75,21 +90,25 @@
 		} else if (canReturnNull)
 			return null;
 
-
-		Program ast= null;
+		Program ast = null;
 		try {
-			ast= createAST(input, progressMonitor);
+			ast = createAST(input, progressMonitor);
 			if (progressMonitor != null && progressMonitor.isCanceled()) {
-				ast= null;
+				ast = null;
 				if (DEBUG)
-					System.out.println(getThreadName() + " - " + DEBUG_PREFIX + "Ignore created AST for: " + input.getElementName() + " - operation has been cancelled"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+					System.out
+							.println(getThreadName()
+									+ " - " + DEBUG_PREFIX + "Ignore created AST for: " + input.getElementName() + " - operation has been cancelled"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 			}
 		} finally {
 			if (isActiveElement) {
 				if (fAST != null) {
-					// in the meantime, reconcile created a new AST. Return that one
+					// in the meantime, reconcile created a new AST. Return that
+					// one
 					if (DEBUG)
-						System.out.println(getThreadName() + " - " + DEBUG_PREFIX + "Ignore created AST for " + input.getElementName() + " - AST from reconciler is newer"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+						System.out
+								.println(getThreadName()
+										+ " - " + DEBUG_PREFIX + "Ignore created AST for " + input.getElementName() + " - AST from reconciler is newer"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 					reconciled(fAST, input, null);
 					return fAST;
 				} else

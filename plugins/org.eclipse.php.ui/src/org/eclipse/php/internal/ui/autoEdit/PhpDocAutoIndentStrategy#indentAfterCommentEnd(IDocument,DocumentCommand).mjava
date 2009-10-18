@@ -1,8 +1,10 @@
 	/**
 	 * Unindents a typed slash ('/') if it forms the end of a comment.
-	 *
-	 * @param d the document
-	 * @param c the command
+	 * 
+	 * @param d
+	 *            the document
+	 * @param c
+	 *            the command
 	 */
 	private void indentAfterCommentEnd(IDocument d, DocumentCommand c) {
 		if (c.offset < 2 || d.getLength() == 0) {
@@ -19,14 +21,18 @@
 				if (offset == d.getLength()) {
 					fixedOffset -= 1;
 				}
-				IStructuredDocumentRegion sdRegion = ((IStructuredDocument) d).getRegionAtCharacterOffset(fixedOffset);
+				IStructuredDocumentRegion sdRegion = ((IStructuredDocument) d)
+						.getRegionAtCharacterOffset(fixedOffset);
 
-				ITextRegion tRegion = sdRegion.getRegionAtCharacterOffset(fixedOffset);
+				ITextRegion tRegion = sdRegion
+						.getRegionAtCharacterOffset(fixedOffset);
 
 				int regionOffset = offset;
 				if (tRegion instanceof ITextRegionContainer) {
-					tRegion = ((ITextRegionContainer) tRegion).getRegionAtCharacterOffset(fixedOffset);
-					regionOffset -= (sdRegion.getStartOffset(tRegion) + tRegion.getStart());
+					tRegion = ((ITextRegionContainer) tRegion)
+							.getRegionAtCharacterOffset(fixedOffset);
+					regionOffset -= (sdRegion.getStartOffset(tRegion) + tRegion
+							.getStart());
 				}
 				int regionStart = sdRegion.getStartOffset(tRegion);
 
@@ -34,14 +40,18 @@
 					IPhpScriptRegion scriptRegion = (IPhpScriptRegion) tRegion;
 					regionOffset -= scriptRegion.getStart();
 
-					ITextRegion commentRegion = scriptRegion.getPhpToken(regionOffset);
+					ITextRegion commentRegion = scriptRegion
+							.getPhpToken(regionOffset);
 					int phpScriptEndOffset = scriptRegion.getLength();
 					boolean isSpaceDeletionNeeded = false;
 					do {
 						int currentRegionEndOffset = commentRegion.getEnd();
-						commentRegion = scriptRegion.getPhpToken(currentRegionEndOffset);
+						commentRegion = scriptRegion
+								.getPhpToken(currentRegionEndOffset);
 						String tokenType = commentRegion.getType();
-						if (tokenType.equals(PHPRegionTypes.PHP_COMMENT_END) || PHPRegionTypes.PHPDOC_COMMENT_END.equals(tokenType)) {
+						if (tokenType.equals(PHPRegionTypes.PHP_COMMENT_END)
+								|| PHPRegionTypes.PHPDOC_COMMENT_END
+										.equals(tokenType)) {
 							break;
 						} else if (currentRegionEndOffset >= phpScriptEndOffset) {
 							isSpaceDeletionNeeded = true;
@@ -50,7 +60,7 @@
 					} while (true);
 
 					if (isSpaceDeletionNeeded) {
-						//perform the actual work
+						// perform the actual work
 						c.length++;
 						c.offset--;
 						return;

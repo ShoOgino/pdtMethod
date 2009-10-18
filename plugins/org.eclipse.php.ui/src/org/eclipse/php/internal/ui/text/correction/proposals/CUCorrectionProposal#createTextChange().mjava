@@ -1,36 +1,40 @@
 	/**
-	 * Creates the text change for this proposal.
-	 * This method is only called once and only when no text change has been passed in
-	 * {@link #CUCorrectionProposal(String, ISourceModule, TextChange, int, Image)}.
-	 *
+	 * Creates the text change for this proposal. This method is only called
+	 * once and only when no text change has been passed in
+	 * {@link #CUCorrectionProposal(String, ISourceModule, TextChange, int, Image)}
+	 * .
+	 * 
 	 * @return returns the created text change.
-	 * @throws CoreException thrown if the creation of the text change failed.
+	 * @throws CoreException
+	 *             thrown if the creation of the text change failed.
 	 */
 	protected TextChange createTextChange() throws CoreException {
-		ISourceModule cu= getCompilationUnit();
-		String name= getName();
+		ISourceModule cu = getCompilationUnit();
+		String name = getName();
 		TextChange change;
 		if (!cu.getResource().exists()) {
 			String source;
 			try {
-				source= cu.getSource();
+				source = cu.getSource();
 			} catch (ModelException e) {
 				PHPUiPlugin.log(e);
-				source= new String(); // empty
+				source = new String(); // empty
 			}
-			Document document= new Document(source);
-			document.setInitialLineDelimiter(StubUtility.getLineDelimiterUsed(cu.getScriptProject()));
-			change= new DocumentChange(name, document);
+			Document document = new Document(source);
+			document.setInitialLineDelimiter(StubUtility
+					.getLineDelimiterUsed(cu.getScriptProject()));
+			change = new DocumentChange(name, document);
 		} else {
 			SourceModuleChange cuChange = new SourceModuleChange(name, cu);
 			cuChange.setSaveMode(TextFileChange.LEAVE_DIRTY);
-			change= cuChange;
+			change = cuChange;
 		}
-		TextEdit rootEdit= new MultiTextEdit();
+		TextEdit rootEdit = new MultiTextEdit();
 		change.setEdit(rootEdit);
 
 		// initialize text change
-		IDocument document= change.getCurrentDocument(new NullProgressMonitor());
+		IDocument document = change
+				.getCurrentDocument(new NullProgressMonitor());
 		addEdits(document, rootEdit);
 		return change;
 	}

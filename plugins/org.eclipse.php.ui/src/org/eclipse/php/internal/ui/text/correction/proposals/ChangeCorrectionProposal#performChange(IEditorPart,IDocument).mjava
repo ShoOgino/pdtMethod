@@ -1,47 +1,59 @@
 	/**
 	 * Performs the change associated with this proposal.
-	 *
-	 * @param activeEditor The editor currently active or <code>null</code> if no
-	 * editor is active.
-	 * @param document The document of the editor currently active or <code>null</code> if
-	 * no editor is visible.
-	 * @throws CoreException Thrown when the invocation of the change failed.
+	 * 
+	 * @param activeEditor
+	 *            The editor currently active or <code>null</code> if no editor
+	 *            is active.
+	 * @param document
+	 *            The document of the editor currently active or
+	 *            <code>null</code> if no editor is visible.
+	 * @throws CoreException
+	 *             Thrown when the invocation of the change failed.
 	 */
-	protected void performChange(IEditorPart activeEditor, IDocument document) throws CoreException {
-		Change change= null;
-		IRewriteTarget rewriteTarget= null;
+	protected void performChange(IEditorPart activeEditor, IDocument document)
+			throws CoreException {
+		Change change = null;
+		IRewriteTarget rewriteTarget = null;
 		try {
-			change= getChange();
+			change = getChange();
 			if (change != null) {
 				if (document != null) {
 					LinkedModeModel.closeAllModels(document);
 				}
 				if (activeEditor != null) {
-					rewriteTarget= (IRewriteTarget) activeEditor.getAdapter(IRewriteTarget.class);
+					rewriteTarget = (IRewriteTarget) activeEditor
+							.getAdapter(IRewriteTarget.class);
 					if (rewriteTarget != null) {
 						rewriteTarget.beginCompoundChange();
 					}
 				}
 
 				change.initializeValidationData(new NullProgressMonitor());
-				RefactoringStatus valid= change.isValid(new NullProgressMonitor());
+				RefactoringStatus valid = change
+						.isValid(new NullProgressMonitor());
 				if (valid.hasFatalError()) {
-					IStatus status= new Status(IStatus.ERROR, PHPUiPlugin.ID, IStatus.ERROR,
-						valid.getMessageMatchingSeverity(RefactoringStatus.FATAL), null);
+					IStatus status = new Status(
+							IStatus.ERROR,
+							PHPUiPlugin.ID,
+							IStatus.ERROR,
+							valid
+									.getMessageMatchingSeverity(RefactoringStatus.FATAL),
+							null);
 					throw new CoreException(status);
 				} else {
-					IUndoManager manager= RefactoringCore.getUndoManager();
+					IUndoManager manager = RefactoringCore.getUndoManager();
 					Change undoChange;
-					boolean successful= false;
+					boolean successful = false;
 					try {
 						manager.aboutToPerformChange(change);
-						undoChange= change.perform(new NullProgressMonitor());
-						successful= true;
+						undoChange = change.perform(new NullProgressMonitor());
+						successful = true;
 					} finally {
 						manager.changePerformed(change, successful);
 					}
 					if (undoChange != null) {
-						undoChange.initializeValidationData(new NullProgressMonitor());
+						undoChange
+								.initializeValidationData(new NullProgressMonitor());
 						manager.addUndo(getName(), undoChange);
 					}
 				}
