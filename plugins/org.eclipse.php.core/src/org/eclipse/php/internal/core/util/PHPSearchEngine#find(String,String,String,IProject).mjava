@@ -1,14 +1,22 @@
 	/**
 	 * Searches for the given path using internal PHP mechanism
-	 *
-	 * @param path File path to resolve
-	 * @param currentWorkingDir Current working directory (usually: CWD of PHP process), absolute (workspace of file system)
-	 * @param currentScriptDir Absolute (workspace of file system) directory of current script (which is interpreted by the PHP at this time)
-	 * @param currentProject Current project to which current script belongs
+	 * 
+	 * @param path
+	 *            File path to resolve
+	 * @param currentWorkingDir
+	 *            Current working directory (usually: CWD of PHP process),
+	 *            absolute (workspace of file system)
+	 * @param currentScriptDir
+	 *            Absolute (workspace of file system) directory of current
+	 *            script (which is interpreted by the PHP at this time)
+	 * @param currentProject
+	 *            Current project to which current script belongs
 	 * @return resolved path, or <code>null</code> in case of failure
 	 */
-	public static Result<?, ?> find(String path, String currentWorkingDir, String currentScriptDir, IProject currentProject) {
-		if (path == null || currentWorkingDir == null || currentScriptDir == null || currentProject == null) {
+	public static Result<?, ?> find(String path, String currentWorkingDir,
+			String currentScriptDir, IProject currentProject) {
+		if (path == null || currentWorkingDir == null
+				|| currentScriptDir == null || currentProject == null) {
 			throw new NullPointerException("Parameters can't be null");
 		}
 
@@ -17,7 +25,10 @@
 		if (file.isAbsolute()) {
 			return searchExternalOrWorkspaceFile(file);
 		}
-		if (RELATIVE_PATH_PATTERN.matcher(path).matches()) { // check whether the path starts with ./ or ../
+		if (RELATIVE_PATH_PATTERN.matcher(path).matches()) { // check whether
+																// the path
+																// starts with
+																// ./ or ../
 			return searchExternalOrWorkspaceFile(currentWorkingDir, path);
 		}
 
@@ -25,9 +36,11 @@
 		IncludePath[] includePaths = buildIncludePath(currentProject);
 		for (IncludePath includePath : includePaths) {
 			if (includePath.isBuildpath()) {
-				Result<?, ?> searchInBuildpathEntry = searchInBuildpathEntry(path, (IBuildpathEntry) includePath.getEntry(), currentProject);
+				Result<?, ?> searchInBuildpathEntry = searchInBuildpathEntry(
+						path, (IBuildpathEntry) includePath.getEntry(),
+						currentProject);
 				if (searchInBuildpathEntry != null) {
-					return searchInBuildpathEntry;	
+					return searchInBuildpathEntry;
 				}
 			} else {
 				IContainer container = (IContainer) includePath.getEntry();

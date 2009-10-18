@@ -1,25 +1,31 @@
 	/**
-	 * Returns active completion context resolver. By default returns this class instance,
-	 * but may be overriden using extension point.
+	 * Returns active completion context resolver. By default returns this class
+	 * instance, but may be overriden using extension point.
 	 * 
 	 * @return array of active {@link ICompletionContextResolver}'s
 	 */
 	public static ICompletionContextResolver[] getActive() {
-		if (instances == null) { // not synchronized since we don't care about creating multiple instances of resolvers in worst case
+		if (instances == null) { // not synchronized since we don't care about
+									// creating multiple instances of resolvers
+									// in worst case
 
 			List<ICompletionContextResolver> resolvers = new LinkedList<ICompletionContextResolver>();
-			IConfigurationElement[] elements = Platform.getExtensionRegistry().getConfigurationElementsFor("org.eclipse.php.core.completionContextResolvers");
+			IConfigurationElement[] elements = Platform.getExtensionRegistry()
+					.getConfigurationElementsFor(
+							"org.eclipse.php.core.completionContextResolvers");
 			for (IConfigurationElement element : elements) {
 				if (element.getName().equals("resolver")) {
 					try {
-						resolvers.add((ICompletionContextResolver) element.createExecutableExtension("class"));
+						resolvers.add((ICompletionContextResolver) element
+								.createExecutableExtension("class"));
 					} catch (CoreException e) {
 						PHPCorePlugin.log(e);
 					}
 				}
 			}
 			resolvers.add(new CompletionContextResolver()); // add default
-			instances = (ICompletionContextResolver[]) resolvers.toArray(new ICompletionContextResolver[resolvers.size()]);
+			instances = (ICompletionContextResolver[]) resolvers
+					.toArray(new ICompletionContextResolver[resolvers.size()]);
 		}
 		return instances;
 	}

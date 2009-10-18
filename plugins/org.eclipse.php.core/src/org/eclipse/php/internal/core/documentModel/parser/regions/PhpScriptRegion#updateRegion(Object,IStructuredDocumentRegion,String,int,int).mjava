@@ -1,8 +1,11 @@
 	@Override
-	public StructuredDocumentEvent updateRegion(Object requester, IStructuredDocumentRegion flatnode, String changes, int requestStart, int lengthToReplace) {
+	public StructuredDocumentEvent updateRegion(Object requester,
+			IStructuredDocumentRegion flatnode, String changes,
+			int requestStart, int lengthToReplace) {
 		isFullReparsed = true;
 		try {
-			final int offset = requestStart - flatnode.getStartOffset() - getStart();
+			final int offset = requestStart - flatnode.getStartOffset()
+					- getStart();
 
 			// support the <?php case
 			if (offset < 4) {
@@ -16,7 +19,8 @@
 			}
 
 			// get the region to re-parse
-			final ITextRegion tokenStart = tokensContaier.getToken(offset == 0 ? 0 : offset - 1);
+			final ITextRegion tokenStart = tokensContaier
+					.getToken(offset == 0 ? 0 : offset - 1);
 			final int oldEndOffset = offset + lengthToReplace;
 			final ITextRegion tokenEnd = tokensContaier.getToken(oldEndOffset);
 			int newTokenOffset = tokenStart.getStart();
@@ -26,27 +30,34 @@
 			}
 
 			// get start and end states
-			final LexerState startState = tokensContaier.getState(newTokenOffset);
-			final LexerState endState = tokensContaier.getState(tokenEnd.getEnd() + 1);
+			final LexerState startState = tokensContaier
+					.getState(newTokenOffset);
+			final LexerState endState = tokensContaier.getState(tokenEnd
+					.getEnd() + 1);
 
 			final PhpTokenContainer newContainer = new PhpTokenContainer();
-			final AbstractPhpLexer phpLexer = getPhpLexer(new DocumentReader(flatnode, changes, requestStart, lengthToReplace, newTokenOffset), startState);
+			final AbstractPhpLexer phpLexer = getPhpLexer(new DocumentReader(
+					flatnode, changes, requestStart, lengthToReplace,
+					newTokenOffset), startState);
 
 			Object state = startState;
 			try {
 				String yylex = phpLexer.getNextToken();
 				int yylength;
 				final int toOffset = offset + length;
-				while (yylex != null && newTokenOffset <= toOffset && yylex != PHPRegionTypes.PHP_CLOSETAG) {
+				while (yylex != null && newTokenOffset <= toOffset
+						&& yylex != PHPRegionTypes.PHP_CLOSETAG) {
 					yylength = phpLexer.getLength();
-					newContainer.addLast(yylex, newTokenOffset, yylength, yylength, state);
+					newContainer.addLast(yylex, newTokenOffset, yylength,
+							yylength, state);
 					newTokenOffset += yylength;
 					state = phpLexer.createLexicalStateMemento();
 					yylex = phpLexer.getNextToken();
 				}
 				if (yylex == PHPRegionTypes.WHITESPACE) {
 					yylength = phpLexer.getLength();
-					newContainer.adjustWhitespace(yylex, newTokenOffset, yylength, yylength, state);
+					newContainer.adjustWhitespace(yylex, newTokenOffset,
+							yylength, yylength, state);
 				}
 			} catch (IOException e) {
 				Logger.logException(e);
@@ -57,7 +68,7 @@
 				return null;
 			}
 
-			// if the two streams end with the same lexer sate - 
+			// if the two streams end with the same lexer sate -
 			// 1. replace the regions
 			// 2. adjust next regions start location
 			// 3. update state changes
@@ -69,8 +80,11 @@
 			}
 
 			// 1. replace the regions
-			final ListIterator oldIterator = tokensContaier.removeTokensSubList(tokenStart, tokenEnd);
-			ITextRegion[] newTokens = newContainer.getPhpTokens(); // now, add the new ones
+			final ListIterator oldIterator = tokensContaier
+					.removeTokensSubList(tokenStart, tokenEnd);
+			ITextRegion[] newTokens = newContainer.getPhpTokens(); // now, add
+																	// the new
+																	// ones
 			for (int i = 0; i < newTokens.length; i++) {
 				oldIterator.add(newTokens[i]);
 			}
@@ -82,10 +96,12 @@
 			}
 
 			// 3. update state changes
-			tokensContaier.updateStateChanges(newContainer, tokenStart.getStart(), end);
+			tokensContaier.updateStateChanges(newContainer, tokenStart
+					.getStart(), end);
 			isFullReparsed = false;
 
-			return super.updateRegion(requester, flatnode, changes, requestStart, lengthToReplace);
+			return super.updateRegion(requester, flatnode, changes,
+					requestStart, lengthToReplace);
 
 		} catch (BadLocationException e) {
 			PHPCorePlugin.log(e);

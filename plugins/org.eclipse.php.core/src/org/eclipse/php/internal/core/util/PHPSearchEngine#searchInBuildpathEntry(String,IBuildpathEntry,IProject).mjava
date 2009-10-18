@@ -1,14 +1,15 @@
-	private static Result<?, ?> searchInBuildpathEntry(String path, IBuildpathEntry entry, IProject currentProject) {
+	private static Result<?, ?> searchInBuildpathEntry(String path,
+			IBuildpathEntry entry, IProject currentProject) {
 
 		IPath entryPath = EnvironmentPathUtils.getLocalPath(entry.getPath());
-		
+
 		if (entry.getEntryKind() == IBuildpathEntry.BPE_LIBRARY) {
 			File entryDir = entryPath.toFile();
 			File file = new File(entryDir, path);
 			if (file.exists()) {
 				return new IncludedFileResult(entry, file);
-			}	
-        } else if (entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
+			}
+		} else if (entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
 			entryPath = DLTKCore.getResolvedVariablePath(entryPath);
 			File entryDir = entryPath.toFile();
 			File file = new File(entryDir, path);
@@ -16,7 +17,8 @@
 				return new IncludedFileResult(entry, file);
 			}
 		} else if (entry.getEntryKind() == IBuildpathEntry.BPE_PROJECT) {
-			IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
+			IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace()
+					.getRoot();
 			IProject project = workspaceRoot.getProject(entryPath.segment(0));
 			if (project.isAccessible()) {
 				IResource resource = project.findMember(path);
@@ -25,10 +27,11 @@
 				}
 			}
 		} else if (entry.getEntryKind() == IBuildpathEntry.BPE_SOURCE) {
-			IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
+			IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace()
+					.getRoot();
 			IResource resource = workspaceRoot.findMember(entryPath);
 			if (resource instanceof IContainer) {
-				resource = ((IContainer)resource).findMember(path);
+				resource = ((IContainer) resource).findMember(path);
 				if (resource instanceof IFile) {
 					return new ResourceResult((IFile) resource);
 				}
@@ -36,15 +39,20 @@
 		} else if (entry.getEntryKind() == IBuildpathEntry.BPE_CONTAINER) {
 			try {
 				IScriptProject scriptProject = DLTKCore.create(currentProject);
-				IBuildpathContainer container = DLTKCore.getBuildpathContainer(entry.getPath(), scriptProject);
+				IBuildpathContainer container = DLTKCore.getBuildpathContainer(
+						entry.getPath(), scriptProject);
 				if (container != null) {
-					IBuildpathEntry[] buildpathEntries = container.getBuildpathEntries(scriptProject);
+					IBuildpathEntry[] buildpathEntries = container
+							.getBuildpathEntries(scriptProject);
 					if (buildpathEntries != null) {
 						for (IBuildpathEntry buildpathEntry : buildpathEntries) {
-							Result<?, ?> result = searchInBuildpathEntry(path, buildpathEntry, currentProject);
+							Result<?, ?> result = searchInBuildpathEntry(path,
+									buildpathEntry, currentProject);
 							if (result != null) {
-								IProjectFragment[] projectFragments = scriptProject.findProjectFragments(entry);
-								((IncludedFileResult)result).setProjectFragments(projectFragments);
+								IProjectFragment[] projectFragments = scriptProject
+										.findProjectFragments(entry);
+								((IncludedFileResult) result)
+										.setProjectFragments(projectFragments);
 								return result;
 							}
 						}
@@ -54,7 +62,7 @@
 				PHPCorePlugin.log(e);
 			}
 		}
-		
+
 		return null;
 	}
 

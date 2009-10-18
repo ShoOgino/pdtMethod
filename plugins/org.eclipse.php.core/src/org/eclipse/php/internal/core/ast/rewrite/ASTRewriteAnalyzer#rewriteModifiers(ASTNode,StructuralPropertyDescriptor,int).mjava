@@ -1,4 +1,5 @@
-	private void rewriteModifiers(ASTNode parent, StructuralPropertyDescriptor property, int offset) {
+	private void rewriteModifiers(ASTNode parent,
+			StructuralPropertyDescriptor property, int offset) {
 		RewriteEvent event = getEvent(parent, property);
 		if (event == null || event.getChangeKind() != RewriteEvent.REPLACED) {
 			return;
@@ -10,16 +11,22 @@
 
 			TokenScanner scanner = getScanner();
 
-			Symbol tok = scanner.readNext(offset/*, false*/);
+			Symbol tok = scanner.readNext(offset/* , false */);
 			int startPos = scanner.getCurrentStartOffset();
 			int nextStart = startPos;
 			// prepare the modifiers 'syms'
 			PHPVersion phpVersion = this.scanner.getPHPVersion();
-			int modifiers[] = new int[] { SymbolsProvider.getModifierSym("public", phpVersion), SymbolsProvider.getModifierSym("private", phpVersion), SymbolsProvider.getModifierSym("protected", phpVersion), SymbolsProvider.getModifierSym("static", phpVersion),
-				SymbolsProvider.getModifierSym("abstract", phpVersion), SymbolsProvider.getModifierSym("final", phpVersion) };
+			int modifiers[] = new int[] {
+					SymbolsProvider.getModifierSym("public", phpVersion),
+					SymbolsProvider.getModifierSym("private", phpVersion),
+					SymbolsProvider.getModifierSym("protected", phpVersion),
+					SymbolsProvider.getModifierSym("static", phpVersion),
+					SymbolsProvider.getModifierSym("abstract", phpVersion),
+					SymbolsProvider.getModifierSym("final", phpVersion) };
 			loop: while (true) {
 				if (TokenScanner.isComment(tok)) {
-					tok = scanner.readNext(/*true*/); // next non-comment token
+					tok = scanner.readNext(/* true */); // next non-comment
+															// token
 				}
 				boolean keep = true;
 				if (tok == null) {
@@ -40,7 +47,7 @@
 				} else {
 					break loop;
 				}
-				tok = getScanner().readNext(/*false*/); // include comments
+				tok = getScanner().readNext(/* false */); // include comments
 				int currPos = nextStart;
 				nextStart = getScanner().getCurrentStartOffset();
 				if (!keep) {
@@ -50,10 +57,12 @@
 			int addedModifiers = newModifiers & ~oldModifiers;
 			if (addedModifiers != 0) {
 				if (startPos != nextStart) {
-					int visibilityModifiers = addedModifiers & (Modifiers.AccPublic | Modifiers.AccPrivate | Modifiers.AccProtected);
+					int visibilityModifiers = addedModifiers
+							& (Modifiers.AccPublic | Modifiers.AccPrivate | Modifiers.AccProtected);
 					if (visibilityModifiers != 0) {
 						StringBuffer buf = new StringBuffer();
-						ASTRewriteFlattener.printModifiers(visibilityModifiers, buf);
+						ASTRewriteFlattener.printModifiers(visibilityModifiers,
+								buf);
 						doTextInsert(startPos, buf.toString(), editGroup);
 						addedModifiers &= ~visibilityModifiers;
 					}

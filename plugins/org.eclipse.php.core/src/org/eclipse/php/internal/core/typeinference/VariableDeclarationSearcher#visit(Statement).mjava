@@ -8,47 +8,46 @@
 		if (isConditional(parent)) {
 			getScope().enterInnerBlock((Statement) parent);
 		}
-		
+
 		if (node instanceof GlobalStatement) {
 			GlobalStatement globalStatement = (GlobalStatement) node;
 			for (Expression variable : globalStatement.getVariables()) {
 				if (variable instanceof VariableReference) {
 					VariableReference varReference = (VariableReference) variable;
-					getScope().addDeclaration(varReference.getName(), globalStatement);
+					getScope().addDeclaration(varReference.getName(),
+							globalStatement);
 				}
 			}
-		}
-		else if (node instanceof FormalParameter) {
+		} else if (node instanceof FormalParameter) {
 			FormalParameter parameter = (FormalParameter) node;
 			getScope().addDeclaration(parameter.getName(), parameter);
-		}
-		else if (node instanceof CatchClause) {
+		} else if (node instanceof CatchClause) {
 			CatchClause clause = (CatchClause) node;
 			VariableReference varReference = clause.getVariable();
 			getScope().addDeclaration(varReference.getName(), clause);
-		}
-		else if (node instanceof ForEachStatement) {
+		} else if (node instanceof ForEachStatement) {
 			ForEachStatement foreachStatement = (ForEachStatement) node;
 
 			Expression value = foreachStatement.getValue();
-			if (value instanceof ReferenceExpression) { // foreach ( $array as &$value ) 
+			if (value instanceof ReferenceExpression) { // foreach ( $array as
+														// &$value )
 				value = ((ReferenceExpression) value).getVariable();
 			}
 
 			if (value instanceof SimpleReference) {
 				String variableName = ((SimpleReference) value).getName();
 				getScope().addDeclaration(variableName, foreachStatement);
-			} 
+			}
 
-			final Expression key = foreachStatement.getKey();			
+			final Expression key = foreachStatement.getKey();
 			if (key instanceof SimpleReference) {
 				String variableName = ((SimpleReference) key).getName();
 				getScope().addDeclaration(variableName, foreachStatement);
 			}
 		}
-		
+
 		postProcess(node);
-		
+
 		return super.visit(node);
 	}
 

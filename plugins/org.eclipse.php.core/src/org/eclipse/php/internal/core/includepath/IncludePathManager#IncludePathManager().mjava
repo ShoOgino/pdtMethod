@@ -13,27 +13,33 @@
 				IModelElement element = delta.getElement();
 				try {
 					if ((delta.getFlags() & IModelElementDelta.F_BUILDPATH_CHANGED) != 0) {
-						IScriptProject scriptProject = element.getScriptProject();
+						IScriptProject scriptProject = element
+								.getScriptProject();
 						IProject project = scriptProject.getProject();
 						IncludePath[] includePathEntries = getIncludePaths(project);
-						List<IncludePath> newEntries = new LinkedList<IncludePath>(Arrays.asList(includePathEntries));
+						List<IncludePath> newEntries = new LinkedList<IncludePath>(
+								Arrays.asList(includePathEntries));
 
-						IBuildpathEntry[] rawBuildpath = scriptProject.getRawBuildpath();
+						IBuildpathEntry[] rawBuildpath = scriptProject
+								.getRawBuildpath();
 
-						// This is a workaround to the lack of information about buildpath changes in delta:
+						// This is a workaround to the lack of information about
+						// buildpath changes in delta:
 						boolean changed = false;
 
-						// Calculate added entries: 
+						// Calculate added entries:
 						for (IBuildpathEntry entry : rawBuildpath) {
 							boolean added = true;
 							for (IncludePath includePath : includePathEntries) {
-								if (includePath.isBuildpath() && entry.equals(includePath.getEntry())) {
+								if (includePath.isBuildpath()
+										&& entry.equals(includePath.getEntry())) {
 									added = false;
 									break;
 								}
 							}
 							if (added && isBuildpathAllowed(entry)) {
-								newEntries.add(new IncludePath(entry, scriptProject));
+								newEntries.add(new IncludePath(entry,
+										scriptProject));
 								changed = true;
 							}
 						}
@@ -51,12 +57,12 @@
 								} else {
 									removed = false;
 								}
-								/* else {
-								if (entry.getPath().isPrefixOf(((IResource) includePath.getEntry()).getFullPath())) {
-									removed = false;
-									break;
-								}
-								}*/
+								/*
+								 * else { if
+								 * (entry.getPath().isPrefixOf(((IResource)
+								 * includePath.getEntry()).getFullPath())) {
+								 * removed = false; break; } }
+								 */
 							}
 							if (removed) {
 								entriesToRemove.add(includePath);
@@ -68,11 +74,15 @@
 						}
 
 						if (changed) {
-							setIncludePath(project, newEntries.toArray(new IncludePath[newEntries.size()]));
+							setIncludePath(project,
+									newEntries
+											.toArray(new IncludePath[newEntries
+													.size()]));
 						}
 
 					} else {
-						IModelElementDelta[] children = delta.getAffectedChildren();
+						IModelElementDelta[] children = delta
+								.getAffectedChildren();
 						for (IModelElementDelta child : children) {
 							processChildren(child);
 						}

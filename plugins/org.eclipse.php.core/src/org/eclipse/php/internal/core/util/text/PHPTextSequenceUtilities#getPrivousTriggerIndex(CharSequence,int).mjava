@@ -1,4 +1,5 @@
-	public static int getPrivousTriggerIndex(CharSequence textSequence, int startPosition) {
+	public static int getPrivousTriggerIndex(CharSequence textSequence,
+			int startPosition) {
 		int rv = startPosition;
 		int bracketsNum = 0;
 		char inStringMode = 0;
@@ -7,14 +8,16 @@
 		for (; rv > 0; rv--) {
 			char currChar = textSequence.charAt(rv - 1);
 			if (currChar == '\'' || currChar == '"') {
-				inStringMode = inStringMode == 0 ? currChar : inStringMode == currChar ? 0 : inStringMode;
+				inStringMode = inStringMode == 0 ? currChar
+						: inStringMode == currChar ? 0 : inStringMode;
 			}
 			if (inStringMode != 0) {
 				continue;
 			}
 
 			// The next block solves bug #205034:
-			// store state for whitespace before literals and if another literal comes before it - return 'not found'
+			// store state for whitespace before literals and if another literal
+			// comes before it - return 'not found'
 			if (Character.isLetterOrDigit(currChar) || currChar == '$') {
 				if (inWhiteSpaceBeforeLiteral && bracketsNum == 0) {
 					return -1;
@@ -30,41 +33,42 @@
 				inLiteral = false;
 			}
 
-			if (!Character.isLetterOrDigit(currChar) && currChar != '_' && currChar != '$' && !Character.isWhitespace(currChar)) {
+			if (!Character.isLetterOrDigit(currChar) && currChar != '_'
+					&& currChar != '$' && !Character.isWhitespace(currChar)) {
 				switch (currChar) {
-					case '(':
-					case '[':
-					case '{':
-						bracketsNum--;
-						if (bracketsNum < 0) {
+				case '(':
+				case '[':
+				case '{':
+					bracketsNum--;
+					if (bracketsNum < 0) {
+						return -1;
+					}
+					break;
+				case ')':
+				case ']':
+				case '}':
+					bracketsNum++;
+					break;
+				case ':':
+					if (bracketsNum == 0 && rv >= 2) {
+						if (textSequence.charAt(rv - 2) == ':') {
+							return rv - 2;
+						} else {
 							return -1;
 						}
-						break;
-					case ')':
-					case ']':
-					case '}':
-						bracketsNum++;
-						break;
-					case ':':
-						if (bracketsNum == 0 && rv >= 2) {
-							if (textSequence.charAt(rv - 2) == ':') {
-								return rv - 2;
-							} else {
-								return -1;
-							}
+					}
+					break;
+				case '>':
+					if (bracketsNum == 0 && rv >= 2) {
+						if (textSequence.charAt(rv - 2) == '-') {
+							return rv - 2;
 						}
-						break;
-					case '>':
-						if (bracketsNum == 0 && rv >= 2) {
-							if (textSequence.charAt(rv - 2) == '-') {
-								return rv - 2;
-							}
-						}
-						break;
-					default:
-						if (bracketsNum == 0) {
-							return -1;
-						}
+					}
+					break;
+				default:
+					if (bracketsNum == 0) {
+						return -1;
+					}
 				}
 			}
 		}
