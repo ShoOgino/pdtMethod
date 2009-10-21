@@ -1,0 +1,40 @@
+		public void resourceChanged(IResourceChangeEvent event) {
+			if (event.getBuildKind() == IncrementalProjectBuilder.CLEAN_BUILD) {
+				Object source = event.getSource();
+				try {
+					if (source instanceof IProject) {
+						IProject project = (IProject) source;
+						ProjectIndexerManager.removeProject(project
+								.getFullPath());
+						ProjectIndexerManager.indexProject(project);
+
+					} else if (source instanceof IWorkspace) {
+						IWorkspace workspace = (IWorkspace) source;
+						IProject[] projects = workspace.getRoot().getProjects();
+
+						// remove from index:
+						for (IProject project : projects) {
+							IScriptProject scriptProject = DLTKCore
+									.create(project);
+							IProjectFragment[] projectFragments = scriptProject
+									.getProjectFragments();
+							for (IProjectFragment projectFragment : projectFragments) {
+								ProjectIndexerManager.removeProjectFragment(
+										scriptProject, projectFragment
+												.getPath());
+							}
+							ProjectIndexerManager.removeProject(project
+									.getFullPath());
+						}
+
+						// add to index:
+						for (IProject project : projects) {
+							ProjectIndexerManager.indexProject(project);
+						}
+					}
+				} catch (CoreException e) {
+					Logger.logException(e);
+				}
+			}
+		}
+
