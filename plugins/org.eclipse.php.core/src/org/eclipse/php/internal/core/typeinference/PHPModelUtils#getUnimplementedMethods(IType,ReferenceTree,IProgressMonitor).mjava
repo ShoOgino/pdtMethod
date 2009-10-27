@@ -1,0 +1,32 @@
+	/**
+	 * Returns methods that must be overridden in first non-abstract class in
+	 * hierarchy.
+	 * 
+	 * @param type
+	 *            Type to start the search from
+	 * @param referenceTree
+	 *            Cached instance of file hierarchy
+	 * @param monitor
+	 *            Progress monitor
+	 * @return unimplemented methods
+	 * @throws ModelException
+	 */
+	public static IMethod[] getUnimplementedMethods(IType type,
+			ReferenceTree referenceTree, IProgressMonitor monitor)
+			throws ModelException {
+
+		HashMap<String, IMethod> abstractMethods = new HashMap<String, IMethod>();
+		HashSet<String> nonAbstractMethods = new HashSet<String>();
+
+		internalGetUnimplementedMethods(type, nonAbstractMethods,
+				abstractMethods, new HashSet<String>(), referenceTree, monitor);
+
+		for (String methodName : nonAbstractMethods) {
+			abstractMethods.remove(methodName);
+		}
+
+		Collection<IMethod> unimplementedMethods = abstractMethods.values();
+		return (IMethod[]) unimplementedMethods
+				.toArray(new IMethod[unimplementedMethods.size()]);
+	}
+
