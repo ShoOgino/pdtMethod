@@ -2,33 +2,12 @@
 			Set<ISourceModule> processedFiles, IProgressMonitor monitor)
 			throws CoreException {
 		ISourceModule sourceModule = root.getFile();
+		IField[] includes = PhpModelAccess.getDefault().findIncludes(null,
+				MatchRule.PREFIX, SearchEngine.createSearchScope(sourceModule),
+				monitor);
 
-		final List<String> includes = new LinkedList<String>();
-
-		ModuleDeclaration moduleDeclaration = SourceParserUtil
-				.getModuleDeclaration(sourceModule);
-
-		ASTVisitor visitor = new ASTVisitor() {
-			public boolean visit(Expression expr) throws ModelException {
-				if (expr instanceof Include) {
-					Expression fileExpr = ((Include) expr).getExpr();
-					if (fileExpr instanceof Scalar) {
-						String fileName = ASTUtils
-								.stripQuotes(((Scalar) fileExpr).getValue());
-						includes.add(fileName);
-					}
-				}
-				return true;
-			}
-		};
-
-		try {
-			moduleDeclaration.traverse(visitor);
-		} catch (Exception e) {
-			Logger.logException(e);
-		}
-
-		for (String filePath : includes) {
+		for (IField include : includes) {
+			String filePath = ((IncludeField) include).getFilePath();
 			ISourceModule testFile = findSourceModule(sourceModule, filePath);
 			if (testFile != null && !processedFiles.contains(testFile)) {
 				processedFiles.add(testFile);
