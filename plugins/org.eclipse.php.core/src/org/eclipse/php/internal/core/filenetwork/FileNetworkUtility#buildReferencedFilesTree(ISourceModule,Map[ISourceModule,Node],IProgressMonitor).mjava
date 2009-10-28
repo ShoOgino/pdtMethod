@@ -1,0 +1,31 @@
+	/**
+	 * Analyzes file dependences, and builds tree of all source modules, which
+	 * are referenced by the given source module.
+	 * 
+	 * @param file
+	 *            Source module
+	 * @param cachedTrees
+	 *            Cached reference trees from previous invocations
+	 * @param monitor
+	 *            Progress monitor
+	 * @return reference tree
+	 */
+	public static ReferenceTree buildReferencedFilesTree(ISourceModule file,
+			Map<ISourceModule, Node> cachedTrees, IProgressMonitor monitor) {
+
+		HashSet<ISourceModule> processedFiles = new HashSet<ISourceModule>();
+		processedFiles.add(file);
+
+		Node root;
+		if (cachedTrees == null || (root = cachedTrees.get(file)) == null) {
+			root = new Node(file);
+			try {
+				internalBuildReferencedFilesTree(root, processedFiles,
+						cachedTrees, monitor);
+			} catch (CoreException e) {
+				Logger.logException(e);
+			}
+		}
+		return new ReferenceTree(root);
+	}
+
