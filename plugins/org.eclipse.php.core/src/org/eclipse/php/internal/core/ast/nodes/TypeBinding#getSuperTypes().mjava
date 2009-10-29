@@ -1,0 +1,40 @@
+	protected IType[] getSuperTypes() {
+		if (superTypes == null) {
+			if (elements != null && elements.length > 0) {
+				IDLTKSearchScope scope = SearchEngine
+						.createSearchScope(elements[0].getScriptProject());
+
+				Set<String> superTypeNames = new HashSet<String>();
+				for (IModelElement element : elements) {
+					IType type = (IType) element;
+					try {
+						String[] superClassNames = type.getSuperClasses();
+						if (superClassNames != null) {
+							superTypeNames.addAll(Arrays
+									.asList(superClassNames));
+						}
+					} catch (CoreException e) {
+						if (DLTKCore.DEBUG) {
+							e.printStackTrace();
+						}
+					}
+				}
+				StringBuilder buf = new StringBuilder();
+				for (String superTypeName : superTypeNames) {
+					if (buf.length() > 0) {
+						buf.append(',');
+					}
+					buf.append(superTypeName);
+				}
+				if (buf.length() > 0) {
+					superTypes = PhpModelAccess.getDefault().findTypes(
+							buf.toString(), MatchRule.SET, 0,
+							Modifiers.AccNameSpace, scope, null);
+				} else {
+					superTypes = new IType[0];
+				}
+			}
+		}
+		return superTypes;
+	}
+

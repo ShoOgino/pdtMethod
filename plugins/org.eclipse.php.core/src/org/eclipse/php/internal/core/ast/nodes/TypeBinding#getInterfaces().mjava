@@ -34,41 +34,21 @@
 		}
 
 		if (this.interfaces == null) {
-			final ArrayList<ITypeBinding> interfaces = new ArrayList<ITypeBinding>();
-			for (IModelElement element : elements) {
-				IType type = (IType) element;
+			IType[] types = getSuperTypes();
+			List<ITypeBinding> interfaces = new LinkedList<ITypeBinding>();
+			for (IType type : types) {
 				try {
-					IDLTKSearchScope scope = SearchEngine
-							.createSearchScope(type.getScriptProject());
-
-					String[] superClassNames = type.getSuperClasses();
-
-					if (superClassNames != null) {
-						StringBuilder buf = new StringBuilder();
-						for (int i = 0; i < superClassNames.length; ++i) {
-							if (i > 0) {
-								buf.append(',');
-							}
-							buf.append(superClassNames[i]);
-						}
-						if (buf.length() > 0) {
-							IType[] types = PhpModelAccess.getDefault()
-									.findTypes(buf.toString(), MatchRule.SET,
-											Modifiers.AccInterface, 0, scope,
-											null);
-							for (IType t : types) {
-								interfaces.add(resolver.getTypeBinding(t));
-							}
-						}
+					if (PHPFlags.isInterface(type.getFlags())) {
+						interfaces.add(resolver.getTypeBinding(type));
 					}
-				} catch (CoreException e) {
+				} catch (ModelException e) {
 					if (DLTKCore.DEBUG) {
 						e.printStackTrace();
 					}
 				}
 			}
-			this.interfaces = interfaces.toArray(new ITypeBinding[interfaces
-					.size()]);
+			this.interfaces = (ITypeBinding[]) interfaces
+					.toArray(new ITypeBinding[interfaces.size()]);
 		}
 		return this.interfaces;
 	}
