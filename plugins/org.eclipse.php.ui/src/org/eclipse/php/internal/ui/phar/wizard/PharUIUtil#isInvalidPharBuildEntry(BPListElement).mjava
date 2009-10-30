@@ -1,0 +1,37 @@
+	public static boolean isInvalidPharBuildEntry(BPListElement cpentry) {
+		IBuildpathEntry entry = cpentry.getBuildpathEntry();
+		if (PHPToolkitUtil.isPharFileName(entry.getPath().toString())) {
+			try {
+				File pharFile = null;
+				IPath path = entry.getPath();
+				if (EnvironmentPathUtils.isFull(path)) {
+					path = EnvironmentPathUtils.getLocalPath(path);
+					pharFile = path.toFile();
+				} else {
+					IWorkspaceRoot root = ResourcesPlugin.getWorkspace()
+							.getRoot();
+					IResource file = root.findMember(path);
+					pharFile = Util
+							.toLocalFile(file.getLocationURI(), null/*
+																	 * no
+																	 * progress
+																	 * availaible
+																	 */);
+				}
+
+				// path.isAbsolute();
+
+				if (pharFile == null || !pharFile.exists())
+					return false;
+				new PharArchiveFile(pharFile);
+			} catch (IOException e) {
+				return false;
+			} catch (PharException e) {
+				return true;
+			} catch (CoreException e) {
+				return false;
+			}
+		}
+		return false;
+	}
+
