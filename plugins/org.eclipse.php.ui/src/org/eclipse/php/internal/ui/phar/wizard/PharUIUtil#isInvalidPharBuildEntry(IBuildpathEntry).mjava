@@ -1,0 +1,36 @@
+	public static boolean isInvalidPharBuildEntry(IBuildpathEntry entry) {
+		if (entry.getEntryKind() == IBuildpathEntry.BPE_LIBRARY && PHPToolkitUtil.isPharFileName(entry.getPath().toString())) {
+			try {
+				File pharFile = null;
+				IPath path = entry.getPath();
+				if (EnvironmentPathUtils.isFull(path)) {
+					path = EnvironmentPathUtils.getLocalPath(path);
+					pharFile = path.toFile();
+				} else {
+					IWorkspaceRoot root = ResourcesPlugin.getWorkspace()
+							.getRoot();
+					IResource file = root.findMember(path);
+					pharFile = Util
+							.toLocalFile(file.getLocationURI(), null/*
+																	 * no
+																	 * progress
+																	 * availaible
+																	 */);
+				}
+
+				// path.isAbsolute();
+
+				if (pharFile == null || !pharFile.exists())
+					return false;
+				new PharArchiveFile(pharFile);
+			} catch (IOException e) {
+				return true;
+			} catch (PharException e) {
+				return true;
+			} catch (CoreException e) {
+				return true;
+			}
+		}
+		return false;
+	}
+
