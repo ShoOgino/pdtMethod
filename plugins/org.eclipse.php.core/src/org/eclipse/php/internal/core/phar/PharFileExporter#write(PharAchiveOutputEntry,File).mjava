@@ -1,0 +1,29 @@
+	private void write(PharAchiveOutputEntry entry, File file)
+			throws IOException, CoreException {
+		if (exportedField.contains(file))
+			return;
+		exportedField.add(file);
+		// final URI location = contents.getLocationURI();
+		if (!file.exists()) {
+			throw new FileNotFoundException(file.getAbsolutePath());
+		}
+
+		InputStream contentStream = new BufferedInputStream(
+				new FileInputStream(file));
+		entry.setSize(file.length());
+		outputStream.putNextEntry(entry);
+		try {
+			int n;
+			byte[] readBuffer = new byte[4096];
+			while ((n = contentStream.read(readBuffer)) > 0) {
+				outputStream.write(readBuffer, 0, n);
+			}
+		} finally {
+			if (contentStream != null) {
+				contentStream.close();
+			}
+		}
+
+		outputStream.closeEntry();
+	}
+
