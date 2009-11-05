@@ -2,25 +2,57 @@
 		TestSuite suite = new TestSuite("PHAR Tests");
 
 		for (String testsDirectory : TESTS) {
-			for (final String fileName : getFiles(testsDirectory, ".phar")) {
-				try {
-					final PharFile pharFile = new PharFile(new File(FileLocator
-							.getBundleFile(PHPCoreTests.getDefault()
-									.getBundle()), fileName));
-					suite.addTest(new SamplePharTest(fileName, pharFile));
-				} catch (final Exception e) {
-					suite.addTest(new TestCase(fileName) { // dummy
-								// test
-								// indicating
-								// PDTT
-								// file
-								// parsing
-								// failure
-								protected void runTest() throws Throwable {
-									throw e;
-								}
-							});
+			File folder = getResourceFolder(testsDirectory).toFile();
+			try {
+				for (final File pharFolder : folder.listFiles()) {
+					if (pharFolder.getName().equalsIgnoreCase("CVS"))
+						continue;
+					if (pharFolder.isDirectory()) {
+						IPath stubLocation = new Path(pharFolder
+								.getAbsolutePath())
+								.append(PharConstants.STUB_PATH);
+						PharPackage pharPackage = new PharPackage();
+
+						if (stubLocation.toFile().exists()) {
+							pharPackage.setStubGenerated(false);
+							pharPackage.setStubLocation(stubLocation);
+						}
+						pharPackage.setExportType(PharConstants.PHAR);
+						pharPackage
+								.setCompressType(PharConstants.NONE_COMPRESSED);
+
+						pharPackage.setSignature(Digest.SHA1_TYPE);
+						suite.addTest(new PharTest(pharFolder.getName(),
+								pharFolder.getAbsolutePath(), pharPackage));
+
+						pharPackage
+								.setCompressType(PharConstants.BZ2_COMPRESSED);
+
+						pharPackage.setSignature(Digest.SHA1_TYPE);
+						suite.addTest(new PharTest(pharFolder.getName(),
+								pharFolder.getAbsolutePath(), pharPackage));
+
+						pharPackage
+								.setCompressType(PharConstants.GZ_COMPRESSED);
+
+						pharPackage.setSignature(Digest.MD5_TYPE);
+						suite.addTest(new PharTest(pharFolder.getName(),
+								pharFolder.getAbsolutePath(), pharPackage));
+					}
+
 				}
+			} catch (final Exception e) {
+				suite.addTest(new TestCase(folder.getAbsolutePath()) { // dummy
+							// test
+							// indicating
+							// PDTT
+							// file
+							// parsing
+							// failure
+							protected void runTest() throws Throwable {
+								throw e;
+							}
+						});
 			}
 		}
 
