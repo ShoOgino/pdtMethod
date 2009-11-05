@@ -1,0 +1,84 @@
+	public IStatus addBreakpoint(IDocument document, IEditorInput input,
+			int lineNumber, int offset) throws CoreException {
+
+		// check if there is a valid position to set breakpoint
+		int pos = getValidPosition(document, lineNumber);
+
+		// calculate the line number here so both workspace files AND externals
+		// will get it
+		try {
+			lineNumber = document.getLineOfOffset(pos) + 1;
+		} catch (BadLocationException e) {
+			Logger.logException(e);
+			return new Status(IStatus.ERROR, PHPDebugUIPlugin.getID(),
+					"Invalid breakpoint");
+		}
+
+		IStatus status = null;
+		IBreakpoint point = null;
+		if (pos >= 0) {
+
+			IResource resource = getResourceFromInput(input);
+
+			Map<String, String> attributes = new HashMap<String, String>();
+			ISourceModule modelElement = DLTKUIPlugin
+					.getEditorInputModelElement(input);
+
+			if (modelElement != null) {
+				attributes.put(IMarker.LOCATION, modelElement.getPath()
+						.toString());
+			}
+
+			// Calculate secondary ID
+			String secondaryId = null;
+			if (input instanceof IFileEditorInput) {
+
+			} else if (input instanceof IURIEditorInput
+					|| (input instanceof NonExistingPHPFileEditorInput)) {
+
+				if (input instanceof IPlatformIndependentPathEditorInput) {
+					secondaryId = ((IPlatformIndependentPathEditorInput) input)
+							.getPath();
+				} else if (input instanceof IURIEditorInput) {
+					secondaryId = URIUtil.toPath(
+							((IURIEditorInput) input).getURI()).toOSString();
+				} else {
+					secondaryId = ((NonExistingPHPFileEditorInput) input)
+							.getPath(input).toString();
+				}
+
+			} else if (input instanceof IStorageEditorInput) {
+				IStorage storage = ((IStorageEditorInput) input).getStorage();
+				if (storage instanceof IModelElement) {
+					IModelElement element = (IModelElement) storage;
+					secondaryId = EnvironmentPathUtils.getFile(element)
+							.getFullPath().toString();
+				}
+			}
+
+			if (secondaryId != null) {
+				attributes
+						.put(
+								StructuredResourceMarkerAnnotationModel.SECONDARY_ID_KEY,
+								secondaryId);
+			}
+
+			if (findBreakpointMarker(secondaryId, resource, lineNumber) == null) {
+				point = createBreakpoint(input, resource, lineNumber,
+						attributes);
+			}
+		}
+
+		if (point == null) {
+			showErrorMessage();
+		}
+
+		if (status == null) {
+			status = new Status(IStatus.OK, PHPDebugUIPlugin.getID(),
+					IStatus.OK, MessageFormat.format(
+							PHPDebugUIMessages.BreakpointCreated_1,
+							new Object[] {}), null);
+		}
+		return status;
+	}
+

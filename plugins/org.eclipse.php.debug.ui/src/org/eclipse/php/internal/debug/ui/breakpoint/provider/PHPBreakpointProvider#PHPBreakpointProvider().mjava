@@ -1,0 +1,22 @@
+	public PHPBreakpointProvider() {
+
+		IExtensionRegistry registry = Platform.getExtensionRegistry();
+		IConfigurationElement[] elements = registry
+				.getConfigurationElementsFor(PHPDebugUIPlugin.getID(),
+						"phpBreakpointProviders"); //$NON-NLS-1$
+		for (IConfigurationElement element : elements) {
+			if ("provider".equals(element.getName())) { //$NON-NLS-1$
+				try {
+					provider = (IPHPBreakpointProvider) element
+							.createExecutableExtension("class");
+					break;
+				} catch (CoreException e) {
+					PHPUiPlugin.log(e);
+				}
+			}
+		}
+		if (provider == null) {
+			provider = new DefaultPHPBreakpointProvider();
+		}
+	}
+
