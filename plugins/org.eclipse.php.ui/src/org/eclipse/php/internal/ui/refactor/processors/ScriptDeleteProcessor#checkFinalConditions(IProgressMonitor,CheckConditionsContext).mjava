@@ -1,0 +1,52 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.eclipse.dltk.internal.corext.refactoring.base.Refactoring#checkInput
+	 * (org.eclipse.core.runtime.IProgressMonitor)
+	 */
+	public RefactoringStatus checkFinalConditions(IProgressMonitor pm,
+			CheckConditionsContext context) throws CoreException {
+		pm.beginTask(RefactoringCoreMessages.DeleteRefactoring_1, 1);
+		try {
+			fWasCanceled = false;
+			RefactoringStatus result = new RefactoringStatus();
+
+			recalculateElementsToDelete();
+
+			TextChangeManager manager = new TextChangeManager();
+			fDeleteChange = DeleteChangeCreator.createDeleteChange(manager,
+					fResources, fScriptElements, getProcessorName());
+			checkDirtySourceModules(result);
+			checkDirtyResources(result);
+			fDeleteModifications = new DeleteModifications();
+			fDeleteModifications.delete(fResources);
+			fDeleteModifications.delete(fScriptElements);
+			fDeleteModifications.postProcess();
+
+			ResourceChangeChecker checker = (ResourceChangeChecker) context
+					.getChecker(ResourceChangeChecker.class);
+			IResourceChangeDescriptionFactory deltaFactory = checker
+					.getDeltaFactory();
+			fDeleteModifications.buildDelta(deltaFactory);
+			IFile[] files = getBuildpathFiles();
+			for (int i = 0; i < files.length; i++) {
+				deltaFactory.change(files[i]);
+			}
+			files = ResourceUtil.getFiles(manager.getAllSourceModules());
+			for (int i = 0; i < files.length; i++) {
+				deltaFactory.change(files[i]);
+			}
+			return result;
+		} catch (OperationCanceledException e) {
+			fWasCanceled = true;
+			throw e;
+		} catch (ModelException e) {
+			throw e;
+		} catch (CoreException e) {
+			throw new ModelException(e);
+		} finally {
+			pm.done();
+		}
+	}
+

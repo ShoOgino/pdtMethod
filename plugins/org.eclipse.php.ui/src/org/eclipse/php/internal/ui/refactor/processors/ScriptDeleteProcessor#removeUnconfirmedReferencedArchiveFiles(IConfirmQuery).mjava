@@ -1,0 +1,26 @@
+	private void removeUnconfirmedReferencedArchiveFiles(IConfirmQuery query)
+			throws ModelException, OperationCanceledException {
+		List filesToSkip = new ArrayList(0);
+		for (int i = 0; i < fResources.length; i++) {
+			IResource resource = fResources[i];
+			if (!(resource instanceof IFile))
+				continue;
+
+			IScriptProject project = DLTKCore.create(resource.getProject());
+			if (project == null || !project.exists())
+				continue;
+			IProjectFragment root = project.findProjectFragment(resource
+					.getFullPath());
+			if (root == null)
+				continue;
+			List referencingProjects = new ArrayList(1);
+			referencingProjects.add(root.getScriptProject());
+			referencingProjects.addAll(Arrays.asList(ModelElementUtil
+					.getReferencingProjects(root)));
+			if (skipDeletingReferencedRoot(query, root, referencingProjects))
+				filesToSkip.add(resource);
+		}
+		removeFromSetToDelete((IFile[]) filesToSkip
+				.toArray(new IFile[filesToSkip.size()]));
+	}
+

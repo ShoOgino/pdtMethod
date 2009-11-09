@@ -1,0 +1,23 @@
+	private static Change createProjectFragmentDeleteChange(
+			IProjectFragment root) {
+		IResource resource = root.getResource();
+		if (resource != null && resource.isLinked()) {
+			// XXX using this code is a workaround for jcore bug 31998
+			// jcore cannot handle linked stuff
+			// normally, we should always create DeleteProjectFragmentChange
+			CompositeChange composite = new DynamicValidationStateChange(
+					RefactoringCoreMessages.DeleteRefactoring_delete_package_fragment_root);
+
+			composite.add(new DeleteFromBuildpathChange(root));
+			Assert.isTrue(!Checks.isBuildpathDelete(root));// checked in
+															// preconditions
+			composite.add(createDeleteChange(resource));
+
+			return composite;
+		} else {
+			Assert.isTrue(!root.isExternal());
+			// TODO remove the query argument
+			return new DeleteProjectFragmentChange(root, true, null);
+		}
+	}
+

@@ -1,0 +1,24 @@
+	/**
+	 * @see MultiOperation This method delegate to <code>deleteResource</code>
+	 *      or <code>deleteScriptFolder</code> depending on the type of
+	 *      <code>element</code>.
+	 */
+	protected void processElement(IModelElement element) throws ModelException {
+		switch (element.getElementType()) {
+		case IModelElement.SOURCE_MODULE:
+			deleteResource(element.getResource(), force ? IResource.FORCE
+					| IResource.KEEP_HISTORY : IResource.KEEP_HISTORY);
+			break;
+		case IModelElement.SCRIPT_FOLDER:
+			deleteScriptFolder((IScriptFolder) element);
+			break;
+		default:
+			throw new ModelException(new ModelStatus(
+					IModelStatusConstants.INVALID_ELEMENT_TYPES, element));
+		}
+		// ensure the element is closed
+		if (element instanceof IOpenable) {
+			((IOpenable) element).close();
+		}
+	}
+

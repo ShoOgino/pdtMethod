@@ -1,0 +1,47 @@
+	/*
+	 * List<IModelElement> modelElements
+	 */
+	private static Change createDeleteChange(ISourceModule cu,
+			List modelElements, TextChangeManager manager) throws CoreException {
+		// SourceModule cuNode= RefactoringASTParser.parseWithASTProvider(cu,
+		// false, null);
+		// SourceModuleRewrite rewriter= new SourceModuleRewrite(cu, cuNode);
+		Assert.isNotNull(cu);
+		Assert.isNotNull(modelElements);
+		Assert.isNotNull(manager);
+		TextFileChange textFileChange = null;
+		if (cu != null && cu.getResource() instanceof IFile) {
+			textFileChange = new TextFileChange(cu.getElementName(), (IFile) cu
+					.getResource());
+			MultiTextEdit fileChangeRootEdit = new MultiTextEdit();
+			textFileChange.setEdit(fileChangeRootEdit);
+
+			manager.manage(cu, textFileChange);
+
+			IModelElement[] elements = (IModelElement[]) modelElements
+					.toArray(new IModelElement[modelElements.size()]);
+
+			for (int cnt = 0, max = elements.length; cnt < max; cnt++) {
+				ISourceRange sourceRange = null;
+				if (elements[cnt] instanceof IMember) {
+					IMember type = (IMember) elements[cnt];
+					sourceRange = type.getSourceRange();
+				}
+				if (sourceRange != null) {
+					DeleteEdit edit = new DeleteEdit(sourceRange.getOffset(),
+							sourceRange.getLength());
+
+					fileChangeRootEdit.addChild(edit);
+					if (cu.isWorkingCopy()) {
+						textFileChange.setSaveMode(TextFileChange.LEAVE_DIRTY);
+					}
+
+				}
+			}
+		}
+
+		// ASTNodeDeleteUtil.markAsDeleted(elements, rewriter, null);
+		// return addTextEditFromRewrite(manager, cu, rewriter.getASTRewrite());
+		return textFileChange;
+	}
+

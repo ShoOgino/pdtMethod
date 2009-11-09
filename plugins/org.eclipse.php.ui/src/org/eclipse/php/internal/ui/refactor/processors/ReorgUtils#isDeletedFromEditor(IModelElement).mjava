@@ -1,0 +1,19 @@
+	public static boolean isDeletedFromEditor(IModelElement elem) {
+		if (!isInsideSourceModule(elem))
+			return false;
+		if (elem instanceof IMember) {// && ((IMember)elem).isBinary())
+			return false;
+		}
+		ISourceModule cu = ReorgUtils.getSourceModule(elem);
+		if (cu == null)
+			return false;
+		ISourceModule wc = cu;
+		// TODO have to understand if this method is needed any longer. Since
+		// with the new working copy support a element is never deleted from
+		// the editor if we have a primary working copy.
+		if (cu.equals(wc))
+			return false;
+		IModelElement wcElement = ScriptModelUtil.findInSourceModule(wc, elem);
+		return wcElement == null || !wcElement.exists();
+	}
+

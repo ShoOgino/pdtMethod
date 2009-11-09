@@ -1,0 +1,37 @@
+	static Change createDeleteChange(TextChangeManager manager,
+			IResource[] resources, IModelElement[] modelElements,
+			String changeName) throws CoreException {
+		final DynamicValidationStateChange result = new DynamicValidationStateChange(
+				changeName) {
+			public Change perform(IProgressMonitor pm) throws CoreException {
+				super.perform(pm);
+				return null;
+			}
+		};
+		for (int i = 0; i < modelElements.length; i++) {
+			IModelElement element = modelElements[i];
+			if (!ReorgUtils.isInsideSourceModule(element))
+				result.add(createDeleteChange(element));
+		}
+
+		for (int i = 0; i < resources.length; i++) {
+			result.add(createDeleteChange(resources[i]));
+		}
+
+		Map grouped = ReorgUtils
+				.groupBySourceModule(getElementsSmallerThanCu(modelElements));
+		if (grouped.size() != 0) {
+			Assert.isNotNull(manager);
+			for (Iterator iter = grouped.keySet().iterator(); iter.hasNext();) {
+				ISourceModule cu = (ISourceModule) iter.next();
+				Change change = createDeleteChange(cu, (List) grouped.get(cu),
+						manager);
+				if (change != null) {
+					result.add(change);
+				}
+			}
+		}
+
+		return result;
+	}
+

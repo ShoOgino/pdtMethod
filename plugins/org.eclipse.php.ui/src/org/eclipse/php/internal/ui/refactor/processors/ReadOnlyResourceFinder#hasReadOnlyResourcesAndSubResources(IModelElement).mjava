@@ -1,0 +1,53 @@
+	private static boolean hasReadOnlyResourcesAndSubResources(
+			IModelElement modelElement) throws CoreException {
+		switch (modelElement.getElementType()) {
+		case IModelElement.SOURCE_MODULE:
+			IResource resource = ReorgUtils.getResource(modelElement);
+			return (resource != null && Resources.isReadOnly(resource));
+		case IModelElement.SCRIPT_FOLDER:
+			IResource packResource = ReorgUtils.getResource(modelElement);
+			if (packResource == null)
+				return false;
+			IScriptFolder pack = (IScriptFolder) modelElement;
+			if (Resources.isReadOnly(packResource))
+				return true;
+			Object[] nonScript = pack.getForeignResources();
+			for (int i = 0; i < nonScript.length; i++) {
+				Object object = nonScript[i];
+				if (object instanceof IResource
+						&& hasReadOnlyResourcesAndSubResources((IResource) object))
+					return true;
+			}
+			return hasReadOnlyResourcesAndSubResources(pack.getChildren());
+		case IModelElement.PROJECT_FRAGMENT:
+			IProjectFragment root = (IProjectFragment) modelElement;
+			if (root.isArchive())
+				return false;
+			IResource pfrResource = ReorgUtils.getResource(modelElement);
+			if (pfrResource == null)
+				return false;
+			if (Resources.isReadOnly(pfrResource))
+				return true;
+			Object[] nonScript1 = root.getForeignResources();
+			for (int i = 0; i < nonScript1.length; i++) {
+				Object object = nonScript1[i];
+				if (object instanceof IResource
+						&& hasReadOnlyResourcesAndSubResources((IResource) object))
+					return true;
+			}
+			return hasReadOnlyResourcesAndSubResources(root.getChildren());
+
+		case IModelElement.FIELD:
+			// case IModelElement.IMPORT_CONTAINER:
+			// case IModelElement.IMPORT_DECLARATION:
+			// case IModelElement.INITIALIZER:
+		case IModelElement.METHOD:
+			// case IModelElement.PACKAGE_DECLARATION:
+		case IModelElement.TYPE:
+			return false;
+		default:
+			Assert.isTrue(false);// not handled here
+			return false;
+		}
+	}
+
