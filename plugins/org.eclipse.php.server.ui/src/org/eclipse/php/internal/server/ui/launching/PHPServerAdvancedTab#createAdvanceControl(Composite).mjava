@@ -4,20 +4,96 @@
 	 * @param composite
 	 */
 	protected void createAdvanceControl(Composite composite) {
-		Group group = new Group(composite, SWT.NONE);
-		GridLayout layout = new GridLayout(3, false);
+		// == Groups ==
+		tunnelGroup = new Group(composite, SWT.NONE);
+		GridLayout layout = new GridLayout(1, false);
 		layout.marginWidth = 5;
 		layout.marginHeight = 5;
-		group.setLayout(layout);
-		group.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		group.setText("Session Settings");
+		tunnelGroup.setLayout(layout);
+		tunnelGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		tunnelGroup.setText("SSH Tunnel");
 
-		// Add the 'Open in Browser' checkbox.
-		openBrowser = new Button(group, SWT.CHECK);
-		openBrowser.setText("Open in Browser");
+		Group browserGroup = new Group(composite, SWT.NONE);
+		layout = new GridLayout(1, false);
+		layout.marginWidth = 5;
+		layout.marginHeight = 5;
+		browserGroup.setLayout(layout);
+		browserGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		browserGroup.setText("Browser");
+
+		// == Controls ==
+		// Add the tunneling controls
+		PixelConverter converter = new PixelConverter(composite);
+		debugThroughTunnel = new Button(tunnelGroup, SWT.CHECK);
+		debugThroughTunnel.setText("Debug Through SSH Tunnel");
+		Composite credentialsComposite = new Composite(tunnelGroup, SWT.NONE);
+		credentialsComposite.setLayout(new GridLayout(2, false));
 		GridData data = new GridData(GridData.FILL_HORIZONTAL);
+		data.horizontalIndent = 20;
+		credentialsComposite.setLayoutData(data);
+		nameLabel = new Label(credentialsComposite, SWT.NONE);
+		nameLabel.setText("User Name:");
+		userName = new Text(credentialsComposite, SWT.BORDER | SWT.SINGLE);
+		data = new GridData();
+		data.widthHint = converter.convertHorizontalDLUsToPixels(150);
+		userName.setLayoutData(data);
+		passwordLabel = new Label(credentialsComposite, SWT.NONE);
+		passwordLabel.setText("Password:");
+		password = new Text(credentialsComposite, SWT.PASSWORD | SWT.BORDER
+				| SWT.SINGLE);
+		data = new GridData();
+		data.widthHint = converter.convertHorizontalDLUsToPixels(150);
+		password.setLayoutData(data);
+		final Composite testConnectionComposite = new Composite(
+				credentialsComposite, SWT.NONE);
+		layout = new GridLayout(2, false);
+		layout.marginWidth = 0;
+		testConnectionComposite.setLayout(layout);
+		data = new GridData(GridData.FILL_HORIZONTAL);
+		data.horizontalSpan = 2;
+		testConnectionComposite.setLayoutData(data);
+		testButton = new Button(testConnectionComposite, SWT.PUSH);
+		testButton.setText("Test Connection");
+		testResultLabel = new CLabel(testConnectionComposite, SWT.NONE);
+		testResultLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		testButton.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				// Run a test for the connection
+				testTunnelConnection();
+			}
+		});
+		testResultLabel.addMouseListener(new MouseAdapter() {
+			public void mouseUp(MouseEvent e) {
+				Object messageData = testResultLabel.getData("info");
+				if (messageData != null) {
+					MessageDialog.openInformation(getShell(),
+							"SSH Tunnel Test", messageData.toString());
+				}
+			}
+		});
+		debugThroughTunnel.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent se) {
+				Button b = (Button) se.getSource();
+				boolean selection = b.getSelection();
+				updateTunnelComponents(selection);
+				updateLaunchConfigurationDialog();
+			}
+		});
+
+		// Add the Browser group controls
+		openBrowser = new Button(browserGroup, SWT.CHECK);
+		openBrowser.setText("Open in Browser");
+		data = new GridData(GridData.FILL_HORIZONTAL);
 		data.horizontalSpan = 3;
 		openBrowser.setLayoutData(data);
+
+		sessionGroup = new Composite(browserGroup, SWT.NONE);
+		layout = new GridLayout(3, false);
+		layout.marginWidth = 5;
+		layout.marginHeight = 5;
+		sessionGroup.setLayout(layout);
+		sessionGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
 		openBrowser.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent se) {
 				Button b = (Button) se.getSource();
@@ -31,30 +107,35 @@
 				}
 				debugStartFromBt.setSelection(false);
 				debugContinueBt.setSelection(false);
-				enableSessionSettingButtons(isOpenInBrowser);
+				enableSessionSettingButtons(isOpenInBrowser
+						&& ILaunchManager.DEBUG_MODE
+								.equals(getLaunchConfigurationDialog()
+										.getMode()));
 				updateLaunchConfigurationDialog();
 			}
 		});
 
-		debugAllPagesBt = createRadioButton(group, "Debug &All Pages");
+		// Add the Session group controls
+		debugAllPagesBt = createRadioButton(sessionGroup, "Debug &All Pages");
 		data = (GridData) debugAllPagesBt.getLayoutData();
 		data.horizontalSpan = 3;
 		data.horizontalIndent = 20;
 
-		debugFirstPageBt = createRadioButton(group, "Debug &First Page Only");
+		debugFirstPageBt = createRadioButton(sessionGroup,
+				"Debug &First Page Only");
 		data = (GridData) debugFirstPageBt.getLayoutData();
 		data.horizontalSpan = 3;
 		data.horizontalIndent = 20;
 
-		debugStartFromBt = createRadioButton(group, "&Start Debug from:");
+		debugStartFromBt = createRadioButton(sessionGroup, "&Start Debug from:");
 		data = (GridData) debugStartFromBt.getLayoutData();
 		data.horizontalIndent = 20;
 
-		debugFromTxt = new Text(group, SWT.SINGLE | SWT.BORDER);
+		debugFromTxt = new Text(sessionGroup, SWT.SINGLE | SWT.BORDER);
 		data = new GridData(GridData.FILL_HORIZONTAL);
 		debugFromTxt.setLayoutData(data);
 
-		resetBt = createPushButton(group, "Default", null);
+		resetBt = createPushButton(sessionGroup, "Default", null);
 		resetBt.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
 				if (launchConfiguration != null) {
@@ -67,7 +148,7 @@
 			}
 		});
 
-		debugContinueBt = createCheckButton(group,
+		debugContinueBt = createCheckButton(sessionGroup,
 				"&Continue Debug from This Page");
 		data = (GridData) debugContinueBt.getLayoutData();
 		data.horizontalSpan = 3;
@@ -88,5 +169,21 @@
 		debugContinueBt.addSelectionListener(listener);
 		debugStartFromBt.addSelectionListener(listener);
 		debugFromTxt.addModifyListener(listener);
+		debugThroughTunnel.addSelectionListener(listener);
+		userName.addModifyListener(listener);
+		password.addModifyListener(listener);
+
+		KeyListener userInputListener = new KeyListener() {
+			public void keyReleased(KeyEvent e) {
+				testResultLabel.setText("");
+				testButton.setEnabled((userName.getText().trim().length() > 0));
+			}
+
+			public void keyPressed(KeyEvent e) {
+				testResultLabel.setText("");
+			}
+		};
+		userName.addKeyListener(userInputListener);
+		password.addKeyListener(userInputListener);
 	}
 

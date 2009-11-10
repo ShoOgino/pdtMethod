@@ -1,0 +1,123 @@
+	/**
+	 * Test a connection with the user name and password that are currently
+	 * typed in their designated boxes. We assume here that the validation of
+	 * the dialog already eliminated a situation where the Test button is
+	 * enabled when there is a missing user-name or password.
+	 */
+	private void testTunnelConnection() {
+		testButton.setEnabled(false);
+		testResultLabel.setForeground(Display.getDefault().getSystemColor(
+				SWT.COLOR_BLUE));
+		testResultLabel.setText("Testing Connection...");
+		testResultLabel.setCursor(Display.getDefault().getSystemCursor(
+				SWT.CURSOR_WAIT));
+		testResultLabel.setData("info", null);
+		Job connectionTest = new UIJob("SSH Tunnel Test") {
+			public IStatus runInUIThread(IProgressMonitor monitor) {
+				try {
+					String remoteHost = PHPLaunchUtilities
+							.getDebugHost(launchConfiguration);
+					int port = PHPLaunchUtilities
+							.getDebugPort(launchConfiguration);
+					if (remoteHost == null || remoteHost.length() == 0
+							|| port < 0) {
+						// The host was not yet set in the launch configuration.
+						testButton.setEnabled(true);
+						testResultLabel.setCursor(Display.getDefault()
+								.getSystemCursor(SWT.CURSOR_HAND));
+						testResultLabel.setForeground(Display.getDefault()
+								.getSystemColor(SWT.COLOR_DARK_RED));
+						if (port > -1) {
+							testResultLabel
+									.setText("Missing host (click for more information)");
+							testResultLabel
+									.setData(
+											"info",
+											"Missing host address. \nPlease fill in the Server part in the 'Server' tab before testing the connection.");
+						} else {
+							testResultLabel
+									.setText("Error (click for more information)");
+							testResultLabel
+									.setData(
+											"info",
+											"Could not determin the port to tunnel. \nPlease 'Apply' the dialog and try again.");
+						}
+					}
+
+					testResultLabel.setCursor(Display.getDefault()
+							.getSystemCursor(SWT.CURSOR_WAIT));
+					IStatus connectionStatus = TunnelTester.test(remoteHost,
+							userName.getText().trim(), password.getText()
+									.trim(), port, port);
+					testButton.setEnabled(true);
+					testResultLabel.setCursor(null);
+					if (connectionStatus.isOK()) {
+						testResultLabel.setForeground(Display.getDefault()
+								.getSystemColor(SWT.COLOR_DARK_GREEN));
+						testResultLabel.setText("Successfully connected");
+					} else if (connectionStatus.isMultiStatus()) {
+						// A case where the connection indicate that it was
+						// successful, however, we were still not able to verify
+						// that
+						testResultLabel.setCursor(Display.getDefault()
+								.getSystemCursor(SWT.CURSOR_HAND));
+						testResultLabel.setForeground(Display.getDefault()
+								.getSystemColor(SWT.COLOR_DARK_YELLOW));
+						testResultLabel
+								.setText("Undetermined (click for more information)");
+						testResultLabel.setData("info", connectionStatus
+								.getMessage());
+						// Update the password fields in case the multi status
+						// also contains a password change information
+						IStatus[] children = connectionStatus.getChildren();
+						if (children != null) {
+							for (IStatus child : children) {
+								if (child.getSeverity() == IStatus.INFO
+										&& child.getCode() == TunnelTester.PASSWORD_CHANGED_CODE) {
+									password.setText(child.getMessage());
+									break;
+								}
+							}
+						}
+					} else if (connectionStatus.getSeverity() == IStatus.WARNING) {
+						testResultLabel.setCursor(Display.getDefault()
+								.getSystemCursor(SWT.CURSOR_HAND));
+						testResultLabel.setForeground(Display.getDefault()
+								.getSystemColor(SWT.COLOR_DARK_GREEN));
+						testResultLabel
+								.setText("Connected with warnings (click for more information)");
+						testResultLabel.setData("info", connectionStatus
+								.getMessage());
+					} else if (connectionStatus.getSeverity() == IStatus.INFO) {
+						testResultLabel.setForeground(Display.getDefault()
+								.getSystemColor(SWT.COLOR_DARK_GREEN));
+						testResultLabel.setText("Successfully connected");
+						// update the password field in case that the info
+						// indicated a password change.
+						if (connectionStatus.getCode() == TunnelTester.PASSWORD_CHANGED_CODE) {
+							password.setText(connectionStatus.getMessage());
+						}
+					} else if (connectionStatus.getSeverity() == IStatus.ERROR) {
+						testResultLabel.setCursor(Display.getDefault()
+								.getSystemCursor(SWT.CURSOR_HAND));
+						testResultLabel.setForeground(Display.getDefault()
+								.getSystemColor(SWT.COLOR_DARK_RED));
+						testResultLabel
+								.setText("Failed to Connect (click for more information)");
+						testResultLabel.setData("info", connectionStatus
+								.getMessage());
+					}
+				} catch (OperationCanceledException oce) {
+					testButton.setEnabled(true);
+					testResultLabel.setCursor(null);
+					testResultLabel.setForeground(null);
+					testResultLabel.setText("Canceled");
+				}
+				return Status.OK_STATUS;
+			}
+		};
+		connectionTest.setUser(true);
+		connectionTest.setPriority(Job.LONG);
+		connectionTest.schedule();
+	}
+

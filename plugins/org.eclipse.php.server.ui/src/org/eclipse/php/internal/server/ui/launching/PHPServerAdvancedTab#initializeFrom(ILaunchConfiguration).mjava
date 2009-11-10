@@ -7,11 +7,50 @@
 	 */
 	public void initializeFrom(ILaunchConfiguration configuration) {
 		launchConfiguration = configuration;
+		boolean isXdebugger = isXdebug(configuration);
 		try {
-			isOpenInBrowser = configuration.getAttribute(
-					IPHPDebugConstants.OPEN_IN_BROWSER, PHPDebugPlugin
+			boolean isUsingTunnel = configuration.getAttribute(
+					IPHPDebugConstants.USE_SSH_TUNNEL, false);
+			debugThroughTunnel.setSelection(isUsingTunnel);
+			updateTunnelComponents(isUsingTunnel);
+			if (isUsingTunnel) {
+				userName.setText(configuration.getAttribute(
+						IPHPDebugConstants.SSH_TUNNEL_USER_NAME, ""));
+				if (userName.getText().length() > 0) {
+					// Load the password from the Secured Storage
+					try {
+						password
+								.setText(PHPLaunchUtilities
+										.getSecurePreferences(
+												PHPLaunchUtilities
+														.getDebugHost(launchConfiguration))
+										.get(userName.getText(), ""));
+					} catch (StorageException e) {
+						Logger.logException(
+								"Error accessing the secured storage", e);
+						password.setText("");
+					}
+				} else {
+					password.setText("");
+				}
+			}
+			// Zend debugger have the option not to use a browser to start a
+			// session. Since XDebug seems to start only
+			// with a browser instance, we check for it and enable it anyway.
+			isOpenInBrowser = isXdebugger
+					|| configuration.getAttribute(
+							IPHPDebugConstants.OPEN_IN_BROWSER, PHPDebugPlugin
 							.getOpenInBrowserOption());
+			// isUsingExternalBrowser = internalWebBrowserAvailable
+			// && configuration.getAttribute(
+			// IPHPDebugConstants.USE_INTERNAL_BROWSER, false);
 			openBrowser.setSelection(isOpenInBrowser);
+			if (isXdebugger) {
+				openBrowser.setEnabled(false);
+			}
+
+			sessionGroup.setVisible(!isXdebugger);
+
 			String debugSetting = configuration.getAttribute(
 					IPHPDebugConstants.DEBUGGING_PAGES,
 					IPHPDebugConstants.DEBUGGING_ALL_PAGES);
@@ -37,8 +76,11 @@
 					IPHPDebugConstants.DEBUGGING_START_FROM_URL, "");
 			debugFromTxt.setText(startFromURL);
 			updateDebugFrom();
-
-			enableSessionSettingButtons(isOpenInBrowser);
+			// in case we are dealing with XDebug, enable the browser control
+			// anyway and do not restrict to debug mode
+			enableSessionSettingButtons(isXdebugger
+					|| (isOpenInBrowser && ILaunchManager.DEBUG_MODE
+							.equals(getLaunchConfigurationDialog().getMode())));
 		} catch (CoreException e) {
 		}
 		isValid(configuration);
