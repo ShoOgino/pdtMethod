@@ -1,0 +1,56 @@
+	/**
+	 * Returns a SSHTunnelSession for the given arguments. A new session will be
+	 * created in case there is no active session with the given target and user
+	 * name.
+	 * 
+	 * @param username
+	 * @param password
+	 * @param hostname
+	 * @param port
+	 * @param monitor
+	 * @return A connected SSH tunnel session.
+	 * @throws JSchException
+	 *             In case a connection could not be established.
+	 */
+	public static SSHTunnelSession getSession(String username, String password,
+			String hostname, int port, IProgressMonitor monitor)
+			throws JSchException {
+		String key = getPoolKey(username, hostname, port);
+
+		try {
+			SSHTunnelSession jschSession = (SSHTunnelSession) pool.get(key);
+			if (jschSession != null && !jschSession.getSession().isConnected()) {
+				pool.remove(key);
+				jschSession = null;
+			}
+
+			if (jschSession == null) {
+				IJSchService service = getJSchService();
+				IJSchLocation jlocation = service.getLocation(username,
+						hostname, port);
+				Session session = null;
+				try {
+					session = createSession(service, jlocation, password,
+							monitor);
+				} catch (JSchException e) {
+					throw e;
+				}
+				if (session == null)
+					throw new JSchException(
+							"Could not create a debug tunneling session to " + hostname); //$NON-NLS-1$
+				if (session.getTimeout() != DEFAULT_TIMEOUT)
+					session.setTimeout(DEFAULT_TIMEOUT);
+				SSHTunnelSession schSession = new SSHTunnelSession(session);
+				pool.put(key, schSession);
+				return schSession;
+			}
+			return jschSession;
+		} catch (JSchException e) {
+			pool.remove(key);
+			if (e.toString().indexOf("Auth cancel") != -1) { //$NON-NLS-1$
+				throw new OperationCanceledException();
+			}
+			throw e;
+		}
+	}
+
