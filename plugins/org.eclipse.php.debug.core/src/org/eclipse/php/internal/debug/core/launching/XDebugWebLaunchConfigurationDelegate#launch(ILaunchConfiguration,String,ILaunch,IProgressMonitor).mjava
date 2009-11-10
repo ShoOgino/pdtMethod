@@ -79,6 +79,7 @@
 		String baseURL = new String(configuration.getAttribute(Server.BASE_URL,
 				"").getBytes()); //$NON-NLS-1$
 		IDBGpDebugTarget target = null;
+		SSHTunnel tunnel = null;
 
 		if (mode.equals(ILaunchManager.DEBUG_MODE)) {
 			String sessionId = DBGpSessionHandler.getInstance()
@@ -101,6 +102,10 @@
 			String launchScript = configuration.getAttribute(Server.FILE_NAME,
 					(String) null);
 
+			// Check if a tunneled connection is needed and create request for a
+			// tunnel if needed.
+			tunnel = PHPLaunchUtilities.getSSHTunnel(configuration);
+
 			// determine if we should use the multisession manager or the single
 			// session manager
 			if (XDebugPreferenceMgr.useMultiSession() == true) {
@@ -120,16 +125,22 @@
 			startStopURLs = new String[] { baseURL, null };
 		}
 		final String startURL = startStopURLs[0];
+		final SSHTunnel sshTunnel = tunnel;
 
 		// load the URL into the appropriate web browser
 		IProgressMonitor subMonitor = new SubProgressMonitor(monitor, 30);
 		subMonitor.beginTask(
-				PHPDebugCoreMessages.XDebug_WebLaunchConfigurationDelegate_3,
-				10); //$NON-NLS-1$
+				PHPDebugCoreMessages.XDebug_WebLaunchConfigurationDelegate_3, 
+				10);
 
 		Display.getDefault().syncExec(new Runnable() {
 			public void run() {
 				try {
+					// establish a secured tunnel connection in case it's
+					// defined in the configuration dialog
+					if (sshTunnel != null) {
+						sshTunnel.connect();
+					}
 					if (openExternal) {
 						browser[0].openURL(new URL(startURL));
 					} else {
