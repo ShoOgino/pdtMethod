@@ -1,0 +1,58 @@
+    public void testAssertPerformance() throws SQLException {
+
+        Performance perf= Performance.getDefault();
+        
+        // set the variation for the reference data
+        System.setProperty("eclipse.perf.config", CONFIG+"=test;"+BUILD+"=ref"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+
+        // store a reference value
+        TestPerformanceMeter pm1= new TestPerformanceMeter(SCENARIO_NAME_0);
+		pm1.addPair(InternalDimensions.CPU_TIME, 100, 1000);
+		pm1.addPair(InternalDimensions.WORKING_SET, 1000, 2000);
+
+		pm1.start();
+		pm1.stop();
+		pm1.commit();
+		pm1.dispose();
+		
+		String build= "001"; //$NON-NLS-1$
+        // set the variation for the this run
+        System.setProperty("eclipse.perf.config", CONFIG+"=test;"+BUILD+"="+build); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+        // assert that this run's values are compared against reference data
+        System.setProperty("eclipse.perf.assertAgainst", BUILD+"=ref"); //$NON-NLS-1$ //$NON-NLS-2$
+		
+        // store a reference value
+        TestPerformanceMeter pm2= new TestPerformanceMeter(SCENARIO_NAME_0);
+		pm2.addPair(InternalDimensions.CPU_TIME, 100, 1100);
+		pm2.addPair(InternalDimensions.WORKING_SET, 1000, 2000);
+		
+		pm2.start();
+		pm2.stop();
+		pm2.commit();
+		boolean failed= false;
+		try {
+            perf.assertPerformanceInRelativeBand(pm2, InternalDimensions.CPU_TIME, -5, +5);
+        } catch (AssertionFailedError e) {
+            failed= true;
+        }
+		pm2.dispose();
+		
+		if (!failed) {
+			// check in DB			
+			Variations v= new Variations();
+			v.put(CONFIG, "%"); //$NON-NLS-1$
+			v.put(BUILD, build);
+	        Scenario[] scenarios= DB.queryScenarios(v, SCENARIO_NAME_0, CONFIG, null);
+	        if (scenarios != null && scenarios.length > 0) {
+	        		Scenario s= scenarios[0];
+	        		String[] failureMessages= s.getFailureMessages();
+	        		if (failureMessages.length == 1) {
+	        			String mesg= failureMessages[0];
+	        			if (mesg != null && mesg.equals("Performance criteria not met when compared to '{b=ref, c=test}':\nCPU Time: 1 s is not within [95%, 105%] of 900 ms")) //$NON-NLS-1$
+	        				failed= true;
+	        		}
+	        }
+		}
+        assertTrue(failed);
+    }
+

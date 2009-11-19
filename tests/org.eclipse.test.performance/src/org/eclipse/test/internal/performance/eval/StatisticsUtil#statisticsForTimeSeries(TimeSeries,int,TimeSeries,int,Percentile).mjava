@@ -1,0 +1,43 @@
+    /**
+     * Returns <code>true</code> if the mean of two data sets is significantly different, such
+     * that the probability that they are from the same population is lower than
+     * <code>percentile</code>, <code>false</code> otherwise. The data sets are taken from
+     * <code>series</code> at <code>index1</code> and <code>index2</code>.
+     * <p>
+     * Note that no conclusion must be drawn from a <code>false</code> return value: it does not
+     * indicate that the two data sets are from the same population - there may simply be not enough
+     * data to conclude the other way, for example due to a small sample size or large standard
+     * deviation.
+     * </p>
+     * <p>
+     * Also note that a <code>true</code> return value does not say anything about the relevance
+     * of the difference - a statistically significant difference may be practically irrelevant if
+     * it is small.
+     * </p>
+     * <p>
+     * XXX the current implementation assumes that the standard deviations are sufficiently similar.
+     * </p>
+     * 
+     * @param refSeries the time series containing the first data set
+     * @param index1 the index into <code>series1</code> for the first data set
+     * @param testSeries the time series containing the second data set
+     * @param index2 the index into <code>series2</code> for the second data set
+     * @param percentile the percentile level to use
+     * @return <code>true</code> if the null hypothesis is rejected on the <code>percentile</code>
+     *         level, <code>false</code> if it cannot be rejected based on the given data
+     */
+    public static double[] statisticsForTimeSeries(TimeSeries refSeries, int index1, TimeSeries testSeries, int index2, Percentile percentile) {
+        // see http://bmj.bmjjournals.com/collections/statsbk/7.shtml
+    
+    	double[] values = new double[] { refSeries.getValue(index1), testSeries.getValue(index2) };
+    	long[] counts = new long[] { refSeries.getCount(index1), testSeries.getCount(index2) };
+    	double[] stddevs = new double[] { refSeries.getStddev(index1), testSeries.getStddev(index2) };
+		double ttest = studentTtest(values, stddevs, counts, percentile);
+		return new double[] {
+			getStudentsT((int) (counts[0] + counts[1] - 2), percentile),
+			ttest,
+			standardError(values, stddevs, counts),
+			deviation(values),
+		};
+    }
+

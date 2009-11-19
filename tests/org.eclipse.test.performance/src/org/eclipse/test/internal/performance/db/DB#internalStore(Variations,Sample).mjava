@@ -1,0 +1,97 @@
+    private boolean internalStore(Variations variations, Sample sample) {
+        
+        if (fSQL == null || sample == null)
+            return false;
+        
+		DataPoint[] dataPoints= sample.getDataPoints();
+	    int n= dataPoints.length;
+		if (n <= 0)
+		    return false;
+
+		//System.out.println("store started..."); //$NON-NLS-1$
+	    try {
+            //long l= System.currentTimeMillis();
+            int variation_id= fSQL.getVariations(variations);
+            int scenario_id= fSQL.getScenario(sample.getScenarioID());
+			String comment= sample.getComment();
+            if (sample.isSummary()) {
+                boolean isGlobal= sample.isGlobal();
+                
+                int commentId= 0;
+                int commentKind= sample.getCommentType();
+                if (commentKind == Performance.EXPLAINS_DEGRADATION_COMMENT && comment != null)
+                		commentId= fSQL.getCommentId(commentKind, comment);
+                
+                Dimension[] summaryDimensions= sample.getSummaryDimensions();
+                for (int i= 0; i < summaryDimensions.length; i++) {
+                    Dimension dimension= summaryDimensions[i];
+                    if (dimension instanceof Dim)
+                        fSQL.createSummaryEntry(variation_id, scenario_id, ((Dim)dimension).getId(), isGlobal, commentId);
+                }
+                String shortName= sample.getShortname();
+                if (shortName != null)
+                    fSQL.setScenarioShortName(scenario_id, shortName);
+            } else if (comment != null) {
+                int commentId= 0;
+                int commentKind= sample.getCommentType();
+                if (commentKind == Performance.EXPLAINS_DEGRADATION_COMMENT) {
+                	commentId= fSQL.getCommentId(commentKind, comment);
+                }
+				fSQL.createSummaryEntry(variation_id, scenario_id, 0, false, commentId); // use special dim id '0' to identify summary entry created to only handle a comment
+            }
+            int sample_id= fSQL.createSample(variation_id, scenario_id, new Timestamp(sample.getStartTime()));
+
+            if (AGGREGATE) {
+                StatisticsSession stats= new StatisticsSession(dataPoints);
+                Dim[] dims= dataPoints[0].getDimensions();
+
+                int datapoint_id= fSQL.createDataPoint(sample_id, 0, InternalPerformanceMeter.AVERAGE);
+                for (int i= 0; i < dims.length; i++) {
+                    Dim dim= dims[i];
+                    fSQL.insertScalar(datapoint_id, dim.getId(), (long) stats.getAverage(dim));
+                }
+                
+                datapoint_id= fSQL.createDataPoint(sample_id, 0, InternalPerformanceMeter.STDEV);
+                for (int i= 0; i < dims.length; i++) {
+                    Dim dim= dims[i];
+                    // see StatisticsSession
+                    long value= Double.doubleToLongBits(stats.getStddev(dim));
+                    fSQL.insertScalar(datapoint_id, dim.getId(), value);
+                }
+                
+                datapoint_id= fSQL.createDataPoint(sample_id, 0, InternalPerformanceMeter.SIZE);
+                for (int i= 0; i < dims.length; i++) {
+                    Dim dim= dims[i];
+                    fSQL.insertScalar(datapoint_id, dim.getId(), stats.getCount(dim));
+                }
+		    } else {
+				for (int i= 0; i < dataPoints.length; i++) {
+				    DataPoint dp= dataPoints[i];
+		            int datapoint_id= fSQL.createDataPoint(sample_id, i, dp.getStep());
+				    Scalar[] scalars= dp.getScalars();
+	 			    for (int j= 0; j < scalars.length; j++) {
+				        Scalar scalar= scalars[j];
+				        int dim_id= scalar.getDimension().getId();
+				        long value= scalar.getMagnitude();
+						fSQL.insertScalar(datapoint_id, dim_id, value);
+				    }
+				}
+		    }
+			
+			fConnection.commit();
+            fStoredSamples++;
+            fStoreCalled= true;
+
+			//System.err.println(System.currentTimeMillis()-l);
+
+        } catch (SQLException e) {
+            PerformanceTestPlugin.log(e);
+            try {
+                fConnection.rollback();
+            } catch (SQLException e1) {
+                PerformanceTestPlugin.log(e1);
+            }
+        }
+        return true;
+    }
+

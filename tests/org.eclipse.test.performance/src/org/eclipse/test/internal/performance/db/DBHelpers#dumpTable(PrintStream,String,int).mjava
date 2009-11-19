@@ -1,0 +1,20 @@
+    void dumpTable(PrintStream ps, String tableName, int maxRow) throws SQLException {
+        ps.print(tableName + '(');
+		Statement select= fConnection.createStatement();
+        ResultSet result= select.executeQuery("select * from " + tableName); //$NON-NLS-1$
+        ResultSetMetaData metaData= result.getMetaData();
+        int n= metaData.getColumnCount();
+        for (int i= 0; i < n; i++) {
+            ps.print(metaData.getColumnLabel(i+1));
+            if (i < n-1)
+                ps.print(", "); //$NON-NLS-1$
+        }
+        ps.println("):"); //$NON-NLS-1$
+        for (int r= 0; result.next() && r < maxRow; r++) {
+            for (int i= 0; i < n; i++)
+                ps.print(' ' + result.getString(i+1));
+            ps.println();
+        }
+        select.close();
+    }
+

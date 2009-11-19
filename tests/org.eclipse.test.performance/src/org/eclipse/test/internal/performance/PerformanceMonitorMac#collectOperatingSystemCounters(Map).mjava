@@ -1,0 +1,42 @@
+	/**
+	 * Write out operating system counters for Mac OS X.
+	 * @param scalars where to collect the data
+	 */
+	protected void collectOperatingSystemCounters(Map scalars) {
+		synchronized(this) {
+		    if (isLoaded()) {
+				int[] counters= new int[18];
+				if (getrusage(0, counters) == 0) {
+				    
+				    int user_time= counters[0]*1000 + counters[1]/1000;
+				    int kernel_time= counters[2]*1000 + counters[3]/1000;
+				    
+					addScalar(scalars, InternalDimensions.KERNEL_TIME, kernel_time);
+					addScalar(scalars, InternalDimensions.CPU_TIME, user_time + kernel_time);
+				}
+			}
+			
+			long currentTime= System.currentTimeMillis();
+			if (!PerformanceTestPlugin.isOldDB())
+				addScalar(scalars, InternalDimensions.SYSTEM_TIME, currentTime);
+			
+			if (fgHasElapsedTime) {
+				if (fgStartupTime == 0) {
+					String t= System.getProperty("eclipse.startTime"); //$NON-NLS-1$
+					if (t != null) {
+						try {
+							fgStartupTime= Long.parseLong(t);
+						} catch (NumberFormatException e) {
+							fgHasElapsedTime= false;
+						}
+					} else
+						fgHasElapsedTime= false;
+				}
+				if (fgHasElapsedTime)
+					addScalar(scalars, InternalDimensions.ELAPSED_PROCESS, currentTime-fgStartupTime);
+			}
+			
+		    super.collectOperatingSystemCounters(scalars);
+		}
+	}
+

@@ -1,0 +1,38 @@
+	private String checkSampleSize(StatisticsSession s, Sample sample, Dim dimension) throws CoreException {
+		long sampleSize= s.getCount(dimension);
+		double stdev= s.getStddev(dimension);
+		double mean= s.getAverage(dimension);
+		
+		if (stdev == 0)
+			return ""; //$NON-NLS-1$
+		
+		// measurable effect size
+		// sampleSize= 16 * stdev^2 / effect^2
+		double effectSize= 4 * Math.sqrt(stdev * stdev / sampleSize);
+		
+		double base;
+		String baseName;
+		if (stdev > Math.abs(mean)) {
+			base= stdev;
+			baseName="stdev"; //$NON-NLS-1$
+		} else {
+			base= Math.abs(mean);
+			baseName= "mean"; //$NON-NLS-1$
+		}
+		double fivePercentEffect= 0.05 * base;
+		long requiredSampleSizeForFivePercentEffect= Math.round(16 * stdev * stdev / fivePercentEffect / fivePercentEffect + 0.5);
+		
+//		if (requiredSampleSizeForFivePercentEffect > 1000 || Double.isNaN(stdev))
+//			throw new CoreException(new Status(IStatus.OK, "org.eclipse.text.performance", IStatus.OK, "no message", null)); //$NON-NLS-1$ //$NON-NLS-2$
+		
+		NumberFormat numberInstance= NumberFormat.getNumberInstance();
+		numberInstance.setMaximumFractionDigits(1);
+		numberInstance.setMinimumFractionDigits(1);
+		
+		String measurableMsg= " Measurable effect: " + dimension.getDisplayValue(effectSize) + " (" + numberInstance.format(effectSize / stdev) + " SDs)"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+		if (fivePercentEffect < effectSize)
+			measurableMsg += " (required sample size for an effect of 5% of " + baseName + ": " + requiredSampleSizeForFivePercentEffect + ")"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+		
+		return measurableMsg;
+	}
+

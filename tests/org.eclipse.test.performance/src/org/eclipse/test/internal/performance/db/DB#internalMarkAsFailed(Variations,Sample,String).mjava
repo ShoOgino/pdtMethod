@@ -1,0 +1,23 @@
+    private void internalMarkAsFailed(Variations variations, Sample sample, String failMesg) {
+        
+        if (fSQL == null)
+            return;
+  
+	    try {
+            int variation_id= fSQL.getVariations(variations);
+            int scenario_id= fSQL.getScenario(sample.getScenarioID());
+
+            fSQL.insertFailure(variation_id, scenario_id, failMesg);
+            
+            fConnection.commit();
+			
+	    } catch (SQLException e) {
+            PerformanceTestPlugin.log(e);
+            try {
+                fConnection.rollback();
+            } catch (SQLException e1) {
+                PerformanceTestPlugin.log(e1);
+            }
+        }
+    }
+

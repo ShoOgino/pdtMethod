@@ -1,0 +1,61 @@
+    private String[] internalQuerySeriesValues(Variations v, String scenarioName, String seriesKey) {
+        
+        boolean isCloned= false;
+        
+        String[] seriesPatterns= null;
+        Object object= v.get(seriesKey);
+        if (object instanceof String[])
+            seriesPatterns= (String[]) object;
+        else if (object instanceof String)
+            seriesPatterns= new String[] { (String) object };
+        else
+            Assert.assertTrue(false);
+        
+        ArrayList values= new ArrayList();
+        for (int i= 0; i < seriesPatterns.length; i++) {
+            if (seriesPatterns[i].indexOf('%') >= 0) {
+                if (! isCloned) {
+                    v= (Variations) v.clone();
+                    isCloned= true;
+                }
+                v.put(seriesKey, seriesPatterns[i]);
+                internalQueryDistinctValues(values, seriesKey, v, scenarioName);
+            } else
+                values.add(seriesPatterns[i]);
+        }
+        
+        String[] names= (String[])values.toArray(new String[values.size()]);
+        
+        boolean sort= true;
+        Pattern pattern= Pattern.compile("200[3-9][01][0-9][0-3][0-9]"); //$NON-NLS-1$
+        final Matcher matcher= pattern.matcher(""); //$NON-NLS-1$
+        for (int i= 0; i < names.length; i++) {
+            matcher.reset(names[i]);
+            if (! matcher.find()) {
+                sort= false;
+                break;
+            }
+        }
+        if (sort) {
+	        Arrays.sort(names,
+	            new Comparator() {
+	            	public int compare(Object o1, Object o2) {
+	            	    String s1= (String)o1;
+	            	    String s2= (String)o2;
+	            	    
+	            	    matcher.reset(s1);
+	            	    if (matcher.find())
+	            	        s1= s1.substring(matcher.start());
+
+		            	matcher.reset(s2);
+		            	if (matcher.find())
+		            	    s2= s2.substring(matcher.start());
+
+	            	    return s1.compareTo(s2);
+	            	}
+	        	}
+	        );
+        }
+        return names;
+    }
+
