@@ -1,0 +1,76 @@
+/**
+ * Read all data from performance database for the given configurations
+ * and scenario pattern.
+ *
+ * This method is typically called when generated performance results
+ * from a non-UI application.
+ *
+ * @param buildName The name of the build
+ * @param configs All configurations to extract results. If <code>null</code>,
+ * 	then all known configurations ({@link DB_Results#getConfigs()})  are read.
+ * @param pattern The pattern of the concerned scenarios
+ * @param dataDir The directory where data will be read/stored locally.
+ * 	If <code>null</code>, then database will be read instead and no storage
+ * 	will be performed
+ * @param threshold The failure percentage threshold over which a build result
+ * 	value compared to the baseline is considered as failing.
+ * @param monitor The progress monitor
+ *
+ * @return All known build names
+ */
+public String[] readAll(String buildName, String[][] configs, String pattern, File dataDir, int threshold, IProgressMonitor monitor) {
+
+	// Init
+	this.scenarioPattern = pattern == null ? "%" : pattern; //$NON-NLS-1$
+	this.failure_threshold = threshold;
+	SubMonitor subMonitor = SubMonitor.convert(monitor, 1000);
+
+	// Set default names
+	setDefaults();
+
+	// Read local data files first
+	reset(dataDir);
+	String[] names = read(true, null, configs, true, dataDir, null, subMonitor.newChild(100));
+	if (names==null) {
+		// if one local files is missing then force a full DB read!
+		// TODO moderate this to force the DB read only for the missing file...
+		return read(false, null, configs, true, dataDir, null, subMonitor.newChild(900));
+	}
+
+	// Search build name in read data
+	boolean buildMissing = true;
+	if (buildName != null) {
+		this.name = buildName;
+		buildMissing = Arrays.binarySearch(names, buildName, Util.BUILD_DATE_COMPARATOR) < 0;
+	}
+
+	// Look for missing builds
+	if (buildMissing) {
+		if (buildName == null) {
+			// Read all missing builds
+			String[] builds = DB_Results.getBuilds();
+			Arrays.sort(builds, Util.BUILD_DATE_COMPARATOR);
+			int lengthDB = builds.length;
+			int lengthLocal = names.length;
+			if (lengthLocal < lengthDB) {
+				int length= lengthDB-lengthLocal;
+				String[] addedBuilds = new String[length];
+				int idx = length-1;
+				int idxDB = lengthDB-1;
+				while (!this.allBuildNames[lengthLocal-1].equals(builds[idxDB])) {
+					addedBuilds[idx] = builds[idxDB];
+					idxDB--;
+					idx--;
+				}
+				for (int i=idx+1; i<length; i++) {
+					read(false, addedBuilds[i], configs, true, dataDir, null, subMonitor.newChild(900));
+				}
+			}
+		} else {
+			// Read the missing build
+			read(false, buildName, configs, true, dataDir, null, subMonitor.newChild(900));
+		}
+	}
+	return this.allBuildNames;
+}
+

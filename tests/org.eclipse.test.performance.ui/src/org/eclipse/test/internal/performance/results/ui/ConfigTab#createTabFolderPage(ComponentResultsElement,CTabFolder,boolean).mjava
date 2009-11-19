@@ -1,0 +1,110 @@
+/**
+ * Creates the tab folder page.
+ *
+ * @param tabFolder org.eclipse.swt.widgets.TabFolder
+ * @param fullSelection Tells whether the table should have a full line selection or not
+ * @return the new page for the tab folder
+ */
+Composite createTabFolderPage (ComponentResultsElement componentResultsElement, CTabFolder tabFolder, boolean fullSelection) {
+	// Cache the shell and display.
+	this.shell = tabFolder.getShell();
+	this.display = this.shell.getDisplay();
+
+	// Remove old table is present
+	boolean initResources = this.table == null;
+	if (this.table != null) {
+		disposeTable();
+	}
+
+	// Store results
+	this.results = componentResultsElement;
+
+	// Create the "children" table
+	int style = SWT.MULTI | SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL;
+	if (fullSelection) style |= SWT.FULL_SELECTION;
+	this.table = new Table(tabFolder, style);
+	this.table.setLinesVisible (true);
+	this.table.setHeaderVisible (true);
+	GridData gridData = new GridData(SWT.FILL, SWT.FILL, true, true, 3, 1);
+	gridData.heightHint = 150;
+	this.table.setLayoutData (gridData);
+	this.gc = new GC(this.table);
+
+	// Init resources
+	if (initResources) initResources();
+
+	// Add columns to the table
+	boolean fingerprints = this.preferences.getBoolean(IPerformancesConstants.PRE_FILTER_ADVANCED_SCENARIOS, IPerformancesConstants.DEFAULT_FILTER_ADVANCED_SCENARIOS);
+	String [] columnHeaders = getLayoutDataFieldNames(fingerprints);
+	int length = columnHeaders.length;
+	for (int i = 0; i < length; i++) {
+		TableColumn column = new TableColumn(this.table, SWT.CENTER);
+		column.setText (columnHeaders [i]);
+	}
+
+	// Add lines to the table
+	this.toolTips = new HashMap();
+	fillTableLines(fingerprints);
+
+	// Updated columns
+	for (int i=0; i<length; i++) {
+		TableColumn column = this.table.getColumn(i);
+		column.setWidth(i==0?120:100);
+		if (i > 0) {
+			String text = (String) this.firstLine.get(i);
+			column.setToolTipText(text);
+		}
+	}
+
+	// Store table info
+	this.columnsCount = length;
+
+	// Listen to mouse events to select the corresponding build in the components view
+	// when a click is done in the table cell.
+	final ComponentsView componentsView = (ComponentsView) PerformancesView.getWorkbenchView("org.eclipse.test.internal.performance.results.ui.ComponentsView");
+	MouseListener mouseListener = new MouseListener() {
+		public void mouseUp(MouseEvent e) {
+		}
+		public void mouseDown(MouseEvent e) {
+			Point cellPosition = currentCellPosition(e.x, e.y);
+			Table tabTable = ConfigTab.this.table;
+			componentsView.select(ConfigTab.this.results, ConfigTab.this.configName, (String) ConfigTab.this.firstLine.get(cellPosition.x), tabTable.getItem(cellPosition.y).getText());
+		}
+		public void mouseDoubleClick(MouseEvent e) {
+		}
+	};
+	this.table.addMouseListener(mouseListener);
+
+	// Listen to mouse track events to display the table cell corresponding tooltip.
+	MouseTrackListener mouseTrackListener = new MouseTrackListener() {
+		ToolTip currentTooltip;
+		public void mouseHover(MouseEvent e) {
+			if (this.currentTooltip != null) {
+				this.currentTooltip.setVisible(false);
+				this.currentTooltip = null;
+			}
+			Point cellPosition = currentCellPosition(e.x, e.y);
+			if (cellPosition != null) {
+				ToolTip tooltip = (ToolTip) ConfigTab.this.toolTips.get(cellPosition);
+				if (tooltip != null) {
+					Point location = ConfigTab.this.table.toDisplay(new Point(e.x, e.y));
+					tooltip.setLocation(location);
+					tooltip.setVisible(true);
+					this.currentTooltip = tooltip;
+				}
+			}
+		}
+		public void mouseEnter(MouseEvent e) {
+		}
+		public void mouseExit(MouseEvent e) {
+		}
+	};
+	this.table.addMouseTrackListener(mouseTrackListener);
+
+	// Select the first line by default (as this is the current build)
+	this.table.select(0);
+
+	// Return the built composite
+	return this.table;
+}
+

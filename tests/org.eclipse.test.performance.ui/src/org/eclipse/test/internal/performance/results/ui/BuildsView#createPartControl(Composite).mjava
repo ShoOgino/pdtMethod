@@ -1,0 +1,68 @@
+/* (non-Javadoc)
+ * @see org.eclipse.test.internal.performance.results.ui.PerformancesView#createPartControl(org.eclipse.swt.widgets.Composite)
+ */
+public void createPartControl(Composite parent) {
+	super.createPartControl(parent);
+
+	// Create the viewer
+	this.viewer = new TreeViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
+
+	// Set the content provider: first level is builds list
+	WorkbenchContentProvider contentProvider = new WorkbenchContentProvider() {
+		public Object[] getElements(Object o) {
+			return getBuilds();
+		}
+	};
+	this.viewer.setContentProvider(contentProvider);
+
+	// Set the label provider
+	WorkbenchLabelProvider labelProvider = new WorkbenchLabelProvider() {
+
+		// Set an italic font when no local data have been read
+		public Font getFont(Object element) {
+			Font font = super.getFont(element);
+			if (element instanceof BuildResultsElement) {
+				if (((BuildResultsElement) element).isUnknown()) {
+					if (BuildsView.this.italicFont == null) {
+						FontData[] defaultFont = JFaceResources.getDefaultFont().getFontData();
+						FontData italicFontData = new FontData(defaultFont[0].getName(), defaultFont[0].getHeight(), SWT.ITALIC);
+						BuildsView.this.italicFont = new Font(DEFAULT_DISPLAY, italicFontData);
+					}
+					return BuildsView.this.italicFont;
+				}
+			}
+			return font;
+		}
+
+		// Set font in gray when no local data is available (i.e. local data needs to be updated)
+		public Color getForeground(Object element) {
+			Color color = super.getForeground(element);
+			if (element instanceof BuildResultsElement) {
+				if (!((BuildResultsElement) element).isRead()) {
+					color = DARK_GRAY;
+				}
+			}
+			return color;
+		}
+	};
+	this.viewer.setLabelProvider(labelProvider);
+
+	// Set the children sorter
+	ViewerSorter nameSorter = new ViewerSorter() {
+
+		// Sort children using specific comparison (see the implementation
+		// of the #compareTo(Object) in the ResultsElement hierarchy
+		public int compare(Viewer view, Object e1, Object e2) {
+			if (e2 instanceof ResultsElement) {
+				return ((ResultsElement) e2).compareTo(e1);
+			}
+			return super.compare(view, e1, e2);
+		}
+	};
+	this.viewer.setSorter(nameSorter);
+
+	// Finalize viewer initialization
+	PlatformUI.getWorkbench().getHelpSystem().setHelp(this.viewer.getControl(), "org.eclipse.test.performance.ui.builds");
+	finalizeViewerCreation();
+}
+

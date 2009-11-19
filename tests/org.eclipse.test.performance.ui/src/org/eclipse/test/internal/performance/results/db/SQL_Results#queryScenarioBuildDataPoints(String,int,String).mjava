@@ -1,0 +1,17 @@
+ResultSet queryScenarioBuildDataPoints(String config, int scenarioID, String buildName) throws SQLException {
+	if (DB_Results.LOG) DB_Results.LOG_WRITER.starts("		+ SQL query (config="+config+", scenario ID="+scenarioID+", build name="+buildName); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+	if (this.queryScenarioBuildDataPoints== null) {
+		String statement = "select DATAPOINT.ID, DATAPOINT.STEP, VARIATION.KEYVALPAIRS from SAMPLE, DATAPOINT, VARIATION where " + //$NON-NLS-1$
+			"SAMPLE.VARIATION_ID = VARIATION.ID and VARIATION.KEYVALPAIRS LIKE ? and " + //$NON-NLS-1$
+			"SAMPLE.SCENARIO_ID = ? and " + //$NON-NLS-1$
+			"DATAPOINT.SAMPLE_ID = SAMPLE.ID " + //$NON-NLS-1$
+			"ORDER BY DATAPOINT.ID, DATAPOINT.STEP"; //$NON-NLS-1$
+		this.queryScenarioBuildDataPoints = this.fConnection.prepareStatement(statement);
+	}
+	this.queryScenarioBuildDataPoints.setString(1, "|build=" + buildName + '%'); //$NON-NLS-1$
+	this.queryScenarioBuildDataPoints.setInt(2, scenarioID);
+	ResultSet resultSet =  this.queryScenarioBuildDataPoints.executeQuery();
+	if (DB_Results.LOG) DB_Results.LOG_WRITER.ends(")"); //$NON-NLS-1$
+	return resultSet;
+}
+

@@ -1,0 +1,59 @@
+/*
+ * Reset the table tab folders by re-create all the pages.
+ * Selections are set onto the first found error if this is the first tab creation (typically on a component change event from the ComponentsView)
+ * or to the previous one if this is just a refresh.
+ */
+void resetTabFolders(boolean init) {
+
+	// Store current indexes
+	int tabIndex = this.tabFolder.getSelectionIndex();
+	int lineIndex = tabIndex<0 ? -1 : this.tabs[tabIndex].table.getSelectionIndex();
+
+	// Create tab folders
+	CTabItem[] tabItems = this.tabFolder.getItems();
+	int length = tabItems.length;
+	if (length == 0) {
+		createTabs();
+	} else {
+		for (int i=0; i<length; i++) {
+			tabItems[i].setControl(this.tabs [i].createTabFolderPage(this.componentResultsElement, this.tabFolder, this.fullLineSelection.isChecked()));
+		}
+	}
+
+	// Set the part name when possible
+	if (this.componentResultsElement != null) {
+		setPartName();
+	}
+
+	// If this is the first display then look for the first error to set the selection on it
+	if (init)  {
+		if (this.componentResultsElement != null) {
+			// If the component has
+			if (this.componentResultsElement.hasError()) {
+				ResultsElement[] children = this.componentResultsElement.getChildren(); // get scenarios
+				int childrenLength = children.length;
+				for (int s=0; s<childrenLength; s++) {
+					if (children[s].hasError()) {
+						children = children[s].getChildren(); // get configs
+						for (int c=0; c<childrenLength; c++) {
+							if (children[c].hasError()) {
+								tabIndex = c;
+								break;
+							}
+						}
+						break;
+					}
+				}
+			}
+		}
+		lineIndex = 0;
+	}
+
+	// Set the selection
+	if (tabIndex >= 0 && lineIndex >= 0) {
+		this.tabFolder.setSelection(tabIndex);
+		Table table = this.tabs[tabIndex].table;
+		table.setSelection(lineIndex);
+	}
+}
+

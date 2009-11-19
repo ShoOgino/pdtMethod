@@ -1,0 +1,53 @@
+		public void run() {
+
+			// Ask for output directory
+			String resultGenerationDir = BuildsView.this.preferences.get(IPerformancesConstants.PRE_RESULTS_GENERATION_DIR, "");
+			String pathFilter = (BuildsView.this.outputDir == null) ? resultGenerationDir : BuildsView.this.outputDir.getPath();
+			File dir = changeDir(pathFilter, "Select directory to write comparison files");
+			if (dir == null) {
+				return;
+			}
+			BuildsView.this.outputDir = dir;
+			BuildsView.this.preferences.put(IPerformancesConstants.PRE_RESULTS_GENERATION_DIR, dir.getAbsolutePath());
+
+			// Select the reference
+			String[] baselines = BuildsView.this.results.getBaselines();
+			int bLength = baselines.length;
+			String selectedBaseline;
+			switch (bLength) {
+				case 0:
+					// no baseline, nothing to do...
+					selectedBaseline = BuildsView.this.results.getPerformanceResults().getBaselineName();
+					break;
+				case 1:
+					// only one baseline, no selection to do
+					selectedBaseline = baselines[0];
+					break;
+				default:
+					// select the baseline from list
+					ElementListSelectionDialog dialog = new ElementListSelectionDialog(getSite().getShell(), new LabelProvider());
+					dialog.setTitle(getTitleToolTip());
+					dialog.setMessage("Select the baseline to use while generating results:");
+					String[] defaultBaseline = new String[] { baselines[baselines.length - 1] };
+					dialog.setInitialSelections(defaultBaseline);
+					dialog.setElements(baselines);
+					dialog.open();
+					Object[] selected = dialog.getResult();
+					if (selected == null)
+						return;
+					selectedBaseline = (String) selected[0];
+					break;
+			}
+			final String baselineName = selectedBaseline;
+			BuildsView.this.results.getPerformanceResults().setBaselineName(baselineName);
+
+			// Ask for fingerprints
+			final boolean fingerprints = MessageDialog.openQuestion(BuildsView.this.shell, getTitleToolTip(), "Generate only fingerprints?");
+
+			// Generate all selected builds
+			int length = BuildsView.this.buildsResults.length;
+			for (int i = 0; i < length; i++) {
+				generate(i, baselineName, fingerprints);
+			}
+		}
+

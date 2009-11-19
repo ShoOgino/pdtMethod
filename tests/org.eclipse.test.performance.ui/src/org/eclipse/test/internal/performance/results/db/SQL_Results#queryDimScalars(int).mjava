@@ -1,0 +1,29 @@
+/**
+ * Query all scalars for a given data point.
+ *
+ * @param datapointId The id of the data point
+ * @return Set of the query result
+ * @throws SQLException
+ */
+ResultSet queryDimScalars(int datapointId) throws SQLException {
+	if (this.queryDimScalars == null) {
+		StringBuffer buffer = new StringBuffer("select DIM_ID, VALUE from SCALAR where "); //$NON-NLS-1$
+		buffer.append("DATAPOINT_ID = ? and "); //$NON-NLS-1$
+		Dim[] dimensions = DB_Results.getResultsDimensions();
+		int length = dimensions.length;
+		for (int i=0; i<length; i++) {
+			if (i==0) {
+				buffer.append("(");
+			} else {
+				buffer.append(" or ");
+			}
+			buffer.append("DIM_ID = ");
+			buffer.append(dimensions[i].getId());
+		}
+		buffer.append(") order by DIM_ID");
+		this.queryDimScalars = this.fConnection.prepareStatement(buffer.toString());
+	}
+	this.queryDimScalars.setInt(1, datapointId);
+	return this.queryDimScalars.executeQuery();
+}
+

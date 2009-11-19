@@ -1,0 +1,26 @@
+File changeDataDir() {
+	String localDataDir = this.preferences.get(IPerformancesConstants.PRE_LOCAL_DATA_DIR, "");
+	String filter = (this.dataDir == null) ? localDataDir : this.dataDir.getPath();
+	File dir = this.dataDir;
+	this.dataDir = changeDir(filter, "Select directory for data local files");
+	boolean refresh = false;
+	if (this.dataDir != null) {
+		this.preferences.put(IPerformancesConstants.PRE_LOCAL_DATA_DIR, this.dataDir.getAbsolutePath());
+		if (dir != null && dir.getPath().equals(this.dataDir.getPath())) {
+			refresh = MessageDialog.openQuestion(this.shell, getTitleToolTip(), "Do you want to read local file again?");
+		} else {
+			refresh = true;
+		}
+		if (refresh) {
+			readLocalFiles();
+
+			// Refresh views
+			refreshInput();
+			PerformancesView resultsView = getSiblingView();
+			resultsView.refreshInput();
+			return resultsView.dataDir = this.dataDir;
+		}
+	}
+	return null;
+}
+

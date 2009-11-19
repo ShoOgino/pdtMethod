@@ -1,0 +1,26 @@
+/**
+ * Get all data points for a given scenario and configuration.
+ *
+ * @param config The name of the concerned configuration
+ * @param scenarioID The id of the scenario
+ * @return A set of the query result
+ * @throws SQLException
+ */
+ResultSet queryScenarioDataPoints(String config, int scenarioID) throws SQLException {
+	long start = System.currentTimeMillis();
+	if (DB_Results.DEBUG) DB_Results.DEBUG_WRITER.print("[SQL query (config="+config+", scenario ID="+scenarioID); //$NON-NLS-1$ //$NON-NLS-2$
+	if (this.queryScenarioDataPoints== null) {
+		String statement = "select DATAPOINT.ID, DATAPOINT.STEP, VARIATION.KEYVALPAIRS from VARIATION, SAMPLE, DATAPOINT where " + //$NON-NLS-1$
+			"VARIATION.KEYVALPAIRS like ? and SAMPLE.VARIATION_ID = VARIATION.ID and " + //$NON-NLS-1$
+			"SAMPLE.SCENARIO_ID = ? and " + //$NON-NLS-1$
+			"DATAPOINT.SAMPLE_ID = SAMPLE.ID " + //$NON-NLS-1$
+			"ORDER BY DATAPOINT.ID, DATAPOINT.STEP"; //$NON-NLS-1$
+		this.queryScenarioDataPoints = this.fConnection.prepareStatement(statement);
+	}
+	this.queryScenarioDataPoints.setString(1, "%"+config+"%"); //$NON-NLS-1$ //$NON-NLS-2$
+	this.queryScenarioDataPoints.setInt(2, scenarioID);
+	ResultSet resultSet =  this.queryScenarioDataPoints.executeQuery();
+	if (DB_Results.DEBUG) DB_Results.DEBUG_WRITER.print(")=" + (System.currentTimeMillis() - start) + "ms]"); //$NON-NLS-1$ //$NON-NLS-2$
+	return resultSet;
+}
+

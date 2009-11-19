@@ -1,0 +1,44 @@
+/**
+ * Update a given build information with database contents.
+ *
+ * @param builds The builds to read new data
+ * @param force Force the update from the database, even if the build is
+ * 	already known.
+ * @param dataDir The directory where data should be stored locally if necessary.
+ * 	If <code>null</code>, then information changes won't be persisted.
+ * @param monitor The progress monitor
+ * @return All known builds
+ */
+public String[] updateBuilds(String[] builds, boolean force, File dataDir, IProgressMonitor monitor) {
+
+	// Print title
+	StringBuffer buffer = new StringBuffer("Update data for "); //$NON-NLS-1$
+	int length = builds == null ? 0 : builds.length;
+	switch (length) {
+		case 0:
+			buffer.append("all builds"); //$NON-NLS-1$
+			reset(dataDir);
+			break;
+		case 1:
+			buffer.append("one build"); //$NON-NLS-1$
+			break;
+		default:
+			buffer.append("several builds"); //$NON-NLS-1$
+			break;
+	}
+	String taskName = buffer.toString();
+	println(buffer);
+
+	// Create sub-monitor
+	SubMonitor subMonitor = SubMonitor.convert(monitor, 1000*length);
+	subMonitor.setTaskName(taskName);
+
+	// Read
+	for (int i=0; i<length;  i++) {
+		read(false, builds[i], null, force, dataDir, taskName, subMonitor.newChild(1000));
+	}
+
+	// Return new builds list
+	return this.allBuildNames;
+}
+

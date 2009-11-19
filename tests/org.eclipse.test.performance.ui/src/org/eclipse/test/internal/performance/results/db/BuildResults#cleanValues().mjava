@@ -1,0 +1,35 @@
+/*
+ * Clean values when several measures has been done for the same build.
+ */
+void cleanValues() {
+	int length = this.values.length;
+	for (int dim_id=0; dim_id<length; dim_id++) {
+		int vLength = this.values[dim_id].length;
+		/* Log clean operation
+		if (dim_id == 0) {
+			IStatus status = new Status(IStatus.WARNING, PerformanceTestPlugin.PLUGIN_ID, "Clean "+vLength+" values for "+this.parent+">"+this.name+" ("+this.count[dim_id]+" measures)...");    //$NON-NLS-1$//$NON-NLS-2$//$NON-NLS-3$//$NON-NLS-4$ //$NON-NLS-5$
+			PerformanceTestPlugin.log(status);
+		}
+		*/
+		this.average[dim_id] = 0;
+		for (int i=0; i<vLength; i++) {
+			this.average[dim_id] += this.values[dim_id][i];
+		}
+		this.average[dim_id] /= vLength;
+		double squaredDeviations= 0;
+		for (int i=0; i<vLength; i++) {
+		    double deviation= this.average[dim_id] - this.values[dim_id][i];
+		    squaredDeviations += deviation * deviation;
+		}
+		this.stddev[dim_id] = Math.sqrt(squaredDeviations / (this.count[dim_id] - 1)); // unbiased sample stdev
+		this.values[dim_id] = null;
+	}
+	for (int i=0; i<length; i++) {
+		if (this.values[i] != null) {
+			return;
+		}
+	}
+	this.values = null;
+	this.hadValues = true;
+}
+

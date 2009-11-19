@@ -1,0 +1,33 @@
+/*
+ * Print all build results in the table.
+ */
+private void printDetails() {
+	this.stream.print("<tr><td><b>Build ID</b></td>");
+	printColumnHeaders();
+	this.stream.print("</tr>\n");
+
+	List builds = this.configResults.getBuildsMatchingPrefixes(this.buildPrefixes);
+	Collections.reverse(builds);
+	int size = builds.size();
+	for (int i=0; i<size; i++) {
+		BuildResults buildResults = (BuildResults) builds.get(i);
+		this.stream.print("<tr><td>");
+		this.stream.print(buildResults.getName());
+		this.stream.print("</td>");
+		int dimLength = this.dimensions.length;
+		for (int d=0; d<dimLength; d++) {
+			Dim dimension = this.dimensions[d];
+			int dim_id = dimension.getId();
+			double value = buildResults.getValue(dim_id);
+			printDimTitle(dimension.getName());
+			String displayValue = dimension.getDisplayValue(value);
+			this.stream.print(displayValue);
+			if (this.debug) System.out.print("\t"+displayValue);
+			this.stream.print("</td>");
+		}
+		if (this.debug) System.out.println();
+		this.stream.print("</tr>\n");
+	}
+	if (this.debug) System.out.println("\n");
+}
+

@@ -1,0 +1,44 @@
+/*
+ * Query all variations. This method stores all config and build names.
+ */
+private void internalQueryAllVariations(String configPattern) {
+	if (this.fSQL == null) return;
+	if (BUILDS != null) return;
+	long start = System.currentTimeMillis();
+	if (DEBUG) {
+		DEBUG_WRITER.print("	- DB query all variations for configuration pattern: "+configPattern); //$NON-NLS-1$
+		DEBUG_WRITER.print("..."); //$NON-NLS-1$
+	}
+	ResultSet result = null;
+	try {
+		CONFIGS = null;
+		BUILDS = null;
+		BUILDS_LENGTH = 0;
+		result = this.fSQL.queryAllVariations(configPattern);
+		while (result.next()) {
+			String variation = result.getString(1); //  something like "||build=I20070615-1200||config=eclipseperfwin2_R3.3||jvm=sun|"
+			StringTokenizer tokenizer = new StringTokenizer(variation, "=|"); //$NON-NLS-1$
+			tokenizer.nextToken(); 												// 'build'
+			storeBuildName(tokenizer.nextToken());				// 'I20070615-1200'
+			tokenizer.nextToken();												// 'config'
+			storeConfig(tokenizer.nextToken()); 	// 'eclipseperfwin2_R3.3'
+			tokenizer.nextToken();												// 'jvm'
+			storeVm(tokenizer.nextToken());					// 'sun'
+		}
+		if (BUILDS_LENGTH == 0) {
+			BUILDS = EMPTY_LIST;
+		}
+	} catch (SQLException e) {
+		PerformanceTestPlugin.log(e);
+	} finally {
+		if (result != null) {
+			try {
+				result.close();
+			} catch (SQLException e1) {
+				// ignored
+			}
+		}
+		if (DEBUG) DEBUG_WRITER.println("done in " + (System.currentTimeMillis() - start) + "ms]"); //$NON-NLS-1$ //$NON-NLS-2$
+	}
+}
+

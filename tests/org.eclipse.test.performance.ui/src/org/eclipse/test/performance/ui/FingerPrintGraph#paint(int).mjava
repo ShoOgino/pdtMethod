@@ -1,0 +1,61 @@
+void paint(int kind) {
+
+	// Set image
+	this.graphHeight = MARGIN + this.count * LINE_HEIGHT;
+	this.imageHeight = this.graphHeight + GAP + 16 + MARGIN;
+	this.image = new Image(DEFAULT_DISPLAY, this.imageWidth, this.imageHeight);
+	this.gc = new GC(this.image);
+
+	// draw white background
+	this.gc.setBackground(WHITE);
+	this.gc.fillRectangle(0, 0, this.imageWidth, this.imageHeight);
+
+	// Set widths and heights
+	int width= (int) (RATIO * this.imageWidth); // width for results bar
+	this.graphWidth= width - this.gc.stringExtent("-999.9%").x - TGAP - MARGIN; // reserve space //$NON-NLS-1$
+
+	// Get warning image width
+	Image warning = (Image) this.resources.get("warning");
+	if (warning == null) {
+		warning = new Image(this.gc.getDevice(), new File(this.outputDir, Utils.WARNING_OBJ).toString());
+		this.resources.put("warning", warning);
+	}
+	this.graphWidth -= warning.getImageData().width;
+
+	// Set maximum of values
+	this.maxValue = 0.0;
+	this.minValue = Double.MAX_VALUE;
+	for (int i= 0; i<this.count; i++) {
+		BuildResults baselineBuildResults = this.results[i].getBaselineBuildResults();
+		double value = baselineBuildResults.getValue();
+		double error = baselineBuildResults.getError();
+		if (!Double.isNaN(error)) value += Math.abs(error);
+		if (value < 1000000 && value > this.maxValue) {
+			this.maxValue = value;
+		}
+		if (value < this.minValue) {
+			this.minValue = value;
+		}
+		BuildResults currentBuildResults = this.results[i].getCurrentBuildResults();
+		value = currentBuildResults.getValue();
+		error = currentBuildResults.getError();
+		if (!Double.isNaN(error)) value += Math.abs(error);
+		if (value < 1000000 && value > this.maxValue) {
+			this.maxValue = value;
+		}
+		if (value < this.minValue) {
+			this.minValue = value;
+		}
+	}
+	this.minValue = 0; // do not use minValue for now...
+
+	// Draw the scale
+	drawScale(kind);
+
+	// Draw the bars
+	drawBars(kind);
+
+	// Dispose
+	this.gc.dispose();
+}
+

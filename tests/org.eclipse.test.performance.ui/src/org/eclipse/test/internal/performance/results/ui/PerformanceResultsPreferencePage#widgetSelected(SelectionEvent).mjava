@@ -1,0 +1,95 @@
+/**
+ * (non-Javadoc) Method declared on SelectionListener
+ */
+public void widgetSelected(SelectionEvent event) {
+
+	// As for directory when 'Local' button is pushed
+	final Object source = event.getSource();
+	if (source == this.dbLocalBrowseButton) {
+		String location = this.databaseLocationCombo.getText();
+		String path = getDirectoryPath(location);
+		if (path != null) {
+			// First verify that the selected dir was correct
+			int version;
+			if (this.mVersionRadioButton.getSelection()) {
+				version = ECLIPSE_MAINTENANCE_VERSION;
+			} else {
+				version = ECLIPSE_DEVELOPMENT_VERSION;
+			}
+			File dbDir = new File(path, "perfDb"+version);
+			if (!dbDir.exists() || !dbDir.isDirectory()) {
+				StringBuffer message = new StringBuffer("Invalid performance database directory\n");
+				message.append(path+" should contain 'perfDb");
+				message.append(version);
+				message.append("' directory and none was found!");
+				MessageDialog.openError(getShell(), getDialogTitle(), message.toString());
+				return;
+			}
+
+			// Look for selected dir in combo box list
+			int count = this.databaseLocationCombo.getItemCount();
+			int index = -1;
+			for (int i = 0; i < count; i++) {
+				String item = this.databaseLocationCombo.getItem(i);
+				if (item.length() == 0) { // nothing in the combo-box list
+					break;
+				}
+				if (item.equals(path)) {
+					index = i;
+					break;
+				}
+			}
+			// Set the selected dir the more recent in the previous dirs list
+			if (index !=  0) {
+				if (index > 0) {
+					// the dir was used before, but not recently => remove it from previous dirs list
+					this.databaseLocationCombo.remove(index);
+				}
+				// add the selected dir on the top of the previous dirs list
+				this.databaseLocationCombo.add(path, 0);
+			}
+			// Set combo box text
+			this.databaseLocationCombo.setText(path);
+			updateLocalDb();
+		}
+	}
+
+	// Reset dabase location when 'Releng' button is pushed
+	if (source == this.dbConnectionCheckBox) {
+		updateDatabaseGroup();
+	}
+
+	// Reset dabase location when 'Releng' check-box is checked
+	if (source == this.dbLocalRadioButton) {
+		updateLocalDb();
+	}
+
+	// Add default dimension to results if necessary
+	if (source == this.resultsDimensionsList) {
+		String[] resultsDimensions = this.resultsDimensionsList.getSelection();
+		int length = resultsDimensions.length;
+		String defaultDimension = this.defaultDimensionCombo.getText();
+		for (int i = 0; i < length; i++) {
+			if (resultsDimensions[i].equals(defaultDimension)) {
+				// Default dim is already set as a results dimension, hence nothing has to be done
+				return;
+			}
+		}
+		System.arraycopy(resultsDimensions, 0, resultsDimensions = new String[length + 1], 0, length);
+		resultsDimensions[length] = defaultDimension;
+		this.resultsDimensionsList.setSelection(resultsDimensions);
+	}
+
+	if (source == this.mVersionRadioButton) {
+		if (this.mVersionRadioButton.getSelection()) {
+		    updateBrowseButtonToolTip(ECLIPSE_MAINTENANCE_VERSION);
+		}
+	}
+
+	if (source == this.dVersionRadionButton) {
+		if (this.dVersionRadionButton.getSelection()) {
+		    updateBrowseButtonToolTip(ECLIPSE_DEVELOPMENT_VERSION);
+		}
+	}
+}
+

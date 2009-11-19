@@ -1,0 +1,63 @@
+private void setDefaults() {
+
+	// Set builds if none
+	if (size() == 0 && DB_Results.DB_CONNECTION) {
+		this.allBuildNames = DB_Results.getBuilds();
+		this.components = DB_Results.getComponents();
+		initConfigs();
+	}
+
+	// Set name if null
+	if (this.name == null) {
+		setAllBuildNames();
+		if (this.name == null) { // does not know any build
+			this.name = DB_Results.getLastCurrentBuild();
+			if (this.dbRequired) {
+				if (this.name == null) {
+					throw new RuntimeException("Cannot find any current build!"); //$NON-NLS-1$
+				}
+				this.allBuildNames = DB_Results.getBuilds();
+				this.components = DB_Results.getComponents();
+				initConfigs();
+			}
+			if (this.printStream != null) {
+				this.printStream.println("	+ no build specified => use last one: "+this.name); //$NON-NLS-1$
+			}
+		}
+	}
+
+	// Init baseline name if not set
+	if (this.baselineName == null && getName() != null) {
+		String buildDate = Util.getBuildDate(getName());
+		this.baselineName = DB_Results.getLastBaselineBuild(buildDate);
+		if (this.baselineName == null && this.dbRequired) {
+			throw new RuntimeException("Cannot find any baseline to refer!"); //$NON-NLS-1$
+		}
+		if (this.printStream != null) {
+			this.printStream.println("	+ no baseline specified => use last one: "+this.baselineName); //$NON-NLS-1$
+		}
+	}
+
+	// Init baseline prefix if not set
+	if (this.baselinePrefix == null && this.baselineName != null) {
+		// Assume that baseline name format is *always* x.y_yyyyMMddhhmm_yyyyMMddhhmm
+		int index = this.baselineName.lastIndexOf('_');
+		if (index > 0) {
+			this.baselinePrefix = this.baselineName.substring(0, index);
+		} else {
+			this.baselinePrefix = DB_Results.getDbBaselinePrefix();
+		}
+	}
+
+	// Set scenario pattern default
+	if (this.scenarioPattern == null) {
+		this.scenarioPattern = "%"; //$NON-NLS-1$
+	}
+
+	// Flush print stream
+	if (this.printStream != null) {
+		this.printStream.println();
+		this.printStream.flush();
+	}
+}
+

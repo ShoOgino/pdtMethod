@@ -1,0 +1,56 @@
+/**
+ * Print the scenario all builds data from the given performance results.
+ *
+ * @param performanceResults The needed information to generate scenario data
+ */
+public void print(PerformanceResults performanceResults, PrintStream printStream, final SubMonitor subMonitor) {
+	String[] configNames = performanceResults.getConfigNames(false/*not sorted*/);
+	String[] configBoxes = performanceResults.getConfigBoxes(false/*not sorted*/);
+	int length = configNames.length;
+	int size = performanceResults.size();
+	double total = length * size;
+	subMonitor.setWorkRemaining(length*size);
+	int progress = 0;
+	for (int i=0; i<length; i++) {
+		final String configName = configNames[i];
+		final String configBox = configBoxes[i];
+
+		// Manage monitor
+		subMonitor.setTaskName("Generating data for "+configBox);
+		if (subMonitor.isCanceled()) throw new OperationCanceledException();
+
+		long start = System.currentTimeMillis();
+		if (printStream != null) printStream.print("		+ "+configName);
+		final File outputDir = new File(this.rootDir, configName);
+		outputDir.mkdir();
+		Iterator components = performanceResults.getResults();
+		while (components.hasNext()) {
+			if (printStream != null) printStream.print(".");
+			final ComponentResults componentResults = (ComponentResults) components.next();
+
+			// Manage monitor
+			int percentage = (int) ((progress++ / total) * 100);
+			subMonitor.setTaskName("Generating data for "+configBox+": "+percentage+"%");
+			subMonitor.subTask("Component "+componentResults.getName()+"...");
+
+			Display display = Display.getDefault();
+		     display.syncExec(
+				new Runnable() {
+					public void run(){
+						printSummary(configName, configBox, componentResults, outputDir, subMonitor);
+					}
+				}
+			);
+//			printSummary(configName, configBox, componentResults, outputDir, monitor);
+			printDetails(configName, configBoxes[i], componentResults, outputDir);
+
+			subMonitor.worked(1);
+			if (subMonitor.isCanceled()) throw new OperationCanceledException();
+		}
+		if (printStream != null) {
+			String duration = Util.timeString(System.currentTimeMillis()-start);
+			printStream.println(" done in "+duration);
+		}
+	}
+}
+

@@ -1,0 +1,52 @@
+/*
+ * Read the build results data from the given stream.
+ */
+void readData(DataInputStream stream) throws IOException {
+	long timeBuild = stream.readLong();
+	this.date = new Long(timeBuild).toString();
+	byte kind = stream.readByte();
+	this.baseline = kind == 0;
+	if (this.baseline) {
+		this.name = getPerformance().baselinePrefix + '_' + this.date;
+	} else {
+		String suffix = this.date.substring(0, 8) + '-' + this.date.substring(8);
+		switch (kind) {
+			case 1:
+				this.name = "N" + suffix; //$NON-NLS-1$
+				break;
+			case 2:
+				this.name = "I" + suffix; //$NON-NLS-1$
+				break;
+			case 3:
+				this.name = "M" + suffix; //$NON-NLS-1$
+				break;
+			default:
+				this.name = stream.readUTF();
+				break;
+		}
+	}
+	int length = stream.readInt();
+	this.dimensions = new Dim[length];
+	this.average = new double[length];
+	this.stddev = new double[length];
+	this.count = new long[length];
+	for (int i=0; i<length; i++) {
+		int dimId = stream.readInt();
+		DB_Results.storeDimension(dimId);
+		this.dimensions[i] = (Dim) PerformanceTestPlugin.getDimension(dimId);
+		this.average[i] = stream.readLong();
+		this.count[i] = stream.readLong();
+		this.stddev[i] = stream.readDouble();
+	}
+	this.id = DB_Results.getBuildId(this.name);
+
+	// read summary
+	this.summaryKind = stream.readInt();
+
+	// read comment
+	String str = stream.readUTF();
+	if (str.length() > 0) {
+		this.comment = str;
+	}
+}
+

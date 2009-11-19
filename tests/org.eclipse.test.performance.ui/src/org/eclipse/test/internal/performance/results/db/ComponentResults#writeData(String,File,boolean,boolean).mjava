@@ -1,0 +1,47 @@
+/*
+ * Write the component results data to the file '<component name>.dat' in the given directory.
+ */
+void writeData(String buildName, File dir, boolean temp, boolean dirty) {
+//	if (!dir.exists() && !dir.mkdirs()) {
+//		System.err.println("can't create directory "+dir); //$NON-NLS-1$
+//	}
+	File tmpFile = new File(dir, getName()+".tmp"); //$NON-NLS-1$
+	File dataFile = new File(dir, getName()+".dat"); //$NON-NLS-1$
+	if (!dirty) { // only possible on final write
+		if (tmpFile.exists()) {
+			if (dataFile.exists()) dataFile.delete();
+			tmpFile.renameTo(dataFile);
+			println("	=> rename temporary file to "+dataFile); //$NON-NLS-1$
+		}
+		return;
+	}
+	if (tmpFile.exists()) {
+		tmpFile.delete();
+	}
+	File file;
+	if (temp) {
+		file = tmpFile;
+	} else {
+		if (dataFile.exists()) {
+			dataFile.delete();
+		}
+		file = dataFile;
+	}
+	try {
+		DataOutputStream stream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
+		int size = this.children.size();
+		stream.writeUTF(lastBuildName(0));
+		stream.writeInt(size);
+		for (int i=0; i<size; i++) {
+			ScenarioResults scenarioResults = (ScenarioResults) this.children.get(i);
+			scenarioResults.write(stream);
+		}
+		stream.close();
+		println("	=> extracted data "+(temp?"temporarily ":"")+"written in file "+file); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+	} catch (FileNotFoundException e) {
+		System.err.println("can't create output file"+file); //$NON-NLS-1$
+	} catch (IOException e) {
+		e.printStackTrace();
+	}
+}
+

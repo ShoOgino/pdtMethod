@@ -1,0 +1,80 @@
+private void initialize() {
+	reset();
+	// Get performance results builds name
+	PerformanceResults perfResults = getPerformance();
+	String baselineBuildName = perfResults.getBaselineName();
+	String baselineBuildDate = baselineBuildName == null ? null : Util.getBuildDate(baselineBuildName);
+	String currentBuildName = perfResults.name;
+	String currentBuildDate = currentBuildName == null ? null : Util.getBuildDate(currentBuildName);
+
+	// Set baseline and current builds
+	BuildResults lastBaseline = null;
+	int size = size();
+	for (int i=0; i<size; i++) {
+		BuildResults buildResults = (BuildResults) this.children.get(i);
+		if (buildResults.values != null) {
+			buildResults.cleanValues();
+		}
+		if (buildResults.isBaseline()) {
+			if (lastBaseline == null || baselineBuildDate == null || baselineBuildDate.compareTo(buildResults.getDate()) >= 0) {
+				lastBaseline = buildResults;
+			}
+			if (baselineBuildName != null && buildResults.getName().equals(baselineBuildName)) {
+				this.baseline = buildResults;
+				this.baselined = true;
+			}
+		} else if (currentBuildName == null || currentBuildDate == null || (this.current == null && buildResults.getDate().compareTo(currentBuildDate) >= 0)) {
+			this.current = buildResults;
+			this.valid = true;
+		}
+	}
+	if (this.baseline == null) {
+		this.baseline = (lastBaseline == null) ? (BuildResults) this.children.get(0) : lastBaseline;
+	}
+	if (this.current == null) {
+		int idx = size() - 1;
+		BuildResults previous = (BuildResults) this.children.get(idx--);
+		while (idx >= 0 && previous.isBaseline()) {
+			previous = (BuildResults) this.children.get(idx--);
+		}
+		this.current = previous;
+	}
+
+	// Set delta between current vs. baseline and the corresponding error
+	int dim_id = DB_Results.getDefaultDimension().getId();
+	double baselineValue = this.baseline.getValue();
+	double currentValue = this.current.getValue();
+	this.delta = (currentValue - baselineValue) / baselineValue;
+	if (Double.isNaN(this.delta)) {
+		this.error = Double.NaN;
+	} else {
+		long baselineCount = this.baseline.getCount(dim_id);
+		long currentCount = this.current.getCount(dim_id);
+		if (baselineCount == 1 || currentCount == 1) {
+			this.error = Double.NaN;
+		} else {
+			double baselineError = this.baseline.getError(dim_id);
+			double currentError = this.current.getError(dim_id);
+			this.error = Double.isNaN(baselineError)
+					? currentError / baselineValue
+					: Math.sqrt(baselineError*baselineError + currentError*currentError) / baselineValue;
+		}
+	}
+
+	// Set the failure on the current build if necessary
+	int failure_threshold = getPerformance().failure_threshold;
+	if (this.delta >= (failure_threshold/100.0)) {
+		StringBuffer buffer = new StringBuffer("Performance criteria not met when compared to '"); //$NON-NLS-1$
+		buffer.append(this.baseline.getName());
+		buffer.append("': "); //$NON-NLS-1$
+		buffer.append(DB_Results.getDefaultDimension().getName());
+		buffer.append("= "); //$NON-NLS-1$
+		buffer.append(Util.timeString((long)this.current.getValue()));
+		buffer.append(" is not within [0%, "); //$NON-NLS-1$
+		buffer.append(100+failure_threshold);
+		buffer.append("'%] of "); //$NON-NLS-1$
+		buffer.append(Util.timeString((long)this.baseline.getValue()));
+		this.current.setFailure(buffer.toString());
+	}
+}
+

@@ -1,0 +1,22 @@
+/**
+ * Query all scenarios corresponding to a given scenario pattern
+ * and for a specific build name.
+ *
+ * @param scenarioPattern The pattern for all the concerned scenarios
+ * @param buildName The name of the concerned build
+ * @return Set of the query result
+ * @throws SQLException
+ */
+ResultSet queryBuildScenarios(String scenarioPattern, String buildName) throws SQLException {
+	if (this.queryBuildScenarios == null) {
+		String statement = "select distinct SCENARIO.ID, SCENARIO.NAME , SCENARIO.SHORT_NAME from SCENARIO, SAMPLE, VARIATION where " + //$NON-NLS-1$
+			"SAMPLE.VARIATION_ID = VARIATION.ID and VARIATION.KEYVALPAIRS LIKE ? and " + //$NON-NLS-1$
+			"SAMPLE.SCENARIO_ID = SCENARIO.ID and SCENARIO.NAME LIKE ? " + //$NON-NLS-1$
+			"order by SCENARIO.NAME"; //$NON-NLS-1$
+		this.queryBuildScenarios = this.fConnection.prepareStatement(statement);
+	}
+	this.queryBuildScenarios.setString(1, "|build=" + buildName + '%'); //$NON-NLS-1$
+	this.queryBuildScenarios.setString(2, scenarioPattern);
+	return this.queryBuildScenarios.executeQuery();
+}
+

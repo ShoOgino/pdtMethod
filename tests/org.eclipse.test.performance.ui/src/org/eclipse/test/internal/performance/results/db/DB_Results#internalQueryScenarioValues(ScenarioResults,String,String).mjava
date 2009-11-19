@@ -1,0 +1,49 @@
+private void internalQueryScenarioValues(ScenarioResults scenarioResults, String configPattern, String buildName) {
+	if (this.fSQL == null) return;
+	if (DEBUG) {
+		DEBUG_WRITER.print("	- DB query all data points for config pattern: "+configPattern+" for scenario: " + scenarioResults.getShortName()); //$NON-NLS-1$ //$NON-NLS-2$
+		if (buildName != null) DEBUG_WRITER.print(" for build: "+buildName); //$NON-NLS-1$
+	}
+	internalQueryAllVariations(configPattern); // need to read all variations to have all build names
+	ResultSet result = null;
+	try {
+		int count = 0;
+
+		result = buildName == null
+			?	this.fSQL.queryScenarioDataPoints(configPattern, scenarioResults.getId())
+			:	this.fSQL.queryScenarioBuildDataPoints(configPattern, scenarioResults.getId(), buildName);
+		while (result.next()) {
+			int dp_id = result.getInt(1);
+			int step = result.getInt(2);
+			String variation = result.getString(3); //  something like "|build=I20070615-1200||config=eclipseperfwin2_R3.3||jvm=sun|"
+			StringTokenizer tokenizer = new StringTokenizer(variation, "=|"); //$NON-NLS-1$
+			tokenizer.nextToken(); 													// 'build'
+			int build_id = getBuildId(tokenizer.nextToken());		// 'I20070615-1200'
+			tokenizer.nextToken();													// 'config'
+			int config_id = getConfigId(tokenizer.nextToken()); 		// 'eclipseperflnx3'
+			ResultSet rs2 = this.fSQL.queryDimScalars(dp_id);
+			while (rs2.next()) {
+				int dim_id = rs2.getInt(1);
+				storeDimension(dim_id);
+				BigDecimal decimalValue = rs2.getBigDecimal(2);
+				long value = decimalValue.longValue();
+				if (build_id >= 0) { // build id may be negative (i.e. not stored in the array) if new run starts while we're getting results
+					scenarioResults.setValue(build_id, dim_id, config_id, step, value);
+				}
+				count++;
+			}
+		}
+		if (LOG) LOG_WRITER.ends("		-> " + count + " values read");  //$NON-NLS-1$ //$NON-NLS-2$
+	} catch (SQLException e) {
+		PerformanceTestPlugin.log(e);
+	} finally {
+		if (result != null) {
+			try {
+				result.close();
+			} catch (SQLException e1) {
+				// ignored
+			}
+		}
+	}
+}
+

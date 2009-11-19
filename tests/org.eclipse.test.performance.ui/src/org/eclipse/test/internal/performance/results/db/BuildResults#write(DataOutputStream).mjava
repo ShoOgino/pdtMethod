@@ -1,0 +1,47 @@
+/*
+ * Write the build results data in the given stream.
+ */
+void write(DataOutputStream stream) throws IOException {
+	long timeBuild = -1;
+    try {
+	    timeBuild = Long.parseLong(getDate());
+    } catch (NumberFormatException nfe) {
+	    // do nothing
+    	nfe.printStackTrace();
+    }
+	stream.writeLong(timeBuild);
+	byte kind = 0; // baseline
+	if (!this.baseline) {
+		switch (this.name.charAt(0)) {
+			case 'N':
+				kind = 1;
+				break;
+			case 'I':
+				kind = 2;
+				break;
+			case 'M':
+				kind = 3;
+				break;
+			default:
+				kind = 4;
+				break;
+		}
+	}
+	stream.writeByte(kind);
+	if (kind == 4) {
+		stream.writeUTF(this.name);
+	}
+	int length = this.dimensions == null ? 0 : this.dimensions.length;
+	stream.writeInt(length);
+	for (int i=0; i<length; i++) {
+		stream.writeInt(this.dimensions[i].getId());
+		stream.writeLong((long)this.average[i]) ;
+		stream.writeLong(this.count[i]);
+		stream.writeDouble(this.stddev[i]);
+	}
+
+	// Write extra infos (summary, failure and comment)
+	stream.writeInt(this.summaryKind);
+	stream.writeUTF(this.comment == null ? "" : this.comment) ; //$NON-NLS-1$
+}
+

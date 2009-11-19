@@ -1,0 +1,42 @@
+private void internalQueryScenarioSummaries(ScenarioResults scenarioResults, String config, String[] builds) {
+	if (this.fSQL == null) return;
+	long start = System.currentTimeMillis();
+	if (DEBUG) {
+		DEBUG_WRITER.print("	- DB query all summaries for scenario '"+scenarioResults.getShortName()+"' of '"+config+"' config"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+	}
+	internalQueryAllComments();
+	ResultSet result = null;
+	try {
+		int scenarioID = scenarioResults.getId();
+		// First try to get summaries of elapsed process dimension
+		result = this.fSQL.queryScenarioSummaries(scenarioID, config, builds);
+		while (result.next()) {
+			String variation = result.getString(1); //  something like "|build=I20070615-1200||config=eclipseperfwin2_R3.3||jvm=sun|"
+			int summaryKind = result.getShort(2);
+			int comment_id = result.getInt(3);
+			int dim_id = result.getInt(4);
+			if (dim_id != 0) storeDimension(dim_id);
+			StringTokenizer tokenizer = new StringTokenizer(variation, "=|"); //$NON-NLS-1$
+			tokenizer.nextToken(); 													// 'build'
+			String buildName = tokenizer.nextToken();					// 'I20070615-1200'
+			tokenizer.nextToken();													// 'config'
+			int config_id = getConfigId(tokenizer.nextToken()); 		// 'eclipseperflnx3'
+			int build_id = getBuildId(buildName);
+			if (build_id >= 0) {
+				scenarioResults.setInfos(config_id, build_id, dim_id==0?-1:summaryKind, COMMENTS[comment_id]);
+			}
+		}
+	} catch (SQLException e) {
+		PerformanceTestPlugin.log(e);
+	} finally {
+		if (result != null) {
+			try {
+				result.close();
+			} catch (SQLException e1) {
+				// ignored
+			}
+		}
+		if (DEBUG) DEBUG_WRITER.println("done in " + (System.currentTimeMillis() - start) + "ms]"); //$NON-NLS-1$ //$NON-NLS-2$
+	}
+}
+

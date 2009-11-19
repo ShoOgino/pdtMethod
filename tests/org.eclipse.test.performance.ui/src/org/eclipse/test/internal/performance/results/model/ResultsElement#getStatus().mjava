@@ -1,0 +1,50 @@
+/**
+ * Return the status of the element.
+ *
+ * The status is a bit mask pattern where digits are
+ * allowed as follow:
+ *	<ul>
+ * 		<li>0-3: bits for state showing whether the element is
+ * 			<ul>
+ * 				<li>{@link #UNKNOWN} : not connected to a db</li>
+ * 				<li>{@link #UNREAD} : is not valid (e.g. NaN results)</li>
+ * 				<li>{@link #MISSING} : no results (e.g. the perf machine crashed and didn't store any results)</li>
+ * 				<li>{@link #READ} : has valid results</li>
+ * 			</ul>
+ * 		</li>
+ * 		<li>4-5: bits for information. Current possible information are
+ * 			<ul>
+ * 				<li>{@link #SMALL_VALUE} : build results or delta with baseline value is under 100ms</li>
+ * 				<li>{@link #STUDENT_TTEST} : the Student T-test is over the threshold (old yellow color for test results)</li>
+ * 			</ul>
+ * 		</li>
+ * 		<li>6-11: bits for warnings. Current possible warnings are
+ * 			<ul>
+ * 				<li>{@link #NO_BASELINE} : no baseline for the current build</li>
+ * 				<li>{@link #SINGLE_RUN} : the test has only one run (i.e. no error could be computed), hence its reliability cannot be evaluated</li>
+ * 				<li>{@link #BIG_ERROR} : the test result is over the 3% threshold</li>
+ * 				<li>{@link #NOT_STABLE} : the test history shows a deviation between 10% and 20% (may mean that this test is not so reliable)</li>
+ * 				<li>{@link #NOT_RELIABLE} : the test history shows a deviation over 20% (surely means that this test is too erratic to be reliable)</li>
+ * 			</ul>
+ * 		</li>
+ * 		<li>12-15: bits for errors. Current possible errors are
+ * 			<ul>
+ * 				<li>{@link #BIG_DELTA} : the delta for the test is over the 10% threshold</li>
+ * 			</ul>
+ * 		</li>
+ *	</ul>
+ *
+ * Note that these explanation applied to {@link BuildResultsElement}, and {@link DimResultsElement}.
+ * For {@link ComponentResultsElement}, and {@link ScenarioResultsElement}, it's the merge of all the children status
+ * and means "Some tests have..." instead of "The test has...". For {@link ConfigResultsElement}, it means the status
+ * of the most recent build compared to its most recent baseline.
+ *
+ * @return An int with each bit set when the corresponding symptom applies.
+ */
+public final int getStatus() {
+	if (this.status < 0) {
+		initStatus();
+	}
+	return this.status;
+}
+

@@ -1,0 +1,117 @@
+    public void paint(Image im) {
+
+        Rectangle bounds= im.getBounds();
+
+        GC g= new GC(im);
+
+        Point ee= g.stringExtent(this.fTitle);
+        int titleHeight= ee.y;
+
+        double maxItem= getMaxItem();
+        double minItem= getMinItem();
+
+        int max= (int) (Math.ceil(maxItem * (maxItem < 0 ? 0.8 : 1.2)));
+        int min= (int) (Math.floor(minItem * (minItem < 0 ? 1.2 : 0.8)));
+
+        String smin= this.fDimension.getDisplayValue(min);
+        Point emin= g.stringExtent(smin);
+
+        String smax= this.fDimension.getDisplayValue(max);
+        Point emax= g.stringExtent(smax);
+
+        int labelWidth= Math.max(emin.x, emax.x) + 2;
+
+        int top= PADDING;
+        int bottom= bounds.height - titleHeight - PADDING;
+        int left= PADDING + labelWidth;
+
+        //getMostRecent
+        TimeLineGraphItem lastItem= getMostRecent(this.fItemGroups);
+        int right=bounds.width - PADDING/2;
+        if (lastItem!=null)
+        	right= bounds.width - lastItem.getSize(g).x - PADDING/2;
+
+        // draw the max and min values
+        g.drawString(smin, PADDING/2+labelWidth-emin.x, bottom-titleHeight, true);
+        g.drawString(smax, PADDING/2+labelWidth-emax.x, top, true);
+        g.drawString("TIME (not drawn to scale)", (right-left)/3+PADDING+titleHeight,bottom-PADDING+(titleHeight*2), true);
+
+        // draw the vertical and horizontal lines
+        g.drawLine(left, top, left, bottom);
+        g.drawLine(left, bottom, right, bottom);
+
+        Color oldbg= g.getBackground();
+        Color oldfg= g.getForeground();
+
+        setCoordinates(right-left,left,bottom-top,bottom,max-min);
+
+        Enumeration _enum=this.fItemGroups.elements();
+        Comparator comparator=new TimeLineGraphItem.GraphItemComparator();
+
+        while (_enum.hasMoreElements()) {
+ 			List items = (List) _enum.nextElement();
+			Object[] fItemsArray=items.toArray();
+			Arrays.sort(fItemsArray,comparator);
+			int lastx = 0;
+			int lasty = 0;
+
+			int n = fItemsArray.length;
+
+			for (int i = 0; i < n; i++) {
+				TimeLineGraphItem thisItem = (TimeLineGraphItem) fItemsArray[i];
+
+				int yposition = thisItem.y;
+				int xposition = thisItem.x;
+				g.setLineWidth(1);
+
+				g.setBackground(thisItem.color);
+				g.setForeground(thisItem.color);
+
+				if (thisItem.drawAsBaseline){
+					g.setLineWidth(0);
+					g.drawLine(xposition, yposition,right,yposition);
+					g.drawLine(left,yposition,xposition, yposition);
+    		    }
+
+				if (i > 0) // don't draw for first segment
+					g.drawLine(lastx, lasty, xposition, yposition);
+
+				g.setBackground(thisItem.color);
+				g.setForeground(thisItem.color);
+			//	g.fillOval(xposition - 2, yposition - 2, 6, 6);
+				g.fillRectangle(xposition - 2, yposition - 2, 5, 5);
+
+				if (thisItem.isSpecial)
+					g.drawRectangle(xposition -4, yposition - 4, 8, 8);
+
+				if (this.fAreaBuffer == null)
+					this.fAreaBuffer = new StringBuffer();
+
+				this.fAreaBuffer.append("\r<area shape=\"circle\" coords=\""
+						+ (xposition - 2) + ',' + (yposition - 2) + ',' + 5
+						+ " alt=\"" + thisItem.title + ": "
+						+ thisItem.description + "\"" + " title=\""
+						+ thisItem.title + ": " + thisItem.description + "\">");
+
+				int shift;
+				if (i > 0 && yposition < lasty)
+					shift = 3; // below dot
+				else
+					shift = -(2 * titleHeight + 3); // above dot
+				if (thisItem.displayDescription) {
+					g.drawString(thisItem.title, xposition + 2, yposition
+							+ shift, true);
+					g.drawString(thisItem.description, xposition + 2, yposition
+							+ shift + titleHeight, true);
+				}
+				g.setBackground(oldbg);
+				g.setForeground(oldfg);
+
+				lastx = xposition;
+				lasty = yposition;
+			}
+		}
+
+        g.dispose();
+    }
+

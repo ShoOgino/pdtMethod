@@ -1,0 +1,28 @@
+/**
+ * Select a results element in the tree.
+ */
+public void select(ComponentResultsElement componentResults, String configName, String scenarioName, String buildName) {
+
+	// Collapse previous expanded components except the requested one
+	// TODO (frederic) also collapse expanded components children elements
+	this.expandedComponents.remove(componentResults);
+	Iterator iterator = this.expandedComponents.iterator();
+	while (iterator.hasNext()) {
+		this.viewer.collapseToLevel(iterator.next(), AbstractTreeViewer.ALL_LEVELS);
+	}
+	this.expandedComponents.clear();
+
+	// Set the tree selection
+	ScenarioResultsElement scenarioResultsElement = (ScenarioResultsElement) componentResults.getResultsElement(scenarioName);
+	if (scenarioResultsElement != null) {
+		ConfigResultsElement configResultsElement = (ConfigResultsElement) scenarioResultsElement.getResultsElement(configName);
+		if (configResultsElement != null) {
+			BuildResultsElement buildResultsElement = (BuildResultsElement) configResultsElement.getResultsElement(buildName);
+			if (buildResultsElement != null) {
+				this.viewer.setSelection(new StructuredSelection(buildResultsElement), true);
+				this.setFocus();
+			}
+		}
+	}
+}
+

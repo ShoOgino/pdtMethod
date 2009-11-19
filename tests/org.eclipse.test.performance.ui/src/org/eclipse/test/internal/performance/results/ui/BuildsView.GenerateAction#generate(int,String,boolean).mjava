@@ -1,0 +1,62 @@
+		/*
+		 * Generate the HTML pages.
+		 */
+		private void generate(int i, final String baselineName, final boolean fingerprints) {
+			// Create output directory
+			final String buildName = BuildsView.this.buildsResults[i].getName();
+			final File genDir = new File(BuildsView.this.outputDir, buildName);
+			if (!genDir.exists() && !genDir.mkdir()) {
+				MessageDialog.openError(BuildsView.this.shell, getTitleToolTip(), "Cannot create " + genDir.getPath() + " to generate results!");
+				return;
+			}
+
+			// Create runnable
+			IRunnableWithProgress runnable = new IRunnableWithProgress() {
+
+				public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
+					try {
+						monitor.beginTask("Generate performance results", 10000);
+						GenerateResults generation = new GenerateResults(BuildsView.this.results.getPerformanceResults(),
+						    buildName,
+						    baselineName,
+						    fingerprints,
+						    BuildsView.this.dataDir,
+						    genDir);
+						GenerateAction.this.status = generation.run(monitor);
+						monitor.done();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			};
+
+			// Run with progress monitor
+			ProgressMonitorDialog readProgress = new ProgressMonitorDialog(getSite().getShell());
+			try {
+				readProgress.run(true, true, runnable);
+			} catch (InvocationTargetException e) {
+				// skip
+			} catch (InterruptedException e) {
+				// skip
+			}
+
+			// Results
+			if (!this.status.isOK()) {
+				StringWriter swriter = new StringWriter();
+				PrintWriter pwriter = new PrintWriter(swriter);
+				swriter.write(this.status.getMessage());
+				Throwable ex = this.status.getException();
+				if (ex != null) {
+					swriter.write(": ");
+					swriter.write(ex.getMessage());
+					swriter.write('\n');
+					ex.printStackTrace(pwriter);
+				}
+				MessageDialog.open(this.status.getSeverity(),
+				    BuildsView.this.shell,
+				    getTitleToolTip(),
+				    swriter.toString(),
+				    SWT.NONE);
+			}
+		}
+

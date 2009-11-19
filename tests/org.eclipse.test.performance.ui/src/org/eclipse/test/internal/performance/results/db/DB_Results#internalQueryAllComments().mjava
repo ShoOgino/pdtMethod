@@ -1,0 +1,40 @@
+/*
+ * Query all comments from database
+ */
+private void internalQueryAllComments() {
+	if (this.fSQL == null) return;
+	if (COMMENTS != null) return;
+	long start = System.currentTimeMillis();
+	if (DEBUG) DEBUG_WRITER.print("		[DB query all comments..."); //$NON-NLS-1$
+	ResultSet result = null;
+	try {
+		String[] comments = null;
+		result = this.fSQL.queryAllComments();
+		while (result.next()) {
+			int commentID = result.getInt(1);
+			// Ignore kind as there's only one
+			// int commentKind = result.getInt(2);
+			String comment = result.getString(3);
+			if (comments == null) {
+				comments = new String[commentID+10];
+			} else if (commentID >= comments.length) {
+				int length = comments.length;
+				System.arraycopy(comments, 0, comments = new String[commentID+10], 0, length);
+			}
+			comments[commentID] = comment;
+		}
+		COMMENTS = comments;
+	} catch (SQLException e) {
+		PerformanceTestPlugin.log(e);
+	} finally {
+		if (result != null) {
+			try {
+				result.close();
+			} catch (SQLException e1) {
+				// ignored
+			}
+		}
+		if (DEBUG) DEBUG_WRITER.println("done in " + (System.currentTimeMillis() - start) + "ms]"); //$NON-NLS-1$ //$NON-NLS-2$
+	}
+}
+

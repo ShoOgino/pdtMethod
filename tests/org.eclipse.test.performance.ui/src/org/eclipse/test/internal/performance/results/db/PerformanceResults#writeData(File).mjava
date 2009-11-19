@@ -1,0 +1,70 @@
+/*
+ * Write general information.
+ */
+void writeData(File dir) {
+	if (dir ==null || (!dir.exists() && !dir.mkdirs())) {
+		System.err.println("can't create directory " + dir); //$NON-NLS-1$
+		return;
+	}
+	File dataFile = new File(dir, "performances.dat"); //$NON-NLS-1$
+	if (dataFile.exists()) {
+		if (this.updateLocalFileNeed) {
+			dataFile.delete();
+		} else {
+			return;
+		}
+	} else if (!DB_Results.DB_CONNECTION) {
+		// Only write new local file if there's a database connection
+		// otherwise contents may not be complete...
+		return;
+	}
+	try {
+		DataOutputStream stream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(dataFile)));
+
+		// Write build info
+		stream.writeUTF(this.name == null ? DB_Results.getLastCurrentBuild() : this.name);
+		stream.writeUTF(this.baselineName == null ? DB_Results.getLastBaselineBuild(null) : this.baselineName);
+		stream.writeUTF(this.baselinePrefix == null ? "" : this.baselinePrefix);
+
+		// Write configs info
+		int length = this.sortedConfigNames.length;
+		stream.writeInt(length);
+		for (int i = 0; i < length; i++) {
+			stream.writeUTF(this.sortedConfigNames[i]);
+			stream.writeUTF(this.sortedConfigDescriptions[i]);
+		}
+
+		// Write builds info
+		String[] builds = this.allBuildNames == null ? DB_Results.getBuilds() : this.allBuildNames;
+		length = builds.length;
+		stream.writeInt(length);
+		for (int i = 0; i < length; i++) {
+			stream.writeUTF(builds[i]);
+		}
+
+		// Write scenarios info
+		length = this.components.length;
+		stream.writeInt(length);
+		for (int i = 0; i < length; i++) {
+			stream.writeUTF(this.components[i]);
+			List scenarios = (List) this.allScenarios.get(this.components[i]);
+			int size = scenarios.size();
+			stream.writeInt(size);
+			for (int j=0; j<size; j++) {
+				final ScenarioResults scenarioResults = (ScenarioResults)scenarios.get(j);
+				stream.writeInt(scenarioResults.getId());
+				stream.writeUTF(scenarioResults.getName());
+				stream.writeUTF(scenarioResults.getLabel());
+			}
+		}
+
+		// Close
+		stream.close();
+		println("	=> performance results general data  written in file " + dataFile); //$NON-NLS-1$
+	} catch (FileNotFoundException e) {
+		System.err.println("can't create output file" + dataFile); //$NON-NLS-1$
+	} catch (IOException e) {
+		e.printStackTrace();
+	}
+}
+

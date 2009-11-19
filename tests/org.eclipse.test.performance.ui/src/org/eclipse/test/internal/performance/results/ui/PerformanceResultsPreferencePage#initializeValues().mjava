@@ -1,0 +1,82 @@
+/**
+ * Initializes states of the controls from the preference store.
+ */
+private void initializeValues() {
+	IPreferenceStore store = getPreferenceStore();
+
+	this.dbConnectionCheckBox.setSelection(store.getBoolean(PRE_DATABASE_CONNECTION));
+	final boolean dbLocal = store.getBoolean(PRE_DATABASE_LOCAL);
+	if (dbLocal) {
+		this.dbLocalRadioButton.setSelection(true);
+		this.dbRelengRadioButton.setToolTipText("");
+	} else {
+		this.dbRelengRadioButton.setSelection(true);
+		this.dbRelengRadioButton.setToolTipText(NETWORK_DATABASE_LOCATION);
+	}
+	this.databaseLocationCombo.removeAll();
+	this.databaseLocationCombo.setText(store.getString(PRE_DATABASE_LOCATION));
+	for (int i = 0; i < 3; i++) {
+		String history = store.getString(PRE_DATABASE_LOCATION + "." + i);
+		if (history.length() == 0)
+			break;
+		this.databaseLocationCombo.add(history);
+	}
+	updateDatabaseGroup();
+
+
+	// Init eclipse version
+	int version = store.getInt(PRE_ECLIPSE_VERSION);
+	if (version == ECLIPSE_MAINTENANCE_VERSION) {
+		this.mVersionRadioButton.setSelection(true);
+	} else {
+		this.dVersionRadionButton.setSelection(true);
+	}
+    updateBrowseButtonToolTip(version);
+
+	// Milestones
+	String prefix = PRE_MILESTONE_BUILDS + "." + version;
+	int index = 0;
+	String milestone = store.getString(prefix + index);
+	while (milestone != null && milestone.length() > 0) {
+		this.milestonesCombo.add(milestone);
+		index++;
+		milestone = store.getString(prefix + index);
+	}
+
+	// Init composite lists
+	initDimensionsLists();
+
+	// Init default dimension
+	String defaultDimension = store.getString(PRE_DEFAULT_DIMENSION);
+	this.defaultDimensionCombo.setText(defaultDimension);
+
+	// Init generated dimensions
+	int count = this.resultsDimensionsList.getItemCount();
+	int[] indices = new int[count];
+	int n = 0;
+	String resultsDimension = store.getString(PRE_RESULTS_DIMENSION + "." + n);
+	while (resultsDimension.length() > 0) {
+		indices[n++] = this.resultsDimensionsList.indexOf(resultsDimension);
+		resultsDimension = store.getString(PRE_RESULTS_DIMENSION + "." + n);
+	}
+	if (n < count) {
+		System.arraycopy(indices, 0, indices = new int[n], 0, n);
+	}
+	this.resultsDimensionsList.select(indices);
+
+	// Init config descriptors
+	/* TODO See whether config descriptors need to be set as preferences or not...
+	this.configDescriptorsTable.clearAll();
+	int d = 0;
+	String descriptorName = store.getString(PRE_CONFIG_DESCRIPTOR_NAME + "." + d);
+	String descriptorDescription = store.getString(PRE_CONFIG_DESCRIPTOR_DESCRIPTION + "." + d++);
+	while (descriptorName.length() > 0) {
+		TableItem tableItem = new TableItem (this.configDescriptorsTable, SWT.NONE);
+		tableItem.setText (0, descriptorName);
+		tableItem.setText (1, descriptorDescription);
+		descriptorName = store.getString(PRE_CONFIG_DESCRIPTOR_NAME + "." + d);
+		descriptorDescription = store.getString(PRE_CONFIG_DESCRIPTOR_DESCRIPTION + "." + d++);
+	}
+	*/
+}
+

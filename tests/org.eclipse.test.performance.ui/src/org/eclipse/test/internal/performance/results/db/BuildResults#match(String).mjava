@@ -1,0 +1,34 @@
+/*
+ * Returns a given pattern match the build name or not.
+ */
+boolean match(String pattern) {
+	if (pattern.equals("*")) return true; //$NON-NLS-1$
+	if (pattern.indexOf('*') < 0 && pattern.indexOf('?') < 0) {
+		pattern += "*"; //$NON-NLS-1$
+	}
+	StringTokenizer tokenizer = new StringTokenizer(pattern, "*?", true); //$NON-NLS-1$
+	int start = 0;
+	String previous = ""; //$NON-NLS-1$
+	while (tokenizer.hasMoreTokens()) {
+		String token = tokenizer.nextToken();
+		if (!token.equals("*") && !token.equals("?")) { //$NON-NLS-1$ //$NON-NLS-2$
+			if (previous.equals("*")) { //$NON-NLS-1$
+				int idx = this.name.substring(start).indexOf(token);
+				if (idx < 0) return false;
+				start += idx;
+			} else {
+				if (previous.equals("?")) start++; //$NON-NLS-1$
+				if (!this.name.substring(start).startsWith(token)) return false;
+			}
+			start += token.length();
+		}
+		previous = token;
+	}
+	if (previous.equals("*")) { //$NON-NLS-1$
+		return true;
+	} else if (previous.equals("?")) { //$NON-NLS-1$
+		return this.name.length() == start;
+	}
+	return this.name.endsWith(previous);
+}
+

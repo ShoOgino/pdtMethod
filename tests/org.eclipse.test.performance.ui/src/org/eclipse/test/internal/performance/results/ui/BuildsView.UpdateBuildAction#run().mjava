@@ -1,0 +1,36 @@
+		public void run() {
+
+			// Verify that directories are set
+			if (BuildsView.this.dataDir == null) {
+				if (changeDataDir() == null) {
+					if (!MessageDialog.openConfirm(BuildsView.this.shell, getTitleToolTip(), "No local files directory is set, hence the update could not be written! OK to continue?")) {
+						return;
+					}
+				}
+			}
+
+			// Progress dialog
+			IRunnableWithProgress runnable = new IRunnableWithProgress() {
+
+				public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
+					try {
+						updateBuilds(monitor);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			};
+			ProgressMonitorDialog readProgress = new ProgressMonitorDialog(getSite().getShell());
+			try {
+				readProgress.run(true, true, runnable);
+			} catch (InvocationTargetException e) {
+				return;
+			} catch (InterruptedException e) {
+				return;
+			}
+
+			// Reset Components and Builds views input
+			refreshInput();
+			getSiblingView().refreshInput();
+		}
+

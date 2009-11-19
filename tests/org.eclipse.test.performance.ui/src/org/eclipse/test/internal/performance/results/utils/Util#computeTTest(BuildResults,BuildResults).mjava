@@ -1,0 +1,34 @@
+/**
+ * Compute the student t-test values.
+ *
+ * @see "http://en.wikipedia.org/wiki/Student's_t-test"
+ *
+ * @param baselineResults The baseline build
+ * @param buildResults The current build
+ * @return The student t-test value as a double.
+ */
+public static double computeTTest(BuildResults baselineResults, BuildResults buildResults) {
+
+	double ref = baselineResults.getValue();
+	double val = buildResults.getValue();
+
+	double delta = ref - val;
+	long dfRef = baselineResults.getCount() - 1;
+	double sdRef = baselineResults.getDeviation();
+	long dfVal = buildResults.getCount() - 1;
+	double sdVal = buildResults.getDeviation();
+	// TODO if the stdev's are not sufficiently similar, we have to take a
+	// different approach
+
+	if (!Double.isNaN(sdRef) && !Double.isNaN(sdVal) && dfRef > 0 && dfVal > 0) {
+		long df = dfRef + dfVal;
+		double sp_square = (dfRef * sdRef * sdRef + dfVal * sdVal * sdVal) / df;
+
+		double se_diff = Math.sqrt(sp_square * (1.0 / (dfRef + 1) + 1.0 / (dfVal + 1)));
+		double t = Math.abs(delta / se_diff);
+		return t;
+	}
+
+	return -1;
+}
+

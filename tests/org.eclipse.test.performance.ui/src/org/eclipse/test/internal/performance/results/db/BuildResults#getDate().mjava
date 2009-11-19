@@ -1,0 +1,36 @@
+/**
+ * Returns the date of the build which is a part of its name.
+ *
+ * @return The date of the build as yyyyMMddHHmm
+ */
+public String getDate() {
+	if (this.date == null) {
+		if (this.baseline) {
+			int length = this.name.length();
+			this.date = this.name.substring(length-12, length);
+		} else {
+			char first = this.name.charAt(0);
+			if (first == 'N' || first == 'I' || first == 'M') { // TODO (frederic) should be buildIdPrefixes...
+				if (this.name.length() == 14) {
+					this.date = this.name.substring(1, 9)+this.name.substring(10, 14);
+				} else {
+					this.date = this.name.substring(1);
+				}
+			} else {
+				int length = this.name.length() - 12 /* length of date */;
+				for (int i=0; i<=length; i++) {
+					try {
+						String substring = i == 0 ? this.name : this.name.substring(i);
+						Util.DATE_FORMAT.parse(substring);
+						this.date = substring; // if no exception is raised then the substring has a correct date format => store it
+						break;
+					} catch(ParseException ex) {
+						// skip
+					}
+				}
+			}
+		}
+	}
+	return this.date;
+}
+

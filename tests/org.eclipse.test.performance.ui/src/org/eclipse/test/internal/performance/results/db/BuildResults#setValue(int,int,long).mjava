@@ -1,0 +1,65 @@
+/*
+ * Set the build value from database information.
+ */
+void setValue(int dim_id, int step, long value) {
+	int length = DB_Results.getDimensions().length;
+	Dim dimension = (Dim) PerformanceTestPlugin.getDimension(dim_id);
+	int idx = 0;
+	if (this.dimensions == null){
+		this.dimensions = new Dim[length];
+		this.average = new double[length];
+		this.stddev = new double[length];
+		this.count = new long[length];
+		this.dimensions[0] = dimension;
+		for (int i=0; i<length; i++) {
+			// init average numbers with an impossible value
+			// to clearly identify whether it's already set or not
+			// when several measures are made for the same build
+			this.average[i] = IMPOSSIBLE_VALUE;
+		}
+	} else {
+		length = this.dimensions.length;
+		for (int i=0; i<length; i++) {
+			if (this.dimensions[i] == null) {
+				this.dimensions[i] = dimension;
+				idx = i;
+				break;
+			}
+			if (this.dimensions[i].getId() == dim_id) {
+				idx = i;
+				break;
+			}
+		}
+	}
+	switch (step) {
+		case InternalPerformanceMeter.AVERAGE:
+			if (this.average[idx] != IMPOSSIBLE_VALUE) {
+				if (this.values == null) {
+					this.values = new double[length][];
+					this.values[idx] = new double[2];
+					this.values[idx][0] = this.average[idx];
+					this.values[idx][1] = value;
+					this.average[idx] = IMPOSSIBLE_VALUE;
+				} else if (this.values[idx] == null) {
+					this.values[idx] = new double[2];
+					this.values[idx][0] = this.average[idx];
+					this.values[idx][1] = value;
+					this.average[idx] = IMPOSSIBLE_VALUE;
+				}
+			} else if (this.values != null && this.values[idx] != null) {
+				int vLength = this.values[idx].length;
+				System.arraycopy(this.values[idx], 0, this.values[idx] = new double[vLength+1], 0, vLength);
+				this.values[idx][vLength] = value;
+			} else {
+				this.average[idx] = value;
+			}
+			break;
+		case InternalPerformanceMeter.STDEV:
+			this.stddev[idx] += Double.longBitsToDouble(value);
+			break;
+		case InternalPerformanceMeter.SIZE:
+			this.count[idx] += value;
+			break;
+	}
+}
+

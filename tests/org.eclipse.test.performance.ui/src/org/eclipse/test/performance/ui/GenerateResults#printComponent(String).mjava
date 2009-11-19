@@ -1,0 +1,80 @@
+/*
+ * Print component PHP file
+ */
+private void printComponent(/*PerformanceResults performanceResults, */String component) throws FileNotFoundException {
+	if (this.printStream != null) this.printStream.print(".");
+	File outputFile = new File(this.outputDir, component + ".php");
+	PrintStream stream = new PrintStream(new BufferedOutputStream(new FileOutputStream(outputFile)));
+
+	// Print header
+	boolean isGlobal = component.startsWith("global");
+	if (isGlobal) {
+		File globalFile = new File(this.outputDir, "global.php");
+		PrintStream gStream = new PrintStream(new BufferedOutputStream(new FileOutputStream(globalFile)));
+		gStream.print(Utils.HTML_OPEN);
+		gStream.print("</head>\n");
+		gStream.print("<body>\n");
+		gStream.print("<?php\n");
+		gStream.print("	include(\"global_fp.php\");\n");
+		gStream.print("?>\n");
+		gStream.print("<table border=0 cellpadding=2 cellspacing=5 width=\"100%\">\n");
+		gStream.print("<tbody><tr> <td colspan=3 align=\"left\" bgcolor=\"#0080c0\" valign=\"top\"><b><font color=\"#ffffff\" face=\"Arial,Helvetica\">\n");
+		gStream.print("Detailed performance data grouped by scenario prefix</font></b></td></tr></tbody></table>\n");
+		gStream.print("<a href=\"org.eclipse.php.core.php?\">org.eclipse.php.core*</a><br>\n");
+		gStream.print("</body>\n");
+		gStream.print(Utils.HTML_CLOSE);
+		gStream.close();
+	} else {
+		stream.print(Utils.HTML_OPEN);
+	}
+	stream.print("<link href=\""+Utils.TOOLTIP_STYLE+"\" rel=\"stylesheet\" type=\"text/css\">\n");
+	stream.print("<script src=\""+Utils.TOOLTIP_SCRIPT+"\"></script>\n");
+	stream.print("<script src=\""+Utils.FINGERPRINT_SCRIPT+"\"></script>\n");
+	stream.print(Utils.HTML_DEFAULT_CSS);
+
+	// Print title
+	stream.print("<body>");
+	printComponentTitle(/*performanceResults, */component, isGlobal, stream);
+
+	// print the html representation of fingerprint for each config
+	Display display = Display.getDefault();
+	if (this.genFingerPrints || this.genAll) {
+		final FingerPrint fingerprint = new FingerPrint(component, stream, this.outputDir);
+		display.syncExec(
+			new Runnable() {
+				public void run(){
+					try {
+						fingerprint.print(GenerateResults.this.performanceResults);
+					} catch (Exception ex) {
+						ex.printStackTrace();
+					}
+				}
+			}
+		);
+	}
+//	FingerPrint fingerprint = new FingerPrint(component, stream, this.outputDir);
+//	fingerprint.print(performanceResults);
+
+	// print scenario status table
+	if (!isGlobal) {
+		// print the component scenario status table beneath the fingerprint
+		final ScenarioStatusTable sst = new ScenarioStatusTable(component, stream);
+		display.syncExec(
+			new Runnable() {
+				public void run(){
+					try {
+						sst.print(GenerateResults.this.performanceResults);
+					} catch (Exception ex) {
+						ex.printStackTrace();
+					}
+				}
+			}
+		);
+//		ScenarioStatusTable sst = new ScenarioStatusTable(component, stream);
+//		sst.print(performanceResults);
+	}
+
+	stream.print(Utils.HTML_CLOSE);
+	stream.close();
+}
+

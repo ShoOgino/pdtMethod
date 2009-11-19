@@ -1,0 +1,283 @@
+/*
+ * Parse the command arguments and create corresponding performance
+ * results object.
+ */
+private void parse(String[] args) {
+	StringBuffer buffer = new StringBuffer("Parameters used to generate performance results (");
+	buffer.append(new SimpleDateFormat().format(new Date(System.currentTimeMillis())));
+	buffer.append("):\n");
+	int i = 0;
+	int argsLength = args.length;
+	if (argsLength == 0) {
+		printUsage();
+	}
+
+	String currentBuildId = null;
+	String baseline = null;
+	String jvm = null;
+	this.configDescriptors = null;
+
+	while (i < argsLength) {
+		String arg = args[i];
+		if (!arg.startsWith("-")) {
+			i++;
+			continue;
+		}
+		if (argsLength == i + 1 && i != argsLength - 1) {
+			System.out.println("Missing value for last parameter");
+			printUsage();
+		}
+		if (arg.equals("-baseline")) {
+			baseline = args[i + 1];
+			if (baseline.startsWith("-")) {
+				System.out.println("Missing value for "+arg+" parameter");
+				printUsage();
+			}
+			buffer.append("	-baseline = "+baseline+'\n');
+			i++;
+			continue;
+		}
+		if (arg.equals("-baseline.prefix")) {
+			this.baselinePrefix = args[i + 1];
+			if (this.baselinePrefix.startsWith("-")) {
+				System.out.println("Missing value for "+arg+" parameter");
+				printUsage();
+			}
+			buffer.append("	").append(arg).append(" = ").append(this.baselinePrefix).append('\n');
+			i++;
+			continue;
+		}
+		if (arg.equals("-current.prefix")) {
+			String idPrefixList = args[i + 1];
+			if (idPrefixList.startsWith("-")) {
+				System.out.println("Missing value for "+arg+" parameter");
+				printUsage();
+			}
+			buffer.append("	").append(arg).append(" = ");
+			String[] ids = idPrefixList.split(",");
+			this.currentBuildPrefixes = new ArrayList();
+			for (int j = 0; j < ids.length; j++) {
+				this.currentBuildPrefixes.add(ids[j]);
+				buffer.append(ids[j]);
+			}
+			buffer.append('\n');
+			i++;
+			continue;
+		}
+		if (arg.equals("-highlight") || arg.equals("-highlight.latest")) {
+			if (args[i + 1].startsWith("-")) {
+				System.out.println("Missing value for "+arg+" parameter");
+				printUsage();
+			}
+			buffer.append("	").append(arg).append(" = ");
+			String[] ids = args[i + 1].split(",");
+			this.pointsOfInterest = new ArrayList();
+			for (int j = 0; j < ids.length; j++) {
+				this.pointsOfInterest.add(ids[j]);
+				buffer.append(ids[j]);
+			}
+			buffer.append('\n');
+			i++;
+			continue;
+		}
+		if (arg.equals("-current")) {
+			currentBuildId  = args[i + 1];
+			if (currentBuildId.startsWith("-")) {
+				System.out.println("Missing value for "+arg+" parameter");
+				printUsage();
+			}
+			buffer.append("	").append(arg).append(" = ").append(currentBuildId).append('\n');
+			i++;
+			continue;
+		}
+		if (arg.equals("-jvm")) {
+			jvm = args[i + 1];
+			if (jvm.startsWith("-")) {
+				System.out.println("Missing value for "+arg+" parameter");
+				printUsage();
+			}
+			buffer.append("	").append(arg).append(" = ").append(jvm).append('\n');
+			i++;
+			continue;
+		}
+		if (arg.equals("-output")) {
+			String dir = args[++i];
+			if (dir.startsWith("-")) {
+				System.out.println("Missing value for "+arg+" parameter");
+				printUsage();
+			}
+			this.outputDir = new File(dir);
+			if (!this.outputDir.exists() && !this.outputDir.mkdirs()) {
+				System.err.println("Cannot create directory "+dir+" to write results in!");
+				System.exit(2);
+			}
+			buffer.append("	").append(arg).append(" = ").append(dir).append('\n');
+			continue;
+		}
+		if (arg.equals("-dataDir")) {
+			String dir = args[++i];
+			if (dir.startsWith("-")) {
+				System.out.println("Missing value for "+arg+" parameter");
+				printUsage();
+			}
+			this.dataDir = new File(dir);
+			if (!this.dataDir.exists() && !this.dataDir.mkdirs()) {
+				System.err.println("Cannot create directory "+dir+" to save data locally!");
+				System.exit(2);
+			}
+			buffer.append("	").append(arg).append(" = ").append(dir).append('\n');
+			continue;
+		}
+		if (arg.equals("-config")) {
+			String configs = args[i + 1];
+			if (configs.startsWith("-")) {
+				System.out.println("Missing value for "+arg+" parameter");
+				printUsage();
+			}
+			String[] names = configs.split(",");
+			int length = names.length;
+			buffer.append("	").append(arg).append(" = ");
+			for (int j=0; j<length; j++) {
+				if (j>0) buffer.append(',');
+				buffer.append(names[j]);
+			}
+			if (this.configDescriptors == null) {
+				this.configDescriptors = new String[length][2];
+				for (int j=0; j<length; j++) {
+					this.configDescriptors[j][0] = names[j];
+					this.configDescriptors[j][1] = names[j];
+				}
+			} else {
+				int confLength = this.configDescriptors[0].length;
+				int newLength = confLength;
+				mainLoop: for (int j=0; j<confLength; j++) {
+					for (int k=0; k<length; k++) {
+						if (this.configDescriptors[j][0].equals(names[k])) {
+							continue mainLoop;
+						}
+					}
+					this.configDescriptors[j][0] = null;
+					this.configDescriptors[j][1] = null;
+					newLength--;
+				}
+				if (newLength < confLength) {
+					String[][] newDescriptors = new String[newLength][2];
+					for (int j=0, c=0; j<newLength; j++) {
+						if (this.configDescriptors[c] != null) {
+							newDescriptors[j][0] = this.configDescriptors[c][0];
+							newDescriptors[j][1] = this.configDescriptors[c][1];
+						} else {
+							c++;
+						}
+					}
+					this.configDescriptors = newDescriptors;
+				}
+			}
+			buffer.append('\n');
+			i++;
+			continue;
+		}
+		if (arg.equals("-config.properties")) {
+			String configProperties = args[i + 1];
+			if (configProperties.startsWith("-")) {
+				System.out.println("Missing value for "+arg+" parameter");
+				printUsage();
+			}
+			if (this.configDescriptors == null) {
+				System.out.println("Missing -config parameter");
+				printUsage();
+			}
+			int length = this.configDescriptors.length;
+			StringTokenizer tokenizer = new StringTokenizer(configProperties, ";");
+			buffer.append('\t').append(arg).append(" = '").append(configProperties).append("' splitted in ").append(length).append(" configs:");
+			while (tokenizer.hasMoreTokens()) {
+				String labelDescriptor = tokenizer.nextToken();
+				String[] elements = labelDescriptor.trim().split(",");
+				for (int j=0; j<length; j++) {
+					if (elements[0].equals(this.configDescriptors[j][0])) {
+						this.configDescriptors[j][1] = elements[1];
+						buffer.append("\n\t\t+ ");
+						buffer.append(elements[0]);
+						buffer.append(" -> ");
+						buffer.append(elements[1]);
+					}
+				}
+			}
+			buffer.append('\n');
+			i++;
+			continue;
+		}
+		if (arg.equals("-scenario.filter") || arg.equals("-scenario.pattern")) {
+			this.scenarioPattern= args[i + 1];
+			if (this.scenarioPattern.startsWith("-")) {
+				System.out.println("Missing value for "+arg+" parameter");
+				printUsage();
+			}
+			buffer.append("	").append(arg).append(" = ").append(this.scenarioPattern).append('\n');
+			i++;
+			continue;
+		}
+		if (arg.equals("-fingerprints")) {
+			this.genFingerPrints = true;
+			this.genAll = false;
+			buffer.append("	").append(arg).append('\n');
+			i++;
+			continue;
+		}
+		if (arg.equals("-data")) {
+			this.genData = true;
+			this.genAll = false;
+			buffer.append("	").append(arg).append('\n');
+			i++;
+			continue;
+		}
+		if (arg.equals("-print")) {
+			this.printStream = System.out; // default is to print to console
+			buffer.append("	").append(arg);
+			i++;
+			String printFile = i==argsLength ? null : args[i];
+			if (printFile==null ||printFile.startsWith("-")) {
+				buffer.append(" (to the console)").append('\n');
+			} else {
+				try {
+					this.printStream = new PrintStream(new BufferedOutputStream(new FileOutputStream(printFile)));
+				}
+				catch (FileNotFoundException fnfe) {
+					// use the console if the output file cannot be created
+				}
+				buffer.append(" (to file: ").append(printFile).append(")\n");
+			}
+			continue;
+		}
+		if (arg.equals("-failure.threshold")) {
+			String value = args[i + 1];
+			try {
+				this.failure_threshold = Integer.parseInt(value);
+				if (this.failure_threshold < 0) {
+					System.out.println("Value for "+arg+" parameter must be positive.");
+					printUsage();
+				}
+			}
+			catch (NumberFormatException nfe) {
+				System.out.println("Invalid value for "+arg+" parameter");
+				printUsage();
+			}
+			buffer.append("	").append(arg).append(" = ").append(value).append('\n');
+			i++;
+			continue;
+		}
+		i++;
+	}
+	if (this.printStream != null) {
+		this.printStream.print(buffer.toString());
+	}
+
+	// Stop if some mandatory parameters are missing
+	if (this.outputDir == null || this.configDescriptors == null || jvm == null) {
+		printUsage();
+	}
+
+	// Set performance results
+	setPerformanceResults(currentBuildId, baseline);
+}
+
