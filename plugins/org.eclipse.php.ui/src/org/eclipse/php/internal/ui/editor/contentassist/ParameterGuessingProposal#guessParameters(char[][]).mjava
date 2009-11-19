@@ -1,0 +1,38 @@
+	private ICompletionProposal[][] guessParameters(char[][] parameterNames)
+			throws ModelException {
+		// find matches in reverse order. Do this because people tend to declare
+		// the variable meant for the last
+		// parameter last. That is, local variables for the last parameter in
+		// the method completion are more
+		// likely to be closer to the point of code completion. As an example
+		// consider a "delegation" completion:
+		//
+		// public void myMethod(int param1, int param2, int param3) {
+		// someOtherObject.yourMethod(param1, param2, param3);
+		// }
+		//
+		// The other consideration is giving preference to variables that have
+		// not previously been used in this
+		// code completion (which avoids
+		// "someOtherObject.yourMethod(param1, param1, param1)";
+
+		int count = parameterNames.length;
+		fPositions = new Position[count];
+		fChoices = new ICompletionProposal[count][];
+
+		String[] initializers = method.getParameterInitializers();
+
+		for (int i = count - 1; i >= 0; i--) {
+			String paramName = new String(parameterNames[i]);
+			Position position = new Position(0, 0);
+
+			ICompletionProposal[] argumentProposals = parameterProposals(
+					initializers[i], paramName, position, fFillBestGuess);
+
+			fPositions[i] = position;
+			fChoices[i] = argumentProposals;
+		}
+
+		return fChoices;
+	}
+

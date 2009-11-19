@@ -1,0 +1,41 @@
+	/**
+	 * Creates the completion string. Offsets and Lengths are set to the offsets
+	 * and lengths of the parameters.
+	 * 
+	 * @return the completion string
+	 * @throws ModelException
+	 *             if parameter guessing failed
+	 */
+	private String computeGuessingCompletion() throws ModelException {
+
+		StringBuffer buffer = new StringBuffer();
+		appendMethodNameReplacement(buffer);
+
+		setCursorPosition(buffer.length());
+
+		char[][] parameterNames = fProposal.findParameterNames(null);
+
+		fChoices = guessParameters(parameterNames);
+		int count = fChoices.length;
+		int replacementOffset = getReplacementOffset();
+
+		for (int i = 0; i < count; i++) {
+			if (i != 0) {
+				buffer.append(COMMA);
+			}
+
+			ICompletionProposal proposal = fChoices[i][0];
+			String argument = proposal.getDisplayString();
+
+			Position position = fPositions[i];
+			position.setOffset(replacementOffset + buffer.length());
+			position.setLength(argument.length());
+
+			buffer.append(argument);
+		}
+
+		buffer.append(RPAREN);
+
+		return buffer.toString();
+	}
+

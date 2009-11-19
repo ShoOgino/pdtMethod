@@ -1,0 +1,52 @@
+	/**
+	 * Returns the matches for the type and name argument, ordered by match
+	 * quality.
+	 * 
+	 * @param expectedType
+	 *            - the qualified type of the parameter we are trying to match
+	 * @param paramName
+	 *            - the name of the parameter (used to find similarly named
+	 *            matches)
+	 * @param pos
+	 * @param suggestions
+	 *            the suggestions or <code>null</code>
+	 * @param fillBestGuess
+	 * @return returns the name of the best match, or <code>null</code> if no
+	 *         match found
+	 * @throws JavaModelException
+	 *             if it fails
+	 */
+	public ICompletionProposal[] parameterProposals(String initialValue,
+			String paramName, Position pos, boolean fillBestGuess)
+			throws ModelException {
+		List<String> typeMatches = new ArrayList<String>();
+		if (initialValue != null) {
+			typeMatches.add(initialValue);
+		}
+		ICompletionProposal[] ret = new ICompletionProposal[typeMatches.size()];
+		int i = 0;
+		int replacementLength = 0;
+		for (Iterator<String> it = typeMatches.iterator(); it.hasNext();) {
+			String name = it.next();
+			if (i == 0) {
+				replacementLength = name.length();
+			}
+
+			final char[] triggers = new char[1];
+			triggers[triggers.length - 1] = ';';
+
+			ret[i++] = new PositionBasedCompletionProposal(name, pos,
+					replacementLength, getImage(), name, null, null, triggers);
+		}
+		if (!fillBestGuess) {
+			// insert a proposal with the argument name
+			ICompletionProposal[] extended = new ICompletionProposal[ret.length + 1];
+			System.arraycopy(ret, 0, extended, 1, ret.length);
+			extended[0] = new PositionBasedCompletionProposal(paramName, pos,
+					replacementLength/* paramName.length() */, null, paramName,
+					null, null, NO_TRIGGERS);
+			return extended;
+		}
+		return ret;
+	}
+
