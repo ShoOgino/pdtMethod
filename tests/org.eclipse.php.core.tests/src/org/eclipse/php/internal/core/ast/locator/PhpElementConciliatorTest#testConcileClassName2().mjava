@@ -1,0 +1,30 @@
+	public void testConcileClassName2() {
+		IFile file = null;
+		try {
+			file = setFileContent("<?php class A{function foo(){}} class B{function bar(){}} $a = new A();$a->foo(); A::foo(); $b = new B();$b->bar();B::bar();?>");
+		} catch (CoreException e) {
+			fail(e.getMessage());
+		}
+
+		assertNotNull(file);
+
+		Program program = createProgram(file);
+
+		assertNotNull(program);
+
+		// select the class name.
+		int start = 68;
+		ASTNode selectedNode = locateNode(program, start, 0);
+		assertNotNull(selectedNode);
+
+		assertEquals(PhpElementConciliator.CONCILIATOR_CLASSNAME,
+				PhpElementConciliator.concile(selectedNode));
+
+		start = 83;
+		selectedNode = locateNode(program, start, 0);
+		assertNotNull(selectedNode);
+
+		assertEquals(PhpElementConciliator.CONCILIATOR_CLASSNAME,
+				PhpElementConciliator.concile(selectedNode));
+	}
+
