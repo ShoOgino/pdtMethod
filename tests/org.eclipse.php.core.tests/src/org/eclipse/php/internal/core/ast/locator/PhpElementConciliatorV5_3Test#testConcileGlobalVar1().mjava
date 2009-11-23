@@ -1,0 +1,22 @@
+	public void testConcileGlobalVar1() {
+		IFile file = null;
+		try {
+			file = setFileContent("<?php namespace my\name; $a = 1;  function test(){ echo $GLOBALS['a'];} ?>");
+		} catch (CoreException e) {
+			fail(e.getMessage());
+		}
+
+		assertNotNull(file);
+
+		Program program = createProgram(file);
+
+		assertNotNull(program);
+
+		int start = 67;
+		ASTNode selectedNode = locateNode(program, start, 0);
+		assertNotNull(selectedNode);
+
+		assertEquals(PhpElementConciliator.CONCILIATOR_GLOBAL_VARIABLE,
+				PhpElementConciliator.concile(selectedNode));
+	}
+
