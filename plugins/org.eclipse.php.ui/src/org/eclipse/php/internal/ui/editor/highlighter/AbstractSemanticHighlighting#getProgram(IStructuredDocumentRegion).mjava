@@ -1,0 +1,35 @@
+	private Program getProgram(IStructuredDocumentRegion region) {
+		final IStructuredDocument structuredDocument = region
+				.getParentDocument();
+		PlatformUI.getWorkbench().getDisplay().syncExec(new Runnable() {
+			public void run() {
+				IWorkbenchPage page = PHPUiPlugin.getActivePage();
+				if (page != null) {
+					IEditorPart editor = page.getActiveEditor();
+					if (editor instanceof PHPStructuredEditor) {
+						PHPStructuredEditor pHPStructuredEditor = (PHPStructuredEditor) editor;
+						StructuredTextViewer textViewer = pHPStructuredEditor
+								.getTextViewer();
+						if (textViewer != null
+								&& textViewer.getDocument() == structuredDocument) {
+							sourceModule = (ISourceModule) pHPStructuredEditor
+									.getModelElement();
+						}
+					}
+				}
+			}
+		});
+		Program program = null;
+		if (sourceModule != null) {
+			try {
+				program = SharedASTProvider.getAST(sourceModule,
+						SharedASTProvider.WAIT_YES, null);
+			} catch (ModelException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return program;
+	}
+

@@ -41,7 +41,7 @@
 		fStylesViewer = createStylesViewer(styleEditor);
 		GridData gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
 		gridData.horizontalIndent = 0;
-		Iterator iterator = fStyleToDescriptionMap.values().iterator();
+		Iterator<String> iterator = fStyleToDescriptionMap.values().iterator();
 		while (iterator.hasNext()) {
 			gridData.widthHint = Math.max(gridData.widthHint,
 					convertWidthInCharsToPixels(iterator.next().toString()
@@ -53,10 +53,11 @@
 		Composite editingComposite = createComposite(top, 1);
 		((GridLayout) styleEditor.getLayout()).marginLeft = 5;
 		createLabel(editingComposite, ""); //$NON-NLS-1$
-		Button enabler = createCheckbox(editingComposite,
+
+		fEnabler = createCheckbox(editingComposite,
 				XMLUIMessages.SyntaxColoringPage_2);
-		enabler.setEnabled(false);
-		enabler.setSelection(true);
+		fEnabler.setEnabled(false);
+
 		Composite editControls = createComposite(editingComposite, 2);
 		((GridLayout) editControls.getLayout()).marginLeft = 20;
 
@@ -161,6 +162,28 @@
 					Object o = ((IStructuredSelection) fStylesViewer
 							.getSelection()).getFirstElement();
 					String namedStyle = o.toString();
+
+					if (SemanticHighlightingManager.getInstance()
+							.getSemanticHighlightings().containsKey(namedStyle)) {
+						AbstractSemanticHighlighting semanticHighlighting = SemanticHighlightingManager
+								.getInstance().getSemanticHighlightings().get(
+										namedStyle);
+						String oldValue = getOverlayStore().getString(
+								semanticHighlighting.getColorPreferenceKey());
+						String newValue = ColorHelper
+								.toRGBString(fForegroundColorEditor
+										.getColorValue());
+
+						if (!newValue.equals(oldValue)) {
+							getOverlayStore().setValue(
+									semanticHighlighting
+											.getColorPreferenceKey(), newValue);
+							// applyStyles();
+							// fText.redraw();
+						}
+						return;
+					}
+
 					String prefString = getOverlayStore().getString(namedStyle);
 					String[] stylePrefs = ColorHelper
 							.unpackStylePreferences(prefString);
@@ -224,6 +247,26 @@
 				Object o = ((IStructuredSelection) fStylesViewer.getSelection())
 						.getFirstElement();
 				String namedStyle = o.toString();
+
+				if (SemanticHighlightingManager.getInstance()
+						.getSemanticHighlightings().containsKey(namedStyle)) {
+					AbstractSemanticHighlighting semanticHighlighting = SemanticHighlightingManager
+							.getInstance().getSemanticHighlightings().get(
+									namedStyle);
+					String oldValue = getOverlayStore().getString(
+							semanticHighlighting.getBoldPreferenceKey());
+					String newValue = String.valueOf(fBold.getSelection());
+
+					if (!newValue.equals(oldValue)) {
+						getOverlayStore().setValue(
+								semanticHighlighting.getBoldPreferenceKey(),
+								newValue);
+						// applyStyles();
+						// fText.redraw();
+					}
+					return;
+				}
+
 				String prefString = getOverlayStore().getString(namedStyle);
 				String[] stylePrefs = ColorHelper
 						.unpackStylePreferences(prefString);
@@ -250,6 +293,24 @@
 				Object o = ((IStructuredSelection) fStylesViewer.getSelection())
 						.getFirstElement();
 				String namedStyle = o.toString();
+				if (SemanticHighlightingManager.getInstance()
+						.getSemanticHighlightings().containsKey(namedStyle)) {
+					AbstractSemanticHighlighting semanticHighlightingType = SemanticHighlightingManager
+							.getInstance().getSemanticHighlightings().get(
+									namedStyle);
+					String oldValue = getOverlayStore().getString(
+							semanticHighlightingType.getItalicPreferenceKey());
+					String newValue = String.valueOf(fItalic.getSelection());
+
+					if (!newValue.equals(oldValue)) {
+						getOverlayStore().setValue(
+								semanticHighlightingType
+										.getItalicPreferenceKey(), newValue);
+						// applyStyles();
+						// fText.redraw();
+					}
+					return;
+				}
 				String prefString = getOverlayStore().getString(namedStyle);
 				String[] stylePrefs = ColorHelper
 						.unpackStylePreferences(prefString);
@@ -276,6 +337,26 @@
 				Object o = ((IStructuredSelection) fStylesViewer.getSelection())
 						.getFirstElement();
 				String namedStyle = o.toString();
+				if (SemanticHighlightingManager.getInstance()
+						.getSemanticHighlightings().containsKey(namedStyle)) {
+					AbstractSemanticHighlighting semanticHighlighting = SemanticHighlightingManager
+							.getInstance().getSemanticHighlightings().get(
+									namedStyle);
+					String oldValue = getOverlayStore().getString(
+							semanticHighlighting
+									.getStrikethroughPreferenceKey());
+					String newValue = String.valueOf(fStrike.getSelection());
+
+					if (!newValue.equals(oldValue)) {
+						getOverlayStore().setValue(
+								semanticHighlighting
+										.getStrikethroughPreferenceKey(),
+								newValue);
+						// applyStyles();
+						// fText.redraw();
+					}
+					return;
+				}
 				String prefString = getOverlayStore().getString(namedStyle);
 				String[] stylePrefs = ColorHelper
 						.unpackStylePreferences(prefString);
@@ -302,6 +383,26 @@
 				Object o = ((IStructuredSelection) fStylesViewer.getSelection())
 						.getFirstElement();
 				String namedStyle = o.toString();
+
+				if (SemanticHighlightingManager.getInstance()
+						.getSemanticHighlightings().containsKey(namedStyle)) {
+					AbstractSemanticHighlighting semanticHighlighting = SemanticHighlightingManager
+							.getInstance().getSemanticHighlightings().get(
+									namedStyle);
+					String oldValue = getOverlayStore().getString(
+							semanticHighlighting.getUnderlinePreferenceKey());
+					String newValue = String.valueOf(fUnderline.getSelection());
+
+					if (!newValue.equals(oldValue)) {
+						getOverlayStore().setValue(
+								semanticHighlighting
+										.getUnderlinePreferenceKey(), newValue);
+						// applyStyles();
+						// fText.redraw();
+					}
+					return;
+				}
+
 				String prefString = getOverlayStore().getString(namedStyle);
 				String[] stylePrefs = ColorHelper
 						.unpackStylePreferences(prefString);
@@ -334,6 +435,31 @@
 			}
 		});
 
+		fEnabler.addSelectionListener(new SelectionAdapter() {
+
+			public void widgetSelected(SelectionEvent e) {
+				// get current (newly old) style
+				Object o = ((IStructuredSelection) fStylesViewer.getSelection())
+						.getFirstElement();
+				String namedStyle = o.toString();
+
+				Map<String, AbstractSemanticHighlighting> highlightingMap = SemanticHighlightingManager
+						.getInstance().getSemanticHighlightings();
+				if (highlightingMap.containsKey(namedStyle)) {
+					AbstractSemanticHighlighting semantic = highlightingMap
+							.get(namedStyle);
+					boolean enablement = fEnabler.getSelection();
+					semantic.getStyle().setEnabledByDefault(enablement);
+					switchEnablement(enablement);
+					getOverlayStore().setValue(
+							semantic.getEnabledPreferenceKey(), enablement);
+
+				}
+			}
+
+		});
+
+		switchEnablement(true);
 		return pageComponent;
 	}
 

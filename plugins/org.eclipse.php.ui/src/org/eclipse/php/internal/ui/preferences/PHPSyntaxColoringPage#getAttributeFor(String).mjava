@@ -3,6 +3,43 @@
 				fDefaultBackground, SWT.NORMAL);
 
 		if (namedStyle != null && fOverlayStore != null) {
+
+			if (SemanticHighlightingManager.getInstance()
+					.getSemanticHighlightings().containsKey(namedStyle)) {
+				AbstractSemanticHighlighting semanticHighlightingType = SemanticHighlightingManager
+						.getInstance().getSemanticHighlightings().get(
+								namedStyle);
+
+				int fontModifier = SWT.NORMAL;
+				boolean on = getOverlayStore().getBoolean(
+						semanticHighlightingType.getBoldPreferenceKey());
+				if (on)
+					fontModifier = fontModifier | SWT.BOLD;
+
+				on = getOverlayStore().getBoolean(
+						semanticHighlightingType.getItalicPreferenceKey());
+				if (on)
+					fontModifier = fontModifier | SWT.ITALIC;
+
+				on = getOverlayStore().getBoolean(
+						semanticHighlightingType
+								.getStrikethroughPreferenceKey());
+				if (on)
+					fontModifier = fontModifier | TextAttribute.STRIKETHROUGH;
+
+				on = getOverlayStore().getBoolean(
+						semanticHighlightingType.getUnderlinePreferenceKey());
+				if (on)
+					fontModifier = fontModifier | TextAttribute.UNDERLINE;
+
+				String color = getOverlayStore().getString(
+						semanticHighlightingType.getColorPreferenceKey());
+				RGB foreground = ColorHelper.toRGB(color);
+				ta = new TextAttribute((foreground != null) ? EditorUtility
+						.getColor(foreground) : null, null, fontModifier);
+				return ta;
+			}
+
 			// note: "namedStyle" *is* the preference key
 			String prefString = getOverlayStore().getString(namedStyle);
 			String[] stylePrefs = ColorHelper
