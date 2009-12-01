@@ -1,0 +1,37 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @seeorg.eclipse.wst.sse.core.internal.format.IStructuredFormatProcessor#
+	 * formatFile(org.eclipse.core.resources.IFile)
+	 */
+	public void formatFile(IFile file) throws IOException, CoreException {
+		IStructuredDocument document = null;
+		IStructuredModel structuredModel = null;
+		try {
+			if (file != null) {
+				if (file.exists()) {
+					structuredModel = StructuredModelManager.getModelManager()
+							.getExistingModelForRead(file);
+					if (structuredModel != null) {
+						document = structuredModel.getStructuredDocument();
+					} else {
+						document = StructuredModelManager.getModelManager()
+								.createStructuredDocumentFor(file);
+					}
+				}
+			}
+		} catch (Exception e) {
+			PHPCorePlugin.log(e);
+		} finally {
+			if (structuredModel != null) {
+				structuredModel.releaseFromRead();
+			}
+		}
+		if (document != null) {
+			Region region = new Region(0, document.getLength());
+			IContentFormatter formatter = getFormatter();
+			if (formatter != null)
+				formatter.format(document, region);
+		}
+	}
+
