@@ -2,10 +2,11 @@
 
 		TestSuite suite = new TestSuite("Semantic Highlighting Tests");
 		for (Entry<PHPVersion, String> pair : TESTS.entrySet()) {
-			PHPVersion phpVersion = pair.getKey();
+			phpVersion = pair.getKey();
 			TestSuite phpVerSuite = new TestSuite(phpVersion.getAlias());
 
-			String[] files = getPDTTFiles(pair.getValue());
+			String[] files = getPDTTFiles(pair.getValue(), PHPUiTests
+					.getDefault().getBundle());
 
 			for (final String fileName : files) {
 				try {
@@ -25,7 +26,6 @@
 							}
 						}
 
-						@SuppressWarnings("restriction")
 						protected void runTest() throws Throwable {
 							;
 							String result = "";
@@ -40,9 +40,12 @@
 							AbstractSemanticHighlighting highlighter = highlighters
 									.get(index);
 							assertNotNull(highlighter);
-							highlighter.setSourceModule(module);
+							Program program = getProgram(module);
+							highlighter.initDefaultPreferences();
 							Position[] positions = highlighter
-									.consumes(getProgram(module));
+									.consumes(program);
+							assertNoDuplicates(highlighter.getDisplayName(),
+									positions);
 							result += highlighter.getClass().getName() + ":\n";
 							for (Position position : positions) {
 								result += "highlight("
@@ -52,9 +55,17 @@
 														+ position.getLength())
 										+ ")\n";
 							}
-
-							// System.err.println(result);
 							assertEquals(pdttFile.getExpected(), result);
+							// We check the other highlighters for failure
+							for (AbstractSemanticHighlighting h : highlighters
+									.values()) {
+								if (h != highlighter) {
+									h.initDefaultPreferences();
+									positions = h.consumes(program);
+									assertNoDuplicates(highlighter
+											.getDisplayName(), positions);
+								}
+							}
 						}
 
 						private Program getProgram(ISourceModule module)
