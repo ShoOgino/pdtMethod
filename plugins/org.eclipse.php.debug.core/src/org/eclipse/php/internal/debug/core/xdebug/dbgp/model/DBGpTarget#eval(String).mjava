@@ -9,11 +9,16 @@
 		// Convert to session encoding bytes 1st before converting to Base64
 		String encoded = Base64.encode(getSessionEncodingBytes(toEval));
 		String args = "-- " + encoded; //$NON-NLS-1$
-		DBGpResponse resp = session.sendSyncCmd(DBGpCommand.eval, args);
-		if (DBGpUtils.isGoodDBGpResponse(this, resp)) {
-			return resp.getParentNode().getFirstChild();
-		} else {
-			return null;
+
+		Node response = null;
+		synchronized (sessionMutex) {
+			if (session != null && session.isActive()) {
+				DBGpResponse resp = session.sendSyncCmd(DBGpCommand.eval, args);
+				if (DBGpUtils.isGoodDBGpResponse(this, resp)) {
+					response = resp.getParentNode().getFirstChild();
+				}
+			}
 		}
+		return response;
 	}
 

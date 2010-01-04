@@ -7,57 +7,63 @@
 	 * attached.
 	 */
 	public void sessionEnded() {
+		boolean unexpectedTermination = false;
+
 		synchronized (sessionMutex) {
 			session = null;
-		}
-		if (STATE_TERMINATING == targetState) {
-			// we are terminating, if we are a web launch, we need to issue the
-			// stop URL, then terminate the debug target.
-			if (isWebLaunch()) {
-				sendStopDebugURL();
-			}
-			terminateDebugTarget(true);
-		} else {
-
-			// need to save the suspended state as state is changed in the
-			// next section of code.
-			boolean savedSuspended = isSuspended();
-
-			// we were not terminating and the session ended. If we are a web
-			// launch, then we need to wait for the next session. Otherwise we
-			// terminate the debug target.
-			if (isWebLaunch()) {
-				if (isSuspended()) {
-					// if we are suspended, then inform eclipse we have resumed
-					// so all the user can do is terminate or disconnect while
-					// waiting for the next session.
-					fireResumeEvent(DebugEvent.RESUME);
-					langThread.fireResumeEvent(DebugEvent.RESUME);
+			if (STATE_TERMINATING == targetState) {
+				// we are terminating, if we are a web launch, we need to issue
+				// the
+				// stop URL, then terminate the debug target.
+				if (isWebLaunch()) {
+					sendStopDebugURL();
 				}
-				stepping = false;
-				setState(STATE_STARTED_SESSION_WAIT);
-				langThread.setBreakpoints(null);
-			} else {
 				terminateDebugTarget(true);
-			}
-			if (savedSuspended) {
-				// we were suspended at the time and not terminating so we have
-				// received an unexpected termination from the server side
-				final String errorMessage = PHPDebugCoreMessages.XDebugMessage_unexpectedTermination;
-				Status status = new Status(IStatus.ERROR, PHPDebugPlugin
-						.getID(), IPHPDebugConstants.INTERNAL_ERROR,
-						errorMessage, null);
-				DebugPlugin.log(status);
-				Display.getDefault().asyncExec(new Runnable() {
-					public void run() {
-						MessageDialog.openError(Display.getDefault()
-								.getActiveShell(),
-								PHPDebugCoreMessages.XDebugMessage_debugError,
-								errorMessage);
-					}
-				});
+			} else {
 
+				// if we were suspended and we are now terminating then
+				// something
+				// has caused debug to end, most likely a bad eval.
+				unexpectedTermination = isSuspended();
+
+				// we were not terminating and the session ended. If we are a
+				// web
+				// launch, then we need to wait for the next session. Otherwise
+				// we
+				// terminate the debug target.
+				if (isWebLaunch()) {
+					if (isSuspended()) {
+						// if we are suspended, then inform eclipse we have
+						// resumed
+						// so all the user can do is terminate or disconnect
+						// while
+						// waiting for the next session.
+						fireResumeEvent(DebugEvent.RESUME);
+						langThread.fireResumeEvent(DebugEvent.RESUME);
+					}
+					stepping = false;
+					setState(STATE_STARTED_SESSION_WAIT);
+					langThread.setBreakpoints(null);
+				} else {
+					terminateDebugTarget(true);
+				}
 			}
+		}
+
+		if (unexpectedTermination) {
+			// an unexpected termination occurred, so put out a message.
+			final String errorMessage = PHPDebugCoreMessages.XDebugMessage_unexpectedTermination;
+			Status status = new Status(IStatus.ERROR, PHPDebugPlugin.getID(),
+					IPHPDebugConstants.INTERNAL_ERROR, errorMessage, null);
+			DebugPlugin.log(status);
+			Display.getDefault().asyncExec(new Runnable() {
+				public void run() {
+					MessageDialog.openError(Display.getDefault()
+							.getActiveShell(),
+							PHPDebugCoreMessages.XDebugMessage_debugError,
+							errorMessage);
+				}
+			});
 
 		}
 	}

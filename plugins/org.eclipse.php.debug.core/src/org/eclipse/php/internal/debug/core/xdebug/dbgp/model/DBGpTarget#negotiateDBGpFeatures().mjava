@@ -13,16 +13,6 @@
 		resp = session.sendSyncCmd(DBGpCommand.featureSet,
 				"-n max_children -v " + getMaxChildren()); //$NON-NLS-1$
 		DBGpUtils.isGoodDBGpResponse(this, resp);
-
-		/*
-		 * resp = session.sendSyncCmd(DBGpCommand.featureGet,
-		 * "-n max_children"); if (DBGpUtils.isGoodDBGpResponse(this, resp)) {
-		 * Node child = resp.getParentNode().getFirstChild(); if (child != null)
-		 * { String data = child.getNodeValue(); try { maxChildren =
-		 * Integer.parseInt(data); } catch (NumberFormatException nfe) {
-		 * maxChildren = -1; } } }
-		 */
-
 		resp = session.sendSyncCmd(DBGpCommand.featureGet, "-n encoding"); //$NON-NLS-1$
 		if (DBGpUtils.isGoodDBGpResponse(this, resp)) {
 			Node child = resp.getParentNode().getFirstChild();
@@ -41,10 +31,14 @@
 		asyncSupported = false;
 		resp = session.sendSyncCmd(DBGpCommand.featureGet, "-n supports_async"); //$NON-NLS-1$
 		if (DBGpUtils.isGoodDBGpResponse(this, resp)) {
+			// TODO: could check the supported atttribute ?
+			//String supportedAttr = DBGpResponse.getAttribute(resp, "supported"); //$NON-NLS-1$
 			Node child = resp.getParentNode().getFirstChild();
-			String supported = DBGpResponse.getAttribute(child, "supported"); //$NON-NLS-1$
-			if (supported != null && supported.equals("1")) { //$NON-NLS-1$
-				asyncSupported = true;
+			if (child != null) {
+				String supported = child.getNodeValue();
+				if (supported != null && supported.equals("1")) { //$NON-NLS-1$
+					asyncSupported = true;
+				}
 			}
 		}
 

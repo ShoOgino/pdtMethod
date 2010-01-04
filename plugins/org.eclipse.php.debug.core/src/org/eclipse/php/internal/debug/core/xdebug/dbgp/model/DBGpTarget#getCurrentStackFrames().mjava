@@ -21,20 +21,25 @@
 		// doing this at the same time on will be getting the data and the other
 		// will not and returning null as the data is not yet ready.
 		if (stackFrames == null) {
-			DBGpResponse resp = session.sendSyncCmd(DBGpCommand.stackGet);
-			if (DBGpUtils.isGoodDBGpResponse(this, resp)) {
-				Node parent = resp.getParentNode();
-				NodeList stackNodes = parent.getChildNodes(); // <stack>
-				// entries
-				stackFrames = new IStackFrame[stackNodes.getLength()];
-				for (int i = 0; i < stackNodes.getLength(); i++) {
-					Node stackNode = stackNodes.item(i);
-					stackFrames[i] = new DBGpStackFrame(langThread, stackNode);
+			currentStackLevel = 0;
+			stackFrames = new IStackFrame[0];
+			synchronized (sessionMutex) {
+				if (session != null && session.isActive()) {
+					DBGpResponse resp = session
+							.sendSyncCmd(DBGpCommand.stackGet);
+					if (DBGpUtils.isGoodDBGpResponse(this, resp)) {
+						Node parent = resp.getParentNode();
+						NodeList stackNodes = parent.getChildNodes(); // <stack>
+						// entries
+						stackFrames = new IStackFrame[stackNodes.getLength()];
+						for (int i = 0; i < stackNodes.getLength(); i++) {
+							Node stackNode = stackNodes.item(i);
+							stackFrames[i] = new DBGpStackFrame(langThread,
+									stackNode);
+						}
+						currentStackLevel = stackNodes.getLength() - 1;
+					}
 				}
-				currentStackLevel = stackNodes.getLength() - 1;
-			} else {
-				currentStackLevel = 0;
-				stackFrames = new IStackFrame[0];
 			}
 		}
 		return stackFrames;
