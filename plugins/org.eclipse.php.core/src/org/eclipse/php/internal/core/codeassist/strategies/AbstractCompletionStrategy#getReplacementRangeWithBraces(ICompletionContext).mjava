@@ -1,0 +1,30 @@
+	public SourceRange getReplacementRangeWithBraces(ICompletionContext context)
+			throws BadLocationException {
+
+		AbstractCompletionContext completionContext = (AbstractCompletionContext) context;
+
+		int length = completionContext.getPrefix().length();
+		int start = completionContext.getOffset() - length;
+		int prefixEnd = completionContext.getPrefixEnd();
+
+		if (start + length < prefixEnd) {
+			length = prefixEnd - start;
+		}
+
+		IStructuredDocument document = completionContext.getDocument();
+
+		int endOfReplacement = start + length;
+		if (document.getLength() == start) {
+			endOfReplacement = start;
+		} else if (start < document.getLength() - 2) {
+			if (document.getChar(endOfReplacement) == '('
+					&& document.getChar(endOfReplacement + 1) == ')') {
+				endOfReplacement += 2;
+			}
+		}
+
+		SourceRange replacementRange = new SourceRange(start, endOfReplacement
+				- start);
+		return replacementRange;
+	}
+
