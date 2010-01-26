@@ -9,7 +9,15 @@
 		CompletionRequestor requestor = concreteContext
 				.getCompletionRequestor();
 		String prefix = concreteContext.getPrefix();
-		SourceRange replaceRange = getReplacementRange(context);
+
+		String suffix = getSuffix(concreteContext);
+		SourceRange replaceRange = null;
+		if (suffix.equals("")) {
+			replaceRange = getReplacementRange(concreteContext);
+		} else {
+			replaceRange = getReplacementRangeWithBraces(concreteContext);
+		}
+		replaceRange = getReplacementRange(context);
 
 		IMethod enclosingMethod = concreteContext.getEnclosingMethod();
 
@@ -18,9 +26,10 @@
 			IType declaringType = enclosingMethod.getDeclaringType();
 			if (declaringType != null) {
 				if ("$this".startsWith(prefix)) { //$NON-NLS-1$
-					reporter.reportField(
-							new FakeField((ModelElement) declaringType,
-									"$this", 0, 0), "->", replaceRange, false); //NON-NLS-1 //$NON-NLS-2$
+					reporter
+							.reportField(
+									new FakeField((ModelElement) declaringType,
+											"$this", 0, 0), suffix, replaceRange, false); //NON-NLS-1 //$NON-NLS-2$
 				}
 			}
 		}
