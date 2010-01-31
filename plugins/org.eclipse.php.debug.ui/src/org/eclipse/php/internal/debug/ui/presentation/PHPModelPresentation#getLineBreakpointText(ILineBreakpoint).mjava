@@ -12,7 +12,18 @@
 				fileName = (String) marker
 						.getAttribute(StructuredResourceMarkerAnnotationModel.SECONDARY_ID_KEY);
 
-				Path path = new Path(fileName);
+				IPath path = new Path(fileName);
+
+				if (path.getDevice() == null) {
+					String fullPathString = path.toString();
+					String absolutePath = fullPathString
+							.substring(fullPathString.indexOf(':') + 1);
+					path = new Path(absolutePath);
+				} else {
+					path = EnvironmentPathUtils.getLocalPath(path);
+				}
+
+
 				NonExistingPHPFileEditorInput nonExistingEditorInput = NonExistingPHPFileEditorInput
 						.findEditorInput(path);
 				if (nonExistingEditorInput != null) {
@@ -21,6 +32,9 @@
 					if (EnvironmentPathUtils.isFull(path)) {
 						fileName = EnvironmentPathUtils
 								.getLocalPathString(path);
+					} else {
+						File file = path.toFile();
+						fileName = file.getAbsolutePath();
 					}
 				}
 
