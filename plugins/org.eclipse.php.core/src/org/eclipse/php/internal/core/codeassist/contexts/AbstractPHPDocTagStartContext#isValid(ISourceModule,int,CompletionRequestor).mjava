@@ -1,0 +1,33 @@
+	public boolean isValid(ISourceModule sourceModule, int offset,
+			CompletionRequestor requestor) {
+		if (!super.isValid(sourceModule, offset, requestor)) {
+			return false;
+		}
+		String tagName = getTagName();
+		if (!getTags().contains(tagName)) {
+			return false;
+		}
+		TextSequence statementText = getStatementText();
+		String statementTextString = statementText.toString();
+		StringTokenizer st = new StringTokenizer(statementTextString);
+		Stack<String> stack = new Stack<String>();
+		while (st.hasMoreElements()) {
+			stack.add((String) st.nextElement());
+		}
+		if (!stack.empty()) {
+			String lastWord = stack.pop();
+			if (lastWord.startsWith("@")) {
+				lastWord = lastWord.substring(1);
+			}
+			if (!statementTextString.endsWith(lastWord)) {
+				return getTags().contains(lastWord);
+			}
+
+			if (!stack.empty() && isPrefix(lastWord)) {
+				lastWord = stack.pop();
+				return lastWord.endsWith(tagName);
+			}
+		}
+		return false;
+	}
+
