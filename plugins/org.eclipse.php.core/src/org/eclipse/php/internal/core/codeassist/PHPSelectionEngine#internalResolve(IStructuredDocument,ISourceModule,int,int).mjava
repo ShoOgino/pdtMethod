@@ -239,8 +239,12 @@
 										&& elementName.charAt(0) != '$') { //$NON-NLS-1$
 									List<IModelElement> fields = new LinkedList<IModelElement>();
 									for (IType t : types) {
-										return PHPModelUtils.getTypeField(t,
-												elementName, true);
+										IField[] typeFields = PHPModelUtils
+												.getTypeField(t, elementName,
+														true);
+										for (IField currentField : typeFields) {
+											fields.add(currentField);
+										}
 									}
 									return fields
 											.toArray(new IModelElement[fields
@@ -250,23 +254,7 @@
 
 							// What can it be? Only class variables:
 							Set<IModelElement> fields = new TreeSet<IModelElement>(
-									new Comparator<IModelElement>() {
-										public int compare(IModelElement o1,
-												IModelElement o2) {
-											try {
-												ISourceRange r1 = ((SourceRefElement) o1)
-														.getSourceRange();
-												ISourceRange r2 = ((SourceRefElement) o2)
-														.getSourceRange();
-												return (int) Math.signum(r1
-														.getOffset()
-														- r2.getOffset());
-											} catch (ModelException e) {
-												PHPCorePlugin.log(e);
-											}
-											return 0;
-										}
-									});
+									new SourceFieldComparator());
 							for (IType t : types) {
 								fields.addAll(Arrays.asList(PHPModelUtils
 										.getTypeHierarchyField(t, elementName,
