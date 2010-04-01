@@ -1,0 +1,33 @@
+	/**
+	 * 
+	 * @param type
+	 * @param isEnclosingClass
+	 * @return IMethod[]
+	 * 		constructors[0] is the type's constructor
+	 * 		constructors[1] is an available FakeConstructor for constructors[0]
+	 * 		both constructors[0] and constructors[1] could be null
+	 */
+	public static IMethod[] getConstructors(IType type,boolean isEnclosingClass){
+		IMethod[] constructors = new IMethod[2];
+		try {
+			constructors = getConstructorsOfType(type, isEnclosingClass);
+
+			// try to find constructor in super classes
+			if (constructors[0] == null) {
+				ITypeHierarchy newSupertypeHierarchy = type
+						.newSupertypeHierarchy(null);
+				IType[] allSuperclasses = newSupertypeHierarchy
+						.getAllSuperclasses(type);
+				if (allSuperclasses != null && allSuperclasses.length > 0) {
+					for (IType superClass : allSuperclasses) {
+						constructors = getConstructorsOfType(superClass, isEnclosingClass);
+					}
+				}
+			}
+
+		} catch (ModelException e) {
+			PHPCorePlugin.log(e);
+		}
+		return constructors;
+	}
+
