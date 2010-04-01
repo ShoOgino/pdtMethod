@@ -8,36 +8,58 @@
 			if (selection.size() != 1)
 				return;
 			Object input = selection.getFirstElement();
+
+			if (input instanceof LogicalPackage) {
+				IScriptFolder[] fragments = ((LogicalPackage) input).getFragments();
+				if (fragments.length == 0)
+					return;
+				input = fragments[0];
+			}
+
 			// || firstElement instanceof PHPSuperClassNameData || firstElement
 			// instanceof PHPInterfaceNameData
-			if (!(input instanceof ISourceModule)) {
+			if (!(input instanceof IModelElement)) {
 				IStatus status = createStatus("A PHP element must be selected.");
 				ErrorDialog.openError(getShell(), getDialogTitle(),
-						"Cannot create type hierarchy", status);
+						ActionMessages.OpenTypeHierarchyAction_messages_title, status);
 				return;
 			}
-			ISourceModule sourceModule = (ISourceModule) input;
-			String fileName = sourceModule.getElementName();
-			IModelElement element = DLTKCore.create(ResourcesPlugin
-					.getWorkspace().getRoot().getFile(
-							Path.fromOSString(fileName)));
-			if (element instanceof ISourceModule) {
-				int offset = 0;
-				try {
-					offset = sourceModule.getSourceRange().getOffset();
-				} catch (ModelException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				IModelElement modelElement = getSelectionModelElement(offset,
-						1, (ISourceModule) element);
-				if (modelElement != null) {
-					if (!ActionUtil.isProcessable(getShell(), modelElement)) {
-						return;
-					}
-					run(new IModelElement[] { modelElement });
-				}
+			IModelElement element = (IModelElement) input;
+			if (!ActionUtil.isProcessable(getShell(), element))
+				return;
+
+			List result = new ArrayList(1);
+			IStatus status = compileCandidates(result, element);
+			if (status.isOK()) {
+				run((IModelElement[]) result.toArray(new IModelElement[result
+						.size()]));
+			} else {
+				ErrorDialog.openError(getShell(), getDialogTitle(),
+						ActionMessages.OpenTypeHierarchyAction_messages_title,
+						status);
 			}
+//			ISourceModule sourceModule = (ISourceModule) input;
+//			String fileName = sourceModule.getElementName();
+//			IModelElement element = DLTKCore.create(ResourcesPlugin
+//					.getWorkspace().getRoot().getFile(
+//							Path.fromOSString(fileName)));
+//			if (element instanceof ISourceModule) {
+//				int offset = 0;
+//				try {
+//					offset = sourceModule.getSourceRange().getOffset();
+//				} catch (ModelException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
+//				IModelElement modelElement = getSelectionModelElement(offset,
+//						1, (ISourceModule) element);
+//				if (modelElement != null) {
+//					if (!ActionUtil.isProcessable(getShell(), modelElement)) {
+//						return;
+//					}
+//					run(new IModelElement[] { modelElement });
+//				}
+//			}
 		}
 	}
 
