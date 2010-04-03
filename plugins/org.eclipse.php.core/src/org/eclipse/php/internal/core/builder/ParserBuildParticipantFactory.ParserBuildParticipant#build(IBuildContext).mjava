@@ -1,0 +1,37 @@
+		public void build(IBuildContext context) throws CoreException {
+			IModuleDeclaration moduleDeclaration = (ModuleDeclaration) context
+					.get(IBuildContext.ATTR_MODULE_DECLARATION);
+			if (moduleDeclaration != null) {
+				// do nothing if already have AST - optimization for reconcile
+				return;
+			}
+			// get cache entry
+			final ISourceModuleInfo cacheEntry = ModelManager.getModelManager()
+					.getSourceModuleInfoCache().get(context.getSourceModule());
+			// if full build,do not use cache,or the error marker will not be
+			// refreshed
+			if (context.getBuildType() != IScriptBuilder.FULL_BUILD) {
+
+				// check if there is cached AST
+				moduleDeclaration = SourceParserUtil.getModuleFromCache(
+						cacheEntry, context.getProblemReporter());
+				if (moduleDeclaration != null) {
+					// use AST from cache
+					context.set(IBuildContext.ATTR_MODULE_DECLARATION,
+							moduleDeclaration);
+					return;
+				}
+			}
+
+			// create problem collector
+			final ProblemCollector problemCollector = new ProblemCollector();
+			// parse
+			moduleDeclaration = parser.parse((IModuleSource) context
+					.getSourceModule(), problemCollector);
+			// put result to the cache
+			SourceParserUtil.putModuleToCache(cacheEntry, moduleDeclaration,
+					problemCollector);
+			// report errors to the build context
+			problemCollector.copyTo(context.getProblemReporter());
+		}
+
