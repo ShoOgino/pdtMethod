@@ -1,0 +1,35 @@
+	protected static IStructuredDocument determineDocument(ISourceModule module) {
+		IStructuredDocument document = null;
+		IStructuredModel structuredModel = null;
+		try {
+			IFile file = (IFile) module.getResource();
+			if (file != null) {
+				if (file.exists()) {
+					structuredModel = StructuredModelManager.getModelManager()
+							.getExistingModelForRead(file);
+					if (structuredModel != null) {
+						document = structuredModel.getStructuredDocument();
+					} else {
+						document = StructuredModelManager.getModelManager()
+								.createStructuredDocumentFor(file);
+					}
+				} else {
+					document = StructuredModelManager.getModelManager()
+							.createNewStructuredDocumentFor(file);
+					document.set(module.getSource());
+				}
+			}
+		} catch (IOException e) {
+			PHPUiPlugin.log(e);
+		} catch (CoreException e) {
+			PHPUiPlugin.log(e);
+		} catch (ResourceAlreadyExists e) {
+			PHPUiPlugin.log(e);
+		} finally {
+			if (structuredModel != null) {
+				structuredModel.releaseFromRead();
+			}
+		}
+		return document;
+	}
+
