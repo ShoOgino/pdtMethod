@@ -1,0 +1,34 @@
+	// public static PHPexeItem getPHPexeItem(IProject project) {
+	//		
+	// }
+	public static PHPexeItem getPHPexeItem(IProject project) {
+		if (project != null) {
+
+			IEclipsePreferences node = createPreferenceScopes(project)[0]
+					.getNode(PHPProjectPreferences.getPreferenceNodeQualifier());
+			if (node != null) {
+				// Replace the workspace defaults with the project-specific
+				// settings.
+				String phpDebuggerId = node.get(
+						PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID, null);
+				String phpExe = node.get(
+						PHPDebugCorePreferenceNames.DEFAULT_PHP, null);
+				if (phpDebuggerId != null && phpExe != null) {
+					return PHPexes.getInstance().getItem(phpDebuggerId, phpExe);
+				}
+			}
+			PHPVersion phpVersion = PHPVersion.byAlias(new Key(
+					PHPCorePlugin.ID, Keys.PHP_VERSION).getStoredValue(
+					createPreferenceScopes(project), false, null));
+			if (phpVersion != null) {
+				PHPexeItem item = PHPexes.getInstance()
+						.getDefaultItemForPHPVersion(phpVersion);
+				if (item != null) {
+					return item;
+				}
+			}
+		}
+
+		return getWorkspaceDefaultExe();
+	}
+

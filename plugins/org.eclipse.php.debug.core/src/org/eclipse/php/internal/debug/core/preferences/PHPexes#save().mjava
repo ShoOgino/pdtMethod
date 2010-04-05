@@ -8,6 +8,7 @@
 		final StringBuffer inisString = new StringBuffer();
 		final StringBuffer namesString = new StringBuffer();
 		final StringBuffer debuggersString = new StringBuffer();
+		final StringBuffer defaultItemForPHPVersionString = new StringBuffer();
 		for (int i = 0; i < phpItems.length; i++) {
 			final PHPexeItem item = phpItems[i];
 			if (i > 0) {
@@ -15,12 +16,26 @@
 				inisString.append(SEPARATOR);
 				namesString.append(SEPARATOR);
 				debuggersString.append(SEPARATOR);
+				defaultItemForPHPVersionString.append(SEPARATOR);
 			}
 			locationsString.append(item.getExecutable().toString());
 			inisString.append(item.getINILocation() != null ? item
-					.getINILocation().toString() : "null"); //$NON-NLS-1$
+					.getINILocation().toString() : NULL_PLACE_HOLDER); //$NON-NLS-1$
 			namesString.append(item.getName());
 			debuggersString.append(item.getDebuggerID());
+			if (item.geDefaultForPHPVersionSize() > 0) {
+				for (int j = 0; j < item.geDefaultForPHPVersionSize(); j++) {
+					if (j > 0) {
+						defaultItemForPHPVersionString
+								.append(SEPARATOR_FOR_PHPVERSION);
+					}
+					defaultItemForPHPVersionString.append(item
+							.getPHPVersionAtDefaultList(j).getAlias());
+				}
+			} else {
+				defaultItemForPHPVersionString.append(NULL_PLACE_HOLDER);
+			}
+
 		}
 		prefs.setValue(PHPDebugCorePreferenceNames.INSTALLED_PHP_NAMES,
 				namesString.toString());
@@ -30,7 +45,9 @@
 				inisString.toString());
 		prefs.setValue(PHPDebugCorePreferenceNames.INSTALLED_PHP_DEBUGGERS,
 				debuggersString.toString());
-
+		prefs.setValue(
+				PHPDebugCorePreferenceNames.INSTALLED_PHP_DEFAULT_FOR_VERSIONS,
+				defaultItemForPHPVersionString.toString());
 		// save the default executables per debugger id
 		final StringBuffer defaultsString = new StringBuffer();
 		Iterator<PHPexeItem> iterator = defaultItems.values().iterator();

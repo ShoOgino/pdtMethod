@@ -50,12 +50,40 @@
 				.split(SEPARATOR)
 				: new String[0];
 
+		// Load the PHP Versions array
+		String defaultItemForPHPVersionString = prefs
+				.getString(PHPDebugCorePreferenceNames.INSTALLED_PHP_DEFAULT_FOR_VERSIONS);
+		if (defaultItemForPHPVersionString == null) {
+			defaultItemForPHPVersionString = "";
+		}
+		final String[] defaultItemForPHPVersions = defaultItemForPHPVersionString
+				.length() > 0 ? defaultItemForPHPVersionString.split(SEPARATOR)
+				: new String[0];
+
 		// Add the executable items
 		assert names.length == phpExecutablesLocations.length;
 		for (int i = 0; i < phpExecutablesLocations.length; i++) {
-			String iniLocation = "null".equals(phpIniLocations[i]) ? null : phpIniLocations[i]; //$NON-NLS-1$
+			String iniLocation = NULL_PLACE_HOLDER.equals(phpIniLocations[i]) ? null
+					: phpIniLocations[i]; //$NON-NLS-1$
 			final PHPexeItem item = new PHPexeItem(names[i],
 					phpExecutablesLocations[i], iniLocation, debuggers[i]);
+			// the size of defaultItemForPHPVersions may be 0 when you use this
+			// first time
+			if (defaultItemForPHPVersions.length == phpExecutablesLocations.length) {
+				if (!NULL_PLACE_HOLDER.equals(defaultItemForPHPVersions[i])) {
+					final String[] phpVersions = defaultItemForPHPVersions[i]
+							.length() > 0 ? defaultItemForPHPVersions[i]
+							.split(SEPARATOR_FOR_PHPVERSION) : new String[0];
+					for (int j = 0; j < phpVersions.length; j++) {
+						PHPVersion phpVersion = PHPVersion
+								.byAlias(phpVersions[j]);
+						if (phpVersion != null) {
+							item.addPHPVersionToDefaultList(phpVersion);
+							defaultItemsForPHPVersion.put(phpVersion, item);
+						}
+					}
+				}
+			}
 			if (item.getExecutable() != null) {
 				boolean filterItem = WorkbenchActivityHelper
 						.filterItem(new IPluginContribution() {
