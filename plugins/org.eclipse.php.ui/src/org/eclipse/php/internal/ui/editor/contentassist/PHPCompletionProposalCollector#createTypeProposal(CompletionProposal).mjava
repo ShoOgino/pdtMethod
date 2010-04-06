@@ -1,5 +1,5 @@
 	private IScriptCompletionProposal createTypeProposal(
-			CompletionProposal typeProposal) {
+			final CompletionProposal typeProposal) {
 
 		String completion = new String(typeProposal.getCompletion());
 		int replaceStart = typeProposal.getReplaceStart();
@@ -12,8 +12,40 @@
 		String displayString = ((PHPCompletionProposalLabelProvider) getLabelProvider())
 				.createTypeProposalLabel(typeProposal);
 
-		ScriptCompletionProposal scriptProposal = createScriptCompletionProposal(
-				completion, replaceStart, length, image, displayString, 0);
+		// return new PHPCompletionProposal(completion, replaceStart, length,
+		// image, displayString, 0);
+		ScriptCompletionProposal scriptProposal = new PHPCompletionProposal(
+				completion, replaceStart, length, image, displayString, 0) {
+			private boolean fReplacementStringComputed = false;
+
+			public String getReplacementString() {
+				if (!fReplacementStringComputed)
+					setReplacementString(computeReplacementString());
+				return super.getReplacementString();
+			}
+
+			private String computeReplacementString() {
+				fReplacementStringComputed = true;
+				String suffix = getSuffix((IType) typeProposal
+						.getModelElement());
+				return super.getReplacementString() + suffix;
+			}
+
+			public String getSuffix(IType type) {
+				String defaultResult = EMPTY_STRING;
+				if (!PHPModelUtils.hasStaticMember(type)) {
+					return defaultResult;
+				}
+				String nextWord = null;
+				try {
+					nextWord = document.get(offset, 2);// "::".length()
+				} catch (BadLocationException e) {
+					PHPUiPlugin.log(e);
+				}
+				return DOUBLE_COLON.equals(nextWord) ? defaultResult
+						: DOUBLE_COLON;
+			}
+		};
 
 		scriptProposal.setRelevance(computeRelevance(typeProposal));
 		scriptProposal.setProposalInfo(new TypeProposalInfo(getSourceModule()
