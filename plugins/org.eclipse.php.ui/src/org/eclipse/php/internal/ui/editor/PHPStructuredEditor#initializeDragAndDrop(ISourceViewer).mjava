@@ -1,0 +1,35 @@
+	/**
+	 * Initializes the drag and drop support for the given viewer based on
+	 * provided editor adapter for drop target listeners.
+	 * 
+	 * @param viewer
+	 *            the viewer
+	 * @since 3.0
+	 */
+	protected void initializeDragAndDrop(ISourceViewer viewer) {
+		IDragAndDropService dndService = (IDragAndDropService) getSite()
+				.getService(IDragAndDropService.class);
+		if (dndService == null)
+			return;
+
+		ITextEditorDropTargetListener listener = (ITextEditorDropTargetListener) getAdapter(ITextEditorDropTargetListener.class);
+
+		if (listener == null) {
+			Object object = Platform.getAdapterManager().loadAdapter(this,
+					"org.eclipse.ui.texteditor.ITextEditorDropTargetListener"); //$NON-NLS-1$
+			if (object instanceof ITextEditorDropTargetListener)
+				listener = (ITextEditorDropTargetListener) object;
+		}
+
+		if (listener != null)
+			dndService.addMergedDropTarget(viewer.getTextWidget(),
+					DND.DROP_MOVE | DND.DROP_COPY, listener.getTransfers(),
+					listener);
+
+		IPreferenceStore store = getPreferenceStore();
+		if (store != null
+				&& store.getBoolean(PREFERENCE_TEXT_DRAG_AND_DROP_ENABLED))
+			installTextDragAndDrop(viewer);
+
+	}
+

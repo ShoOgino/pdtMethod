@@ -1,0 +1,28 @@
+	/**
+	 * Uninstalls text drag and drop from the given source viewer.
+	 * 
+	 * @param viewer
+	 *            the viewer
+	 * @since 3.3
+	 */
+	protected void uninstallTextDragAndDrop(ISourceViewer viewer) {
+		if (viewer == null || !fIsTextDragAndDropInstalled)
+			return;
+
+		final IDragAndDropService dndService = (IDragAndDropService) getSite()
+				.getService(IDragAndDropService.class);
+		if (dndService == null)
+			return;
+
+		StyledText st = viewer.getTextWidget();
+		dndService.removeMergedDropTarget(st);
+
+		DragSource dragSource = (DragSource) st.getData(DND.DRAG_SOURCE_KEY);
+		if (dragSource != null) {
+			dragSource.dispose();
+			st.setData(DND.DRAG_SOURCE_KEY, null);
+		}
+
+		fIsTextDragAndDropInstalled = false;
+	}
+
