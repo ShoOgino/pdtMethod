@@ -1,0 +1,92 @@
+	@Override
+	protected String getHoverInfo(String nature, IModelElement[] result) {
+		StringBuffer buffer = new StringBuffer();
+		int nResults = result.length;
+		if (nResults == 0)
+			return null;
+
+		boolean hasContents = false;
+		if (nResults > 1) {
+			HTMLPrinter.addSmallHeader(buffer, getInfoText(result[0]));
+			HTMLPrinter.addParagraph(buffer, "<hr>"); //$NON-NLS-1$
+			for (int i = 0; i < result.length; i++) {
+				// HTMLPrinter.startBulletList(buffer);
+				IModelElement curr = result[i];
+				if (curr instanceof IMember) {
+					IMember member = (IMember) curr;
+
+					Reader reader;
+					try {
+						reader = ScriptDocumentationAccess
+								.getHTMLContentReader(nature, member, true,
+										true);
+
+						// Provide hint why there's no doc
+						if (reader == null) {
+							// reader= new
+							// StringReader(DLTKHoverMessages.ScriptdocHover_noAttachedInformation);
+							continue;
+						}
+
+					} catch (ModelException ex) {
+						return null;
+					}
+
+					if (reader != null) {
+						// HTMLPrinter.addBullet(buffer, getInfoText(curr));
+						// HTMLPrinter.addParagraph(buffer, "<br>");
+						if (hasContents) {
+							HTMLPrinter.addParagraph(buffer, "<hr>"); //$NON-NLS-1$
+						}
+						HTMLPrinter.addParagraph(buffer, reader);
+					}
+					hasContents = true;
+				}
+				// HTMLPrinter.endBulletList(buffer);
+			}
+
+		} else {
+
+			IModelElement curr = result[0];
+			if (curr instanceof IMember) {
+				IMember member = (IMember) curr;
+				HTMLPrinter.addSmallHeader(buffer, getInfoText(member));
+				Reader reader;
+				try {
+					reader = ScriptDocumentationAccess.getHTMLContentReader(
+							nature, member, true, true);
+
+					// Provide hint why there's no doc
+					if (reader == null) {
+						reader = new StringReader(
+								ScriptHoverMessages.ScriptdocHover_noAttachedInformation);
+					}
+
+				} catch (ModelException ex) {
+					return null;
+				}
+
+				if (reader != null) {
+					HTMLPrinter.addParagraph(buffer, reader);
+				}
+				hasContents = true;
+			}/*
+			 * else if (curr.getElementType() == IModelElement.LOCAL_VARIABLE ||
+			 * curr.getElementType() == IModelElement.TYPE_PARAMETER) {
+			 * HTMLPrinter.addSmallHeader(buffer, getInfoText(curr));
+			 * hasContents= true; }
+			 */
+		}
+
+		if (!hasContents)
+			return null;
+
+		if (buffer.length() > 0) {
+			HTMLPrinter.insertPageProlog(buffer, 0, getStyleSheet());
+			HTMLPrinter.addPageEpilog(buffer);
+			return buffer.toString();
+		}
+
+		return null;
+	}
+
