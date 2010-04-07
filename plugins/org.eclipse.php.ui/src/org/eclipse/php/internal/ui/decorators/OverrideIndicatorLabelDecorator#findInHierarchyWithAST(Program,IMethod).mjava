@@ -1,0 +1,26 @@
+	private int findInHierarchyWithAST(Program astRoot, IMethod method)
+			throws ModelException {
+		SourceRange range = new SourceRange(
+				method.getSourceRange().getOffset(), method.getSourceRange()
+						.getLength());
+		ASTNode node = NodeFinder.perform(astRoot, range);
+		if (node instanceof Identifier
+				&& node.getParent() instanceof MethodDeclaration) {
+			IMethodBinding binding = ((MethodDeclaration) node.getParent())
+					.resolveMethodBinding();
+			if (binding != null) {
+				IMethodBinding defining = Bindings.findOverriddenMethod(
+						binding, true);
+				if (defining != null) {
+					if (isAbstract(defining)) {
+						return PHPElementImageDescriptor.IMPLEMENTS;
+					} else {
+						return PHPElementImageDescriptor.OVERRIDES;
+					}
+				}
+				return 0;
+			}
+		}
+		return -1;
+	}
+

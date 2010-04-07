@@ -1,0 +1,41 @@
+	/**
+	 * Note: This method is for internal use only. Clients should not call this
+	 * method.
+	 * 
+	 * @param method
+	 *            The element to decorate
+	 * @return Resulting decorations (combination of
+	 *         JavaElementImageDescriptor.IMPLEMENTS and
+	 *         JavaElementImageDescriptor.OVERRIDES)
+	 * @throws ModelException
+	 * @throws IOException
+	 * 
+	 * @noreference This method is not intended to be referenced by clients.
+	 */
+	protected int getOverrideIndicators(IMethod method) throws ModelException,
+			IOException {
+		Program astRoot = SharedASTProvider.getAST(method.getSourceModule(),
+				SharedASTProvider.WAIT_ACTIVE_ONLY, null);
+		if (astRoot != null) {
+			int res = findInHierarchyWithAST(astRoot, method);
+			if (res != -1) {
+				return res;
+			}
+		}
+
+		IType type = method.getDeclaringType();
+
+		MethodOverrideTester methodOverrideTester = SuperTypeHierarchyCache
+				.getMethodOverrideTester(type);
+		IMethod defining = methodOverrideTester.findOverriddenMethod(method,
+				true);
+		if (defining != null) {
+			if (isAbstract(defining)) {
+				return PHPElementImageDescriptor.IMPLEMENTS;
+			} else {
+				return PHPElementImageDescriptor.OVERRIDES;
+			}
+		}
+		return 0;
+	}
+
