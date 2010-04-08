@@ -11,7 +11,7 @@
 			if (file != null) {
 				if (file.exists()) {
 					structuredModel = StructuredModelManager.getModelManager()
-							.getExistingModelForRead(file);
+							.getModelForRead(file);
 					if (structuredModel != null) {
 						document = structuredModel.getStructuredDocument();
 					} else {
@@ -20,18 +20,21 @@
 					}
 				}
 			}
+
+			if (document != null) {
+				Region region = new Region(0, document.getLength());
+				IContentFormatter formatter = getFormatter();
+				if (formatter != null)
+					formatter.format(document, region);
+			}
+
 		} catch (Exception e) {
 			PHPCorePlugin.log(e);
 		} finally {
+			// release model after formatting
 			if (structuredModel != null) {
 				structuredModel.releaseFromRead();
 			}
-		}
-		if (document != null) {
-			Region region = new Region(0, document.getLength());
-			IContentFormatter formatter = getFormatter();
-			if (formatter != null)
-				formatter.format(document, region);
 		}
 	}
 
