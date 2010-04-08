@@ -9,6 +9,15 @@
 		assert (phpTokens.size() == 0 || getLastToken().getEnd() == start)
 				&& tokensIterator == null;
 
+		if (phpTokens.size() > 0) {
+			ContextRegion lastContextRegion = (ContextRegion) phpTokens
+					.get(phpTokens.size() - 1);
+			if (deprecatedKeywordAfter(lastContextRegion.getType())) {
+				if (isKeyword(yylex)) {
+					yylex = PHPRegionTypes.PHP_STRING;
+				}
+			}
+		}
 		// if state was change - we add a new token and add state
 		if (lexerStateChanges.size() == 0
 				|| !getLastChange().state.equals(lexerState)) {
