@@ -17,8 +17,9 @@
 	 */
 	public static IType[] getTypes(String typeName, ISourceModule sourceModule,
 			int offset, IProgressMonitor monitor) throws ModelException {
+
 		if (typeName == null || typeName.length() == 0) {
-			return null;
+			return NULL_TYPES;
 		}
 
 		String namespace = extractNamespaceName(typeName, sourceModule, offset);
@@ -30,7 +31,7 @@
 				if (types.length > 0) {
 					return types;
 				}
-				return null;
+				return NULL_TYPES;
 			}
 			// it's a global reference: \A
 		} else {
@@ -51,16 +52,13 @@
 		IType[] types = PhpModelAccess.getDefault().findTypes(typeName,
 				MatchRule.EXACT, 0, 0, scope, null);
 		if (types == null) {
-			return null;
+			return NULL_TYPES;
 		}
 
-		List<IType> result = new ArrayList<IType>(types != null ? types.length
-				: 0);
-		if (types != null) {
-			for (IType type : types) {
-				if (getCurrentNamespace(type) == null) {
-					result.add(type);
-				}
+		List<IType> result = new ArrayList<IType>(types.length);
+		for (IType type : types) {
+			if (getCurrentNamespace(type) == null) {
+				result.add(type);
 			}
 		}
 
