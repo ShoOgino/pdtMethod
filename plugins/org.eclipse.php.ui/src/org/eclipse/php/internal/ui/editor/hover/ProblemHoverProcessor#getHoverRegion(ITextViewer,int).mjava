@@ -1,0 +1,31 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.eclipse.jface.text.ITextHover#getHoverRegion(org.eclipse.jface.text
+	 * .ITextViewer, int)
+	 */
+	public IRegion getHoverRegion(ITextViewer textViewer, int offset) {
+		IAnnotationModel model = ((SourceViewer) textViewer)
+				.getAnnotationModel();
+		Region hoverRegion = null;
+
+		if (model != null) {
+			Iterator e = model.getAnnotationIterator();
+			while (e.hasNext()) {
+				Annotation a = (Annotation) e.next();
+				if (!isAnnotationValid(a))
+					continue;
+				Position p = model.getPosition(a);
+				if (p != null && p.includes(offset)) {
+					// find the smallest region containing offset
+					if ((hoverRegion == null)
+							|| (hoverRegion.getLength() > p.getLength())) {
+						hoverRegion = new Region(p.getOffset(), p.getLength());
+					}
+				}
+			}
+		}
+		return hoverRegion;
+	}
+
