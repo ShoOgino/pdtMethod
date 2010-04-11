@@ -11,26 +11,19 @@
 							final String[] typesNames = PIPE_PATTERN
 									.split(reference.getName());
 							for (String typeName : typesNames) {
-								IEvaluatedType type = PHPSimpleTypes
-										.fromString(typeName);
-								if (type == null) {
-									if (typeName
-											.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) != -1
-											|| currentNamespace == null) {
-										type = new PHPClassType(typeName);
-									} else if (currentNamespace != null) {
-										type = new PHPClassType(
-												currentNamespace
-														.getElementName(),
-												typeName);
-									}
-								}
-								if (type != null) {
-									evaluated.add(type);
-								}
+								addType(currentNamespace, typeName);
 							}
 						}
 					}
+				}
+			} else {// resolve the type binding
+				// FIXME since this class name is
+				// PHPDocMethodReturnTypeEvaluator,so do we need change the
+				// class name or move the code to another class
+				try {
+					resolveReturnType(method);
+				} catch (ModelException e) {
+					PHPCorePlugin.log(e);
 				}
 			}
 		}
