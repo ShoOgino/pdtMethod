@@ -1,0 +1,18 @@
+		protected String resolve(TemplateContext context) {
+			ISourceModule module = ((ScriptTemplateContext) context)
+					.getSourceModule();
+			int offset = ((ScriptTemplateContext) context)
+					.getCompletionOffset();
+			CodeCompletionRequestor requestor = new CodeCompletionRequestor();
+			try {
+				module.codeComplete(offset, requestor, 1000);
+			} catch (ModelException e) {
+				PHPUiPlugin.log(e);
+			}
+
+			String[] knownVars = requestor.getVariables();
+			Set knownVarsSet = new HashSet(Arrays.asList(knownVars));
+
+			return findUnusedName(knownVarsSet);
+		}
+

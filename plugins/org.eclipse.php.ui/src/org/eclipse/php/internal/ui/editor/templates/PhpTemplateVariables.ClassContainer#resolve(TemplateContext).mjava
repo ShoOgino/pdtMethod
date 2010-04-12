@@ -1,0 +1,22 @@
+		protected String resolve(TemplateContext context) {
+			ISourceModule module = getSourceModule(context);
+			if (module == null)
+				return null;
+
+			int position = ((ScriptTemplateContext) context)
+					.getCompletionOffset();
+			try {
+				IModelElement element = module.getElementAt(position);
+				while ((element != null)
+						&& (element.getElementType() != IModelElement.TYPE)) {
+					element = element.getParent();
+				}
+
+				return element == null ? null : element.getElementName();
+			} catch (ModelException e) {
+				PHPUiPlugin.log(e);
+			}
+
+			return null;
+		}
+
