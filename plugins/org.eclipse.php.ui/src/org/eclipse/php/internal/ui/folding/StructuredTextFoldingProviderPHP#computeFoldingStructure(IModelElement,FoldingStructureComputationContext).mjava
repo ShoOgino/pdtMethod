@@ -52,16 +52,22 @@
 				ctx);
 		if (regions.length > 0) {
 			// comments
+			// use the set to filter the duplicate comment IRegion,or sometimes
+			// you will see the header comment is collapsed but with a expanded
+			// iamge,this is because there are two ProjectionAnnotations for one
+			// comment,and the second ProjectionAnnotation's image overide the
+			// header one
+			Set<IRegion> regionSet = new HashSet<IRegion>();
 			for (int i = 0; i < regions.length - 1; i++) {
 				IRegion normalized = alignRegion(regions[i], ctx);
-				if (normalized != null) {
+				if (normalized != null && regionSet.add(normalized)) {
 					Position position = createCommentPosition(normalized);
 					if (position != null) {
 						boolean commentCollapse;
 						if (i == 0
 								&& (regions.length > 2 || ctx
 										.hasHeaderComment())
-						/* && element == ctx.getFirstType() */) {
+								&& element == ctx.getFirstElement()) {
 							commentCollapse = ctx.collapseHeaderComments();
 						} else {
 							commentCollapse = ctx.collapseJavadoc();
