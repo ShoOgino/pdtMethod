@@ -4,31 +4,32 @@
 	private List<String> getMarkerMessages(ISourceViewer viewer, int line) {
 
 		IDocument document = viewer.getDocument();
-		IAnnotationModel model = viewer.getAnnotationModel();
-
+		IAnnotationModel model = getAnnotationModel(viewer);
 		List<String> messages = new ArrayList<String>();
 
 		if (model == null) {
 			return messages;
 		}
-
+		HashMap messagesAtPosition = new HashMap();
 		Iterator e = model.getAnnotationIterator();
 		while (e.hasNext()) {
 			Object o = e.next();
 			if (o instanceof Annotation) {
 				Annotation a = (Annotation) o;
 				if (compareRulerLine(model.getPosition(a), document, line) == 1) {
-					String text = null;
-					if (a instanceof MarkerAnnotation) {
-						IMarker marker = ((MarkerAnnotation) a).getMarker();
-						text = marker.getAttribute(IMarker.MESSAGE,
-								(String) null);
+					if (a instanceof AnnotationBag) {
+						AnnotationBag bag = (AnnotationBag) a;
+						Iterator iterator = bag.iterator();
+						while (iterator.hasNext()) {
+							Annotation annotation = (Annotation) iterator
+									.next();
+							addText(model, annotation, messages,
+									messagesAtPosition);
+						}
 					} else {
-						text = a.getText();
+						addText(model, a, messages, messagesAtPosition);
 					}
-					if (text != null) {
-						messages.add(text);
-					}
+
 				}
 			}
 		}
