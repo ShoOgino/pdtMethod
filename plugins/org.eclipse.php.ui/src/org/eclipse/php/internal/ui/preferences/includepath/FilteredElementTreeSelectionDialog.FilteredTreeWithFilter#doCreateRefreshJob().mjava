@@ -1,0 +1,61 @@
+		// This is a copy of the super method, but without auto-expansion.
+		protected WorkbenchJob doCreateRefreshJob() {
+			return new WorkbenchJob("Refresh Filter") {//$NON-NLS-1$
+
+				public IStatus runInUIThread(IProgressMonitor monitor) {
+					if (treeViewer.getControl().isDisposed()) {
+						return Status.CANCEL_STATUS;
+					}
+
+					String text = getFilterString();
+					if (text == null) {
+						return Status.OK_STATUS;
+					}
+
+					boolean initial = initialText != null
+							&& initialText.equals(text);
+					if (initial) {
+						getPatternFilter().setPattern(null);
+					} else {
+						getPatternFilter().setPattern(text);
+					}
+
+					Control redrawFalseControl = treeComposite != null ? treeComposite
+							: treeViewer.getControl();
+					try {
+						// don't want the user to see updates that will be made
+						// to
+						// the tree
+						// we are setting redraw(false) on the composite to
+						// avoid
+						// dancing scrollbar
+						redrawFalseControl.setRedraw(false);
+						if (!narrowingDown) {
+							// collapse all
+							TreeItem[] is = treeViewer.getTree().getItems();
+							for (int i = 0; i < is.length; i++) {
+								TreeItem item = is[i];
+								if (item.getExpanded()) {
+									treeViewer.setExpandedState(item.getData(),
+											false);
+								}
+							}
+						}
+						treeViewer.refresh(true);
+
+						updateToolbar(text.length() > 0 && !initial);
+
+					} finally {
+						// done updating the tree - set redraw back to true
+						TreeItem[] items = getViewer().getTree().getItems();
+						if (items.length > 0
+								&& getViewer().getTree().getSelectionCount() == 0) {
+							treeViewer.getTree().setTopItem(items[0]);
+						}
+						redrawFalseControl.setRedraw(true);
+					}
+					return Status.OK_STATUS;
+				}
+			};
+		}
+

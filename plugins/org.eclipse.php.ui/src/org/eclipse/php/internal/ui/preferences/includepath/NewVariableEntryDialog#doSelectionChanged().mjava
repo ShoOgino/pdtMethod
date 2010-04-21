@@ -1,0 +1,48 @@
+	private void doSelectionChanged() {
+		boolean isValidSelection = true;
+		boolean canExtend = false;
+		StatusInfo status = new StatusInfo();
+
+		List selected = fVariablesList.getSelectedElements();
+		int nSelected = selected.size();
+
+		if (nSelected > 0) {
+			fResultPaths = new Path[nSelected];
+			for (int i = 0; i < nSelected; i++) {
+				BPVariableElement curr = (BPVariableElement) selected.get(i);
+				fResultPaths[i] = new Path(curr.getName());
+				File file = curr.getPath().toFile();
+				if (!file.exists()) {
+					status
+							.setError(NewWizardMessages.NewVariableEntryDialog_info_notexists);
+					isValidSelection = false;
+					break;
+				}
+				if (file.isDirectory()) {
+					canExtend = true;
+				}
+			}
+		} else {
+			isValidSelection = false;
+			status
+					.setInfo(NewWizardMessages.NewVariableEntryDialog_info_noselection);
+		}
+		if (isValidSelection && nSelected > 1) {
+			String str = Messages.format(
+					NewWizardMessages.NewVariableEntryDialog_info_selected,
+					String.valueOf(nSelected));
+			status.setInfo(str);
+		}
+		// TODO now disable Extend button
+		fCanExtend = nSelected == 1 && canExtend;
+		fVariablesList.enableButton(0, fCanExtend);
+
+		updateStatus(status);
+		fIsValidSelection = isValidSelection;
+		Button okButton = getButton(IDialogConstants.OK_ID);
+		if (okButton != null && !okButton.isDisposed()) {
+			okButton.setEnabled(isValidSelection);
+		}
+		updateDeprecationWarning();
+	}
+
