@@ -1,13 +1,19 @@
 	static Change createDeleteChange(TextChangeManager manager,
 			IResource[] resources, IModelElement[] modelElements,
-			String changeName) throws CoreException {
-		final DynamicValidationStateChange result = new DynamicValidationStateChange(
-				changeName) {
-			public Change perform(IProgressMonitor pm) throws CoreException {
-				super.perform(pm);
-				return null;
-			}
-		};
+			String changeName, List packageDeletes) throws CoreException {
+		// final DynamicValidationStateChange result= new
+		// DynamicValidationStateChange(changeName) {
+		// public Change perform(IProgressMonitor pm) throws CoreException {
+		// super.perform(pm);
+		// return null;
+		// }
+		// };
+		DynamicValidationStateChange result;
+		if (packageDeletes.size() > 0) {
+			result = new UndoablePackageDeleteChange(changeName, packageDeletes);
+		} else {
+			result = new DynamicValidationStateChange(changeName);
+		}
 		for (int i = 0; i < modelElements.length; i++) {
 			IModelElement element = modelElements[i];
 			if (!ReorgUtils.isInsideSourceModule(element))
