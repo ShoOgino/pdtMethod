@@ -1,0 +1,56 @@
+	public void delete(IModelElement element) throws CoreException {
+		switch (element.getElementType()) {
+		case IModelElement.SCRIPT_MODEL:
+			return;
+		case IModelElement.SCRIPT_PROJECT:
+			fDelete.add(element);
+			if (element.getResource() != null)
+				getResourceModifications().addDelete(element.getResource());
+			return;
+		case IModelElement.PROJECT_FRAGMENT:
+			fDelete.add(element);
+			IResource resource = element.getResource();
+			// Flag an resource change even if we have an archive. If it is
+			// internal (we have a underlying resource then we have a resource
+			// change.
+			if (resource != null)
+				getResourceModifications().addDelete(resource);
+			return;
+		case IModelElement.SCRIPT_FOLDER:
+			fDelete.add(element);
+			fPackagesToDelete.add(element);
+			return;
+		case IModelElement.SOURCE_MODULE:
+			fDelete.add(element);
+			try {
+				IType[] types = ((ISourceModule) element).getTypes();
+				fDelete.addAll(Arrays.asList(types));
+			} catch (ModelException e) {
+				// Ignore content retrieve errors
+				DLTKUIPlugin.log(e);
+			}
+			if (element.getResource() != null)
+				getResourceModifications().addDelete(element.getResource());
+			return;
+		case IModelElement.TYPE:
+			fDelete.add(element);
+			IType type = (IType) element;
+			ISourceModule unit = type.getSourceModule();
+			// TODO: Looks like a bug:
+			// unit.getElementName().endsWith(type.getElementName())
+			if (type.getDeclaringType() == null
+					&& unit.getElementName().endsWith(type.getElementName())) {
+				if (unit.getTypes().length == 1) {
+					fDelete.add(unit);
+					if (unit.getResource() != null)
+						getResourceModifications()
+								.addDelete(unit.getResource());
+				}
+			}
+			return;
+		default:
+			fDelete.add(element);
+		}
+
+	}
+
