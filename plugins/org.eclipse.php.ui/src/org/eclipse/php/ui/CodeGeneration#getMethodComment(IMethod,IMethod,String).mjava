@@ -77,7 +77,21 @@
 			resolvedBinding = functionDeclaration.resolveFunctionBinding();
 			formalParameters = functionDeclaration.formalParameters();
 		}
-
+		final Set<String> exceptions = new HashSet<String>();
+		elementAt.accept(new AbstractVisitor() {
+			public boolean visit(ThrowStatement throwStatement) {
+				if (throwStatement.getExpression() instanceof ClassInstanceCreation) {
+					ClassInstanceCreation cic = (ClassInstanceCreation) throwStatement
+							.getExpression();
+					if (cic.getClassName().getName() instanceof Identifier) {
+						Identifier name = (Identifier) cic.getClassName()
+								.getName();
+						exceptions.add(name.getName());
+					}
+				}
+				return true;
+			}
+		});
 		if (formalParameters != null) {
 			// get parameter type
 			parameterTypes = new String[formalParameters.size()];
@@ -143,10 +157,11 @@
 			return StubUtility.getMethodComment(method.getScriptProject(),
 					declaringType.getElementName(), method.getElementName(),
 					paramNames, retType, typeParameterNames, overridden, false,
-					lineDelimiter);
+					lineDelimiter, exceptions);
 		}
 		return StubUtility.getMethodComment(method.getScriptProject(), null,
 				method.getElementName(), paramNames, retType,
-				typeParameterNames, overridden, false, lineDelimiter);
+				typeParameterNames, overridden, false, lineDelimiter,
+				exceptions);
 	}
 
