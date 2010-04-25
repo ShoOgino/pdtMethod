@@ -5,15 +5,19 @@
 		final Expression functionName = functionInvocation.getFunctionName()
 				.getName();
 		final int invocationParent = functionInvocation.getParent().getType();
-		if (functionName.getType() == ASTNode.IDENTIFIER
+		if ((functionName.getType() == ASTNode.IDENTIFIER || functionName
+				.getType() == ASTNode.NAMESPACE_NAME)
 				&& invocationParent != ASTNode.METHOD_INVOCATION
 				&& invocationParent != ASTNode.STATIC_METHOD_INVOCATION) {
 			final Identifier identifier = (Identifier) functionName;
-			if (this.functionName.equalsIgnoreCase(identifier.getName())) {
-				fResult.add(new OccurrenceLocation(functionName.getStart(),
-						functionName.getLength(),
-						getOccurrenceType(functionName), fDescription));
-			}
+			String fullName = getFullName(identifier, fLastUseParts,
+					fCurrentNamespace);
+			nodeToFullName.put(identifier, fullName);
+			// if (this.functionName.equalsIgnoreCase(fullName)) {
+			// fResult.add(new OccurrenceLocation(functionName.getStart(),
+			// functionName.getLength(),
+			// getOccurrenceType(functionName), fDescription));
+			// }
 		}
 		return true;
 	}
