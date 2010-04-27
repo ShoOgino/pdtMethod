@@ -1,0 +1,84 @@
+	private void checkTypeDeclaration(TypeDeclaration typeDeclaration) {
+		assert typeDeclaration != null;
+
+		Block body = typeDeclaration.getBody();
+
+		// definitions of the class property
+		List<Statement> statements = body.statements();
+		for (Statement statement : statements) {
+			if (statement.getType() == ASTNode.METHOD_DECLARATION) {
+				final MethodDeclaration classMethodDeclaration = (MethodDeclaration) statement;
+				if (isMethod) {
+					final Identifier functionName = classMethodDeclaration
+							.getFunction().getFunctionName();
+					if (classMemberName
+							.equalsIgnoreCase(functionName.getName())) {
+						if (dispatcherType != null) {
+							if (isDispatcherTypeEquals(functionName)) {
+								addOccurrence(new OccurrenceLocation(
+										functionName.getStart(), functionName
+												.getLength(),
+										getOccurrenceType(functionName),
+										fDescription));
+							}
+						} else {
+							addOccurrence(new OccurrenceLocation(functionName
+									.getStart(), functionName.getLength(),
+									getOccurrenceType(functionName),
+									fDescription));
+						}
+					}
+				}
+			} else if (statement.getType() == ASTNode.FIELD_DECLARATION) {
+				if (!isMethod) {
+					FieldsDeclaration classVariableDeclaration = (FieldsDeclaration) statement;
+					final Variable[] variableNames = classVariableDeclaration
+							.getVariableNames();
+					for (int j = 0; j < variableNames.length; j++) {
+						// safe cast to identifier
+						assert variableNames[j].getName().getType() == ASTNode.IDENTIFIER;
+
+						final Identifier variable = (Identifier) variableNames[j]
+								.getName();
+						if (classMemberName.equals(variable.getName())) {
+							if (dispatcherType != null) {
+								if (isDispatcherTypeEquals(variable)) {
+									addOccurrence(new OccurrenceLocation(
+											variable.getStart() - 1, variable
+													.getLength() + 1,
+											F_WRITE_OCCURRENCE, fDescription));
+								}
+							} else {
+								addOccurrence(new OccurrenceLocation(variable
+										.getStart() - 1,
+										variable.getLength() + 1,
+										F_WRITE_OCCURRENCE, fDescription));
+							}
+						}
+					}
+				}
+			} else if (statement.getType() == ASTNode.CONSTANT_DECLARATION) {
+				ConstantDeclaration classVariableDeclaration = (ConstantDeclaration) statement;
+				List<Identifier> variableNames = classVariableDeclaration
+						.names();
+				for (Identifier name : variableNames) {
+					if (classMemberName.equals(name.getName())) {
+						if (dispatcherType != null) {
+							if (isDispatcherTypeEquals(name)) {
+								addOccurrence(new OccurrenceLocation(name
+										.getStart(), name.getLength(),
+										getOccurrenceType(name), fDescription));
+							}
+						} else {
+							addOccurrence(new OccurrenceLocation(name
+									.getStart(), name.getLength(),
+									getOccurrenceType(name), fDescription));
+						}
+					}
+				}
+			}
+		}
+		// }
+		body.accept(this);
+	}
+
