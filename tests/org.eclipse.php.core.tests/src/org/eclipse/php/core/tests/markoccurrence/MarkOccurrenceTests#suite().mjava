@@ -1,0 +1,67 @@
+	public static Test suite() {
+
+		TestSuite suite = new TestSuite("Auto Mark Occurrence Tests");
+
+		for (final PHPVersion phpVersion : TESTS.keySet()) {
+			TestSuite phpVerSuite = new TestSuite(phpVersion.getAlias());
+
+			for (String testsDirectory : TESTS.get(phpVersion)) {
+
+				for (final String fileName : getPDTTFiles(testsDirectory)) {
+					try {
+						final PdttFile pdttFile = new PdttFile(fileName);
+						phpVerSuite.addTest(new MarkOccurrenceTests(phpVersion
+								.getAlias()
+								+ " - /" + fileName) {
+
+							protected void setUp() throws Exception {
+								PHPCoreTests.setProjectPhpVersion(project,
+										phpVersion);
+								pdttFile.applyPreferences();
+							}
+
+							protected void tearDown() throws Exception {
+								if (testFile != null) {
+									testFile.delete(true, null);
+									testFile = null;
+								}
+							}
+
+							protected void runTest() throws Throwable {
+								// OccurrenceLocation[] proposals =
+								// getProposals(pdttFile
+								// .getFile());
+								compareProposals(pdttFile.getFile());
+							}
+						});
+					} catch (final Exception e) {
+						phpVerSuite.addTest(new TestCase(fileName) { // dummy
+									// test
+									// indicating
+									// PDTT
+									// file
+									// parsing
+									// failure
+									protected void runTest() throws Throwable {
+										throw e;
+									}
+								});
+					}
+				}
+			}
+			suite.addTest(phpVerSuite);
+		}
+
+		// Create a setup wrapper
+		TestSetup setup = new TestSetup(suite) {
+			protected void setUp() throws Exception {
+				setUpSuite();
+			}
+
+			protected void tearDown() throws Exception {
+				tearDownSuite();
+			}
+		};
+		return setup;
+	}
+

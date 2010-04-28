@@ -1,0 +1,26 @@
+	public IProject createProject(String name) {
+		IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(
+				name);
+		if (project.exists()) {
+			return project;
+		}
+		try {
+			project.create(null);
+
+			project.open(IResource.BACKGROUND_REFRESH,
+					new NullProgressMonitor());
+			IProjectDescription desc = project.getDescription();
+			desc.setNatureIds(new String[] { PHPNature.ID });
+			project.setDescription(desc, null);
+
+			project.refreshLocal(IResource.DEPTH_INFINITE, null);
+			project.build(IncrementalProjectBuilder.FULL_BUILD, null);
+		} catch (CoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		PHPCoreTests.waitForIndexer();
+		PHPCoreTests.waitForAutoBuild();
+		return project;
+	}
+
