@@ -51,12 +51,14 @@
 				resolveMagicMethodDeclaration(method, methodName);
 			}
 			// if we can not get the return type,we resolve the method
-			if (subGoals.isEmpty() && evaluated.isEmpty()) {
-				try {
+			// if the method is abstract,it will make the call in deadloop.
+			try {
+				if (subGoals.isEmpty() && evaluated.isEmpty()
+						&& !PHPFlags.isAbstract(method.getFlags())) {
 					resolveReturnType(method);
-				} catch (ModelException e) {
-					PHPCorePlugin.log(e);
 				}
+			} catch (ModelException e) {
+				PHPCorePlugin.log(e);
 			}
 		}
 
