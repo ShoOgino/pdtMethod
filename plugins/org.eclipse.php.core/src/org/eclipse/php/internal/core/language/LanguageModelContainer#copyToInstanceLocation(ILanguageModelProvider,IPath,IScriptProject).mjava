@@ -1,18 +1,18 @@
 	protected IPath copyToInstanceLocation(ILanguageModelProvider provider,
 			IPath path, IScriptProject project) {
 
-		IPath targetPath = LanguageModelInitializer.getTargetLocation(provider,
-				project);
-
-		LocalFile targetDir = new LocalFile(targetPath.toFile());
-
 		try {
 			HashMap<String, String> map = new HashMap<String, String>();
 			map.put("$nl$", Platform.getNL()); //$NON-NLS-1$
 			URL url = FileLocator.find(provider.getPlugin().getBundle(),
 					provider.getPath(project), map);
-			LocalFile sourceDir = new LocalFile(new File(FileLocator.toFileURL(
-					url).getPath()));
+			File sourceFile = new File(FileLocator.toFileURL(url).getPath());
+			LocalFile sourceDir = new LocalFile(sourceFile);
+
+			IPath targetPath = LanguageModelInitializer.getTargetLocation(
+					provider, Path.fromOSString(sourceFile.getAbsolutePath()),
+					project);
+			LocalFile targetDir = new LocalFile(targetPath.toFile());
 
 			IFileInfo targetInfo = targetDir.fetchInfo();
 			boolean update = !targetInfo.exists();
@@ -26,10 +26,13 @@
 				targetDir.delete(EFS.NONE, new NullProgressMonitor());
 				sourceDir.copy(targetDir, EFS.NONE, new NullProgressMonitor());
 			}
+
+			return targetPath;
+
 		} catch (Exception e) {
 			Logger.logException(e);
 		}
 
-		return targetPath;
+		return null;
 	}
 

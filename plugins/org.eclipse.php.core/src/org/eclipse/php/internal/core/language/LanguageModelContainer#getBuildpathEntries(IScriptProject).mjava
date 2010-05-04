@@ -6,22 +6,32 @@
 				for (ILanguageModelProvider provider : LanguageModelInitializer
 						.getContributedProviders()) {
 
+					// Get the location where language model files reside
+					// in provider's plug-in:
 					IPath path = provider.getPath(project);
 					if (path != null) {
 
+						// Copy files (if target directory is older) to the
+						// plug-in state
+						// location:
 						path = copyToInstanceLocation(provider, path, project);
+						if (path != null) {
 
-						IEnvironment environment = EnvironmentManager
-								.getEnvironment(project);
-						if (environment != null) {
-							path = EnvironmentPathUtils.getFullPath(
-									environment, path);
+							LanguageModelInitializer.addPathName(path, provider
+									.getName());
+
+							IEnvironment environment = EnvironmentManager
+									.getEnvironment(project);
+							if (environment != null) {
+								path = EnvironmentPathUtils.getFullPath(
+										environment, path);
+							}
+							entries.add(DLTKCore.newLibraryEntry(path,
+									BuildpathEntry.NO_ACCESS_RULES,
+									BuildpathEntry.NO_EXTRA_ATTRIBUTES,
+									BuildpathEntry.INCLUDE_ALL,
+									BuildpathEntry.EXCLUDE_NONE, false, true));
 						}
-						entries.add(DLTKCore.newLibraryEntry(path,
-								BuildpathEntry.NO_ACCESS_RULES,
-								BuildpathEntry.NO_EXTRA_ATTRIBUTES,
-								BuildpathEntry.INCLUDE_ALL,
-								BuildpathEntry.EXCLUDE_NONE, false, true));
 					}
 				}
 				buildPathEntries = (IBuildpathEntry[]) entries
