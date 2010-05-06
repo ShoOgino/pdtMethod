@@ -1,0 +1,35 @@
+	/**
+	 * Finds method by name in the class hierarchy (including the class itself)
+	 * 
+	 * @param type
+	 *            Class element
+	 * @param hierarchy
+	 *            Cached type hierarchy
+	 * @param prefix
+	 *            Method name or prefix
+	 * @param exactName
+	 *            Whether the name is exact or it is prefix
+	 * @param monitor
+	 *            Progress monitor
+	 * @throws CoreException
+	 */
+	public static IMethod[] getTypeHierarchyMethod(IType type,
+			ITypeHierarchy hierarchy, String prefix, boolean exactName,
+			IProgressMonitor monitor, boolean returnFirst) throws CoreException {
+
+		if (prefix == null) {
+			throw new NullPointerException();
+		}
+		final List<IMethod> methods = new LinkedList<IMethod>();
+		methods.addAll(Arrays.asList(getTypeMethod(type, prefix, exactName)));
+
+		boolean ignoreSuper = methods.size() > 0 && returnFirst;
+
+		if (type.getSuperClasses() != null && type.getSuperClasses().length > 0
+				&& !ignoreSuper) {
+			methods.addAll(Arrays.asList(getSuperTypeHierarchyMethod(type,
+					hierarchy, prefix, exactName, monitor, returnFirst)));
+		}
+		return methods.toArray(new IMethod[methods.size()]);
+	}
+
