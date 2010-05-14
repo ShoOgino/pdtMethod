@@ -22,7 +22,8 @@
 				return offset;
 			}
 			// class members should return offset directly
-			if (modelElement.getElementType() != IModelElement.TYPE) {
+			if (modelElement.getElementType() != IModelElement.TYPE
+					&& !(modelElement instanceof FakeConstructor)) {
 				IModelElement type = modelElement
 						.getAncestor(IModelElement.TYPE);
 				if (type != null
@@ -53,6 +54,17 @@
 
 						try {
 							String namespaceName = namespace.getElementName();
+							boolean useAlias = !Platform
+									.getPreferencesService()
+									.getBoolean(
+											PHPCorePlugin.ID,
+											PHPCoreConstants.CODEASSIST_INSERT_FULL_QUALIFIED_NAME_FOR_NAMESPACE,
+											true, null);
+							if (!useAlias) {
+								namespaceName = namespaceName
+										+ NamespaceReference.NAMESPACE_SEPARATOR
+										+ modelElement.getElementName();
+							}
 							ModuleDeclaration moduleDeclaration = SourceParserUtil
 									.getModuleDeclaration(sourceModule);
 							TextEdit edits = null;
@@ -101,11 +113,51 @@
 									program.statements()
 											.add(0, newUseStatement);
 								}
-								edits = program.rewrite(document, null);
+								Map options = new HashMap(PHPCorePlugin
+										.getOptions());
+								// TODO project may be null
+								IScopeContext[] contents = new IScopeContext[] {
+										new ProjectScope(modelElement
+												.getScriptProject()
+												.getProject()),
+										new InstanceScope(), new DefaultScope() };
+								for (int i = 0; i < contents.length; i++) {
+									IScopeContext scopeContext = contents[i];
+									IEclipsePreferences node = scopeContext
+											.getNode(PHPCorePlugin.ID);
+									if (node != null) {
+										if (!options
+												.containsKey(PHPCoreConstants.FORMATTER_USE_TABS)) {
+											String useTabs = node
+													.get(
+															PHPCoreConstants.FORMATTER_USE_TABS,
+															null);
+											if (useTabs != null) {
+												options.put(
+														PHPCoreConstants.FORMATTER_USE_TABS,
+														useTabs);
+											}
+										}
+										if (!options
+												.containsKey(PHPCoreConstants.FORMATTER_INDENTATION_SIZE)) {
+											String size = node
+													.get(
+															PHPCoreConstants.FORMATTER_INDENTATION_SIZE,
+															null);
+											if (size != null) {
+												options.put(
+														PHPCoreConstants.FORMATTER_INDENTATION_SIZE,
+														size);
+											}
+										}
+									}
+								}
+
+								edits = program.rewrite(document, options);
 								edits.apply(document);
 							}
 
-							if (needsAliasPrepend(modelElement)) {
+							if (useAlias && needsAliasPrepend(modelElement)) {
 								// update replacement string: add namespace
 								// alias prefix
 								String alias;
@@ -138,8 +190,7 @@
 									replacementString = namespacePrefix
 											+ replacementString;
 								}
-								proposal
-										.setReplacementString(replacementString);
+								proposal.setReplacementString(replacementString);
 							}
 
 							if (edits != null) {
@@ -147,8 +198,7 @@
 										.getReplacementOffset()
 										+ edits.getLength();
 								offset += edits.getLength();
-								proposal
-										.setReplacementOffset(replacementOffset);
+								proposal.setReplacementOffset(replacementOffset);
 							}
 
 						} catch (Exception e) {
