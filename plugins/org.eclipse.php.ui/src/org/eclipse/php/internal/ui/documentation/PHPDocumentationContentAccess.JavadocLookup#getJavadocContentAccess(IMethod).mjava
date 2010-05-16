@@ -1,0 +1,34 @@
+		/**
+		 * @param method
+		 *            the method
+		 * @return the Javadoc content access for the given method, or
+		 *         <code>null</code> if no Javadoc could be found in source
+		 * @throws ModelException
+		 *             unexpected problem
+		 */
+		private PHPDocumentationContentAccess getJavadocContentAccess(
+				IMethod method) throws ModelException {
+			Object cached = fContentAccesses.get(method);
+			if (cached != null)
+				return (PHPDocumentationContentAccess) cached;
+			if (fContentAccesses.containsKey(method))
+				return null;
+
+			// IBuffer buf = method.getOpenable().getBuffer();
+			// if (buf == null) { // no source attachment found
+			// fContentAccesses.put(method, null);
+			// return null;
+			// }
+
+			PHPDocBlock javadoc = PHPModelUtils.getDocBlock(method);
+			if (javadoc == null) {
+				fContentAccesses.put(method, null);
+				return null;
+			}
+
+			PHPDocumentationContentAccess contentAccess = new PHPDocumentationContentAccess(
+					method, javadoc, this);
+			fContentAccesses.put(method, contentAccess);
+			return contentAccess;
+		}
+

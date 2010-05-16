@@ -1,0 +1,21 @@
+	private static String javadoc2HTML(IMember member) {
+		PHPDocBlock javadoc = getJavadocNode(member);
+
+		if (javadoc == null) {
+			javadoc = new PHPDocBlock(0, 0, null, new PHPDocTag[0]);
+		}
+		if (canInheritJavadoc(member)) {
+			IMethod method = (IMethod) member;
+			IType declaringType = method.getDeclaringType();
+			JavadocLookup lookup;
+			if (declaringType == null) {
+				lookup = JavadocLookup.NONE;
+			} else {
+				lookup = new JavadocLookup(method.getDeclaringType());
+			}
+			return new PHPDocumentationContentAccess(method, javadoc, lookup)
+					.toHTML();
+		}
+		return new PHPDocumentationContentAccess(member, javadoc).toHTML();
+	}
+

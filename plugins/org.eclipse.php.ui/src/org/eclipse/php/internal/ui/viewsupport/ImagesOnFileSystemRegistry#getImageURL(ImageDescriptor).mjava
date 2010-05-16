@@ -1,0 +1,28 @@
+	public URL getImageURL(ImageDescriptor descriptor) {
+		if (fTempDir == null)
+			return null;
+
+		URL url = (URL) fURLMap.get(descriptor);
+		if (url != null)
+			return url;
+
+		File imageFile = getNewFile();
+		ImageData imageData = descriptor.getImageData();
+		if (imageData == null) {
+			return null;
+		}
+
+		ImageLoader loader = new ImageLoader();
+		loader.data = new ImageData[] { imageData };
+		loader.save(imageFile.getAbsolutePath(), SWT.IMAGE_PNG);
+
+		try {
+			url = imageFile.toURI().toURL();
+			fURLMap.put(descriptor, url);
+			return url;
+		} catch (MalformedURLException e) {
+			PHPUiPlugin.log(e);
+		}
+		return null;
+	}
+

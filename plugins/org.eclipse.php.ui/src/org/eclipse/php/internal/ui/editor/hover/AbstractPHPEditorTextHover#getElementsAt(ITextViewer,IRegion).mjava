@@ -1,0 +1,32 @@
+	/**
+	 * Returns the Java elements at the given hover region.
+	 * 
+	 * @param textViewer
+	 *            the text viewer
+	 * @param hoverRegion
+	 *            the hover region
+	 * @return the array with the Java elements or <code>null</code>
+	 * @since 3.4
+	 */
+	protected IModelElement[] getElementsAt(ITextViewer textViewer,
+			IRegion hoverRegion) {
+		/*
+		 * The region should be a word region an not of length 0. This check is
+		 * needed because codeSelect(...) also finds the Java element if the
+		 * offset is behind the word.
+		 */
+		if (hoverRegion.getLength() == 0)
+			return null;
+
+		ICodeAssist resolve = getCodeAssist();
+		if (resolve != null) {
+			try {
+				return resolve.codeSelect(hoverRegion.getOffset(), hoverRegion
+						.getLength());
+			} catch (ModelException x) {
+				return null;
+			}
+		}
+		return null;
+	}
+

@@ -1,0 +1,43 @@
+		/**
+		 * Visits the super interfaces of the given type in the given hierarchy,
+		 * thereby skipping already visited types.
+		 * 
+		 * @param visited
+		 *            set of visited types
+		 * @param currentType
+		 *            type whose super interfaces should be visited
+		 * @param typeHierarchy
+		 *            type hierarchy (must include <code>currentType</code>)
+		 * @return the result, or {@link #CONTINUE} if no result has been found
+		 * @throws ModelException
+		 *             unexpected problem
+		 */
+		private Object visitInheritDocInterfaces(ArrayList visited,
+				IType currentType, ITypeHierarchy typeHierarchy)
+				throws ModelException {
+			ArrayList toVisitChildren = new ArrayList();
+			IType[] superInterfaces = typeHierarchy.getSuperclass(currentType);
+			for (int i = 0; i < superInterfaces.length; i++) {
+				IType superInterface = superInterfaces[i];
+				if (visited.contains(superInterface))
+					continue;
+				visited.add(superInterface);
+				Object result = visit(superInterface);
+				if (result == InheritDocVisitor.STOP_BRANCH) {
+					// skip
+				} else if (result == InheritDocVisitor.CONTINUE) {
+					toVisitChildren.add(superInterface);
+				} else {
+					return result;
+				}
+			}
+			for (Iterator iter = toVisitChildren.iterator(); iter.hasNext();) {
+				IType child = (IType) iter.next();
+				Object result = visitInheritDocInterfaces(visited, child,
+						typeHierarchy);
+				if (result != InheritDocVisitor.CONTINUE)
+					return result;
+			}
+			return InheritDocVisitor.CONTINUE;
+		}
+

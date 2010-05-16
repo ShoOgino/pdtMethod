@@ -1,0 +1,58 @@
+		/*
+		 * @seeorg.eclipse.jdt.internal.ui.text.java.hover.
+		 * AbstractReusableInformationControlCreator
+		 * #doCreateInformationControl(org.eclipse.swt.widgets.Shell)
+		 */
+		public IInformationControl doCreateInformationControl(Shell parent) {
+			if (BrowserInformationControl.isAvailable(parent)) {
+				ToolBarManager tbm = new ToolBarManager(SWT.FLAT);
+				String font = PreferenceConstants.APPEARANCE_DOCUMENTATION_FONT;
+				BrowserInformationControl iControl = new BrowserInformationControl(
+						parent, font, tbm);
+
+				final BackAction backAction = new BackAction(iControl);
+				backAction.setEnabled(false);
+				tbm.add(backAction);
+				final ForwardAction forwardAction = new ForwardAction(iControl);
+				tbm.add(forwardAction);
+				forwardAction.setEnabled(false);
+
+				final OpenDeclarationAction openDeclarationAction = new OpenDeclarationAction(
+						iControl);
+				tbm.add(openDeclarationAction);
+
+				// final SimpleSelectionProvider selectionProvider = new
+				// SimpleSelectionProvider();
+				// OpenExternalBrowserAction openExternalJavadocAction = new
+				// OpenExternalBrowserAction(
+				// parent.getDisplay(), selectionProvider);
+				// selectionProvider
+				// .addSelectionChangedListener(openExternalJavadocAction);
+				// selectionProvider.setSelection(new StructuredSelection());
+				// tbm.add(openExternalJavadocAction);
+
+				IInputChangedListener inputChangeListener = new IInputChangedListener() {
+					public void inputChanged(Object newInput) {
+						backAction.update();
+						forwardAction.update();
+						if (newInput == null) {
+						} else if (newInput instanceof BrowserInformationControlInput) {
+							BrowserInformationControlInput input = (BrowserInformationControlInput) newInput;
+							Object inputElement = input.getInputElement();
+							boolean isJavaElementInput = inputElement instanceof IModelElement;
+							openDeclarationAction
+									.setEnabled(isJavaElementInput);
+						}
+					}
+				};
+				iControl.addInputChangeListener(inputChangeListener);
+
+				tbm.update(true);
+
+				return iControl;
+
+			} else {
+				return new DefaultInformationControl(parent, true);
+			}
+		}
+

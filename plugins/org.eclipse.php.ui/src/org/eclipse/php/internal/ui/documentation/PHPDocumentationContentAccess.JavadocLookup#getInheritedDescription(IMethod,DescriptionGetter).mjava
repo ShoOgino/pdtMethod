@@ -1,0 +1,35 @@
+		private CharSequence getInheritedDescription(final IMethod method,
+				final DescriptionGetter descriptionGetter) {
+			try {
+				return (CharSequence) new InheritDocVisitor() {
+					public Object visit(IType currType) throws ModelException {
+						IMethod overridden = getOverrideTester()
+								.findOverriddenMethodInType(currType, method);
+						if (overridden == null)
+							return InheritDocVisitor.CONTINUE;
+
+						PHPDocumentationContentAccess contentAccess = getJavadocContentAccess(overridden);
+						if (contentAccess == null) {
+							// if (overridden.getOpenable().getBuffer() == null)
+							// {
+							// return InheritDocVisitor.CONTINUE;
+							// } else {
+							// return InheritDocVisitor.CONTINUE;
+							// }
+							return InheritDocVisitor.CONTINUE;
+						}
+
+						CharSequence overriddenDescription = descriptionGetter
+								.getDescription(contentAccess);
+						if (overriddenDescription != null)
+							return overriddenDescription;
+						else
+							return InheritDocVisitor.CONTINUE;
+					}
+				}.visitInheritDoc(method.getDeclaringType(), getTypeHierarchy());
+			} catch (ModelException e) {
+				PHPUiPlugin.log(e);
+			}
+			return null;
+		}
+

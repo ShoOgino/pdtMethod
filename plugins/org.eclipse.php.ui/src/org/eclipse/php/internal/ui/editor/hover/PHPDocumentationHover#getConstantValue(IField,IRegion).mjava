@@ -1,0 +1,65 @@
+	/**
+	 * Returns the constant value for the given field.
+	 * 
+	 * @param field
+	 *            the field
+	 * @param hoverRegion
+	 *            the hover region
+	 * @return the constant value for the given field or <code>null</code> if
+	 *         none
+	 * @since 3.4
+	 */
+	private String getConstantValue(IField field, IRegion hoverRegion) {
+		if (!isFinal(field))
+			return null;
+
+		ISourceModule typeRoot = getEditorInputModelElement();
+		if (typeRoot == null)
+			return null;
+
+		Object constantValue = null;
+		if (field != null && field.exists()) {
+			try {
+				Program unit = SharedASTProvider.getAST(
+						field.getSourceModule(), SharedASTProvider.WAIT_YES,
+						null);
+				ASTNode node = NodeFinder.perform(unit, field.getNameRange()
+						.getOffset(), field.getNameRange().getLength());
+				if (node != null && node instanceof Identifier
+						&& node.getParent() instanceof ConstantDeclaration) {
+					ConstantDeclaration decl = (ConstantDeclaration) node
+							.getParent();
+					if (decl.initializers().size() == 1
+							&& decl.initializers().get(0) instanceof Scalar) {
+						Scalar scalar = (Scalar) decl.initializers().get(0);
+						constantValue = scalar.getStringValue();
+					}
+				}
+			} catch (ModelException e) {
+			} catch (IOException e) {
+			}
+		}
+
+		if (constantValue == null)
+			return null;
+
+		if (constantValue instanceof String) {
+			StringBuffer result = new StringBuffer();
+			String stringConstant = (String) constantValue;
+			if (stringConstant.length() > 80) {
+				result.append(stringConstant.substring(0, 80));
+				result.append(ScriptElementLabels.ELLIPSIS_STRING);
+			} else {
+				result.append(stringConstant);
+			}
+			return result.toString();
+
+		} else if (constantValue instanceof Integer) {
+			int intValue = ((Integer) constantValue).intValue();
+			return formatWithHexValue(constantValue,
+					"0x" + Integer.toHexString(intValue)); //$NON-NLS-1$
+		} else {
+			return constantValue.toString();
+		}
+	}
+

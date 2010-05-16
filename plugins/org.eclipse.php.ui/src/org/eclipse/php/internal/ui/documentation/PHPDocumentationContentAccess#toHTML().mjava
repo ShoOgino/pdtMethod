@@ -1,0 +1,143 @@
+	private String toHTML() {
+		fBuf = new StringBuffer();
+
+		if (appendBuiltinDoc(fMember, fBuf)) {
+			return fBuf.toString();
+		}
+
+		// After first loop, non-null entries in the following two lists are
+		// missing and need to be inherited:
+		List<String> parameterNames = initParameterNames();
+		List<String> exceptionNames = new ArrayList<String>();
+
+		PHPDocTag deprecatedTag = null;
+		PHPDocTag returnTag = null;
+		List<PHPDocTag> parameters = new ArrayList<PHPDocTag>();
+		List<PHPDocTag> exceptions = new ArrayList<PHPDocTag>();
+		List<PHPDocTag> versions = new ArrayList<PHPDocTag>();
+		List<PHPDocTag> authors = new ArrayList<PHPDocTag>();
+		List<PHPDocTag> sees = new ArrayList<PHPDocTag>();
+		List<PHPDocTag> since = new ArrayList<PHPDocTag>();
+		List<PHPDocTag> rest = new ArrayList<PHPDocTag>();
+		String shortDescription = fJavadoc.getShortDescription();
+		PHPDocTag[] tags = fJavadoc.getTags();
+		for (PHPDocTag tag : tags) {
+			if (PHPDocTag.PARAM == tag.getTagKind()) {
+				parameters.add(tag);
+				SimpleReference[] fragments = tag.getReferences();
+				if (fragments.length == 0) {
+					if (parameterNames.size() > parameters.indexOf(tag))
+						parameterNames.set(parameters.indexOf(tag), null);
+				}
+				for (SimpleReference reference : fragments) {
+					String name = reference.getName();
+					if (reference instanceof TypeReference) {
+						// parameterTypes.add(name);
+					} else if (reference instanceof VariableReference) {
+						int paramIndex = parameterNames.indexOf(name);
+						if (paramIndex != -1) {
+							parameterNames.set(paramIndex, null);
+						}
+					}
+				}
+			} else if (PHPDocTag.RETURN == tag.getTagKind()) {
+				if (returnTag == null)
+					returnTag = tag; // the Javadoc tool only shows the first
+				// return tag
+
+			} else if (PHPDocTag.THROWS == tag.getTagKind()) {
+				exceptions.add(tag);
+				SimpleReference[] fragments = tag.getReferences();
+				if (fragments.length > 0) {
+					Object first = fragments[0];
+					if (first instanceof TypeReference) {
+						exceptionNames.add(((TypeReference) first).getName());
+					}
+				}
+
+			} else if (PHPDocTag.SINCE == tag.getTagKind()) {
+				since.add(tag);
+			} else if (PHPDocTag.VERSION == tag.getTagKind()) {
+				versions.add(tag);
+			} else if (PHPDocTag.AUTHOR == tag.getTagKind()) {
+				authors.add(tag);
+			} else if (PHPDocTag.SEE == tag.getTagKind()) {
+				sees.add(tag);
+			} else if (PHPDocTag.DEPRECATED == tag.getTagKind()) {
+				if (deprecatedTag == null)
+					deprecatedTag = tag; // the Javadoc tool only shows the
+				// first deprecated tag
+			} else {
+				rest.add(tag);
+			}
+		}
+
+		if (deprecatedTag != null)
+			handleDeprecatedTag(deprecatedTag);
+		if (shortDescription != null && shortDescription.length() > 0)
+			fBuf.append(shortDescription);
+		else if (fMethod != null) {
+			CharSequence inherited = fJavadocLookup
+					.getInheritedMainDescription(fMethod);
+			handleInherited(inherited);
+		}
+
+		CharSequence[] parameterDescriptions = new CharSequence[parameterNames
+				.size()];
+		CharSequence[] parameterTypes = new CharSequence[parameterNames.size()];
+		boolean hasInheritedParameters = inheritParameterDescriptions(
+				parameterNames, parameterDescriptions, parameterTypes);
+		boolean hasParameters = parameters.size() > 0 || hasInheritedParameters;
+
+		CharSequence returnDescription = null;
+		if (returnTag == null)
+			returnDescription = fJavadocLookup
+					.getInheritedReturnDescription(fMethod);
+		boolean hasReturnTag = returnTag != null || returnDescription != null;
+
+		CharSequence[] exceptionDescriptions = new CharSequence[exceptionNames
+				.size()];
+		boolean hasInheritedExceptions = inheritExceptionDescriptions(
+				exceptionNames, exceptionDescriptions);
+		boolean hasExceptions = exceptions.size() > 0 || hasInheritedExceptions;
+
+		if (hasParameters
+				|| hasReturnTag
+				|| hasExceptions
+				|| versions.size() > 0
+				|| authors.size() > 0
+				|| since.size() > 0
+				|| sees.size() > 0
+				|| rest.size() > 0
+				|| (fBuf.length() > 0 && (parameterDescriptions.length > 0 || exceptionDescriptions.length > 0))) {
+			handleSuperMethodReferences();
+			fBuf.append(BLOCK_TAG_START);
+			handleParameterTags(parameters, parameterNames, parameterTypes,
+					parameterDescriptions);
+			handleReturnTag(returnTag, returnDescription);
+			handleExceptionTags(exceptions, exceptionNames,
+					exceptionDescriptions);
+			handleBlockTags(
+					PHPDocumentationMessages.JavaDoc2HTMLTextReader_since_section,
+					since);
+			handleBlockTags(
+					PHPDocumentationMessages.JavaDoc2HTMLTextReader_version_section,
+					versions);
+			handleBlockTags(
+					PHPDocumentationMessages.JavaDoc2HTMLTextReader_author_section,
+					authors);
+			handleBlockTags(
+					PHPDocumentationMessages.JavaDoc2HTMLTextReader_see_section,
+					sees);
+			handleBlockTags(rest);
+			fBuf.append(BLOCK_TAG_END);
+
+		} else if (fBuf.length() > 0) {
+			handleSuperMethodReferences();
+		}
+
+		String result = fBuf.toString();
+		fBuf = null;
+		return result;
+	}
+

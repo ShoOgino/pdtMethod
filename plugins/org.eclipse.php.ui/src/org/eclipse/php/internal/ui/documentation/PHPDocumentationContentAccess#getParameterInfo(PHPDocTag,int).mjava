@@ -1,0 +1,32 @@
+	private String getParameterInfo(PHPDocTag tag, int infoType) {
+		if (tag.getTagKind() != PHPDocTag.PARAM) {
+			return null;
+		}
+		SimpleReference typeRef = null;
+		SimpleReference variableRef = null;
+		String value = tag.getValue();
+		if (tag.getReferences().length != 2) {
+			return null;
+		}
+		for (SimpleReference reference : tag.getReferences()) {
+			if (reference instanceof TypeReference) {
+				typeRef = reference;
+			} else if (reference instanceof VariableReference) {
+				variableRef = reference;
+			}
+		}
+		if (infoType == PARAMETER_DESCRIPTION_TYPE) {
+			int typeRefIndex = value.indexOf(typeRef.getName());
+			int variableRefIndex = value.indexOf(variableRef.getName());
+			int lastRefIndex = typeRefIndex > variableRefIndex ? typeRefIndex
+					+ typeRef.getName().length() : variableRefIndex
+					+ variableRef.getName().length();
+			return value.substring(lastRefIndex).trim();
+		} else if (infoType == PARAMETER_TYPE_TYPE) {
+			return typeRef.getName();
+		} else if (infoType == PARAMETER_NAME_TYPE) {
+			return variableRef.getName();
+		}
+		return null;
+	}
+

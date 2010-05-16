@@ -1,0 +1,56 @@
+	private static StringBuffer createSuperMethodReferences(final IMethod method)
+			throws ModelException {
+		IType type = method.getDeclaringType();
+		ITypeHierarchy hierarchy = SuperTypeHierarchyCache
+				.getTypeHierarchy(type);
+		final MethodOverrideTester tester = SuperTypeHierarchyCache
+				.getMethodOverrideTester(type);
+
+		final ArrayList<IMethod> superInterfaceMethods = new ArrayList<IMethod>();
+		final IMethod[] superClassMethod = { null };
+		new InheritDocVisitor() {
+			public Object visit(IType currType) throws ModelException {
+				IMethod overridden = tester.findOverriddenMethodInType(
+						currType, method);
+				if (overridden == null)
+					return InheritDocVisitor.CONTINUE;
+
+				if (PHPFlags.isInterface(currType.getFlags()))
+					superInterfaceMethods.add(overridden);
+				else
+					superClassMethod[0] = overridden;
+
+				return STOP_BRANCH;
+			}
+		}.visitInheritDoc(type, hierarchy);
+
+		boolean hasSuperInterfaceMethods = superInterfaceMethods.size() != 0;
+		if (!hasSuperInterfaceMethods && superClassMethod[0] == null)
+			return null;
+
+		StringBuffer buf = new StringBuffer();
+		buf.append("<div>"); //$NON-NLS-1$
+		if (hasSuperInterfaceMethods) {
+			buf.append("<b>"); //$NON-NLS-1$
+			buf.append(PHPDocumentationMessages.JavaDoc2HTMLTextReader_specified_by_section);
+			buf.append("</b> "); //$NON-NLS-1$
+			for (Iterator<IMethod> iter = superInterfaceMethods.iterator(); iter
+					.hasNext();) {
+				IMethod overridden = (IMethod) iter.next();
+				buf.append(createMethodInTypeLinks(overridden));
+				if (iter.hasNext())
+					buf.append(ScriptElementLabels.COMMA_STRING);
+			}
+		}
+		if (superClassMethod[0] != null) {
+			if (hasSuperInterfaceMethods)
+				buf.append(ScriptElementLabels.COMMA_STRING);
+			buf.append("<b>"); //$NON-NLS-1$
+			buf.append(PHPDocumentationMessages.JavaDoc2HTMLTextReader_overrides_section);
+			buf.append("</b> "); //$NON-NLS-1$
+			buf.append(createMethodInTypeLinks(superClassMethod[0]));
+		}
+		buf.append("</div>"); //$NON-NLS-1$
+		return buf;
+	}
+
