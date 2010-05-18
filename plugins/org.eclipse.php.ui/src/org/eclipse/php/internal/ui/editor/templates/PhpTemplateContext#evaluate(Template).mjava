@@ -27,6 +27,51 @@
 
 		}
 		TemplateBuffer result = super.evaluate(template);
+		// 300533: Switching through template keys? in fore and forek template
+		// is corrupter
+		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=300533
+		// merge ${dollar}${variable} to single $variable to solve bug 300533
+		TemplateVariable[] variables = result.getVariables();
+		TemplateVariable dollarVariable = null;
+		List<TemplateVariable> nonDollarVariables = new ArrayList<TemplateVariable>();
+		for (int i = 0; i < variables.length; i++) {
+			if (isDollar(variables[i])) {
+				dollarVariable = variables[i];
+			} else {
+				nonDollarVariables.add(variables[i]);
+			}
+		}
+		List<TemplateVariable> templateVariables = new ArrayList<TemplateVariable>();
+		if (dollarVariable != null) {
+			Set<Integer> dollarOffsetSet = new HashSet<Integer>();
+			for (int i = 0; i < dollarVariable.getOffsets().length; i++) {
+				dollarOffsetSet.add(dollarVariable.getOffsets()[i]);
+			}
+			for (Iterator iterator = nonDollarVariables.iterator(); iterator
+					.hasNext();) {
+				TemplateVariable templateVariable = (TemplateVariable) iterator
+						.next();
+				if (templateVariable.getOffsets().length > 0
+						&& isbehind(templateVariable, dollarOffsetSet)) {
+					int[] offsets = new int[templateVariable.getOffsets().length];
+					for (int i = 0; i < templateVariable.getOffsets().length; i++) {
+						dollarOffsetSet
+								.remove(templateVariable.getOffsets()[i] - 1);
+						offsets[i] = templateVariable.getOffsets()[i] - 1;
+					}
+					String name = DOLLAR_SIGN + templateVariable.getName();
+					templateVariable = new TemplateVariable(templateVariable
+							.getVariableType(), name, name, offsets);
+				}
+				templateVariables.add(templateVariable);
+			}
+			if (!dollarOffsetSet.isEmpty()) {
+				templateVariables.add(dollarVariable);
+			}
+			result.setContent(result.getString(), templateVariables
+					.toArray(new TemplateVariable[templateVariables.size()]));
+		}
+		// end
 		return result;
 	}
 
