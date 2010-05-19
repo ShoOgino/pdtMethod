@@ -1,0 +1,36 @@
+	/**
+	 * Note: This method is for internal use only. Clients should not call this
+	 * method.
+	 * 
+	 * @param element
+	 *            The element to decorate
+	 * @return Resulting decorations (combination of
+	 *         JavaElementImageDescriptor.IMPLEMENTS and
+	 *         JavaElementImageDescriptor.OVERRIDES)
+	 * 
+	 * @noreference This method is not intended to be referenced by clients.
+	 */
+	public int computeAdornmentFlags(Object element) {
+		if (element instanceof IMethod) {
+			try {
+				IMethod method = (IMethod) element;
+				if (!method.getScriptProject().isOnBuildpath(method)) {
+					return 0;
+				}
+				int flags = method.getFlags();
+				if (!method.isConstructor() && !Flags.isPrivate(flags)
+						&& !Flags.isStatic(flags)) {
+					int res = getOverrideIndicators(method);
+					return res;
+				}
+			} catch (ModelException e) {
+				if (!e.isDoesNotExist()) {
+					PHPUiPlugin.log(e);
+				}
+			} catch (IOException e) {
+				PHPUiPlugin.log(e);
+			}
+		}
+		return 0;
+	}
+
