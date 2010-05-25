@@ -38,11 +38,20 @@
 
 			boolean shouldDeprecatedKeyword = false;
 			int previousIndex = tokensContaier.phpTokens.indexOf(tokenStart) - 1;
-			if (previousIndex >= 0
-					&& PhpTokenContainer
-							.deprecatedKeywordAfter(tokensContaier.phpTokens
-									.get(previousIndex).getType())) {
-				shouldDeprecatedKeyword = true;
+			if (previousIndex >= 0) {
+				ITextRegion previousRegion = tokensContaier.phpTokens
+						.get(previousIndex);
+				if (PhpTokenContainer.deprecatedKeywordAfter(previousRegion
+						.getType())) {
+					shouldDeprecatedKeyword = true;
+				}
+				if (tokenStart.getType().equals(PHPRegionTypes.PHP_COMMENT)
+						&& tokenStart.getLength() == 1
+						&& previousRegion.getType().equals(
+								PHPRegionTypes.PHP_COMMENT_START)) {
+					requestStart = previousRegion.getStart();
+				}
+
 			}
 
 			int newTokenOffset = tokenStart.getStart();
