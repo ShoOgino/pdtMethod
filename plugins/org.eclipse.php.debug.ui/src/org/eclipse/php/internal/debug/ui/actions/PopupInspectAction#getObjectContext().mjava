@@ -1,0 +1,35 @@
+	/**
+	 * Returns the 'object' context for this evaluation, or <code>null</code> if
+	 * none. If the evaluation is being performed in the context of the
+	 * variables view/inspector. Then perform the evaluation in the context of
+	 * the selected value.
+	 * 
+	 * @return Java object or <code>null</code>
+	 */
+	protected String getObjectContext() {
+		IWorkbenchPage page = PHPUiPlugin.getActivePage();
+		IStructuredSelection selection = null;
+		if (page != null) {
+			ISelection sec = page.getSelection();
+			if (sec instanceof IStructuredSelection) {
+				selection = (IStructuredSelection) sec;
+			}
+		}
+		if (selection instanceof TextSelection) {
+			TextSelection textSelection = (TextSelection) selection;
+			IExpressionManager expressionManager = DebugPlugin.getDefault()
+					.getExpressionManager();
+			IDOMNode domNode = (IDOMNode) selection.getFirstElement();
+			String expression;
+			try {
+				expression = domNode.getFirstStructuredDocumentRegion()
+						.getParentDocument().get(textSelection.getOffset(),
+								textSelection.getLength());
+				return expression;
+			} catch (Exception e) {
+				Logger.logException(e);
+			}
+		}
+		return null;
+	}
+

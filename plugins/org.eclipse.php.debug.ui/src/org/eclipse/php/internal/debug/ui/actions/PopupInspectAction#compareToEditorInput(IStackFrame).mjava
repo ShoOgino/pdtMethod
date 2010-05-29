@@ -1,0 +1,27 @@
+	/**
+	 * Resolve an editor input from the source element of the stack frame
+	 * argument, and return whether it's equal to the editor input for the
+	 * editor that owns this action.
+	 */
+	protected boolean compareToEditorInput(IStackFrame stackFrame) {
+		ILaunch launch = stackFrame.getLaunch();
+		if (launch == null) {
+			return false;
+		}
+		ISourceLocator locator = launch.getSourceLocator();
+		if (locator == null) {
+			return false;
+		}
+		Object sourceElement = locator.getSourceElement(stackFrame);
+		if (sourceElement == null) {
+			return false;
+		}
+		IEditorInput sfEditorInput = getDebugModelPresentation()
+				.getEditorInput(sourceElement);
+		if (getTargetPart() instanceof IEditorPart) {
+			return ((IEditorPart) getTargetPart()).getEditorInput().equals(
+					sfEditorInput);
+		}
+		return false;
+	}
+

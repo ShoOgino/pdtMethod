@@ -1,0 +1,54 @@
+	/**
+	 * Display the given evaluation result.
+	 */
+	protected void displayResult(final IWatchExpressionResult result) {
+		IWorkbenchPart part = getTargetPart();
+		final StyledText styledText = getStyledText(part);
+		if (styledText != null) {
+			expression = new IExpression() {
+
+				public String getModelIdentifier() {
+					return getDebugTarget().getModelIdentifier();
+				}
+
+				public ILaunch getLaunch() {
+					return getDebugTarget().getLaunch();
+				}
+
+				public Object getAdapter(Class adapter) {
+					return AdapterManager.getDefault()
+							.getAdapter(this, adapter);
+				}
+
+				public String getExpressionText() {
+					return result.getExpressionText();
+				}
+
+				public IValue getValue() {
+					return result.getValue();
+				}
+
+				public IDebugTarget getDebugTarget() {
+					IValue value = getValue();
+					if (value != null) {
+						return getValue().getDebugTarget();
+					}
+					// An expression should never be created with a null value
+					// *and*
+					// a null result.
+					return null;
+				}
+
+				public void dispose() {
+
+				}
+			};
+			PHPDebugUIPlugin.getStandardDisplay().asyncExec(new Runnable() {
+				public void run() {
+					showPopup(styledText);
+				}
+			});
+		}
+		evaluationCleanup();
+	}
+

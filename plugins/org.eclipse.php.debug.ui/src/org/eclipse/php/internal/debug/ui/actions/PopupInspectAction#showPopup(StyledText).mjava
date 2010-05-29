@@ -1,0 +1,22 @@
+	protected void showPopup(StyledText textWidget) {
+		IWorkbenchPart part = getTargetPart();
+		if (part instanceof ITextEditor) {
+			fTextEditor = (ITextEditor) part;
+			fSelectionBeforeEvaluation = getTargetSelection();
+		}
+		DebugPopup displayPopup = new InspectPopupDialog(getShell(),
+				getPopupAnchor(textWidget), ACTION_DEFININITION_ID, expression) {
+			public boolean close() {
+				boolean returnValue = super.close();
+				if (fTextEditor != null && fSelectionBeforeEvaluation != null) {
+					fTextEditor.getSelectionProvider().setSelection(
+							fSelectionBeforeEvaluation);
+					fTextEditor = null;
+					fSelectionBeforeEvaluation = null;
+				}
+				return returnValue;
+			}
+		};
+		displayPopup.open();
+	}
+
