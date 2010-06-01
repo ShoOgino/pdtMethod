@@ -6,13 +6,21 @@
 	 */
 	public static String convertToRemoteFilename(String localFile,
 			PHPDebugTarget debugTarget) {
-		IFile wsFile = ResourcesPlugin.getWorkspace().getRoot().getFile(
-				new Path(localFile));
-		if (debugTarget.isPHPCGI() && wsFile.exists()
-				&& wsFile.getLocation() != null) {
-			File fsFile = wsFile.getLocation().toFile();
-			if (fsFile.exists()) {
-				return fsFile.getAbsolutePath();
+		IPath path = Path.fromPortableString(localFile);
+
+		// check if this is valid workspace path to avoid IAE
+		// e.g. when using debug URL, localFile can be "c:\Program Files\..."
+		// see https://bugs.eclipse.org/bugs/show_bug.cgi?id=306834
+		if (path.segmentCount() > 2) {
+
+			IFile wsFile = ResourcesPlugin.getWorkspace().getRoot().getFile(
+					path);
+			if (debugTarget.isPHPCGI() && wsFile.exists()
+					&& wsFile.getLocation() != null) {
+				File fsFile = wsFile.getLocation().toFile();
+				if (fsFile.exists()) {
+					return fsFile.getAbsolutePath();
+				}
 			}
 		}
 		if (VirtualPath.isAbsolute(localFile)) {
