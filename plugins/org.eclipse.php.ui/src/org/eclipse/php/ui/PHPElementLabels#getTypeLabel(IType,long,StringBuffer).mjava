@@ -1,0 +1,81 @@
+	protected void getTypeLabel(IType type, long flags, StringBuffer buf) {
+		if (getFlag(flags, T_FULLY_QUALIFIED | T_CONTAINER_QUALIFIED)) {
+			IModelElement elem = type.getParent();
+			IType declaringType = (elem instanceof IType) ? (IType) elem : null;
+			if (declaringType != null) {
+				getTypeLabel(declaringType, T_CONTAINER_QUALIFIED
+						| (flags & QUALIFIER_FLAGS), buf);
+				buf.append(getTypeDelimiter(elem));
+			}
+			int parentType = type.getParent().getElementType();
+			if (parentType == IModelElement.METHOD
+					|| parentType == IModelElement.FIELD) { // anonymous
+				// or
+				// local
+				getElementLabel(type.getParent(),
+						(parentType == IModelElement.METHOD ? M_FULLY_QUALIFIED
+								: F_FULLY_QUALIFIED)
+								| (flags & QUALIFIER_FLAGS), buf);
+				buf.append(getTypeDelimiter(elem));
+			}
+		}
+
+		String typeName = type.getElementName();
+		if (typeName.length() == 0) { // anonymous
+			try {
+				if (type.getParent() instanceof IField) {
+					typeName = '{' + ELLIPSIS_STRING + '}';
+				} else {
+					String[] superNames = type.getSuperClasses();
+					if (superNames != null) {
+						int count = 0;
+						typeName += DECL_STRING;
+						for (int i = 0; i < superNames.length; ++i) {
+
+							if (count > 0) {
+								typeName += COMMA_STRING + " "; //$NON-NLS-1$
+							}
+							typeName += superNames[i];
+							count++;
+						}
+					}
+				}
+			} catch (ModelException e) {
+				// ignore
+				typeName = ""; //$NON-NLS-1$
+			}
+		}
+
+		buf.append(typeName);
+
+		// post qualification
+		if (getFlag(flags, T_POST_QUALIFIED)) {
+			IModelElement elem = type.getParent();
+			IType declaringType = (elem instanceof IType) ? (IType) elem : null;
+			if (declaringType != null) {
+				buf.append(CONCAT_STRING);
+				getTypeLabel(declaringType, T_FULLY_QUALIFIED
+						| (flags & QUALIFIER_FLAGS), buf);
+				int parentType = type.getParent().getElementType();
+				if (parentType == IModelElement.METHOD
+						|| parentType == IModelElement.FIELD) { // anonymous
+					// or
+					// local
+					buf.append(getTypeDelimiter(elem));
+					getElementLabel(type.getParent(), 0, buf);
+				}
+			}
+			int parentType = type.getParent().getElementType();
+			if (parentType == IModelElement.METHOD
+					|| parentType == IModelElement.FIELD) { // anonymous
+				// or
+				// local
+				buf.append(CONCAT_STRING);
+				getElementLabel(type.getParent(),
+						(parentType == IModelElement.METHOD ? M_FULLY_QUALIFIED
+								: F_FULLY_QUALIFIED)
+								| (flags & QUALIFIER_FLAGS), buf);
+			}
+		}
+	}
+
