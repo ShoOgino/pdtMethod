@@ -14,11 +14,27 @@
 			if (!(groups[i] instanceof LayoutActionGroup
 					|| groups[i] instanceof GenerateActionGroup
 					|| groups[i] instanceof RefactorActionGroup || groups[i] instanceof CCPActionGroup)) {
-				//use pdt's NavigateActionGroup instead of dltk's
+				// use pdt's NavigateActionGroup instead of dltk's
 				if (groups[i] instanceof org.eclipse.dltk.internal.ui.actions.NavigateActionGroup) {
 					groups[i].dispose();
 					fNavigateActionGroup = new NavigateActionGroup(getPart());
 					groups[i] = fNavigateActionGroup;
+				}
+
+				IPropertyChangeListener workingSetListener = new IPropertyChangeListener() {
+					public void propertyChange(PropertyChangeEvent event) {
+						doWorkingSetChanged(event);
+					}
+				};
+
+				if (groups[i] instanceof org.eclipse.dltk.internal.ui.workingsets.ViewActionGroup) {
+					groups[i].dispose();
+					fViewActionGroup = new ViewActionGroup(getPart()
+							.getRootMode(), workingSetListener, getPart()
+							.getSite());
+
+					fViewActionGroup.fillFilters(getPart().getTreeViewer());
+					groups[i] = fViewActionGroup;
 				}
 				filtered.add(groups[i]);
 			}
@@ -26,8 +42,7 @@
 		phpRefactorActionGroup = new PHPRefactorActionGroup(getPart());
 		filtered.add(phpRefactorActionGroup);
 		filtered.add(new GenerateIncludePathActionGroup(getPart()));
-		filtered
-				.add(new NamespaceGroupingActionGroup(getPart().getTreeViewer()));
+		filtered.add(new NamespaceGroupingActionGroup(getPart().getTreeViewer()));
 		filtered.add(new PHPFileOperationActionGroup(getPart()));
 
 		super.setGroups(filtered.toArray(new ActionGroup[filtered.size()]));
