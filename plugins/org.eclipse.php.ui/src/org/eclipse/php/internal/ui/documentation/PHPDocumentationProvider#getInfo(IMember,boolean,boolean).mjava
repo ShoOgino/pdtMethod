@@ -1,20 +1,35 @@
 	public Reader getInfo(IMember element, boolean lookIntoParents,
 			boolean lookIntoExternal) {
-		StringBuilder buf = new StringBuilder(DL_START);
-		try {
-			if (!appendBuiltinDoc(element, buf)) {
-				if (element instanceof IMethod) {
-					appendMethodInfo((IMethod) element, buf);
-				} else if (element instanceof IType) {
-					appendTypeInfo((IType) element, buf);
-				} else if (element instanceof IField) {
-					appendFieldInfo((IField) element, buf);
-				}
+		StringBuffer buffer = new StringBuffer();
+		String constantValue = null;
+		if (element instanceof IField) {
+			try {
+				constantValue = getConstantValue((IField) element);
+			} catch (ModelException e) {
+				PHPUiPlugin.log(e);
 			}
-		} catch (Exception e) {
-			Logger.logException(e);
+			if (constantValue != null)
+				constantValue = HTMLPrinter.convertToHTMLContent(constantValue);
 		}
-		buf.append(DL_END);
-		return new StringReader(buf.toString());
+
+		HTMLPrinter.addSmallHeader(buffer, getInfoText(element, constantValue,
+				true));
+		Reader reader = null;
+		try {
+			reader = getHTMLContent(element);
+		} catch (ModelException e) {
+		}
+
+		if (reader != null) {
+			HTMLPrinter.addParagraph(buffer, reader);
+		}
+
+		if (buffer.length() > 0) {
+			HTMLPrinter.insertPageProlog(buffer, 0, getStyleSheet());
+			HTMLPrinter.addPageEpilog(buffer);
+
+			return new StringReader(buffer.toString());
+		}
+		return null;
 	}
 

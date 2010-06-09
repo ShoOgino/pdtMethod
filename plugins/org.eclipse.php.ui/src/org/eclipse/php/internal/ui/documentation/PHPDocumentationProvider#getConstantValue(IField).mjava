@@ -1,0 +1,24 @@
+	private String getConstantValue(IField field) throws ModelException {
+		if (!isFinal(field)) {
+			return null;
+		}
+		ISourceModule sourceModule = field.getSourceModule();
+
+		ModuleDeclaration module = SourceParserUtil
+				.getModuleDeclaration(sourceModule);
+		ASTNode node = PHPModelUtils.getNodeByField(module, field);
+
+		if (!(node instanceof IPHPDocAwareDeclaration)) {
+			return null;
+		}
+		if (node instanceof ConstantDeclaration) {
+			ConstantDeclaration constantDeclaration = (ConstantDeclaration) node;
+			if (constantDeclaration.getConstantValue() instanceof Scalar) {
+				Scalar scalar = (Scalar) constantDeclaration.getConstantValue();
+				return scalar.getValue();
+			}
+		}
+		return null;
+
+	}
+
