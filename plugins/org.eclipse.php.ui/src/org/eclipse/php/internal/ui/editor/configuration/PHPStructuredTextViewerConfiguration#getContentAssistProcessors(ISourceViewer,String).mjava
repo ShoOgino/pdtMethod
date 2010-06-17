@@ -22,8 +22,18 @@
 			if (partitionType == PHPPartitionTypes.PHP_DEFAULT) {
 				processors = new IContentAssistProcessor[] { phpCompletionProcessor };
 			} else {
-				IContentAssistProcessor[] superProcessors = super
-						.getContentAssistProcessors(sourceViewer, partitionType);
+				IContentAssistProcessor[] superProcessors;
+				if (partitionType.equals(ICSSPartitions.STYLE)
+						|| partitionType.equals(ICSSPartitions.COMMENT)) {
+					IContentAssistProcessor processor = new CSSStructuredContentAssistProcessor(
+							this.getContentAssistant(), partitionType,
+							sourceViewer);
+					superProcessors = new IContentAssistProcessor[] { processor };
+
+				} else {
+					superProcessors = super.getContentAssistProcessors(
+							sourceViewer, partitionType);
+				}
 				processorMap.put(partitionType, superProcessors);
 				if (superProcessors != null) {
 					processors = new IContentAssistProcessor[superProcessors.length + 1];
