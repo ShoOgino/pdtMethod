@@ -1,0 +1,38 @@
+	/**
+	 * Filters given set of element according to a file network
+	 * 
+	 * @param sourceModule
+	 *            Current file
+	 * @param elements
+	 *            Elements set
+	 * @param monitor
+	 *            Progress monitor
+	 * @return
+	 */
+	private <T extends IModelElement> Collection<T> filterElements(
+			Collection<T> elements, IProgressMonitor monitor) {
+
+		if (elements == null) {
+			return null;
+		}
+
+		// If it's just one element - return it
+		if (elements.size() == 1) {
+			return elements;
+		}
+
+		List<T> filteredElements = new LinkedList<T>();
+		// If some of elements belong to current file return just it:
+		for (T element : elements) {
+			if (sourceModule.equals(element.getOpenable())) {
+				filteredElements.add(element);
+			}
+		}
+		if (filteredElements.size() > 0) {
+			return filteredElements;
+		}
+
+		return PHPModelUtils.fileNetworkFilter(sourceModule, elements,
+				getFileHierarchy(monitor));
+	}
+
