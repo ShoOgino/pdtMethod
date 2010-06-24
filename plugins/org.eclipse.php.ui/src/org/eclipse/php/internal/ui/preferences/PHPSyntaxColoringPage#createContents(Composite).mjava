@@ -119,9 +119,7 @@
 		gridData3.horizontalSpan = 2;
 		fText.setLayoutData(gridData3);
 		fText.setEditable(false);
-		fText
-				.setFont(JFaceResources
-						.getFont("org.eclipse.wst.sse.ui.textfont")); //$NON-NLS-1$
+		fText.setFont(JFaceResources.getFont("org.eclipse.wst.sse.ui.textfont")); //$NON-NLS-1$
 		fText.addKeyListener(getTextKeyListener());
 		fText.addSelectionListener(getTextSelectionListener());
 		fText.addMouseListener(getTextMouseListener());
@@ -428,7 +426,30 @@
 					return;
 				String namedStyle = ((IStructuredSelection) fStylesViewer
 						.getSelection()).getFirstElement().toString();
-				getOverlayStore().setToDefault(namedStyle);
+				if (SemanticHighlightingManager.getInstance()
+						.getSemanticHighlightings().containsKey(namedStyle)) {
+					AbstractSemanticHighlighting semanticHighlighting = SemanticHighlightingManager
+							.getInstance().getSemanticHighlightings().get(
+									namedStyle);
+					getOverlayStore().setToDefault(
+							semanticHighlighting.getBoldPreferenceKey());
+					getOverlayStore().setToDefault(
+							semanticHighlighting.getColorPreferenceKey());
+					getOverlayStore().setToDefault(
+							semanticHighlighting.getEnabledPreferenceKey());
+					getOverlayStore().setToDefault(
+							semanticHighlighting.getItalicPreferenceKey());
+					getOverlayStore().setToDefault(
+							semanticHighlighting
+									.getStrikethroughPreferenceKey());
+					getOverlayStore().setToDefault(
+							semanticHighlighting.getUnderlinePreferenceKey());
+					boolean enablement = getOverlayStore().getDefaultBoolean(
+							semanticHighlighting.getEnabledPreferenceKey());
+					switchEnablement(enablement);
+				} else {
+					getOverlayStore().setToDefault(namedStyle);
+				}
 				applyStyles();
 				fText.redraw();
 				activate(namedStyle);
@@ -454,16 +475,19 @@
 					getOverlayStore().setValue(
 							semantic.getEnabledPreferenceKey(), enablement);
 
-				}else if(getStylePreferenceKeys().contains(namedStyle)){
+				} else if (getStylePreferenceKeys().contains(namedStyle)) {
 					boolean enablement = fEnabler.getSelection();
 					switchEnablement(enablement);
-					getOverlayStore().setValue(PreferenceConstants.getEnabledPreferenceKey(namedStyle),enablement);
+					getOverlayStore().setValue(
+							PreferenceConstants
+									.getEnabledPreferenceKey(namedStyle),
+							enablement);
 				}
 			}
 
 		});
 
-		switchEnablement(true);
+		switchEnablement(false);
 		return pageComponent;
 	}
 
