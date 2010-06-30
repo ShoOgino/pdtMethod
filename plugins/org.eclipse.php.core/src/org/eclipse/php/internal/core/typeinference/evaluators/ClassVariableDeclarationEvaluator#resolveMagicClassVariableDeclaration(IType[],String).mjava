@@ -7,25 +7,21 @@
 	private void resolveMagicClassVariableDeclaration(IType[] types,
 			String variableName) {
 		for (IType type : types) {
-			final PHPDocBlock docBlock = PHPModelUtils.getDocBlock(type);
-			if (docBlock != null) {
-				for (PHPDocTag tag : docBlock.getTags()) {
-					final int tagKind = tag.getTagKind();
-					if (tagKind == PHPDocTag.PROPERTY
-							|| tagKind == PHPDocTag.PROPERTY_READ
-							|| tagKind == PHPDocTag.PROPERTY_WRITE) {
-						final String typeName = getTypeBinding(variableName,
-								tag);
-						if (typeName != null) {
-							IEvaluatedType resolved = PHPSimpleTypes
-									.fromString(typeName);
-							if (resolved == null) {
-								resolved = new PHPClassType(typeName);
-							}
-							evaluated.add(resolved);
-						}
+			resolveMagicClassVariableDeclaration(variableName, type);
+			try {
+				if (evaluated.isEmpty() && type.getSuperClasses() != null
+						&& type.getSuperClasses().length > 0) {
+					IType[] superClasses = PHPModelUtils.getSuperClasses(type,
+							null);
+					for (int i = 0; i < superClasses.length
+					/* && evaluated.isEmpty() */; i++) {
+						IType superClass = superClasses[i];
+						resolveMagicClassVariableDeclaration(variableName,
+								superClass);
 					}
 				}
+			} catch (ModelException e) {
+				e.printStackTrace();
 			}
 		}
 	}

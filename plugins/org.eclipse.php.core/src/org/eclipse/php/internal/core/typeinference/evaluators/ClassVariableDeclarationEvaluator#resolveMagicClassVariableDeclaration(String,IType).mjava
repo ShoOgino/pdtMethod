@@ -1,0 +1,23 @@
+	protected void resolveMagicClassVariableDeclaration(String variableName,
+			IType type) {
+		final PHPDocBlock docBlock = PHPModelUtils.getDocBlock(type);
+		if (docBlock != null) {
+			for (PHPDocTag tag : docBlock.getTags()) {
+				final int tagKind = tag.getTagKind();
+				if (tagKind == PHPDocTag.PROPERTY
+						|| tagKind == PHPDocTag.PROPERTY_READ
+						|| tagKind == PHPDocTag.PROPERTY_WRITE) {
+					final String typeName = getTypeBinding(variableName, tag);
+					if (typeName != null) {
+						IEvaluatedType resolved = PHPSimpleTypes
+								.fromString(typeName);
+						if (resolved == null) {
+							resolved = new PHPClassType(typeName);
+						}
+						evaluated.add(resolved);
+					}
+				}
+			}
+		}
+	}
+

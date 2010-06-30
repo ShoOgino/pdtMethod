@@ -18,11 +18,11 @@
 			try {
 				IField[] fields = PHPModelUtils.getTypeHierarchyField(type,
 						variableName, true, null);
-
+				Set<IType> fieldDeclaringTypeSet = new HashSet<IType>();
 				for (IField field : fields) {
 					IType declaringType = field.getDeclaringType();
 					if (declaringType != null) {
-
+						fieldDeclaringTypeSet.add(declaringType);
 						ISourceModule sourceModule = declaringType
 								.getSourceModule();
 						ModuleDeclaration moduleDeclaration = SourceParserUtil
@@ -58,28 +58,15 @@
 				}
 
 				if (subGoals.size() == 0) {
-					ISourceModule sourceModule = type.getSourceModule();
-					ModuleDeclaration moduleDeclaration = SourceParserUtil
-							.getModuleDeclaration(sourceModule);
-					TypeDeclaration typeDeclaration = PHPModelUtils
-							.getNodeByClass(moduleDeclaration, type);
-
-					// try to search declarations of type "self::$var =" or
-					// "$this->var ="
-					ClassDeclarationSearcher searcher = new ClassDeclarationSearcher(
-							sourceModule, typeDeclaration, 0, 0, variableName);
-					try {
-						moduleDeclaration.traverse(searcher);
-						Map<ASTNode, IContext> staticDeclarations = searcher
-								.getStaticDeclarations();
-						for (ASTNode node : staticDeclarations.keySet()) {
-							subGoals.add(new ExpressionTypeGoal(
-									staticDeclarations.get(node), node));
-						}
-					} catch (Exception e) {
-						if (DLTKCore.DEBUG) {
-							e.printStackTrace();
-						}
+					getGoalFromStaticDeclaration(variableName, subGoals, type);
+				}
+				fieldDeclaringTypeSet.remove(type);
+				if (subGoals.size() == 0 && !fieldDeclaringTypeSet.isEmpty()) {
+					for (Iterator iterator = fieldDeclaringTypeSet.iterator(); iterator
+							.hasNext();) {
+						IType fieldDeclaringType = (IType) iterator.next();
+						getGoalFromStaticDeclaration(variableName, subGoals,
+								fieldDeclaringType);
 					}
 				}
 			} catch (CoreException e) {
