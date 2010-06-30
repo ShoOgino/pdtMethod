@@ -19,17 +19,10 @@
 			PHPDebugPlugin.log(e);
 		}
 
-		String localPath = null;
 		if (isFirstFileToDebug) { // we suppose that we always get full path
 			// here
 			if (isWebServerDebugger) {
-				PathEntry pathEntry = debugTarget
-						.mapFirstDebugFile(remoteFileName);
-				if (pathEntry != null) {
-					localPath = pathEntry.getResolvedPath();
-				} else {
-					localPath = remoteFileName;
-				}
+				debugTarget.mapFirstDebugFile(remoteFileName);
 
 				// set current working directory to the current script directory
 				// on debugger side
@@ -39,25 +32,11 @@
 					remoteDebugger.setCurrentWorkingDirectory(remotePath
 							.toString());
 				}
-			} else {
-				try {
-					IFile file = ResourcesPlugin
-							.getWorkspace()
-							.getRoot()
-							.getFileForLocation(
-									Path.fromOSString(remoteFileName));
-					if (file != null) {
-						localPath = file.getFullPath().toString();
-					}
-				} catch (Exception e) {
-				}
-				if (localPath == null) {
-					localPath = remoteFileName;
-				}
 			}
-		} else {
-			localPath = remoteDebugger.convertToLocalFilename(remoteFileName);
 		}
+
+		String localPath = remoteDebugger
+				.convertToLocalFilename(remoteFileName);
 
 		// send found breakpoints with remote file name
 		if (localPath != null
