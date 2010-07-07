@@ -1,0 +1,40 @@
+	/**
+	 * Creates a highlighting style based on the preferences defined in the
+	 * semantic highlighting
+	 * 
+	 * @param highlighting
+	 *            the semantic highlighting
+	 * @return a highlighting style based on the preferences of the semantic
+	 *         highlighting
+	 */
+	private HighlightingStyle createHighlightingStyle(
+			ISemanticHighlighting highlighting) {
+		IPreferenceStore store = highlighting.getPreferenceStore();
+		HighlightingStyle highlightingStyle = null;
+		if (store != null) {
+			TextAttribute attribute = null;
+			int style = getBoolean(store, highlighting.getBoldPreferenceKey()) ? SWT.BOLD
+					: SWT.NORMAL;
+
+			if (getBoolean(store, highlighting.getItalicPreferenceKey()))
+				style |= SWT.ITALIC;
+			if (getBoolean(store, highlighting.getStrikethroughPreferenceKey()))
+				style |= TextAttribute.STRIKETHROUGH;
+			if (getBoolean(store, highlighting.getUnderlinePreferenceKey()))
+				style |= TextAttribute.UNDERLINE;
+
+			String rgbString = getString(store, highlighting
+					.getColorPreferenceKey());
+			Color color = null;
+
+			if (rgbString != null)
+				color = EditorUtility.getColor(ColorHelper.toRGB(rgbString));
+			attribute = new TextAttribute(color, null, style);
+
+			boolean isEnabled = getBoolean(store, highlighting
+					.getEnabledPreferenceKey());
+			highlightingStyle = new HighlightingStyle(attribute, isEnabled);
+		}
+		return highlightingStyle;
+	}
+
