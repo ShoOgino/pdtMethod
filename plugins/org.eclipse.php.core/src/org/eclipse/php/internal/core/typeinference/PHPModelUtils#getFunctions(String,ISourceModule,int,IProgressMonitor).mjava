@@ -18,56 +18,6 @@
 	public static IMethod[] getFunctions(String functionName,
 			ISourceModule sourceModule, int offset, IProgressMonitor monitor)
 			throws ModelException {
-		if (functionName == null || functionName.length() == 0) {
-			return PhpModelAccess.NULL_METHODS;
-		}
-		String namespace = extractNamespaceName(functionName, sourceModule,
-				offset);
-		functionName = extractElementName(functionName);
-		if (namespace != null) {
-			if (namespace.length() > 0) {
-				IMethod[] functions = getNamespaceFunction(namespace,
-						functionName, true, sourceModule, monitor);
-				if (functions.length > 0) {
-					return functions;
-				}
-				return PhpModelAccess.NULL_METHODS;
-			}
-			// it's a global reference: \foo()
-		} else {
-			// look for the element in current namespace:
-			IType currentNamespace = getCurrentNamespace(sourceModule, offset);
-			if (currentNamespace != null) {
-				namespace = currentNamespace.getElementName();
-				IMethod[] functions = getNamespaceFunction(namespace,
-						functionName, true, sourceModule, monitor);
-				if (functions.length > 0) {
-					return functions;
-				}
-				// For functions and constants, PHP will fall back to global
-				// functions or constants if a namespaced function or constant
-				// does not exist:
-				IDLTKSearchScope scope = SearchEngine
-						.createSearchScope(sourceModule.getScriptProject());
-				functions = PhpModelAccess.getDefault().findMethods(
-						functionName, MatchRule.EXACT, Modifiers.AccGlobal, 0,
-						scope, null);
-
-				Collection<IMethod> filteredElements = filterElements(
-						sourceModule, Arrays.asList(functions));
-				return (IMethod[]) filteredElements
-						.toArray(new IMethod[filteredElements.size()]);
-			}
-		}
-
-		IDLTKSearchScope scope = SearchEngine.createSearchScope(sourceModule
-				.getScriptProject());
-		IMethod[] functions = PhpModelAccess.getDefault().findMethods(
-				functionName, MatchRule.EXACT, Modifiers.AccGlobal, 0, scope,
-				null);
-
-		Collection<IMethod> filteredElements = filterElements(sourceModule,
-				Arrays.asList(functions == null ? new IMethod[0] : functions));
-		return (IMethod[]) filteredElements
-				.toArray(new IMethod[filteredElements.size()]);
+		return getFunctions(functionName, sourceModule, offset, null, monitor);
 	}
+
