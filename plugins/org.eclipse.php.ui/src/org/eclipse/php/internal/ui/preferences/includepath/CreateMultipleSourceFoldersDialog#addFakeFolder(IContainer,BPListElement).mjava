@@ -1,0 +1,22 @@
+	private IFolder addFakeFolder(final IContainer container,
+			final BPListElement element) {
+		IFolder result;
+		IPath projectPath = fScriptProject.getPath();
+		IPath path = element.getPath();
+		if (projectPath.isPrefixOf(path)) {
+			path = path.removeFirstSegments(projectPath.segmentCount());
+		}
+		result = container.getFolder(path);
+		IFolder folder = result;
+		do {
+			IContainer parent = folder.getParent();
+			fNonExistingFolders.put(folder, parent);
+			if (parent instanceof IFolder) {
+				folder = (IFolder) parent;
+			} else {
+				folder = null;
+			}
+		} while (folder != null && !folder.exists());
+		return result;
+	}
+

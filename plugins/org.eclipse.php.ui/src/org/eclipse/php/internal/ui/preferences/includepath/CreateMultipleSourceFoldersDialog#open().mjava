@@ -1,0 +1,91 @@
+	public int open() {
+		Class[] acceptedClasses = new Class[] { IProject.class, IFolder.class };
+		List existingContainers = getExistingContainers(fExistingElements);
+
+		IProject[] allProjects = ResourcesPlugin.getWorkspace().getRoot()
+				.getProjects();
+		ArrayList rejectedElements = new ArrayList(allProjects.length);
+		IProject currProject = fScriptProject.getProject();
+		for (int i = 0; i < allProjects.length; i++) {
+			if (!allProjects[i].equals(currProject)) {
+				rejectedElements.add(allProjects[i]);
+			}
+		}
+		ViewerFilter filter = new TypedViewerFilter(acceptedClasses,
+				rejectedElements.toArray());
+
+		ILabelProvider lp = new WorkbenchLabelProvider();
+		ITreeContentProvider cp = new FakeFolderBaseWorkbenchContentProvider();
+
+		String title = NewWizardMessages.SourceContainerWorkbookPage_ExistingSourceFolderDialog_new_title;
+		String message = NewWizardMessages.SourceContainerWorkbookPage_ExistingSourceFolderDialog_edit_description;
+
+		MultipleFolderSelectionDialog dialog = new MultipleFolderSelectionDialog(
+				getShell(), lp, cp) {
+			protected Control createDialogArea(Composite parent) {
+				Control result = super.createDialogArea(parent);
+				if (DLTKCore.DEBUG) {
+					System.err
+							.println("CreateMultipleSourceFoldersDialog: Add help support"); //$NON-NLS-1$
+				}
+				// PlatformUI.getWorkbench().getHelpSystem().setHelp(parent,
+				// IDLTKHelpContextIds.BP_CHOOSE_EXISTING_FOLDER_TO_MAKE_SOURCE_FOLDER);
+				return result;
+			}
+
+			protected Object createFolder(final IContainer container) {
+				final Object[] result = new Object[1];
+				final BPListElement newElement = new BPListElement(
+						fScriptProject, IBuildpathEntry.BPE_SOURCE, false);
+				final AddSourceFolderWizard wizard = newSourceFolderWizard(
+						newElement, fExistingElements, container);
+				AbstractOpenWizardAction action = new AbstractOpenWizardAction() {
+					protected INewWizard createWizard() throws CoreException {
+						return wizard;
+					}
+				};
+				action.addPropertyChangeListener(new IPropertyChangeListener() {
+					public void propertyChange(PropertyChangeEvent event) {
+						if (event.getProperty().equals(IAction.RESULT)) {
+							if (event.getNewValue().equals(Boolean.TRUE)) {
+								result[0] = addFakeFolder(fScriptProject
+										.getProject(), newElement);
+							} else {
+								wizard.cancel();
+							}
+						}
+					}
+				});
+				action.run();
+				return result[0];
+			}
+		};
+		dialog.setExisting(existingContainers.toArray());
+		dialog.setTitle(title);
+		dialog.setMessage(message);
+		dialog.addFilter(filter);
+		dialog.setInput(fScriptProject.getProject().getParent());
+		dialog.setInitialFocus(fScriptProject.getProject());
+
+		if (dialog.open() == Window.OK) {
+			Object[] elements = dialog.getResult();
+			for (int i = 0; i < elements.length; i++) {
+				IResource res = (IResource) elements[i];
+				fInsertedElements.add(new BPListElement(fScriptProject,
+						IBuildpathEntry.BPE_SOURCE, res.getFullPath(), res,
+						false));
+			}
+
+			if (fExistingElements.length == 1) {
+			} else {
+				ArrayList added = new ArrayList(fInsertedElements);
+				HashSet updatedEclusionPatterns = new HashSet();
+				addExlusionPatterns(added, updatedEclusionPatterns);
+				fModifiedElements.addAll(updatedEclusionPatterns);
+			}
+			return Window.OK;
+		} else {
+			return Window.CANCEL;
+		}
+	}
+
