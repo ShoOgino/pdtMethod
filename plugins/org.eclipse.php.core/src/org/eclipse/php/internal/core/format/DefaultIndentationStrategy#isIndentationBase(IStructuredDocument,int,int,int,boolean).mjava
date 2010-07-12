@@ -1,5 +1,6 @@
-	private boolean isIndentationBase(final IStructuredDocument document,
-			final int checkedOffset, final int forOffset)
+	private static boolean isIndentationBase(
+			final IStructuredDocument document, final int checkedOffset,
+			final int forOffset, int currLineIndex, boolean checkMultiLine)
 			throws BadLocationException {
 		final IRegion lineInfo = document
 				.getLineInformationOfOffset(checkedOffset);
@@ -27,7 +28,11 @@
 				document, forOffset);
 
 		if (shouldNotConsiderAsIndentationBase(checkedLineBeginState,
-				forLineEndState))
+				forLineEndState)
+				|| checkMultiLine
+				&& isInMultiLineStatement(document, checkedLineBeginState,
+						checkedLineEndState, checkedOffset, lineStart,
+						currLineIndex))
 			return false;
 
 		// Fix bug #201688

@@ -1,0 +1,32 @@
+	private static boolean isInMultiLineStatement(IStructuredDocument document,
+			String checkedLineBeginState, String checkedLineEndState,
+			int checkedOffset, int lineStart, int currLineIndex) {
+		// TODO if in phpdoc or php miltiline,return false;
+		try {
+			char[] line = document.get(lineStart,
+					document.getLineLength(currLineIndex)).toCharArray();
+			for (int i = 0; i < line.length; i++) {
+				char c = line[i];
+				if (Character.isWhitespace(c)) {
+				} else {
+					// move line start to first non blank char
+					lineStart += i + 1;
+					break;
+				}
+			}
+		} catch (BadLocationException e) {
+		}
+
+		TextSequence textSequence = PHPTextSequenceUtilities
+				.getStatement(lineStart, document
+						.getRegionAtCharacterOffset(lineStart), true);
+		if (textSequence != null
+				&& isRegionTypeAllowedMultiline(FormatterUtils.getRegionType(
+						document, textSequence.getOriginalOffset(0)))
+				&& document.getLineOfOffset(textSequence.getOriginalOffset(0)) < currLineIndex) {
+			return true;
+		}
+
+		return false;
+	}
+
