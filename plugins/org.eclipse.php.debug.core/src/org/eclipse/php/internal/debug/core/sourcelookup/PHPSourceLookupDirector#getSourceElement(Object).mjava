@@ -13,7 +13,8 @@
 			try {
 				if (stackFrame.getLaunch() != null
 						&& stackFrame.getLaunch().getLaunchConfiguration() != null) {
-					String file = stackFrame.getLaunch()
+					String file = stackFrame
+							.getLaunch()
 							.getLaunchConfiguration()
 							.getAttribute(IPHPDebugConstants.ATTR_FILE,
 									(String) null);
@@ -29,7 +30,7 @@
 			} catch (CoreException e1) {
 			}
 			if (project != null) {
-				PHPDebugTarget debugTarget = (PHPDebugTarget) stackFrame
+				IDebugTarget debugTarget = (IDebugTarget) stackFrame
 						.getDebugTarget();
 				try {
 					ProjectDescription desc = ((Project) project)
@@ -54,8 +55,21 @@
 											null);
 									relativePath = relativePath
 											.append(filePath);
-									IFile file = debugTarget.getProject()
-											.getFile(relativePath);
+
+									IFile file = null;
+									if (debugTarget instanceof PHPDebugTarget) {
+										file = ((PHPDebugTarget) debugTarget)
+												.getProject().getFile(
+														relativePath);
+									} else {
+										// not sure what the logic here is
+										// trying to achieve but it
+										// is specific to the zend
+										// implementation, so I have put
+										// something here for xdebug to stop
+										// errors in source lookup occuring
+										file = project.getFile(relativePath);
+									}
 									if (file.isAccessible()) {
 										return file;
 									}
