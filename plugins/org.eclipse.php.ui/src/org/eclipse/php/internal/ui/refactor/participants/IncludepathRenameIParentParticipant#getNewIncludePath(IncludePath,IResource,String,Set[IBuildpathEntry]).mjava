@@ -1,0 +1,44 @@
+	protected IncludePath getNewIncludePath(IncludePath includePath,
+			IResource resource, String destProjectName,
+			Set<IBuildpathEntry> newBuildPathEntryList) {
+		if (acceptKind(includePath)) {
+			IPath renamedPath = resource.getFullPath();
+			// IPath oldPath = null;
+			if (includePath.isBuildpath()) {
+				IBuildpathEntry entry = (IBuildpathEntry) includePath
+						.getEntry();
+				if (renamedPath.isPrefixOf(entry.getPath())) {
+					entry = replaceBuildpath(destProjectName,
+							newBuildPathEntryList, renamedPath, entry);
+
+					includePath = new IncludePath(entry, includePath
+							.getProject());
+				}
+
+			} else if (includePath.getEntry() instanceof IResource) {
+				IResource oldRes = (IResource) includePath.getEntry();
+
+				if (renamedPath.isPrefixOf(oldRes.getFullPath())) {
+					renamedPath = renamedPath.removeLastSegments(1).append(
+							destProjectName).append(
+							oldRes.getFullPath().removeFirstSegments(
+									renamedPath.segmentCount()));
+					IResource newRes = null;
+					if (oldRes.getType() == IResource.FILE) {
+						newRes = ResourcesPlugin.getWorkspace().getRoot()
+								.getFile(renamedPath);
+					} else if (oldRes.getType() == IResource.FOLDER) {
+						newRes = ResourcesPlugin.getWorkspace().getRoot()
+								.getFolder(renamedPath);
+					} else if (oldRes.getType() == IResource.PROJECT) {
+						newRes = ResourcesPlugin.getWorkspace().getRoot()
+								.getProject(renamedPath.toString());
+					}
+					includePath = new IncludePath(newRes, includePath
+							.getProject());
+				}
+			}
+		}
+		return includePath;
+	}
+

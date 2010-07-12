@@ -1,0 +1,24 @@
+	protected void getNewIncludePaths(IProject project,
+			List<IncludePath> newIncludePathEntryList,
+			Set<IBuildpathEntry> newBuildPathEntryList, IResource resource,
+			String destProjectName) {
+		IncludePath[] includePathEntries = IncludePathManager.getInstance()
+				.getIncludePaths(project);
+		try {
+			IBuildpathEntry[] oldBuildpathEntries = DLTKCore.create(project)
+					.getRawBuildpath();
+			for (int i = 0; i < oldBuildpathEntries.length; i++) {
+				newBuildPathEntryList.add(oldBuildpathEntries[i]);
+			}
+		} catch (ModelException e) {
+			if (DLTKCore.DEBUG) {
+				e.printStackTrace();
+			}
+		}
+		for (int i = 0; i < includePathEntries.length; i++) {
+			newIncludePathEntryList.add(getNewIncludePath(
+					includePathEntries[i], resource, destProjectName,
+					newBuildPathEntryList));
+		}
+	}
+
