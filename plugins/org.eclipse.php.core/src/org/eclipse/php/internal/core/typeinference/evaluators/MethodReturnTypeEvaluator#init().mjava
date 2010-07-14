@@ -4,12 +4,12 @@
 
 		final List<IGoal> subGoals = new LinkedList<IGoal>();
 
-		ISourceModule sourceModule = ((ISourceModuleContext) goal.getContext())
-				.getSourceModule();
-		ModuleDeclaration module = SourceParserUtil
-				.getModuleDeclaration(sourceModule);
-
 		for (IMethod method : getMethods()) {
+
+			ISourceModule sourceModule = method.getSourceModule();
+			ModuleDeclaration module = SourceParserUtil
+					.getModuleDeclaration(sourceModule);
+
 			MethodDeclaration decl = null;
 			try {
 				decl = PHPModelUtils.getNodeByMethod(module, method);
@@ -49,16 +49,6 @@
 			}
 			if (method != null) {
 				resolveMagicMethodDeclaration(method, methodName);
-			}
-			// if we can not get the return type,we resolve the method
-			// if the method is abstract,it will make the call in deadloop.
-			try {
-				if (subGoals.isEmpty() && evaluated.isEmpty()
-						&& !PHPFlags.isAbstract(method.getFlags())) {
-					resolveReturnType(method);
-				}
-			} catch (ModelException e) {
-				PHPCorePlugin.log(e);
 			}
 		}
 
