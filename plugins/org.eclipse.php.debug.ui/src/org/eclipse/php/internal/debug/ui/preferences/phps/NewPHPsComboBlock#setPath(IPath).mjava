@@ -1,0 +1,72 @@
+	/**
+	 * Sets the selection based on the given container path and returns a status
+	 * indicating if the selection was successful.
+	 * 
+	 * @param containerPath
+	 * @return status
+	 */
+	public void setPath(IPath containerPath) {
+		fErrorPath = null;
+		setStatus(OK_STATUS);
+		if (containerPath == null
+				|| PHPRuntime.newDefaultJREContainerPath()
+						.equals(containerPath)) {
+			setUseDefaultJRE();
+		} else {
+			PHPVersion version = PHPRuntime.getPHPVersion(containerPath);
+			if (version != null) {
+				selectEnvironment(version);
+				PHPexeItem[] items = PHPexes.getInstance().getCompatibleItems(
+						PHPexes.getInstance().getAllItems(), version);
+				if (items.length == 0) {
+					setError(MessageFormat.format(
+							PHPDebugUIMessages.PHPexesComboBlock_7,
+							new String[] { version.getAlias() }));
+				}
+			} else {
+				PHPexeItem install = PHPRuntime.getPHPexeItem(containerPath);
+				if (install == null) {
+					selectJRE(install);
+					fErrorPath = containerPath;
+					// String installTypeId = PHPRuntime
+					// .getVMInstallTypeId(containerPath);
+					// if (installTypeId == null) {
+					setError(PHPDebugUIMessages.PHPexesComboBlock_8);
+					// } else {
+					// IVMInstallType installType = PHPRuntime
+					// .getVMInstallType(installTypeId);
+					// if (installType == null) {
+					// setError(MessageFormat.format(
+					// PHPDebugUIMessages.PHPexesComboBlock_9,
+					// new String[] { installTypeId }));
+					// } else {
+					// String installName = PHPRuntime
+					// .getVMInstallName(containerPath);
+					// if (installName == null) {
+					// setError(MessageFormat
+					// .format(
+					// PHPDebugUIMessages.PHPexesComboBlock_10,
+					// new String[] { installType
+					// .getName() }));
+					// } else {
+					// setError(MessageFormat
+					// .format(
+					// PHPDebugUIMessages.PHPexesComboBlock_11,
+					// new String[] { installName,
+					// installType.getName() }));
+					// }
+					// }
+					// }
+				} else {
+					selectJRE(install);
+					File location = install.getExecutable();
+					if (location == null) {
+						setError(PHPDebugUIMessages.PHPexesComboBlock_12);
+					} else if (!location.exists()) {
+						setError(PHPDebugUIMessages.PHPexesComboBlock_13);
+					}
+				}
+			}
+		}
+	}
+
