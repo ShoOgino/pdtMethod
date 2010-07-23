@@ -8,6 +8,22 @@
 				.getModuleDeclaration(sourceModule);
 		ASTNode node = PHPModelUtils.getNodeByField(module, field);
 
+		if (node == null) {// define constant
+			PHPCallExpression callExpression = DefineMethodUtils
+					.getDefineNodeByField(module, field);
+			if (callExpression != null) {
+				CallArgumentsList args = callExpression.getArgs();
+				if (args != null && args.getChilds() != null
+						&& args.getChilds().size() >= 2) {
+					ASTNode argument = (ASTNode) args.getChilds().get(1);
+					if (argument instanceof Scalar) {
+						String value = ASTUtils.stripQuotes(((Scalar) argument)
+								.getValue());
+						return value;
+					}
+				}
+			}
+		}
 		if (!(node instanceof IPHPDocAwareDeclaration)) {
 			return null;
 		}
