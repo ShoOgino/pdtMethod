@@ -1,0 +1,25 @@
+		protected void checkElementDeclaration(PHPCallExpression s) {
+			if (s.getName().equals(DEFINE)) {
+				CallArgumentsList args = s.getArgs();
+				if (args != null && args.getChilds() != null) {
+					ASTNode argument = (ASTNode) args.getChilds().get(0);
+					if (argument instanceof Scalar) {
+						String constant = ASTUtils
+								.stripQuotes(((Scalar) argument).getValue());
+						if (constant.equals(elementName)) {
+							int astStart = s.sourceStart();
+							int astEnd = s.sourceEnd();
+							int diff1 = modelStart - astStart;
+							int diff2 = modelEnd - astEnd;
+							int score = diff1 * diff1 + diff2 * diff2;
+							if (score < bestScore) {
+								bestScore = score;
+								result = s;
+							}
+						}
+					}
+
+				}
+			}
+		}
+
