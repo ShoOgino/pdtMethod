@@ -1,0 +1,58 @@
+	public void complete(IModuleSource module, int position, int i,
+			boolean waitForBuilder) {
+		if (!PHPCorePlugin.toolkitInitialized) {
+			return;
+		}
+		if (requestor instanceof IPHPCompletionRequestor) {
+			((IPHPCompletionRequestor) requestor).setOffset(offset);
+		}
+		if (waitForBuilder) {
+			ModelManager.getModelManager().getIndexManager().waitUntilReady();
+		}
+
+		relevanceKeyword = RELEVANCE_KEYWORD;
+		relevanceMethod = RELEVANCE_METHOD;
+		relevanceClass = RELEVANCE_CLASS;
+		relevanceVar = RELEVANCE_VAR;
+		relevanceConst = RELEVANCE_CONST;
+
+		try {
+			ICompletionContextResolver[] contextResolvers = CompletionContextResolver
+					.getActive();
+			ICompletionStrategyFactory[] strategyFactories = CompletionStrategyFactory
+					.getActive();
+
+			CompletionCompanion companion = new CompletionCompanion();
+			org.eclipse.dltk.core.ISourceModule sourceModule = (org.eclipse.dltk.core.ISourceModule) module
+					.getModelElement();
+
+			for (ICompletionContextResolver resolver : contextResolvers) {
+				ICompletionContext[] contexts = resolver.resolve(sourceModule,
+						position, requestor, companion);
+
+				if (contexts != null) {
+					for (ICompletionStrategyFactory factory : strategyFactories) {
+						ICompletionStrategy[] strategies = factory
+								.create(contexts);
+
+						if (strategies != null) {
+							for (ICompletionStrategy strategy : strategies) {
+								strategy.init(companion);
+
+								try {
+									strategy.apply(this);
+								} catch (Exception e) {
+									PHPCorePlugin.log(e);
+									return; // stop processing other completions
+								}
+							}
+						}
+					}
+				}
+			}
+		} finally {
+			processedElements.clear();
+			processedPaths.clear();
+		}
+	}
+

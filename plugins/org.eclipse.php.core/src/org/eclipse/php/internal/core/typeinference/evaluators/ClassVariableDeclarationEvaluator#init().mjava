@@ -11,13 +11,23 @@
 			return null;
 		}
 
+		IContext context = typedGoal.getContext();
+		IModelAccessCache cache = null;
+		if (context instanceof IModelCacheContext) {
+			cache = ((IModelCacheContext) context).getCache();
+		}
+
 		String variableName = typedGoal.getVariableName();
 
 		final List<IGoal> subGoals = new LinkedList<IGoal>();
 		for (final IType type : types) {
 			try {
+				ITypeHierarchy hierarchy = null;
+				if (cache != null) {
+					hierarchy = cache.getSuperTypeHierarchy(type, null);
+				}
 				IField[] fields = PHPModelUtils.getTypeHierarchyField(type,
-						variableName, true, null);
+						hierarchy, variableName, true, null);
 				Set<IType> fieldDeclaringTypeSet = new HashSet<IType>();
 				for (IField field : fields) {
 					IType declaringType = field.getDeclaringType();
@@ -76,7 +86,7 @@
 			}
 		}
 
-		resolveMagicClassVariableDeclaration(types, variableName);
+		resolveMagicClassVariableDeclaration(types, variableName, cache);
 
 		return subGoals.toArray(new IGoal[subGoals.size()]);
 	}
