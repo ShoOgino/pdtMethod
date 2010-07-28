@@ -1,0 +1,25 @@
+	private int getExecutionId() throws Exception {
+		Connection connection = pool.getConnection();
+		try {
+			PreparedStatement statement = connection.prepareStatement(
+					"INSERT INTO EXECUTIONS(DATE) VALUES(?);",
+					Statement.RETURN_GENERATED_KEYS);
+			try {
+				statement.setTimestamp(1, new Timestamp(System
+						.currentTimeMillis()));
+				statement.executeUpdate();
+				ResultSet result = statement.getGeneratedKeys();
+				try {
+					result.next();
+					return result.getInt(1);
+				} finally {
+					result.close();
+				}
+			} finally {
+				statement.close();
+			}
+		} finally {
+			connection.close();
+		}
+	}
+

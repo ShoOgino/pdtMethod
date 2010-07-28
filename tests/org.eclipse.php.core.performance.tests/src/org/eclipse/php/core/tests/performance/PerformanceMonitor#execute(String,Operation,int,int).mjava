@@ -1,0 +1,41 @@
+	/**
+	 * Executes test operation, and measure execution time
+	 * 
+	 * @param id
+	 *            Test identifier within the bounds of testing plug-in.
+	 * @param operation
+	 *            Operation to test
+	 * @param times
+	 *            How many times the operation will be executed for calculating
+	 *            average execution time
+	 * @param threshold
+	 *            Threshold in percents
+	 * @throws Exception
+	 */
+	public void execute(String id, Operation operation, int times, int threshold)
+			throws Exception {
+		int testId = getTestId(id);
+
+		long testTimeSum = 0;
+		for (int i = 0; i < times; ++i) {
+			long testStart = System.currentTimeMillis();
+			operation.run();
+			testTimeSum += System.currentTimeMillis() - testStart;
+		}
+		long testAverage = testTimeSum / times;
+
+		long savedAverage = getAverage(testId, AVG_SAMPLES);
+		if (savedAverage != -1 && testAverage > savedAverage) {
+
+			long diff = testAverage - savedAverage;
+			if (diff * 100 / savedAverage > threshold) {
+
+				Assert.fail("Average execution time (" + testAverage
+						+ "ms) is greater by more than " + threshold
+						+ "% than the saved average (" + savedAverage + "ms)");
+			}
+		}
+
+		writeResult(testId, testAverage);
+	}
+

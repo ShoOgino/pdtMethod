@@ -1,0 +1,40 @@
+	/**
+	 * Returns average time of running a test.
+	 * 
+	 * @param testId
+	 *            Test ID
+	 * @param samples
+	 *            Number of invocations to take into account
+	 * @return average time
+	 * @throws SQLException
+	 */
+	private long getAverage(int testId, int samples) throws SQLException {
+		Connection connection = pool.getConnection();
+		try {
+			PreparedStatement statement = connection
+					.prepareStatement("SELECT COUNT(*),AVG(TIME) FROM ("
+							+ "SELECT R.TIME FROM RESULTS AS R JOIN TESTS AS T ON R.TEST_ID = T.ID AND T.ID=? "
+							+ "JOIN EXECUTIONS AS E ON R.EXECUTION_ID = E.ID "
+							+ "ORDER BY E.DATE DESC LIMIT ?);");
+			statement.setInt(1, testId);
+			statement.setInt(2, samples);
+			try {
+				ResultSet result = statement.executeQuery();
+				try {
+					if (result.next()) {
+						if (result.getInt(1) == samples) {
+							return result.getLong(2);
+						}
+					}
+				} finally {
+					result.close();
+				}
+			} finally {
+				statement.close();
+			}
+		} finally {
+			connection.close();
+		}
+		return -1;
+	}
+

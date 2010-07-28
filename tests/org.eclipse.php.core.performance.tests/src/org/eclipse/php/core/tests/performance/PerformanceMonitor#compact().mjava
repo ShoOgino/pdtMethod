@@ -1,0 +1,16 @@
+	private void compact() throws SQLException {
+		Connection connection = pool.getConnection();
+		try {
+			PreparedStatement statement = connection
+					.prepareStatement("DELETE FROM EXECUTIONS WHERE ID IN (SELECT ID FROM (SELECT ROWNUM() AS R,ID FROM (SELECT ID FROM EXECUTIONS ORDER BY DATE DESC)) WHERE R > ?);");
+			statement.setInt(1, HISTORY_SIZE);
+			try {
+				statement.executeUpdate();
+			} finally {
+				statement.close();
+			}
+		} finally {
+			connection.close();
+		}
+	}
+
