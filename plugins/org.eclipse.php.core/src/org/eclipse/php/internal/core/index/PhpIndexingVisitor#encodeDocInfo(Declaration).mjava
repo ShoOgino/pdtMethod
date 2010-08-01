@@ -1,0 +1,45 @@
+	/**
+	 * See {@link PhpElementResolver#decodeDocInfo(String)} for the decoding
+	 * routine.
+	 * 
+	 * @param declaration
+	 *            Declaration ASTNode
+	 * @return decoded PHPDoc info, or <code>null</code> if there's no PHPDoc
+	 *         info to store.
+	 */
+	protected static String encodeDocInfo(Declaration declaration) {
+		if (declaration instanceof IPHPDocAwareDeclaration) {
+			PHPDocBlock docBlock = ((IPHPDocAwareDeclaration) declaration)
+					.getPHPDoc();
+			if (docBlock != null) {
+				Map<String, String> info = new HashMap<String, String>();
+				for (PHPDocTag tag : docBlock.getTags()) {
+					if (tag.getTagKind() == PHPDocTag.DEPRECATED) {
+						info.put("d", null);
+					} else if (tag.getTagKind() == PHPDocTag.RETURN) {
+						StringBuilder buf = new StringBuilder();
+						for (SimpleReference ref : tag.getReferences()) {
+							if (buf.length() > 0) {
+								buf.append(',');
+							}
+							buf.append(ref.getName());
+						}
+						info.put("r", buf.toString());
+					}
+				}
+				StringBuilder buf = new StringBuilder();
+				for (Entry<String, String> e : info.entrySet()) {
+					if (buf.length() > 0) {
+						buf.append(';');
+					}
+					buf.append(e.getKey());
+					if (e.getValue() != null) {
+						buf.append(':').append(e.getValue());
+					}
+				}
+				return buf.length() > 0 ? buf.toString() : null;
+			}
+		}
+		return null;
+	}
+
