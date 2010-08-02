@@ -2,7 +2,9 @@
 			final IStructuredDocument document, final StringBuffer result,
 			final int lineNumber, final int forOffset)
 			throws BadLocationException {
-		final int lastNonEmptyLineIndex = getIndentationBaseLine(document,
+		boolean enterKeyPressed = document.getLineDelimiter().equals(
+				result.toString());
+		int lastNonEmptyLineIndex = getIndentationBaseLine(document,
 				lineNumber, forOffset, false);
 		final int indentationBaseLineIndex = getIndentationBaseLine(document,
 				lineNumber, forOffset, true);
@@ -32,6 +34,41 @@
 					.getIndentationChar(document);
 			for (int i = 0; i < indentationSize; i++)
 				result.append(indentationChar);
+		} else {
+			lastNonEmptyLineIndex = lineNumber;
+			if (!enterKeyPressed && lastNonEmptyLineIndex > 0) {
+				lastNonEmptyLineIndex--;
+			}
+			while (lastNonEmptyLineIndex >= 0) {
+				IRegion lineInfo = document
+						.getLineInformation(lastNonEmptyLineIndex);
+				String content = document.get(lineInfo.getOffset(), lineInfo
+						.getLength());
+				if (content.trim().length() > 0) {
+					break;
+				}
+				lastNonEmptyLineIndex--;
+			}
+			if (!isEndOfStatement(document, offset, lastNonEmptyLineIndex)) {
+				if (enterKeyPressed) {
+					// this line is one of multi line statement
+					if (indentationBaseLineIndex == lastNonEmptyLineIndex) {
+						// this only deal with "$a = 'aaa'.|","|" is the cursor
+						// position when we press enter key
+						placeStringIndentation(document, lastNonEmptyLineIndex,
+								result);
+					} else {
+						// in multi line statement,when user press enter key,
+						// we use the same indentation of the last non-empty
+						// line.
+						result.setLength(result.length() - blanks.length());
+						IRegion lineInfo = document
+								.getLineInformation(lastNonEmptyLineIndex);
+						result.append(FormatterUtils.getLineBlanks(document,
+								lineInfo));
+					}
+				}
+			}
 		}
 	}
 
