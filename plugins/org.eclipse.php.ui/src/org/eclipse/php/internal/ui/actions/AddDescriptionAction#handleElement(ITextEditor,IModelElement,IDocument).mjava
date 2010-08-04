@@ -48,11 +48,28 @@
 				comment = createTypeComment((IType) modelElem, lineDelim);
 				break;
 			case IModelElement.FIELD:
-				if (PHPModelUtils.getDocBlock((IField) modelElem) != null) {
-					return null;
+				if (!isParameter((IField) modelElem)) {
+					if (PHPModelUtils.getDocBlock((IField) modelElem) != null) {
+						return null;
+					}
+					comment = createFieldComment((IField) modelElem, lineDelim);
+					break;
+				} else {
+					// If the element is a parameter in the function
+					// declaration,
+					// get the parent element and go to method case.
+					modelElem = modelElem.getParent();
+					// reset the position to the beginning of the method
+					startPosition = getCodeDataOffset(modelElem);
+
+					try {
+						// reset the indent level to the method.
+						indentString = getIndentString(document, modelElem);
+					} catch (BadLocationException e) {
+						Logger.logException(e);
+						return null;
+					}
 				}
-				comment = createFieldComment((IField) modelElem, lineDelim);
-				break;
 			case IModelElement.METHOD:
 				if (PHPModelUtils.getDocBlock((IMethod) modelElem) != null) {
 					return null;
