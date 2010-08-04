@@ -5,23 +5,38 @@
 	 * 
 	 * @param session
 	 *            the DBGpSession.
+	 * @throws CoreException
 	 */
-	private void createLaunch(DBGpSession session) {
+	private void createLaunch(DBGpSession session) throws CoreException {
 		boolean stopAtFirstLine = PHPProjectPreferences
 				.getStopAtFirstLine(null);
 		DBGpTarget target = null;
 		PathMapper mapper = null;
 		PHPSourceLookupDirector srcLocator = new PHPSourceLookupDirector();
 		srcLocator.initializeParticipants();
+		ILaunchConfigurationType type = null;
+		ILaunchManager lm = DebugPlugin.getDefault().getLaunchManager();
 
-		ILaunch remoteLaunch = new Launch(null, ILaunchManager.DEBUG_MODE,
-				srcLocator);
+		if (session.getSessionId() == null) {
+			// web launch
+			type = lm
+					.getLaunchConfigurationType(IPHPDebugConstants.PHPServerLaunchType);
+		} else {
+			// cli launch
+			type = lm
+					.getLaunchConfigurationType(IPHPDebugConstants.PHPEXELaunchType);
+		}
+
+		ILaunchConfiguration launchConfig = type.newInstance(null,
+				PHPDebugCoreMessages.XDebugMessage_remoteSessionTitle);
+		ILaunch remoteLaunch = new Launch(launchConfig,
+				ILaunchManager.DEBUG_MODE, srcLocator);
 		boolean multiSession = XDebugPreferenceMgr.useMultiSession();
 
 		if (session.getSessionId() == null && !multiSession) {
 			// non multisession web launch
-			target = new DBGpTarget(remoteLaunch, null, null, session
-					.getIdeKey(), stopAtFirstLine, null);
+			target = new DBGpTarget(remoteLaunch, null, null,
+					session.getIdeKey(), stopAtFirstLine, null);
 
 			// try to locate a relevant server definition so we can get its path
 			// mapper
@@ -80,9 +95,9 @@
 			// we are not a multisession web launch, so just add to the launch
 			remoteLaunch.addDebugTarget(target);
 			// tell the target it now has a session.
-			target.sessionReceived((DBGpBreakpointFacade) IDELayerFactory
-					.getIDELayer(), XDebugPreferenceMgr
-					.createSessionPreferences());
+			target.sessionReceived(
+					(DBGpBreakpointFacade) IDELayerFactory.getIDELayer(),
+					XDebugPreferenceMgr.createSessionPreferences());
 			// probably could do waitForInitialSession as session has already
 			// been set.
 		}
