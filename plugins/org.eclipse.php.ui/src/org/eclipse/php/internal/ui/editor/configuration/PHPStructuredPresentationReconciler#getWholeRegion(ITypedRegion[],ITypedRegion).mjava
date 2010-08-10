@@ -1,0 +1,32 @@
+	ITypedRegion getWholeRegion(ITypedRegion[] wholePartitions,
+			ITypedRegion originalRegion) {
+		if (fTypeSet.contains(originalRegion.getType())) {
+			int i = 0;
+			int jumpto = -1;
+			while (i < wholePartitions.length) {
+				ITypedRegion r = wholePartitions[i];
+				if (wholePartitions[i].getType().equals(
+						originalRegion.getType())) {
+					jumpto = getFollowingCSS(wholePartitions, i);
+					r = new SimpleStructuredTypedRegion(r.getOffset(),
+							wholePartitions[jumpto].getOffset()
+									+ wholePartitions[jumpto].getLength()
+									- r.getOffset(), originalRegion.getType());
+					if (originalRegion.getOffset() >= r.getOffset()
+							&& originalRegion.getOffset()
+									+ originalRegion.getLength() <= r
+									.getOffset()
+									+ r.getLength()) {
+						return r;
+					} else {
+						i = jumpto + 2;
+					}
+				} else {
+					i++;
+				}
+
+			}
+		}
+		return null;
+	}
+

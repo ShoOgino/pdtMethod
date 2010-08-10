@@ -1,0 +1,30 @@
+	@Override
+	public IPresentationReconciler getPresentationReconciler(
+			ISourceViewer sourceViewer) {
+		StructuredPresentationReconciler reconciler = new PHPStructuredPresentationReconciler();
+		reconciler
+				.setDocumentPartitioning(getConfiguredDocumentPartitioning(sourceViewer));
+
+		String[] contentTypes = getConfiguredContentTypes(sourceViewer);
+
+		if (contentTypes != null) {
+			StructuredDocumentDamagerRepairer dr = null;
+
+			for (int i = 0; i < contentTypes.length; i++) {
+				if (fHighlighter != null) {
+					LineStyleProvider provider = fHighlighter
+							.getProvider(contentTypes[i]);
+					if (provider == null)
+						continue;
+
+					dr = new StructuredDocumentDamagerRepairer(provider);
+					dr.setDocument(sourceViewer.getDocument());
+					reconciler.setDamager(dr, contentTypes[i]);
+					reconciler.setRepairer(dr, contentTypes[i]);
+				}
+			}
+		}
+
+		return reconciler;
+	}
+
