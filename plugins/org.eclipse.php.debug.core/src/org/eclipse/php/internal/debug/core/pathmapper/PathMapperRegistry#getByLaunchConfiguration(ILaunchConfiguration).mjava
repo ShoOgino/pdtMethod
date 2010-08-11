@@ -13,16 +13,17 @@
 					(String) null);
 			if (serverName != null) {
 				pathMapper = getByServer(ServersManager.getServer(serverName));
-			}/*
-			 * else { String phpExe =
-			 * launchConfiguration.getAttribute(PHPCoreConstants
-			 * .ATTR_EXECUTABLE_LOCATION, (String) null); String phpIni =
-			 * launchConfiguration
-			 * .getAttribute(PHPCoreConstants.ATTR_INI_LOCATION, (String) null);
-			 * if (phpExe != null) { pathMapper =
-			 * getByPHPExe(PHPexes.getInstance().getItemForFile(phpExe,
-			 * phpIni)); } }
-			 */
+			} else {
+				PathMapperRegistry reg = getInstance();
+				DebugPlugin.getDefault().getLaunchManager()
+						.addLaunchConfigurationListener(reg);
+				pathMapper = reg.launchMapper.get(launchConfiguration);
+				if (pathMapper == null) {
+					pathMapper = new PathMapper();
+					reg.launchMapper.put(launchConfiguration, pathMapper);
+				}
+			}
+
 		} catch (CoreException e) {
 			PHPDebugPlugin.log(e);
 		}
