@@ -1,0 +1,38 @@
+	public boolean visitMethodDeclaration(MethodDeclaration method)
+			throws Exception {
+		this.fNodes.push(method);
+		List args = method.getArguments();
+
+		String[] parameter = new String[args.size()];
+		String[] initializers = new String[args.size()];
+		for (int a = 0; a < args.size(); a++) {
+			Argument arg = (Argument) args.get(a);
+			parameter[a] = arg.getName();
+			if (arg.getInitialization() != null) {
+				if (arg.getInitialization() instanceof Literal) {
+					Literal scalar = (Literal) arg.getInitialization();
+					initializers[a] = scalar.getValue();
+				} else {
+					initializers[a] = NULL_VALUE;
+				}
+			}
+		}
+
+		ISourceElementRequestor.MethodInfo mi = new ISourceElementRequestor.MethodInfo();
+		mi.parameterNames = parameter;
+		mi.name = method.getName();
+		mi.modifiers = method.getModifiers();
+		mi.nameSourceStart = method.getNameStart();
+		mi.nameSourceEnd = method.getNameEnd() - 1;
+		mi.declarationStart = method.sourceStart();
+		mi.parameterInitializers = initializers;
+
+		modifyMethodInfo(method, mi);
+
+		this.fRequestor.enterMethod(mi);
+
+		this.fInMethod = true;
+		this.fCurrentMethod = method;
+		return true;
+	}
+
