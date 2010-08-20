@@ -82,7 +82,8 @@
 		final List<String> exceptions = new ArrayList<String>();
 		elementAt.accept(new AbstractVisitor() {
 			public boolean visit(ThrowStatement throwStatement) {
-				if (throwStatement.getExpression() instanceof ClassInstanceCreation) {
+				Expression expression = throwStatement.getExpression();
+				if (expression instanceof ClassInstanceCreation) {
 					ClassInstanceCreation cic = (ClassInstanceCreation) throwStatement
 							.getExpression();
 					if (cic.getClassName().getName() instanceof Identifier) {
@@ -91,6 +92,14 @@
 						exceptions.add(name.getName());
 					}
 				}
+				if (expression instanceof Variable) {
+					ITypeBinding type = ((Variable) expression)
+							.resolveTypeBinding();
+					if (type != null) {
+						exceptions.add(type.getName());
+					}
+				}
+
 				return true;
 			}
 		});
