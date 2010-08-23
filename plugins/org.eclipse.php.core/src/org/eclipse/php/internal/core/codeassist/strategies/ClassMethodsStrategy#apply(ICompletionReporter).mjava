@@ -25,7 +25,6 @@
 				.getMethods(phpVersion)));
 
 		boolean exactName = requestor.isContextInformationMode();
-
 		List<IMethod> result = new LinkedList<IMethod>();
 		for (IType type : concreteContext.getLhsTypes()) {
 			try {
@@ -38,10 +37,14 @@
 						.getTypeHierarchyMethod(type, hierarchy, prefix,
 								exactName, null);
 
+				boolean inConstructor = isInConstructor(type,
+						type.getMethods(), concreteContext);
 				for (IMethod method : removeOverriddenElements(Arrays
 						.asList(methods))) {
 
-					if (!isFiltered(method, type, concreteContext)) {
+					if ((!isConstructor(method) || inConstructor
+							&& isSuperConstructor(method, type, concreteContext))
+							&& !isFiltered(method, type, concreteContext)) {
 						if (magicMethods.contains(method.getElementName())) {
 							reporter.reportMethod(method, suffix, replaceRange,
 									ProposalExtraInfo.MAGIC_METHOD);
