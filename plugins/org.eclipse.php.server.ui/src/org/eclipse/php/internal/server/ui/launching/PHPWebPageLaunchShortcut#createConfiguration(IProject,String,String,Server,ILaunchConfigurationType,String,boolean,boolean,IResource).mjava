@@ -12,7 +12,13 @@
 		if (selectedURL != null) {
 			URL = selectedURL;
 		} else {
-			URL = server.getBaseURL() + new Path(fileName).toString();
+			try {
+				URL resolvedUrl = constractURL(res.getProject(),
+						server.getBaseURL(), new Path(fileName));
+				URL = resolvedUrl.toString();
+			} catch (MalformedURLException e) {
+				// safe as resolved URL is server.getBaseURL()
+			}
 		}
 
 		ILaunchConfigurationWorkingCopy wc = configType.newInstance(null,
@@ -21,9 +27,7 @@
 		// Set the debugger ID and the configuration delegate for this launch
 		// configuration
 		String debuggerID = PHPProjectPreferences.getDefaultDebuggerID(project);
-		wc
-				.setAttribute(PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID,
-						debuggerID);
+		wc.setAttribute(PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID, debuggerID);
 		AbstractDebuggerConfiguration debuggerConfiguration = PHPDebuggersRegistry
 				.getDebuggerConfiguration(debuggerID);
 		wc.setAttribute(
@@ -33,10 +37,10 @@
 		wc.setAttribute(Server.NAME, server.getName());
 		wc.setAttribute(Server.FILE_NAME, fileName);
 		wc.setAttribute(Server.BASE_URL, URL);
-		wc.setAttribute(IPHPDebugConstants.RUN_WITH_DEBUG_INFO, PHPDebugPlugin
-				.getDebugInfoOption());
-		wc.setAttribute(IPHPDebugConstants.OPEN_IN_BROWSER, PHPDebugPlugin
-				.getOpenInBrowserOption());
+		wc.setAttribute(IPHPDebugConstants.RUN_WITH_DEBUG_INFO,
+				PHPDebugPlugin.getDebugInfoOption());
+		wc.setAttribute(IPHPDebugConstants.OPEN_IN_BROWSER,
+				PHPDebugPlugin.getOpenInBrowserOption());
 		wc.setAttribute(IDebugParametersKeys.FIRST_LINE_BREAKPOINT,
 				breakAtFirstLine);
 		if (res != null) {

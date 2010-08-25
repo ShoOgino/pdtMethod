@@ -3,17 +3,27 @@
 
 		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
 		IResource resource = root.findMember(fileName);
+
+		basePath = getBasePath(resource.getProject());
+		if (basePath == null && resource.getProject() != null)
+			basePath = resource.getProject().getName();
+		else if (basePath == null && resource.getProject() == null) {
+			basePath = "";
+		}
+
 		if (resource == null) {
 			return fileName;
 		}
 		int type = resource.getType();
 		if (type == IResource.FILE || type == IResource.FOLDER) {
-			formatFile = resource.getFullPath().toString();
+
+			formatFile = basePath + "/"
+					+ resource.getFullPath().removeFirstSegments(1).toString();
 		} else {
-			formatFile = "/"; //$NON-NLS-1$
+			formatFile = basePath + "/"; //$NON-NLS-1$
 		}
 		if (!formatFile.startsWith("/")) { //$NON-NLS-1$
-			formatFile = "/" + formatFile; //$NON-NLS-1$
+			formatFile = basePath + "/" + formatFile; //$NON-NLS-1$
 		}
 		return formatFile;
 	}
