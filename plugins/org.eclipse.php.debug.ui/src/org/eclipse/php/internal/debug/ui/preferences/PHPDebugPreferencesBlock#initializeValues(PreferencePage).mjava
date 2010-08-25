@@ -27,6 +27,10 @@
 			IEclipsePreferences node = preferenceScopes[0]
 					.getNode(getPreferenceNodeQualifier());
 			if (node != null && project != null) {
+				if (getBasePathValue(project) == null
+						|| getBasePathValue(project) == "") {
+					setBasePathValue(project, project.getName());
+				}
 				String projectServerName = ServersManager.getDefaultServer(
 						project).getName();
 				if (!projectServerName.equals("")) { //$NON-NLS-1$
@@ -68,8 +72,8 @@
 			}
 		}
 		if (!exeLoaded) {
-			loadPHPExes(fDefaultPHPExe, exes.getItems(PHPDebugPlugin
-					.getCurrentDebuggerId()));
+			loadPHPExes(fDefaultPHPExe,
+					exes.getItems(PHPDebugPlugin.getCurrentDebuggerId()));
 		}
 		fStopAtFirstLine.setSelection(stopAtFirstLine);
 		fDefaultDebugger.select(fDefaultDebugger.indexOf(debuggerName));
@@ -77,5 +81,11 @@
 		fDefaultPHPExe.select(fDefaultPHPExe.indexOf(phpExeName));
 		fDebugEncodingSettings.setText(transferEncoding);
 		fOutputEncodingSettings.setText(outputEncoding);
+
+		if (isPropertyPage()) {
+			defaultBasePath = getBasePathValue(project);
+			initAutoGenerateListener();
+			fDefaultBasePath.setText(defaultBasePath);
+		}
 	}
 
