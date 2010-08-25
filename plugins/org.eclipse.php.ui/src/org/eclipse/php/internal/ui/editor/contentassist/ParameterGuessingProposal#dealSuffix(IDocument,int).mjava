@@ -1,0 +1,20 @@
+	private void dealSuffix(IDocument document, int offset) {
+		String replacement = getReplacementString();
+		if (replacement.endsWith(PARENS)) {
+			if (cursorInBrackets(document, offset)) {
+				setReplacementLength(getReplacementLength() + 1);
+			} else if (cursorInBrackets(document, offset + 1)) {
+				setReplacementLength(getReplacementLength() + 2);
+			}
+		} else {
+			// deal with case that a method that do not have parameters but with
+			// append with parameters when using insert mode,for example
+			// getA|($a),we should generate getA()($a) instead of getA($a),but
+			// for getA|(),we should generate getA()
+			if (insertCompletion() && !cursorInBrackets(document, offset + 1)) {
+				replacement = replacement + PARENS;
+				setReplacementString(replacement);
+			}
+		}
+	}
+
