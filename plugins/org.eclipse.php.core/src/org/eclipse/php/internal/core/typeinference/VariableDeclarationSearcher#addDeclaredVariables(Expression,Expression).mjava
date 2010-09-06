@@ -8,9 +8,16 @@
 				addDeclaredVariables(nestedVar, node);
 			}
 		} else if (variable instanceof ReflectionArrayVariableReference) {
-			ArrayVariableReference varRef = (ArrayVariableReference) ((ReflectionArrayVariableReference) variable)
+			Expression expression = ((ReflectionArrayVariableReference) variable)
 					.getExpression();
-			getScope().addDeclaration(varRef.getName(), node);
+			while (expression instanceof ReflectionArrayVariableReference) {
+				expression = ((ReflectionArrayVariableReference) expression)
+						.getExpression();
+			}
+			if (expression instanceof ArrayVariableReference) {
+				ArrayVariableReference varRef = (ArrayVariableReference) expression;
+				getScope().addDeclaration(varRef.getName(), node);
+			}
 		}
 	}
 
