@@ -1,0 +1,23 @@
+	public ITextRegion getNextPHPToken(int times) throws BadLocationException {
+		ITextRegion phpToken = null;
+		int offset = this.offset;
+		while (times-- > 0) {
+			phpToken = getPHPToken(offset);
+			do {
+				phpToken = phpScriptRegion.getPhpToken(phpToken.getEnd());
+				if (!PHPPartitionTypes.isPHPCommentState(phpToken.getType())
+						&& phpToken.getType() != PHPRegionTypes.WHITESPACE) {
+					break;
+				}
+			} while (phpToken.getEnd() < phpScriptRegion.getLength());
+			if (phpToken == null) {
+				return null;
+			} else {
+				offset = regionCollection.getStartOffset()
+						+ phpScriptRegion.getStart() + phpToken.getEnd();
+			}
+		}
+
+		return phpToken;
+	}
+
