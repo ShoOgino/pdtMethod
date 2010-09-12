@@ -1,0 +1,45 @@
+	protected static IModelElement parseURI(URI uri) {
+		String ssp = uri.getSchemeSpecificPart();
+		String[] segments = ssp.split(String.valueOf(LINK_SEPARATOR), -1);
+
+		// replace '[' manually, since URI confuses it for an IPv6 address as
+		// per RFC 2732:
+		IModelElement element = DLTKCore.create(segments[1].replace(
+				LINK_BRACKET_REPLACEMENT, '['));
+
+		if ((segments.length > 2) && (element instanceof IMember)) {
+			IMember member = (IMember) element;
+			String refTypeName = segments[2];
+
+			IType[] types = null;
+
+			try {
+				
+				int offset = member.getSourceRange() != null ? member.getSourceRange().getOffset() : 0;
+				types = PHPModelUtils.getTypes(refTypeName,
+						member.getSourceModule(), offset, new NullProgressMonitor());
+			} catch (ModelException e) {
+				PHPUiPlugin.log(e);
+			}
+
+			if ((types != null) && (types.length > 0)) {
+				IType type = types[0]; // take first one
+				if (segments.length > 3) {
+					String refMemberName = segments[3];
+					IMethod method = type.getMethod(refMemberName);
+					if (method != null) {
+						return method;
+					} else {
+						return type.getField(refMemberName);
+					}
+				}
+
+				return type;
+				// String refParamterTypes = segments[4..];
+			}
+
+		}
+
+		return element;
+	}
+

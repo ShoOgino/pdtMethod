@@ -1,0 +1,79 @@
+	/**
+	 * Creates a location listener which uses the given handler to handle java
+	 * element links.
+	 * 
+	 * The location listener can be attached to a {@link Browser}
+	 * 
+	 * @param handler
+	 *            the handler to use to handle links
+	 * @return a new {@link LocationListener}
+	 */
+	public static LocationListener createLocationListener(
+			final ILinkHandler handler) {
+		return new LocationAdapter() {
+			public void changing(LocationEvent event) {
+				String loc = event.location;
+
+				if ("about:blank".equals(loc)) { //$NON-NLS-1$
+					/*
+					 * Using the Browser.setText API triggers a location change
+					 * to "about:blank". XXX: remove this code once
+					 * https://bugs.eclipse.org/bugs/show_bug.cgi?id=130314 is
+					 * fixed
+					 */
+					// input set with setText
+					handler.handleTextSet();
+					return;
+				}
+
+				event.doit = false;
+
+				if (loc.startsWith("about:")) { //$NON-NLS-1$
+					// Relative links should be handled via head > base tag.
+					// If no base is available, links just won't work.
+					return;
+				}
+
+				URI uri;
+				try {
+					uri = new URI(loc);
+				} catch (URISyntaxException e) {
+					// try it with a file (workaround for
+					// https://bugs.eclipse.org/bugs/show_bug.cgi?id=237903 ):
+					File file = new File(loc);
+					if (!file.exists()) {
+						PHPUiPlugin.log(e);
+						return;
+					}
+					uri = file.toURI();
+					loc = uri.toASCIIString();
+				}
+
+				String scheme = uri.getScheme();
+				if (PHPElementLinks.PHPDOC_SCHEME.equals(scheme)) {
+					IModelElement linkTarget = PHPElementLinks.parseURI(uri);
+					if (linkTarget == null)
+						return;
+
+					handler.handleInlineLink(linkTarget);
+				} else if (PHPElementLinks.OPEN_LINK_SCHEME.equals(scheme)) {
+					IModelElement linkTarget = PHPElementLinks.parseURI(uri);
+					if (linkTarget == null)
+						return;
+
+					handler.handleDeclarationLink(linkTarget);
+				} else {
+					try {
+						if (handler.handleExternalLink(new URL(loc),
+								event.display))
+							return;
+
+						event.doit = true;
+					} catch (MalformedURLException e) {
+						PHPUiPlugin.log(e);
+					}
+				}
+			}
+		};
+	}
+
