@@ -1,0 +1,21 @@
+		public void runTest() throws Throwable {
+			IProject project = getProject(metadata.project);
+
+			IScriptProject scriptProject = DLTKCore.create(project);
+			final IDLTKSearchScope scope = SearchEngine
+					.createSearchScope(scriptProject);
+			final IType[] exceptionType = PhpModelAccess.getDefault()
+					.findTypes(metadata.type, MatchRule.EXACT, 0, 0, scope,
+							null);
+
+			Assert.assertNotNull(exceptionType);
+			Assert.assertEquals(exceptionType.length, 1);
+
+			perfMonitor.execute(metadata.project + ".testTypeHierarchy",
+					new Operation() {
+						public void run() throws Exception {
+							exceptionType[0].newTypeHierarchy(null);
+						}
+					}, 10, 10);
+		}
+
