@@ -1,0 +1,39 @@
+	/**
+	 * Creates test file with the specified content and calculates the offset at
+	 * OFFSET_CHAR. Offset character itself is stripped off.
+	 * 
+	 * @param data
+	 *            File data
+	 * @param fileName
+	 * @return offset where's the offset character set.
+	 * @throws Exception
+	 */
+	protected void executeLocator(String data, final String fileName)
+			throws Exception {
+
+		IStructuredModel modelForEdit = StructuredModelManager
+				.getModelManager().getModelForEdit(testFile);
+		try {
+			final IDocument document = modelForEdit.getStructuredDocument();
+			String beforeFormat = document.get();
+
+			final PhpFormatProcessorImpl formatter = new PhpFormatProcessorImpl();
+
+			perfMonitor.execute("PerformanceTests.testFormatter" + "_"
+					+ fileName, new Operation() {
+				public void run() throws Exception {
+					formatter.formatDocument(document, 0, document.getLength());
+				}
+			}, 1, 10);
+
+			// change the document text as was before
+			// the formatting
+			document.set(beforeFormat);
+			modelForEdit.save();
+		} finally {
+			if (modelForEdit != null) {
+				modelForEdit.releaseFromEdit();
+			}
+		}
+	}
+
