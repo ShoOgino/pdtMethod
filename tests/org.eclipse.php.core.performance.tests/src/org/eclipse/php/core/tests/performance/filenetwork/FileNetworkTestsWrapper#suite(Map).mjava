@@ -1,0 +1,87 @@
+	public Test suite(final Map map) {
+		project = ResourcesPlugin.getWorkspace().getRoot().getProject(
+				map.get(ProjectSuite.PROJECT).toString());
+		perfMonitor = PHPCorePerformanceTests.getPerformanceMonitor();
+		TestSuite suite = new TestSuite("Auto File Network Tests");
+
+		// final PHPVersion phpVersion = (PHPVersion) map
+		// .get(ProjectSuite.PHP_VERSION);
+		// for (String testsDirectory : TESTS.get(phpVersion)) {
+		// testsDirectory = testsDirectory.replaceAll("project", map.get(
+		// ProjectSuite.PROJECT).toString());
+		// String[] fileNames = getFiles(testsDirectory,
+		// PHPCorePerformanceTests.getDefault().getBundle(),
+		// "properties");
+		// if (fileNames.length > 0) {
+		try {
+			// Properties properties = new Properties();
+			// InputStream inStream = new BufferedInputStream(
+			// PHPCorePerformanceTests.getDefault().getBundle()
+			// .getEntry(fileNames[0]).openStream());
+			// properties.load(inStream);
+			String[] fileNames = (String[]) map
+					.get(ProjectSuite.REFERENCED_FILE);
+			if (fileNames != null) {
+				for (final String fileName : (String[]) map
+						.get(ProjectSuite.REFERENCED_FILE)) {
+					try {
+						FileNetworkReferencedFilesTests test = new FileNetworkReferencedFilesTests(
+								fileName) {
+
+							protected void runTest() throws Throwable {
+								testReferencedFiles(fileName);
+							}
+						};
+						suite.addTest(test);
+					} catch (final Exception e) {
+						suite.addTest(new TestCase(fileName) { // dummy
+									// test
+									// indicating
+									// PDTT
+									// file
+									// parsing
+									// failure
+									protected void runTest() throws Throwable {
+										throw e;
+									}
+								});
+					}
+				}
+			}
+
+			fileNames = (String[]) map.get(ProjectSuite.REFERENCING_FILE);
+			if (fileNames != null) {
+				for (final String fileName : (String[]) map
+						.get(ProjectSuite.REFERENCING_FILE)) {
+					try {
+						FileNetworkReferencingFilesTests test = new FileNetworkReferencingFilesTests(
+								fileName) {
+
+							protected void runTest() throws Throwable {
+								testReferencingFiles(fileName);
+							}
+						};
+						suite.addTest(test);
+					} catch (final Exception e) {
+						suite.addTest(new TestCase(fileName) { // dummy
+									// test
+									// indicating
+									// PDTT
+									// file
+									// parsing
+									// failure
+									protected void runTest() throws Throwable {
+										throw e;
+									}
+								});
+					}
+				}
+			}
+
+		} catch (final Exception e) {
+		}
+		// }
+		// }
+		return suite;
+	}
+

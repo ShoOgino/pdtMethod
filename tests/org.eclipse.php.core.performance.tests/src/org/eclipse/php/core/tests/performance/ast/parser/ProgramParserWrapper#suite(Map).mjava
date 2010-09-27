@@ -1,19 +1,30 @@
-	public Test suite(final Metadata metadata) {
+	public Test suite(final Map map) {
 		project = ResourcesPlugin.getWorkspace().getRoot().getProject(
-				metadata.project);
+				map.get(ProjectSuite.PROJECT).toString());
 		perfMonitor = PHPCorePerformanceTests.getPerformanceMonitor();
-		TestSuite suite = new TestSuite("Locator Tests");
-
-		final PHPVersion phpVersion = metadata.phpVersion;
+		TestSuite suite = new TestSuite("Auto Program Parser Tests");
+		final PHPVersion phpVersion = (PHPVersion) map
+				.get(ProjectSuite.PHP_VERSION);
 		for (String testsDirectory : TESTS.get(phpVersion)) {
-			testsDirectory = testsDirectory.replaceAll("project",
-					metadata.project);
+			testsDirectory = testsDirectory.replaceAll("project", map.get(
+					ProjectSuite.PROJECT).toString());
+
 			for (final String fileName : getPDTTFiles(testsDirectory,
 					PHPCorePerformanceTests.getDefault().getBundle())) {
 				try {
-					final PdttFile pdttFile = new PdttFile(fileName);
-					PhpElementConciliatorTest test = new PhpElementConciliatorTest(
-							fileName) {
+					final PdttFile pdttFile = new PdttFile(
+							PHPCorePerformanceTests.getDefault().getBundle(),
+							fileName);
+					ProgramParser test = new ProgramParser(phpVersion
+							.getAlias()
+							+ " - /" + fileName) {
+
+						protected void setUp() throws Exception {
+							PHPCoreTests.setProjectPhpVersion(project,
+									phpVersion);
+							pdttFile.applyPreferences();
+						}
+
 						protected void tearDown() throws Exception {
 							if (testFile != null) {
 								testFile.delete(true, null);
@@ -22,7 +33,7 @@
 						}
 
 						protected void runTest() throws Throwable {
-							executeLocator(pdttFile.getFile(), fileName);
+							executeParser(pdttFile.getFile(), fileName);
 						}
 					};
 					suite.addTest(test);
