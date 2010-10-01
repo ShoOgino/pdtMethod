@@ -1,5 +1,14 @@
 	public Reader getInfo(IMember element, boolean lookIntoParents,
 			boolean lookIntoExternal) {
+		if (element instanceof FakeConstructor) {
+			IType type = (IType) element.getParent();
+			IMethod[] ctors = FakeConstructor.getConstructors(type, true);
+			if (ctors != null && ctors.length == 2) {
+				if (ctors[0] != null) {
+					element = ctors[0];
+				}
+			}
+		}
 		StringBuffer buffer = new StringBuffer();
 		String constantValue = null;
 		if (element instanceof IField) {
@@ -12,8 +21,8 @@
 				constantValue = HTMLPrinter.convertToHTMLContent(constantValue);
 		}
 
-		HTMLPrinter.addSmallHeader(buffer, getInfoText(element, constantValue,
-				true));
+		HTMLPrinter.addSmallHeader(buffer,
+				getInfoText(element, constantValue, true));
 		Reader reader = null;
 		try {
 			reader = getHTMLContent(element);
