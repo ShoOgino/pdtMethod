@@ -1,0 +1,22 @@
+	protected void reportAliasForNS(ICompletionReporter reporter,
+			String suffix, AbstractCompletionContext abstractContext,
+			IModuleSource module, final Map<String, UsePart> result)
+			throws BadLocationException {
+		SourceRange replacementRange = getReplacementRange(abstractContext);
+		IDLTKSearchScope scope = createSearchScope();
+		for (Iterator iterator = result.keySet().iterator(); iterator.hasNext();) {
+			String name = (String) iterator.next();
+			String fullName = result.get(name).getNamespace()
+					.getFullyQualifiedName();
+			IType[] elements = PhpModelAccess.getDefault().findTypes(null,
+					fullName + NamespaceReference.NAMESPACE_SEPARATOR,
+					MatchRule.PREFIX, 0, 0, scope, null);
+			for (int i = 0; i < elements.length; i++) {
+				String elementName = elements[i].getElementName();
+				reportAlias(reporter, scope, module, replacementRange,
+						elements[i], elementName,
+						elementName.replace(fullName, name), suffix);
+			}
+		}
+	}
+

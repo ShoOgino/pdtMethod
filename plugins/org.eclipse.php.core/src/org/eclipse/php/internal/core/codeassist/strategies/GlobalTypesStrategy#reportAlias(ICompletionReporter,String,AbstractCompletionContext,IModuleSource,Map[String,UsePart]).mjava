@@ -1,0 +1,30 @@
+	protected void reportAlias(ICompletionReporter reporter, String suffix,
+			AbstractCompletionContext abstractContext, IModuleSource module,
+			final Map<String, UsePart> result) throws BadLocationException {
+		SourceRange replacementRange = getReplacementRange(abstractContext);
+		IDLTKSearchScope scope = createSearchScope();
+		for (Iterator iterator = result.keySet().iterator(); iterator.hasNext();) {
+			String name = (String) iterator.next();
+			String fullName = result.get(name).getNamespace()
+					.getFullyQualifiedName();
+			IType[] elements = PhpModelAccess.getDefault().findTypes(fullName,
+					MatchRule.EXACT, 0, 0, scope, null);
+			try {
+				for (int i = 0; i < elements.length; i++) {
+					if (!PHPFlags.isNamespace(elements[i].getFlags())) {
+						reportAlias(reporter, scope, module, replacementRange,
+								elements[i], fullName, name, suffix);
+					} else {
+						IType[] typesOfNS = elements[i].getTypes();
+						for (int j = 0; j < typesOfNS.length; j++) {
+
+						}
+					}
+				}
+
+			} catch (ModelException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
