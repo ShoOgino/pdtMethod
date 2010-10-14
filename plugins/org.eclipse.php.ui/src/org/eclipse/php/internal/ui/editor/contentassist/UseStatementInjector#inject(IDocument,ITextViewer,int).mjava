@@ -9,6 +9,15 @@
 	 */
 	public int inject(IDocument document, ITextViewer textViewer, int offset) {
 		IModelElement modelElement = proposal.getModelElement();
+		if (modelElement instanceof FakeConstructor) {
+			FakeConstructor fc = (FakeConstructor) modelElement;
+			if (fc.getParent() instanceof AliasType) {
+				return offset;
+			}
+
+		} else if (modelElement instanceof AliasType) {
+			return offset;
+		}
 		if (modelElement == null)
 			return offset;
 		try {
@@ -87,8 +96,10 @@
 								AST ast = program.getAST();
 
 								NamespaceName newNamespaceName = ast
-										.newNamespaceName(createIdentifiers(
-												ast, usePartName), false, false);
+										.newNamespaceName(
+												createIdentifiers(ast,
+														usePartName), false,
+												false);
 								UseStatementPart newUseStatementPart = ast
 										.newUseStatementPart(newNamespaceName,
 												null);
@@ -114,8 +125,8 @@
 									program.statements()
 											.add(0, newUseStatement);
 								}
-								Map options = new HashMap(PHPCorePlugin
-										.getOptions());
+								Map options = new HashMap(
+										PHPCorePlugin.getOptions());
 								// TODO project may be null
 								IScopeContext[] contents = new IScopeContext[] {
 										new ProjectScope(modelElement
@@ -130,8 +141,7 @@
 										if (!options
 												.containsKey(PHPCoreConstants.FORMATTER_USE_TABS)) {
 											String useTabs = node
-													.get(
-															PHPCoreConstants.FORMATTER_USE_TABS,
+													.get(PHPCoreConstants.FORMATTER_USE_TABS,
 															null);
 											if (useTabs != null) {
 												options.put(
@@ -142,8 +152,7 @@
 										if (!options
 												.containsKey(PHPCoreConstants.FORMATTER_INDENTATION_SIZE)) {
 											String size = node
-													.get(
-															PHPCoreConstants.FORMATTER_INDENTATION_SIZE,
+													.get(PHPCoreConstants.FORMATTER_INDENTATION_SIZE,
 															null);
 											if (size != null) {
 												options.put(

@@ -2,12 +2,19 @@
 			boolean lookIntoExternal) {
 		if (element instanceof FakeConstructor) {
 			IType type = (IType) element.getParent();
+			if (type instanceof AliasType) {
+				type = (IType) type.getParent();
+				element = FakeConstructor.createFakeConstructor(null, type,
+						false);
+			}
 			IMethod[] ctors = FakeConstructor.getConstructors(type, true);
 			if (ctors != null && ctors.length == 2) {
 				if (ctors[0] != null) {
 					element = ctors[0];
 				}
 			}
+		} else if (element instanceof AliasType) {
+			element = (IType) element.getParent();
 		}
 		StringBuffer buffer = new StringBuffer();
 		String constantValue = null;
