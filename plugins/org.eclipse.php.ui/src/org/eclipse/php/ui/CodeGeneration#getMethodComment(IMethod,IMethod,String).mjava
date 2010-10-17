@@ -39,19 +39,7 @@
 		}
 
 		if (program == null) {
-			ISourceModule source = method.getSourceModule();
-			ASTParser parserForExpected = ASTParser.newParser(ProjectOptions
-					.getPhpVersion(source.getScriptProject().getProject()),
-					ProjectOptions.useShortTags(source.getScriptProject()
-							.getProject()));
-			try {
-				parserForExpected.setSource(source);
-				program = parserForExpected
-						.createAST(new NullProgressMonitor());
-				program.recordModifications();
-				program.setSourceModule(source);
-			} catch (Exception e) {
-			}
+			program = generageProgram(method, program);
 			if (program == null) {
 				return null;
 			}
@@ -59,6 +47,17 @@
 
 		ASTNode elementAt = program.getElementAt(method.getSourceRange()
 				.getOffset());
+
+		if (!(elementAt instanceof MethodDeclaration
+				|| elementAt instanceof FunctionDeclaration || elementAt
+				.getParent() instanceof MethodDeclaration)) {
+			program = generageProgram(method, program);
+			if (program == null) {
+				return null;
+			}
+			elementAt = program.getElementAt(method.getSourceRange()
+					.getOffset());
+		}
 
 		if (elementAt.getParent() instanceof MethodDeclaration) {
 			elementAt = elementAt.getParent();
@@ -145,8 +144,8 @@
 					}
 				}
 				if (returnTypeBuffer.length() > 0) {
-					retType = returnTypeBuffer.substring(0, returnTypeBuffer
-							.length() - 1);
+					retType = returnTypeBuffer.substring(0,
+							returnTypeBuffer.length() - 1);
 				}
 			}
 
