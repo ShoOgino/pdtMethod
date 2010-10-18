@@ -25,14 +25,72 @@
 						null);
 				ASTNode node = NodeFinder.perform(unit, field.getNameRange()
 						.getOffset(), field.getNameRange().getLength());
-				if (node != null && node instanceof Identifier
-						&& node.getParent() instanceof ConstantDeclaration) {
-					ConstantDeclaration decl = (ConstantDeclaration) node
-							.getParent();
-					if (decl.initializers().size() == 1
-							&& decl.initializers().get(0) instanceof Scalar) {
-						Scalar scalar = (Scalar) decl.initializers().get(0);
-						constantValue = scalar.getStringValue();
+				if (node != null) {
+					if (node instanceof Identifier
+							&& node.getParent() instanceof ConstantDeclaration) {
+						ConstantDeclaration decl = (ConstantDeclaration) node
+								.getParent();
+						if (decl.initializers().size() == 1
+								&& decl.initializers().get(0) instanceof Scalar) {
+							Scalar scalar = (Scalar) decl.initializers().get(0);
+							constantValue = scalar.getStringValue();
+						}
+					} else if (node instanceof Scalar
+							&& node.getParent() instanceof FunctionInvocation) {
+						FunctionInvocation invocation = (FunctionInvocation) node
+								.getParent();
+						Expression function = invocation.getFunctionName()
+								.getName();
+						String functionName = "";
+						// for PHP5.3
+						if (function instanceof NamespaceName) {
+							// global function
+							if (((NamespaceName) function).isGlobal()) {
+								functionName = ((NamespaceName) function)
+										.getName();
+								if (functionName.charAt(0) == '\\') {
+									functionName = functionName.substring(1);
+								}
+							} else {
+								ModuleDeclaration parsedUnit = SourceParserUtil
+										.getModuleDeclaration(
+												field.getSourceModule(), null);
+								org.eclipse.dltk.ast.ASTNode func = ASTUtils
+										.findMinimalNode(parsedUnit,
+												function.getStart(),
+												function.getEnd());
+
+								if (func instanceof FullyQualifiedReference) {
+									functionName = ((FullyQualifiedReference) func)
+											.getFullyQualifiedName();
+								}
+								// look for the element in current namespace
+								if (functionName.indexOf('\\') == -1) {
+									IType currentNamespace = PHPModelUtils
+											.getCurrentNamespace(
+													field.getSourceModule(),
+													function.getStart());
+									String fullyQualifiedFuncName = "\\"
+											+ currentNamespace.getElementName()
+											+ "\\" + functionName;
+									IMethod[] methods = PHPModelUtils
+											.getFunctions(
+													fullyQualifiedFuncName,
+													field.getSourceModule(),
+													function.getStart(), null);
+									if (methods != null && methods.length > 0) {
+										functionName = fullyQualifiedFuncName;
+									}
+								}
+							}
+						} else if (function instanceof Identifier) {
+							functionName = ((Identifier) function).getName();
+						}
+						if (functionName.equalsIgnoreCase("define")
+								&& invocation.parameters().size() >= 2) {
+							constantValue = ((Scalar) invocation.parameters()
+									.get(1)).getStringValue();
+						}
 					}
 				}
 			} catch (ModelException e) {
