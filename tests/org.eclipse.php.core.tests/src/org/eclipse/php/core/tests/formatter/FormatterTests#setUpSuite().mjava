@@ -1,6 +1,6 @@
 	public static void setUpSuite() throws Exception {
-		project = ResourcesPlugin.getWorkspace().getRoot().getProject(
-				"FormatterTests");
+		project = ResourcesPlugin.getWorkspace().getRoot()
+				.getProject("FormatterTests");
 		if (project.exists()) {
 			return;
 		}
@@ -12,6 +12,20 @@
 		IProjectDescription desc = project.getDescription();
 		desc.setNatureIds(new String[] { PHPNature.ID });
 		project.setDescription(desc, null);
+
+		WorkingCopyOwner.setPrimaryBufferProvider(new WorkingCopyOwner() {
+			public IBuffer createBuffer(ISourceModule workingCopy) {
+				ISourceModule original = workingCopy.getPrimary();
+				IResource resource = original.getResource();
+				if (resource != null) {
+					if (resource instanceof IFile) {
+						return new DocumentAdapter(workingCopy,
+								(IFile) resource);
+					}
+				}
+				return DocumentAdapter.NULL;
+			}
+		});
 
 		for (PdttFile pdttFile : filesMap.keySet()) {
 			IFile file = createFile(pdttFile.getFile().trim());
