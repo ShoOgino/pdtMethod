@@ -1,9 +1,15 @@
 	private void addInternalEntries(ICompletionReporter reporter,
-			SourceRange replaceRange, final Object entry,
-			IPath prefixPathFolder, IPath lastSegmant) throws CoreException {
+			SourceRange replaceRange, Object entry, IPath prefixPathFolder,
+			IPath lastSegmant) throws CoreException {
 		IContainer container = (IContainer) entry;
 		if (prefixPathFolder.segmentCount() > 0) {
-			container = container.getFolder(prefixPathFolder);
+			for (IContainer con : getContainers(container)) {
+				container = con.getFolder(prefixPathFolder);
+				if (container.isAccessible()) {
+					entry = con;
+					break;
+				}
+			}
 		}
 
 		if (!container.isAccessible()) {
@@ -11,33 +17,14 @@
 		}
 
 		ICompletionContext context = getContext();
-		IResource[] members = container.members();
-		for (IResource resource : members) {
-			final IPath relative = resource.getFullPath().makeRelativeTo(
-					container.getFullPath());
-			if (isLastSegmantPrefix(lastSegmant, relative)) {
-				final IPath rel = resource.getFullPath().makeRelativeTo(
-						((IContainer) entry).getFullPath());
-				final IModelElement modelElement = DLTKCore.create(resource);
-				if (modelElement == null) {
-					continue;
-				}
-				if (resource.getType() == IResource.FILE) {
-					if (PHPToolkitUtil.isPhpFile((IFile) resource)
-							&& !modelElement
-									.equals(((IncludeStatementContext) context)
-											.getSourceModule())) {
-						reporter.reportResource(modelElement, rel,
-								getSuffix(modelElement), replaceRange);
-					}
-				} else {
-					if (resource.getName().charAt(0) != '.') { // filter dot
-						// resources
-						reporter.reportResource(modelElement, rel,
-								getSuffix(modelElement), replaceRange);
-					}
-				}
+		if (container instanceof IProject) {
+			for (IContainer con : getContainers(container)) {
+				findResource(reporter, replaceRange, con, lastSegmant, context,
+						con);
 			}
+		} else {
+			findResource(reporter, replaceRange, entry, lastSegmant, context,
+					container);
 		}
 	}
 

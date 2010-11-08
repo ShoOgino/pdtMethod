@@ -1,0 +1,34 @@
+	private void findResource(ICompletionReporter reporter,
+			SourceRange replaceRange, final Object entry, IPath lastSegmant,
+			ICompletionContext context, IContainer container)
+			throws CoreException {
+		IResource[] members = container.members();
+		for (IResource resource : members) {
+			final IPath relative = resource.getFullPath().makeRelativeTo(
+					container.getFullPath());
+			if (isLastSegmantPrefix(lastSegmant, relative)) {
+				final IPath rel = resource.getFullPath().makeRelativeTo(
+						((IContainer) entry).getFullPath());
+				final IModelElement modelElement = DLTKCore.create(resource);
+				if (modelElement == null) {
+					continue;
+				}
+				if (resource.getType() == IResource.FILE) {
+					if (PHPToolkitUtil.isPhpFile((IFile) resource)
+							&& !modelElement
+									.equals(((IncludeStatementContext) context)
+											.getSourceModule())) {
+						reporter.reportResource(modelElement, rel,
+								getSuffix(modelElement), replaceRange);
+					}
+				} else {
+					if (resource.getName().charAt(0) != '.') { // filter dot
+						// resources
+						reporter.reportResource(modelElement, rel,
+								getSuffix(modelElement), replaceRange);
+					}
+				}
+			}
+		}
+	}
+
