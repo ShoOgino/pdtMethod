@@ -5,6 +5,16 @@
 	 */
 	public void run() {
 		try {
+			StreamGobbler errorGobbler = new StreamGobbler(process
+					.getErrorStream(), true);
+			StreamGobbler inputGobbler = new StreamGobbler(process
+					.getInputStream(), false);
+
+			ConsolePlugin.getDefault().getConsoleManager().addConsoleListener(
+					this);
+
+			errorGobbler.start();
+			inputGobbler.start();
 
 			int exitValue = process.waitFor();
 			IDebugTarget debugTarget = launch.getDebugTarget();
@@ -17,7 +27,8 @@
 
 		} catch (Throwable t) {
 		} finally {
-
+			ConsolePlugin.getDefault().getConsoleManager()
+					.removeConsoleListener(this);
 		}
 	}
 
