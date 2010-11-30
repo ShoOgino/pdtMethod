@@ -15,6 +15,7 @@
 
 		int level = innerBlocks.size();
 
+		// TODO check ArrayCreation,ArrayVariableReference
 		// skip all inner conditional blocks statements, since we've reached
 		// a re-declaration here
 		while (varDecls.size() > level + 1) {
@@ -26,7 +27,19 @@
 		while (varDecls.size() < level) {
 			varDecls.addLast(null);
 		}
-
+		if (declNode instanceof Assignment
+				&& (((Assignment) declNode).getVariable() instanceof ArrayVariableReference)) {
+			int index = varDecls.size() - 1;
+			while (index >= 0) {
+				Declaration decl = varDecls.get(index);
+				if (decl instanceof ArrayDeclaration) {
+					ArrayDeclaration arrayDeclaration = (ArrayDeclaration) decl;
+					arrayDeclaration.addDeclaration(declNode);
+					return;
+				}
+				index--;
+			}
+		}
 		if (varDecls.size() > level) {
 			Declaration decl = varDecls.get(level);
 			// The case that the node is inside another node
@@ -43,13 +56,28 @@
 							// replace existing declaration with a new one
 							// (leave
 							// 'isGlobal' flag the same)
-					decl.setNode(declNode);
+					if (decl instanceof ArrayDeclaration) {
+						decl = new Declaration(
+								declNode instanceof GlobalStatement, declNode);
+						varDecls.set(level, decl);
+					} else {
+						decl.setNode(declNode);
+					}
+
 					return;
 				}
 			}
 		}
 		// add new declaration
-		varDecls.addLast(new Declaration(declNode instanceof GlobalStatement,
-				declNode));
+		if (declNode instanceof Assignment
+				&& (((Assignment) declNode).getValue() instanceof ArrayCreation)) {
+			varDecls.addLast(new ArrayDeclaration(
+					declNode instanceof GlobalStatement, declNode));
+
+		} else {
+			varDecls.addLast(new Declaration(
+					declNode instanceof GlobalStatement, declNode));
+		}
+
 	}
 
