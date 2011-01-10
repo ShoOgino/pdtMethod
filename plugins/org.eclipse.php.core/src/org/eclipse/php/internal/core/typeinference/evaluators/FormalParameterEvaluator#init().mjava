@@ -11,16 +11,35 @@
 				MethodContext methodContext = (MethodContext) context;
 				PHPMethodDeclaration methodDeclaration = (PHPMethodDeclaration) methodContext
 						.getMethodNode();
-				PHPDocBlock docBlock = methodDeclaration.getPHPDoc();
-				if (docBlock != null) {
-					for (PHPDocTag tag : docBlock.getTags()) {
-						if (tag.getTagKind() == PHPDocTag.PARAM) {
-							SimpleReference[] references = tag.getReferences();
-							if (references.length == 2) {
-								if (references[0].getName().equals(
-										parameter.getName())) {
-									result = PHPClassType
-											.fromSimpleReference(references[1]);
+				PHPDocBlock[] docBlocks = new PHPDocBlock[0];
+				try {
+					IMethod method = (IMethod) methodContext.getSourceModule()
+							.getElementAt(methodDeclaration.getNameStart());
+					if (method.getDeclaringType() != null) {
+						docBlocks = PHPModelUtils.getTypeHierarchyMethodDoc(
+								method.getDeclaringType(), method
+										.getElementName(), true, null);
+					} else {
+						docBlocks = new PHPDocBlock[] { methodDeclaration
+								.getPHPDoc() };
+					}
+				} catch (CoreException e) {
+				}
+				for (PHPDocBlock docBlock : docBlocks) {
+					if (result != null) {
+						break;
+					}
+					if (docBlock != null) {
+						for (PHPDocTag tag : docBlock.getTags()) {
+							if (tag.getTagKind() == PHPDocTag.PARAM) {
+								SimpleReference[] references = tag
+										.getReferences();
+								if (references.length == 2) {
+									if (references[0].getName().equals(
+											parameter.getName())) {
+										result = PHPClassType
+												.fromSimpleReference(references[1]);
+									}
 								}
 							}
 						}
