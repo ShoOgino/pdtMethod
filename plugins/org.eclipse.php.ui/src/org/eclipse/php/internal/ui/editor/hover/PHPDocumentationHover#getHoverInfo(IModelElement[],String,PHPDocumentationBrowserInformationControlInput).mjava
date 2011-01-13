@@ -15,35 +15,16 @@
 	private static PHPDocumentationBrowserInformationControlInput getHoverInfo(
 			IModelElement[] elements, String constantValue,
 			PHPDocumentationBrowserInformationControlInput previousInput) {
-		int nResults = elements.length;
 		StringBuffer buffer = new StringBuffer();
 		boolean hasContents = false;
 		IModelElement element = null;
-
-		int leadingImageWidth = 0;
-
-		if (nResults > 1) {
-
-			for (int i = 0; i < elements.length; i++) {
-				HTMLPrinter.startBulletList(buffer);
-				IModelElement curr = elements[i];
-				if (curr instanceof IMember
-						|| curr.getElementType() == IModelElement.FIELD) {
-					// FIXME: provide links
-					HTMLPrinter.addBullet(buffer,
-							getInfoText(curr, constantValue, false));
-					hasContents = true;
-				}
-				HTMLPrinter.endBulletList(buffer);
-			}
-
-		} else {
-
-			element = elements[0];
+		int leadingImageWidth = 20;
+		for (int i = 0; i < elements.length; i++) {
+			element = elements[i];
 			if (element instanceof IMember) {
 				IMember member = (IMember) element;
-				HTMLPrinter.addSmallHeader(buffer,
-						getInfoText(member, constantValue, true));
+				HTMLPrinter.addSmallHeader(buffer, getInfoText(member,
+						constantValue, true, i == 0));
 				Reader reader = null;
 				try {
 					reader = getHTMLContent(member);
@@ -53,14 +34,15 @@
 				if (reader != null) {
 					HTMLPrinter.addParagraph(buffer, reader);
 				}
+				if (i != elements.length - 1) {
+					buffer.append("<hr>");
+				}
 				hasContents = true;
-
 			} else if (element.getElementType() == IModelElement.FIELD) {
-				HTMLPrinter.addSmallHeader(buffer,
-						getInfoText(element, constantValue, true));
+				HTMLPrinter.addSmallHeader(buffer, getInfoText(element,
+						constantValue, true, i == 0));
 				hasContents = true;
 			}
-			leadingImageWidth = 20;
 		}
 
 		if (!hasContents)
