@@ -1,0 +1,26 @@
+	private void handleInlineLinks() {
+		Matcher m = INLINE_LINK_PATTERN.matcher(fBuf);
+		StringBuffer sb = new StringBuffer();
+		while (m.find()) {
+			String[] strs = m.group().split("[\\s]+", 3);
+			String url = removeLastRightCurlyBrace(strs[1]);
+			if (url.toLowerCase().startsWith("http")) {
+				String description = "";
+				if (strs.length == 3) {
+					description = removeLastRightCurlyBrace(strs[2]);
+				} else {
+					description = url;
+				}
+				String link = "<a href=\"" + url + "\">" + description + "</a>";
+				m.appendReplacement(sb, link);
+			} else {
+				m.appendReplacement(sb,
+						handleLink(Arrays.asList(new TypeReference(0, 0, url)))
+								.toString());
+			}
+		}
+		m.appendTail(sb);
+		fBuf = sb;
+		sb = null;
+	}
+
