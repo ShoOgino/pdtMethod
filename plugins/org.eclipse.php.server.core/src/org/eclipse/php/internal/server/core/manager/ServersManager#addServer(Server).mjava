@@ -13,14 +13,24 @@
 		if (server == null) {
 			return;
 		}
+
 		ServersManager manager = getInstance();
-		Server oldValue = (Server) manager.servers
-				.put(server.getName(), server);
+		Server oldValue = ServersManager.getServer(server);
+		if (server != oldValue) {
+			manager.servers.remove(oldValue.getName());
+			oldValue.removePropertyChangeListener(manager);
+			ServerManagerEvent event = new ServerManagerEvent(
+					ServerManagerEvent.MANAGER_EVENT_REMOVED, oldValue);
+			manager.fireEvent(event);
+		}
+		oldValue = (Server) manager.servers.put(server.getName(), server);
 		if (oldValue != null) {
 			oldValue.removePropertyChangeListener(manager);
 			ServerManagerEvent event = new ServerManagerEvent(
 					ServerManagerEvent.MANAGER_EVENT_REMOVED, oldValue);
 			manager.fireEvent(event);
+		} else {
+
 		}
 		ServerManagerEvent event = new ServerManagerEvent(
 				ServerManagerEvent.MANAGER_EVENT_ADDED, server);
