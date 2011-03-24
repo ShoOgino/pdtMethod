@@ -6,6 +6,20 @@
 		}
 		DebugPopup displayPopup = new InspectPopupDialog(getShell(),
 				getPopupAnchor(textWidget), ACTION_DEFININITION_ID, expression) {
+			IContextActivation contextActivation;
+
+			@Override
+			protected Control createDialogArea(Composite parent) {
+				Control result = super.createDialogArea(parent);
+				if (fTextEditor != null) {
+					IContextService contextService = (IContextService) fTextEditor
+							.getSite().getService(IContextService.class);
+					contextActivation = contextService
+							.activateContext("org.eclipse.php.debug.ui.xdebug");
+				}
+				return result;
+			}
+
 			public boolean close() {
 				boolean returnValue = super.close();
 				if (fTextEditor != null && fSelectionBeforeEvaluation != null) {
@@ -14,6 +28,12 @@
 					fTextEditor = null;
 					fSelectionBeforeEvaluation = null;
 				}
+				// if (fTextEditor != null) {
+				// IContextService contextService = (IContextService)
+				// fTextEditor
+				// .getSite().getService(IContextService.class);
+				// contextService.deactivateContext(contextActivation);
+				// }
 				return returnValue;
 			}
 		};
