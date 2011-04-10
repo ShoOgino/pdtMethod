@@ -3,9 +3,9 @@
 		TypeContext context = (TypeContext) typedGoal.getContext();
 		String variableName = typedGoal.getVariableName();
 
-		IType[] types = PHPTypeInferenceUtils.getModelElements(context
-				.getInstanceType(), context);
-		Set<PHPDocBlock> docs = new HashSet<PHPDocBlock>();
+		IType[] types = PHPTypeInferenceUtils.getModelElements(
+				context.getInstanceType(), context);
+		Map<PHPDocBlock, IField> docs = new HashMap<PHPDocBlock, IField>();
 
 		IModelAccessCache cache = context.getCache();
 
@@ -28,7 +28,7 @@
 							PHPDocBlock docBlock = PHPModelUtils
 									.getDocBlock(typeField[0]);
 							if (docBlock != null) {
-								docs.add(docBlock);
+								docs.put(docBlock, typeField[0]);
 							}
 						}
 					}
@@ -40,14 +40,30 @@
 			}
 		}
 
-		for (PHPDocBlock doc : docs) {
+		for (PHPDocBlock doc : docs.keySet()) {
+			IField typeField = docs.get(doc);
+			IType currentNamespace = PHPModelUtils
+					.getCurrentNamespace(typeField);
 			for (PHPDocTag tag : doc.getTags()) {
 				if (tag.getTagKind() == PHPDocTag.VAR) {
 					SimpleReference[] references = tag.getReferences();
 					for (SimpleReference ref : references) {
-						IEvaluatedType type = PHPClassType
-								.fromSimpleReference(ref);
-						evaluated.add(type);
+						String typeName = ref.getName();
+						Matcher m = ARRAY_TYPE_PATTERN.matcher(typeName);
+						if (m.find()) {
+							evaluated.add(getArrayType(m.group(),
+									currentNamespace));
+						} else {
+							IEvaluatedType type = getEvaluatedType(typeName,
+									currentNamespace);
+							if (type != null) {
+								evaluated.add(type);
+							}
+							// IEvaluatedType type = PHPClassType
+							// .fromSimpleReference(ref);
+							// evaluated.add(type);
+						}
+
 					}
 				}
 			}

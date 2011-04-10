@@ -1,0 +1,19 @@
+	private MultiTypeType getArrayType(String type, IType currentNamespace) {
+		int beginIndex = type.indexOf("[") + 1;
+		int endIndex = type.lastIndexOf("]");
+		type = type.substring(beginIndex, endIndex);
+		MultiTypeType arrayType = new MultiTypeType();
+		Matcher m = ARRAY_TYPE_PATTERN.matcher(type);
+		if (m.find()) {
+			arrayType.addType(getArrayType(m.group(), currentNamespace));
+			type = m.replaceAll("");
+		}
+		String[] typeNames = type.split(",");
+		for (String name : typeNames) {
+			if (!"".equals(name)) {
+				arrayType.addType(getEvaluatedType(name, currentNamespace));
+			}
+		}
+		return arrayType;
+	}
+
