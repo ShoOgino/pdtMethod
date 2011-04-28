@@ -26,17 +26,30 @@
 					} else if (entry.getEntryKind() == IBuildpathEntry.BPE_PROJECT
 							|| entry.getEntryKind() == IBuildpathEntry.BPE_SOURCE
 							|| entry.getEntryKind() == IBuildpathEntry.BPE_LIBRARY) {
-						IPath entryPath = EnvironmentPathUtils
-								.getLocalPath(entry.getPath());
-						IResource resource = ResourcesPlugin.getWorkspace()
-								.getRoot().findMember(entryPath);
-						if (resource != null) {
-							IPath location = resource.getLocation();
-							if (location != null) {
-								includePath.add(location.toOSString());
+						if (entry.getEntryKind() == IBuildpathEntry.BPE_PROJECT) {
+							IWorkspaceRoot root = ResourcesPlugin
+									.getWorkspace().getRoot();
+							IResource resource = root.findMember(entry
+									.getPath());
+							IModelElement scriptProject = DLTKCore
+									.create(resource);
+							if (scriptProject instanceof IScriptProject) {
+								try {
+									IProjectFragment[] projectFragments = ((IScriptProject) scriptProject)
+											.getProjectFragments();
+									for (IProjectFragment projectFragment : projectFragments) {
+										if (projectFragment.getResource() instanceof IFolder
+												|| projectFragment
+														.getResource() instanceof IProject)
+											addIncludePath(includePath,
+													projectFragment.getPath());
+									}
+
+								} catch (ModelException e) {
+								}
 							}
 						} else {
-							includePath.add(entryPath.toOSString());
+							addIncludePath(includePath, entry.getPath());
 						}
 					} else if (entry.getEntryKind() == IBuildpathEntry.BPE_CONTAINER) {
 						try {
