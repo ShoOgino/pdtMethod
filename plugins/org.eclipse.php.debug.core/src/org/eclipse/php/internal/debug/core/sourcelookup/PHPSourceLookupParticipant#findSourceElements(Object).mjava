@@ -35,6 +35,27 @@
 				if (file.exists()) {
 					return new Object[] { new LocalFile(file) };
 				}
+
+				// try a phar
+				final PharPath pharPath = PharPath.getPharPath(new Path(
+						fileName));
+				if (pharPath != null) {
+
+					try {
+						final PharArchiveFile archiveFile = new PharArchiveFile(
+								pharPath.getPharName());
+						final IArchiveEntry entry = archiveFile
+								.getArchiveEntry((pharPath.getFolder().length() == 0 ? ""
+										: pharPath.getFolder() + "/")
+										+ pharPath.getFile());
+						return new Object[] { new ExternalEntryFile(fileName,
+								archiveFile, entry) };
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+
 				return EMPTY;
 			}
 		}
