@@ -24,6 +24,8 @@
 			} else {
 				PHPDocBlock docBlock = PHPModelUtils.getDocBlock(method);
 				if (docBlock != null) {
+					AbstractMethodReturnTypeGoal typedGoal = (AbstractMethodReturnTypeGoal) goal;
+					IType[] types = typedGoal.getTypes();
 					for (PHPDocTag tag : docBlock.getTags()) {
 						if (tag.getTagKind() == PHPDocTag.RETURN) {
 							// @return datatype1|datatype2|...
@@ -38,10 +40,22 @@
 										evaluated.add(getArrayType(m.group(),
 												currentNamespace));
 									} else {
-										IEvaluatedType type = getEvaluatedType(
-												typeName, currentNamespace);
-										if (type != null) {
-											evaluated.add(type);
+										if (typeName.equals(SELF_RETURN_TYPE)
+												&& types != null) {
+											for (IType t : types) {
+												IEvaluatedType type = getEvaluatedType(
+														t.getElementName(),
+														currentNamespace);
+												if (type != null) {
+													evaluated.add(type);
+												}
+											}
+										} else {
+											IEvaluatedType type = getEvaluatedType(
+													typeName, currentNamespace);
+											if (type != null) {
+												evaluated.add(type);
+											}
 										}
 									}
 								}
