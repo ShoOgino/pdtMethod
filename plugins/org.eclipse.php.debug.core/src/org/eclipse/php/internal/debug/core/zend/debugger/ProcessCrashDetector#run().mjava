@@ -5,17 +5,32 @@
 	 */
 	public void run() {
 		try {
-			StreamGobbler errorGobbler = new StreamGobbler(process
-					.getErrorStream(), true);
-			StreamGobbler inputGobbler = new StreamGobbler(process
-					.getInputStream(), false);
+			boolean streamerReqd = false;
+			try {
+				ILaunchConfiguration config = launch.getLaunchConfiguration();
+				if (config.getAttribute(
+						PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID, "")
+						.equals(DebuggerCommunicationDaemon.ZEND_DEBUGGER_ID)) {
+					streamerReqd = config.getAttribute(
+							IPHPDebugConstants.RUN_WITH_DEBUG_INFO, true)
+							|| launch.getLaunchMode().equals(
+									ILaunchManager.DEBUG_MODE);
+				}
+			} catch (CoreException e) {
+			}
+			if (streamerReqd) {
 
-			ConsolePlugin.getDefault().getConsoleManager().addConsoleListener(
-					this);
+				StreamGobbler errorGobbler = new StreamGobbler(
+						process.getErrorStream(), true);
+				StreamGobbler inputGobbler = new StreamGobbler(
+						process.getInputStream(), false);
 
-			errorGobbler.start();
-			inputGobbler.start();
+				ConsolePlugin.getDefault().getConsoleManager()
+						.addConsoleListener(this);
 
+				errorGobbler.start();
+				inputGobbler.start();
+			}
 			int exitValue = process.waitFor();
 			IDebugTarget debugTarget = launch.getDebugTarget();
 			if (debugTarget != null) {
