@@ -27,6 +27,27 @@
 			private String computeReplacementString() {
 				fReplacementStringComputed = true;
 				IType type = (IType) typeProposal.getModelElement();
+
+				String prefix = "";
+				try {
+					int flags = type.getFlags();
+					IType namespace = PHPModelUtils.getCurrentNamespace(type);
+					if (!PHPFlags.isNamespace(flags)
+							&& namespace == null
+							&& !ProjectOptions.getPhpVersion(
+									PHPCompletionProposalCollector.this
+											.getScriptProject().getProject())
+									.isLessThan(PHPVersion.PHP5_3)
+							&& PHPCompletionProposalCollector.this.document
+									.getChar(getReplacementOffset() - 1) != NamespaceReference.NAMESPACE_SEPARATOR) {
+						prefix = prefix
+								+ NamespaceReference.NAMESPACE_SEPARATOR;
+					}
+				} catch (ModelException e) {
+					PHPUiPlugin.log(e);
+				} catch (BadLocationException e) {
+					PHPUiPlugin.log(e);
+				}
 				String suffix = getSuffix(type);
 				String replacementString = null;
 				if (typeProposal.getModelElement() instanceof AliasType) {
@@ -35,7 +56,7 @@
 				} else {
 					replacementString = super.getReplacementString();
 				}
-				return replacementString + suffix;
+				return prefix + replacementString + suffix;
 			}
 
 			public String getSuffix(IType type) {
