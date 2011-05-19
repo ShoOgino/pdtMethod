@@ -1,0 +1,37 @@
+	private MultiTypeType getArrayType(String type, IType currentNamespace,
+			int offset) {
+		int beginIndex = type.indexOf("[") + 1;
+		int endIndex = type.lastIndexOf("]");
+		type = type.substring(beginIndex, endIndex);
+		MultiTypeType arrayType = new MultiTypeType();
+		Matcher m = ARRAY_TYPE_PATTERN.matcher(type);
+		if (m.find()) {
+			arrayType
+					.addType(getArrayType(m.group(), currentNamespace, offset));
+			type = m.replaceAll("");
+		}
+		String[] typeNames = type.split(",");
+		for (String name : typeNames) {
+			if (!"".equals(name)) {
+				if (name.indexOf(SPLASH) > 0) {
+					// check if the first part is an
+					// alias,then get the full name
+					ModuleDeclaration moduleDeclaration = SourceParserUtil
+							.getModuleDeclaration(currentNamespace
+									.getSourceModule());
+					String prefix = name.substring(0, name.indexOf(SPLASH));
+					final Map<String, UsePart> result = PHPModelUtils
+							.getAliasToNSMap(prefix, moduleDeclaration, offset,
+									currentNamespace, true);
+					if (result.containsKey(prefix)) {
+						String fullName = result.get(prefix).getNamespace()
+								.getFullyQualifiedName();
+						name = name.replace(prefix, fullName);
+					}
+				}
+				arrayType.addType(getEvaluatedType(name, currentNamespace));
+			}
+		}
+		return arrayType;
+	}
+
