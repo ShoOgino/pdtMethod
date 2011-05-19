@@ -9,7 +9,17 @@
 		if (!abstractContext.getCompletionRequestor()
 				.isContextInformationMode()) {
 			// get types for alias
-			final String prefix = abstractContext.getPrefixWithoutProcessing();
+			String prefix = abstractContext.getPrefixWithoutProcessing();
+			boolean exactMatch = false;
+			if (prefix.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) == 0) {
+				return;
+			} else if (prefix.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) > 0) {
+				prefix = prefix.substring(0,
+						prefix.indexOf(NamespaceReference.NAMESPACE_SEPARATOR));
+				exactMatch = true;
+			} else {
+
+			}
 
 			if (prefix.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) < 0) {
 				IModuleSource module = reporter.getModule();
@@ -21,8 +31,9 @@
 				IType namespace = PHPModelUtils.getCurrentNamespace(
 						sourceModule, offset);
 
-				final Map<String, UsePart> result = getAliasToNSMap(prefix,
-						moduleDeclaration, offset, namespace);
+				final Map<String, UsePart> result = PHPModelUtils
+						.getAliasToNSMap(prefix, moduleDeclaration, offset,
+								namespace, exactMatch);
 				reportAlias(reporter, suffix, abstractContext, module, result);
 
 			}
