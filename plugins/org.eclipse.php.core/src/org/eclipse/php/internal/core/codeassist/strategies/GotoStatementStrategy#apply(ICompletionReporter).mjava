@@ -1,0 +1,32 @@
+	public void apply(ICompletionReporter reporter) throws BadLocationException {
+		ICompletionContext context = getContext();
+
+		GotoStatementContext gotoStatementContext = (GotoStatementContext) context;
+
+		String prefix = gotoStatementContext.getPrefix();
+		if (prefix.startsWith("$")) {
+			return;
+		}
+		try {
+			ModuleDeclaration rootNode = SourceParserUtil
+					.getModuleDeclaration(gotoStatementContext
+							.getSourceModule());
+			ASTNode node;
+			if (gotoStatementContext.getCurrentElement() != null) {
+				node = PHPModelUtils.getNodeByElement(rootNode,
+						gotoStatementContext.getCurrentElement());
+			} else {
+				node = rootNode;
+			}
+			GotoStatementVisitor vistor = new GotoStatementVisitor(node, prefix);
+			node.traverse(vistor);
+			List<String> getoLabels = vistor.getGotoLabels();
+			SourceRange range = getReplacementRange(context);
+			for (String label : getoLabels) {
+				reporter.reportKeyword(label, "", range);
+			}
+		} catch (Exception e) {
+		}
+
+	}
+
