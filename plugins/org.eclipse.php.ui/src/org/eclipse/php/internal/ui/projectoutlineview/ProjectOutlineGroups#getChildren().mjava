@@ -84,12 +84,27 @@
 				break;
 
 			case GROUP_CONSTANTS:
+				// find all constants
 				IField[] findFields = PhpModelAccess.getDefault().findFields(
-						null, MatchRule.PREFIX,
-						Modifiers.AccConstant | Modifiers.AccGlobal, 0, scope,
-						null);
+						null, MatchRule.PREFIX, Modifiers.AccConstant, 0,
+						scope, null);
 				if (findFields != null) {
-					childrenList.addAll(Arrays.asList(findFields));
+					for (IField field : findFields) {
+						try {
+							IModelElement element = field;
+							if (field.getParent() instanceof ISourceModule) {
+								element = ((ISourceModule) field.getParent())
+										.getElementAt(field.getNameRange()
+												.getOffset());
+							}
+							if (element != null
+									&& element.getParent() instanceof ISourceModule) {
+								// display constants defined in GLOBAL scope
+								childrenList.add(element);
+							}
+						} catch (ModelException e) {
+						}
+					}
 				}
 				break;
 			}
