@@ -1,0 +1,60 @@
+	protected MethodsAndTypes getMethodsAndTypes() {
+		AbstractMethodReturnTypeGoal typedGoal = (AbstractMethodReturnTypeGoal) goal;
+		ISourceModule sourceModule = ((ISourceModuleContext) goal.getContext())
+				.getSourceModule();
+		IType[] types = typedGoal.getTypes();
+		String methodName = typedGoal.getMethodName();
+
+		IContext context = typedGoal.getContext();
+		IModelAccessCache cache = null;
+		if (context instanceof IModelCacheContext) {
+			cache = ((IModelCacheContext) context).getCache();
+		}
+
+		List<IMethod> methods = new LinkedList<IMethod>();
+		List<IType> methodTypes = new LinkedList<IType>();
+		if (types == null) {
+			try {
+				methods.addAll(Arrays.asList(PHPModelUtils.getFunctions(
+						methodName, sourceModule, 0, cache, null)));
+				for (IMethod method : methods) {
+					methodTypes.add(null);
+				}
+			} catch (ModelException e) {
+				if (DLTKCore.DEBUG) {
+					e.printStackTrace();
+				}
+			}
+		} else {
+			try {
+				for (IType type : types) {
+					IMethod[] typeMethods = PHPModelUtils.getTypeMethod(type,
+							methodName, true);
+					if (typeMethods.length == 0) {
+						ITypeHierarchy hierarchy = null;
+						if (cache != null) {
+							hierarchy = cache.getSuperTypeHierarchy(type, null);
+						}
+						typeMethods = PHPModelUtils
+								.getSuperTypeHierarchyMethod(type, hierarchy,
+										methodName, true, null);
+					}
+					if (typeMethods.length > 0) {
+						methods.add(typeMethods[0]);
+						methodTypes.add(type);
+					}
+				}
+			} catch (CoreException e) {
+				if (DLTKCore.DEBUG) {
+					e.printStackTrace();
+				}
+			}
+		}
+		MethodsAndTypes mat = new MethodsAndTypes();
+		mat.methods = (IMethod[]) methods.toArray(new IMethod[methods.size()]);
+		mat.types = (IType[]) methodTypes
+				.toArray(new IType[methodTypes.size()]);
+
+		return mat;
+	}
+
