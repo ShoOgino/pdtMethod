@@ -1,0 +1,27 @@
+	private PathEntry[] getMostMatchEntries(PathEntry[] entries,
+			VirtualPath remotePath) {
+		if (remotePath.getSegmentsCount() == 1) {
+			return entries;
+		}
+		Map<Integer, List<PathEntry>> map = new HashMap<Integer, List<PathEntry>>();
+		int mostMatchSegmentsNumber = 1;
+		for (int i = 0; i < entries.length; i++) {
+			PathEntry pathEntry = entries[i];
+			VirtualPath virtualPath = pathEntry.getAbstractPath();
+			int matchSegmentsNumber = getMatchSegmentsNumber(virtualPath,
+					remotePath);
+			if (matchSegmentsNumber > mostMatchSegmentsNumber) {
+				mostMatchSegmentsNumber = matchSegmentsNumber;
+			}
+			List<PathEntry> list = map.get(matchSegmentsNumber);
+			if (list == null) {
+				list = new ArrayList<PathEntry>();
+				map.put(matchSegmentsNumber, list);
+			}
+			list.add(pathEntry);
+
+		}
+		List<PathEntry> mostMatchList = map.get(mostMatchSegmentsNumber);
+		return mostMatchList.toArray(new PathEntry[mostMatchList.size()]);
+	}
+
