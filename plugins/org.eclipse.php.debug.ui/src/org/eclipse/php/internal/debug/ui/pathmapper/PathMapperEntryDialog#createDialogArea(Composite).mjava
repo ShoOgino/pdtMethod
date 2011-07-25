@@ -14,6 +14,8 @@
 		fRemotePathText = new Text(mainComp, SWT.BORDER);
 		fRemotePathText.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
+				// System.out.println(fRemotePathText.getText());
+				ignorePathText.setText(fRemotePathText.getText());
 				validate();
 			}
 		});
@@ -42,6 +44,7 @@
 				fWorkspacePathBrowseBtn.setEnabled(enabled);
 				fExternalPathText.setEnabled(!enabled);
 				fExternalPathBrowseBtn.setEnabled(!enabled);
+				ignorePathText.setEnabled(!enabled);
 				validate();
 			}
 		});
@@ -73,16 +76,15 @@
 								.toString());
 					} else if (selectedElement instanceof IBuildpathEntry) {
 						IBuildpathEntry includePathEntry = (IBuildpathEntry) selectedElement;
-						fWorkspacePathText
-								.setData(includePathEntry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE ? Type.INCLUDE_VAR
-										: Type.INCLUDE_FOLDER);
+						fWorkspacePathText.setData(includePathEntry
+								.getEntryKind() == IBuildpathEntry.BPE_VARIABLE ? Type.INCLUDE_VAR
+								: Type.INCLUDE_FOLDER);
 						if (includePathEntry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
 							IPath incPath = DLTKCore
 									.getResolvedVariablePath(includePathEntry
 											.getPath());
 							if (incPath != null) {
-								fWorkspacePathText
-										.setText(incPath.toOSString());
+								fWorkspacePathText.setText(incPath.toOSString());
 							}
 						} else {
 							fWorkspacePathText.setText(EnvironmentPathUtils
@@ -92,9 +94,9 @@
 					} else if (selectedElement instanceof IPFile) {
 						IPFile ipFile = (IPFile) selectedElement;
 						IBuildpathEntry includePathEntry = ipFile.includePathEntry;
-						fWorkspacePathText
-								.setData(includePathEntry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE ? Type.INCLUDE_VAR
-										: Type.INCLUDE_FOLDER);
+						fWorkspacePathText.setData(includePathEntry
+								.getEntryKind() == IBuildpathEntry.BPE_VARIABLE ? Type.INCLUDE_VAR
+								: Type.INCLUDE_FOLDER);
 						fWorkspacePathText.setText(ipFile.file
 								.getAbsolutePath());
 					}
@@ -115,6 +117,7 @@
 				fExternalPathBrowseBtn.setEnabled(enabled);
 				fWorkspacePathText.setEnabled(!enabled);
 				fWorkspacePathBrowseBtn.setEnabled(!enabled);
+				ignorePathText.setEnabled(!enabled);
 				validate();
 			}
 		});
@@ -141,6 +144,36 @@
 				}
 			}
 		});
+
+		ignoreMappingBtn = new Button(typeSelectionGroup, SWT.RADIO);
+		ignoreMappingBtn
+				.setText("Do not map the following server path to a local resource:");
+		layoutData = new GridData(GridData.FILL_HORIZONTAL);
+		layoutData.horizontalSpan = 2;
+		ignoreMappingBtn.setLayoutData(layoutData);
+		ignoreMappingBtn.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				boolean enabled = ignoreMappingBtn.getSelection();
+				fWorkspacePathText.setEnabled(!enabled);
+				fWorkspacePathBrowseBtn.setEnabled(!enabled);
+				fExternalPathText.setEnabled(!enabled);
+				fExternalPathBrowseBtn.setEnabled(!enabled);
+				ignorePathText.setEnabled(enabled);
+				// configurePathBtn.setEnabled(enabled);
+				validate();
+			}
+		});
+
+		ignorePathText = new Text(typeSelectionGroup, SWT.BORDER
+				| SWT.READ_ONLY);
+		ignorePathText.setEnabled(false);
+		layoutData = new GridData(GridData.FILL_HORIZONTAL);
+		// layoutData.horizontalIndent = convertWidthInCharsToPixels(2);
+		layoutData.horizontalIndent = pixelConverter
+				.convertWidthInCharsToPixels(1);
+		layoutData.widthHint = convertWidthInCharsToPixels(70);
+		ignorePathText.setLayoutData(layoutData);
+		ignorePathText.setText("");
 
 		applyDialogFont(mainComp);
 		initializeValues();
