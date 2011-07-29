@@ -1,7 +1,25 @@
 	public String getPartitionType(final ITextRegion region, final int offset) {
 		// if php region
-		if (isPhpRegion(region.getType()))
+		if (isPhpRegion(region.getType())) {
+			if (region instanceof IPhpScriptRegion) {
+				IPhpScriptRegion phpScriptRegion = (IPhpScriptRegion) region;
+				ITextRegion textRegion;
+				try {
+					textRegion = phpScriptRegion.getPhpToken(offset
+					// - sdRegion.getStartOffset()
+							- region.getStart());
+					// handle comments
+					if (PHPPartitionTypes.isPHPCommentState(textRegion
+							.getType())) {
+						// return PHPPartitionTypes.PHP_COMMENT;
+					}
+				} catch (BadLocationException e) {
+					// TODO Auto-generated catch block
+					// e.printStackTrace();
+				}
+			}
 			return PHPPartitionTypes.PHP_DEFAULT;
+		}
 
 		// else do super
 		return super.getPartitionType(region, offset);
