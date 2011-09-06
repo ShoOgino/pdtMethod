@@ -15,72 +15,103 @@
 		final String blanks = FormatterUtils.getLineBlanks(document,
 				indentationBaseLine);
 		result.append(blanks);
-
-		final int lastLineEndOffset = lastNonEmptyLine.getOffset()
-				+ lastNonEmptyLine.getLength();
-		int offset;
-		int line;
-		if (forOffset < lastLineEndOffset) {
-			offset = forOffset;
-			line = lineNumber;
-		} else {
-			offset = lastLineEndOffset;
-			line = lastNonEmptyLineIndex;
+		IRegion currentLine = document.getLineInformationOfOffset(forOffset);
+		if (!enterKeyPressed
+				&& document
+						.get(currentLine.getOffset(),
+								forOffset - currentLine.getOffset()).trim()
+						.length() != 0) {
+			return;
 		}
-		if (shouldIndent(document, offset, line)) {
-			final int indentationSize = FormatPreferencesSupport.getInstance()
-					.getIndentationSize(document);
-			final char indentationChar = FormatPreferencesSupport.getInstance()
-					.getIndentationChar(document);
-			for (int i = 0; i < indentationSize; i++)
-				result.append(indentationChar);
-		} else {
-			lastNonEmptyLineIndex = lineNumber;
-			if (!enterKeyPressed && lastNonEmptyLineIndex > 0) {
-				lastNonEmptyLineIndex--;
+
+		ASTNode node = getASTNode(document, forOffset);
+		if (node != null) {
+			if (enterKeyPressed) {
+				node = getIndentNode(node);
 			}
-			while (lastNonEmptyLineIndex >= 0) {
-				IRegion lineInfo = document
-						.getLineInformation(lastNonEmptyLineIndex);
-				String content = document.get(lineInfo.getOffset(),
-						lineInfo.getLength());
-				if (content.trim().length() > 0) {
-					break;
-				}
-				lastNonEmptyLineIndex--;
-			}
-			if (!isEndOfStatement(document, offset, lastNonEmptyLineIndex)) {
-				if (enterKeyPressed) {
-					// this line is one of multi line statement
-					if (indentationBaseLineIndex == lastNonEmptyLineIndex) {
-						// this only deal with "$a = 'aaa'.|","|" is the cursor
-						// position when we press enter key
-						placeStringIndentation(document, lastNonEmptyLineIndex,
-								result);
-					} else {
-						// in multi line statement,when user press enter key,
-						// we use the same indentation of the last non-empty
-						// line.
-						result.setLength(result.length() - blanks.length());
-						IRegion lineInfo = document
-								.getLineInformation(lastNonEmptyLineIndex);
-						result.append(FormatterUtils.getLineBlanks(document,
-								lineInfo));
+			ASTNode parentNode = node.getParent();
+			parentNode = getIndentNode(parentNode);
+			if (isInlinePHP(node, parentNode)) {
+				originalPlaceMatchingBlanks(document, result, lineNumber,
+						forOffset, enterKeyPressed, indentationBaseLineIndex,
+						lastNonEmptyLine, blanks);
+			} else {
+				IRegion startLine = document.getLineInformationOfOffset(node
+						.getStart());
+				IRegion endLine = document.getLineInformationOfOffset(node
+						.getEnd());
+				if (currentLine.getOffset() == startLine.getOffset()
+						&& !enterKeyPressed/* && result.length() != 0 */) {
+
+					IRegion parentStartLine = document
+							.getLineInformationOfOffset(parentNode.getStart());
+					result.setLength(result.length() - blanks.length());
+					char[] lineChars = document
+							.get(parentStartLine.getOffset(),
+									parentNode.getStart()
+											- parentStartLine.getOffset())
+							.toCharArray();
+					for (int i = 0; i < lineChars.length; i++) {
+						char c = lineChars[i];
+						if (Character.isWhitespace(c)) {
+							result.append(c);
+						} else {
+							result.append(" ");
+						}
 					}
+					if (!(parentNode instanceof Program)
+							&& !(parentNode instanceof InfixExpression)
+							&& !(node instanceof Block)) {
+						addIndent(document, result);
+					}
+					return;
 				} else {
-					if (enterKeyPressed) {
-						// in multi line statement,when user press enter key,
-						// we use the same indentation of the last non-empty
-						// line.
-						result.setLength(result.length() - blanks.length());
-						IRegion lineInfo = document
-								.getLineInformation(lastNonEmptyLineIndex);
-						result.append(FormatterUtils.getLineBlanks(document,
-								lineInfo));
-					}
+					result.setLength(result.length() - blanks.length());
+					char[] lineChars = document.get(startLine.getOffset(),
+							node.getStart() - startLine.getOffset())
+							.toCharArray();
+					if (currentLine.getOffset() != endLine.getOffset()
+							&& !(node instanceof InfixExpression)) {
+						for (int i = 0; i < lineChars.length; i++) {
+							char c = lineChars[i];
+							if (Character.isWhitespace(c)) {
+								result.append(c);
+							} else {
+								result.append(" ");
+							}
+						}
+						if (!enterKeyPressed && (node instanceof IfStatement)) {
+							String currentString = document.get(
+									currentLine.getOffset(),
+									currentLine.getOffset()
+											+ currentLine.getLength());
+							if (!currentString.trim().toLowerCase()
+									.startsWith("else")) {
+								addIndent(document, result);
+							}
+						} else {
+							addIndent(document, result);
 
+						}
+
+					} else {
+						for (int i = 0; i < lineChars.length; i++) {
+							char c = lineChars[i];
+							if (Character.isWhitespace(c)) {
+								result.append(c);
+							} else {
+								return;
+							}
+						}
+					}
 				}
 			}
+
+		} else {
+			originalPlaceMatchingBlanks(document, result, lineNumber,
+					forOffset, enterKeyPressed, indentationBaseLineIndex,
+					lastNonEmptyLine, blanks);
 		}
+
 	}
 

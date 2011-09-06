@@ -1,0 +1,25 @@
+	public static Program getProgram(IStructuredDocument document) {
+		IStructuredModel structuredModel = null;
+		try {
+			structuredModel = StructuredModelManager.getModelManager()
+					.getExistingModelForRead(document);
+			if (structuredModel != null) {
+				IResource resource = ResourcesPlugin.getWorkspace().getRoot()
+						.findMember(structuredModel.getBaseLocation());
+				ISourceModule modelElement = (ISourceModule) DLTKCore
+						.create(resource);
+				ASTParser parser = ASTParser.newParser(modelElement);
+
+				return parser.createAST(null);
+			}
+
+		} catch (Exception e) {
+		} finally {
+			// ensureClosed(outputStream, null);
+			// release from model manager
+			if (structuredModel != null)
+				structuredModel.releaseFromRead();
+		}
+		return null;
+	}
+

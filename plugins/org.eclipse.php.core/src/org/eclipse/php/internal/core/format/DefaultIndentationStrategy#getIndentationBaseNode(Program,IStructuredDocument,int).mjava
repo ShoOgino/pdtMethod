@@ -1,0 +1,30 @@
+	private static ASTNode getIndentationBaseNode(Program program,
+			IStructuredDocument document, int offset)
+			throws BadLocationException {
+		ASTNode node = program.getElementAt(offset);
+		// process Comment by default way
+		if (node instanceof Comment) {
+			return null;
+		} else {
+			if (node instanceof DoStatement) {
+				int nextCharIndex = offset;
+				while (Character.isWhitespace(document.getChar(nextCharIndex)))
+					nextCharIndex++;
+				// if current offset is out of DoStatement Body
+				if (nextCharIndex != ((DoStatement) node).getBody().getStart()) {
+					node = node.getParent();
+				}
+			} else if (offset == node.getStart() && node.getParent() != null) {
+				while (node.getParent() != null
+						&& node.getStart() == node.getParent().getStart()) {
+					node = node.getParent();
+				}
+				// node = node.getParent();
+			}
+			if (node instanceof ASTError) {
+				return null;
+			}
+			return node;
+		}
+	}
+
