@@ -80,7 +80,7 @@
 								result.append(" ");
 							}
 						}
-						if (!enterKeyPressed && (node instanceof IfStatement)) {
+						if (!enterKeyPressed && isBlockable(node)) {
 							String currentString = document.get(
 									currentLine.getOffset(),
 									currentLine.getOffset()
@@ -90,7 +90,27 @@
 								addIndent(document, result);
 							}
 						} else {
-							addIndent(document, result);
+							if (enterKeyPressed
+									&& isBlockable(node)
+									&& ((currentLine.getOffset() == startLine
+											.getOffset())
+											&& document
+													.get(currentLine
+															.getOffset(),
+															forOffset
+																	- currentLine
+																			.getOffset())
+													.trim().length() == 0 || document
+											.get(forOffset,
+													currentLine.getOffset()
+															+ currentLine
+																	.getLength()
+															- forOffset).trim()
+											.startsWith("{"))) {
+								// for example |if (xxx){ and if (xxx)|{
+							} else {
+								addIndent(document, result);
+							}
 
 						}
 
@@ -104,6 +124,7 @@
 							}
 						}
 					}
+
 				}
 			}
 
