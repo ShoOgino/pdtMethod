@@ -1,0 +1,56 @@
+		/**
+		 * @see org.eclipse.jface.operation.IRunnableWithProgress#run(org.eclipse.core.runtime.IProgressMonitor)
+		 */
+		public void run(IProgressMonitor monitor) {
+			// start work
+			monitor.beginTask(SSEUIMessages.ToggleComment_progress,
+					this.fSelectionEndLine - this.fSelectionStartLine);
+			try {
+				boolean allLinesCommented = true;
+				for (int i = fSelectionStartLine; i <= fSelectionEndLine; i++) {
+					try {
+						if (fDocument.getLineLength(i) > 0) {
+							if (!isCommentLine(fDocument, i)) {
+								allLinesCommented = false;
+								break;
+							}
+						}
+					} catch (BadLocationException e) {
+						Logger.log(Logger.WARNING_DEBUG, e.getMessage(), e);
+					}
+				}
+				// toggle each line so long as task not canceled
+				for (int line = this.fSelectionStartLine; line <= this.fSelectionEndLine
+						&& !monitor.isCanceled(); ++line) {
+
+					// allows the user to be able to click the cancel button
+					readAndDispatch(this.fDisplay);
+
+					// get the line region
+					IRegion lineRegion = this.fDocument
+							.getLineInformation(line);
+
+					// don't toggle empty lines
+					String content = this.fDocument.get(lineRegion.getOffset(),
+							lineRegion.getLength());
+					if (content.trim().length() > 0) {
+						// try to get a line comment type
+
+						// toggle the comment on the line
+						if (allLinesCommented) {
+							remove(this.fDocument, lineRegion.getOffset(),
+									lineRegion.getLength(), true);
+						} else {
+							apply(this.fDocument, lineRegion.getOffset(),
+									lineRegion.getLength());
+						}
+					}
+					monitor.worked(1);
+				}
+			} catch (BadLocationException e) {
+				Logger.logException("Bad location while toggling comments.", e); //$NON-NLS-1$
+			}
+			// done work
+			monitor.done();
+		}
+

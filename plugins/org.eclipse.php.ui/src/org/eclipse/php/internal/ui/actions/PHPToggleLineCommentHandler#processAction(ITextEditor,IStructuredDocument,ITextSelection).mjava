@@ -1,0 +1,134 @@
+	/**
+	 * @see org.eclipse.wst.sse.ui.internal.handlers.AbstractCommentHandler#processAction(org.eclipse.ui.texteditor.ITextEditor,
+	 *      org.eclipse.wst.sse.core.internal.provisional.text.IStructuredDocument,
+	 *      org.eclipse.jface.text.ITextSelection)
+	 */
+	protected void processAction(final ITextEditor textEditor,
+			final IStructuredDocument document, ITextSelection textSelection) {
+
+		IStructuredModel model = null;
+		DocumentRewriteSession session = null;
+		boolean changed = false;
+
+		try {
+			// get text selection lines info
+			int selectionStartLine = textSelection.getStartLine();
+			int selectionEndLine = textSelection.getEndLine();
+
+			int selectionEndLineOffset = document
+					.getLineOffset(selectionEndLine);
+			int selectionEndOffset = textSelection.getOffset()
+					+ textSelection.getLength();
+
+			// adjust selection end line
+			if ((selectionEndLine > selectionStartLine)
+					&& (selectionEndLineOffset == selectionEndOffset)) {
+				selectionEndLine--;
+				selectionEndLineOffset = document.getLineInformation(
+						selectionEndLine).getOffset();
+			}
+
+			int selectionStartLineOffset = document
+					.getLineOffset(selectionStartLine);
+			ITypedRegion[] lineTypedRegions = document.computePartitioning(
+					selectionStartLineOffset, selectionEndLineOffset
+							- selectionStartLineOffset);
+			if (lineTypedRegions != null
+					&& lineTypedRegions.length == 1
+					&& lineTypedRegions[0].getType().equals(
+							"org.eclipse.php.PHP_DEFAULT")) {
+
+				// save the selection position since it will be changing
+				Position selectionPosition = null;
+				selectionPosition = new Position(textSelection.getOffset(),
+						textSelection.getLength());
+				document.addPosition(selectionPosition);
+
+				model = StructuredModelManager.getModelManager()
+						.getModelForEdit(document);
+				if (model != null) {
+					// makes it so one undo will undo all the edits to the
+					// document
+					model.beginRecording(this,
+							SSEUIMessages.ToggleComment_label,
+							SSEUIMessages.ToggleComment_description);
+
+					// keeps listeners from doing anything until updates are all
+					// done
+					model.aboutToChangeModel();
+					if (document instanceof IDocumentExtension4) {
+						session = ((IDocumentExtension4) document)
+								.startRewriteSession(DocumentRewriteSessionType.UNRESTRICTED);
+					}
+					changed = true;
+
+					// get the display for the editor if we can
+					Display display = null;
+					if (textEditor instanceof StructuredTextEditor) {
+						StructuredTextViewer viewer = ((StructuredTextEditor) textEditor)
+								.getTextViewer();
+						if (viewer != null) {
+							display = viewer.getControl().getDisplay();
+						}
+					}
+
+					// create the toggling operation
+					IRunnableWithProgress toggleCommentsRunnable = new ToggleLinesRunnable(
+							model.getContentTypeIdentifier(), document,
+							selectionStartLine, selectionEndLine, display);
+
+					// if toggling lots of lines then use progress monitor else
+					// just
+					// run the operation
+					if ((selectionEndLine - selectionStartLine) > TOGGLE_LINES_MAX_NO_BUSY_INDICATOR
+							&& display != null) {
+						ProgressMonitorDialog dialog = new ProgressMonitorDialog(
+								display.getActiveShell());
+						dialog.run(false, true, toggleCommentsRunnable);
+					} else {
+						toggleCommentsRunnable.run(new NullProgressMonitor());
+					}
+				}
+			} else {
+				org.eclipse.core.expressions.EvaluationContext evaluationContext = new org.eclipse.core.expressions.EvaluationContext(
+						null, "") {
+					@Override
+					public Object getVariable(String name) {
+						if (ISources.ACTIVE_EDITOR_NAME.equals(name)) {
+							return textEditor;
+						}
+						return null;
+					}
+				};
+				org.eclipse.core.commands.ExecutionEvent executionEvent = new org.eclipse.core.commands.ExecutionEvent(
+						null, Collections.EMPTY_MAP, new Event(),
+						evaluationContext);
+				toggleLineCommentHandler.execute(executionEvent);
+			}
+
+		} catch (InvocationTargetException e) {
+			Logger.logException(
+					"Problem running toggle comment progess dialog.", e); //$NON-NLS-1$
+		} catch (InterruptedException e) {
+			Logger.logException(
+					"Problem running toggle comment progess dialog.", e); //$NON-NLS-1$
+		} catch (BadLocationException e) {
+			Logger.logException(
+					"The given selection " + textSelection + " must be invalid", e); //$NON-NLS-1$ //$NON-NLS-2$
+		} catch (ExecutionException e) {
+		} finally {
+			// clean everything up
+			if (session != null && document instanceof IDocumentExtension4) {
+				((IDocumentExtension4) document).stopRewriteSession(session);
+			}
+
+			if (model != null) {
+				model.endRecording(this);
+				if (changed) {
+					model.changedModel();
+				}
+				model.releaseFromEdit();
+			}
+		}
+	}
+

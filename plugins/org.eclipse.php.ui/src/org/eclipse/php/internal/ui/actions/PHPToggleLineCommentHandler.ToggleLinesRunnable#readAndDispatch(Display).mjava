@@ -1,0 +1,44 @@
+		/**
+		 * <p>
+		 * When calling {@link Display#readAndDispatch()} the game is off as to
+		 * whose code you maybe calling into because of event
+		 * handling/listeners/etc. The only important thing is that the UI has
+		 * been given a chance to react to user clicks. Thus the logging of most
+		 * {@link Exception}s and {@link Error}s as caused by
+		 * {@link Display#readAndDispatch()} because they are not caused by this
+		 * code and do not effect it.
+		 * </p>
+		 * 
+		 * @param display
+		 *            the {@link Display} to call <code>readAndDispatch</code>
+		 *            on with exception/error handling.
+		 */
+		private void readAndDispatch(Display display) {
+			try {
+				display.readAndDispatch();
+			} catch (Exception e) {
+				Logger.log(
+						Logger.WARNING,
+						"Exception caused by readAndDispatch, not caused by or fatal to caller",
+						e);
+			} catch (LinkageError e) {
+				Logger.log(
+						Logger.WARNING,
+						"LinkageError caused by readAndDispatch, not caused by or fatal to caller",
+						e);
+			} catch (VirtualMachineError e) {
+				// re-throw these
+				throw e;
+			} catch (ThreadDeath e) {
+				// re-throw these
+				throw e;
+			} catch (Error e) {
+				// catch every error, except for a few that we don't want to
+				// handle
+				Logger.log(
+						Logger.WARNING,
+						"Error caused by readAndDispatch, not caused by or fatal to caller",
+						e);
+			}
+		}
+

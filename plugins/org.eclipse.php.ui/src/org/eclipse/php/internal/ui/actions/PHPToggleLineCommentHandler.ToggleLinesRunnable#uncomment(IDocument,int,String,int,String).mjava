@@ -1,0 +1,68 @@
+		/**
+		 * <p>
+		 * This method modifies the given document to remove the given comment
+		 * prefix at the given comment prefix offset and the given comment
+		 * suffix at the given comment suffix offset. In the case of removing a
+		 * line comment that does not have a suffix, pass <code>null</code> for
+		 * the comment suffix and it and its associated offset will be ignored.
+		 * </p>
+		 * 
+		 * <p>
+		 * <b>NOTE:</b> it is a good idea if a model is at hand when calling
+		 * this to warn the model of an impending update
+		 * </p>
+		 * 
+		 * @param document
+		 *            the document to remove the comment from
+		 * @param commentPrefixOffset
+		 *            the offset of the comment prefix
+		 * @param commentSuffixOffset
+		 *            the offset of the comment suffix (ignored if
+		 *            <code>commentSuffix</code> is <code>null</code>)
+		 * @param commentPrefix
+		 *            the prefix of the comment to remove from its associated
+		 *            given offset
+		 * @param commentSuffix
+		 *            the suffix of the comment to remove from its associated
+		 *            given offset, or null if there is not suffix to remove for
+		 *            this comment
+		 */
+		protected static void uncomment(IDocument document,
+				int commentPrefixOffset, String commentPrefix,
+				int commentSuffixOffset, String commentSuffix) {
+
+			try {
+				// determine if there is a space after the comment prefix that
+				// should also be removed
+				int commentPrefixLength = commentPrefix.length();
+				String postCommentPrefixChar = document.get(commentPrefixOffset
+						+ commentPrefix.length(), 1);
+				if (postCommentPrefixChar.equals(" ")) {
+					commentPrefixLength++;
+				}
+
+				// remove the comment prefix
+				document.replace(commentPrefixOffset, commentPrefixLength, ""); //$NON-NLS-1$
+
+				if (commentSuffix != null) {
+					commentSuffixOffset -= commentPrefixLength;
+
+					// determine if there is a space before the comment suffix
+					// that should also be removed
+					int commentSuffixLength = commentSuffix.length();
+					String preCommentSuffixChar = document.get(
+							commentSuffixOffset - 1, 1);
+					if (preCommentSuffixChar.equals(" ")) {
+						commentSuffixLength++;
+						commentSuffixOffset--;
+					}
+
+					// remove the comment suffix
+					document.replace(commentSuffixOffset, commentSuffixLength,
+							""); //$NON-NLS-1$
+				}
+			} catch (BadLocationException e) {
+				Logger.log(Logger.WARNING_DEBUG, e.getMessage(), e);
+			}
+		}
+
