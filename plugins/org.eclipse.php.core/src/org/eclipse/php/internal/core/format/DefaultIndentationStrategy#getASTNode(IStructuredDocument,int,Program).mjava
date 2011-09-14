@@ -1,12 +1,14 @@
 	public static ASTNode getASTNode(final IStructuredDocument document,
-			final int offset) throws BadLocationException {
+			final int offset, Program program) throws BadLocationException {
 		try {
 			IRegion lineInfo = document.getLineInformationOfOffset(offset);
 			int lineStart = lineInfo.getOffset();
 			while (Character.isWhitespace(document.getChar(lineStart))
 					&& (lineStart < document.getLength() - 1))
 				lineStart++;
-			Program program = getProgram(document);
+			if (program == null) {
+				program = getProgram(document);
+			}
 			if (program == null || lineStart > program.getEnd()
 					|| offset > program.getEnd()) {
 				return null;
@@ -15,15 +17,11 @@
 					|| lineStart > (lineInfo.getOffset() + lineInfo.getLength())) {
 				lineStart = offset;
 			}
-			// document.get(21, 37)
 			ASTNode node = getIndentationBaseNode(program, document, lineStart);
 			if (node == program) {
 				return null;
 			}
 			return node;
-
-			// return document.getLineOfOffset(node.getStart()) != document
-			// .getLineOfOffset(node.getEnd());
 		} catch (Exception e) {
 			PHPCorePlugin.log(e);
 		}
