@@ -1,0 +1,65 @@
+	private static boolean indentMultiLineCase(IStructuredDocument document,
+			int lineNumber, int offset, boolean enterKeyPressed,
+			StringBuffer result, String blanks) {
+		// LineState lineState = new LineState();
+		// StringBuffer sb = new StringBuffer();
+		try {
+			PHPHeuristicScanner scanner = PHPHeuristicScanner
+					.createHeuristicScanner(document, offset, true);
+			if (inBracelessBlock(scanner, document, offset)) {
+				// lineState.inBracelessBlock = true;
+				indent(document, result);
+				return true;
+			} else if (inMultiLine(scanner, document, lineNumber, offset,
+					enterKeyPressed)) {
+				// lineState.inBracelessBlock = true;
+				int peer = scanner.findOpeningPeer(offset - 1,
+						PHPHeuristicScanner.LPAREN, PHPHeuristicScanner.RPAREN);
+				if (peer != PHPHeuristicScanner.NOT_FOUND) {
+					// lineState.indent.setLength(0)
+					// int baseLine = document.getLineOfOffset(peer);
+					String newblanks = FormatterUtils.getLineBlanks(document,
+							document.getLineInformationOfOffset(peer));
+					StringBuffer newBuffer = new StringBuffer(newblanks);
+					IRegion region = document
+							.getLineInformationOfOffset(offset);
+					if (!document
+							.get(offset,
+									region.getOffset() + region.getLength()
+											- offset).trim()
+							.startsWith("" + PHPHeuristicScanner.RPAREN)) {
+						indent(document, newBuffer, 2);
+					}
+					// if (newBuffer.length() > blanks.length()) {
+
+					result.setLength(result.length() - blanks.length());
+					result.append(newBuffer.toString());
+					return true;
+					// }
+					// if(isset($a)
+					// ||abc(isset($b),
+					// isset($b))){
+					// echo "";//
+					// echo "";//
+					// }
+				}
+			} else if (inMultiLineString(scanner, document, lineNumber, offset,
+					enterKeyPressed)) {
+				if (!endOfString(document, offset, scanner, enterKeyPressed)) {
+					int startOffset = getStartOffsetOfString(document, offset,
+							scanner, enterKeyPressed);
+
+					result.setLength(result.length() - blanks.length());
+					String newblanks = FormatterUtils.getLineBlanks(document,
+							document.getLineInformationOfOffset(startOffset));
+					result.append(newblanks);
+					indent(document, result, 2);
+				}
+				return true;
+
+			}
+		} catch (final BadLocationException e) {
+		}
+		return false;
+	}
+

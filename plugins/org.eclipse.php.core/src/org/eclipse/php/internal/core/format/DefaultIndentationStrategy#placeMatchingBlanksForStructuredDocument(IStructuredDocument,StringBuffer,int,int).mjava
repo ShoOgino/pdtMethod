@@ -15,7 +15,6 @@
 		final String blanks = FormatterUtils.getLineBlanks(document,
 				indentationBaseLine);
 		result.append(blanks);
-
 		final int lastLineEndOffset = lastNonEmptyLine.getOffset()
 				+ lastNonEmptyLine.getLength();
 		int offset;
@@ -28,59 +27,48 @@
 			line = lastNonEmptyLineIndex;
 		}
 		if (shouldIndent(document, offset, line)) {
-			final int indentationSize = FormatPreferencesSupport.getInstance()
-					.getIndentationSize(document);
-			final char indentationChar = FormatPreferencesSupport.getInstance()
-					.getIndentationChar(document);
-			for (int i = 0; i < indentationSize; i++)
-				result.append(indentationChar);
+			indent(document, result);
 		} else {
-			lastNonEmptyLineIndex = lineNumber;
-			if (!enterKeyPressed && lastNonEmptyLineIndex > 0) {
-				lastNonEmptyLineIndex--;
-			}
-			while (lastNonEmptyLineIndex >= 0) {
-				IRegion lineInfo = document
-						.getLineInformation(lastNonEmptyLineIndex);
-				String content = document.get(lineInfo.getOffset(),
-						lineInfo.getLength());
-				if (content.trim().length() > 0) {
-					break;
+			boolean intended = indentMultiLineCase(document, lineNumber,
+					forOffset, enterKeyPressed, result, blanks);
+			if (!intended) {
+				lastNonEmptyLineIndex = lineNumber;
+				if (!enterKeyPressed && lastNonEmptyLineIndex > 0) {
+					lastNonEmptyLineIndex--;
 				}
-				lastNonEmptyLineIndex--;
-			}
-			if (!isEndOfStatement(document, offset, lastNonEmptyLineIndex)) {
-				if (enterKeyPressed) {
-					// this line is one of multi line statement
+				while (lastNonEmptyLineIndex >= 0) {
+					IRegion lineInfo = document
+							.getLineInformation(lastNonEmptyLineIndex);
+					String content = document.get(lineInfo.getOffset(),
+							lineInfo.getLength());
+					if (content.trim().length() > 0) {
+						break;
+					}
+					lastNonEmptyLineIndex--;
+				}
+				if (!isEndOfStatement(document, offset, lastNonEmptyLineIndex)) {
 					if (indentationBaseLineIndex == lastNonEmptyLineIndex) {
-						// this only deal with "$a = 'aaa'.|","|" is the cursor
+						// this only deal with "$a = 'aaa'.|","|" is the
+						// cursor
 						// position when we press enter key
 						placeStringIndentation(document, lastNonEmptyLineIndex,
 								result);
-					} else {
-						// in multi line statement,when user press enter key,
-						// we use the same indentation of the last non-empty
-						// line.
-						result.setLength(result.length() - blanks.length());
-						IRegion lineInfo = document
-								.getLineInformation(lastNonEmptyLineIndex);
-						result.append(FormatterUtils.getLineBlanks(document,
-								lineInfo));
 					}
-				} else {
-					if (enterKeyPressed) {
-						// in multi line statement,when user press enter key,
-						// we use the same indentation of the last non-empty
-						// line.
-						result.setLength(result.length() - blanks.length());
-						IRegion lineInfo = document
-								.getLineInformation(lastNonEmptyLineIndex);
-						result.append(FormatterUtils.getLineBlanks(document,
-								lineInfo));
-					}
-
+					// if (enterKeyPressed) {
+					// this line is one of multi line statement
+					// in multi line statement,when user press enter
+					// key,
+					// we use the same indentation of the last non-empty
+					// line.
+					result.setLength(result.length() - blanks.length());
+					IRegion lineInfo = document
+							.getLineInformation(lastNonEmptyLineIndex);
+					result.append(FormatterUtils.getLineBlanks(document,
+							lineInfo));
+					// }
 				}
 			}
+
 		}
 	}
 

@@ -1,0 +1,42 @@
+	private static boolean inMultiLine(PHPHeuristicScanner scanner,
+			IStructuredDocument document, int lineNumber, int offset,
+			boolean enterKeyPressed) {
+		// TODO if in phpdoc or php miltiline,return false;
+		int lineStart = offset;
+		try {
+			IRegion region = document.getLineInformation(lineNumber);
+			char[] line = document.get(lineStart,
+					region.getOffset() + region.getLength() - lineStart)
+					.toCharArray();
+			for (int i = 0; i < line.length; i++) {
+				char c = line[i];
+				if (Character.isWhitespace(c)) {
+				} else {
+					// move line start to first non blank char
+					lineStart += i + 1;
+					break;
+				}
+			}
+			// scanner = PHPHeuristicScanner.createHeuristicScanner(document,
+			// lineStart);
+		} catch (BadLocationException e) {
+		}
+		int peer = scanner.findOpeningPeer(offset - 1,
+				PHPHeuristicScanner.LPAREN, PHPHeuristicScanner.RPAREN);
+		if (peer == PHPHeuristicScanner.NOT_FOUND) {
+			return false;
+		}
+		TextSequence textSequence = PHPTextSequenceUtilities
+				.getStatement(lineStart,
+						document.getRegionAtCharacterOffset(lineStart), true);
+		if (textSequence != null
+				&& isRegionTypeAllowedMultiline(FormatterUtils.getRegionType(
+						document, textSequence.getOriginalOffset(0)))) {
+			int statementStart = textSequence.getOriginalOffset(0);
+			if (statementStart < peer) {
+				return true;
+			}
+		}
+		return false;
+	}
+
