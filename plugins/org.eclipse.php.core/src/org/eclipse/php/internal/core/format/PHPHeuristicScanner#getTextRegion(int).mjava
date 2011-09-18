@@ -1,0 +1,27 @@
+	private ITextRegion getTextRegion(int position) {
+		Assert.isTrue(position >= 0);
+		Assert.isTrue(position <= fDocument.getLength());
+		try {
+			// If we have a structured document - extract the text region from
+			// the document and classify it
+			if (fDocument instanceof BasicStructuredDocument) {
+				IStructuredDocumentRegion sdRegion = ((BasicStructuredDocument) fDocument)
+						.getRegionAtCharacterOffset(position);
+				ITextRegion textRegion = sdRegion
+						.getRegionAtCharacterOffset(position);
+				if (textRegion instanceof IPhpScriptRegion) {
+					IPhpScriptRegion phpScriptRegion = (IPhpScriptRegion) textRegion;
+					textRegion = phpScriptRegion.getPhpToken(position
+							- sdRegion.getStartOffset()
+							- phpScriptRegion.getStart());
+					return textRegion;
+				}
+			}
+
+			return null;
+		} catch (BadLocationException e) {
+			return null; //$NON-NLS-1$
+		}
+
+	}
+

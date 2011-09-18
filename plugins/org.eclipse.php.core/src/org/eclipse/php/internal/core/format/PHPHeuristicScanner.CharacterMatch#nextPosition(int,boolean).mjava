@@ -1,0 +1,31 @@
+		/*
+		 * @see
+		 * org.eclipse.jdt.internal.ui.text.JavaHeuristicScanner.StopCondition
+		 * #nextPosition(int, boolean)
+		 */
+		public int nextPosition(int position, boolean forward) {
+			// only match char in the same string
+			if (fTextRegion != null
+					&& !fTextRegion.equals(getTextRegion(position))) {
+				if (forward) {
+					return fDocument.getLength();
+				} else {
+					return -1;
+				}
+			}
+			ITypedRegion partition = getPartition(position);
+			if (fPartition.equals(partition.getType()))
+				return super.nextPosition(position, forward);
+
+			if (forward) {
+				int end = partition.getOffset() + partition.getLength();
+				if (position < end)
+					return end;
+			} else {
+				int offset = partition.getOffset();
+				if (position > offset)
+					return offset - 1;
+			}
+			return super.nextPosition(position, forward);
+		}
+
