@@ -24,10 +24,10 @@
 						ISourceElementRequestor.FieldInfo info = new ISourceElementRequestor.FieldInfo();
 						info.modifiers = Modifiers.AccPublic;
 						info.name = split[1];
-						info.type = MAGIC_PROPERTY_TYPE;
+						info.type = split[0];
 
-						SimpleReference var = new SimpleReference(docTag
-								.sourceStart(), docTag.sourceStart() + 9,
+						SimpleReference var = new SimpleReference(
+								docTag.sourceStart(), docTag.sourceStart() + 9,
 								removeParenthesis(split));
 						info.nameSourceStart = var.sourceStart();
 						info.nameSourceEnd = var.sourceEnd();
@@ -47,14 +47,23 @@
 						ISourceElementRequestor.MethodInfo mi = new ISourceElementRequestor.MethodInfo();
 						mi.parameterNames = null;
 						mi.name = removeParenthesis(split);
-						SimpleReference var = new SimpleReference(docTag
-								.sourceStart(), docTag.sourceStart() + 6,
+						SimpleReference var = new SimpleReference(
+								docTag.sourceStart(), docTag.sourceStart() + 6,
 								removeParenthesis(split));
 						mi.modifiers = Modifiers.AccPublic;
 						mi.nameSourceStart = var.sourceStart();
 						mi.nameSourceEnd = var.sourceEnd();
 						mi.declarationStart = mi.nameSourceStart;
 						mi.isConstructor = false;
+						mi.returnType = split[0];
+
+						MagicMethod magicMethod = MagicMemberUtil
+								.getMagicMethod(docTag.getValue());
+						if (magicMethod != null) {
+							mi.parameterNames = magicMethod.parameterNames;
+							mi.parameterTypes = magicMethod.parameterTypes;
+							mi.parameterInitializers = magicMethod.parameterInitializers;
+						}
 
 						this.fRequestor.enterMethod(mi);
 						this.fRequestor.exitMethod(mi.nameSourceEnd);
