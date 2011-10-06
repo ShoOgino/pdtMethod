@@ -1,0 +1,58 @@
+	private static MagicMember getMagicMember(IMember member) {
+		if (member instanceof IMethod || member instanceof IField) {
+			IType type = null;
+			if (member instanceof IMethod) {
+				type = ((IMethod) member).getDeclaringType();
+				PHPDocBlock doc = PHPModelUtils.getDocBlock(type);
+				if (doc != null) {
+					Pattern WHITESPACE_SEPERATOR = Pattern.compile("\\s+");
+					final PHPDocTag[] tags = doc.getTags();
+					for (PHPDocTag docTag : tags) {
+						final int tagKind = docTag.getTagKind();
+						if (tagKind == PHPDocTag.METHOD) {
+							// http://manual.phpdoc.org/HTMLSmartyConverter/HandS/phpDocumentor/tutorial_tags.method.pkg.html
+							final String[] split = WHITESPACE_SEPERATOR
+									.split(docTag.getValue().trim());
+							if (split.length < 2) {
+								continue;
+							}
+
+							if (MagicMemberUtil.removeParenthesis(split)
+									.equals(member.getElementName())) {
+								return MagicMemberUtil.getMagicMethod(docTag
+										.getValue());
+							}
+						}
+					}
+				}
+			} else {
+				type = ((IField) member).getDeclaringType();
+				PHPDocBlock doc = PHPModelUtils.getDocBlock(type);
+				if (doc != null) {
+					Pattern WHITESPACE_SEPERATOR = Pattern.compile("\\s+");
+					final PHPDocTag[] tags = doc.getTags();
+					for (PHPDocTag docTag : tags) {
+						final int tagKind = docTag.getTagKind();
+						if (tagKind == PHPDocTag.PROPERTY
+								|| tagKind == PHPDocTag.PROPERTY_READ
+								|| tagKind == PHPDocTag.PROPERTY_WRITE) {
+							// http://manual.phpdoc.org/HTMLSmartyConverter/HandS/phpDocumentor/tutorial_tags.property.pkg.html
+							final String[] split = WHITESPACE_SEPERATOR
+									.split(docTag.getValue().trim());
+							if (split.length < 2) {
+								continue;
+							}
+
+							if (split[1].equals(member.getElementName())) {
+								return MagicMemberUtil.getMagicField(docTag
+										.getValue());
+							}
+						}
+					}
+				}
+			}
+		}
+
+		return null;
+	}
+
