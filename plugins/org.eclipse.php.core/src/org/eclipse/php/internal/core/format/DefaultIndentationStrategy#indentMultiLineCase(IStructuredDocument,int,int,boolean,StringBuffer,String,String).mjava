@@ -1,6 +1,6 @@
 	private static boolean indentMultiLineCase(IStructuredDocument document,
 			int lineNumber, int offset, boolean enterKeyPressed,
-			StringBuffer result, String blanks) {
+			StringBuffer result, String blanks, String commandText) {
 		// LineState lineState = new LineState();
 		// StringBuffer sb = new StringBuffer();
 		try {
@@ -11,10 +11,12 @@
 					.createHeuristicScanner(document, offset, true);
 			if (inBracelessBlock(scanner, document, offset)) {
 				// lineState.inBracelessBlock = true;
-				indent(document, result);
+				if (!"{".equals(commandText)) {
+					indent(document, result);
+				}
 				return true;
 			} else if (content.trim().startsWith(
-					"" + PHPHeuristicScanner.LBRACE)) {
+					BLANK + PHPHeuristicScanner.LBRACE)) {
 				// lineState.inBracelessBlock = true;
 				int token = scanner.previousToken(offset - 1,
 						PHPHeuristicScanner.UNBOUND);
@@ -57,7 +59,8 @@
 													+ region.getLength()
 													- offset)
 									.trim()
-									.startsWith("" + PHPHeuristicScanner.RPAREN)) {
+									.startsWith(
+											BLANK + PHPHeuristicScanner.RPAREN)) {
 						indent(document, newBuffer, 2);
 					}
 					// if (newBuffer.length() > blanks.length()) {
