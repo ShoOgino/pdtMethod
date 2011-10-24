@@ -1,0 +1,24 @@
+	public void apply(ICompletionReporter reporter) throws BadLocationException {
+
+		FunctionParameterTypeContext context = (FunctionParameterTypeContext) getContext();
+		if (context.getEnclosingType() != null) {
+			try {
+				int flags = context.getEnclosingType().getFlags();
+				if (!PHPFlags.isNamespace(flags)) {
+					SourceRange replaceRange = getReplacementRange(context);
+					String suffix = "";
+					String prefix = context.getPrefix();
+					for (String keyword : KEYWORDS) {
+						if (keyword.startsWith(prefix)) {
+							reporter.reportKeyword(keyword, suffix,
+									replaceRange);
+						}
+					}
+				}
+			} catch (ModelException e) {
+				PHPCorePlugin.log(e);
+			}
+		}
+
+	}
+
