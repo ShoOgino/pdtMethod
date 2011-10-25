@@ -1,0 +1,29 @@
+	private boolean processDelta(IJavaScriptElementDelta delta,
+			ArrayList<Runnable> runnables) {
+		int flags = delta.getFlags();
+		IJavaScriptElement element = delta.getElement();
+		int elementType = element.getElementType();
+
+		if (elementType != IJavaScriptElement.JAVASCRIPT_MODEL
+				&& elementType != IJavaScriptElement.JAVASCRIPT_PROJECT) {
+			IJavaScriptProject proj = element.getJavaScriptProject();
+			if (proj == null || !proj.getProject().isOpen())
+				return false;
+		}
+
+		if (elementType == IJavaScriptElement.JAVASCRIPT_PROJECT) {
+			// if the raw class path has changed we refresh the entire project
+			if ((flags & IJavaScriptElementDelta.F_INCLUDEPATH_CHANGED) != 0) {
+
+				final ArrayList<IScriptProject> resources = new ArrayList<IScriptProject>(
+						1);
+				IProject project = ((IJavaScriptProject) element).getProject();
+				resources.add(DLTKCore.create(project));
+				postRefresh(resources, true, runnables);
+				this.executeRunnables(runnables);
+				return true;
+			}
+		}
+		return false;
+	}
+
