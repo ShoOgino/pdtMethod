@@ -14,6 +14,13 @@
 			if (context instanceof MethodContext) {
 				final MethodContext methodContext = (MethodContext) context;
 				ModuleDeclaration rootNode = methodContext.getRootNode();
+				ISourceModule sourceModule = ((ISourceModuleContext) context)
+						.getSourceModule();
+				final IType currentNamespace = PHPModelUtils
+						.getCurrentNamespace(sourceModule,
+								rootNode.sourceStart());
+				final ModuleDeclaration moduleDeclaration = SourceParserUtil
+						.getModuleDeclaration(sourceModule);
 				final MethodDeclaration methodDecl = methodContext
 						.getMethodNode();
 
@@ -40,19 +47,100 @@
 									SimpleReference reference = null;
 									if (node instanceof SimpleReference) {
 										reference = (SimpleReference) node;
+										String typeName = reference.getName();
 										if (reference instanceof FullyQualifiedReference) {
 											FullyQualifiedReference ref = (FullyQualifiedReference) node;
 											namespace = ref.getNamespace();
 										}
+										if (namespace != null
+												&& !namespace.getName().equals(
+														"")) {
+											String nsName = namespace.getName();
+											if (nsName.equals("\\")) {
+												typeName = nsName + typeName;
+											} else {
+												if (nsName
+														.startsWith("namespace\\")) {
+													nsName = nsName.replace(
+															"namespace\\", "");
+												}
+												typeName = nsName
+														+ NamespaceReference.NAMESPACE_SEPARATOR
+														+ typeName;
+											}
+										}
+										if (typeName
+												.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) > 0) {
+											// check if the first part
+											// is an
+											// alias,then get the full
+											// name
+											String prefix = typeName.substring(
+													0,
+													typeName.indexOf(NamespaceReference.NAMESPACE_SEPARATOR));
+											final Map<String, UsePart> result = PHPModelUtils
+													.getAliasToNSMap(
+															prefix,
+															moduleDeclaration,
+															reference
+																	.sourceStart(),
+															currentNamespace,
+															true);
+											if (result.containsKey(prefix)) {
+												String fullName = result
+														.get(prefix)
+														.getNamespace()
+														.getFullyQualifiedName();
+												typeName = typeName.replace(
+														prefix, fullName);
+											}
+										} else if (typeName
+												.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) < 0) {
+
+											String prefix = typeName;
+											final Map<String, UsePart> result = PHPModelUtils
+													.getAliasToNSMap(
+															prefix,
+															moduleDeclaration,
+															reference
+																	.sourceStart(),
+															currentNamespace,
+															true);
+											if (result.containsKey(prefix)) {
+												String fullName = result
+														.get(prefix)
+														.getNamespace()
+														.getFullyQualifiedName();
+												typeName = fullName;
+											}
+										}
+										IEvaluatedType type = PHPSimpleTypes
+												.fromString(typeName);
+										if (type == null) {
+											if (typeName
+													.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) != -1
+													|| currentNamespace == null) {
+												type = new PHPClassType(
+														typeName);
+											} else if (currentNamespace != null) {
+												type = new PHPClassType(
+														currentNamespace
+																.getElementName(),
+														typeName);
+											}
+										}
+
+										types.add(type);
 									}
-									if (namespace == null
-											|| namespace.getName().equals("")) {
-										types.add(new PHPClassType(reference
-												.getName()));
-									} else {
-										types.add(new PHPClassType(namespace
-												.getName(), reference.getName()));
-									}
+									// if (namespace == null
+									// || namespace.getName().equals("")) {
+									// types.add(new PHPClassType(reference
+									// .getName()));
+									// } else {
+									// types.add(new
+									// PHPClassType(namespace.getName(),
+									// reference.getName()));
+									// }
 
 								}
 								found = true;
