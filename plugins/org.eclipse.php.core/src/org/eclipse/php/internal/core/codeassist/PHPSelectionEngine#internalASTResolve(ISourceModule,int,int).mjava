@@ -30,10 +30,40 @@
 								.resolveExpression(sourceModule, parsedUnit,
 										context, callExpression.getReceiver());
 						if (receiverType != null) {
-							IModelElement[] elements = PHPTypeInferenceUtils
-									.getModelElements(receiverType,
-											(ISourceModuleContext) context,
-											offset);
+							IModelElement[] elements = null;
+							if ((receiverType instanceof PHPClassType)
+									&& ((PHPClassType) receiverType).isGlobal()) {
+
+								IDLTKSearchScope scope = SearchEngine
+										.createSearchScope(sourceModule
+												.getScriptProject());
+								elements = PhpModelAccess.getDefault()
+										.findTypes(receiverType.getTypeName(),
+												MatchRule.EXACT, 0, 0, scope,
+												null);
+								LinkedList<IModelElement> result = new LinkedList<IModelElement>();
+								for (IModelElement element : elements) {
+									IModelElement parent = element.getParent();
+									while (parent.getParent() instanceof IType) {
+										parent = parent.getParent();
+									}
+									if ((parent instanceof IType)
+											&& PHPFlags
+													.isNamespace(((IType) parent)
+															.getFlags())) {
+										// Do nothing
+									} else {
+										result.add(element);
+									}
+								}
+								elements = result.toArray(new IType[result
+										.size()]);
+							} else {
+								elements = PHPTypeInferenceUtils
+										.getModelElements(receiverType,
+												(ISourceModuleContext) context,
+												offset);
+							}
 							List<IModelElement> methods = new LinkedList<IModelElement>();
 							if (elements != null) {
 								for (IModelElement element : elements) {
@@ -161,6 +191,9 @@
 				else if (node instanceof TypeReference) {
 					IEvaluatedType evaluatedType = PHPTypeInferenceUtils
 							.resolveExpression(sourceModule, node);
+					if (evaluatedType == null) {
+						return new IType[0];
+					}
 					String name = evaluatedType.getTypeName();
 					IType[] types = PHPModelUtils.getTypes(name, sourceModule,
 							offset, null, null);
