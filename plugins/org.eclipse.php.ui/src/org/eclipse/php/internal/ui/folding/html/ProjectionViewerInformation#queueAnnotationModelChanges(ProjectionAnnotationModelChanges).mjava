@@ -6,9 +6,13 @@
 			ProjectionAnnotationModelChanges newChange) {
 		/*
 		 * future_TODO: maybe improve by checking if annotation projection model
-		 * change already exists for node. if so, throw out old change.
+		 * change already exists for node. if so, throw out old change. (For
+		 * some reason after removing old changes for a node folding is broken.)
 		 */
-		getQueuedAnnotationChanges().add(newChange);
+		List<ProjectionAnnotationModelChanges> changes = getQueuedAnnotationChanges();
+		synchronized (changes) {
+			changes.add(newChange);
+		}
 
 		// if document isn't changing, go ahead and apply it
 		if (!isDocumentChanging()) {
