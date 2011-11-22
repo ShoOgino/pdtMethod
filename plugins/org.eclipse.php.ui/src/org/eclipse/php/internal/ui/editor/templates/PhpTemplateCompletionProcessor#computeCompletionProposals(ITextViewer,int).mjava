@@ -19,17 +19,28 @@
 
 		ICompletionProposal[] selectionProposal = EMPTY;
 		if (selection.getLength() != 0) {
+			isSelection = true;
 			int tempOffset = offset;
 			// adjust offset to end of normalized selection
 			if (selection.getOffset() == tempOffset)
 				tempOffset = selection.getOffset() + selection.getLength();
 
 			String prefix = extractPrefix(viewer, tempOffset);
-			IRegion region = new Region(selection.getOffset(),
-					selection.getLength());
-			TemplateContext context = createContext(viewer, region);
+			IRegion region = new Region(selection.getOffset(), 0);
+			Position position = new Position(offset, selection.getLength());
+			TemplateContext context = createContext(viewer, region, position);//
 			if (context == null)
 				return new ICompletionProposal[0];
+
+			// if (selection.y != 0) {
+			try {
+				// selectedText= document.get(selection.getOffset(),
+				// selection.getLength());
+				document.addPosition(position);
+				fPositions.put(document, position);
+			} catch (BadLocationException e) {
+			}
+			// }
 
 			// name of the selection variables {line, word}_selection
 			context.setVariable("selection", selection.getText()); //$NON-NLS-1$
@@ -52,6 +63,8 @@
 			}
 			selectionProposal = matches.toArray(new ICompletionProposal[matches
 					.size()]);
+		} else {
+			isSelection = false;
 		}
 		ICompletionProposal[] completionProposals = super
 				.computeCompletionProposals(viewer, offset);
@@ -62,11 +75,11 @@
 				extractPrefix(viewer, offset));
 
 		List<ICompletionProposal> matches = new ArrayList<ICompletionProposal>();
-		for (int i = 0; i < completionProposals.length; i++) {
-			matches.add(completionProposals[i]);
-		}
 		for (int i = 0; i < selectionProposal.length; i++) {
 			matches.add(selectionProposal[i]);
+		}
+		for (int i = 0; i < completionProposals.length; i++) {
+			matches.add(completionProposals[i]);
 		}
 
 		return matches.toArray(new ICompletionProposal[matches.size()]);
