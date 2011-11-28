@@ -1,23 +1,26 @@
 	private void updateReferences(int start, int end) {
-		
+
 		int valueStart = start + getTagKind(tagKind).length() + 1;
-		
-		if (tagKind == RETURN || tagKind == VAR || tagKind == THROWS || tagKind == SEE) {
-			
+
+		if (tagKind == RETURN || tagKind == VAR || tagKind == THROWS
+				|| tagKind == SEE) {
+
 			int wordStart = getNonWhitespaceIndex(value, 0);
 			int wordEnd = getWhitespaceIndex(value, wordStart);
 			if (wordStart < wordEnd) {
-				
+
 				String word = value.substring(wordStart, wordEnd);
 
 				int classStart = getClassStartIndex(word, 0);
 				int classEnd = getClassEndIndex(word, classStart);
 				List<TypeReference> types = new LinkedList<TypeReference>();
-				
+
 				while (classStart < classEnd) {
 					String className = word.substring(classStart, classEnd);
-					types.add(new TypeReference(valueStart + wordStart + classStart, valueStart + wordStart + classEnd, className));
-					
+					types.add(new TypeReference(valueStart + wordStart
+							+ classStart, valueStart + wordStart + classEnd,
+							className));
+
 					classStart = getClassStartIndex(word, classEnd);
 					classEnd = getClassEndIndex(word, classStart);
 				}
@@ -26,25 +29,35 @@
 				}
 			}
 		} else if (tagKind == PARAM) {
-			
+
 			int firstWordStart = getNonWhitespaceIndex(value, 0);
 			int firstWordEnd = getWhitespaceIndex(value, firstWordStart);
 			if (firstWordStart < firstWordEnd) {
-				
+
 				int secondWordStart = getNonWhitespaceIndex(value, firstWordEnd);
 				int secondWordEnd = getWhitespaceIndex(value, secondWordStart);
 				if (secondWordStart < secondWordEnd) {
 
-					String firstWord = value.substring(firstWordStart, firstWordEnd);
-					String secondWord = value.substring(secondWordStart, secondWordEnd);
+					String firstWord = value.substring(firstWordStart,
+							firstWordEnd);
+					String secondWord = value.substring(secondWordStart,
+							secondWordEnd);
 					if (firstWord.charAt(0) == '$') {
 						references = new SimpleReference[2];
-						references[0] = new VariableReference(valueStart + firstWordStart, valueStart + firstWordEnd, firstWord);
-						references[1] = new TypeReference(valueStart + secondWordStart, valueStart + secondWordEnd, secondWord);
+						references[0] = new VariableReference(valueStart
+								+ firstWordStart, valueStart + firstWordEnd,
+								firstWord);
+						references[1] = new TypeReference(valueStart
+								+ secondWordStart, valueStart + secondWordEnd,
+								secondWord);
 					} else if (secondWord.charAt(0) == '$') {
 						references = new SimpleReference[2];
-						references[0] = new VariableReference(valueStart + secondWordStart, valueStart + secondWordEnd, secondWord);
-						references[1] = new TypeReference(valueStart + firstWordStart, valueStart + firstWordEnd, firstWord);
+						references[0] = new VariableReference(valueStart
+								+ secondWordStart, valueStart + secondWordEnd,
+								secondWord);
+						references[1] = new TypeReference(valueStart
+								+ firstWordStart, valueStart + firstWordEnd,
+								firstWord);
 					}
 				}
 			}
