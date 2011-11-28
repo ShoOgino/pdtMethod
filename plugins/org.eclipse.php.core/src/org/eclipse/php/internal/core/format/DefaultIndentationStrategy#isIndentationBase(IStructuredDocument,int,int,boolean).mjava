@@ -1,9 +1,17 @@
 	private static boolean isIndentationBase(
-			final IStructuredDocument document, final int checkedOffset,
-			final int forOffset, int currLineIndex, boolean checkMultiLine)
+			final IStructuredDocument document, final int forOffset,
+			int currLineIndex, boolean checkMultiLine)
 			throws BadLocationException {
-		final IRegion lineInfo = document
-				.getLineInformationOfOffset(checkedOffset);
+
+		final IRegion lineInfo = document.getLineInformation(currLineIndex);
+
+		if (lineInfo.getLength() == 0) {
+			return false;
+		}
+
+		final int checkedOffset = Math.min(
+				lineInfo.getOffset() + lineInfo.getLength(), forOffset);
+
 		int lineStart = lineInfo.getOffset();
 
 		if (isBlanks(document, lineStart, checkedOffset, forOffset))
@@ -34,10 +42,9 @@
 
 		if (shouldNotConsiderAsIndentationBase(checkedLineBeginState,
 				forLineEndState)
-				|| checkMultiLine
-				&& isInMultiLineStatement(document, checkedLineBeginState,
-						checkedLineEndState, checkedOffset, lineStart,
-						currLineIndex))
+				|| (checkMultiLine && isInMultiLineStatement(document,
+						checkedLineBeginState, checkedLineEndState,
+						checkedOffset, lineStart, currLineIndex)))
 			return false;
 
 		// Fix bug #201688

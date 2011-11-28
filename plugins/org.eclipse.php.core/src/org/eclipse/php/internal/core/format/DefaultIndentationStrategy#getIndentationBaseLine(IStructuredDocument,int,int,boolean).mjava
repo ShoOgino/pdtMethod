@@ -1,23 +1,15 @@
 	public static int getIndentationBaseLine(
-			final IStructuredDocument document, final int lineNumber,
+			final IStructuredDocument document, int currLineIndex,
 			final int offset, boolean checkMultiLine)
 			throws BadLocationException {
-		int currLineIndex = lineNumber;
 		while (currLineIndex >= 0) {
-			final IRegion lineInfo = document.getLineInformation(currLineIndex);
-			if (lineInfo.getLength() == 0) {
-				// then its not indentation base for sure
-				currLineIndex--;
-				continue;
-			}
-			final int currLineEndOffset = lineInfo.getOffset()
-					+ lineInfo.getLength();
-			final boolean isIndentationBase = isIndentationBase(document,
-					Math.min(offset, currLineEndOffset), offset, currLineIndex,
-					checkMultiLine);
-			if (isIndentationBase)
+
+			if (isIndentationBase(document, offset, currLineIndex,
+					checkMultiLine))
 				return currLineIndex;
-			currLineIndex--;
+
+			currLineIndex = getNextLineIndex(document, checkMultiLine,
+					currLineIndex);
 		}
 		return 0;
 	}
