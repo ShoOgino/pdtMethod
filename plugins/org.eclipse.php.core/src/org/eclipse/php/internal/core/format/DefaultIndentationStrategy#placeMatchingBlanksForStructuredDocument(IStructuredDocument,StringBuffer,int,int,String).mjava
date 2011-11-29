@@ -2,6 +2,13 @@
 			final IStructuredDocument document, final StringBuffer result,
 			final int lineNumber, final int forOffset, String commandText)
 			throws BadLocationException {
+		int indentationWrappedLineSize = FormatterUtils
+				.getFormatterCommonPrferences().getIndentationWrappedLineSize(
+						document);
+		int indentationSize = FormatterUtils.getFormatterCommonPrferences()
+				.getIndentationSize(document);
+		char indentationChar = FormatterUtils.getFormatterCommonPrferences()
+				.getIndentationChar(document);
 		boolean enterKeyPressed = document.getLineDelimiter().equals(
 				result.toString());
 		int lastNonEmptyLineIndex = getIndentationBaseLine(document,
@@ -27,10 +34,12 @@
 			line = lastNonEmptyLineIndex;
 		}
 		if (shouldIndent(document, offset, line)) {
-			indent(document, result);
+			indent(document, result, indentationChar, indentationSize);
 		} else {
 			boolean intended = indentMultiLineCase(document, lineNumber,
-					forOffset, enterKeyPressed, result, blanks, commandText);
+					forOffset, enterKeyPressed, result, blanks, commandText,
+					indentationWrappedLineSize, indentationChar,
+					indentationSize);
 			if (!intended) {
 				lastNonEmptyLineIndex = lineNumber;
 				if (!enterKeyPressed && lastNonEmptyLineIndex > 0) {
@@ -52,7 +61,8 @@
 						// cursor
 						// position when we press enter key
 						placeStringIndentation(document, lastNonEmptyLineIndex,
-								result);
+								result, indentationWrappedLineSize,
+								indentationChar, indentationSize);
 					}
 					// if (enterKeyPressed) {
 					// this line is one of multi line statement
