@@ -1,8 +1,7 @@
 	private static boolean indentMultiLineCase(IStructuredDocument document,
 			int lineNumber, int offset, boolean enterKeyPressed,
 			StringBuffer result, String blanks, String commandText,
-			int indentationWrappedLineSize, int indentationChar,
-			int indentationSize) {
+			IndentationObject indentationObject) {
 		// LineState lineState = new LineState();
 		// StringBuffer sb = new StringBuffer();
 		try {
@@ -14,7 +13,8 @@
 			if (inBracelessBlock(scanner, document, offset)) {
 				// lineState.inBracelessBlock = true;
 				if (!"{".equals(commandText)) {
-					indent(document, result, indentationChar, indentationSize);
+					indent(document, result, indentationObject.indentationChar,
+							indentationObject.indentationSize);
 				}
 				return true;
 			} else if (content.trim().startsWith(
@@ -47,6 +47,10 @@
 				int peer = scanner.findOpeningPeer(offset - 1,
 						PHPHeuristicScanner.LPAREN, PHPHeuristicScanner.RPAREN);
 				if (peer != PHPHeuristicScanner.NOT_FOUND) {
+
+					int token = scanner.previousToken(peer - 1,
+							PHPHeuristicScanner.UNBOUND);
+					boolean isArray = token == Symbols.TokenARRAY;
 					// lineState.indent.setLength(0)
 					// int baseLine = document.getLineOfOffset(peer);
 					String newblanks = FormatterUtils.getLineBlanks(document,
@@ -63,21 +67,23 @@
 									.trim()
 									.startsWith(
 											BLANK + PHPHeuristicScanner.RPAREN)) {
-						indent(document, newBuffer, indentationWrappedLineSize,
-								indentationChar, indentationSize);
+						if (isArray) {
+							indent(document, newBuffer,
+									indentationObject.indentationArrayInitSize,
+									indentationObject.indentationChar,
+									indentationObject.indentationSize);
+						} else {
+							indent(document,
+									newBuffer,
+									indentationObject.indentationWrappedLineSize,
+									indentationObject.indentationChar,
+									indentationObject.indentationSize);
+						}
 					}
-					// if (newBuffer.length() > blanks.length()) {
 
 					result.setLength(result.length() - blanks.length());
 					result.append(newBuffer.toString());
 					return true;
-					// }
-					// if(isset($a)
-					// ||abc(isset($b),
-					// isset($b))){
-					// echo "";//
-					// echo "";//
-					// }
 				}
 			}
 		} catch (final BadLocationException e) {
