@@ -4,12 +4,16 @@
 
 		boolean hasNewClassContext = false;
 		boolean hasNewExceptionClassContext = false;
+		boolean hasInstanceOfContext = false;
 		for (ICompletionContext c : allContexts) {
 			if (c instanceof ExceptionClassInstantiationContext) {
 				hasNewExceptionClassContext = true;
 				break;
 			} else if (c instanceof ClassInstantiationContext) {
 				hasNewClassContext = true;
+				break;
+			} else if (c instanceof InstanceOfContext) {
+				hasInstanceOfContext = true;
 				break;
 			}
 		}
@@ -20,6 +24,8 @@
 			} else if (hasNewExceptionClassContext) {
 				strategies
 						.add(new ExceptionClassInstantiationStrategy(context));
+			} else if (hasInstanceOfContext) {
+				strategies.add(new InstanceOfStrategy(context));
 			} else {
 				strategies.add(new GlobalTypesStrategy(context));
 				strategies.add(new GlobalFunctionsStrategy(context));
@@ -33,6 +39,8 @@
 				strategies
 						.add(new NamespaceExceptionClassInstantiationStrategy(
 								context));
+			} else if (hasInstanceOfContext) {
+				strategies.add(new NamespaceInstanceOfStrategy(context));
 			} else {
 				strategies.add(new NamespaceTypesStrategy(context));
 				strategies.add(new NamespaceFunctionsStrategy(context));
