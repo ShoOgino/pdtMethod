@@ -1,0 +1,22 @@
+	public void testUseTrait2() throws Exception {
+		String str = "<?php class Aliased_Talker { use A, B {B::smallTalk insteadof A;\nA::bigTalk insteadof B;\nB::bigTalk as talk;\n}\n } ?>";
+		initialize(str);
+
+		List<TraitPrecedenceStatement> arrayAccess = getAllOfType(program,
+				TraitPrecedenceStatement.class);
+		Assert.assertTrue("Unexpected list size.", arrayAccess.size() == 2);
+		arrayAccess.get(0).getPrecedence().getMethodReference().getClassName()
+				.segments().get(0).setName("B1");
+		arrayAccess.get(0).getPrecedence().getMethodReference()
+				.setFunctionName(ast.newIdentifier("bigTalk"));
+
+		List<TraitAliasStatement> aliasStatement = getAllOfType(program,
+				TraitAliasStatement.class);
+		Assert.assertTrue("Unexpected list size.", aliasStatement.size() == 1);
+		aliasStatement.get(0).getAlias()
+				.setFunctionName(ast.newIdentifier("talking"));
+
+		rewrite();
+		checkResult("<?php class Aliased_Talker { use A, B {B1::bigTalk insteadof A;\nA::bigTalk insteadof B;\nB::bigTalk as talking;\n}\n } ?>");
+	}
+
