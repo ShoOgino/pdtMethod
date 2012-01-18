@@ -1,0 +1,27 @@
+	public static IMethod[] getTraitMethods(IType type, Set<String> nameSet) {
+		UseTrait useTrait = parse(type);
+		List<IMethod> fieldList = new ArrayList<IMethod>();
+		for (String trait : useTrait.getTraits()) {
+			IType[] traitTypes = PhpModelAccess.getDefault().findTraits(trait,
+					MatchRule.EXACT, 0, 0, createSearchScope(type), null);
+			for (IType traitType : traitTypes) {
+				IMethod[] methods;
+				try {
+					methods = traitType.getMethods();
+					for (IMethod method : methods) {
+						method = getMethodWrapper(useTrait, method);
+						if (method == null) {
+							continue;
+						}
+						String elementName = method.getElementName();
+						if (!nameSet.contains(elementName)) {
+							fieldList.add(method);
+						}
+					}
+				} catch (ModelException e) {
+				}
+			}
+		}
+		return fieldList.toArray(new IMethod[fieldList.size()]);
+	}
+

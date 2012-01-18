@@ -14,7 +14,26 @@
 
 		List<IField> result = new LinkedList<IField>();
 		if (type.exists()) {
+			Set<String> nameSet = new HashSet<String>();
 			IField[] fields = type.getFields();
+			for (IField field : fields) {
+				String elementName = field.getElementName();
+
+				if (elementName.startsWith("$")) {
+					nameSet.add(elementName.substring(1));
+				}
+				if (elementName.startsWith("$") && !prefix.startsWith("$")) {
+					elementName = elementName.substring(1);
+				}
+				if (exactName
+						&& elementName.equalsIgnoreCase(prefix)
+						|| !exactName
+						&& elementName.toLowerCase().startsWith(
+								prefix.toLowerCase())) {
+					result.add(field);
+				}
+			}
+			fields = TraitUtils.getTraitFields(type, nameSet);
 			for (IField field : fields) {
 				String elementName = field.getElementName();
 				if (elementName.startsWith("$") && !prefix.startsWith("$")) {

@@ -1,0 +1,30 @@
+	/**
+	 * Returns PHPDoc block associated with the given IField element
+	 * 
+	 * @param field
+	 * @return
+	 */
+	public static PHPDocBlock getDocBlock(IField field) {
+		if (field == null) {
+			return null;
+		}
+		try {
+			ISourceModule sourceModule = field.getSourceModule();
+			ModuleDeclaration moduleDeclaration = SourceParserUtil
+					.getModuleDeclaration(sourceModule);
+			ASTNode fieldDeclaration = CopyOfPHPModelUtils.getNodeByField(
+					moduleDeclaration, field);
+			if (fieldDeclaration instanceof IPHPDocAwareDeclaration) {
+				return ((IPHPDocAwareDeclaration) fieldDeclaration).getPHPDoc();
+			} else if (fieldDeclaration == null) {
+				return DefineMethodUtils.getDefinePHPDocBlockByField(
+						moduleDeclaration, field);
+			}
+		} catch (ModelException e) {
+			if (DLTKCore.DEBUG) {
+				Logger.logException(e);
+			}
+		}
+		return null;
+	}
+

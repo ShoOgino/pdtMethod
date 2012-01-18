@@ -1,0 +1,30 @@
+	public static String getClassNameForNewStatement(
+			TextSequence newClassStatementText, PHPVersion phpVersion) {
+		if (phpVersion.isGreaterThan(PHPVersion.PHP5_3)) {
+			// TextSequence newClassStatementText =
+			// statementText.subTextSequence(
+			// functionNameStart + 1, propertyEndPosition - 1);
+			String newClassName = newClassStatementText.toString().trim();
+			if (newClassName.startsWith("new") && newClassName.endsWith(")")) {
+				int newClassNameEnd = getFunctionNameEndOffset(
+						newClassStatementText,
+						newClassStatementText.length() - 1);
+				int newClassNameStart = PHPTextSequenceUtilities
+						.readIdentifierStartIndex(phpVersion,
+								newClassStatementText, newClassNameEnd, false);
+				if (newClassNameStart > 3
+						&& newClassNameStart < newClassNameEnd) {// should have
+																	// blank
+																	// chars
+																	// after
+					// 'new'
+					newClassName = newClassStatementText.subSequence(
+							newClassNameStart, newClassNameEnd).toString();
+
+					return newClassName;
+				}
+			}
+		}
+		return null;
+	}
+

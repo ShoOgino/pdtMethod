@@ -80,8 +80,8 @@
 		// if its function call calc the return type.
 		if (propertyEndPosition > 0
 				&& statementText.charAt(propertyEndPosition - 1) == ')') {
-			int functionNameEnd = getFunctionNameEndOffset(statementText,
-					propertyEndPosition - 1);
+			int functionNameEnd = PHPModelUtils.getFunctionNameEndOffset(
+					statementText, propertyEndPosition - 1);
 			int functionNameStart = PHPTextSequenceUtilities
 					.readIdentifierStartIndex(phpVersion, statementText,
 							functionNameEnd, false);
@@ -90,10 +90,50 @@
 					functionNameEnd).toString();
 			// if its a non class function
 			Set<IType> returnTypes = new LinkedHashSet<IType>();
-			IType[] types = getFunctionReturnType(null, functionName,
-					sourceModule, offset);
-			if (types != null) {
-				returnTypes.addAll(Arrays.asList(types));
+			if (functionNameStart == functionNameEnd
+					&& statementText.charAt(functionNameStart) == '('
+					&& propertyEndPosition - 1 > functionNameStart + 1
+					&& phpVersion.isGreaterThan(PHPVersion.PHP5_3)) {
+				TextSequence newClassStatementText = statementText
+						.subTextSequence(functionNameStart + 1,
+								propertyEndPosition - 1);
+				String newClassName = PHPModelUtils
+						.getClassNameForNewStatement(newClassStatementText,
+								phpVersion);
+				try {
+					return PHPModelUtils.getTypes(newClassName, sourceModule,
+							offset, null, null);
+				} catch (ModelException e) {
+					if (DLTKCore.DEBUG) {
+						e.printStackTrace();
+					}
+				}
+				// String newClassName = statementText
+				// .subSequence(functionNameStart + 1,
+				// propertyEndPosition - 1).toString().trim();
+				// if (newClassName.startsWith("new")
+				// && newClassName.endsWith(")")) {
+				// int newClassNameEnd = PHPModelUtils.getFunctionNameEndOffset(
+				// newClassStatementText,
+				// newClassStatementText.length() - 1);
+				// int newClassNameStart = PHPTextSequenceUtilities
+				// .readIdentifierStartIndex(phpVersion,
+				// newClassStatementText, newClassNameEnd,
+				// false);
+				// if (newClassNameStart > 3) {// should have blank chars after
+				// // 'new'
+				// newClassName = newClassStatementText.subSequence(
+				// newClassNameStart, newClassNameEnd).toString();
+				//
+				// }
+				// }
+
+			} else {
+				IType[] types = getFunctionReturnType(null, functionName,
+						sourceModule, offset);
+				if (types != null) {
+					returnTypes.addAll(Arrays.asList(types));
+				}
 			}
 			return returnTypes.toArray(new IType[returnTypes.size()]);
 		}

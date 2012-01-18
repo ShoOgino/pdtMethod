@@ -1,0 +1,24 @@
+	public static UseTrait parse(IType type) {
+		final UseTrait useTrait = new UseTrait();
+		final ISourceModule sourceModule = type.getSourceModule();
+		try {
+			final ISourceRange sourceRange = type.getSourceRange();
+			ModuleDeclaration moduleDeclaration = SourceParserUtil
+					.getModuleDeclaration(sourceModule);
+			moduleDeclaration.traverse(new PHPASTVisitor() {
+				public boolean visit(TraitUseStatement s) throws Exception {
+					if (s.sourceStart() > sourceRange.getOffset()
+							&& s.sourceEnd() < sourceRange.getOffset()
+									+ sourceRange.getLength()) {
+						parse(sourceModule, sourceRange.getOffset(), s,
+								useTrait);
+					}
+					return false;
+				}
+			});
+		} catch (ModelException e1) {
+		} catch (Exception e) {
+		}
+		return useTrait;
+	}
+

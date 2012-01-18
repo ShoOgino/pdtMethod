@@ -20,58 +20,6 @@
 	public static IType[] getTypes(String typeName, ISourceModule sourceModule,
 			int offset, IModelAccessCache cache, IProgressMonitor monitor)
 			throws ModelException {
-
-		if (typeName == null || typeName.length() == 0) {
-			return PhpModelAccess.NULL_TYPES;
-		}
-
-		String namespace = extractNamespaceName(typeName, sourceModule, offset);
-		typeName = extractElementName(typeName);
-		if (namespace != null) {
-			if (namespace.length() > 0) {
-				typeName = getRealName(typeName, sourceModule, offset, typeName);
-
-				IType[] types = getNamespaceType(namespace, typeName, true,
-						sourceModule, cache, monitor);
-				if (types.length > 0) {
-					return types;
-				}
-				return PhpModelAccess.NULL_TYPES;
-			}
-			// it's a global reference: \A
-		} else {
-			// look for the element in current namespace:
-			IType currentNamespace = getCurrentNamespace(sourceModule, offset);
-			if (currentNamespace != null) {
-				namespace = currentNamespace.getElementName();
-				IType[] types = getNamespaceType(namespace, typeName, true,
-						sourceModule, cache, monitor);
-				if (types.length > 0) {
-					return types;
-				}
-			}
-		}
-
-		Collection<IType> types;
-		if (cache == null) {
-			IDLTKSearchScope scope = SearchEngine
-					.createSearchScope(sourceModule.getScriptProject());
-			IType[] r = PhpModelAccess.getDefault().findTypes(typeName,
-					MatchRule.EXACT, 0, 0, scope, null);
-			types = filterElements(sourceModule, Arrays.asList(r), null,
-					monitor);
-		} else {
-			types = cache.getTypes(sourceModule, typeName, null, monitor);
-			if (types == null) {
-				return PhpModelAccess.NULL_TYPES;
-			}
-		}
-		List<IType> result = new ArrayList<IType>(types.size());
-		for (IType type : types) {
-			if (getCurrentNamespace(type) == null) {
-				result.add(type);
-			}
-		}
-		return (IType[]) result.toArray(new IType[result.size()]);
+		return getTypes(typeName, sourceModule, offset, cache, monitor, true);
 	}
 

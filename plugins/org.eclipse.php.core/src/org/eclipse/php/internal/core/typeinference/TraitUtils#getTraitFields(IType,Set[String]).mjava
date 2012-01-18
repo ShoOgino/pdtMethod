@@ -1,0 +1,30 @@
+	public static IField[] getTraitFields(IType type, Set<String> nameSet) {
+		UseTrait useTrait = parse(type);
+		List<IField> fieldList = new ArrayList<IField>();
+		for (String trait : useTrait.getTraits()) {
+			IType[] traitTypes = PhpModelAccess.getDefault().findTraits(trait,
+					MatchRule.EXACT, 0, 0, createSearchScope(type), null);
+			for (IType traitType : traitTypes) {
+				IField[] fields;
+				try {
+					fields = traitType.getFields();
+					for (IField field : fields) {
+						field = getFieldWrapper(useTrait, field);
+						if (field == null) {
+							continue;
+						}
+						String elementName = field.getElementName();
+						if (elementName.startsWith("$")) {
+							elementName = elementName.substring(1);
+						}
+						if (!nameSet.contains(elementName)) {
+							fieldList.add(field);
+						}
+					}
+				} catch (ModelException e) {
+				}
+			}
+		}
+		return fieldList.toArray(new IField[fieldList.size()]);
+	}
+

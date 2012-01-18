@@ -1,0 +1,58 @@
+	public static UseTrait parse(ISourceModule sourceModule, int offset,
+			TraitUseStatement statement, UseTrait useTrait) {
+		if (useTrait == null) {
+			useTrait = new UseTrait();
+		}
+		for (TypeReference typeReference : statement.getTraitList()) {
+			useTrait.getTraits().add(
+					PHPModelUtils.getFullName(typeReference.getName(),
+							sourceModule, offset));
+		}
+
+		for (TraitStatement traitStatement : statement.getTsList()) {
+			if (traitStatement instanceof TraitAliasStatement) {
+				TraitAliasStatement new_name = (TraitAliasStatement) traitStatement;
+				Expression traitMethod = new_name.getAlias().getTraitMethod();
+				if (traitMethod instanceof SimpleReference) {
+					SimpleReference simpleReference = (SimpleReference) traitMethod;
+					TraitAliasObject ta = new TraitAliasObject();
+					ta.traitMethodName = simpleReference.getName();
+					ta.newMethodVisibility = new_name.getAlias().getModifier();
+					ta.newMethodName = new_name.getAlias().getMethodName()
+							.getName();
+					useTrait.getTraitAliases().add(ta);
+					useTrait.getAliasMap().put(ta.traitMethodName, ta);
+				} else if (traitMethod instanceof FullyQualifiedTraitMethodReference) {
+					FullyQualifiedTraitMethodReference simpleReference = (FullyQualifiedTraitMethodReference) traitMethod;
+
+					TraitAliasObject ta = new TraitAliasObject();
+					ta.traitName = PHPModelUtils.getFullName(simpleReference
+							.getClassName().getName(), sourceModule, offset);
+					ta.traitMethodName = simpleReference.getFunctionName();
+					ta.newMethodVisibility = new_name.getAlias().getModifier();
+					ta.newMethodName = new_name.getAlias().getMethodName()
+							.getName();
+					useTrait.getTraitAliases().add(ta);
+					useTrait.getAliasMap().put(ta.traitMethodName, ta);
+				}
+
+			} else if (traitStatement instanceof TraitPrecedenceStatement) {
+				TraitPrecedenceStatement new_name = (TraitPrecedenceStatement) traitStatement;
+				TraitPrecedenceObject tpo = new TraitPrecedenceObject();
+				tpo.traitName = PHPModelUtils.getFullName(new_name
+						.getPrecedence().getMethodReference().getClassName()
+						.getName(), sourceModule, offset);
+				tpo.traitMethodName = new_name.getPrecedence()
+						.getMethodReference().getFunctionName();
+
+				for (TypeReference typeReference : new_name.getPrecedence()
+						.getTrList()) {
+					tpo.insteadofTraitNameList.add(typeReference.getName());
+				}
+				useTrait.getPrecedenceMap().put(tpo.traitMethodName, tpo);
+
+			}
+		}
+		return useTrait;
+	}
+

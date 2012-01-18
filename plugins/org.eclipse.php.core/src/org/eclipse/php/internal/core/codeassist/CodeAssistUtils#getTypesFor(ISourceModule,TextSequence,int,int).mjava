@@ -55,10 +55,28 @@
 			return getVariableType(types, propertyName, offset);
 		}
 
+		boolean arrayReference = false;
+		PHPVersion version = ProjectOptions.getPhpVersion(sourceModule
+				.getScriptProject().getProject());
+		if (propertyName.endsWith("]")
+				&& version.isGreaterThan(PHPVersion.PHP5_3)) {
+			int closeBracketIndex = propertyName.lastIndexOf(')');
+			if (closeBracketIndex >= 0) {
+				if (propertyName.indexOf('[', closeBracketIndex) > closeBracketIndex) {
+					arrayReference = true;
+				}
+			}
+		}
 		String functionName = propertyName.substring(0, bracketIndex).trim();
 		Set<IType> result = new LinkedHashSet<IType>();
-		IType[] returnTypes = getFunctionReturnType(types, functionName,
-				sourceModule, offset);
+		IType[] returnTypes = null;
+		if (arrayReference) {
+			returnTypes = getFunctionArrayReturnType(types, functionName,
+					sourceModule, offset);
+		} else {
+			returnTypes = getFunctionReturnType(types, functionName,
+					sourceModule, offset);
+		}
 		if (returnTypes != null) {
 			result.addAll(Arrays.asList(returnTypes));
 		}
