@@ -265,13 +265,46 @@
 			} else {
 				TextPresentation presentation = new TextPresentation(damage,
 						1000);
-				for (int i = 0; i < partitions.length; i++) {
-					ITypedRegion r = partitions[i];
-					IPresentationRepairer repairer = getRepairer(r.getType());
-					if (repairer != null)
+
+				List<ITypedRegion> damagedPartitions = findDamagedPartitions(
+						partitions, damage);
+
+				// performance optimisation: if only PHPScriptRegion has been
+				// damaged and not fully reparsed we can try to create
+				// presentation for updated tokens only.
+				if (damagedPartitions.size() == 1) {
+					ITypedRegion r = damagedPartitions.get(0);
+					IPresentationRepairer repairer = getRepairer(damagedPartitions
+							.get(0).getType());
+					if (repairer != null) {
+						if (r.getType().equals(PHPPartitionTypes.PHP_DEFAULT)) {
+							if (repairer instanceof StructuredDocumentDamagerRepairer) {
+								TextPresentation newPresentation = ((StructuredDocumentDamagerRepairer) repairer)
+										.getPresentation(r, damage);
+								if (newPresentation != null) {
+									presentation = newPresentation;
+								}
+							}
+						}
 						repairer.createPresentation(presentation, r);
+					}
+				} else {
+					for (int i = 0; i < damagedPartitions.size(); i++) {
+						ITypedRegion r = damagedPartitions.get(i);
+						IPresentationRepairer repairer = getRepairer(r
+								.getType());
+						if (repairer != null)
+							repairer.createPresentation(presentation, r);
+					}
 				}
 
+				// OLD CODE
+				// for (int i = 0; i < partitions.length; i++) {
+				// ITypedRegion r = partitions[i];
+				// IPresentationRepairer repairer = getRepairer(r.getType());
+				// if (repairer != null)
+				// repairer.createPresentation(presentation, r);
+				// }
 				return presentation;
 			}
 

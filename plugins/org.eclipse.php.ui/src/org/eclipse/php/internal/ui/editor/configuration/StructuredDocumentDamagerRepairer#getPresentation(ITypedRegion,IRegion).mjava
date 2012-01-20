@@ -1,0 +1,31 @@
+	/**
+	 * Returns presentation which covers only updated php tokens in case when
+	 * the damage covers whole PHP region and this regions has not been fully
+	 * reparsed.
+	 * 
+	 * @param region
+	 * @param damage
+	 * @return presentation or null - if region has been fully reparsed
+	 */
+	public TextPresentation getPresentation(ITypedRegion region, IRegion damage) {
+		if (fProvider instanceof LineStyleProviderForPhp) {
+			IStructuredDocumentRegion structuredDocumentRegion = ((LineStyleProviderForPhp) fProvider)
+					.getDamagedRegion(region);
+			ITextRegion textReg = structuredDocumentRegion
+					.getRegionAtCharacterOffset(region.getOffset());
+			if (textReg != null
+					&& textReg.getType() == PHPRegionContext.PHP_CONTENT
+					&& damageCoversWholeRegion(region, textReg, damage)) {
+				IPhpScriptRegion phpScriptRegion = (IPhpScriptRegion) textReg;
+				if (!phpScriptRegion.isFullReparsed()) {
+					Region r = new Region(
+							phpScriptRegion.getUpdatedTokensStart()
+									+ phpScriptRegion.getStart(),
+							phpScriptRegion.getUpdatedTokensLength());
+					return new TextPresentation((IRegion) r, 1000);
+				}
+			}
+		}
+		return null;
+	}
+

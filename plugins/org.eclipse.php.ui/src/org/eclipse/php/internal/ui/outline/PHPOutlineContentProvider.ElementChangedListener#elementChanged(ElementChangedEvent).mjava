@@ -1,51 +1,65 @@
 		public void elementChanged(final ElementChangedEvent e) {
 
-			Control control = fOutlineViewer.getControl();
+			final Control control = fOutlineViewer.getControl();
 			if (control == null || control.isDisposed()) {
 				return;
 			}
 
-			Display d = control.getDisplay();
-			if (d != null) {
-				d.asyncExec(new Runnable() {
-					public void run() {
-						IWorkbenchWindow activeWorkbenchWindow = PlatformUI
-								.getWorkbench().getActiveWorkbenchWindow();
-						if (activeWorkbenchWindow != null) {
-							IWorkbenchPage activePage = activeWorkbenchWindow
-									.getActivePage();
-							if (activePage != null) {
-								IEditorPart activeEditor = activePage
-										.getActiveEditor();
-								if (activeEditor instanceof PHPStructuredEditor) {
-									IModelElement base = ((PHPStructuredEditor) activeEditor)
-											.getModelElement();
+			// update useStatements
+			Job job = new Job("Updating Outline view") {
 
-									if (isNamespaceSupported(base)) {
-										ModuleDeclaration moduleDeclaration = SourceParserUtil
-												.getModuleDeclaration((ISourceModule) base);
-										UseStatement[] useStatements = ASTUtils
-												.getUseStatements(
-														moduleDeclaration,
-														moduleDeclaration
-																.sourceEnd());
-										useStatementsCountNew = useStatements.length;
-									}
+				@Override
+				protected IStatus run(IProgressMonitor monitor) {
 
-									IModelElementDelta delta = findElement(
-											base, e.getDelta());
-									if ((delta != null || e.getType() == ElementChangedEvent.POST_CHANGE)
-											&& fOutlineViewer != null
-											&& fOutlineViewer.getControl() != null
-											&& !fOutlineViewer.getControl()
-													.isDisposed()) {
-										fOutlineViewer.refresh();
+					fUseStatements = getUseStatements();
+
+					IWorkbenchWindow activeWorkbenchWindow = PlatformUI
+							.getWorkbench().getActiveWorkbenchWindow();
+					if (activeWorkbenchWindow != null) {
+						IWorkbenchPage activePage = activeWorkbenchWindow
+								.getActivePage();
+						if (activePage != null) {
+							IEditorPart activeEditor = activePage
+									.getActiveEditor();
+							if (activeEditor instanceof PHPStructuredEditor) {
+								IModelElement base = ((PHPStructuredEditor) activeEditor)
+										.getModelElement();
+
+								if (isNamespaceSupported(base)) {
+									ModuleDeclaration moduleDeclaration = SourceParserUtil
+											.getModuleDeclaration((ISourceModule) base);
+									UseStatement[] useStatements = ASTUtils
+											.getUseStatements(
+													moduleDeclaration,
+													moduleDeclaration
+															.sourceEnd());
+									useStatementsCountNew = useStatements.length;
+								}
+
+								IModelElementDelta delta = findElement(base,
+										e.getDelta());
+								if ((delta != null || e.getType() == ElementChangedEvent.POST_CHANGE)
+										&& fOutlineViewer != null
+										&& fOutlineViewer.getControl() != null
+										&& !fOutlineViewer.getControl()
+												.isDisposed()) {
+									Display d = control.getDisplay();
+									if (d != null) {
+										d.asyncExec(new Runnable() {
+											public void run() {
+												fOutlineViewer.refresh();
+											}
+										});
 									}
 								}
 							}
 						}
 					}
-				});
-			}
+					return Status.OK_STATUS;
+				}
+			};
+			job.setPriority(Job.DECORATE);
+			job.setSystem(true);
+			job.schedule();
 		}
 
