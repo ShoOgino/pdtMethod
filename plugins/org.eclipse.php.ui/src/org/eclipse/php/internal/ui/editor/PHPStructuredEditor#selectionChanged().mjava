@@ -6,13 +6,18 @@
 	protected void selectionChanged() {
 		if (getSelectionProvider() == null)
 			return;
-		ISourceReference element = computeHighlightRangeSourceReference();
-		// if
-		// (getPreferenceStore().getBoolean(PreferenceConstants.EDITOR_SYNC_OUTLINE_ON_CURSOR_MOVE))
-		// synchronizeOutlinePage(element);
-		setSelection(element, false);
-		// if (!fSelectionChangedViaGotoAnnotation)
-		// updateStatusLine();
-		// fSelectionChangedViaGotoAnnotation= false;
+		Job job = new Job("PHPStructuredEditor selection changed job") {
+
+			@Override
+			protected IStatus run(IProgressMonitor monitor) {
+				ISourceReference element = computeHighlightRangeSourceReference();
+				setSelection(element, false);
+				return Status.OK_STATUS;
+			}
+		};
+		job.setPriority(Job.DECORATE);
+		job.setSystem(true);
+		job.schedule();
+
 	}
 
