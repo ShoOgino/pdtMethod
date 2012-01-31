@@ -1,0 +1,47 @@
+	/**
+	 * Returns type of a variable defined by name.
+	 * 
+	 * @param sourceModule
+	 * @param variableName
+	 * @param position
+	 * @return
+	 */
+	public static IType[] getArrayVariableType(ISourceModule sourceModule,
+			String variableName, int position) {
+		ModuleDeclaration moduleDeclaration = SourceParserUtil
+				.getModuleDeclaration(sourceModule, null);
+		IContext context = ASTUtils.findContext(sourceModule,
+				moduleDeclaration, position);
+		if (context != null) {
+			VariableReference varReference = getVariableReference(variableName,
+					position);
+			ExpressionTypeGoal goal = new ExpressionTypeGoal(context,
+					varReference);
+			PHPTypeInferencer typeInferencer = new PHPTypeInferencer();
+			IEvaluatedType evaluatedType = typeInferencer.evaluateType(goal);
+
+			if (evaluatedType instanceof MultiTypeType) {
+				List<IType> tmpList = new LinkedList<IType>();
+				List<IEvaluatedType> possibleTypes = ((MultiTypeType) evaluatedType)
+						.getTypes();
+				for (IEvaluatedType possibleType : possibleTypes) {
+					IType[] tmpArray = PHPTypeInferenceUtils.getModelElements(
+							possibleType, (ISourceModuleContext) context,
+							position, (IModelAccessCache) null);
+					if (tmpArray != null) {
+						tmpList.addAll(Arrays.asList(tmpArray));
+					}
+				}
+				// the elements are filtered already
+				return tmpList.toArray(new IType[tmpList.size()]);
+			}
+
+			IType[] modelElements = PHPTypeInferenceUtils.getModelElements(
+					evaluatedType, (ISourceModuleContext) context, position);
+			if (modelElements != null) {
+				return modelElements;
+			}
+		}
+		return EMPTY_TYPES;
+	}
+

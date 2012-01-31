@@ -66,7 +66,25 @@
 							+ quotedVarName.substring(1,
 									quotedVarName.length() - 1); //$NON-NLS-1$
 					// check for $array[0] scenario
-				} else if (testedVar.endsWith("}") || testedVar.endsWith("]")) {
+				} else if (testedVar.endsWith("}")) {
+					className = testedVar;
+				} else if (testedVar.endsWith("]")) {
+					if (statementText.toString().lastIndexOf('[') > 0) {
+						int end = statementText.toString().lastIndexOf('[');
+						int classNameStart1 = PHPTextSequenceUtilities
+								.readIdentifierStartIndex(phpVersion,
+										statementText, end, true);
+						className = statementText.subSequence(classNameStart1,
+								end).toString();
+						// if its object call calc the object type.
+						if (className.length() > 0
+								&& className.charAt(0) == '$') {
+							int statementStart = statementText
+									.getOriginalOffset(classNameStart);
+							return getArrayVariableType(sourceModule,
+									className, statementStart);
+						}
+					}
 					className = testedVar;
 				}
 			}
