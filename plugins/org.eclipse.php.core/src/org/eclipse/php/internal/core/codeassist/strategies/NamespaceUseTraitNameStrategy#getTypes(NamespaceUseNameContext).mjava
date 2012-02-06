@@ -1,0 +1,24 @@
+	public IType[] getTypes(NamespaceUseNameContext context)
+			throws BadLocationException {
+		if (context.getNamespaces() == null) {
+			return new IType[0];
+		}
+		String prefix = context.getPrefix();
+
+		List<IType> result = new LinkedList<IType>();
+		for (IType ns : context.getNamespaces()) {
+			try {
+				for (IType type : ns.getTypes()) {
+					if (PHPFlags.isTrait(type.getFlags())
+							&& CodeAssistUtils.startsWithIgnoreCase(
+									type.getElementName(), prefix)) {
+						result.add(type);
+					}
+				}
+			} catch (ModelException e) {
+				PHPCorePlugin.log(e);
+			}
+		}
+		return (IType[]) result.toArray(new IType[result.size()]);
+	}
+
