@@ -11,6 +11,13 @@
 		typeDeclarationName = null;
 		isMethod = false;
 
+		PHPVersion phpVersion = PHPVersion.PHP5_4;
+		if (root.getSourceModule().getScriptProject() != null
+				&& root.getSourceModule().getScriptProject().getProject() != null) {
+			phpVersion = ProjectOptions.getPhpVersion(root.getSourceModule()
+					.getScriptProject().getProject());
+		}
+
 		if (node.getType() == ASTNode.IDENTIFIER) {
 			Identifier identifier = (Identifier) node;
 
@@ -22,6 +29,13 @@
 			isMethod = type == ASTNode.FUNCTION_DECLARATION
 					|| parent.getLocationInParent() == FunctionName.NAME_PROPERTY
 					|| parent.getLocationInParent() == FunctionInvocation.FUNCTION_PROPERTY;
+
+			if (dispatcherType != null
+					&& phpVersion.isGreaterThan(PHPVersion.PHP5_3)) {
+				traitList = dispatcherType.getTraitList(isMethod,
+						classMemberName);
+			}
+
 			while (typeDeclarationName == null && parent != fASTRoot) {
 				if (type == ASTNode.CLASS_DECLARATION
 						|| type == ASTNode.INTERFACE_DECLARATION) {

@@ -16,7 +16,14 @@
 					for (IType t : types) {
 						if (t.getElementName().equalsIgnoreCase(
 								evaluatedType.getTypeName())) {
-							result.add(t);
+							Class<?> expressionClass = evaluatedType.getClass();
+							if ((expressionClass == PHPTraitType.class)
+									&& PHPFlags.isTrait(t.getFlags())
+									|| (expressionClass == PHPClassType.class)
+									&& PHPFlags.isClass(t.getFlags())) {
+								result.add(t);
+							}
+
 							break;
 						}
 					}
@@ -28,8 +35,16 @@
 				return result.toArray(new IType[result.size()]);
 			} else {
 				try {
-					return PHPModelUtils.getTypes(evaluatedType.getTypeName(),
-							sourceModule, offset, cache, null);
+					Class<?> expressionClass = evaluatedType.getClass();
+					if (expressionClass == PHPTraitType.class) {
+						return PHPModelUtils.getTypes(
+								evaluatedType.getTypeName(), sourceModule,
+								offset, cache, null, false);
+					} else {
+						return PHPModelUtils.getTypes(
+								evaluatedType.getTypeName(), sourceModule,
+								offset, cache, null);
+					}
 				} catch (ModelException e) {
 					if (DLTKCore.DEBUG) {
 						e.printStackTrace();
