@@ -1,0 +1,38 @@
+	/**
+	 * @param locateNode
+	 * @return true if the given path indicates a trait
+	 */
+	private static boolean isTraitName(ASTNode locateNode) {
+		assert locateNode != null;
+
+		ASTNode parent = null;
+		if (locateNode.getType() == ASTNode.CLASS_DECLARATION) {
+			parent = locateNode;
+		} else if (locateNode.getType() == ASTNode.IDENTIFIER) {
+			parent = locateNode.getParent();
+		} else {
+			return false;
+		}
+
+		if (parent.getType() == ASTNode.NAMESPACE_NAME) {
+			locateNode = parent;
+			parent = parent.getParent();
+		}
+
+		final int parentType = parent.getType();
+		if (parentType == ASTNode.CLASS_DECLARATION
+				|| parentType == ASTNode.TRAIT_USE_STATEMENT
+				|| parentType == ASTNode.FULLY_QUALIFIED_TRAIT_METHOD_REFERENCE) {
+			if (parentType == ASTNode.FULLY_QUALIFIED_TRAIT_METHOD_REFERENCE) {
+				FullyQualifiedTraitMethodReference reference = (FullyQualifiedTraitMethodReference) parent;
+				if (reference.getFunctionName() == locateNode) {
+					return false;
+				}
+
+			}
+			return true;
+		}
+
+		return false;
+	}
+
