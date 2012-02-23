@@ -34,44 +34,74 @@
 			}
 		} catch (BadLocationException e) {
 		}
+
+		String newline = PHPModelUtils.getLineSeparator(null);
 		IStructuredModel structuredModel = null;
 		try {
 			IProject project = null;
-			IContentFormatter contentFormatter = PHPFormatProcessorProxy
-					.getFormatter();
-			if (contentFormatter instanceof IFormatterProcessorFactory) {
-				structuredModel = StructuredModelManager.getModelManager()
-						.getExistingModelForRead(document);
-				DOMModelForPHP doModelForPHP = (DOMModelForPHP) structuredModel;
-				project = getProject(doModelForPHP);
-				((IFormatterProcessorFactory) contentFormatter)
-						.setDefaultProject(project);
-				((IFormatterProcessorFactory) contentFormatter)
-						.setIsPasting(true);
-			}
-			String lineSeparator = PHPModelUtils.getLineSeparator(project);
-			String beforeText = document.get(0, command.offset);
-			beforeText = beforeText.trim() + lineSeparator;
-			String afterText = lineSeparator
-					+ document.get(command.offset,
-							document.getLength() - command.offset).trim();
-			String newPhpText = beforeText + command.text + afterText;
-			JobSafeStructuredDocument newdocument = new JobSafeStructuredDocument(
-					new PhpSourceParser());
-			newdocument.set(newPhpText);
-			contentFormatter.format(newdocument, new Region(beforeText.length()
-					- lineSeparator.length(), command.text.length()
-					+ lineSeparator.length()));
-			command.text = newdocument.get(
-					beforeText.length(),
-					newdocument.getLength()
-							- (beforeText.length() + afterText.length()));
-		} catch (Exception e1) {
-			e1.printStackTrace();
+			structuredModel = StructuredModelManager.getModelManager()
+					.getExistingModelForRead(document);
+			DOMModelForPHP doModelForPHP = (DOMModelForPHP) structuredModel;
+			project = getProject(doModelForPHP);
+			newline = PHPModelUtils.getLineSeparator(project);
+		} catch (Exception e) {
 		} finally {
 			if (structuredModel != null) {
 				structuredModel.releaseFromRead();
 			}
 		}
+		Document tempdocument = new Document(command.text);
+		int lines = tempdocument.getNumberOfLines();
+		StringBuffer tempsb = new StringBuffer();
+		try {
+			for (int i = 0; i < lines; i++) {
+				IRegion region = tempdocument.getLineInformation(i);
+				if (i > 0) {
+					tempsb.append(newline);
+				}
+				if (i == 0) {
+					tempsb.append(tempdocument.get(region.getOffset(),
+							region.getLength()).trim());
+				} else {
+					tempsb.append(tempdocument.get(region.getOffset(),
+							region.getLength()));
+				}
+			}
+		} catch (BadLocationException e) {
+		}
+		JobSafeStructuredDocument newdocument = new JobSafeStructuredDocument(
+				new PhpSourceParser());
+		String start = "<?php";
+		newdocument.set(start + newline + tempsb.toString());
+		PhpFormatter formatter = new PhpFormatter(0, newdocument.getLength());
+		formatter.format(newdocument.getFirstStructuredDocumentRegion());
+
+		List<String> list = new ArrayList<String>();
+		try {
+			int lineNumber = newdocument.getNumberOfLines();
+			for (int i = 0; i < lineNumber; i++) {
+				if (i == 0) {
+					continue;
+				}
+				IRegion region = newdocument.getLineInformation(i);
+				String line = newdocument.get(region.getOffset(),
+						region.getLength());
+				list.add(line);
+			}
+		} catch (BadLocationException e) {
+		}
+		StringBuffer sb = new StringBuffer();
+		for (int i = 0; i < list.size(); i++) {
+			if (!formatter.getIgnoreLines().contains(i + 1)) {
+				sb.append(helpBuffer.toString());
+			}
+			sb.append(list.get(i));
+			if (i == list.size() - 1) {
+			} else {
+				sb.append(newline);
+			}
+
+		}
+		command.text = sb.toString();
 	}
 
