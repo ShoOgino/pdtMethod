@@ -2,10 +2,13 @@
 			DocumentCommand command, StringBuffer buffer) {
 		try {
 
+			boolean isClosingParen = isClosingParen(document, command);
 			int offset = command.offset;
 
 			int rvPosition = offset + buffer.length();
-			rvPosition += copyRestOfLine(document, command, buffer);
+			if (!isClosingParen) {
+				rvPosition += copyRestOfLine(document, command, buffer);
+			}
 
 			boolean addCurlyClose = false;
 			int curlyCloseCounter = 0;
@@ -65,6 +68,10 @@
 			if (addCurlyClose) {
 				addCurlyCloseBracket(document, command, buffer);
 			}
+			if (isClosingParen) {
+				rvPosition += copyRestOfLine(document, command, buffer);
+			}
+
 			return rvPosition;
 		} catch (BadLocationException e) {
 			Logger.logException(e);
