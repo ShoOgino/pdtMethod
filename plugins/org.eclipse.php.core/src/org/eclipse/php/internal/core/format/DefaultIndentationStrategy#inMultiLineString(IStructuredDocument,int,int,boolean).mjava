@@ -1,0 +1,39 @@
+	private static int inMultiLineString(IStructuredDocument document,
+			int offset, int lineNumber, boolean enterKeyPressed) {
+
+		try {
+			IRegion lineInfo = document.getLineInformation(lineNumber);
+			final IStructuredDocumentRegion sdRegion = document
+					.getRegionAtCharacterOffset(offset);
+			ITextRegion token = getLastTokenRegion(document, lineInfo, offset);
+			if (token == null)
+				return -1;
+			String tokenType = token.getType();
+
+			if (tokenType == PHPRegionTypes.PHP_CONSTANT_ENCAPSED_STRING) {
+				int startLine = document.getLineOfOffset(token.getStart());
+				if (enterKeyPressed && startLine <= lineNumber
+						|| !enterKeyPressed && startLine < lineNumber) {
+					return startLine;
+				}
+			}
+		} catch (BadLocationException e) {
+		}
+
+		// Program program = null;
+		// try {
+		// final Reader reader = new StringReader(document.get());
+		// program = ASTParser.newParser(reader, PHPVersion.PHP5_4, true)
+		// .createAST(new NullProgressMonitor());
+		// ASTNode node = NodeFinder.perform(program, offset, 0);
+		// if (node != null && node.getType() == ASTNode.SCALAR
+		// && ((Scalar) node).getScalarType() == Scalar.TYPE_STRING
+		// && document.getLineOfOffset(node.getStart()) < lineNumber) {
+		// return document.getLineOfOffset(node.getStart());
+		// }
+		// } catch (Exception e) {
+		// }
+
+		return -1;
+	}
+

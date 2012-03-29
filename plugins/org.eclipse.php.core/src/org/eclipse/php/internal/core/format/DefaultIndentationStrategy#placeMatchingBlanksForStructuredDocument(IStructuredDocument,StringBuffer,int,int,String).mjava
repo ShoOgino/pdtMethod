@@ -2,6 +2,7 @@
 			final IStructuredDocument document, final StringBuffer result,
 			final int lineNumber, final int forOffset, String commandText)
 			throws BadLocationException {
+
 		int indentationWrappedLineSize = FormatterUtils
 				.getFormatterCommonPrferences().getIndentationWrappedLineSize(
 						document);
@@ -20,6 +21,9 @@
 
 		boolean enterKeyPressed = document.getLineDelimiter().equals(
 				result.toString());
+		if (forOffset == 0) {
+			return;
+		}
 		int lastNonEmptyLineIndex = getIndentationBaseLine(document,
 				lineNumber, forOffset, false);
 		final int indentationBaseLineIndex = getIndentationBaseLine(document,
@@ -77,11 +81,64 @@
 					// key,
 					// we use the same indentation of the last non-empty
 					// line.
-					result.setLength(result.length() - blanks.length());
-					IRegion lineInfo = document
-							.getLineInformation(lastNonEmptyLineIndex);
-					result.append(FormatterUtils.getLineBlanks(document,
-							lineInfo));
+					boolean shouldNotChangeIndent = false;
+					if (forOffset != document.getLength()) {
+						final IRegion lineInfo = document
+								.getLineInformation(lineNumber);
+						int nonEmptyOffset = forOffset;
+						if (!enterKeyPressed) {
+							if (nonEmptyOffset == lineInfo.getOffset()) {
+								nonEmptyOffset = moveLineStartToNonBlankChar(
+										document, nonEmptyOffset, lineNumber) - 1;
+							}
+						}
+						char lineStartChar = document.getChar(nonEmptyOffset);
+						if (lineStartChar == PHPHeuristicScanner.RBRACE
+						// || lineStartChar == PHPHeuristicScanner.RBRACKET
+								|| lineStartChar == PHPHeuristicScanner.RPAREN) {
+
+							PHPHeuristicScanner scanner = PHPHeuristicScanner
+									.createHeuristicScanner(document,
+											nonEmptyOffset, true);
+							if (lineStartChar == PHPHeuristicScanner.RBRACE) {
+								int peer = scanner.findOpeningPeer(
+										nonEmptyOffset - 1,
+										PHPHeuristicScanner.UNBOUND,
+										PHPHeuristicScanner.LBRACE,
+										PHPHeuristicScanner.RBRACE);
+								if (peer != PHPHeuristicScanner.NOT_FOUND) {
+									shouldNotChangeIndent = true;
+								}
+							} else if (lineStartChar == PHPHeuristicScanner.RBRACKET) {
+								int peer = scanner.findOpeningPeer(
+										nonEmptyOffset - 1,
+										PHPHeuristicScanner.UNBOUND,
+										PHPHeuristicScanner.LBRACKET,
+										PHPHeuristicScanner.RBRACKET);
+								if (peer != PHPHeuristicScanner.NOT_FOUND) {
+									shouldNotChangeIndent = true;
+								}
+							} else {
+								int peer = scanner.findOpeningPeer(
+										nonEmptyOffset - 1,
+										PHPHeuristicScanner.UNBOUND,
+										PHPHeuristicScanner.LPAREN,
+										PHPHeuristicScanner.RPAREN);
+								if (peer != PHPHeuristicScanner.NOT_FOUND) {
+									shouldNotChangeIndent = true;
+								}
+							}
+						}
+					}
+
+					if (!shouldNotChangeIndent) {
+						result.setLength(result.length() - blanks.length());
+						IRegion lineInfo = document
+								.getLineInformation(lastNonEmptyLineIndex);
+						result.append(FormatterUtils.getLineBlanks(document,
+								lineInfo));
+					}
+
 					// }
 				} else {// current is a new statement,check if we should indent
 						// it based on indentationBaseLine
