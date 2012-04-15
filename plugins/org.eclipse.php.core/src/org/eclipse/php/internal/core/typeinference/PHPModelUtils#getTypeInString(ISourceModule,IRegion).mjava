@@ -1,0 +1,24 @@
+	public static IModelElement[] getTypeInString(ISourceModule sourceModule,
+			IRegion wordRegion) {
+		IModelElement[] elements = null;
+		ModuleDeclaration parsedUnit = SourceParserUtil.getModuleDeclaration(
+				sourceModule, null);
+
+		ASTNode node = ASTUtils.findMinimalNode(parsedUnit,
+				wordRegion.getOffset(),
+				wordRegion.getOffset() + wordRegion.getLength());
+		if (node instanceof Scalar) {
+			Scalar scalar = (Scalar) node;
+			if (PHPModelUtils.isQuotesString(scalar.getValue())
+					&& scalar.getScalarType() == Scalar.TYPE_STRING) {
+				try {
+					elements = PHPModelUtils.getTypes(
+							PHPModelUtils.stripQuotes(scalar.getValue()),
+							sourceModule, scalar.sourceStart(), null, null);
+				} catch (Exception e) {
+				}
+			}
+		}
+		return elements;
+	}
+
