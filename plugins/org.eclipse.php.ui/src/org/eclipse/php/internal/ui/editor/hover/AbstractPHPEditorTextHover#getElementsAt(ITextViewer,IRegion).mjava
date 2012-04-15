@@ -17,16 +17,23 @@
 		 */
 		if (hoverRegion.getLength() == 0)
 			return null;
-
+		IModelElement[] elements = null;
 		ICodeAssist resolve = getCodeAssist();
 		if (resolve != null) {
 			try {
-				return resolve.codeSelect(hoverRegion.getOffset(), hoverRegion
-						.getLength());
+				elements = resolve.codeSelect(hoverRegion.getOffset(),
+						hoverRegion.getLength());
+
+				if ((elements == null || elements.length == 0)
+						&& resolve instanceof ISourceModule) {
+					elements = PHPModelUtils.getTypeInString(
+							(ISourceModule) resolve, hoverRegion);
+
+				}
 			} catch (ModelException x) {
 				return null;
 			}
 		}
-		return null;
+		return elements;
 	}
 
