@@ -13,16 +13,24 @@
 						.getMethodNode();
 				PHPDocBlock[] docBlocks = new PHPDocBlock[0];
 				try {
-					IMethod method = (IMethod) methodContext.getSourceModule()
+					IModelElement element = methodContext.getSourceModule()
 							.getElementAt(methodDeclaration.getNameStart());
-					if (method.getDeclaringType() != null) {
-						docBlocks = PHPModelUtils.getTypeHierarchyMethodDoc(
-								method.getDeclaringType(),
-								method.getElementName(), true, null);
+					if (element instanceof IMethod) {
+						IMethod method = (IMethod) element;
+						if (method.getDeclaringType() != null) {
+							docBlocks = PHPModelUtils
+									.getTypeHierarchyMethodDoc(
+											method.getDeclaringType(),
+											method.getElementName(), true, null);
+						} else {
+							docBlocks = new PHPDocBlock[] { methodDeclaration
+									.getPHPDoc() };
+						}
 					} else {
 						docBlocks = new PHPDocBlock[] { methodDeclaration
 								.getPHPDoc() };
 					}
+
 				} catch (CoreException e) {
 				}
 				for (PHPDocBlock docBlock : docBlocks) {
