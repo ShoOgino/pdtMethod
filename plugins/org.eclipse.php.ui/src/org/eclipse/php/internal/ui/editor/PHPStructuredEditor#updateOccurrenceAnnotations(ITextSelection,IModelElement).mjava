@@ -1,0 +1,59 @@
+	/**
+	 * Updates the occurrences annotations based on the current selection.
+	 * 
+	 * TODO : since {@link PHPStructuredEditor#aboutToBeChangedEvent} currently
+	 * doesn't work, we check if " document.getLength() != astRoot.getEnd() " to
+	 * identify if the document was not already reconciled
+	 * 
+	 * @param selection
+	 *            the text selection
+	 * @param astRoot
+	 *            the compilation unit AST
+	 * @since 3.0
+	 */
+	protected void updateOccurrenceAnnotations(final ITextSelection selection,
+			final IModelElement sourceModule) {
+
+		if (fOccurrencesFinderJob != null)
+			fOccurrencesFinderJob.cancel();
+
+		if (!fMarkOccurrenceAnnotations)
+			return;
+
+		String updatingOccurencesJobName = "Updating occurence annotations";
+
+		IJobManager jobManager = Job.getJobManager();
+		if (jobManager.find(updatingOccurencesJobName).length > 0) {
+			jobManager.cancel(updatingOccurencesJobName);
+		}
+		Job job = new Job(updatingOccurencesJobName) {
+
+			@Override
+			protected IStatus run(IProgressMonitor monitor) {
+				Program astRoot = null;
+				try {
+					astRoot = SharedASTProvider.getAST(
+							(ISourceModule) sourceModule,
+							SharedASTProvider.WAIT_YES,
+							new NullProgressMonitor());
+				} catch (ModelException e) {
+					Logger.logException(e);
+				} catch (IOException e) {
+					Logger.logException(e);
+				}
+
+				updateOccurencesAnnotationsRunJob(selection, astRoot);
+				return Status.OK_STATUS;
+			}
+
+			@Override
+			public boolean belongsTo(Object family) {
+				return getName().equals(family);
+			}
+		};
+		job.setSystem(true);
+		job.setPriority(Job.DECORATE);
+		job.schedule();
+
+	}
+
