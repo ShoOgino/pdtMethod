@@ -2,13 +2,21 @@
 			int offset) {
 		int beginIndex = type.indexOf("[") + 1;
 		int endIndex = type.lastIndexOf("]");
-		type = type.substring(beginIndex, endIndex);
+		if (endIndex != -1) {
+			type = type.substring(beginIndex, endIndex);
+		}
+
 		MultiTypeType arrayType = new MultiTypeType();
 		Matcher m = ARRAY_TYPE_PATTERN.matcher(type);
 		if (m.find()) {
 			arrayType
 					.addType(getArrayType(m.group(), currentNamespace, offset));
 			type = m.replaceAll("");
+		} else if (type.endsWith(BRACKETS) && type.length() > 2) {
+			arrayType.addType(getArrayType(
+					type.substring(0, type.length() - 2), currentNamespace,
+					offset));
+			type = type.replaceAll(BRACKETS, "");
 		}
 		String[] typeNames = type.split(",");
 		for (String name : typeNames) {
