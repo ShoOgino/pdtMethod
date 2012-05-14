@@ -10,7 +10,7 @@
 				for (int i = fSelectionStartLine; i <= fSelectionEndLine; i++) {
 					try {
 						if (fDocument.getLineLength(i) > 0) {
-							if (!isCommentLine(fDocument, i)) {
+							if (!isCommentLine(fDocument, i, isSingleLine)) {
 								allLinesCommented = false;
 								break;
 							}
@@ -41,8 +41,37 @@
 							remove(this.fDocument, lineRegion.getOffset(),
 									lineRegion.getLength(), true);
 						} else {
-							apply(this.fDocument, lineRegion.getOffset(),
-									lineRegion.getLength());
+							int offset = 0;
+							String string = content.trim();
+							String commentStr = SINGLE_LINE_COMMENT;
+							if (string.startsWith(PHP_WITH_BLANK)) {
+								// string =
+								// string.substring("<?php".length()).trim();
+								offset = content.indexOf(PHP_WITH_BLANK)
+										+ PHP_WITH_BLANK.length();
+								commentStr = SINGLE_LINE_COMMENT;
+							} else if (string.startsWith(PHP)) {
+								// string =
+								// string.substring("<?php".length()).trim();
+								offset = content.indexOf(PHP) + PHP.length();
+								commentStr = BLANK + SINGLE_LINE_COMMENT;
+							} else if (string.startsWith(SHORT_TAG_WITH_BLANK)) {
+								// string =
+								// string.substring("<?".length()).trim();
+								offset = content.indexOf(SHORT_TAG_WITH_BLANK)
+										+ SHORT_TAG_WITH_BLANK.length();
+								commentStr = SINGLE_LINE_COMMENT;
+							} else if (string.startsWith(SHORT_TAG)) {
+								// string =
+								// string.substring("<?".length()).trim();
+								offset = content.indexOf(SHORT_TAG)
+										+ SHORT_TAG.length();
+								commentStr = BLANK + SINGLE_LINE_COMMENT;
+							} else {
+								commentStr = SINGLE_LINE_COMMENT;
+							}
+							this.fDocument.replace(lineRegion.getOffset()
+									+ offset, 0, commentStr + BLANK);
 						}
 					}
 					monitor.worked(1);

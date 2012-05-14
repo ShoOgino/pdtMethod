@@ -14,6 +14,10 @@
 			// get text selection lines info
 			int selectionStartLine = textSelection.getStartLine();
 			int selectionEndLine = textSelection.getEndLine();
+			boolean isSingleLine = false;
+			if (selectionStartLine == selectionEndLine) {
+				isSingleLine = true;
+			}
 
 			int selectionEndLineOffset = document
 					.getLineOffset(selectionEndLine);
@@ -30,6 +34,12 @@
 
 			int selectionStartLineOffset = document
 					.getLineOffset(selectionStartLine);
+			if (selectionEndLineOffset == selectionStartLineOffset) {
+				selectionEndLineOffset = document.getLineInformation(
+						selectionEndLine).getOffset()
+						+ document.getLineInformation(selectionEndLine)
+								.getLength();
+			}
 			ITypedRegion[] lineTypedRegions = document.computePartitioning(
 					selectionStartLineOffset, selectionEndLineOffset
 							- selectionStartLineOffset);
@@ -75,7 +85,8 @@
 					// create the toggling operation
 					IRunnableWithProgress toggleCommentsRunnable = new ToggleLinesRunnable(
 							model.getContentTypeIdentifier(), document,
-							selectionStartLine, selectionEndLine, display);
+							selectionStartLine, selectionEndLine, display,
+							isSingleLine);
 
 					// if toggling lots of lines then use progress monitor else
 					// just
