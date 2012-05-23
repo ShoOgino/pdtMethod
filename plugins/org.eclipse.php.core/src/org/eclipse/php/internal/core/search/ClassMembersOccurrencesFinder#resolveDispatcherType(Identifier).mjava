@@ -58,6 +58,21 @@
 		} else if (parent.getType() == ASTNode.FULLY_QUALIFIED_TRAIT_METHOD_REFERENCE) {
 			FullyQualifiedTraitMethodReference reference = (FullyQualifiedTraitMethodReference) parent;
 			typeBinding = reference.getClassName().resolveTypeBinding();
+		} else if (parent.getType() == ASTNode.TRAIT_ALIAS) {
+			TraitAlias traitAlias = (TraitAlias) parent;
+			List<NamespaceName> nameList = ((TraitUseStatement) traitAlias
+					.getParent().getParent()).getTraitList();
+			for (NamespaceName namespaceName : nameList) {
+				typeBinding = namespaceName.resolveTypeBinding();
+				if (typeBinding != null
+						&& (typeBinding.isClass() || typeBinding.isTrait())
+						&& typeBinding.getPHPElement() != null
+						&& ((IType) typeBinding.getPHPElement())
+								.getMethod(identifier.getName()) != null) {
+					return typeBinding;
+				}
+			}
+			return null;
 		}
 		if (typeBinding != null
 				&& (typeBinding.isClass() || typeBinding.isTrait())
