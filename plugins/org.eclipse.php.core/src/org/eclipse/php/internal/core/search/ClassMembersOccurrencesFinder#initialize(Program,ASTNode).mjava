@@ -21,7 +21,6 @@
 		if (node.getType() == ASTNode.IDENTIFIER) {
 			Identifier identifier = (Identifier) node;
 
-			dispatcherType = resolveDispatcherType(identifier);
 			classMemberName = identifier.getName();
 
 			ASTNode parent = identifier.getParent();
@@ -32,10 +31,17 @@
 					|| type == ASTNode.FULLY_QUALIFIED_TRAIT_METHOD_REFERENCE
 					|| type == ASTNode.TRAIT_ALIAS;
 
+			dispatcherType = resolveDispatcherType(identifier);
 			if (dispatcherType != null
 					&& phpVersion.isGreaterThan(PHPVersion.PHP5_3)) {
-				traitList = dispatcherType.getTraitList(isMethod,
-						classMemberName);
+				String memberName = getRealName(identifier);
+				// if (dispatcherType.isTrait()) {
+				// traitList = new LinkedList<IType>();
+				// traitList.add((IType) dispatcherType.getPHPElement());
+				// } else {
+				traitList = dispatcherType.getTraitList(isMethod, memberName,
+						false);
+				// }
 			}
 
 			while (typeDeclarationName == null && parent != fASTRoot) {

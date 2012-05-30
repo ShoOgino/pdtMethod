@@ -1,13 +1,15 @@
 	public boolean visit(TraitAlias node) {
-		if (dispatcherType != null
-				&& PHPFlags.isTrait(dispatcherType.getModifiers())) {
+		if (dispatcherType != null) {
 			Expression expression = node.getTraitMethod();
 			if (expression.getType() == ASTNode.FULLY_QUALIFIED_TRAIT_METHOD_REFERENCE) {
-				return true;
+				visit((FullyQualifiedTraitMethodReference) expression);
 			} else {
 				checkDispatch(expression);
-				return false;
 			}
+			if (node.getFunctionName() != null) {
+				checkDispatch(node.getFunctionName());
+			}
+			return false;
 		}
 
 		return super.visit(node);
