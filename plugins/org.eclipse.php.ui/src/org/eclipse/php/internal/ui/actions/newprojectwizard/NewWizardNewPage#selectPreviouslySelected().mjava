@@ -1,0 +1,36 @@
+	/**
+	 * Selects the wizard category and wizard in this page that were selected
+	 * last time this page was used. If a category or wizard that was previously
+	 * selected no longer exists then it is ignored.
+	 */
+	protected void selectPreviouslySelected() {
+		String selectedId = settings.get(STORE_SELECTED_ID);
+		if (selectedId == null) {
+			return;
+		}
+
+		if (wizardCategories == null) {
+			return;
+		}
+
+		Object selected = wizardCategories.findCategory(new Path(selectedId));
+
+		if (selected == null) {
+			selected = wizardCategories.findWizard(selectedId);
+
+			if (selected == null) {
+				// if we cant find either a category or a wizard, abort.
+				return;
+			}
+		}
+
+		// work around for 62039
+		final StructuredSelection selection = new StructuredSelection(selected);
+		filteredTree.getViewer().getControl().getDisplay()
+				.asyncExec(new Runnable() {
+					public void run() {
+						filteredTree.getViewer().setSelection(selection, true);
+					}
+				});
+	}
+

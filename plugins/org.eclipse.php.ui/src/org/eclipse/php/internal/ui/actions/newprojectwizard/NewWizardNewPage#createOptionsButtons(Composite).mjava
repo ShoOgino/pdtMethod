@@ -1,0 +1,88 @@
+	/**
+	 * Create the Show All and help buttons at the bottom of the page.
+	 * 
+	 * @param parent
+	 *            the parent composite on which to create the widgets
+	 */
+	private void createOptionsButtons(Composite parent) {
+		if (needShowAll) {
+			showAllCheck = new Button(parent, SWT.CHECK);
+			GridData data = new GridData();
+			showAllCheck.setLayoutData(data);
+			showAllCheck.setFont(parent.getFont());
+			showAllCheck.setText(WorkbenchMessages.NewWizardNewPage_showAll);
+			showAllCheck.setSelection(false);
+
+			// flipping tabs updates the selected node
+			showAllCheck.addSelectionListener(new SelectionAdapter() {
+
+				// the delta of expanded elements between the last 'show all'
+				// and the current 'no show all'
+				private Object[] delta = new Object[0];
+
+				public void widgetSelected(SelectionEvent e) {
+					boolean showAll = showAllCheck.getSelection();
+
+					if (showAll) {
+						filteredTree.getViewer().getControl().setRedraw(false);
+					} else {
+						// get the inital expanded elements when going from show
+						// all-> no show all.
+						// this isnt really the delta yet, we're just reusing
+						// the variable.
+						delta = filteredTree.getViewer().getExpandedElements();
+					}
+
+					try {
+						if (showAll) {
+							filteredTree.getViewer().resetFilters();
+							filteredTree.getViewer().addFilter(
+									filteredTreeFilter);
+							if (projectsOnly) {
+								filteredTree.getViewer().addFilter(
+										projectFilter);
+							}
+
+							// restore the expanded elements that were present
+							// in the last show all state but not in the 'no
+							// show all' state.
+							Object[] currentExpanded = filteredTree.getViewer()
+									.getExpandedElements();
+							Object[] expanded = new Object[delta.length
+									+ currentExpanded.length];
+							System.arraycopy(currentExpanded, 0, expanded, 0,
+									currentExpanded.length);
+							System.arraycopy(delta, 0, expanded,
+									currentExpanded.length, delta.length);
+							filteredTree.getViewer().setExpandedElements(
+									expanded);
+						} else {
+							filteredTree.getViewer().addFilter(filter);
+							if (projectsOnly) {
+								filteredTree.getViewer().addFilter(
+										projectFilter);
+							}
+						}
+						filteredTree.getViewer().refresh(false);
+
+						if (!showAll) {
+							// if we're going from show all -> no show all
+							// record the elements that were expanded in the
+							// 'show all' state but not the 'no show all' state
+							// (because they didnt exist).
+							Object[] newExpanded = filteredTree.getViewer()
+									.getExpandedElements();
+							List deltaList = new ArrayList(Arrays.asList(delta));
+							deltaList.removeAll(Arrays.asList(newExpanded));
+						}
+					} finally {
+						if (showAll) {
+							filteredTree.getViewer().getControl()
+									.setRedraw(true);
+						}
+					}
+				}
+			});
+		}
+	}
+

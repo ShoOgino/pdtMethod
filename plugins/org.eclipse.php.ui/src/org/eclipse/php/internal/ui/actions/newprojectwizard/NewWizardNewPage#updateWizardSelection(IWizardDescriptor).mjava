@@ -1,0 +1,25 @@
+	/**
+	 * @param selectedObject
+	 */
+	private void updateWizardSelection(IWizardDescriptor selectedObject) {
+		selectedElement = selectedObject;
+		WorkbenchWizardNode selectedNode;
+		if (selectedWizards.containsKey(selectedObject)) {
+			selectedNode = (WorkbenchWizardNode) selectedWizards
+					.get(selectedObject);
+		} else {
+			selectedNode = new WorkbenchWizardNode(page, selectedObject) {
+				public IWorkbenchWizard createWizard() throws CoreException {
+					return wizardElement.createWizard();
+				}
+			};
+			selectedWizards.put(selectedObject, selectedNode);
+		}
+
+		page.setCanFinishEarly(selectedObject.canFinishEarly());
+		page.setHasPages(selectedObject.hasPages());
+		page.selectWizardNode(selectedNode);
+
+		updateDescription(selectedObject);
+	}
+
