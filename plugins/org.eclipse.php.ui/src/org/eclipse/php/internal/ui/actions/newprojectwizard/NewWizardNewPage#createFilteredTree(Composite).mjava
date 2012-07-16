@@ -49,7 +49,6 @@
 				return element;
 			}
 		});
-		// treeViewer.setComparator(NewWizardCollectionComparator.INSTANCE);
 		treeViewer.addSelectionChangedListener(this);
 
 		ArrayList inputArray = new ArrayList();
@@ -58,13 +57,49 @@
 			inputArray.add(primaryWizards[i]);
 		}
 
+		if (!projectsOnly) {
+
+			IWizardCategory phpCategory = wizardCategories
+					.findCategory(new Path("org.eclipse.php.project.ui"));
+			// IWizardCategory[] children = wizardCategories.getCategories();
+			// for (int i = 0; i < children.length; i++) {
+			// if ("org.eclipse.php.project.ui".equals(children[i].getId())) {
+			// phpCategory = children[i];
+			// }
+			// }
+			if (phpCategory != null) {
+				IWizardDescriptor[] wizards = phpCategory.getWizards();
+				for (int i = 0; i < wizards.length; i++) {
+					inputArray.add(wizards[i]);
+				}
+				inputArray = sortWizard(inputArray);
+				IWizardCategory[] categories = phpCategory.getCategories();
+				for (int i = 0; i < categories.length; i++) {
+					inputArray.add(categories[i]);
+				}
+				IWizardDescriptor folder = wizardCategories
+						.findWizard("org.eclipse.ui.wizards.new.folder");
+				if (folder != null) {
+					inputArray.add(folder);
+				}
+			}
+			NewWizardCollectionComparator comparator = NewWizardCollectionComparator.INSTANCE;
+			Set set = new HashSet();
+			set.addAll(inputArray);
+			comparator.setPrimaryWizards(set);
+			treeViewer.setComparator(comparator);
+		}
+
 		boolean expandTop = false;
 
 		if (wizardCategories != null) {
 			if (wizardCategories.getParent() == null) {
 				IWizardCategory[] children = wizardCategories.getCategories();
 				for (int i = 0; i < children.length; i++) {
-					inputArray.add(children[i]);
+					if (!"org.eclipse.php.project.ui".equals(children[i]
+							.getId())) {
+						inputArray.add(children[i]);
+					}
 				}
 			} else {
 				expandTop = true;
