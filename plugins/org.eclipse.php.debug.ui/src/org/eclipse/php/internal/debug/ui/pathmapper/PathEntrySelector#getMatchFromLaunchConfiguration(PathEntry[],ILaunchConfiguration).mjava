@@ -1,0 +1,25 @@
+	private PathEntry getMatchFromLaunchConfiguration(PathEntry[] entries,
+			ILaunchConfiguration launchConfiguration) {
+		try {
+			String projectName = launchConfiguration.getAttribute(
+					IPHPDebugConstants.PHP_Project, (String) null);
+			if (projectName != null) {
+				IProject project = ResourcesPlugin.getWorkspace().getRoot()
+						.getProject(projectName);
+				for (PathEntry pathEntry : entries) {
+					Object container = pathEntry.getContainer();
+					if (container instanceof IContainer) {
+						IProject p = ((IContainer) container).getProject();
+						if (p != null && p.equals(project)) {
+							return pathEntry;
+						}
+					}
+				}
+			}
+		} catch (CoreException e) {
+			// log exception and continue debugging
+			PHPDebugUIPlugin.log(e);
+		}
+		return null;
+	}
+
