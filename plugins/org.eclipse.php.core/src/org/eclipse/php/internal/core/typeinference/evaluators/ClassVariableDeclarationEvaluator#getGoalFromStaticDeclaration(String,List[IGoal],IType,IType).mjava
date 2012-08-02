@@ -1,15 +1,23 @@
 	protected void getGoalFromStaticDeclaration(String variableName,
-			final List<IGoal> subGoals, final IType type) throws ModelException {
-		ISourceModule sourceModule = type.getSourceModule();
+			final List<IGoal> subGoals, final IType declaringType,
+			IType realType) throws ModelException {
+		ISourceModule sourceModule = declaringType.getSourceModule();
 		ModuleDeclaration moduleDeclaration = SourceParserUtil
 				.getModuleDeclaration(sourceModule);
 		TypeDeclaration typeDeclaration = PHPModelUtils.getNodeByClass(
-				moduleDeclaration, type);
+				moduleDeclaration, declaringType);
 
 		// try to search declarations of type "self::$var =" or
 		// "$this->var ="
-		ClassDeclarationSearcher searcher = new ClassDeclarationSearcher(
-				sourceModule, typeDeclaration, 0, 0, variableName);
+		ClassDeclarationSearcher searcher;
+		if (realType != null) {
+			searcher = new ClassDeclarationSearcher(sourceModule,
+					typeDeclaration, 0, 0, variableName, realType,
+					declaringType);
+		} else {
+			searcher = new ClassDeclarationSearcher(sourceModule,
+					typeDeclaration, 0, 0, variableName);
+		}
 		try {
 			moduleDeclaration.traverse(searcher);
 			Map<ASTNode, IContext> staticDeclarations = searcher
