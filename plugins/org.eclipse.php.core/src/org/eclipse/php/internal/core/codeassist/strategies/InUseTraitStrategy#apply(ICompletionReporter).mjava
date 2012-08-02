@@ -1,0 +1,34 @@
+	public void apply(ICompletionReporter reporter) throws BadLocationException {
+		ICompletionContext context = getContext();
+		if (!(context instanceof AbstractCompletionContext)) {
+			return;
+		}
+
+		AbstractCompletionContext abstractContext = (AbstractCompletionContext) context;
+		int offset = abstractContext.getOffset();
+		ISourceModule sourceModule = abstractContext.getSourceModule();
+		List<String> useTypes = abstractContext.getUseTypes();
+		String prefix = abstractContext.getPrefix();
+		ModuleDeclaration moduleDeclaration = SourceParserUtil
+				.getModuleDeclaration(sourceModule, null);
+		FileContext fileContext = new FileContext(sourceModule,
+				moduleDeclaration, offset);
+		SourceRange replacementRange = getReplacementRange(abstractContext);
+		for (String useType : useTypes) {
+			if (useType.trim().startsWith(prefix)) {
+
+				IEvaluatedType type = PHPClassType.fromTraitName(useType,
+						sourceModule, offset);
+				IType[] modelElements = PHPTypeInferenceUtils.getModelElements(
+						type, fileContext, offset);
+				if (modelElements != null) {
+					for (IType typeElement : modelElements) {
+						reporter.reportType(typeElement, "", replacementRange,
+								ProposalExtraInfo.TYPE_ONLY);
+					}
+				}
+			}
+		}
+
+	}
+

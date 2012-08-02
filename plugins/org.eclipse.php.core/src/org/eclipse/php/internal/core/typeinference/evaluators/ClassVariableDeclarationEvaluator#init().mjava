@@ -4,8 +4,8 @@
 
 		if (types == null) {
 			TypeContext context = (TypeContext) typedGoal.getContext();
-			types = PHPTypeInferenceUtils.getModelElements(context
-					.getInstanceType(), context);
+			types = PHPTypeInferenceUtils.getModelElements(
+					context.getInstanceType(), context);
 		}
 		if (types == null) {
 			return null;
@@ -28,11 +28,11 @@
 				}
 				IField[] fields = PHPModelUtils.getTypeHierarchyField(type,
 						hierarchy, variableName, true, null);
-				Set<IType> fieldDeclaringTypeSet = new HashSet<IType>();
+				Map<IType, IType> fieldDeclaringTypeSet = new HashMap<IType, IType>();
 				for (IField field : fields) {
 					IType declaringType = field.getDeclaringType();
 					if (declaringType != null) {
-						fieldDeclaringTypeSet.add(declaringType);
+						fieldDeclaringTypeSet.put(declaringType, type);
 						ISourceModule sourceModule = declaringType
 								.getSourceModule();
 						ModuleDeclaration moduleDeclaration = SourceParserUtil
@@ -48,9 +48,10 @@
 									.getSourceRange();
 
 							ClassDeclarationSearcher searcher = new ClassDeclarationSearcher(
-									sourceModule, typeDeclaration, sourceRange
-											.getOffset(), sourceRange
-											.getLength(), null);
+									sourceModule, typeDeclaration,
+									sourceRange.getOffset(),
+									sourceRange.getLength(), null, type,
+									declaringType);
 							try {
 								moduleDeclaration.traverse(searcher);
 								if (searcher.getResult() != null) {
@@ -68,15 +69,17 @@
 				}
 
 				if (subGoals.size() == 0) {
-					getGoalFromStaticDeclaration(variableName, subGoals, type);
+					getGoalFromStaticDeclaration(variableName, subGoals, type,
+							null);
 				}
 				fieldDeclaringTypeSet.remove(type);
 				if (subGoals.size() == 0 && !fieldDeclaringTypeSet.isEmpty()) {
-					for (Iterator iterator = fieldDeclaringTypeSet.iterator(); iterator
-							.hasNext();) {
+					for (Iterator iterator = fieldDeclaringTypeSet.keySet()
+							.iterator(); iterator.hasNext();) {
 						IType fieldDeclaringType = (IType) iterator.next();
 						getGoalFromStaticDeclaration(variableName, subGoals,
-								fieldDeclaringType);
+								fieldDeclaringType,
+								fieldDeclaringTypeSet.get(fieldDeclaringType));
 					}
 				}
 			} catch (CoreException e) {
