@@ -1,6 +1,30 @@
 		public boolean visit(Variable var) {
 			if (visitField > 0 && !var.isDollared()) {
-				highlight(var);
+
+				IModelElement[] elements = null;
+				boolean processed = false;
+				try {
+					elements = (getSourceModule()).codeSelect(var.getStart(),
+							var.getLength());
+					if (elements != null && elements.length > 0) {
+						processed = true;
+						for (IModelElement iModelElement : elements) {
+							if ((iModelElement instanceof SourceField)) {
+								SourceField sourceMethod = (SourceField) iModelElement;
+								if (sourceMethod.getDeclaringType() != null
+										&& PHPFlags.isClass(sourceMethod
+												.getDeclaringType().getFlags())) {
+									highlight(var);
+									break;
+								}
+							}
+						}
+					}
+				} catch (ModelException e) {
+				}
+				if (!processed) {
+					highlight(var);
+				}
 			}
 			return true;
 		}
