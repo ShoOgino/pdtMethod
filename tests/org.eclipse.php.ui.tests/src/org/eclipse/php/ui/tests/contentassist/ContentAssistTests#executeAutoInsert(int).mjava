@@ -1,6 +1,15 @@
 	protected static String executeAutoInsert(int offset) {
-		StructuredTextViewer viewer = fEditor.getTextViewer();
-		viewer.getTextWidget().setCaretOffset(offset);
+		StructuredTextViewer viewer = null;
+		Display display = Display.getDefault();
+		long timeout = System.currentTimeMillis() + 3000;
+		while ((System.currentTimeMillis() < timeout)
+				&& ((viewer = fEditor.getTextViewer()) == null)) {
+			if (!display.readAndDispatch()) {
+				display.sleep();
+			}
+		}
+		StyledText textWidget = viewer.getTextWidget();
+		textWidget.setCaretOffset(offset);
 		viewer.doOperation(ISourceViewer.CONTENTASSIST_PROPOSALS);
 		return fEditor.getDocument().get();
 	}
