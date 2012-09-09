@@ -1,0 +1,40 @@
+	public IGoal[] subGoalDone(IGoal subgoal, Object result, GoalState state) {
+		if (state != GoalState.RECURSIVE) {
+			if (result instanceof PHPClassType) {
+				if (subgoal instanceof ExpressionTypeGoal) {
+					ISourceModule sourceModule = ((ISourceModuleContext) subgoal
+							.getContext()).getSourceModule();
+					PHPClassType classType = (PHPClassType) result;
+					List<IGoal> subGoals = new LinkedList<IGoal>();
+					try {
+						IType[] types = PHPModelUtils.getTypes(
+								classType.getTypeName(), sourceModule, 0, null);
+						for (IType type : types) {
+							IType[] superTypes = PHPModelUtils.getSuperClasses(
+									type, null);
+							if (isImplementedIterator(superTypes)) {
+								subGoals.add(new MethodElementReturnTypeGoal(
+										subgoal.getContext(),
+										new IType[] { type }, "current"));
+								subGoals.add(new PHPDocMethodReturnTypeGoal(
+										subgoal.getContext(),
+										new IType[] { type }, "current"));
+							}
+						}
+						return subGoals.toArray(new IGoal[subGoals.size()]);
+					} catch (ModelException e) {
+						if (DLTKCore.DEBUG) {
+							e.printStackTrace();
+						}
+					}
+				}
+				MultiTypeType type = new MultiTypeType();
+				type.addType((IEvaluatedType) result);
+				this.result = type;
+				return IGoal.NO_GOALS;
+			}
+			this.result = (IEvaluatedType) result;
+		}
+		return IGoal.NO_GOALS;
+	}
+
