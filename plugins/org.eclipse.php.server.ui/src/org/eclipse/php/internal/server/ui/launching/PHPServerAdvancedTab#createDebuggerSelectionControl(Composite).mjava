@@ -1,0 +1,69 @@
+	protected void createDebuggerSelectionControl(Composite parent) {
+		Group group = new Group(parent, SWT.NONE);
+		group.setText("Debugger"); //$NON-NLS-1$
+		GridLayout ly = new GridLayout(1, false);
+		ly.marginHeight = 0;
+		ly.marginWidth = 0;
+		group.setLayout(ly);
+		group.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+		Composite debuggerServerComp = new Composite(group, SWT.NONE);
+		GridLayout layout = new GridLayout(4, false);
+		debuggerServerComp.setLayout(layout);
+		GridData data = new GridData(GridData.FILL_HORIZONTAL);
+		debuggerServerComp.setLayoutData(data);
+		Font font = parent.getFont();
+		debuggerServerComp.setFont(font);
+
+		// Add the debuggers combo
+		Label label = new Label(debuggerServerComp, SWT.WRAP);
+		data = new GridData(GridData.BEGINNING);
+		data.widthHint = 100;
+		label.setLayoutData(data);
+		label.setFont(font);
+		label.setText("Server Debugger:");
+
+		fDebuggersCombo = new Combo(debuggerServerComp, SWT.SINGLE | SWT.BORDER
+				| SWT.READ_ONLY);
+		fDebuggersCombo.setFont(font);
+		fDebuggersCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		fDebuggersCombo.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(final SelectionEvent e) {
+				updateLaunchConfigurationDialog();
+				updateDebugServerTesters();
+			}
+		});
+
+		validateDebuggerBtn = createPushButton(debuggerServerComp, "Test", null); //$NON-NLS-1$
+		validateDebuggerBtn.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent event) {
+				updateDebugServerTesters();
+				String serverName = null;
+				try {
+					serverName = launchConfiguration.getAttribute(Server.NAME,
+							(String) null);
+				} catch (CoreException e) {
+					// TODO handle
+				}
+				if (serverName != null) {
+					Server server = ServersManager.getServer(serverName);
+					for (IDebugServerConnectionTest debugServerTester : debugTesters) {
+						debugServerTester.testConnection(server, getShell());
+					}
+				}
+			}
+		});
+
+		configureDebugger = createPushButton(debuggerServerComp,
+				PHPServerUIMessages.getString("ServerTab.configure"), null); //$NON-NLS-1$
+		configureDebugger.addSelectionListener(new SelectionAdapter() {
+
+			public void widgetSelected(SelectionEvent e) {
+				handleConfigureDebuggerSelected();
+			}
+		});
+
+		// initialize the debuggers list
+		fillDebuggers();
+	}
+

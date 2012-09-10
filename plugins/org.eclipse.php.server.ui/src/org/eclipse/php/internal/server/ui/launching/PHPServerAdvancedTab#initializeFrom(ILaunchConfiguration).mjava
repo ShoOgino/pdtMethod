@@ -7,6 +7,7 @@
 	 */
 	public void initializeFrom(ILaunchConfiguration configuration) {
 		launchConfiguration = configuration;
+		initializeDebuggerControl(configuration);
 		boolean isXdebugger = isXdebug(configuration);
 		try {
 			boolean isUsingTunnel = configuration.getAttribute(
@@ -19,12 +20,11 @@
 				if (userName.getText().length() > 0) {
 					// Load the password from the Secured Storage
 					try {
-						password
-								.setText(PHPLaunchUtilities
-										.getSecurePreferences(
-												PHPLaunchUtilities
-														.getDebugHost(launchConfiguration))
-										.get(userName.getText(), ""));
+						password.setText(PHPLaunchUtilities
+								.getSecurePreferences(
+										PHPLaunchUtilities
+												.getDebugHost(launchConfiguration))
+								.get(userName.getText(), ""));
 					} catch (StorageException e) {
 						Logger.logException(
 								"Error accessing the secured storage", e);
@@ -39,8 +39,8 @@
 			// with a browser instance, we check for it and enable it anyway.
 			isOpenInBrowser = isXdebugger
 					|| configuration.getAttribute(
-							IPHPDebugConstants.OPEN_IN_BROWSER, PHPDebugPlugin
-							.getOpenInBrowserOption());
+							IPHPDebugConstants.OPEN_IN_BROWSER,
+							PHPDebugPlugin.getOpenInBrowserOption());
 			// isUsingExternalBrowser = internalWebBrowserAvailable
 			// && configuration.getAttribute(
 			// IPHPDebugConstants.USE_INTERNAL_BROWSER, false);
@@ -81,6 +81,12 @@
 			enableSessionSettingButtons(isXdebugger
 					|| (isOpenInBrowser && ILaunchManager.DEBUG_MODE
 							.equals(getLaunchConfigurationDialog().getMode())));
+			if (breakOnFirstLine != null) {
+				// init the breakpoint settings
+				breakOnFirstLine.setSelection(configuration.getAttribute(
+						IDebugParametersKeys.FIRST_LINE_BREAKPOINT,
+						PHPDebugPlugin.getStopAtFirstLine()));
+			}
 		} catch (CoreException e) {
 		}
 		isValid(configuration);
