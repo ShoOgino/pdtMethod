@@ -1,0 +1,49 @@
+	private void evaluateReturnType(List<String> returnTypeList,
+			PHPDocBlock docBlock, IMethod method) {
+
+		PHPDocTag[] tags = docBlock.getTags(PHPDocTagKinds.RETURN);
+		PHPDocTag[] inherit = docBlock.getTags(PHPDocTagKinds.INHERITDOC);
+
+		if (inherit != null && inherit.length == 1) {
+			IType type = method.getDeclaringType();
+
+			if (type != null) {
+				try {
+					IType[] superClasses = PHPModelUtils.getSuperClasses(type,
+							null);
+
+					for (IType superClass : superClasses) {
+						IMethod superClassMethod = superClass.getMethod(method
+								.getElementName());
+
+						if (superClassMethod != null) {
+							PHPDocBlock superDocBlock = PHPModelUtils
+									.getDocBlock(superClassMethod);
+							if (superDocBlock == null) {
+								continue;
+							}
+							evaluateReturnType(returnTypeList, superDocBlock,
+									superClassMethod);
+						}
+					}
+				} catch (ModelException e) {
+					PHPCorePlugin.getDefault().log(e);
+				}
+			}
+		}
+
+		if (tags != null && tags.length > 0) {
+			for (PHPDocTag phpDocTag : tags) {
+				if (phpDocTag.getReferences() != null
+						&& phpDocTag.getReferences().length > 0) {
+					for (SimpleReference ref : phpDocTag.getReferences()) {
+						String type = ref.getName();
+						if (type != null) {
+							returnTypeList.add(type);
+						}
+					}
+				}
+			}
+		}
+	}
+
