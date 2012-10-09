@@ -75,6 +75,17 @@
 					return (Object[]) returnChlidren
 							.toArray(new Object[returnChlidren.size()]);
 				}
+
+				for (ITreeContentProvider provider : TreeContentProviderRegistry
+						.getInstance().getTreeProviders()) {
+
+					Object[] providerChildren = provider
+							.getChildren(parentElement);
+					if (providerChildren != null) {
+						return providerChildren;
+					}
+				}
+
 				return super.getChildren(parentElement);
 			}
 
@@ -91,7 +102,7 @@
 						return NO_CHILDREN;
 					}
 
-					ArrayList<Object> returnChlidren = new ArrayList<Object>();
+					ArrayList<Object> returnChildren = new ArrayList<Object>();
 
 					boolean groupByNamespace = PHPUiPlugin
 							.getDefault()
@@ -101,9 +112,9 @@
 					if (groupByNamespace
 							&& parentElement instanceof IScriptProject
 							&& supportsNamespaces((IScriptProject) parentElement)) {
-						returnChlidren.add(new GlobalNamespace(
+						returnChildren.add(new GlobalNamespace(
 								(IScriptProject) parentElement));
-						returnChlidren
+						returnChildren
 								.addAll(Arrays
 										.asList(getAllNamespaces((IScriptProject) parentElement)));
 
@@ -114,7 +125,7 @@
 									.create(resource2);
 							if (modelElement == null
 									|| !isInSourceFolder(modelElement)) {
-								returnChlidren.add(resource2);
+								returnChildren.add(resource2);
 							}
 						}
 					} else {
@@ -125,9 +136,9 @@
 									.create(resource2);
 							if (modelElement != null
 									&& isInSourceFolder(modelElement)) {
-								returnChlidren.add(modelElement);
+								returnChildren.add(modelElement);
 							} else {
-								returnChlidren.add(resource2);
+								returnChildren.add(resource2);
 							}
 						}
 					}
@@ -142,7 +153,7 @@
 								.getInstance().getIncludePaths(project);
 						IncludePathContainer incPathContainer = new IncludePathContainer(
 								scriptProject, includePaths);
-						returnChlidren.add(incPathContainer);
+						returnChildren.add(incPathContainer);
 
 						// Add the language library
 						Object[] projectChildren = getProjectFragments(scriptProject);
@@ -152,7 +163,7 @@
 											.getBuildpathEntry()
 											.getPath()
 											.equals(LanguageModelInitializer.LANGUAGE_CONTAINER_PATH)) {
-								returnChlidren.add(modelElement);
+								returnChildren.add(modelElement);
 							}
 						}
 
@@ -160,19 +171,33 @@
 						if (hasJsNature) {
 							ProjectLibraryRoot projectLibs = new ProjectLibraryRoot(
 									JavaScriptCore.create(project));
-							returnChlidren.add(projectLibs);
+							returnChildren.add(projectLibs);
+						}
+
+						// let extensions contribute explorer root elements
+						for (ITreeContentProvider provider : TreeContentProviderRegistry
+								.getInstance().getTreeProviders()) {
+
+							Object[] providerChildren = provider
+									.getChildren(parentElement);
+							if (providerChildren != null) {
+								returnChildren.addAll(new ArrayList<Object>(
+										Arrays.asList(providerChildren)));
+							}
 						}
 					}
-					return returnChlidren.toArray();
+					return returnChildren.toArray();
 				}
 			}
 		} catch (CoreException e) {
 			Logger.logException(e);
 		}
+
 		if (parentElement instanceof ArchiveProjectFragment
 				|| parentElement instanceof ArchiveFolder) {
 			return super.getChildren(parentElement);
 		}
+
 		return NO_CHILDREN;
 	}
 
