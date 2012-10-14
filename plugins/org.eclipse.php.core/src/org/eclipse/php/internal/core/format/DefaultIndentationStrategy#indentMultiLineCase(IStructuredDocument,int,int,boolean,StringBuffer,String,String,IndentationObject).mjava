@@ -42,6 +42,7 @@
 						return true;
 					}
 				}
+
 			} else if (inMultiLine(scanner, document, lineNumber, offset)) {
 				// lineState.inBracelessBlock = true;
 				int peer = scanner.findOpeningPeer(offset - 1,
@@ -49,8 +50,27 @@
 						PHPHeuristicScanner.LPAREN, PHPHeuristicScanner.RPAREN);
 				if (peer != PHPHeuristicScanner.NOT_FOUND) {
 
-					int token = scanner.previousToken(peer - 1,
+					// search for assignment (i.e. "=>")
+					int position = peer - 1;
+					int token = scanner.previousToken(position,
 							PHPHeuristicScanner.UNBOUND);
+					// scan tokens backwards until reaching a PHP token
+					while (token > 100
+							|| token == PHPHeuristicScanner.TokenOTHER) {
+						position--;
+						token = scanner.previousToken(position,
+								PHPHeuristicScanner.UNBOUND);
+					}
+
+					position--;
+					boolean isAssignment = scanner.previousToken(position,
+							PHPHeuristicScanner.UNBOUND) == PHPHeuristicScanner.TokenGREATERTHAN
+							&& scanner.previousToken(position - 1,
+									PHPHeuristicScanner.UNBOUND) == PHPHeuristicScanner.TokenEQUAL;
+
+					token = scanner.previousToken(peer - 1,
+							PHPHeuristicScanner.UNBOUND);
+
 					boolean isArray = token == Symbols.TokenARRAY;
 					// lineState.indent.setLength(0)
 					// int baseLine = document.getLineOfOffset(peer);
@@ -69,10 +89,21 @@
 									.startsWith(
 											BLANK + PHPHeuristicScanner.RPAREN)) {
 						if (isArray) {
-							indent(document, newBuffer,
-									indentationObject.indentationArrayInitSize,
-									indentationObject.indentationChar,
-									indentationObject.indentationSize);
+							region = document
+									.getLineInformationOfOffset(offset);
+							if (scanner.nextToken(offset, region.getOffset()
+									+ region.getLength()) == PHPHeuristicScanner.TokenRPAREN
+									&& isAssignment) {
+								indent(document, newBuffer, 0,
+										indentationObject.indentationChar,
+										indentationObject.indentationSize);
+							} else {
+								indent(document,
+										newBuffer,
+										indentationObject.indentationArrayInitSize,
+										indentationObject.indentationChar,
+										indentationObject.indentationSize);
+							}
 						} else {
 							indent(document,
 									newBuffer,
