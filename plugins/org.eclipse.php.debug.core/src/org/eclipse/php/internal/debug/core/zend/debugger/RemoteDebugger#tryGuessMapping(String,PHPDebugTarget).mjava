@@ -1,0 +1,38 @@
+	private String tryGuessMapping(String remoteFile, PHPDebugTarget debugTarget)
+			throws ModelException {
+		String orginalURL = debugTarget.getLaunch().getAttribute(
+				IDebugParametersKeys.ORIGINAL_URL);
+		if (orginalURL != null) {
+			String projectName = new Path(orginalURL).segment(0);
+			IWorkspace workspace = ResourcesPlugin.getWorkspace();
+			IProject project = workspace.getRoot().getProject(projectName);
+			if (project != null) {
+				projectName = project.getName();
+				IPath remotePath = new Path(remoteFile);
+				int size = remotePath.segmentCount();
+				for (int j = 0; j < size; j++) {
+					String segment = remotePath.segment(j);
+					if (segment.equals(projectName)) {
+						remotePath = remotePath.removeFirstSegments(j);
+						size = remotePath.segmentCount();
+						for (int i = 0; i < size; i++) {
+							remotePath = remotePath.removeFirstSegments(1);
+							if (remotePath.segmentCount() > 0) {
+								IResource res = project.getFile(remotePath);
+								if (res != null && res.exists()) {
+									return project.getFullPath()
+											.append(remotePath).toString();
+								}
+							}
+						}
+						List<IPath> includePaths = getIncludePaths(project);
+						if (includePaths.size() > 0) {
+							return checkIncludePaths(remoteFile, includePaths);
+						}
+					}
+				}
+			}
+		}
+		return remoteFile;
+	}
+
