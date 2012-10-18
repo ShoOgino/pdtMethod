@@ -1,0 +1,27 @@
+	public static Map<String, String> getPHP54BuildinServerLaunchEnvironment(
+			String fileName, String query, String phpConfigDir,
+			String phpExeDir, String[] scriptArguments) {
+		Map<String, String> env = new HashMap<String, String>();
+		env.put("REQUEST_METHOD", "GET"); //$NON-NLS-1$ //$NON-NLS-2$
+		//		env.put("SCRIPT_FILENAME", fileName); //$NON-NLS-1$
+		//		env.put("SCRIPT_NAME", fileName); //$NON-NLS-1$
+		//		env.put("PATH_TRANSLATED", fileName); //$NON-NLS-1$
+		//		env.put("PATH_INFO", fileName); //$NON-NLS-1$
+
+		// Build query string
+		StringBuilder queryStringBuf = new StringBuilder(query);
+		queryStringBuf.append("&debug_host=127.0.0.1"); //$NON-NLS-1$
+		if (scriptArguments != null) {
+			for (String arg : scriptArguments) {
+				queryStringBuf.append('&').append(arg);
+			}
+		}
+		env.put("QUERY_STRING", queryStringBuf.toString());
+		env.put("REDIRECT_STATUS", "1"); //$NON-NLS-1$
+		env.put("PHPRC", phpConfigDir); //$NON-NLS-1$
+
+		appendLibrarySearchPathEnv(env, new File(phpExeDir));
+
+		return env;
+	}
+
