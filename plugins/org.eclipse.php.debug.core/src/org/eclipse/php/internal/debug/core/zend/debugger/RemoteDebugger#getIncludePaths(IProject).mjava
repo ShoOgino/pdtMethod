@@ -1,0 +1,35 @@
+	private List<IPath> getIncludePaths(IProject project) throws ModelException {
+		List<IPath> includePaths = resolvedIncludePaths.get(project.getName());
+		if (includePaths != null) {
+			return includePaths;
+		} else {
+			includePaths = new ArrayList<IPath>();
+		}
+		IncludePath[] paths = IncludePathManager.getInstance().getIncludePaths(
+				project);
+		for (IncludePath includePath : paths) {
+			if (includePath.getEntry() instanceof IBuildpathEntry) {
+				IBuildpathEntry bPath = (IBuildpathEntry) includePath
+						.getEntry();
+				if (bPath.getEntryKind() == IBuildpathEntry.BPE_CONTAINER
+						&& !bPath.getPath().toString()
+								.equals("org.eclipse.php.core.LANGUAGE")) {
+					IBuildpathContainer buildpathContainer = DLTKCore
+							.getBuildpathContainer(bPath.getPath(),
+									DLTKCore.create(project));
+					if (buildpathContainer != null) {
+						final IBuildpathEntry[] buildpathEntries = buildpathContainer
+								.getBuildpathEntries();
+						for (IBuildpathEntry buildpathEntry : buildpathEntries) {
+							IPath localPath = EnvironmentPathUtils
+									.getLocalPath(buildpathEntry.getPath());
+							includePaths.add(localPath);
+						}
+					}
+				}
+			}
+		}
+		resolvedIncludePaths.put(project.getName(), includePaths);
+		return includePaths;
+	}
+
