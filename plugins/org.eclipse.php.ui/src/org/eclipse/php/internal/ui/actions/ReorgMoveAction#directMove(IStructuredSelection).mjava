@@ -1,0 +1,55 @@
+	/**
+	 * Move the resources contained in the selection to the target folder
+	 * directly without opening the dialog.
+	 * 
+	 * The CheckConditionsOperation will ensure no files are overwritten in the
+	 * target folder.
+	 * 
+	 * @param selection
+	 * @return true if move operation was successfull, false otherwise.
+	 */
+	protected boolean directMove(IStructuredSelection selection) {
+
+		IResource[] resources = new IResource[selection.size()];
+		Iterator<?> iterator = selection.iterator();
+		int i = 0;
+		while (iterator.hasNext()) {
+			resources[i++] = (IResource) iterator.next();
+
+		}
+
+		MoveResourcesProcessor processor = new MoveResourcesProcessor(resources);
+		processor.setDestination(target);
+
+		ProcessorBasedRefactoring refactoring = new ProcessorBasedRefactoring(
+				processor);
+		CheckConditionsOperation checkOp = new CheckConditionsOperation(
+				refactoring, CheckConditionsOperation.ALL_CONDITIONS);
+		CreateChangeOperation operation = new CreateChangeOperation(checkOp,
+				RefactoringStatus.WARNING);
+		PerformChangeOperation perform = new PerformChangeOperation(operation);
+
+		try {
+			ResourcesPlugin.getWorkspace().run(perform,
+					new NullProgressMonitor());
+		} catch (CoreException e) {
+			PHPCorePlugin.log(e.getStatus());
+			return false;
+		}
+
+		RefactoringStatus status = perform.getValidationStatus();
+
+		if (status == null) {
+			RefactoringStatus refactoringStatus = checkOp.getStatus();
+
+			if (refactoringStatus != null && !refactoringStatus.isOK()) {
+				MessageDialog
+						.openError(fShell, "Error moving resource",
+								"A resource with the same name exists in the target folder.");
+			}
+			return false;
+		}
+
+		return true;
+	}
+

@@ -1,0 +1,61 @@
+	/**
+	 * Check if IType is a typed array in the methodContext:
+	 * 
+	 * <pre>
+	 *   /*
+	 *    *  @param SomeClass[] $elements
+	 *    *\/
+	 *    public function foo(array $elements);
+	 * </pre>
+	 * 
+	 * 
+	 * @param methodContext
+	 * @param type
+	 * @return boolean
+	 */
+	private boolean isArrayType(MethodContext methodContext, IType type) {
+
+		PHPMethodDeclaration methodDeclaration = (PHPMethodDeclaration) methodContext
+				.getMethodNode();
+
+		PHPDocBlock[] docBlocks = new PHPDocBlock[0];
+
+		try {
+			IModelElement element = methodContext.getSourceModule()
+					.getElementAt(methodDeclaration.getNameStart());
+			if (element instanceof IMethod) {
+				IMethod method = (IMethod) element;
+				if (method.getDeclaringType() != null) {
+					docBlocks = PHPModelUtils.getTypeHierarchyMethodDoc(
+							method.getDeclaringType(), method.getElementName(),
+							true, null);
+				} else {
+					docBlocks = new PHPDocBlock[] { methodDeclaration
+							.getPHPDoc() };
+				}
+			} else {
+				docBlocks = new PHPDocBlock[] { methodDeclaration.getPHPDoc() };
+			}
+
+		} catch (CoreException e) {
+		}
+
+		if (docBlocks.length > 0) {
+			for (int i = 0; i < docBlocks.length; i++) {
+				PHPDocTag[] tags = docBlocks[i].getTags();
+				for (int j = 0; j < tags.length; j++) {
+					PHPDocTag tag = tags[i];
+					if (tag.getTagKind() == PHPDocTag.PARAM) {
+						SimpleReference[] refs = tag.getReferences();
+						if (refs[1].getName().equals(
+								type.getElementName() + PHPDocClassVariableEvaluator.BRACKETS)) {
+							return true;
+						}
+					}
+				}
+			}
+		}
+
+		return false;
+	}
+
