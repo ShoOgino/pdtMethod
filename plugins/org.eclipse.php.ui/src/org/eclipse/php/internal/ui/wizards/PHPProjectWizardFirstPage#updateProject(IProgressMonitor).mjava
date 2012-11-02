@@ -1,0 +1,40 @@
+	protected void updateProject(IProgressMonitor monitor)
+			throws CoreException, InterruptedException {
+
+		IProject projectHandle = this.getProjectHandle();
+		DLTKCore.create(projectHandle);
+		fCurrProjectLocation = getProjectLocationURI();
+
+		if (monitor == null) {
+			monitor = new NullProgressMonitor();
+		}
+		try {
+			monitor.beginTask(
+					NewWizardMessages.ScriptProjectWizardSecondPage_operation_initialize,
+					70);
+			if (monitor.isCanceled()) {
+				throw new OperationCanceledException();
+			}
+
+			URI realLocation = fCurrProjectLocation;
+			if (fCurrProjectLocation == null) { // inside workspace
+				try {
+					URI rootLocation = ResourcesPlugin.getWorkspace().getRoot()
+							.getLocationURI();
+					realLocation = new URI(rootLocation.getScheme(), null, Path
+							.fromPortableString(rootLocation.getPath())
+							.append(projectHandle.getName()).toString(), null);
+				} catch (URISyntaxException e) {
+					Assert.isTrue(false, "Can't happen"); //$NON-NLS-1$
+				}
+			}
+
+			rememberExistingFiles(realLocation);
+
+			createProject(projectHandle, fCurrProjectLocation,
+					new SubProgressMonitor(monitor, 20));
+		} finally {
+			monitor.done();
+		}
+	}
+
