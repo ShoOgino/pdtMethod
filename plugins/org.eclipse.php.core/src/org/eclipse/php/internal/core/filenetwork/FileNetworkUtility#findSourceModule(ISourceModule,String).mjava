@@ -1,46 +1,4 @@
 	public static ISourceModule findSourceModule(ISourceModule from, String path) {
-		ISourceModule sourceModule = null;
-
-		IProject currentProject = from.getScriptProject().getProject();
-		String currentScriptDir = from.getParent().getPath().toString();
-		String currentWorkingDir = currentScriptDir; // currentProject.getFullPath().toString();
-		Result<?, ?> result = PHPSearchEngine.find(path, currentWorkingDir,
-				currentScriptDir, currentProject);
-
-		if (result instanceof ResourceResult) {
-			// workspace file
-			ResourceResult resResult = (ResourceResult) result;
-			IResource resource = resResult.getFile();
-			sourceModule = (ISourceModule) DLTKCore.create(resource);
-		} else if (result instanceof IncludedFileResult) {
-			IncludedFileResult incResult = (IncludedFileResult) result;
-			IProjectFragment[] projectFragments = incResult
-					.getProjectFragments();
-			if (projectFragments != null) {
-				String folderPath = ""; //$NON-NLS-1$
-				String moduleName = path;
-				int i = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
-				if (i != -1) {
-					folderPath = path.substring(0, i);
-					moduleName = path.substring(i + 1);
-				}
-				for (IProjectFragment projectFragment : projectFragments) {
-					IScriptFolder scriptFolder = projectFragment
-							.getScriptFolder(folderPath);
-					if (scriptFolder != null) {
-						sourceModule = scriptFolder.getSourceModule(moduleName);
-						if (sourceModule != null) {
-							break;
-						}
-					}
-				}
-			}
-		} else if (result instanceof IncludedPharFileResult) {
-			sourceModule = ((IncludedPharFileResult) result).getFile();
-		} else {
-			// XXX: add support for external files
-		}
-
-		return sourceModule;
+		return findSourceModule(from, path, null);
 	}
 

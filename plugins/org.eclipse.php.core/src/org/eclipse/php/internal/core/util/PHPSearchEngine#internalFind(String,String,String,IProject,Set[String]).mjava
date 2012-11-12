@@ -1,0 +1,55 @@
+	private Result<?, ?> internalFind(String path, String currentWorkingDir,
+			String currentScriptDir, IProject currentProject,
+			Set<String> exclusiveFiles) {
+		if (path == null || currentWorkingDir == null
+				|| currentScriptDir == null || currentProject == null) {
+			throw new NullPointerException("Parameters can't be null");
+		}
+
+		// check whether the path is absolute
+		File file = new File(path);
+		if (file.isAbsolute()) {
+			return searchExternalOrWorkspaceFile(file);
+		}
+		if (RELATIVE_PATH_PATTERN.matcher(path).matches()) { // check whether
+			// the path
+			// starts with
+			// ./ or ../
+			return searchExternalOrWorkspaceFile(currentWorkingDir, path);
+		}
+		List<Result> list = new ArrayList<PHPSearchEngine.Result>();
+
+		// look into include path:
+		IncludePath[] includePaths = buildIncludePath(currentProject);
+		for (IncludePath includePath : includePaths) {
+			if (includePath.isBuildpath()) {
+				Result<?, ?> searchInBuildpathEntry = searchInBuildpathEntry(
+						path, (IBuildpathEntry) includePath.getEntry(),
+						currentProject);
+				if (searchInBuildpathEntry != null) {
+					return searchInBuildpathEntry;
+				}
+			} else {
+				IContainer container = (IContainer) includePath.getEntry();
+				IResource resource = container.findMember(path);
+				if ((resource instanceof IFile)) {
+					Result result = new ResourceResult((IFile) resource);
+					if (exclusiveFiles == null
+							|| !exclusiveFiles.contains(resource.getLocation()
+									.toOSString())) {
+						return result;
+					} else {
+						list.add(result);
+					}
+
+				}
+			}
+		}
+		if (!list.isEmpty()) {
+			return list.get(0);
+		}
+
+		// look at current script directory:
+		return searchExternalOrWorkspaceFile(currentScriptDir, path);
+	}
+
