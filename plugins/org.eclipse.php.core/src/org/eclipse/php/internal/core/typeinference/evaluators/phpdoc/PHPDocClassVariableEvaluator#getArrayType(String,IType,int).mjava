@@ -16,6 +16,28 @@
 		for (String name : typeNames) {
 			if (!"".equals(name)) {
 
+				if (name.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) > 0
+						&& currentNamespace != null) {
+					// check if the first part is an
+					// alias,then get the full name
+					ModuleDeclaration moduleDeclaration = SourceParserUtil
+							.getModuleDeclaration(currentNamespace
+									.getSourceModule());
+					String prefix = name.substring(0, name
+							.indexOf(NamespaceReference.NAMESPACE_SEPARATOR));
+					final Map<String, UsePart> result = PHPModelUtils
+							.getAliasToNSMap(prefix, moduleDeclaration, offset,
+									currentNamespace, true);
+					if (result.containsKey(prefix)) {
+						String fullName = result.get(prefix).getNamespace()
+								.getFullyQualifiedName();
+						name = name.replace(prefix, fullName);
+						if (name.charAt(0) != NamespaceReference.NAMESPACE_SEPARATOR) {
+							name = NamespaceReference.NAMESPACE_SEPARATOR
+									+ name;
+						}
+					}
+				}
 				arrayType.addType(getEvaluatedType(name, currentNamespace));
 			}
 		}
