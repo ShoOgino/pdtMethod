@@ -1,6 +1,33 @@
 	public String getReplacementString() {
+		String prefix = "";
+		try {
+			if (method.isConstructor()) {
+				IType type = method.getDeclaringType();
+				try {
+					int flags = type.getFlags();
+					IType currentNamespace = PHPModelUtils.getCurrentNamespace(
+							fSourceModule, getReplacementOffset());
+					IType namespace = PHPModelUtils.getCurrentNamespace(type);
+					if (!PHPFlags.isNamespace(flags)
+							&& namespace == null
+							&& currentNamespace != null
+							&& !ProjectOptions.getPhpVersion(
+									sProject.getProject()).isLessThan(
+									PHPVersion.PHP5_3)
+							&& document.getChar(getReplacementOffset() - 1) != NamespaceReference.NAMESPACE_SEPARATOR) {
+						prefix = prefix
+								+ NamespaceReference.NAMESPACE_SEPARATOR;
+					}
+				} catch (ModelException e) {
+					PHPUiPlugin.log(e);
+				} catch (BadLocationException e) {
+					PHPUiPlugin.log(e);
+				}
+			}
+		} catch (ModelException e) {
+		}
 		if (ProposalExtraInfo.isMethodOnly(extraInfo)) {
-			setReplacementString(method.getElementName());
+			setReplacementString(prefix + method.getElementName());
 			return super.getReplacementString();
 		}
 		boolean fileArgumentNames = Platform.getPreferencesService()
@@ -8,7 +35,10 @@
 						PHPCoreConstants.CODEASSIST_FILL_ARGUMENT_NAMES, true,
 						null);
 		if (fileArgumentNames && !fReplacementStringComputed)
-			setReplacementString(computeReplacementString());
+			setReplacementString(prefix + computeReplacementString());
+		if (!fileArgumentNames)
+			setReplacementString(prefix + super.getReplacementString());
+
 		return super.getReplacementString();
 	}
 
