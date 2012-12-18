@@ -77,6 +77,7 @@
 					String newblanks = FormatterUtils.getLineBlanks(document,
 							document.getLineInformationOfOffset(peer));
 					StringBuffer newBuffer = new StringBuffer(newblanks);
+					pairArrayParen = false;
 					// IRegion region = document
 					// .getLineInformationOfOffset(offset);
 					if (enterKeyPressed
@@ -92,11 +93,19 @@
 							region = document
 									.getLineInformationOfOffset(offset);
 							if (scanner.nextToken(offset, region.getOffset()
-									+ region.getLength()) == PHPHeuristicScanner.TokenRPAREN
-									&& isAssignment) {
-								indent(document, newBuffer, 0,
-										indentationObject.indentationChar,
-										indentationObject.indentationSize);
+									+ region.getLength()) == PHPHeuristicScanner.TokenRPAREN) {
+								if (isAssignment)
+									indent(document, newBuffer, 0,
+											indentationObject.indentationChar,
+											indentationObject.indentationSize);
+								else {
+									indent(document,
+											newBuffer,
+											indentationObject.indentationArrayInitSize,
+											indentationObject.indentationChar,
+											indentationObject.indentationSize);
+									pairArrayParen = true;
+								}
 							} else {
 								indent(document,
 										newBuffer,
@@ -115,6 +124,12 @@
 
 					result.setLength(result.length() - blanks.length());
 					result.append(newBuffer.toString());
+					if (pairArrayParen) {
+						pairArrayOffset = offset + result.length();
+						result.append(Util.getLineSeparator(null, null));
+						result.append(blanks);
+
+					}
 					return true;
 				}
 			} else {
