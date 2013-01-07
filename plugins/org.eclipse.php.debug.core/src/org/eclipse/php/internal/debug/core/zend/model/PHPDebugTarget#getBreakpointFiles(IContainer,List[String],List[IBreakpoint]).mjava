@@ -1,0 +1,40 @@
+	private void getBreakpointFiles(IContainer container, List<String> paths,
+			List<IBreakpoint> breakpoints) throws CoreException {
+		if (container == null) {
+			String localFile = ((RemoteDebugger) debugger)
+					.convertToLocalFilename(fLastFileName);
+			if (localFile != null) {
+				IPath localPath = new Path(localFile);
+				String projectName = localPath.segment(0);
+				container = ResourcesPlugin.getWorkspace().getRoot()
+						.getProject(projectName);
+				if (container == null) {
+					return;
+				}
+			}
+		}
+		IResource[] members = container.members();
+		for (IResource res : members) {
+			if (res instanceof IContainer) {
+				getBreakpointFiles((IContainer) res, paths, breakpoints);
+			} else {
+				if (res.getName().endsWith(".php")) {
+					List<IBreakpoint> toRemove = new ArrayList<IBreakpoint>();
+					for (IBreakpoint bp : breakpoints) {
+						if (bp.getMarker().getResource().equals(res)) {
+							String remotePath = RemoteDebugger
+									.convertToRemoteFilename(res.getFullPath()
+											.toString(), this);
+							if (remotePath != null && remotePath.length() > 0) {
+								paths.add(remotePath);
+								toRemove.add(bp);
+							}
+							break;
+						}
+					}
+					breakpoints.removeAll(toRemove);
+				}
+			}
+		}
+	}
+
