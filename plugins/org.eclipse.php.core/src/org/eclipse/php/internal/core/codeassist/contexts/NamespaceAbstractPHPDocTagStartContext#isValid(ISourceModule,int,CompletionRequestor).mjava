@@ -18,29 +18,23 @@
 			String lastWord = stack.pop();
 			if (lastWord.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) >= 0) {
 				if (!stack.empty() && isPrefix(lastWord)) {
+					if (lastWord.startsWith("\\")) {
+						// isGlobal = true;
+					}
 					if (lastWord.startsWith("\\")
 							&& lastWord
 									.lastIndexOf(NamespaceReference.NAMESPACE_SEPARATOR) == 0) {
 						isGlobal = true;
 					} else {
-						String nsName = lastWord;
-						nsName = nsName
-								.substring(
-										0,
-										nsName.lastIndexOf(NamespaceReference.NAMESPACE_SEPARATOR) + 1);
-
-						try {
-							namespaces = PHPModelUtils.getNamespaceOf(nsName,
-									sourceModule, offset, null, null);
-						} catch (ModelException e) {
-							if (DLTKCore.DEBUG) {
-								e.printStackTrace();
-							}
-						}
+						initRelativeNamespace(sourceModule, offset, lastWord);
 					}
 					lastWord = stack.pop();
 					return lastWord.endsWith(tagName);
 				}
+			} else {
+				initRelativeNamespace(sourceModule, offset, lastWord);
+				lastWord = stack.pop();
+				return lastWord.endsWith(tagName);
 			}
 		}
 		return false;
