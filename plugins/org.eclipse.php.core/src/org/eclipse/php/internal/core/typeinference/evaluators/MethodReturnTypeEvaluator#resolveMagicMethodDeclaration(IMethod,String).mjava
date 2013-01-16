@@ -10,17 +10,35 @@
 		IType type = (IType) parent;
 		final PHPDocBlock docBlock = PHPModelUtils.getDocBlock(type);
 		if (docBlock != null) {
+			IType currentNamespace = PHPModelUtils.getCurrentNamespace(type);
 			for (PHPDocTag tag : docBlock.getTags()) {
 				final int tagKind = tag.getTagKind();
 				if (tagKind == PHPDocTag.METHOD) {
 					final String typeName = getTypeBinding(methodName, tag);
 					if (typeName != null) {
-						IEvaluatedType resolved = PHPSimpleTypes
-								.fromString(typeName);
-						if (resolved == null) {
-							resolved = new PHPClassType(typeName);
+						Matcher m = PHPDocClassVariableEvaluator.ARRAY_TYPE_PATTERN
+								.matcher(typeName);
+						if (m.find()) {
+							evaluated.add(PHPDocClassVariableEvaluator
+									.getArrayType(m.group(), currentNamespace,
+											tag.sourceStart()));
+						} else if (typeName
+								.endsWith(PHPDocClassVariableEvaluator.BRACKETS)
+								&& typeName.length() > 2) {
+							int offset = tag.sourceStart();
+							evaluated.add(PHPDocClassVariableEvaluator
+									.getArrayType(
+											typeName.substring(0,
+													typeName.length() - 2),
+											currentNamespace, offset));
+						} else {
+							IEvaluatedType resolved = PHPSimpleTypes
+									.fromString(typeName);
+							if (resolved == null) {
+								resolved = new PHPClassType(typeName);
+							}
+							evaluated.add(resolved);
 						}
-						evaluated.add(resolved);
 					}
 				}
 			}
