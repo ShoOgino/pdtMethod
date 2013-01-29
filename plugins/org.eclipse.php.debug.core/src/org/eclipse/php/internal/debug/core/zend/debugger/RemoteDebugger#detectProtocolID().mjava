@@ -5,8 +5,23 @@
 	 *         <code>false</code>
 	 */
 	protected boolean detectProtocolID() {
+		boolean isUseNewProtocol = false;
+		try {
+			ILaunchConfiguration config = getDebugHandler().getDebugTarget()
+					.getLaunch().getLaunchConfiguration();
+			String debuggerId = config.getAttribute(
+					PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID,
+					DebuggerCommunicationDaemon.ZEND_DEBUGGER_ID);
+			if (debuggerId == DebuggerCommunicationDaemon.ZEND_DEBUGGER_ID) {
+				ZendDebuggerConfiguration debuggerConfiguration = (ZendDebuggerConfiguration) PHPDebuggersRegistry
+						.getDebuggerConfiguration(debuggerId);
+				isUseNewProtocol = debuggerConfiguration.isUseNewProtocol();
+			}
+		} catch (CoreException e) {
+			PHPDebugPlugin.log(e);
+		}
 		// check whether debugger is using the latest protocol ID:
-		if (setProtocol(PROTOCOL_ID_LATEST)) {
+		if (isUseNewProtocol && setProtocol(PROTOCOL_ID_LATEST)) {
 			return true;
 		}
 		// check whether debugger is using one of older protocol ID:
