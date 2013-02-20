@@ -1,0 +1,23 @@
+	public static IField[] getTypeHierarchyField(IType type,
+			ITypeHierarchy hierarchy, String prefix, boolean exactName,
+			IProgressMonitor monitor) throws CoreException {
+		if (prefix == null) {
+			throw new NullPointerException();
+		}
+		final List<IField> fields = new ArrayList<IField>();
+		fields.addAll(Arrays.asList(PHPModelUtils.getTypeField(type, prefix,
+				exactName)));
+		if (type.getSuperClasses() != null && type.getSuperClasses().length > 0) {
+			Set<IModelElement> fieldSet = new TreeSet<IModelElement>(
+					new SourceFieldComparator());
+			fieldSet.addAll(Arrays.asList(PHPModelUtils
+					.getSuperTypeHierarchyField(type, hierarchy, prefix,
+							exactName, monitor)));
+			IField[] temp = fieldSet.toArray(new IField[fields.size()]);
+			for (IField field : temp) {
+				fields.add(field);
+			}
+		}
+		return fields.toArray(new IField[fields.size()]);
+	}
+
