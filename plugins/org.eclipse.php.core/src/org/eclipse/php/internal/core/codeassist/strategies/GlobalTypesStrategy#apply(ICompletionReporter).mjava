@@ -11,13 +11,28 @@
 		// now we compute type suffix in PHPCompletionProposalCollector
 		String suffix = "";//$NON-NLS-1$ 
 		String nsSuffix = getNSSuffix(abstractContext);
+		int extraInfo = getExtraInfo();
+		if ((abstractContext.getOffset() - abstractContext.getPrefix().length()
+				- 1 >= 0)
+				&& (abstractContext.getDocument().getChar(
+						abstractContext.getOffset()
+								- abstractContext.getPrefix().length() - 1) == '\'' || abstractContext
+						.getDocument().getChar(
+								abstractContext.getOffset()
+										- abstractContext.getPrefix().length()
+										- 1) == '\"')) {
+			extraInfo = extraInfo | ProposalExtraInfo.NO_INSERT_NAMESPACE;
+		}
+		if ("namespace".equals(abstractContext.getPreviousWord(1))) {
+			extraInfo = extraInfo | ProposalExtraInfo.NO_INSERT_NAMESPACE;
+		}
 
 		for (IType type : types) {
 			try {
 				int flags = type.getFlags();
 				reporter.reportType(type,
 						PHPFlags.isNamespace(flags) ? nsSuffix : suffix,
-						replacementRange, getExtraInfo());
+						replacementRange, extraInfo);
 			} catch (ModelException e) {
 				PHPCorePlugin.log(e);
 			}
