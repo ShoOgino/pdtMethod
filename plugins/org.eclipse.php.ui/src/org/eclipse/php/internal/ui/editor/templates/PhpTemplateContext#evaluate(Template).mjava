@@ -26,7 +26,39 @@
 					newPattern, template.isAutoInsertable());
 
 		}
-		TemplateBuffer result = super.evaluate(template);
+		if (!canEvaluate(template))
+			return null;
+
+		final String[] lines = TextUtils.splitLines(template.getPattern());
+		if (lines.length > 1) {
+			String delimeter;
+			if (fLineDelimiter == null) {
+				delimeter = TextUtilities
+						.getDefaultLineDelimiter(getDocument());
+			} else {
+				delimeter = fLineDelimiter;
+			}
+			final String indent = calculateIndent(getDocument(), getStart());
+			final IScriptTemplateIndenter indenter = getIndenter();
+			final StringBuffer buffer = new StringBuffer(lines[0]);
+
+			// Except first line
+			for (int i = 1; i < lines.length; i++) {
+				buffer.append(delimeter);
+				indenter.indentLine(buffer, indent, lines[i]);
+			}
+
+			template = new Template(template.getName(),
+					template.getDescription(), template.getContextTypeId(),
+					buffer.toString(), template.isAutoInsertable());
+		}
+
+		TemplateTranslator translator = new TemplateTranslator();
+		TemplateBuffer buffer = translator.translate(template);
+
+		getContextType().resolve(buffer, this);
+
+		TemplateBuffer result = buffer;
 		// 300533: Switching through template keys? in fore and forek template
 		// is corrupter
 		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=300533
