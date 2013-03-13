@@ -1,0 +1,41 @@
+	/*
+	 * Method declared in IAction.
+	 */
+	@Override
+	public final void run() {
+		ISourceModule inputElement = EditorUtility.getEditorInputModelElement(
+				fEditor, false);
+		if (!(inputElement instanceof ISourceModule && inputElement.exists()))
+			return;
+
+		// ITypeRoot typeRoot= (ITypeRoot) inputElement;
+		ISourceRange sourceRange;
+		try {
+			sourceRange = inputElement.getSourceRange();
+			if (sourceRange == null || sourceRange.getLength() == 0) {
+				MessageDialog
+						.openInformation(
+								fEditor.getEditorSite().getShell(),
+								"Expand Selection To",
+								"No source code attached to class file. To perform this operation you will need to attach source.");
+				return;
+			}
+		} catch (ModelException e) {
+		}
+		ITextSelection selection = getTextSelection();
+		ISourceRange newRange = getNewSelectionRange(
+				createSourceRange(selection), inputElement);
+		// Check if new selection differs from current selection
+		if (selection.getOffset() == newRange.getOffset()
+				&& selection.getLength() == newRange.getLength())
+			return;
+		fSelectionHistory.remember(new SourceRange(selection.getOffset(),
+				selection.getLength()));
+		try {
+			fSelectionHistory.ignoreSelectionChanges();
+			fEditor.selectAndReveal(newRange.getOffset(), newRange.getLength());
+		} finally {
+			fSelectionHistory.listenToSelectionChanges();
+		}
+	}
+

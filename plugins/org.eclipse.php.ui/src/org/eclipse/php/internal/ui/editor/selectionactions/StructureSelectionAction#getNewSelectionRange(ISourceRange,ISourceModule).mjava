@@ -1,0 +1,19 @@
+	public final ISourceRange getNewSelectionRange(ISourceRange oldSourceRange,
+			ISourceModule typeRoot) {
+		try {
+			Program root = getAST(typeRoot);
+			if (root == null)
+				return oldSourceRange;
+			Selection selection = Selection.createFromStartLength(
+					oldSourceRange.getOffset(), oldSourceRange.getLength());
+			SelectionAnalyzer selAnalyzer = new SelectionAnalyzer(selection,
+					true);
+			root.accept(selAnalyzer);
+			return internalGetNewSelectionRange(oldSourceRange, typeRoot,
+					selAnalyzer);
+		} catch (ModelException e) {
+			return new SourceRange(oldSourceRange.getOffset(),
+					oldSourceRange.getLength());
+		}
+	}
+

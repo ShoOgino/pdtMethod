@@ -1,0 +1,36 @@
+	/*
+	 * non java doc
+	 * 
+	 * @see StructureSelectionAction#internalGetNewSelectionRange(ISourceRange,
+	 * ICompilationUnit, SelectionAnalyzer)
+	 */
+	@Override
+	ISourceRange internalGetNewSelectionRange(ISourceRange oldSourceRange,
+			ISourceReference sr, SelectionAnalyzer selAnalyzer)
+			throws ModelException {
+		if (oldSourceRange.getLength() == 0
+				&& selAnalyzer.getLastCoveringNode() != null) {
+			ASTNode previousNode = PreviousNodeAnalyzer.perform(
+					oldSourceRange.getOffset(),
+					selAnalyzer.getLastCoveringNode());
+			if (previousNode != null)
+				return getSelectedNodeSourceRange(sr, previousNode);
+		}
+		ASTNode first = selAnalyzer.getFirstSelectedNode();
+		if (first == null)
+			return getLastCoveringNodeRange(oldSourceRange, sr, selAnalyzer);
+
+		ASTNode parent = first.getParent();
+		if (parent == null)
+			return getLastCoveringNodeRange(oldSourceRange, sr, selAnalyzer);
+
+		ASTNode previousNode = getPreviousNode(parent,
+				selAnalyzer.getSelectedNodes()[0]);
+		if (previousNode == parent)
+			return getSelectedNodeSourceRange(sr, parent);
+
+		int offset = previousNode.getStart();
+		int end = oldSourceRange.getOffset() + oldSourceRange.getLength() - 1;
+		return StructureSelectionAction.createSourceRange(offset, end);
+	}
+
