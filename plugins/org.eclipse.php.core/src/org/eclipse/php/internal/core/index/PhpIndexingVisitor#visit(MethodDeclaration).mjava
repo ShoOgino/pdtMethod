@@ -2,7 +2,11 @@
 	public boolean visit(MethodDeclaration method) throws Exception {
 		fNodes.push(method);
 		methodGlobalVars.add(new HashSet<String>());
-
+		PHPDocBlock doc = null;
+		if (method instanceof IPHPDocAwareDeclaration) {
+			IPHPDocAwareDeclaration declaration = (IPHPDocAwareDeclaration) method;
+			doc = declaration.getPHPDoc();
+		}
 		Declaration parentDeclaration = null;
 		if (!declarations.empty()) {
 			parentDeclaration = declarations.peek();
@@ -56,7 +60,9 @@
 							type = fp.getParameterType().getName();
 						}
 					}
-
+				}
+				if (type == NULL_VALUE && doc != null) {
+					type = getParamType(doc, arg.getName(), type);
 				}
 
 				metadata.append(type);
