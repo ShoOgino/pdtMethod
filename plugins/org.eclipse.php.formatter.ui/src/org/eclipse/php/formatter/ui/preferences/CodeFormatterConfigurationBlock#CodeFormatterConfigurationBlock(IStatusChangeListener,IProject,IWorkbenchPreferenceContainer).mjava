@@ -1,0 +1,34 @@
+	public CodeFormatterConfigurationBlock(IStatusChangeListener context,
+			IProject project, IWorkbenchPreferenceContainer container) {
+		super(context, project, new Key[] { PROFILE_KEY }, container);
+
+		fInstanceScope = new InstanceScope();
+		List<Profile> profiles = null;
+		try {
+			profiles = ProfileStore.readProfiles(fInstanceScope);
+		} catch (CoreException e) {
+			Logger.logException(e);
+		}
+		if (profiles == null) {
+			try {
+				profiles = ProfileStore
+						.readProfilesFromPreferences(new DefaultScope());
+			} catch (CoreException e) {
+				Logger.logException(e);
+			}
+		}
+
+		if (profiles == null)
+			profiles = new ArrayList<Profile>();
+
+		if (project != null) {
+			fCurrContext = new ProjectScope(project);
+		} else {
+			fCurrContext = fInstanceScope;
+		}
+
+		fProfileManager = new ProfileManager(profiles, fCurrContext);
+
+		new StoreUpdater();
+	}
+

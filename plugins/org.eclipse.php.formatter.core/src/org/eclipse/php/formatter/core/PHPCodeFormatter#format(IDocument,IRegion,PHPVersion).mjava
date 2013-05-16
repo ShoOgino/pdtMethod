@@ -1,0 +1,64 @@
+	public void format(IDocument document, IRegion region, PHPVersion version) {
+		// TODO Auto-generated method stub
+
+		IStructuredTextUndoManager undoManager = null;
+		IStructuredModel structuredModel = null;
+		try {
+			if (document instanceof IStructuredDocument) {
+				IStructuredDocument structuredDocument = (IStructuredDocument) document;
+				structuredModel = StructuredModelManager.getModelManager()
+						.getExistingModelForRead(document);
+				DOMModelForPHP doModelForPHP = (DOMModelForPHP) structuredModel;
+
+				IProject project = this.project;
+				if (doModelForPHP != null) {
+					project = getProject(doModelForPHP);
+				}
+				if (project == null) {
+					Logger.logException(new IllegalStateException(
+							"Cann't resolve file name")); //$NON-NLS-1$
+					return;
+				}
+
+				undoManager = structuredDocument.getUndoManager();
+				undoManager.beginRecording(this, "php format document", //$NON-NLS-1$
+						"format PHP document", 0, document.getLength()); //$NON-NLS-1$
+
+				// html format
+				HTMLFormatProcessorImpl htmlFormatter = new HtmlFormatterForPhpCode();
+
+				try {
+					htmlFormatter.formatDocument(document);
+				} catch (Exception e) {
+					// TODO: handle exception
+				}
+				// php format
+				// PHPVersion version = ProjectOptions.getPhpVersion(project);
+				boolean useShortTags = ProjectOptions.useShortTags(project);
+				ICodeFormattingProcessor codeFormatterVisitor = getCodeFormattingProcessor(
+						project, document, version, useShortTags, region);
+				if (codeFormatterVisitor instanceof CodeFormatterVisitor) {
+					List<ReplaceEdit> changes = ((CodeFormatterVisitor) codeFormatterVisitor)
+							.getChanges();
+					if (changes.size() > 0) {
+						replaceAll(document, changes, doModelForPHP);
+					}
+				}
+
+			} else {
+				// TODO: how to handle other document types?
+			}
+
+		} catch (Exception e) {
+			Logger.logException(e);
+		} finally {
+			if (undoManager != null) {
+				undoManager.endRecording(this);
+			}
+			if (structuredModel != null) {
+				structuredModel.releaseFromRead();
+			}
+		}
+
+	}
+

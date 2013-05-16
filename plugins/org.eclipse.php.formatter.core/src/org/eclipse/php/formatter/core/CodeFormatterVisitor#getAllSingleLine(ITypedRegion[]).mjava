@@ -1,0 +1,62 @@
+	private IRegion[] getAllSingleLine(ITypedRegion[] partitions) {
+		List<IRegion> result = new ArrayList<IRegion>();
+		if (document instanceof IStructuredDocument) {
+			IStructuredDocument structuredDocument = (IStructuredDocument) document;
+			ITextRegion phpOpenRegion = null;
+			for (int i = 0; i < partitions.length; i++) {
+				ITypedRegion iTypedRegion = partitions[i];
+
+				if (PHPPartitionTypes.PHP_DEFAULT
+						.equals(iTypedRegion.getType())) {
+					if (isInSingleLine(iTypedRegion.getOffset(),
+							iTypedRegion.getLength())) {
+						result.add(iTypedRegion);
+						continue;
+					}
+					IStructuredDocumentRegion structuredDocumentRegion = structuredDocument
+							.getRegionAtCharacterOffset(iTypedRegion
+									.getOffset());
+					ITextRegionList regions = structuredDocumentRegion
+							.getRegions();
+					for (Iterator iterator = regions.iterator(); iterator
+							.hasNext();) {
+						ITextRegion iTypedRegion2 = (ITextRegion) iterator
+								.next();
+						// if (iTypedRegion2 instanceof ContextRegionContainer)
+						// {
+						// ContextRegionContainer new_name =
+						// (ContextRegionContainer) iTypedRegion2;
+						//
+						// }
+						if (PHPRegionContext.PHP_OPEN.equals(iTypedRegion2
+								.getType())) {
+							if (phpOpenRegion == null) {
+								phpOpenRegion = iTypedRegion2;
+							}
+						} else if (PHPRegionContext.PHP_CLOSE
+								.equals(iTypedRegion2.getType())) {
+							if (phpOpenRegion != null) {
+								IRegion region = new Region(
+										structuredDocumentRegion.getStart()
+												+ phpOpenRegion.getStart(),
+										iTypedRegion2.getStart()
+												+ iTypedRegion2.getLength());
+								result.add(region);
+								phpOpenRegion = null;
+							}
+						}
+					}
+				}
+			}
+			List<IRegion> temp = new ArrayList<IRegion>();
+			for (Iterator iterator = result.iterator(); iterator.hasNext();) {
+				IRegion iRegion = (IRegion) iterator.next();
+				if (isInSingleLine(iRegion.getOffset(), iRegion.getLength())) {
+					temp.add(iRegion);
+				}
+			}
+			result = temp;
+		}
+		return result.toArray(new IRegion[result.size()]);
+	}
+

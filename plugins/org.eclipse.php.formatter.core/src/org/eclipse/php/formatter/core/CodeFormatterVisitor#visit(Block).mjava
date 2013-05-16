@@ -1,0 +1,273 @@
+	public boolean visit(Block block) {
+		boolean blockIndentation = false;
+		boolean isPhpMode = true;
+		boolean isEmptyBlockNewLine = true;
+		boolean isUnbracketedNamespace = false;
+		boolean isNamespace = false;
+
+		boolean isClassDeclaration = false;
+		boolean isFunctionDeclaration = false;
+
+		switch (block.getParent().getType()) {
+		case ASTNode.NAMESPACE:
+			isNamespace = true;
+			if (!block.isCurly()) {
+				isEmptyBlockNewLine = false;
+				isUnbracketedNamespace = true;
+				if (block.statements().size() > 0) {
+					Statement statement = block.statements().get(0);
+					// need check how many new lines will the next statement
+					// insert
+					int numberOfLines = getNumbreOfLines(statement) - 1;
+					numberOfLines = this.preferences.blank_lines_after_namespace
+							- numberOfLines;
+					if (numberOfLines > 0) {
+						for (int j = 0; j < numberOfLines; j++) {
+							insertNewLine();
+						}
+					}
+				} else {
+					for (int i = 0; i < this.preferences.blank_lines_after_namespace; i++) {
+						insertNewLine();
+					}
+				}
+				// ignoreEmptyLineSetting = true;
+				ignoreEmptyLineSetting = !preferences.indent_empty_lines;
+
+				break;
+			}
+			if (block.statements().size() > 0) {
+				Statement statement = block.statements().get(0);
+				// need check how many new lines will the next statement insert
+				int numberOfLines = getNumbreOfLines(statement) - 1;
+				numberOfLines = this.preferences.blank_lines_after_namespace
+						- numberOfLines;
+				if (numberOfLines > 0) {
+					for (int j = 0; j < numberOfLines; j++) {
+						insertNewLine();
+					}
+				}
+			} else {
+				for (int i = 0; i < this.preferences.blank_lines_after_namespace; i++) {
+					insertNewLine();
+				}
+			}
+			// ignoreEmptyLineSetting = true;
+			ignoreEmptyLineSetting = !preferences.indent_empty_lines;
+
+		case ASTNode.CLASS_DECLARATION:
+		case ASTNode.INTERFACE_DECLARATION:
+			isEmptyBlockNewLine = preferences.new_line_in_empty_class_body;
+			blockIndentation = this.preferences.indent_statements_within_type_declaration;
+			isClassDeclaration = true;
+			break;
+		case ASTNode.SWITCH_STATEMENT:
+			blockIndentation = this.preferences.indent_statements_within_switch;
+			break;
+		case ASTNode.FUNCTION_DECLARATION:
+			isEmptyBlockNewLine = preferences.new_line_in_empty_method_body;
+			blockIndentation = this.preferences.indent_statements_within_function;
+			for (int i = 0; i < this.preferences.blank_line_at_begin_of_method; i++) {
+				insertNewLine();
+			}
+			isFunctionDeclaration = true;
+
+			// ignoreEmptyLineSetting = true;
+			ignoreEmptyLineSetting = !preferences.indent_empty_lines;
+
+			break;
+		default:
+			isEmptyBlockNewLine = preferences.new_line_in_empty_block;
+			blockIndentation = this.preferences.indent_statements_within_block;
+			break;
+		}
+
+		if (blockIndentation) {
+			indentationLevel++;
+		}
+
+		int lastStatementEndOffset;
+		if (isUnbracketedNamespace) {
+			lastStatementEndOffset = block.getStart() - 1;
+		} else {
+			lastStatementEndOffset = block.getStart() + 1;
+		}
+
+		List<Statement> statementsList = block.statements();
+		Statement[] statements = new Statement[statementsList.size()];
+		statements = block.statements().toArray(statements);
+		for (int i = 0; i < statements.length; i++) {
+			boolean isHtmlStatement = statements[i].getType() == ASTNode.IN_LINE_HTML;
+			boolean isASTError = statements[i].getType() == ASTNode.AST_ERROR;
+			if (isASTError && i + 1 < statements.length) {
+				lastStatementEndOffset = statements[i + 1].getStart();
+			} else {
+				if (isPhpMode && !isHtmlStatement) {
+					// PHP -> PHP
+					if (getPhpStartTag(lastStatementEndOffset) != -1) {
+						insertNewLine();
+					}
+					if (isThrowOrReturnFormatCase(statements)) {
+						// do nothing... This is a Throw/Return case
+					} else {
+						insertNewLines(statements[i]);
+						indent();
+					}
+					handleChars(lastStatementEndOffset,
+							statements[i].getStart());
+				} else if (isPhpMode && isHtmlStatement) {
+					// PHP -> HTML
+					isPhpMode = false;
+				} else if (!isPhpMode && !isHtmlStatement) {
+					// HTML -> PHP
+					isPhpEqualTag = getPhpStartTag(lastStatementEndOffset) == PHP_OPEN_SHORT_TAG_WITH_EQUAL;
+					insertNewLines(statements[i]);
+					indent();
+					if (lastStatementEndOffset <= statements[i].getStart()) {
+						handleChars(lastStatementEndOffset,
+								statements[i].getStart());
+					}
+					isPhpMode = true;
+				} else {
+					// HTML -> HTML
+					assert false;
+				}
+				statements[i].accept(this);
+				lastStatementEndOffset = statements[i].getEnd();
+				if (isNamespace && i + 1 < statements.length
+						&& statements[i].getType() == ASTNode.USE_STATEMENT) {
+					if (statements[i + 1].getType() == ASTNode.USE_STATEMENT) {
+						// for (int j = 0; j <
+						// this.preferences.blank_lines_between_use_statements;
+						// j++) {
+						// insertNewLine();
+						// }
+
+						// ignoreEmptyLineSetting = true;
+						ignoreEmptyLineSetting = !preferences.indent_empty_lines;
+
+					} else {
+						// need check how many new lines will the next statement
+						// insert
+						int numberOfLines = getNumbreOfLines(statements[i + 1]) - 1;
+						numberOfLines = this.preferences.blank_lines_after_use_statements
+								- numberOfLines;
+						if (numberOfLines > 0) {
+							for (int j = 0; j < numberOfLines; j++) {
+								insertNewLine();
+							}
+						}
+
+						// ignoreEmptyLineSetting = true;
+						ignoreEmptyLineSetting = !preferences.indent_empty_lines;
+
+					}
+				}
+			}
+		}
+		// in case of the last statement is html statement
+		if (!isPhpMode) {
+			isPhpEqualTag = false;
+		}
+		// set the block end
+		if (blockIndentation) {
+			indentationLevel--;
+			indentationLevelDesending = true;
+		}
+		int endPosition = block.getEnd() - 1;
+		boolean hasComments = false;
+		if (startRegionPosition < endPosition
+				&& endRegionPosition >= endPosition) {
+			try {
+				hasComments = hasComments(lastStatementEndOffset, endPosition);
+			} catch (Exception e) {
+			}
+		}
+
+		if (statements.length > 0 || isEmptyBlockNewLine || hasComments) {
+			if (isUnbracketedNamespace || isThrowOrReturnFormatCase(statements)) {
+				// do not add new line... Throw/Return Statements within an If
+				// Statement block
+			} else {
+				// if ((statements.length > 0 || hasComments)
+				// && (isClassDeclaration || isFunctionDeclaration)) {
+				// if (isClassDeclaration) {
+				// for (int j = 0; j < preferences.blank_line_at_end_of_class;
+				// j++) {
+				// insertNewLine();
+				// }
+				// if (preferences.blank_line_at_end_of_class > 0) {
+				// indent();
+				// }
+				// } else {
+				// for (int j = 0; j < preferences.blank_line_at_end_of_method;
+				// j++) {
+				// insertNewLine();
+				// }
+				// if (preferences.blank_line_at_end_of_method > 0) {
+				// indent();
+				// }
+				// }
+				// } else {
+				insertNewLine();
+				indent();
+				// }
+
+			}
+		}
+
+		if (block.getEnd() > block.getStart()) {
+			int end = block.getEnd() - 1;
+			if (!block.isCurly()) {
+				switch (block.getParent().getType()) {
+				case ASTNode.SWITCH_STATEMENT:
+					end = block.getEnd() - "endswitch".length();//$NON-NLS-1$
+					break;
+				case ASTNode.WHILE_STATEMENT:
+					end = block.getEnd() - "endwhile".length();//$NON-NLS-1$
+					break;
+				case ASTNode.FOR_STATEMENT:
+					end = block.getEnd() - "endfor".length();//$NON-NLS-1$
+					break;
+				case ASTNode.FOR_EACH_STATEMENT:
+					end = block.getEnd() - "endforeach".length();//$NON-NLS-1$
+					break;
+				case ASTNode.DECLARE_STATEMENT:
+					end = block.getEnd() - "enddeclare".length();//$NON-NLS-1$
+					break;
+				case ASTNode.IF_STATEMENT:
+					end = block.getEnd();
+					break;
+				}
+			}
+			if (/*
+				 * (statements.length > 0 || hasComments) &&
+				 */(isClassDeclaration || isFunctionDeclaration)) {
+				if (isClassDeclaration) {
+					for (int j = 0; j < preferences.blank_line_at_end_of_class; j++) {
+						insertNewLine();
+					}
+					if (preferences.blank_line_at_end_of_class > 0) {
+						indent();
+					}
+				} else {
+					for (int j = 0; j < preferences.blank_line_at_end_of_method; j++) {
+						insertNewLine();
+					}
+					if (preferences.blank_line_at_end_of_method > 0) {
+						indent();
+					}
+				}
+			}
+
+			// ignoreEmptyLineSetting = true;
+			ignoreEmptyLineSetting = !preferences.indent_empty_lines;
+
+			blockEnd = true;
+			handleChars(lastStatementEndOffset, end);
+			blockEnd = false;
+			lineWidth++;// closing curly
+		}
+		return false;
+	}
+

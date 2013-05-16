@@ -1,0 +1,147 @@
+	public boolean visit(InfixExpression infixExpression) {
+		boolean forceSplit = this.preferences.line_wrap_binary_expression_force_split;
+		if (binaryExpressionLineWrapPolicy == -1) {// not initialized
+			binaryExpressionLineWrapPolicy = this.preferences.line_wrap_binary_expression_line_wrap_policy;
+			binaryExpressionIndentGap = calculateIndentGap(
+					this.preferences.line_wrap_binary_expression_indent_policy,
+					this.preferences.line_wrap_wrapped_lines_indentation);
+
+		}
+
+		if (binaryExpressionSavedBuffer == null) {
+			binaryExpressionSavedBuffer = replaceBuffer.toString();
+			binaryExpressionSavedNode = infixExpression;
+			binaryExpressionSavedChangesIndex = changes.size() - 1;
+			binaryExpressionRevertPolicy = -1;
+		}
+
+		infixExpression.getLeft().accept(this);
+		int operator = infixExpression.getOperator();
+		boolean isStringOperator = ((operator == InfixExpression.OP_STRING_AND)
+				|| (operator == InfixExpression.OP_STRING_OR) || (operator == InfixExpression.OP_STRING_XOR));
+
+		if (isStringOperator
+				|| this.preferences.insert_space_before_binary_operation) {
+			insertSpace();
+		}
+		appendToBuffer(InfixExpression.getOperator(operator));
+
+		// Need consider the right expression at first,because the right
+		// expression might be
+		// long enough to expend the line width.
+		// This should cause the line wrap.
+		int lineW = calcLinesWidth(infixExpression.getRight());
+
+		switch (binaryExpressionLineWrapPolicy) {
+		case NO_LINE_WRAP:
+			// no_wrap
+			break;
+		case FIRST_WRAP_WHEN_NECESSARY:
+			if (lineW > this.preferences.line_wrap_line_split) {
+				wasBinaryExpressionWrapped = indentationLevel == 1;
+				binaryExpressionLineWrapPolicy = WRAP_WHEN_NECESSARY;
+				insertNewLine();
+				indentationLevel += binaryExpressionIndentGap;
+				wasBinaryExpressionWrapped = true;
+				indent();
+			}
+			break;
+		case WRAP_WHEN_NECESSARY:
+			if (lineW > this.preferences.line_wrap_line_split) {
+				wasBinaryExpressionWrapped = true;
+				insertNewLine();
+				indent();
+			}
+			break;
+		case WRAP_FIRST_ELEMENT:
+			if (forceSplit || lineW > this.preferences.line_wrap_line_split) {
+				if (binaryExpressionRevertPolicy != -1) {
+					binaryExpressionRevertPolicy = -1;
+					binaryExpressionLineWrapPolicy = WRAP_WHEN_NECESSARY;
+					insertNewLine();
+					indentationLevel += binaryExpressionIndentGap;
+					indent();
+				} else {
+					binaryExpressionRevertPolicy = WRAP_FIRST_ELEMENT;
+					binaryExpressionLineWrapPolicy = NO_LINE_WRAP;
+				}
+				wasBinaryExpressionWrapped = true;
+			}
+			break;
+		case WRAP_ALL_ELEMENTS:
+			if (forceSplit || lineW > this.preferences.line_wrap_line_split) {
+				if (binaryExpressionRevertPolicy != -1) {
+					binaryExpressionRevertPolicy = -1;
+					binaryExpressionLineWrapPolicy = ALWAYS_WRAP_ELEMENT;
+					insertNewLine();
+					indentationLevel += binaryExpressionIndentGap;
+					indent();
+				} else {
+					binaryExpressionRevertPolicy = WRAP_ALL_ELEMENTS;
+					binaryExpressionLineWrapPolicy = NO_LINE_WRAP;
+				}
+				wasBinaryExpressionWrapped = true;
+			}
+			break;
+		case WRAP_ALL_ELEMENTS_NO_INDENT_FIRST:
+			if (forceSplit || lineW > this.preferences.line_wrap_line_split) {
+				if (binaryExpressionRevertPolicy != -1) {
+					binaryExpressionRevertPolicy = -1;
+					binaryExpressionLineWrapPolicy = ALWAYS_WRAP_ELEMENT;
+					insertNewLine();
+					indentationLevel += binaryExpressionIndentGap;
+					indent();
+
+					// increase the indentation level after the first element
+					indentationLevel++;
+					isBinaryExpressionExtraIndentation = true;
+				} else {
+					binaryExpressionRevertPolicy = WRAP_ALL_ELEMENTS_NO_INDENT_FIRST;
+					binaryExpressionLineWrapPolicy = NO_LINE_WRAP;
+				}
+				wasBinaryExpressionWrapped = true;
+			}
+			break;
+		case WRAP_ALL_ELEMENTS_EXCEPT_FIRST:
+			if (forceSplit || lineW > this.preferences.line_wrap_line_split) {
+				if (binaryExpressionRevertPolicy != -1) {
+					binaryExpressionLineWrapPolicy = WRAP_ALL_ELEMENTS;
+				} else {
+					binaryExpressionRevertPolicy = WRAP_ALL_ELEMENTS_EXCEPT_FIRST;
+					binaryExpressionLineWrapPolicy = NO_LINE_WRAP;
+				}
+				wasBinaryExpressionWrapped = true;
+			}
+			break;
+		case ALWAYS_WRAP_ELEMENT:
+			insertNewLine();
+			indent();
+			break;
+		}
+
+		if (isStringOperator
+				|| this.preferences.insert_space_after_binary_operation) {
+			insertSpace();
+		}
+
+		// handle the chars between the variable to the value
+		handleChars(infixExpression.getLeft().getEnd(), infixExpression
+				.getRight().getStart());
+
+		if (binaryExpressionRevertPolicy != -1
+				&& infixExpression == binaryExpressionSavedNode) {
+			if (binaryExpressionLineWrapPolicy == WRAP_ALL_ELEMENTS
+					&& binaryExpressionRevertPolicy == WRAP_ALL_ELEMENTS_EXCEPT_FIRST) {
+				infixExpression.getRight().accept(this);
+			} else {
+				revert(binaryExpressionSavedBuffer,
+						binaryExpressionSavedChangesIndex);
+				binaryExpressionLineWrapPolicy = binaryExpressionRevertPolicy;
+				infixExpression.accept(this);
+			}
+		} else {
+			infixExpression.getRight().accept(this);
+		}
+		return false;
+	}
+

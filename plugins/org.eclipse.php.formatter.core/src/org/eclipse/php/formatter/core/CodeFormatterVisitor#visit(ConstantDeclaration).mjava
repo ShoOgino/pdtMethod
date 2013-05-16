@@ -1,0 +1,50 @@
+	public boolean visit(ConstantDeclaration classConstantDeclaration) {
+		boolean isFirst = true;
+		insertSpace();
+		int lastPosition = classConstantDeclaration.getStart() + 5;
+		lineWidth += 5;
+		List<Identifier> names = classConstantDeclaration.names();
+
+		Identifier[] variableNames = new Identifier[names.size()];
+		variableNames = names.toArray(variableNames);
+
+		for (int i = 0; i < variableNames.length; i++) {
+			// handle comma between variables
+			if (!isFirst) {
+				if (this.preferences.insert_space_before_comma_in_class_constant) {
+					insertSpace();
+				}
+				appendToBuffer(COMMA);
+				if (this.preferences.insert_space_after_comma_in_class_constant) {
+					insertSpace();
+				}
+			}
+			handleChars(lastPosition, variableNames[i].getStart());
+			variableNames[i].accept(this);
+			lastPosition = variableNames[i].getEnd();
+
+			// handle initial assignments
+			if (this.preferences.insert_space_before_assignment) {
+				insertSpace();
+			}
+			appendToBuffer(EQUAL);
+			if (this.preferences.insert_space_after_assignment) {
+				insertSpace();
+			}
+
+			List<Expression> initializers = classConstantDeclaration
+					.initializers();
+
+			Expression[] constantValues = new Expression[initializers.size()];
+
+			constantValues = initializers.toArray(constantValues);
+
+			handleChars(lastPosition, constantValues[i].getStart());
+			constantValues[i].accept(this);
+			lastPosition = constantValues[i].getEnd();
+			isFirst = false;
+		}
+		handleSemicolon(lastPosition, classConstantDeclaration.getEnd());
+		return false;
+	}
+

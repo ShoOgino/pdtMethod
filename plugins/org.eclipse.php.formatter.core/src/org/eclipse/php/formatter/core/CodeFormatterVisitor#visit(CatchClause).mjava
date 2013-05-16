@@ -1,0 +1,55 @@
+	public boolean visit(CatchClause catchClause) {
+		// handle the chars between the 'catch' and the identifier start
+		// position
+		if (this.preferences.insert_space_before_opening_paren_in_catch) {
+			insertSpace();
+		}
+		appendToBuffer(OPEN_PARN);
+		if (this.preferences.insert_space_after_opening_paren_in_catch) {
+			insertSpace();
+		}
+		lineWidth += 5;
+		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=326384
+		int start = catchClause.getClassName().getStart();
+		if (catchClause.getClassName() instanceof NamespaceName) {
+			NamespaceName namespaceName = (NamespaceName) catchClause
+					.getClassName();
+			try {
+				if (namespaceName.isGlobal()
+						&& (Character.isWhitespace(document.getChar(start - 1)) || document
+								.getChar(start - 1) == '\\')) {
+					start -= 1;
+				}
+			} catch (BadLocationException e) {
+				// should not be here
+			}
+		}
+		// end
+		handleChars(catchClause.getStart() + 5, start);
+
+		// handle the catch identifier
+		catchClause.getClassName().accept(this);
+		insertSpace();
+		handleChars(catchClause.getClassName().getEnd(), catchClause
+				.getVariable().getStart());
+		catchClause.getVariable().accept(this);
+
+		// set the catch closing parn spaces
+		if (this.preferences.insert_space_before_closing_paren_in_catch) {
+			insertSpace();
+		}
+		appendToBuffer(CLOSE_PARN);
+
+		boolean isIndentationAdded = handleBlockOpenBrace(
+				this.preferences.brace_position_for_block,
+				this.preferences.insert_space_before_opening_brace_in_block);
+		handleChars(catchClause.getVariable().getEnd(), catchClause.getBody()
+				.getStart());
+		catchClause.getBody().accept(this);
+		if (isIndentationAdded) {
+			indentationLevel--;
+			indentationLevelDesending = true;
+		}
+		return false;
+	}
+

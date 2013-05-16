@@ -1,0 +1,35 @@
+	private void indertWordToComment(PHPDocTag phpDocTag, int tagLength,
+			String word, boolean insertSpace) {
+		word = word.trim();
+		if (this.preferences.comment_line_length != -1
+				&& !newLineOfComment
+				&& (lineWidth + 1 + word.length() > this.preferences.comment_line_length)) {
+			insertNewLine();
+			indent();
+			appendToBuffer(" * "); //$NON-NLS-1$
+
+			if (phpDocTag != null) {
+				if (this.preferences.comment_indent_root_tags) {
+					insertSpaces(tagLength);
+				}
+
+				if (this.preferences.comment_indent_root_tags
+						&& this.preferences.comment_indent_parameter_description
+						&& phpDocTag.getTagKind() == PHPDocTag.PARAM) {
+					for (int i = 0; i < preferences.indentationSize; i++) {
+						appendToBuffer(preferences.indentationChar);
+						lineWidth += (preferences.indentationChar == CodeFormatterPreferences.SPACE_CHAR) ? 0
+								: 3;
+					}
+				}
+			}
+			appendToBuffer(word);
+		} else {
+			if (insertSpace) {
+				insertSpaces(1);
+			}
+			appendToBuffer(word);
+			newLineOfComment = false;
+		}
+	}
+

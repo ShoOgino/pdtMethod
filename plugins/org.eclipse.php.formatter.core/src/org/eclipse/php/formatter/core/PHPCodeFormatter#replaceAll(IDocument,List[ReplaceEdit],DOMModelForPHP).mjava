@@ -1,0 +1,36 @@
+	private void replaceAll(IDocument document, List<ReplaceEdit> changes,
+			DOMModelForPHP domModelForPHP) throws BadLocationException {
+		// Collect the markers before the content of the document is replaced.
+		IFile file = null;
+		IMarker[] allMarkers = null;
+		if (domModelForPHP != null) {
+			file = getFile(domModelForPHP.getId());
+			try {
+				if (file != null) {
+					// collect and then delete
+					allMarkers = file.findMarkers(null, true,
+							IResource.DEPTH_INFINITE);
+				} else {
+					return; // no need to save breakpoints when no file was
+					// detected
+				}
+			} catch (CoreException e) {
+			}
+		}
+
+		// Replace the content of the document
+		StringBuffer buffer = new StringBuffer(document.get());
+		for (int i = changes.size() - 1; i >= 0; i--) {
+			ReplaceEdit replace = (ReplaceEdit) changes.get(i);
+			buffer.replace(replace.offset, replace.getEnd(), replace.content);
+		}
+		document.set(buffer.toString());
+
+		try {
+			if (file != null) {
+				reinsertMarkers(allMarkers, file);
+			}
+		} catch (CoreException e) {
+		}
+	}
+

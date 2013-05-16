@@ -1,0 +1,59 @@
+	public boolean visit(FieldsDeclaration fieldsDeclaration) {
+		boolean isFirst = true;
+		Variable[] variableNames = fieldsDeclaration.getVariableNames();
+		Expression[] initialValues = fieldsDeclaration.getInitialValues();
+		int lastPosition = variableNames[0].getStart();
+
+		// handle field modifiers
+		String modifier = fieldsDeclaration.getModifierString();
+		char firstChar = ' ';
+		try {
+			firstChar = document.getChar(fieldsDeclaration.getStart());
+		} catch (BadLocationException e) {
+			Logger.logException(e);
+		}
+		if (modifier.equalsIgnoreCase("public") //$NON-NLS-1$
+				&& (firstChar == 'v' || firstChar == 'V')) {
+			modifier = "var"; //$NON-NLS-1$
+		}
+
+		appendToBuffer(modifier);
+		insertSpace();
+
+		handleChars(fieldsDeclaration.getStart(), lastPosition);
+
+		for (int i = 0; i < variableNames.length; i++) {
+			// handle comma between variables
+			if (!isFirst) {
+				if (this.preferences.insert_space_before_comma_in_class_variable) {
+					insertSpace();
+				}
+				appendToBuffer(COMMA);
+				if (this.preferences.insert_space_after_comma_in_class_variable) {
+					insertSpace();
+				}
+			}
+			handleChars(lastPosition, variableNames[i].getStart());
+			variableNames[i].accept(this);
+			lastPosition = variableNames[i].getEnd();
+
+			if (initialValues[i] != null) {
+				// handle initial assignments
+				if (this.preferences.insert_space_before_assignment) {
+					insertSpace();
+				}
+				appendToBuffer(EQUAL);
+				if (this.preferences.insert_space_after_assignment) {
+					insertSpace();
+				}
+
+				handleChars(lastPosition, initialValues[i].getStart());
+				initialValues[i].accept(this);
+				lastPosition = initialValues[i].getEnd();
+			}
+			isFirst = false;
+		}
+		handleSemicolon(lastPosition, fieldsDeclaration.getEnd());
+		return false;
+	}
+

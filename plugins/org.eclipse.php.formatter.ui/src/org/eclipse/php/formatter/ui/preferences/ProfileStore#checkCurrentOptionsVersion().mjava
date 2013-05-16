@@ -1,0 +1,32 @@
+	public static void checkCurrentOptionsVersion() {
+		IScopeContext instanceScope = new InstanceScope();
+		try {
+			List profiles = ProfileStore.readProfiles(instanceScope);
+			if (profiles == null) {
+				profiles = Collections.EMPTY_LIST;
+			}
+			ProfileManager manager = new ProfileManager(profiles, instanceScope);
+			if (manager.getSelected() instanceof CustomProfile) {
+				manager.commitChanges(instanceScope); // updates JavaCore
+														// options
+			}
+			savePreferences(instanceScope);
+
+			IProject[] projects = ResourcesPlugin.getWorkspace().getRoot()
+					.getProjects();
+			for (int i = 0; i < projects.length; i++) {
+				IScopeContext scope = new ProjectScope(projects[i]);
+				if (ProfileManager.hasProjectSpecificSettings(scope)) {
+					manager = new ProfileManager(profiles, scope);
+					manager.commitChanges(scope); // updates JavaCore project
+													// options
+					savePreferences(scope);
+				}
+			}
+		} catch (CoreException e) {
+			Logger.logException(e);
+		} catch (BackingStoreException e) {
+			Logger.logException(e);
+		}
+	}
+

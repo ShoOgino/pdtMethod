@@ -1,0 +1,29 @@
+	// Return the markers
+	// TODO - This is buggy since the lines might be different now.
+	private void reinsertMarkers(IMarker[] allMarkers, IFile file)
+			throws CoreException {
+		final IBreakpointManager breakpointManager = DebugPlugin.getDefault()
+				.getBreakpointManager();
+		if (allMarkers != null) {
+			for (IMarker marker : allMarkers) {
+				String markerType = MarkerUtilities.getMarkerType(marker);
+				if (markerType != null) {
+					IBreakpoint breakpoint = breakpointManager
+							.getBreakpoint(marker);
+					if (breakpoint != null) {
+						IMarker createdMarker = file.createMarker(markerType);
+						createdMarker.setAttributes(breakpoint.getMarker()
+								.getAttributes());
+						breakpointManager.removeBreakpoint(breakpoint, true);
+						breakpoint.setMarker(createdMarker);
+						breakpointManager.addBreakpoint(breakpoint);
+					} else {
+						MarkerUtilities.createMarker(file,
+								marker.getAttributes(), markerType);
+					}
+				}
+				marker.delete();
+			}
+		}
+	}
+

@@ -1,0 +1,26 @@
+	/**
+	 * Update all formatter settings with the settings of the specified profile.
+	 * 
+	 * @param profile
+	 *            The profile to write to the preference store
+	 */
+	private void writeToPreferenceStore(Profile profile, IScopeContext context) {
+		final Map<String, Object> profileOptions = profile.getSettings();
+
+		final IEclipsePreferences prefs = context
+				.getNode(FormatterCorePlugin.PLUGIN_ID);
+		updatePreferences(prefs, fKeys, profileOptions);
+
+		if (context.getName() == InstanceScope.SCOPE) {
+			prefs.put(PROFILE_KEY, profile.getID());
+		} else if (context.getName() == ProjectScope.SCOPE
+				&& !profile.isSharedProfile()) {
+			prefs.put(PROFILE_KEY, profile.getID());
+		}
+		try {
+			prefs.flush();
+		} catch (BackingStoreException e) {
+			Logger.logException(e);
+		}
+	}
+

@@ -1,0 +1,64 @@
+	public boolean visit(CastExpression castExpression) {
+		// (type) expression
+		appendToBuffer(OPEN_PARN);
+		if (this.preferences.insert_space_before_cast_type) {
+			insertSpace();
+		}
+
+		// get the exact cast type
+		String type = EMPTY_STRING;
+		int start = castExpression.getStart();
+		int end = castExpression.getExpression().getStart();
+		switch (castExpression.getCastingType()) {
+		case CastExpression.TYPE_INT:
+			if (isContainChar(start, end, 'e')) {
+				type = "integer"; //$NON-NLS-1$
+			} else {
+				type = "int"; //$NON-NLS-1$
+			}
+			break;
+		case CastExpression.TYPE_REAL:
+			if (isContainChar(start, end, 'f')) {
+				type = "float"; //$NON-NLS-1$
+			} else if (isContainChar(start, end, 'r')) {
+				type = "real"; //$NON-NLS-1$
+			} else {
+				type = "double"; //$NON-NLS-1$
+			}
+			break;
+		case CastExpression.TYPE_STRING:
+			type = "string"; //$NON-NLS-1$
+			break;
+		case CastExpression.TYPE_ARRAY:
+			type = "array"; //$NON-NLS-1$
+			break;
+		case CastExpression.TYPE_OBJECT:
+			type = "object"; //$NON-NLS-1$
+			break;
+		case CastExpression.TYPE_BOOL:
+			if (isContainChar(start, end, 'e')) {
+				type = "boolean"; //$NON-NLS-1$
+			} else {
+				type = "bool"; //$NON-NLS-1$
+			}
+			break;
+		case CastExpression.TYPE_UNSET:
+			type = "unset"; //$NON-NLS-1$
+			break;
+		}
+
+		appendToBuffer(type);
+		if (this.preferences.insert_space_after_cast_type) {
+			insertSpace();
+		}
+		appendToBuffer(CLOSE_PARN);
+		if (this.preferences.insert_space_after_cast_expression) {
+			insertSpace();
+		}
+		// till the expression
+		handleChars(start, end);
+
+		castExpression.getExpression().accept(this);
+		return false;
+	}
+

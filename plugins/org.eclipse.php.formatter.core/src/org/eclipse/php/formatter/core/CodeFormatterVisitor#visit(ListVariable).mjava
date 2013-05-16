@@ -1,0 +1,34 @@
+	public boolean visit(ListVariable listVariable) {
+		if (this.preferences.insert_space_before_opening_paren_in_list) {
+			insertSpace();
+		}
+		appendToBuffer(OPEN_PARN);
+		if (this.preferences.insert_space_after_opening_paren_in_list) {
+			insertSpace();
+		}
+
+		int lastPosition = listVariable.getStart() + 4;
+		lineWidth += 4;
+		List<VariableBase> variables = listVariable.variables();
+		VariableBase[] variablesArray = variables
+				.toArray(new VariableBase[variables.size()]);
+		lastPosition = handleCommaList(variablesArray, lastPosition,
+				this.preferences.insert_space_before_comma_in_list,
+				this.preferences.insert_space_after_comma_in_list,
+				NO_LINE_WRAP, NO_LINE_WRAP_INDENT, false);
+
+		if (this.preferences.insert_space_before_closing_paren_in_list) {
+			if (variablesArray[variablesArray.length - 1].getLength() == 0
+					&& this.preferences.insert_space_after_comma_in_list) {
+				// in the following case list($a,) we don't want the second
+				// empty parameter to have two spaces. (like this: list( $a, ))
+			} else {
+				insertSpace();
+			}
+		}
+		appendToBuffer(CLOSE_PARN);
+		handleChars(lastPosition, listVariable.getEnd());
+
+		return false;
+	}
+

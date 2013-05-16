@@ -1,0 +1,34 @@
+	public boolean visit(FormalParameter formalParameter) {
+		// handle const in PHP4
+		int lastPosition = formalParameter.getStart();
+		if (formalParameter.isMandatory()) {
+			// the word 'const'
+			lastPosition += 5;
+			lineWidth += 5;
+		}
+
+		// handle type
+		if (formalParameter.getParameterType() != null) {
+			formalParameter.getParameterType().accept(this);
+			lastPosition = formalParameter.getParameterType().getEnd();
+			insertSpace();
+		}
+		handleChars(lastPosition, formalParameter.getParameterName().getStart());
+
+		formalParameter.getParameterName().accept(this);
+		if (formalParameter.hasDefaultValue()) {
+			if (this.preferences.insert_space_before_assignment) {
+				insertSpace();
+			}
+			appendToBuffer(EQUAL);
+			if (this.preferences.insert_space_after_assignment) {
+				insertSpace();
+			}
+
+			// handle the chars between the variable to the value
+			handleChars(formalParameter.getParameterName().getEnd(),
+					formalParameter.getDefaultValue().getStart());
+		}
+		return false;
+	}
+

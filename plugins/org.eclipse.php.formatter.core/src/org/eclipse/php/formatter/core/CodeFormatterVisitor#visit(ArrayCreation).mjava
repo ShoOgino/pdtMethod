@@ -1,0 +1,69 @@
+	public boolean visit(ArrayCreation arrayCreation) {
+		if (this.preferences.insert_space_before_opening_paren_in_array) {
+			insertSpace();
+		}
+		int lastPosition; // array
+		if (arrayCreation.isHasArrayKey()) {
+			appendToBuffer(OPEN_PARN);
+			lastPosition = arrayCreation.getStart() + 5;
+		} else {
+			// appendToBuffer(OPEN_BRACKET);
+			lastPosition = arrayCreation.getStart() + 1;
+		}
+
+		List<ArrayElement> eleList = arrayCreation.elements();
+		ArrayElement[] elements = new ArrayElement[eleList.size()];
+		elements = eleList.toArray(elements);
+
+		if (elements.length > 0) {
+			if (this.preferences.insert_space_after_opening_paren_in_array) {
+				insertSpace();
+			}
+
+			if (this.preferences.new_line_after_open_array_parenthesis) {
+				insertNewLine();
+				indentationLevel++;
+				indent();
+				indentationLevel--;
+			}
+
+			lineWidth += 5;
+			int indentationGap = calculateIndentGap(
+					this.preferences.line_wrap_expressions_in_array_init_indent_policy,
+					this.preferences.line_wrap_array_init_indentation);
+
+			// work around for close bracket.
+			lineWidth++;
+
+			lastPosition = handleCommaList(
+					elements,
+					lastPosition,
+					this.preferences.insert_space_before_list_comma_in_array,
+					this.preferences.insert_space_after_list_comma_in_array,
+					this.preferences.line_wrap_expressions_in_array_init_line_wrap_policy,
+					indentationGap,
+					this.preferences.line_wrap_expressions_in_array_init_force_split);
+
+			// work around for close bracket.
+			lineWidth--;
+
+			if (this.preferences.insert_space_before_closing_paren_in_array) {
+				insertSpace();
+			}
+
+			if (this.preferences.new_line_before_close_array_parenthesis_array) {
+				insertNewLine();
+				indent();
+			}
+
+		}
+
+		if (arrayCreation.isHasArrayKey()) {
+			appendToBuffer(CLOSE_PARN);
+		} else {
+			appendToBuffer(CLOSE_BRACKET);
+		}
+		handleChars(lastPosition, arrayCreation.getEnd());
+		return false;
+	}
+

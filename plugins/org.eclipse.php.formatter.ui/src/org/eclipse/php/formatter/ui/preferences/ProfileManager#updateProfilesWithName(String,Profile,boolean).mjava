@@ -1,0 +1,31 @@
+	private void updateProfilesWithName(String oldName, Profile newProfile,
+			boolean applySettings) {
+		IProject[] projects = ResourcesPlugin.getWorkspace().getRoot()
+				.getProjects();
+		for (int i = 0; i < projects.length; i++) {
+			IScopeContext projectScope = new ProjectScope(projects[i]);
+			IEclipsePreferences node = projectScope
+					.getNode(FormatterCorePlugin.PLUGIN_ID);
+			String profileId = node.get(PROFILE_KEY, null);
+			if (oldName.equals(profileId)) {
+				if (newProfile == null) {
+					node.remove(PROFILE_KEY);
+				} else {
+					if (applySettings) {
+						writeToPreferenceStore(newProfile, projectScope);
+					} else {
+						node.put(PROFILE_KEY, newProfile.getID());
+					}
+				}
+			}
+		}
+
+		IScopeContext instanceScope = new InstanceScope();
+		final IEclipsePreferences uiPrefs = instanceScope
+				.getNode(FormatterCorePlugin.PLUGIN_ID);
+		if (newProfile != null
+				&& oldName.equals(uiPrefs.get(PROFILE_KEY, null))) {
+			writeToPreferenceStore(newProfile, instanceScope);
+		}
+	}
+

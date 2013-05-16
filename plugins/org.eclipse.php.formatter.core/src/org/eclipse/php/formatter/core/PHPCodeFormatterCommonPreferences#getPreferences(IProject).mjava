@@ -1,0 +1,39 @@
+	private CodeFormatterPreferences getPreferences(IProject project)
+			throws Exception {
+
+		IEclipsePreferences node = null;
+		if (project != null) {
+			ProjectScope scope = (ProjectScope) new ProjectScope(project);
+			node = scope.getNode(FormatterCorePlugin.PLUGIN_ID);
+		}
+
+		Map<String, Object> p = new HashMap<String, Object>(
+				defaultPrefrencesValues);
+		if (node != null && node.keys().length > 0) {
+			Set<String> propetiesNames = p.keySet();
+			for (Iterator<String> iter = propetiesNames.iterator(); iter
+					.hasNext();) {
+				String property = (String) iter.next();
+				String value = node.get(property, null);
+				if (value != null) {
+					p.put(property, value);
+				}
+			}
+		} else {
+			Preferences preferences = FormatterCorePlugin.getDefault()
+					.getPluginPreferences();
+			String[] propetiesNames = preferences.propertyNames();
+			for (int i = 0; i < propetiesNames.length; i++) {
+				String property = propetiesNames[i];
+				String value = preferences.getString(property);
+				if (value != null) {
+					p.put(property, value);
+				}
+			}
+		}
+
+		fCodeFormatterPreferences.setPreferencesValues(p);
+
+		return fCodeFormatterPreferences;
+	}
+

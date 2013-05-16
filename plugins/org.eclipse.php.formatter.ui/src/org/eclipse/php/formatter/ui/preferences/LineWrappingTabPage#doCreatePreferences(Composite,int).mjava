@@ -1,0 +1,95 @@
+	protected void doCreatePreferences(Composite composite, int numColumns) {
+
+		final Group lineWidthGroup = createGroup(numColumns, composite,
+				FormatterMessages.LineWrappingTabPage_width_indent);
+
+		fMaxLineWidthPref = createNumberPref(
+				lineWidthGroup,
+				numColumns,
+				FormatterMessages.LineWrappingTabPage_width_indent_option_max_line_width,
+				0, 9999);
+		fMaxLineWidthPref
+				.setValue(codeFormatterPreferences.line_wrap_line_split);
+
+		fDefaultIndentWrapLines = createNumberPref(
+				lineWidthGroup,
+				numColumns,
+				FormatterMessages.LineWrappingTabPage_width_indent_option_default_indent_wrapped,
+				0, 9999);
+		fDefaultIndentWrapLines
+				.setValue(codeFormatterPreferences.line_wrap_wrapped_lines_indentation);
+
+		fCategoriesViewer = new TreeViewer(composite /* categoryGroup */,
+				SWT.MULTI | SWT.BORDER | SWT.READ_ONLY | SWT.V_SCROLL);
+		fCategoriesViewer.setContentProvider(new ITreeContentProvider() {
+			public Object[] getElements(Object inputElement) {
+				return ((Collection<?>) inputElement).toArray();
+			}
+
+			public Object[] getChildren(Object parentElement) {
+				return ((Category) parentElement).children.toArray();
+			}
+
+			public Object getParent(Object element) {
+				return null;
+			}
+
+			public boolean hasChildren(Object element) {
+				return !((Category) element).children.isEmpty();
+			}
+
+			public void inputChanged(Viewer viewer, Object oldInput,
+					Object newInput) {
+			}
+
+			public void dispose() {
+			}
+		});
+		fCategoriesViewer.setLabelProvider(new LabelProvider());
+		fCategoriesViewer.setInput(fCategories);
+
+		fCategoriesViewer.setExpandedElements(fCategories.toArray());
+
+		final GridData gd = createGridData(numColumns, GridData.FILL_BOTH,
+				SWT.DEFAULT);
+		fCategoriesViewer.getControl().setLayoutData(gd);
+
+		fOptionsGroup = createGroup(numColumns, composite, ""); //$NON-NLS-1$
+
+		// label "Select split style:"
+		fWrappingStylePolicy = createLabel(
+				numColumns,
+				fOptionsGroup,
+				FormatterMessages.LineWrappingTabPage_wrapping_policy_label_text);
+
+		// combo SplitStyleCombo
+		fWrappingStyleCombo = new Combo(fOptionsGroup, SWT.SINGLE
+				| SWT.READ_ONLY);
+		fWrappingStyleCombo.setItems(WRAPPING_NAMES);
+		fWrappingStyleCombo.setLayoutData(createGridData(numColumns,
+				GridData.HORIZONTAL_ALIGN_FILL, 0));
+
+		// label "Select indentation style:"
+		fIndentStylePolicy = createLabel(
+				numColumns,
+				fOptionsGroup,
+				FormatterMessages.LineWrappingTabPage_indentation_policy_label_text);
+
+		// combo SplitStyleCombo
+		fIndentStyleCombo = new Combo(fOptionsGroup, SWT.SINGLE | SWT.READ_ONLY);
+		fIndentStyleCombo.setItems(INDENT_NAMES);
+		fIndentStyleCombo.setLayoutData(createGridData(numColumns,
+				GridData.HORIZONTAL_ALIGN_FILL, 0));
+
+		// button "Force split"
+		fForceSplit = new Button(fOptionsGroup, SWT.CHECK);
+		fForceSplit.setLayoutData(createGridData(numColumns,
+				GridData.HORIZONTAL_ALIGN_FILL, 0));
+		fForceSplit
+				.setText(FormatterMessages.LineWrappingTabPage_force_split_checkbox_text);
+
+		// selection state object
+		fSelectionState = new SelectionState();
+		isInitialized = true;
+	}
+

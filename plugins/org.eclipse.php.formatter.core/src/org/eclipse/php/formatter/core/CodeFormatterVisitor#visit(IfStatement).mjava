@@ -1,0 +1,105 @@
+	public boolean visit(IfStatement ifStatement) {
+		// check if the token is 'if' or 'elseif'
+		int len = checkFirstTokenLength(ifStatement.getStart(), ifStatement
+				.getCondition().getStart());
+
+		// handle the chars between the 'while' and the condition start position
+		if (this.preferences.insert_space_before_opening_paren_in_if) {
+			insertSpace();
+		}
+		appendToBuffer(OPEN_PARN);
+		if (this.preferences.insert_space_after_opening_paren_in_if) {
+			insertSpace();
+		}
+		lineWidth += len; // add the word 'if' OR 'elseif'
+		handleChars(ifStatement.getStart() + len, ifStatement.getCondition()
+				.getStart());
+
+		// handle the if condition
+		ifStatement.getCondition().accept(this);
+
+		if (wasBinaryExpressionWrapped) {
+			indentationLevel -= binaryExpressionIndentGap;
+			wasBinaryExpressionWrapped = false;
+		}
+		// handle the chars between the condition end position and action start
+		// position
+
+		// set the while closing paren spaces
+		if (this.preferences.insert_space_before_closing_paren_in_if) {
+			insertSpace();
+		}
+		appendToBuffer(CLOSE_PARN);
+
+		// action
+		int lastPosition = ifStatement.getCondition().getEnd();
+		boolean addNewlineBeforeAction = true;
+		if (ifStatement.getTrueStatement().getType() != ASTNode.BLOCK) {
+			if (len == 2) {// if
+				addNewlineBeforeAction = !(preferences.control_statement_keep_then_on_same_line || (preferences.control_statement_keep_simple_if_on_one_line && ifStatement
+						.getFalseStatement() == null));
+			} else if (len == 6) {// elseif
+				addNewlineBeforeAction = !preferences.control_statement_keep_then_on_same_line;
+			}
+		}
+		handleAction(lastPosition, ifStatement.getTrueStatement(),
+				addNewlineBeforeAction);
+		lastPosition = ifStatement.getTrueStatement().getEnd();
+		if (ifStatement.getFalseStatement() == null
+				|| ifStatement.getFalseStatement().getType() == ASTNode.AST_ERROR) {
+			return false;
+		}
+
+		if (ifStatement.getFalseStatement().getType() == ASTNode.IF_STATEMENT) {
+			try {
+				handleElseIfCases(ifStatement);
+			} catch (BadLocationException ble) {
+				Logger.logException(ble);
+				return false;
+			}
+		} else { // the false statement is not 'elseif' or 'else if'
+			if (ifStatement.getTrueStatement().getType() == ASTNode.BLOCK) {
+				if (preferences.control_statement_insert_newline_before_else_and_elseif_in_if) {
+					insertNewLine();
+					indent();
+				} else {
+					lastPosition = setSpaceAfterBlock(ifStatement
+							.getTrueStatement().getEnd());
+				}
+
+				try {
+					lastPosition = internalHandleElse(ifStatement, lastPosition);
+				} catch (BadLocationException ble) {
+					Logger.logException(ble);
+					return false;
+				}
+				handleAction(lastPosition, ifStatement.getFalseStatement(),
+						true);
+				boolean processed = isProcessed(ifStatement);
+				if (!((Block) ifStatement.getTrueStatement()).isCurly()
+						&& !processed) {
+					handleChars(ifStatement.getFalseStatement().getEnd(),
+							ifStatement.getEnd());
+					appendToBuffer("endif;"); //$NON-NLS-1$
+					handleChars(ifStatement.getEnd(), ifStatement.getEnd());
+				}
+			} else { // if the true statement is not a block then we should add
+				// new line
+				insertNewLine();
+				indent();
+
+				try {
+					lastPosition = internalHandleElse(ifStatement, lastPosition);
+				} catch (BadLocationException ble) {
+					Logger.logException(ble);
+					return false;
+				}
+
+				boolean elseActionInSameLine = preferences.control_statement_keep_else_on_same_line;
+				handleAction(lastPosition, ifStatement.getFalseStatement(),
+						!elseActionInSameLine);
+			}
+		}
+		return false;
+	}
+

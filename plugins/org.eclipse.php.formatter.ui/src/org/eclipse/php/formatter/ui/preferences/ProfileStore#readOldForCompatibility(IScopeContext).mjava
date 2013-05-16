@@ -1,0 +1,39 @@
+	/**
+	 * Read the available profiles from the internal XML file and return them as
+	 * collection.
+	 * 
+	 * @return returns a list of <code>CustomProfile</code> or <code>null</code>
+	 */
+	private static List readOldForCompatibility(IScopeContext instanceScope) {
+
+		// in 3.0 M9 and less the profiles were stored in a file in the plugin's
+		// meta data
+		final String STORE_FILE = "code_formatter_profiles.xml"; //$NON-NLS-1$
+
+		File file = FormatterUIPlugin.getDefault().getStateLocation()
+				.append(STORE_FILE).toFile();
+		if (!file.exists())
+			return null;
+
+		try {
+			// note that it's wrong to use a file reader when XML declares
+			// UTF-8: Kept for compatibility
+			final FileReader reader = new FileReader(file);
+			try {
+				List res = readProfilesFromStream(new InputSource(reader));
+				if (res != null) {
+					writeProfiles(res, instanceScope);
+				}
+				file.delete(); // remove after successful write
+				return res;
+			} finally {
+				reader.close();
+			}
+		} catch (CoreException e) {
+			Logger.logException(e);// log but ignore
+		} catch (IOException e) {
+			Logger.logException(e); // log but ignore
+		}
+		return null;
+	}
+

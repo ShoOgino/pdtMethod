@@ -1,0 +1,33 @@
+	public boolean visit(ArrayAccess arrayAccess) {
+		Expression variableName = arrayAccess.getName();
+		variableName.accept(this);
+		if (this.preferences.insert_space_before_opening_bracket_in_array) {
+			insertSpace();
+		}
+		if (arrayAccess.getArrayType() == ArrayAccess.VARIABLE_ARRAY) {
+			appendToBuffer(OPEN_BRACKET);
+		} else {
+			appendToBuffer(OPEN_CURLY);
+		}
+		int lastPosition = variableName.getEnd();
+		if (arrayAccess.getIndex() == null) {
+			if (this.preferences.insert_space_between_empty_brackets) {
+				insertSpace();
+			}
+		} else {
+			if (this.preferences.insert_space_after_opening_bracket_in_array) {
+				insertSpace();
+			}
+			handleChars(lastPosition, arrayAccess.getIndex().getStart());
+
+			arrayAccess.getIndex().accept(this);
+			if (this.preferences.insert_space_before_closing_bracket_in_array) {
+				insertSpace();
+			}
+			lastPosition = arrayAccess.getIndex().getEnd();
+		}
+		handleChars(lastPosition, arrayAccess.getEnd() - 1);
+		lineWidth++;// we need to add the closing bracket/curly
+		return false;
+	}
+

@@ -1,0 +1,45 @@
+	public boolean visit(NamespaceName namespaceName) {
+		if (namespaceName.isGlobal()) {
+			appendToBuffer("\\"); //$NON-NLS-1$
+		}
+
+		if (namespaceName.isCurrent()) {
+			appendToBuffer("namespace\\"); //$NON-NLS-1$
+		}
+		List<Identifier> segments = namespaceName.segments();
+		if (segments.size() > 0) {
+			// workaround
+			// remove this after fixing of
+			// https://bugs.eclipse.org/bugs/show_bug.cgi?id=326384
+			int start = namespaceName.getStart();
+			try {
+				if (namespaceName.isGlobal()
+						&& (Character.isWhitespace(document.getChar(start - 1)) || document
+								.getChar(start - 1) == '\\')) {
+					start -= 1;
+				}
+			} catch (BadLocationException e) {
+				// should not be here
+			}
+			// end
+
+			handleChars(start, segments.get(0).getStart());
+			Iterator<Identifier> it = segments.iterator();
+			Identifier prev = null;
+			while (it.hasNext()) {
+				Identifier identifier = it.next();
+				if (prev != null) {
+					handleChars(prev.getEnd(), identifier.getStart());
+				}
+				identifier.accept(this);
+				if (it.hasNext()) {
+					appendToBuffer("\\"); //$NON-NLS-1$
+					prev = identifier;
+				}
+			}
+		} else {
+			handleChars(namespaceName.getStart(), namespaceName.getEnd());
+		}
+		return false;
+	}
+

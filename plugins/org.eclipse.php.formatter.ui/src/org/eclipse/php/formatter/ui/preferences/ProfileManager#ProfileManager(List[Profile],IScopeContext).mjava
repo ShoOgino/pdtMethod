@@ -1,0 +1,95 @@
+	/**
+	 * Create and initialize a new profile manager.
+	 * 
+	 * @param profiles
+	 *            Initial custom profiles (List of type
+	 *            <code>CustomProfile</code>)
+	 */
+	public ProfileManager(List<Profile> profiles, IScopeContext context) {
+		fProfiles = new HashMap<String, Profile>();
+		fProfilesByName = new ArrayList<Profile>();
+
+		addBuiltinProfiles(fProfiles, fProfilesByName);
+
+		for (final Iterator<Profile> iter = profiles.iterator(); iter.hasNext();) {
+			final CustomProfile profile = (CustomProfile) iter.next();
+			profile.setManager(this);
+			fProfiles.put(profile.getID(), profile);
+			fProfilesByName.add(profile);
+		}
+
+		Collections.sort(fProfilesByName);
+
+		IScopeContext instanceScope = new InstanceScope();
+		String profileId = instanceScope.getNode(FormatterCorePlugin.PLUGIN_ID)
+				.get(PROFILE_KEY, null);
+		if (profileId == null) {
+			// request from bug 129427
+			profileId = new DefaultScope().getNode(
+					FormatterCorePlugin.PLUGIN_ID).get(PROFILE_KEY, null);
+			// fix for bug 89739
+			if (DEFAULT_PROFILE.equals(profileId)) { // default default:
+				IEclipsePreferences node = instanceScope
+						.getNode(FormatterCorePlugin.PLUGIN_ID);
+				if (node != null) {
+					profileId = PHP_PROFILE;
+				}
+			}
+		}
+
+		Profile profile = fProfiles.get(profileId);
+		if (profile == null) {
+			profile = fProfiles.get(DEFAULT_PROFILE);
+		}
+		fSelected = profile;
+
+		if (context.getName() == ProjectScope.SCOPE
+				&& hasProjectSpecificSettings(context)) {
+			Map<String, Object> map = readFromPreferenceStore(context, profile);
+			if (map != null) {
+				Profile matching = null;
+
+				String projProfileId = context.getNode(
+						FormatterCorePlugin.PLUGIN_ID).get(PROFILE_KEY, null);
+				if (projProfileId != null) {
+					Profile curr = fProfiles.get(projProfileId);
+					if (curr != null
+							&& (curr.isBuiltInProfile() || curr
+									.hasEqualSettings(map, getKeys()))) {
+						matching = curr;
+					}
+				} else {
+					// old version: look for similar
+					for (final Iterator<Profile> iter = fProfilesByName
+							.iterator(); iter.hasNext();) {
+						Profile curr = iter.next();
+						if (curr.hasEqualSettings(map, getKeys())) {
+							matching = curr;
+							break;
+						}
+					}
+				}
+				if (matching == null) {
+					String name;
+					if (projProfileId != null
+							&& !fProfiles.containsKey(projProfileId)) {
+						name = Messages
+								.format(FormatterMessages.ProfileManager_unmanaged_profile_with_name,
+										projProfileId.substring(ID_PREFIX
+												.length()));
+					} else {
+						name = FormatterMessages.ProfileManager_unmanaged_profile;
+					}
+					// current settings do not correspond to any profile ->
+					// create a 'team' profile
+					SharedProfile shared = new SharedProfile(name, map);
+					shared.setManager(this);
+					fProfiles.put(shared.getID(), shared);
+					fProfilesByName.add(shared); // add last
+					matching = shared;
+				}
+				fSelected = matching;
+			}
+		}
+	}
+

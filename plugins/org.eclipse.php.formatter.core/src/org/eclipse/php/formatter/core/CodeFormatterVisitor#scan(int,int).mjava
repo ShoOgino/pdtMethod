@@ -1,0 +1,27 @@
+	private void scan(final int offset, final int end) throws Exception {
+		final Reader reader = new DocumentReader(document, offset, end - offset);
+
+		if (astLexer == null) {
+			// create the lexer for the first time
+			astLexer = getLexer(reader);
+		} else {
+			// reset the lexer
+			astLexer.yyreset(reader);
+			astLexer.resetCommentList();
+		}
+		// ST_IN_SCRIPTING
+		assert stInScriptin != -1;
+		astLexer.yybegin(stInScriptin);
+
+		tokens.clear();
+		try {
+			Symbol symbol = null;
+			do {
+				symbol = astLexer.next_token();
+				tokens.add(symbol);
+			} while (symbol != null && symbol.sym != 0);
+		} catch (Exception e) {
+			// do nothing
+		}
+	}
+

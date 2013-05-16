@@ -1,0 +1,59 @@
+	public boolean visit(DeclareStatement declareStatement) {
+		boolean isFirst = true;
+		if (this.preferences.insert_space_before_opening_paren_in_declare) {
+			insertSpace();
+		}
+		appendToBuffer(OPEN_PARN);
+		if (this.preferences.insert_space_after_opening_paren_in_declare) {
+			insertSpace();
+		}
+		int lastPosition = declareStatement.getStart() + 7;
+		lineWidth += 7;
+		List<Identifier> direciveNameList = declareStatement.directiveNames();
+		Identifier[] directiveNames = new Identifier[direciveNameList.size()];
+		directiveNames = direciveNameList.toArray(directiveNames);
+
+		for (int i = 0; i < directiveNames.length; i++) {
+			// handle comma between variables
+			if (!isFirst) {
+				if (this.preferences.insert_space_before_comma_in_class_variable) {
+					insertSpace();
+				}
+				appendToBuffer(COMMA);
+				if (this.preferences.insert_space_after_comma_in_class_variable) {
+					insertSpace();
+				}
+			}
+			handleChars(lastPosition, directiveNames[i].getStart());
+			directiveNames[i].accept(this);
+			lastPosition = directiveNames[i].getEnd();
+
+			// handle initial assignments
+			if (this.preferences.insert_space_before_assignment) {
+				insertSpace();
+			}
+			appendToBuffer(EQUAL);
+			if (this.preferences.insert_space_after_assignment) {
+				insertSpace();
+			}
+
+			List<Expression> directiveValuesList = declareStatement
+					.directiveValues();
+			Expression[] directiveValues = new Expression[directiveValuesList
+					.size()];
+			directiveValues = directiveValuesList.toArray(directiveValues);
+
+			handleChars(lastPosition, directiveValues[i].getStart());
+			directiveValues[i].accept(this);
+			lastPosition = directiveValues[i].getEnd();
+			isFirst = false;
+		}
+		if (this.preferences.insert_space_before_closing_paren_in_declare) {
+			insertSpace();
+		}
+		appendToBuffer(CLOSE_PARN);
+
+		handleAction(lastPosition, declareStatement.getBody(), true);
+		return false;
+	}
+

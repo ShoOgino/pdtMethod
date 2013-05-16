@@ -1,0 +1,32 @@
+	/**
+	 * Delete the currently selected profile from this profile manager. The next
+	 * profile in the list is selected.
+	 * 
+	 * @return true if the profile has been successfully removed, false
+	 *         otherwise.
+	 */
+	public boolean deleteSelected() {
+		if (!(fSelected instanceof CustomProfile))
+			return false;
+
+		Profile removedProfile = fSelected;
+
+		int index = fProfilesByName.indexOf(removedProfile);
+
+		fProfiles.remove(removedProfile.getID());
+		fProfilesByName.remove(removedProfile);
+
+		((CustomProfile) removedProfile).setManager(null);
+
+		if (index >= fProfilesByName.size())
+			index--;
+		fSelected = fProfilesByName.get(index);
+
+		if (!removedProfile.isSharedProfile()) {
+			updateProfilesWithName(removedProfile.getID(), null, false);
+		}
+
+		notifyObservers(PROFILE_DELETED_EVENT);
+		return true;
+	}
+

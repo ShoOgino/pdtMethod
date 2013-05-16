@@ -1,0 +1,85 @@
+		public void createContents(int numColumns, Composite parent) {
+
+			fComposite = new Composite(parent, SWT.NONE);
+			fComposite.setLayoutData(createGridData(numColumns,
+					GridData.HORIZONTAL_ALIGN_FILL, SWT.DEFAULT));
+			fComposite.setLayout(createGridLayout(numColumns, false));
+
+			createLabel(numColumns, fComposite,
+					FormatterMessages.WhiteSpaceTabPage_insert_space,
+					GridData.HORIZONTAL_ALIGN_BEGINNING);
+
+			final SashForm sashForm = new SashForm(fComposite, SWT.VERTICAL);
+			sashForm.setLayoutData(createGridData(numColumns,
+					GridData.FILL_BOTH, SWT.DEFAULT));
+
+			fInnerViewer = new TreeViewer(sashForm, SWT.SINGLE | SWT.BORDER
+					| SWT.V_SCROLL);
+
+			fInnerViewer.setContentProvider(new ITreeContentProvider() {
+				public Object[] getElements(Object inputElement) {
+					return ((Collection) inputElement).toArray();
+				}
+
+				public Object[] getChildren(Object parentElement) {
+					final List children = ((Node) parentElement).getChildren();
+					final ArrayList innerChildren = new ArrayList();
+					for (final Iterator iter = children.iterator(); iter
+							.hasNext();) {
+						final Object o = iter.next();
+						if (o instanceof InnerNode)
+							innerChildren.add(o);
+					}
+					return innerChildren.toArray();
+				}
+
+				public Object getParent(Object element) {
+					if (element instanceof InnerNode)
+						return ((InnerNode) element).getParent();
+					return null;
+				}
+
+				public boolean hasChildren(Object element) {
+					final List children = ((Node) element).getChildren();
+					for (final Iterator iter = children.iterator(); iter
+							.hasNext();)
+						if (iter.next() instanceof InnerNode)
+							return true;
+					return false;
+				}
+
+				public void inputChanged(Viewer viewer, Object oldInput,
+						Object newInput) {
+				}
+
+				public void dispose() {
+				}
+			});
+
+			fInnerViewer.setLabelProvider(new LabelProvider());
+
+			final GridData innerGd = createGridData(numColumns,
+					GridData.HORIZONTAL_ALIGN_FILL | GridData.FILL_VERTICAL,
+					SWT.DEFAULT);
+			innerGd.heightHint = fPixelConverter
+					.convertHeightInCharsToPixels(3);
+			fInnerViewer.getControl().setLayoutData(innerGd);
+
+			fOptionsViewer = CheckboxTableViewer.newCheckList(sashForm,
+					SWT.SINGLE | SWT.BORDER | SWT.H_SCROLL);
+			fOptionsViewer.setContentProvider(new ArrayContentProvider());
+			fOptionsViewer.setLabelProvider(new LabelProvider());
+
+			final GridData optionsGd = createGridData(numColumns,
+					GridData.HORIZONTAL_ALIGN_FILL | GridData.FILL_VERTICAL,
+					SWT.DEFAULT);
+			optionsGd.heightHint = fPixelConverter
+					.convertHeightInCharsToPixels(3);
+			fOptionsViewer.getControl().setLayoutData(optionsGd);
+
+			fDefaultFocusManager.add(fInnerViewer.getControl());
+			fDefaultFocusManager.add(fOptionsViewer.getControl());
+
+			fInnerViewer.setInput(fTree);
+		}
+

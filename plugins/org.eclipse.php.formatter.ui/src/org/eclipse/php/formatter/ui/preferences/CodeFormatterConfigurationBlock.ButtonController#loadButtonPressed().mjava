@@ -1,0 +1,41 @@
+		private void loadButtonPressed() {
+			final FileDialog dialog = new FileDialog(fComposite.getShell(),
+					SWT.OPEN);
+			dialog.setText(FormatterMessages.CodingStyleConfigurationBlock_load_profile_dialog_title);
+			dialog.setFilterExtensions(new String[] { "*.xml" }); //$NON-NLS-1$
+			final String lastPath = FormatterUIPlugin.getDefault()
+					.getDialogSettings().get(DIALOGSTORE_LASTLOADPATH);
+			if (lastPath != null) {
+				dialog.setFilterPath(lastPath);
+			}
+			final String path = dialog.open();
+			if (path == null)
+				return;
+			FormatterUIPlugin.getDefault().getDialogSettings()
+					.put(DIALOGSTORE_LASTLOADPATH, dialog.getFilterPath());
+
+			final File file = new File(path);
+			Collection<Profile> profiles = null;
+			try {
+				profiles = ProfileStore.readProfilesFromFile(file);
+			} catch (CoreException e) {
+				final String title = FormatterMessages.CodingStyleConfigurationBlock_load_profile_error_title;
+				final String message = FormatterMessages.CodingStyleConfigurationBlock_load_profile_error_message;
+				ExceptionHandler.handle(e, fComposite.getShell(), title,
+						message);
+			}
+			if (profiles == null || profiles.isEmpty())
+				return;
+
+			final CustomProfile profile = (CustomProfile) profiles.iterator()
+					.next();
+
+			if (fProfileManager.containsName(profile.getName())) {
+				final AlreadyExistsDialog aeDialog = new AlreadyExistsDialog(
+						fComposite.getShell(), profile, fProfileManager);
+				if (aeDialog.open() != Window.OK)
+					return;
+			}
+			fProfileManager.addProfile(profile);
+		}
+

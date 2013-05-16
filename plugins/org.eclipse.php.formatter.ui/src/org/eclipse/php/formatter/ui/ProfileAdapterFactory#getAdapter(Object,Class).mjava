@@ -1,0 +1,27 @@
+	public Object getAdapter(Object adaptableObject, Class adapterType) {
+		if (adaptableObject instanceof IScopeContext) {
+			IScopeContext currContext = (IScopeContext) adaptableObject;
+			InstanceScope instanceScope = new InstanceScope();
+			List<Profile> profiles = null;
+			try {
+				profiles = ProfileStore.readProfiles(instanceScope);
+			} catch (CoreException e) {
+				Logger.logException(e);
+			}
+			if (profiles == null) {
+				try {
+					profiles = ProfileStore
+							.readProfilesFromPreferences(new DefaultScope());
+				} catch (CoreException e) {
+					Logger.logException(e);
+				}
+			}
+
+			if (profiles == null)
+				profiles = new ArrayList<Profile>();
+
+			return new ProfileManager(profiles, currContext);
+		}
+		return null;
+	}
+

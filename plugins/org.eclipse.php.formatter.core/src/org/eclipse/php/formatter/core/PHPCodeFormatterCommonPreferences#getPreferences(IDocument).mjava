@@ -1,0 +1,38 @@
+	private CodeFormatterPreferences getPreferences(IDocument document) {
+		IStructuredModel structuredModel = null;
+		try {
+			if (document instanceof IStructuredDocument) {
+				IStructuredDocument structuredDocument = (IStructuredDocument) document;
+				structuredModel = StructuredModelManager.getModelManager()
+						.getExistingModelForRead(document);
+				if (structuredModel == null) {
+					try {
+						CodeFormatterPreferences preferences = getPreferences((IProject) null);
+						return preferences;
+					} catch (Exception e) {
+					}
+					return null;
+				}
+				DOMModelForPHP doModelForPHP = (DOMModelForPHP) structuredModel;
+
+				IProject project = getProject(doModelForPHP);
+				if (project == null) {
+					Logger.logException(new IllegalStateException(
+							"Cann't resolve file name")); //$NON-NLS-1$
+				}
+				try {
+					CodeFormatterPreferences preferences = getPreferences(project);
+					return preferences;
+				} catch (Exception e) {
+				}
+			}
+		} catch (Exception e) {
+			Logger.logException(e);
+		} finally {
+			if (structuredModel != null) {
+				structuredModel.releaseFromRead();
+			}
+		}
+		return null;
+	}
+

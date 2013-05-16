@@ -1,0 +1,30 @@
+	public boolean visit(NamespaceDeclaration namespaceDeclaration) {
+		appendToBuffer("namespace"); //$NON-NLS-1$
+		insertSpace();
+		handleChars(namespaceDeclaration.getStart(), namespaceDeclaration
+				.getName().getStart());
+
+		namespaceDeclaration.getName().accept(this);
+		int lastPosition = namespaceDeclaration.getName().getEnd();
+
+		if (namespaceDeclaration.isBracketed()) {
+			// handle class body
+			boolean isIndentationAdded = handleBlockOpenBrace(
+					this.preferences.brace_position_for_class,
+					this.preferences.insert_space_before_opening_brace_in_class);
+			handleChars(lastPosition, namespaceDeclaration.getBody().getStart());
+
+			namespaceDeclaration.getBody().accept(this);
+
+			if (isIndentationAdded) {
+				indentationLevel--;
+				indentationLevelDesending = true;
+			}
+		} else {
+			handleSemicolon(lastPosition, namespaceDeclaration.getBody()
+					.getStart() - 1);
+			namespaceDeclaration.getBody().accept(this);
+		}
+		return false;
+	}
+

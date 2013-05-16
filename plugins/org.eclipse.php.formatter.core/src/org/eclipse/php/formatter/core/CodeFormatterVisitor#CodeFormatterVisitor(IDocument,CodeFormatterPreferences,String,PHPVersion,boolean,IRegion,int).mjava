@@ -1,0 +1,44 @@
+	public CodeFormatterVisitor(IDocument document,
+			CodeFormatterPreferences codeFormatterPreferences,
+			String lineSeparator, PHPVersion phpVersion, boolean useShortTags,
+			IRegion region, int indentationLevel) throws Exception {
+		this.phpVersion = phpVersion;
+		this.useShortTags = useShortTags;
+		this.document = document;
+		this.lineSeparator = lineSeparator;
+		this.indentationLevel = indentationLevel;
+		this.preferences = codeFormatterPreferences;
+		this.startRegionPosition = region.getOffset();
+		this.endRegionPosition = startRegionPosition + region.getLength();
+
+		ignoreEmptyLineSetting = !preferences.indent_empty_lines;
+
+		Program program = null;
+		try {
+			final Reader reader = new StringReader(document.get());
+			program = ASTParser.newParser(reader, phpVersion, true).createAST(
+					new NullProgressMonitor());
+		} catch (Exception e) {
+			Logger.log(Logger.INFO,
+					"Parsing error, file could not be formatted.");//$NON-NLS-1$
+		}
+
+		this.useTags = preferences.use_tags;
+		this.tagsKind = 0;
+		if (this.useTags) {
+			if (preferences.disabling_tag != null
+					&& preferences.disabling_tag.length > 0) {
+				this.disablingTag = new String(preferences.disabling_tag);
+			}
+			if (preferences.enabling_tag != null
+					&& preferences.enabling_tag.length > 0) {
+				this.enablingTag = new String(preferences.enabling_tag);
+			}
+		}
+		this.editsEnabled = true;
+		if (program != null) {
+			program.accept(this);
+		}
+
+	}
+

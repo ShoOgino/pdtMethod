@@ -1,0 +1,63 @@
+	public boolean visit(ConditionalExpression conditionalExpression) {
+
+		// start
+		// condition ? true : false
+		conditionalExpression.getCondition().accept(this);
+		int lastPosition = conditionalExpression.getCondition().getEnd();
+		// condition -> if true
+		if (this.preferences.insert_space_before_conditional_question_mark) {
+			insertSpace();
+		}
+		appendToBuffer(QUESTION_MARK);
+		lastPosition++;
+		if (this.preferences.insert_space_after_conditional_question_mark) {
+			insertSpace();
+		}
+		Expression ifTrue = conditionalExpression.getIfTrue();
+		Expression ifFalse = conditionalExpression.getIfFalse();
+		int offset = conditionalExpression.getCondition().getStart();
+
+		int colonOffset = 0;
+		if (ifTrue != null) {
+			handleChars(conditionalExpression.getCondition().getEnd(),
+					ifTrue.getStart());
+			ifTrue.accept(this);
+		} else {
+			int length = offset;
+			if (ifFalse != null) {
+				length = ifFalse.getStart();
+			}
+			colonOffset = getCharPosition(conditionalExpression.getCondition()
+					.getEnd(), length, ':');
+			handleChars(conditionalExpression.getCondition().getEnd(),
+					colonOffset);
+		}
+
+		// iftrue -> iffalse
+		if (this.preferences.insert_space_before_conditional_colon) {
+			insertSpace();
+		}
+		appendToBuffer(COLON);
+
+		if (this.preferences.insert_space_after_conditional_colon) {
+			insertSpace();
+		}
+
+		if (ifTrue != null && ifFalse != null) {
+			handleChars(ifTrue.getEnd(), conditionalExpression.getIfFalse()
+					.getStart());
+		} else if (ifTrue == null && ifFalse != null) {
+			handleChars(colonOffset, conditionalExpression.getIfFalse()
+					.getStart());
+		} else if (ifTrue != null && ifFalse == null) {
+			handleChars(ifTrue.getEnd(), colonOffset);
+		}
+
+		if (ifFalse != null) {
+			ifFalse.accept(this);
+		}
+		// end
+
+		return false;
+	}
+

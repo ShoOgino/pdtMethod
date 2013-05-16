@@ -1,0 +1,31 @@
+	private void handleSplittedPhpBlock(int offset, int end)
+			throws BadLocationException {
+		int line = document.getLineOfOffset(offset);
+		IRegion lineRegion = document.getLineInformationOfOffset(offset);
+		int lineLength = document.getLineLength(line);
+		switch (getPhpStartTag(offset)) {
+		case PHP_OPEN_ASP_TAG:
+		case PHP_OPEN_SHORT_TAG:
+			if (document
+					.get(offset + 2,
+							lineRegion.getOffset() + lineRegion.getLength()
+									- (offset + 2)).trim().length() != 0) {
+				insertNewLine();
+			}
+			handleCharsWithoutComments(offset + 2, end);
+			break;
+		case PHP_OPEN_SHORT_TAG_WITH_EQUAL:
+			handleCharsWithoutComments(offset + 3, end);
+			break;
+		case PHP_OPEN_TAG:
+			if (document
+					.get(offset + 5,
+							lineRegion.getOffset() + lineRegion.getLength()
+									- (offset + 5)).trim().length() != 0) {
+				insertNewLine();
+			}
+			handleCharsWithoutComments(offset + 5, end);
+			break;
+		}
+	}
+

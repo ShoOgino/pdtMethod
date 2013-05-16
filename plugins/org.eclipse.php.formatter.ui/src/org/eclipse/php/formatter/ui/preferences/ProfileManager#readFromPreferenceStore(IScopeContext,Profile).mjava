@@ -1,0 +1,34 @@
+	/**
+	 * Only to read project specific settings to find out to what profile it
+	 * matches.
+	 * 
+	 * @param context
+	 *            The project context
+	 */
+	public Map<String, Object> readFromPreferenceStore(IScopeContext context,
+			Profile workspaceProfile) {
+		final Map<String, Object> profileOptions = new HashMap<String, Object>();
+		IEclipsePreferences prefs = context
+				.getNode(FormatterCorePlugin.PLUGIN_ID);
+
+		boolean hasValues = false;
+
+		for (final Iterator<String> keyIter = fKeys.iterator(); keyIter
+				.hasNext();) {
+			final String key = keyIter.next();
+			Object val = prefs.get(key, null);
+			if (val != null) {
+				hasValues = true;
+			} else {
+				val = workspaceProfile.getSettings().get(key);
+			}
+			profileOptions.put(key, val);
+		}
+
+		if (!hasValues) {
+			return null;
+		}
+
+		return profileOptions;
+	}
+

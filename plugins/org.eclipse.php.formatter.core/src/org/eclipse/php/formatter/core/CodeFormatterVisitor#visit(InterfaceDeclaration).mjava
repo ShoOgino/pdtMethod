@@ -1,0 +1,42 @@
+	public boolean visit(InterfaceDeclaration interfaceDeclaration) {
+		insertSpace();
+		lineWidth += 9;// interface
+		handleChars(interfaceDeclaration.getStart() + 9, interfaceDeclaration
+				.getName().getStart());
+		interfaceDeclaration.getName().accept(this);
+
+		int lastPosition = interfaceDeclaration.getName().getEnd();
+
+		List<Identifier> interfaceList = interfaceDeclaration.interfaces();
+		Identifier[] interfaces = new Identifier[interfaceList.size()];
+		interfaces = interfaceList.toArray(interfaces);
+
+		if (interfaces.length > 0) {
+			appendToBuffer(" extends "); //$NON-NLS-1$
+			int indentationGap = calculateIndentGap(
+					this.preferences.line_wrap_superinterfaces_in_type_declaration_indent_policy,
+					this.preferences.line_wrap_wrapped_lines_indentation);
+			lastPosition = handleCommaList(
+					interfaces,
+					lastPosition,
+					this.preferences.insert_space_before_comma_in_implements,
+					this.preferences.insert_space_after_comma_in_implements,
+					this.preferences.line_wrap_superinterfaces_in_type_declaration_line_wrap_policy,
+					indentationGap,
+					this.preferences.line_wrap_superinterfaces_in_type_declaration_force_split);
+		}
+
+		boolean isIndentationAdded = handleBlockOpenBrace(
+				this.preferences.brace_position_for_class,
+				this.preferences.insert_space_before_opening_brace_in_class);
+		handleChars(lastPosition, interfaceDeclaration.getBody().getStart());
+
+		interfaceDeclaration.getBody().accept(this);
+
+		if (isIndentationAdded) {
+			indentationLevel--;
+			indentationLevelDesending = true;
+		}
+		return false;
+	}
+

@@ -1,0 +1,29 @@
+	/*
+	 * Create a new profile element in the specified document. The profile is
+	 * not added to the document by this method.
+	 */
+	private static Element createProfileElement(Profile profile,
+			Document document) {
+		final Element element = document.createElement(XML_NODE_PROFILE);
+		element.setAttribute(XML_ATTRIBUTE_NAME, profile.getName());
+
+		final Iterator keyIter = ProfileManager.getKeys().iterator();
+
+		while (keyIter.hasNext()) {
+			final String key = (String) keyIter.next();
+			final String value = (String) profile.getSettings().get(key);
+			if (value != null) {
+				final Element setting = document
+						.createElement(XML_NODE_SETTING);
+				setting.setAttribute(XML_ATTRIBUTE_ID, key);
+				setting.setAttribute(XML_ATTRIBUTE_VALUE, value);
+				element.appendChild(setting);
+			} else {
+				Logger.log(
+						Logger.ERROR,
+						"ProfileStore: Profile does not contain value for key " + key); //$NON-NLS-1$
+			}
+		}
+		return element;
+	}
+

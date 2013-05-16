@@ -1,0 +1,105 @@
+	private void innerVisit(FunctionInvocation functionInvocation,
+			boolean addParen) {
+		Expression functionName = functionInvocation.getFunctionName()
+				.getName();
+		functionName.accept(this);
+
+		if (this.preferences.insert_space_before_opening_paren_in_function) {
+			insertSpace();
+		}
+
+		if (addParen) {
+			appendToBuffer(OPEN_PARN);
+		}
+
+		int lastPosition = functionName.getEnd();
+		if (functionInvocation.parameters().size() > 0) {
+			if (this.preferences.insert_space_after_opening_paren_in_function) {
+				insertSpace();
+			}
+			int indentationGap = calculateIndentGap(
+					this.preferences.line_wrap_arguments_in_method_invocation_indent_policy,
+					this.preferences.line_wrap_wrapped_lines_indentation);
+
+			List<Expression> parametersList = functionInvocation.parameters();
+			Expression[] parameters = new Expression[parametersList.size()];
+			parameters = parametersList.toArray(parameters);
+
+			// work around. count close bracket now.
+			if (addParen) {
+				lineWidth++;
+			}
+
+			// work around. count space now.
+			if (this.preferences.insert_space_before_closing_paren_in_function) {
+				lineWidth++;
+			}
+
+			lastPosition = handleCommaList(
+					parameters,
+					lastPosition,
+					this.preferences.insert_space_before_comma_in_function,
+					this.preferences.insert_space_after_comma_in_function,
+					this.preferences.line_wrap_arguments_in_method_invocation_line_wrap_policy,
+					indentationGap,
+					this.preferences.line_wrap_arguments_in_method_invocation_force_split);
+
+			if (this.preferences.insert_space_before_closing_paren_in_function) {
+				// work around. count space now.
+				lineWidth--;
+				insertSpace();
+			}
+
+			// work around. count close bracket now.
+			if (addParen) {
+				lineWidth--;
+			}
+
+		} else {
+			if (this.preferences.insert_space_between_empty_paren_in_function) {
+				insertSpace();
+			}
+		}
+
+		if (addParen) {
+			appendToBuffer(CLOSE_PARN);
+		}
+		if (functionInvocation.getArrayDereferenceList() != null
+				&& !functionInvocation.getArrayDereferenceList()
+						.getDereferences().isEmpty()) {
+			handleChars(lastPosition, functionInvocation
+					.getArrayDereferenceList().getDereferences().get(0)
+					.getStart());
+			lastPosition = functionInvocation.getArrayDereferenceList()
+					.getDereferences().get(0).getStart();
+			for (DereferenceNode dereferenceNode : functionInvocation
+					.getArrayDereferenceList().getDereferences()) {
+
+				if (dereferenceNode.getName() instanceof Scalar) {
+					appendToBuffer(OPEN_BRACKET);
+					// handleChars(lastPosition, dereferenceNode.getStart());
+					Scalar scalar = (Scalar) dereferenceNode.getName();
+					appendToBuffer(scalar.getStringValue());
+					appendToBuffer(CLOSE_BRACKET);
+					handleChars(dereferenceNode.getStart(),
+							dereferenceNode.getEnd());
+				} else {
+					appendToBuffer(OPEN_BRACKET);
+					handleChars(lastPosition, dereferenceNode.getName()
+							.getStart());
+					dereferenceNode.getName().accept(this);
+					appendToBuffer(CLOSE_BRACKET);
+					handleChars(dereferenceNode.getName().getEnd(),
+							dereferenceNode.getEnd());
+				}
+
+				// handleChars(dereferenceNode.getEnd(),
+				// dereferenceNode.getEnd());
+				lastPosition = dereferenceNode.getEnd();
+			}
+		} else {
+			handleChars(lastPosition, functionInvocation.getEnd());
+		}
+
+	}
+

@@ -1,0 +1,58 @@
+	public boolean visit(SwitchCase switchCase) {
+		// handle the chars between the 'case'/'default' and the condition start
+		// position/ first statement
+		int lastStatementEndOffset = 0;
+		if (switchCase.isDefault()) {
+			if (this.preferences.insert_space_after_switch_default) {
+				insertSpace();
+			}
+			lastStatementEndOffset = switchCase.getStart() + 7;
+			lineWidth += 7;// the word 'default'
+		} else {
+			insertSpace();
+			lineWidth += 4;// the word 'case'
+			handleChars(switchCase.getStart() + 4, switchCase.getValue()
+					.getStart());
+			switchCase.getValue().accept(this);
+			if (this.preferences.insert_space_after_switch_case_value) {
+				insertSpace();
+			}
+			lastStatementEndOffset = switchCase.getValue().getEnd();
+
+		}
+		appendToBuffer(COLON);
+
+		int regularStatementIndentation = 0;
+		int breakStatementIndentation = 0;
+		if (this.preferences.indent_statements_within_case) {
+			regularStatementIndentation++;
+		}
+		if (this.preferences.indent_break_statements_within_case) {
+			breakStatementIndentation++;
+		}
+		Statement[] actions = new Statement[switchCase.actions().size()];
+		switchCase.actions().toArray(actions);
+		if (actions.length == 0) {
+			handleChars(lastStatementEndOffset, switchCase.getEnd());
+		} else {
+			for (int i = 0; i < actions.length; i++) {
+				if (actions[i].getType() == ASTNode.IN_LINE_HTML) {
+					handleChars(lastStatementEndOffset, lastStatementEndOffset);
+					lastStatementEndOffset = actions[i].getEnd();
+					continue;
+				}
+				boolean isBreakStatement = actions[i].getType() == ASTNode.BREAK_STATEMENT;
+				this.indentationLevel += isBreakStatement ? breakStatementIndentation
+						: regularStatementIndentation;
+				insertNewLine();
+				indent();
+				handleChars(lastStatementEndOffset, actions[i].getStart());
+				actions[i].accept(this);
+				lastStatementEndOffset = actions[i].getEnd();
+				this.indentationLevel -= isBreakStatement ? breakStatementIndentation
+						: regularStatementIndentation;
+			}
+		}
+		return false;
+	}
+

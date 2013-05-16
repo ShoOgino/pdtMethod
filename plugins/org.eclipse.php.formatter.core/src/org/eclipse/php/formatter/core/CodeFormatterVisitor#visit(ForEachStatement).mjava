@@ -1,0 +1,41 @@
+	public boolean visit(ForEachStatement forEachStatement) {
+		if (this.preferences.insert_space_before_open_paren_in_foreach) {
+			insertSpace();
+		}
+		appendToBuffer(OPEN_PARN);
+		if (this.preferences.insert_space_after_open_paren_in_foreach) {
+			insertSpace();
+		}
+		lineWidth += 7;
+		handleChars(forEachStatement.getStart() + 7, forEachStatement
+				.getExpression().getStart());
+		// handle [as key => value] or just [as value]
+		forEachStatement.getExpression().accept(this);
+		appendToBuffer(" as "); //$NON-NLS-1$
+		int lastPosition = forEachStatement.getExpression().getEnd();
+		if (forEachStatement.getKey() != null) {
+			handleChars(forEachStatement.getExpression().getEnd(),
+					forEachStatement.getKey().getStart());
+			forEachStatement.getKey().accept(this);
+			if (this.preferences.insert_space_before_arrow_in_foreach) {
+				insertSpace();
+			}
+			appendToBuffer(KEY_VALUE_OPERATOR);
+			if (this.preferences.insert_space_after_arrow_in_foreach) {
+				insertSpace();
+			}
+			lastPosition = forEachStatement.getKey().getEnd();
+		}
+		handleChars(lastPosition, forEachStatement.getValue().getStart());
+		forEachStatement.getValue().accept(this);
+
+		if (this.preferences.insert_space_before_close_paren_in_foreach) {
+			insertSpace();
+		}
+		appendToBuffer(CLOSE_PARN);
+
+		handleAction(forEachStatement.getValue().getEnd(),
+				forEachStatement.getStatement(), true);
+		return false;
+	}
+

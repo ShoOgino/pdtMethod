@@ -1,0 +1,192 @@
+	/**
+	 * handle comma list (e.g. 1,2,3)
+	 * 
+	 * @param array
+	 *            ASTNode array
+	 * @param lastPosition
+	 *            the position of the last ASTNode
+	 * @param insertSpaceBeforeComma
+	 * @param insertSpaceAfterComma
+	 * @param b
+	 * @param k
+	 * @param j
+	 * @return the last element end position
+	 */
+	private int handleCommaList(ASTNode[] array, int lastPosition,
+			boolean insertSpaceBeforeComma, boolean insertSpaceAfterComma,
+			int lineWrapPolicy, int indentGap, boolean forceSplit) {
+		int oldIndentationLevel = indentationLevel;
+		boolean wasBinaryExpressionWrapped = this.wasBinaryExpressionWrapped;
+		if (array.length == 0) {
+			return lastPosition;
+		}
+
+		// save the changes index position
+		String savedBuffer = replaceBuffer.toString();
+		;
+		int changesIndex = changes.size() - 1;
+		int savedLastPosition = lastPosition;
+		boolean isExtraIndentation = false;
+
+		// Map<Integer, CommentIndentationObject> commentIndetationMap = new
+		// HashMap<Integer, CommentIndentationObject>();
+		CommentIndentationObject cio = new CommentIndentationObject();
+		commentIndetationStack.add(cio);
+		// commentIndetationMap.put(array., cio);
+		boolean isFirst = true;
+		for (int i = 0; i < array.length; i++) {
+			if (!isFirst) {
+				if (insertSpaceBeforeComma) {
+					insertSpace();
+				}
+				appendToBuffer(COMMA);
+				if (insertSpaceAfterComma) {
+					insertSpace();
+				}
+			}
+
+			// after the first element and wrap policy is except first element
+			if (i == 1 && lineWrapPolicy == WRAP_ALL_ELEMENTS_EXCEPT_FIRST) {
+				savedBuffer = replaceBuffer.toString();
+				;
+				changesIndex = changes.size() - 1;
+				savedLastPosition = lastPosition;
+			}
+
+			switch (lineWrapPolicy) {
+			case NO_LINE_WRAP:
+				break;
+			case FIRST_WRAP_WHEN_NECESSARY:
+				if (lineWidth + array[i].getLength() > this.preferences.line_wrap_line_split) {
+					lineWrapPolicy = WRAP_WHEN_NECESSARY;
+					insertNewLine();
+					if (!cio.indented) {
+						indentationLevel += indentGap;
+					}
+
+					indent();
+				}
+				break;
+			case WRAP_WHEN_NECESSARY:
+				if (lineWidth + array[i].getLength() > this.preferences.line_wrap_line_split) {
+					insertNewLine();
+					indent();
+				}
+				break;
+			case WRAP_FIRST_ELEMENT:
+				if (forceSplit
+						|| lineWidth + array[i].getLength() > this.preferences.line_wrap_line_split) {
+					revert(savedBuffer, changesIndex);
+					lastPosition = savedLastPosition;
+					i = 0;
+					lineWrapPolicy = WRAP_WHEN_NECESSARY;
+					insertNewLine();
+					if (!cio.indented) {
+						indentationLevel += indentGap;
+					}
+					indent();
+				}
+				break;
+			case WRAP_ALL_ELEMENTS:
+				if (forceSplit
+						|| lineWidth + array[i].getLength() > this.preferences.line_wrap_line_split) {
+					revert(savedBuffer, changesIndex);
+					lastPosition = savedLastPosition;
+					i = 0;
+					lineWrapPolicy = ALWAYS_WRAP_ELEMENT;
+					insertNewLine();
+					if (!cio.indented) {
+						indentationLevel += indentGap;
+					}
+					indent();
+				}
+				break;
+			case WRAP_ALL_ELEMENTS_NO_INDENT_FIRST:
+				if (forceSplit
+						|| lineWidth + array[i].getLength() > this.preferences.line_wrap_line_split) {
+					// revert the buffer
+					revert(savedBuffer, changesIndex);
+					lastPosition = savedLastPosition;
+					i = 0;
+					lineWrapPolicy = ALWAYS_WRAP_ELEMENT;
+					insertNewLine();
+					if (!cio.indented) {
+						indentationLevel += indentGap;
+					}
+					indent();
+
+					// increase the indentation level after the first element
+					indentationLevel++;
+					isExtraIndentation = true;
+				}
+				break;
+			case WRAP_ALL_ELEMENTS_EXCEPT_FIRST:
+				if (forceSplit
+						|| lineWidth + array[i].getLength() > this.preferences.line_wrap_line_split) {
+					// revert
+					revert(savedBuffer, changesIndex);
+					lastPosition = savedLastPosition;
+					i = (i > 0) ? 1 : 0;
+					lineWrapPolicy = ALWAYS_WRAP_ELEMENT;
+					insertNewLine();
+					if (!cio.indented) {
+						indentationLevel += indentGap;
+					}
+					indent();
+				}
+				break;
+			case ALWAYS_WRAP_ELEMENT:
+				insertNewLine();
+				indent();
+				break;
+			}
+
+			// workaround; remove this after fixing of
+			// https://bugs.eclipse.org/bugs/show_bug.cgi?id=326384
+			int start = array[i].getStart();
+			if (array[i] instanceof NamespaceName
+					&& ((NamespaceName) array[i]).isGlobal()) {
+				start -= 1;
+			} else if (i == 0 && array[i] instanceof UseStatementPart
+					&& ((UseStatementPart) array[i]).getName() != null
+					&& ((UseStatementPart) array[i]).getName().isGlobal()) {
+				start -= 1;
+			}
+			// workaround end
+			handleChars1(lastPosition, start,
+					oldIndentationLevel != indentationLevel, indentGap);
+			array[i].accept(this);
+			if (array[i] instanceof FunctionInvocation) {
+				FunctionInvocation functionInvocation = (FunctionInvocation) array[i];
+				if (functionInvocation.getArrayDereferenceList() != null
+						&& !functionInvocation.getArrayDereferenceList()
+								.getDereferences().isEmpty()) {
+					lastPosition = functionInvocation
+							.getArrayDereferenceList()
+							.getDereferences()
+							.get(functionInvocation.getArrayDereferenceList()
+									.getDereferences().size() - 1).getEnd();
+				} else {
+					lastPosition = array[i].getEnd();
+				}
+			} else {
+				lastPosition = array[i].getEnd();
+			}
+
+			isFirst = false;
+		}
+		commentIndetationStack.pop();
+		if (isExtraIndentation) {
+			indentationLevel--;
+		}
+
+		if (oldIndentationLevel != indentationLevel) {
+			indentationLevel = oldIndentationLevel;
+		}
+
+		if (wasBinaryExpressionWrapped != this.wasBinaryExpressionWrapped) {
+			this.wasBinaryExpressionWrapped = wasBinaryExpressionWrapped;
+		}
+		return lastPosition;
+	}
+

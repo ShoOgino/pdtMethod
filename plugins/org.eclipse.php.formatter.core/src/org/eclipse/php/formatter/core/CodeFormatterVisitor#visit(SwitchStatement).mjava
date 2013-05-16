@@ -1,0 +1,42 @@
+	public boolean visit(SwitchStatement switchStatement) {
+		// handle the chars between the 'switch' and the expr start position
+		if (this.preferences.insert_space_before_opening_paren_in_switch) {
+			insertSpace();
+		}
+		appendToBuffer(OPEN_PARN);
+		if (this.preferences.insert_space_after_opening_paren_in_switch) {
+			insertSpace();
+		}
+		lineWidth += 6;
+		Expression expression = switchStatement.getExpression();
+		handleChars(switchStatement.getStart() + 6, expression.getStart());
+
+		// handle the switch expr
+		expression.accept(this);
+
+		// handle the chars between the expression end position and action start
+		// position
+
+		// set the switch closing parn spaces
+		if (this.preferences.insert_space_before_closing_paren_in_switch) {
+			insertSpace();
+		}
+		appendToBuffer(CLOSE_PARN);
+
+		// switch body
+		boolean isIndentationAdded = false;
+		isIndentationAdded = handleBlockOpenBrace(
+				this.preferences.brace_position_for_switch,
+				this.preferences.insert_space_before_opening_brace_in_switch);
+		Block body = switchStatement.getBody();
+		handleChars(expression.getEnd(), body.getStart());
+
+		body.accept(this);
+
+		if (isIndentationAdded) {
+			indentationLevel--;
+			indentationLevelDesending = true;
+		}
+		return false;
+	}
+

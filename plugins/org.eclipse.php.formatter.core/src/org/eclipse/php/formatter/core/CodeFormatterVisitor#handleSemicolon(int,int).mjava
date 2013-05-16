@@ -1,0 +1,38 @@
+	/**
+	 * handle the last semicolon of statement
+	 * 
+	 * @param start
+	 *            the end position of the ASTNode before the semicolon
+	 * @param end
+	 *            the position of the semicolon -1
+	 */
+	private void handleSemicolon(int start, int end) {
+		if (this.preferences.insert_space_before_semicolon
+				&& !isHeredocSemicolon) {
+			insertSpace();
+		}
+		// check if the statement end with ; or ?>
+		if (isContainChar(start, end, SEMICOLON)) {
+			appendToBuffer(SEMICOLON);
+			isHeredocSemicolon = false;
+		} else if (isContainChar(start, end, QUESTION_MARK)) {
+			handlePhpEndTag(start, end, "?>"); //$NON-NLS-1$
+		} else {
+			handlePhpEndTag(start, end, "%>"); //$NON-NLS-1$
+		}
+		// till the semicolon
+		handleChars(start, end);
+		binaryExpressionLineWrapPolicy = -1;// reset the policy for binary
+		// expression states
+		if (wasBinaryExpressionWrapped) {
+			indentationLevel -= binaryExpressionIndentGap;
+			wasBinaryExpressionWrapped = false;
+		}
+		binaryExpressionIndentGap = 0;
+		binaryExpressionSavedBuffer = null;
+		if (isBinaryExpressionExtraIndentation) {
+			indentationLevel--;
+			isBinaryExpressionExtraIndentation = false;
+		}
+	}
+

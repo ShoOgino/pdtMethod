@@ -1,0 +1,34 @@
+	public boolean visit(TryStatement tryStatement) {
+		boolean isIndentationAdded = handleBlockOpenBrace(
+				this.preferences.brace_position_for_block,
+				this.preferences.insert_space_before_opening_brace_in_block);
+		lineWidth += 3;
+		Block body = tryStatement.getBody();
+		handleChars(tryStatement.getStart() + 3, body.getStart());
+		body.accept(this);
+		if (isIndentationAdded) {
+			indentationLevel--;
+			indentationLevelDesending = true;
+		}
+
+		int lastStatementEndOffset = body.getEnd();
+		List<CatchClause> clausesList = tryStatement.catchClauses();
+		CatchClause[] catchClauses = new CatchClause[clausesList.size()];
+		catchClauses = clausesList.toArray(catchClauses);
+
+		for (int i = 0; i < catchClauses.length; i++) {
+			if (preferences.control_statement_insert_newline_before_catch_in_try) {
+				insertNewLine();
+				indent();
+			} else {
+				if (this.preferences.insert_space_after_closing_brace_in_block) {
+					insertSpace();
+				}
+			}
+			handleChars(lastStatementEndOffset, catchClauses[i].getStart());
+			catchClauses[i].accept(this);
+			lastStatementEndOffset = catchClauses[i].getEnd();
+		}
+		return false;
+	}
+

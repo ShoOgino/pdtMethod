@@ -1,0 +1,87 @@
+	public boolean visit(MethodInvocation methodInvocation) {
+		VariableBase dispatch = methodInvocation.getDispatcher();
+
+		// 0029458: [Ticket 188445][Roman][Feature] Method chaining in Code
+		// Formatter
+		// Track the chain level here.
+		if (this.preferences.new_line_in_second_invoke > 0) {
+			if (chainStack.isEmpty() || chainStack.peek() == -1) {
+				chainStack.push(1);
+			} else {
+				int value = chainStack.pop();
+				chainStack.push(++value);
+			}
+
+			if (!(dispatch instanceof MethodInvocation)) {
+				chainStack.push(-1);
+			}
+		}
+
+		dispatch.accept(this);
+
+		if (this.preferences.insert_space_before_arrow_in_method_invocation) {
+			insertSpace();
+		}
+
+		if (this.preferences.new_line_in_second_invoke > 0) {
+			// 0029458: [Ticket 188445][Roman][Feature] Method chaining in Code
+			// Formatter
+			// calculate the peek chain level.
+			if (peek == null) {
+				peek = -1;
+			}
+			if (chainStack.peek() == -1) {
+				chainStack.pop();
+			}
+
+			peek = peek > chainStack.peek() ? peek : chainStack.peek();
+
+			// if peek chain level bigger than the preference, wrap them
+			if (peek > this.preferences.new_line_in_second_invoke - 1) {
+				if (dispatch instanceof MethodInvocation) {
+
+					insertNewLine();
+
+					indentationLevel++;
+					indent();
+					indentationLevel--;
+				}
+			}
+		}
+
+		appendToBuffer("->"); //$NON-NLS-1$
+		if (this.preferences.insert_space_after_arrow_in_method_invocation) {
+			insertSpace();
+		}
+
+		if (this.preferences.insert_space_after_arrow_in_method_invocation) {
+			insertSpace();
+		}
+
+		// handle the chars between the dispatcher to the property
+		handleChars(methodInvocation.getDispatcher().getEnd(), methodInvocation
+				.getMethod().getStart());
+
+		methodInvocation.getMethod().accept(this);
+
+		// 0029458: [Ticket 188445][Roman][Feature] Method chaining in Code
+		// Formatter
+		// Track the chain level.
+		if (this.preferences.new_line_in_second_invoke > 0) {
+			if (!chainStack.isEmpty()) {
+				int value = chainStack.pop();
+				value -= 1;
+				if (value > 0) {
+					chainStack.push(value);
+				} else {
+					if (!chainStack.isEmpty()) {
+						peek = chainStack.peek();
+					} else {
+						peek = -1;
+					}
+				}
+			}
+		}
+		return false;
+	}
+

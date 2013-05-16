@@ -1,0 +1,39 @@
+	/**
+	 * handle the action of if, while, do while, for statements.
+	 */
+	private void handleAction(int lastPosition, Statement action,
+			boolean addNewlineBeforeAction) {
+		boolean isIndentationAdded = false;
+		if (action.getType() == ASTNode.BLOCK) {
+			isIndentationAdded = handleBlockOpenBrace(
+					this.preferences.brace_position_for_block,
+					this.preferences.insert_space_before_opening_brace_in_block);
+		} else if (action.getType() == ASTNode.EMPTY_STATEMENT) {
+			// This is an empty statement
+			if (this.preferences.new_line_for_empty_statement) {
+				insertNewLine();
+				indentationLevel++;
+				indent();
+				isIndentationAdded = true;
+			}
+		} else {
+			if (addNewlineBeforeAction) {
+				// single statement should indent
+				indentationLevel++;
+				insertNewLine();
+				indent();
+				isIndentationAdded = true;
+			} else {
+				insertSpace();
+			}
+		}
+		handleChars(lastPosition, action.getStart());
+
+		action.accept(this);
+
+		if (isIndentationAdded) {
+			indentationLevel--;
+			indentationLevelDesending = true;
+		}
+	}
+

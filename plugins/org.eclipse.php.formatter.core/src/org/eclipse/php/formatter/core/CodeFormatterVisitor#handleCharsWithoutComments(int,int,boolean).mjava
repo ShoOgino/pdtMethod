@@ -1,0 +1,94 @@
+	private void handleCharsWithoutComments(int offset, int end,
+			boolean isComment) throws BadLocationException {
+		String content = document.get(offset, end - offset).toLowerCase();
+		int phpTagOpenIndex = -1;
+		if (!isComment
+				&& ((phpTagOpenIndex = content.indexOf("<?")) != -1 || (phpTagOpenIndex = content //$NON-NLS-1$
+						.indexOf("<%")) != -1)) { //$NON-NLS-1$
+			handleSplittedPhpBlock(offset + phpTagOpenIndex, end);
+		}
+
+		else {
+			// reset the isPrevSpace while replacing the chars
+			isPrevSpace = false;
+			int startLine = document.getLineOfOffset(offset);
+			int endLine = document.getLineOfOffset(end);
+			int emptyLines = 0;
+
+			if (!ignoreEmptyLineSetting) {
+				// count empty lines
+				for (int line = startLine; line < endLine; line++) {
+					if (isEmptyLine(line)) {
+						emptyLines++;
+					}
+				}
+
+				// set the preserve empty lines
+				if (emptyLines > preferences.blank_line_preserve_empty_lines) {
+					emptyLines = preferences.blank_line_preserve_empty_lines;
+				}
+
+				int newLinesInBuffer = countStrInBuffer(lineSeparator);
+
+				// add empty lines
+				if (emptyLines > 0 && newLinesInBuffer < emptyLines + 1) {
+					for (int line = newLinesInBuffer; line < emptyLines + 1; line++) {
+						insertNewLine();
+					}
+					if (inComment) {
+						if (!doNotIndent) {
+							indentForComment(indentationLevelDesending);
+						}
+					} else {
+						indent();
+					}
+
+				}
+
+			}
+			ignoreEmptyLineSetting = false;
+
+			// check if the replacement and the origin string are the same
+			boolean needToReplace = true;
+			if (end - offset == replaceBuffer.length()) {
+				// in case the buffer is empty and the doc length is 0
+				// no need to replace
+				if (end - offset == 0 && replaceBuffer.length() == 0) {
+					needToReplace = false;
+				} else {
+					// the buffer and document segment length are the same
+					// in case of 2 different chars we need to replace the
+					// document segment
+					needToReplace = false;
+					for (int index = 0; offset + index < end; index++) {
+						char docChar = document.getChar(offset + index);
+						char bufferChar = replaceBuffer.charAt(index);
+						if (docChar != bufferChar) {
+							needToReplace = true;
+							break;
+						}
+					}
+				}
+			}
+			if (needToReplace && editsEnabled) {
+				insertString(offset, end, replaceBuffer.toString());
+			}
+			if (recordCommentIndentVariables) {
+				recordCommentIndentVariables = false;
+				indentLengthForComment = lineWidth;
+				String afterNewLine;
+				int position = replaceBuffer.lastIndexOf(lineSeparator);
+				if (position >= 0) {
+					afterNewLine = replaceBuffer.substring(position
+							+ lineSeparator.length(), replaceBuffer.length());
+				} else {
+					afterNewLine = replaceBuffer.toString();
+				}
+				indentStringForComment = afterNewLine;
+			}
+			indentationLevelDesending = false;
+			// clear the buffer
+			replaceBuffer.setLength(0);
+		}
+	}
+

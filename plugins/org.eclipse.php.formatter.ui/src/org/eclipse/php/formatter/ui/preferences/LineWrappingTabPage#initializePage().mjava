@@ -1,0 +1,53 @@
+	protected void initializePage() {
+		fCategoriesViewer.addSelectionChangedListener(fCategoryListener);
+		fCategoriesViewer.addDoubleClickListener(fCategoryListener);
+
+		fForceSplit.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				boolean isSelected = fForceSplit.getSelection();
+				Iterator<Category> iter = fSelectionState.fElements.iterator();
+				Map<String, Object> map = codeFormatterPreferences.getMap();
+				while (iter.hasNext()) {
+					map.put(iter.next().getForceSplitKey(),
+							Boolean.toString(isSelected));
+				}
+				codeFormatterPreferences.setPreferencesValues(map);
+				notifyValuesModified();
+			}
+		});
+		fIndentStyleCombo.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				int comboSelection = fIndentStyleCombo.getSelectionIndex();
+				Iterator<Category> iter = fSelectionState.fElements.iterator();
+				Map<String, Object> map = codeFormatterPreferences.getMap();
+				while (iter.hasNext()) {
+					map.put(iter.next().getIndentPolicyKey(),
+							Integer.toString(comboSelection));
+				}
+				codeFormatterPreferences.setPreferencesValues(map);
+				notifyValuesModified();
+			}
+		});
+		fWrappingStyleCombo.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				updateControlEnablement();
+				int comboSelection = fWrappingStyleCombo.getSelectionIndex();
+				Iterator<Category> iter = fSelectionState.fElements.iterator();
+				Map<String, Object> map = codeFormatterPreferences.getMap();
+				while (iter.hasNext()) {
+					map.put(iter.next().getLineWrappingPolicyKey(),
+							Integer.toString(comboSelection));
+				}
+				codeFormatterPreferences.setPreferencesValues(map);
+				notifyValuesModified();
+			}
+		});
+
+		fCategoryListener.restoreSelection();
+
+		fDefaultFocusManager.add(fCategoriesViewer.getControl());
+		fDefaultFocusManager.add(fWrappingStyleCombo);
+		fDefaultFocusManager.add(fIndentStyleCombo);
+		fDefaultFocusManager.add(fForceSplit);
+	}
+
