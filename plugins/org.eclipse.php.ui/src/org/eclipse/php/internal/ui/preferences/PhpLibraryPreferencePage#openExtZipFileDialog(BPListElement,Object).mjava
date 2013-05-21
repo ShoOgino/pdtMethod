@@ -1,0 +1,57 @@
+	private BPListElement[] openExtZipFileDialog(BPListElement existing,
+			Object parent) {
+		String lastUsedPath;
+		if (existing != null) {
+			lastUsedPath = existing.getPath().removeLastSegments(1)
+					.toOSString();
+		} else {
+			lastUsedPath = fDialogSettings
+					.get(IUIConstants.DIALOGSTORE_LASTEXTZIP);
+			if (lastUsedPath == null) {
+				lastUsedPath = ""; //$NON-NLS-1$
+			}
+		}
+		String title = (existing == null) ? PreferencesMessages.UserLibraryPreferencePage_browsejar_new_title
+				: PreferencesMessages.UserLibraryPreferencePage_browsejar_edit_title;
+
+		FileDialog dialog = new FileDialog(getShell(),
+				existing == null ? SWT.MULTI : SWT.SINGLE);
+		dialog.setText(title);
+		dialog.setFilterExtensions(new String[] { "*.zip" }); //$NON-NLS-1$
+		dialog.setFilterPath(lastUsedPath);
+		if (existing != null) {
+			dialog.setFileName(existing.getPath().lastSegment());
+		}
+
+		String res = dialog.open();
+		if (res == null) {
+			return null;
+		}
+		String[] fileNames = dialog.getFileNames();
+		int nChosen = fileNames.length;
+
+		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+
+		IPath filterPath = Path.fromOSString(dialog.getFilterPath());
+		BPListElement[] elems = new BPListElement[nChosen];
+		for (int i = 0; i < nChosen; i++) {
+			IPath path = filterPath.append(fileNames[i]).makeAbsolute();
+
+			IFile file = root.getFileForLocation(path);
+			// support internal JARs: bug 133191
+			if (file != null) {
+				path = file.getFullPath();
+			}
+
+			path = EnvironmentPathUtils.getFullPath(
+					EnvironmentManager.getLocalEnvironment(), path);
+			BPListElement curr = new BPListElement(parent, null,
+					IBuildpathEntry.BPE_LIBRARY, path, file, true);
+			elems[i] = curr;
+		}
+		fDialogSettings.put(IUIConstants.DIALOGSTORE_LASTEXTZIP,
+				dialog.getFilterPath());
+
+		return elems;
+	}
+
