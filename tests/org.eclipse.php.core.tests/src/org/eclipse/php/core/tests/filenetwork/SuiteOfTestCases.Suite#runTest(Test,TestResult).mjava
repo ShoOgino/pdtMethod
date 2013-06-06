@@ -1,0 +1,32 @@
+		public void runTest(Test test, TestResult result) {
+			if (test instanceof SuiteOfTestCases) {
+				final SuiteOfTestCases current = (SuiteOfTestCases) test;
+				if (this.currentTestCase == null) {
+					// setup suite
+					try {
+						current.setUpSuite();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				} else {
+					// copy the values of the previous current test case's
+					// fields into the current one
+					this.initialize(current);
+				}
+				current.parentSuite = this;
+				try {
+					super.runTest(test, result);
+				} finally {
+					current.parentSuite = null;
+					// make current
+					this.currentTestCase = current;
+				}
+			} else {
+				/*
+				 * If there was error in TestCase constructor - the test will
+				 * not be of the SuiteOfTestCases type
+				 */
+				super.runTest(test, result);
+			}
+		}
+

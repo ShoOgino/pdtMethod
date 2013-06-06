@@ -1,0 +1,29 @@
+	public static void copyDirectory(File source, File target,
+			Set<File> excludes) throws IOException {
+		if (!target.exists()) {
+			target.mkdirs();
+		}
+		final File[] files = source.listFiles();
+		if (files == null) {
+			throw new IllegalStateException("Source directory " + source
+					+ " doesn't exist");
+		}
+		for (int i = 0; i < files.length; i++) {
+			final File sourceChild = files[i];
+			final String name = sourceChild.getName();
+			if (name.equals("CVS") || name.equals(".svn"))
+				continue;
+			if (excludes.contains(sourceChild))
+				continue;
+			final File targetChild = new File(target, name);
+			if (sourceChild.isDirectory()) {
+				copyDirectory(sourceChild, targetChild, excludes);
+			} else {
+				if (".emptydir".equals(name)) {
+					continue;
+				}
+				copyFile(sourceChild, targetChild);
+			}
+		}
+	}
+

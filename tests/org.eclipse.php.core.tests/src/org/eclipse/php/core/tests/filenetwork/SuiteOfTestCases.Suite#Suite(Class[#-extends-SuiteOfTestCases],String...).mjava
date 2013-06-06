@@ -1,0 +1,29 @@
+		/**
+		 * Creates a new suite on the given class. Only the methods specified in
+		 * the second parameter and included in the suite.
+		 * 
+		 * @param theClass
+		 * @param methodNames
+		 */
+		public Suite(Class<? extends SuiteOfTestCases> theClass,
+				String... methodNames) {
+			super(theClass.getName());
+			for (int i = 0; i < methodNames.length; ++i) {
+				final String methodName = methodNames[i];
+				try {
+					final Method method = theClass.getMethod(methodName,
+							new Class[0]);
+					if (Modifier.isPublic(method.getModifiers())
+							&& !Modifier.isStatic(method.getModifiers())) {
+						addTest(createTest(theClass, methodName));
+					} else {
+						warning(methodName, "Wrong modifiers");
+					}
+				} catch (SecurityException e) {
+					warning(methodName, e.toString());
+				} catch (NoSuchMethodException e) {
+					warning(methodName, e.toString());
+				}
+			}
+		}
+
