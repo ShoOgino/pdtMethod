@@ -13,46 +13,17 @@
 	 *         statement couldn't be found
 	 */
 	public static UsePart findUseStatementByAlias(
-			ModuleDeclaration moduleDeclaration, final String aliasName,
-			final int offset) {
-		final UsePart[] result = new UsePart[1];
+			ModuleDeclaration moduleDeclaration, String aliasName, int offset) {
+
+		FindUseStatementByAliasASTVisitor visitor = new FindUseStatementByAliasASTVisitor(
+				aliasName, offset);
+
 		try {
-			moduleDeclaration.traverse(new ASTVisitor() {
-				boolean found;
-
-				public boolean visit(Statement s) throws Exception {
-					if (s instanceof UseStatement) {
-						UseStatement useStatement = (UseStatement) s;
-						for (UsePart usePart : useStatement.getParts()) {
-							String alias;
-							if (usePart.getAlias() != null) {
-								alias = usePart.getAlias().getName();
-							} else {
-								// In case there's no alias - the alias is the
-								// last segment of the namespace name:
-								alias = usePart.getNamespace().getName();
-							}
-							if (aliasName.equalsIgnoreCase(alias)) {
-								found = true;
-								result[0] = usePart;
-								break;
-							}
-						}
-					}
-					return visitGeneral(s);
-				}
-
-				public boolean visitGeneral(ASTNode node) throws Exception {
-					if (found || node.sourceStart() > offset) {
-						return false;
-					}
-					return super.visitGeneral(node);
-				}
-			});
+			moduleDeclaration.traverse(visitor);
 		} catch (Exception e) {
 			Logger.logException(e);
 		}
 
-		return result[0];
+		return visitor.getResult();
 	}
 

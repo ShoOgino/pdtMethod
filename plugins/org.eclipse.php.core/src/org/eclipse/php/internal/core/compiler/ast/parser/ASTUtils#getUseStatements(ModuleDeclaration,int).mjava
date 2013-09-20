@@ -11,26 +11,16 @@
 	 */
 	public static UseStatement[] getUseStatements(
 			ModuleDeclaration moduleDeclaration, final int offset) {
-		final List<UseStatement> result = new LinkedList<UseStatement>();
-		try {
-			moduleDeclaration.traverse(new ASTVisitor() {
-				public boolean visit(Statement s) throws Exception {
-					if (s instanceof UseStatement) {
-						result.add((UseStatement) s);
-					}
-					return visitGeneral(s);
-				}
 
-				public boolean visitGeneral(ASTNode node) throws Exception {
-					if (node.sourceStart() > offset) {
-						return false;
-					}
-					return super.visitGeneral(node);
-				}
-			});
+		GetUseStatementsASTVisitor visitor = new GetUseStatementsASTVisitor(
+				offset);
+
+		try {
+			moduleDeclaration.traverse(visitor);
 		} catch (Exception e) {
 			Logger.logException(e);
 		}
-		return (UseStatement[]) result.toArray(new UseStatement[result.size()]);
+
+		return visitor.getResult();
 	}
 

@@ -1,0 +1,67 @@
+	public static Test suite() {
+
+		TestSuite suite = new TestSuite("Find Use Statement By Namespace Tests");
+
+		for (final PHPVersion phpVersion : TESTS.keySet()) {
+			TestSuite phpVerSuite = new TestSuite(phpVersion.getAlias());
+			final AbstractPHPSourceParser parser = PHPSourceParserFactory
+					.createParser(phpVersion);
+
+			for (String testsDirectory : TESTS.get(phpVersion)) {
+
+				for (final String fileName : getPDTTFiles(testsDirectory)) {
+					try {
+						final PdttFile pdttFile = new PdttFile(fileName);
+						phpVerSuite.addTest(new CompilerParserTests(phpVersion
+								.getAlias() + " - /" + fileName) {
+
+							protected void runTest() throws Throwable {
+
+								ByteArrayInputStream inputStream = new ByteArrayInputStream(
+										pdttFile.getFile().trim().getBytes());
+								ModuleDeclaration moduleDeclaration = (ModuleDeclaration) parser
+										.parse(new InputStreamReader(
+												inputStream),
+												null,
+												ProjectOptions
+														.useShortTags((IProject) null));
+
+								String namespace = pdttFile.getConfig().get(
+										"namespace");
+								int offset = Integer.parseInt(pdttFile
+										.getConfig().get("offset"));
+
+								UsePart usePart = ASTUtils
+										.findUseStatementByNamespace(
+												moduleDeclaration, namespace,
+												offset);
+
+								String actual = (usePart == null) ? "null"
+										: usePart.toString();
+								assertContents(pdttFile.getExpected(), actual);
+							}
+						});
+					} catch (final Exception e) {
+						// dummy test indicating PDTT file parsing failure
+						phpVerSuite.addTest(new TestCase(fileName) {
+							protected void runTest() throws Throwable {
+								throw e;
+							}
+						});
+					}
+				}
+			}
+			suite.addTest(phpVerSuite);
+		}
+
+		// Create a setup wrapper
+		TestSetup setup = new TestSetup(suite) {
+			protected void setUp() throws Exception {
+			}
+
+			protected void tearDown() throws Exception {
+			}
+		};
+		return setup;
+	}
+
