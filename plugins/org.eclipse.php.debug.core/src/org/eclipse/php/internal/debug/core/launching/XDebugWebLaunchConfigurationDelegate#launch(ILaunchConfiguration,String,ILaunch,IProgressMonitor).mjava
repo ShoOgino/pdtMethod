@@ -1,7 +1,14 @@
 	public void launch(ILaunchConfiguration configuration, String mode,
 			ILaunch launch, IProgressMonitor monitor) throws CoreException {
-		if (!DaemonPlugin.getDefault().validateCommunicationDaemons(
-				XDebugCommunicationDaemon.XDEBUG_DEBUGGER_ID)) {
+		String debuggerId = XDebugCommunicationDaemon.XDEBUG_DEBUGGER_ID;
+		if (!DaemonPlugin.getDefault().validateCommunicationDaemons(debuggerId)) {
+			int port = PHPDebugPlugin.getDebugPort(debuggerId);
+			if (!PHPLaunchUtilities.isPortAvailable(port)) {
+				PHPLaunchUtilities
+						.showLaunchErrorMessage(NLS
+								.bind(PHPDebugCoreMessages.XDebug_WebLaunchConfigurationDelegate_PortInUse,
+										port));
+			}
 			monitor.setCanceled(true);
 			monitor.done();
 			DebugPlugin.getDefault().getLaunchManager().removeLaunch(launch);
