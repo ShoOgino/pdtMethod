@@ -18,6 +18,7 @@
 
 		final List<IEvaluatedType> evaluated = new LinkedList<IEvaluatedType>();
 		final List<Expression> returnExpressions = new LinkedList<Expression>();
+		final List<Expression> yieldExpressions = new LinkedList<Expression>();
 
 		if (functionDeclaration != null) {
 
@@ -31,6 +32,10 @@
 						} else {
 							returnExpressions.add(expr);
 						}
+					} else if (node instanceof YieldExpression) {
+						YieldExpression statement = (YieldExpression) node;
+						Expression expr = statement.getExpr();
+						yieldExpressions.add(expr);
 					}
 					return super.visitGeneral(node);
 				}
@@ -61,6 +66,33 @@
 					e.printStackTrace();
 				}
 				continue;
+			}
+		}
+		if (yieldExpressions.size() > 0) {
+			GeneratorClassType generator = new GeneratorClassType();
+			for (Expression expr : yieldExpressions) {
+				if (expr == null) {
+					generator.getTypes().add(PHPSimpleTypes.NULL);
+				} else {
+					SourceRange sourceRange = new SourceRange(expr);
+					try {
+						ContextFinder contextFinder = getContext(sourceRange);
+						IContext context = contextFinder.getContext();
+						IEvaluatedType resolvedExpression = PHPTypeInferenceUtils
+								.resolveExpression(sourceModule,
+										sourceModuleDeclaration, context, expr);
+						if (resolvedExpression != null) {
+							generator.getTypes().add(resolvedExpression);
+						}
+					} catch (ModelException e) {
+						if (DLTKCore.DEBUG) {
+							e.printStackTrace();
+						}
+						continue;
+					}
+				}
+
+				evaluated.add(generator);
 			}
 		}
 		return (IEvaluatedType[]) evaluated
