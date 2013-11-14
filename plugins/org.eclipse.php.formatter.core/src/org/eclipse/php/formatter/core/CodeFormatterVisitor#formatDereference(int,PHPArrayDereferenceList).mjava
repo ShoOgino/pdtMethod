@@ -1,0 +1,30 @@
+	private int formatDereference(int lastPosition, PHPArrayDereferenceList list) {
+		handleChars(lastPosition, list.getDereferences().get(0).getStart());
+		lastPosition = list.getDereferences().get(0).getStart();
+		for (DereferenceNode dereferenceNode : list.getDereferences()) {
+
+			if (dereferenceNode.getName() instanceof Scalar) {
+				appendToBuffer(OPEN_BRACKET);
+				// handleChars(lastPosition, dereferenceNode.getStart());
+				Scalar scalar = (Scalar) dereferenceNode.getName();
+				appendToBuffer(scalar.getStringValue());
+				appendToBuffer(CLOSE_BRACKET);
+				handleChars(dereferenceNode.getStart(),
+						dereferenceNode.getEnd());
+			} else {
+				appendToBuffer(OPEN_BRACKET);
+				handleChars(lastPosition, dereferenceNode.getName().getStart());
+				dereferenceNode.getName().accept(this);
+				appendToBuffer(CLOSE_BRACKET);
+				handleChars(dereferenceNode.getName().getEnd(),
+						dereferenceNode.getEnd());
+			}
+
+			// handleChars(dereferenceNode.getEnd(),
+			// dereferenceNode.getEnd());
+			lastPosition = dereferenceNode.getEnd();
+		}
+
+		return lastPosition;
+	}
+

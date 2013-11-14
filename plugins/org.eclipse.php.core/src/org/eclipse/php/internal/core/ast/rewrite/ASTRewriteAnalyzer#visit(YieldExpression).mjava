@@ -1,0 +1,31 @@
+	public boolean visit(YieldExpression node) {
+		if (!hasChildrenChanges(node)) {
+			return doVisitUnchangedChildren(node);
+		}
+
+		RewriteEvent event = getEvent(node, YieldExpression.KEY_PROPERTY);
+		if (event != null) {
+			rewriteKeyValue(node, event);
+		}
+
+		if (isChanged(node, YieldExpression.EXPRESSION_PROPERTY)) {
+			try {
+				int offset = node.getKey() != null ? node.getKey().getEnd()
+						: getScanner().getTokenEndOffset(
+								SymbolsProvider.getSymbol(
+										SymbolsProvider.YIELD_ID,
+										scanner.getPHPVersion()),
+								node.getStart());
+				ensureSpaceBeforeReplace(node,
+						YieldExpression.EXPRESSION_PROPERTY, offset, 0);
+
+				rewriteNode(node, YieldExpression.EXPRESSION_PROPERTY, offset,
+						ASTRewriteFormatter.SPACE);
+			} catch (CoreException e) {
+				handleException(e);
+			}
+		}
+
+		return false;
+	}
+
