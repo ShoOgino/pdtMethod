@@ -1,0 +1,29 @@
+	/**
+	 * Updates the visual state of the given model elements and all their
+	 * children in the PHP Explorer view.
+	 * 
+	 * @param elements
+	 *            an array of model elements to update
+	 * 
+	 * @throws ModelException
+	 *             if any of the given element does not exist or if an exception
+	 *             occurs while accessing its corresponding resource
+	 */
+	private void updatePhpExplorer(IModelElement[] elements)
+			throws ModelException {
+		LibraryFolderManager lfm = LibraryFolderManager.getInstance();
+		final IModelElement[] subfolders = lfm.getAllSubfolders(elements);
+
+		// make sure the actual update in the PHP Explorer is executed in the UI
+		// thread
+		Display.getDefault().asyncExec(new Runnable() {
+			@SuppressWarnings("restriction")
+			public void run() {
+				final PHPExplorerPart phpExplorer = getPhpExplorer();
+				if (phpExplorer != null) {
+					phpExplorer.getTreeViewer().update(subfolders, null);
+				}
+			}
+		});
+	}
+

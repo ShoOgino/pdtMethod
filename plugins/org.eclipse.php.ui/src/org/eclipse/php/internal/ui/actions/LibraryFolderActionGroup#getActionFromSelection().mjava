@@ -1,0 +1,67 @@
+	/**
+	 * Returns the action to add to context menu based on the current selection.
+	 * 
+	 * <ul>
+	 * <li>If the current selection consists of only source folders then the
+	 * "Use As Library Folders" action will be returned</li>
+	 * <li>If the current selection consists of only library folders then the
+	 * "Use As Source Folders" action will be returned</li>
+	 * <li>In all other cases, this method returns <code>null</code></li>
+	 * </ul>
+	 * 
+	 * @return the action to add to the context menu, or <code>null</code> if no
+	 *         appropriate action can be determined
+	 */
+	private IAction getActionFromSelection() {
+		ISelection sel = fSite.getSelectionProvider().getSelection();
+		if (!(sel instanceof IStructuredSelection))
+			return null;
+
+		IStructuredSelection selection = (IStructuredSelection) sel;
+		Iterator<?> iterator = selection.iterator();
+
+		Collection<IModelElement> selected = new HashSet<IModelElement>();
+
+		// collect all folders from the current selection
+		while (iterator.hasNext()) {
+			Object obj = iterator.next();
+
+			if (!(obj instanceof IModelElement))
+				// the selection contains an object that is not a model element
+				return null;
+
+			IModelElement element = (IModelElement) obj;
+			IResource resource = element.getResource();
+
+			if (resource == null)
+				// the selection contains a model element without a
+				// corresponding resource on the file system
+				return null;
+
+			if (resource.getType() != IResource.FOLDER)
+				// the selection contains a model element that is not a folder
+				return null;
+
+			selected.add(element);
+		}
+
+		IModelElement[] elements = selected.toArray(new IModelElement[selected
+				.size()]);
+
+		if (elements.length == 0)
+			// no folders in the selection
+			return null;
+
+		if (!allOfSameKind(elements))
+			// a mixture of source folders and library folders in the selection
+			return null;
+
+		if (LibraryFolderManager.getInstance().isInLibraryFolder(elements[0])) {
+			// the selection contains only library folders
+			return new UseAsSourceFolderAction(fSite, elements);
+		} else {
+			// the selection contains only source folders
+			return new UseAsLibraryFolderAction(elements);
+		}
+	}
+

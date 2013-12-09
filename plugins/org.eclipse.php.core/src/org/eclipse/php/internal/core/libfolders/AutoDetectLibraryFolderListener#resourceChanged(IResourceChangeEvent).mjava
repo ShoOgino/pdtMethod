@@ -1,0 +1,15 @@
+	public void resourceChanged(IResourceChangeEvent event) {
+		if (event.getType() != IResourceChangeEvent.POST_CHANGE)
+			return;
+
+		IResourceDelta delta = event.getDelta();
+
+		// find all projects in the delta that may potentially have folders to
+		// be marked as library folders
+		IProject[] projects = new OpenedAndChangedProjectsFinder(delta)
+				.getFoundProjects();
+
+		// schedule a workspace job to process the projects
+		new AutoDetectLibraryFolderJob(projects).schedule();
+	}
+

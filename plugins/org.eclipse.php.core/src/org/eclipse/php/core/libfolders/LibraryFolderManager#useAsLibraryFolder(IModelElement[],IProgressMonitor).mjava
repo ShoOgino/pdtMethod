@@ -1,0 +1,58 @@
+	/**
+	 * Marks the given source folders as library folders.
+	 * 
+	 * <p>
+	 * The given array of model elements should contain {@link IScriptFolder} or
+	 * {@link IProjectFragment} objects.
+	 * </p>
+	 * 
+	 * <p>
+	 * This method executes the following steps:
+	 * <ol>
+	 * <li>Disables the given folders in the WTP Validation Framework.</li>
+	 * <li>Notifies the registered library folder change listeners, e.g. for
+	 * updating the images of the given folders and all their subfolders in the
+	 * PHP Explorer.</li>
+	 * <li>Waits for any running validation job to finish.</li>
+	 * <li>Deletes all problem and task markers on all the children resources of
+	 * the given folders.</li>
+	 * </ol>
+	 * </p>
+	 * 
+	 * <p>
+	 * This method usually executes a significant number of resource
+	 * modifications. It is highly recommended that this method is called either
+	 * in a {@link WorkspaceModifyOperation} or in a {@link WorkspaceJob} to
+	 * batch the resource change notifications and avoid running unnecessary
+	 * build jobs.
+	 * </p>
+	 * 
+	 * @param elements
+	 *            an array of model elements that represents the source folders
+	 *            to be marked as library folders
+	 * @param monitor
+	 *            a progress monitor, or null if progress reporting is not
+	 *            desired
+	 * 
+	 * @throws OperationCanceledException
+	 *             if the progress monitor is canceled while waiting
+	 * @throws InterruptedException
+	 *             if this thread is interrupted while waiting
+	 * @throws CoreException
+	 *             if this method fails for some other reason
+	 * 
+	 * @see {@link #useAsSourceFolder(IModelElement[], IProgressMonitor)}
+	 */
+	public void useAsLibraryFolder(IModelElement[] elements,
+			IProgressMonitor monitor) throws OperationCanceledException,
+			InterruptedException, CoreException {
+		disableValidation(elements);
+
+		elements = removeNonExisting(elements);
+		if (elements.length > 0) {
+			notifyListeners(elements);
+			waitValidationJobs(monitor);
+			deleteMarkers(elements);
+		}
+	}
+

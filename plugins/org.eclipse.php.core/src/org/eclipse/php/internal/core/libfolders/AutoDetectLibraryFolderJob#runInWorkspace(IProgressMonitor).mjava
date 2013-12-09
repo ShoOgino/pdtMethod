@@ -1,0 +1,29 @@
+	@Override
+	public IStatus runInWorkspace(IProgressMonitor monitor)
+			throws CoreException {
+
+		LibraryFolderManager lfm = LibraryFolderManager.getInstance();
+
+		for (IProject project : fProjects) {
+			// check if the user has already marked any folders as library
+			// folders or source folders
+			if (!hasDisabledPreference(project)) {
+				// check the extension point for common library folder names
+				String[] names = getCommonLibraryFolderNames(project);
+
+				// find these folders in the project
+				IModelElement[] folders = getFoldersFromNames(project, names);
+
+				// mark the folders as library folders
+				try {
+					lfm.useAsLibraryFolder(folders, monitor);
+				} catch (Exception e) {
+					return new Status(IStatus.ERROR, PHPCorePlugin.ID,
+							e.getLocalizedMessage(), e);
+				}
+			}
+		}
+
+		return Status.OK_STATUS;
+	}
+
