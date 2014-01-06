@@ -1,0 +1,51 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.eclipse.php.internal.debug.core.debugger.AbstractDebuggerConfiguration
+	 * #validate()
+	 */
+	public IStatus validate(PHPexeItem item) {
+		File executable = item.getExecutable();
+		try {
+			PHPexes.changePermissions(executable);
+			if (isInstalled(item, EXTENSION_ID)) {
+				String output = null;
+				File iniFile = item.getINILocation();
+				if (iniFile != null) {
+					output = PHPexeItem.exec(executable.getAbsolutePath(),
+							"-c", iniFile.getAbsolutePath(), "--ri", //$NON-NLS-1$ //$NON-NLS-2$
+							EXTENSION_ID);
+				} else {
+					output = PHPexeItem.exec(executable.getAbsolutePath(),
+							"--ri", EXTENSION_ID); //$NON-NLS-1$
+				}
+				if (output != null) {
+					String[] properties = output.split("\n"); //$NON-NLS-1$
+					for (String property : properties) {
+						String[] columns = property.split("=>"); //$NON-NLS-1$
+						if (columns.length == 3
+								&& (EXTENSION_ID + '.' + REMOTE_ENABLE)
+										.equals(columns[0].trim())) {
+							String value = columns[1].trim();
+							if (!"on".equalsIgnoreCase(value)) { //$NON-NLS-1$
+								return new Status(
+										IStatus.WARNING,
+										PHPDebugPlugin.ID,
+										PHPDebugCoreMessages.XDebugDebuggerConfiguration_XDebugNotEnabledError);
+							}
+						}
+					}
+				}
+			} else {
+				return new Status(
+						IStatus.WARNING,
+						PHPDebugPlugin.ID,
+						PHPDebugCoreMessages.XDebugDebuggerConfiguration_XDebugNotInstalledError);
+			}
+		} catch (IOException e) {
+			PHPDebugPlugin.log(e);
+		}
+		return Status.OK_STATUS;
+	}
+

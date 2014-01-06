@@ -20,7 +20,8 @@
 					IMessageProvider.ERROR);
 			return;
 		}
-		if (!executableLocation.getName().toLowerCase().contains("php")) { //$NON-NLS-1$
+		if (!executableLocation.getName().toLowerCase().contains("php") //$NON-NLS-1$
+				|| executableLocation.isDirectory()) {
 			setMessage(PHPDebugUIMessages.PHPExeCompositeFragment_13,
 					IMessageProvider.ERROR);
 			return;
@@ -85,7 +86,17 @@
 		phpExeItem.setINILocation(iniFile);
 		phpExeItem.setSapiType(sapiType);
 
-		setMessage(getDescription(), IMessageProvider.NONE);
+		IStatus status = phpExeItem.validateDebugger();
+		if (status.getSeverity() != IStatus.OK) {
+			if (status.getSeverity() == IStatus.ERROR) {
+				setMessage(status.getMessage(), IMessageProvider.ERROR);
+				return;
+			} else {
+				setMessage(status.getMessage(), IMessageProvider.WARNING);
+			}
+		} else {
+			setMessage(getDescription(), IMessageProvider.NONE);
+		}
 		controlHandler.update();
 	}
 
