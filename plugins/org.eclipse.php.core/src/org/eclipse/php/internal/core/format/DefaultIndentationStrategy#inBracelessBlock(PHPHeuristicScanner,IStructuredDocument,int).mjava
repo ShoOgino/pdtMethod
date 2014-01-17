@@ -1,23 +1,13 @@
 	private static boolean inBracelessBlock(PHPHeuristicScanner scanner,
 			IStructuredDocument document, int offset) {
-		boolean isBracelessBlock = scanner.isBracelessBlockStart(offset - 1,
-				PHPHeuristicScanner.UNBOUND);
-		if (isBracelessBlock) {
-			try {
-				IRegion region = document.getLineInformationOfOffset(offset);
-				String trimedLine = document.get(offset,
-						region.getOffset() + region.getLength() - offset)
-						.trim();
-				if (!(trimedLine.startsWith(BLANK + PHPHeuristicScanner.LBRACE)))
-				// && trimedLine.contains(Character
-				// .toString(PHPHeuristicScanner.LBRACE)))
-				{
-					return true;
-				}
-			} catch (BadLocationException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+		try {
+			if (scanner.isBracelessBlockStart(offset - 1,
+					PHPHeuristicScanner.UNBOUND)
+					&& scanner.nextToken(offset, PHPHeuristicScanner.UNBOUND) != PHPHeuristicScanner.TokenLBRACE) {
+				return true;
 			}
+
+		} catch (Throwable e) {
 		}
 		return false;
 	}

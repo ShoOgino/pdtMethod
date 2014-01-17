@@ -1,5 +1,5 @@
 	private static int getNextLineIndex(IStructuredDocument document,
-			boolean checkMultiLine, int currLineIndex)
+			boolean checkMultiLine, int currLineIndex, int offset)
 			throws BadLocationException {
 
 		final IRegion lineInfo = document.getLineInformation(currLineIndex);
@@ -11,6 +11,11 @@
 		String forLineEndState = FormatterUtils.getPartitionType(document,
 				currLineEndOffset);
 
+		int insideBraceless = getMultilineInsideBraceless(document,
+				Math.min(currLineEndOffset, offset));
+		if (insideBraceless >= 0) {
+			return document.getLineOfOffset(insideBraceless);
+		}
 		if (isMultilineType(checkedLineBeginState)
 				&& (checkMultiLine || shouldNotConsiderAsIndentationBase(
 						checkedLineBeginState, forLineEndState))) {
@@ -20,6 +25,7 @@
 				return index;
 			}
 		}
+
 		if (checkMultiLine) {
 			int result = adjustLine(document, currLineIndex, currLineEndOffset);
 			if (result == currLineIndex && result != 0) {
@@ -27,6 +33,7 @@
 			}
 			return result;
 		}
+
 		return currLineIndex - 1;
 	}
 

@@ -18,18 +18,17 @@
 			return false;
 
 		PHPHeuristicScanner scanner = PHPHeuristicScanner
-				.createHeuristicScanner(document, lineStart, true);
-		if (inBracelessBlock(scanner, document, lineStart)) {
-			if (scanner.previousToken(forOffset - 1,
-					PHPHeuristicScanner.UNBOUND) == PHPHeuristicScanner.TokenLPAREN)
-				return true;
-			return false;
+				.createHeuristicScanner(document, checkedOffset, true);
+		if (inBracelessBlock(scanner, document, checkedOffset)) {
+			return true;
 		}
+
+		while (Character.isWhitespace(document.getChar(lineStart)))
+			lineStart++;
+
 		// need to get to the first tRegion - so that we wont get the state of
 		// the
 		// tRegion in the previos line
-		while (Character.isWhitespace(document.getChar(lineStart)))
-			lineStart++;
 
 		// checked line beginning offset (after incrementing spaces in beginning
 		final String checkedLineBeginState = FormatterUtils.getPartitionType(
@@ -42,12 +41,24 @@
 		// the current potential line for formatting begin offset
 		final String forLineEndState = FormatterUtils.getPartitionType(
 				document, forOffset);
+		if (isMultilineAfterBraceless(document, checkedOffset)) {
+			// braceless block end go up
+			return false;
+		}
 		if (!lineContainIncompleteBlock(document, checkedOffset, lineStart,
 				currLineIndex)
 				&& (shouldNotConsiderAsIndentationBase(checkedLineBeginState,
-						forLineEndState) || (checkMultiLine && isInMultiLineStatement(
-						document, checkedLineBeginState, checkedLineEndState,
-						checkedOffset, lineStart, currLineIndex))))
+						forLineEndState))) {
+			return false;
+		}
+		if (!lineContainIncompleteBlock(document, checkedOffset, lineStart,
+				currLineIndex)
+				&& (shouldNotConsiderAsIndentationBase(checkedLineBeginState,
+						forLineEndState) || (checkMultiLine
+						&& isInMultiLineStatement(document,
+								checkedLineBeginState, checkedLineEndState,
+								checkedOffset, lineStart, currLineIndex) && !isMultilineContentInsideBraceless(
+							document, checkedOffset))))
 			return false;
 
 		// Fix bug #201688
