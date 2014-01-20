@@ -9,16 +9,15 @@
 	 */
 	protected ILaunchConfigurationDelegate2 getConfigurationDelegate(
 			ILaunchConfiguration configuration) throws CoreException {
-		if (launchConfigurationDelegate == null) {
+		String className = configuration.getAttribute(
+				PHPDebugCorePreferenceNames.CONFIGURATION_DELEGATE_CLASS, ""); //$NON-NLS-1$
+		if (className.length() == 0) {
+			throw new IllegalArgumentException();
+		}
+		if (launchConfigurationDelegate == null
+				|| !launchConfigurationDelegate.getClass().getCanonicalName()
+						.equals(className)) {
 			try {
-				String className = configuration
-						.getAttribute(
-								PHPDebugCorePreferenceNames.CONFIGURATION_DELEGATE_CLASS,
-								""); //$NON-NLS-1$
-				if (className.length() == 0) {
-					throw new IllegalArgumentException();
-				}
-
 				launchConfigurationDelegate = (ILaunchConfigurationDelegate2) Class
 						.forName(className).newInstance();
 			} catch (Throwable t) {
