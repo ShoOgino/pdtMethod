@@ -1,0 +1,43 @@
+	/**
+	 * Returns the topmost library folder of the given model element.
+	 * 
+	 * <p>
+	 * A topmost library folder is such folder that is explicitly disable in the
+	 * WTP Validation Framework. The subfolders of a topmost library folder are
+	 * library folders, but the parent of the topmost library folder is not a
+	 * library folder.
+	 * </p>
+	 * 
+	 * @param element
+	 *            a model element
+	 * 
+	 * @return the topmost library folder of the given model element
+	 */
+	public IModelElement getTopmostLibraryFolder(IModelElement element) {
+		IResource resource = element.getResource();
+		if (resource == null)
+			// the model element has no corresponding resource, so it is not
+			// part of any source file and hence cannot be in a library folder
+			return null;
+
+		if (resource.getType() == IResource.FILE) {
+			// the model element is a source file, so take its parent folder
+			resource = resource.getParent();
+		}
+
+		while (resource.getType() == IResource.FOLDER) {
+			// check if the folder is disabled in the WTP Validation Framework
+			if (isTopmostLibraryFolder(resource)) {
+				// the folder is disabled, so it is the topmost library folder
+				return DLTKCore.create(resource);
+			}
+			// the folder is not disabled, so check its parent folder
+			resource = resource.getParent();
+		}
+
+		// none of the element's parent folders is disabled in the WTP
+		// Validation Framework, so the element is not inside a library folder
+		// and therefore has no topmost library folder
+		return null;
+	}
+

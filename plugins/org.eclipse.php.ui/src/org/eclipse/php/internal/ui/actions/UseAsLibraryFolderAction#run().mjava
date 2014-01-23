@@ -1,0 +1,21 @@
+	@Override
+	public void run() {
+		// execute the action in a WorkspaceModifyOperation to batch the
+		// resource change events and avoid unnecessary triggering build jobs
+		WorkspaceModifyOperation op = new WorkspaceModifyOperation() {
+			@Override
+			protected void execute(IProgressMonitor monitor)
+					throws CoreException, InvocationTargetException,
+					InterruptedException {
+				LibraryFolderManager lfm = LibraryFolderManager.getInstance();
+				lfm.useAsLibraryFolder(fElements, monitor);
+			}
+		};
+
+		try {
+			PlatformUI.getWorkbench().getProgressService().busyCursorWhile(op);
+		} catch (Exception e) {
+			PHPUiPlugin.log(e);
+		}
+	}
+

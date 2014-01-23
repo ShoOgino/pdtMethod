@@ -1,0 +1,56 @@
+	@Override
+	public void run() {
+		boolean askForConfirmation = false;
+		Collection<IModelElement> topmostElements = new HashSet<IModelElement>();
+		LibraryFolderManager lfm = LibraryFolderManager.getInstance();
+
+		// check if any of the selected library folders is not a topmost library
+		// folder
+		for (IModelElement element : fElements) {
+			IModelElement topmostLibraryFolder = lfm
+					.getTopmostLibraryFolder(element);
+			topmostElements.add(topmostLibraryFolder);
+
+			if (!element.equals(topmostLibraryFolder)) {
+				// there is a selected folder which is not a topmost library
+				// folder, so ask the user for confirmation to mark the topmost
+				// library folder as source folder
+				askForConfirmation = true;
+			}
+		}
+
+		final IModelElement[] elements = topmostElements
+				.toArray(new IModelElement[topmostElements.size()]);
+
+		if (askForConfirmation) {
+			// show the confirmation dialog
+			String title = Messages.LibraryFolderAction_Dialog_title;
+			String message = NLS.bind(
+					Messages.LibraryFolderAction_Dialog_description,
+					StringUtils.join(getSortedElementNames(elements), ",\n\t"));
+
+			if (!MessageDialog.openConfirm(fSite.getShell(), title, message))
+				// the user clicked the Cancel button - abort the action
+				return;
+		}
+
+		// execute the action in a WorkspaceModifyOperation to batch the
+		// resource change events and avoid unnecessary triggering build jobs
+		WorkspaceModifyOperation op = new WorkspaceModifyOperation() {
+			@Override
+			protected void execute(IProgressMonitor monitor)
+					throws CoreException, InvocationTargetException,
+					InterruptedException {
+				LibraryFolderManager.getInstance().useAsSourceFolder(elements,
+						monitor);
+			}
+		};
+
+		try {
+			PlatformUI.getWorkbench().getProgressService().busyCursorWhile(op);
+		} catch (Exception e) {
+			PHPUiPlugin.log(e);
+		}
+
+	}
+
