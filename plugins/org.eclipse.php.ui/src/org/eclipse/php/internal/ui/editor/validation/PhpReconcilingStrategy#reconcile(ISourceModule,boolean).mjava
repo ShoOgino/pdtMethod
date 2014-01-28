@@ -20,18 +20,25 @@
 		}
 
 		try {
-			// TODO : create ast if needed
-			boolean isASTNeeded = initialReconcile
-					|| PHPUiPlugin.getDefault().getASTProvider().isActive(unit);
-			// reconcile
+			final ASTProvider astProvider = PHPUiPlugin.getDefault()
+					.getASTProvider();
+
 			synchronized (unit) {
 				unit.reconcile(true, null, fProgressMonitor);
 			}
-			if (isASTNeeded) {
+
+			// read DOM AST from provider if avaiable
+			Program createdAST = astProvider.getAST(unit,
+					SharedASTProvider.WAIT_NO, fProgressMonitor);
+			if (astProvider.isActive(unit) && createdAST != null) {
+				return createdAST;
+			}
+
+			if (initialReconcile || astProvider.isActive(unit)) {
 				PHPVersion phpVersion = ProjectOptions.getPhpVersion(unit
 						.getScriptProject().getProject());
 				ASTParser newParser = ASTParser.newParser(phpVersion, unit);
-				Program createdAST = newParser.createAST(null);
+				createdAST = newParser.createAST(null);
 				if (createdAST != null && document != null) {
 					createdAST.setSourceModule(unit);
 					createdAST.setSourceRange(0, document.getLength());
