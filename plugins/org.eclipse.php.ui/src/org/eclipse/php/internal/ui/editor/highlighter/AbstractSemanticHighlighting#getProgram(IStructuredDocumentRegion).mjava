@@ -1,34 +1,25 @@
 	protected Program getProgram(final IStructuredDocumentRegion region) {// region.getParentDocument().get()
 		sourceModule = null;
 		// resolve current sourceModule
-		PlatformUI.getWorkbench().getDisplay().syncExec(new Runnable() {
-			public void run() {
-				IWorkbenchPage page = PHPUiPlugin.getActivePage();
-				if (page != null) {
-					IEditorPart editor = page.getActiveEditor();
-					if (editor instanceof PHPStructuredEditor) {
-						PHPStructuredEditor phpStructuredEditor = (PHPStructuredEditor) editor;
-						if (phpStructuredEditor.getTextViewer() != null
-								&& phpStructuredEditor != null
-								&& phpStructuredEditor.getDocument() == region
-										.getParentDocument()) {
-							if (phpStructuredEditor != null
-									&& phpStructuredEditor.getTextViewer() != null) {
-								sourceModule = (ISourceModule) phpStructuredEditor
-										.getModelElement();
-							}
-						}
-					}
+		Enumeration openBuffers = BufferManager.getDefaultBufferManager()
+				.getOpenBuffers();
+		while (openBuffers.hasMoreElements()) {
+			Object nextElement = openBuffers.nextElement();
+			if (nextElement instanceof DocumentAdapter) {
+				DocumentAdapter adapt = (DocumentAdapter) nextElement;
+				if (adapt.getDocument().equals(region.getParentDocument())
+						&& adapt.getOwner() instanceof ISourceModule) {
+					sourceModule = (ISourceModule) adapt.getOwner();
+					break;
 				}
 			}
-		});
+		}
 
 		// resolve AST
 		Program program = null;
 		if (sourceModule != null) {
 			try {
-				program = SharedASTProvider.getAST(sourceModule,
-						SharedASTProvider.WAIT_NO, null);
+				program = SharedASTProvider.getAST(sourceModule,SharedASTProvider.WAIT_ACTIVE_ONLY, null);
 			} catch (ModelException e) {
 				e.printStackTrace();
 			} catch (IOException e) {
