@@ -1,0 +1,44 @@
+	public static String[] getCommandLineForPHP54BuildinServer(
+			ILaunchConfiguration configuration, String phpExe,
+			String phpConfigDir, String server, String root, String routerFile,
+			String[] args, boolean useDefaultPHPIni) throws CoreException {
+		// Check if we should treat ASP tags as PHP tags
+		IProject project = getProject(configuration);
+		String aspTags = ProjectOptions.isSupportingAspTags(project) ? "on" //$NON-NLS-1$
+				: "off"; //$NON-NLS-1$
+		String shortOpenTag = ProjectOptions.useShortTags(project) ? "on" //$NON-NLS-1$
+				: "off"; //$NON-NLS-1$
+		if (server.startsWith("http://")) { //$NON-NLS-1$
+			server = server.substring(7);
+		} else if (server.startsWith("https://")) { //$NON-NLS-1$
+			server = server.substring(8);
+		}
+
+		List<String> cmdLineList = new LinkedList<String>();
+		if (routerFile == null) {
+			cmdLineList
+					.addAll(Arrays
+							.asList(new String[] {
+									phpExe,
+									"-S", //$NON-NLS-1$
+									server,
+									"-t", root, useDefaultPHPIni ? "" : "-n", "-c", phpConfigDir, "-d", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
+									"asp_tags=" + aspTags, "-d", //$NON-NLS-1$ //$NON-NLS-2$
+									"short_open_tag=" + shortOpenTag })); //$NON-NLS-1$
+		} else {
+			cmdLineList
+					.addAll(Arrays
+							.asList(new String[] {
+									phpExe,
+									"-S", //$NON-NLS-1$
+									server,
+									"-t", root, routerFile, useDefaultPHPIni ? "" : "-n", "-c", phpConfigDir, //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+									"-d", "asp_tags=" + aspTags, "-d", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+									"short_open_tag=" + shortOpenTag })); //$NON-NLS-1$
+		}
+		if (args != null) {
+			cmdLineList.addAll(Arrays.asList(args));
+		}
+		return cmdLineList.toArray(new String[cmdLineList.size()]);
+	}
+

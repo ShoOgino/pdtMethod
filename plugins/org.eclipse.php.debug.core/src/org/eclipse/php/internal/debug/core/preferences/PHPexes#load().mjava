@@ -33,10 +33,20 @@
 		if (inisString == null) {
 			inisString = ""; //$NON-NLS-1$
 		}
+
 		// In case there is no preference value for the
 		// PHPDebugCorePreferenceNames.INSTALLED_PHP_INIS,
 		// the size of the array is set to be the same as the executables array.
 		final String[] phpIniLocations = inisString.length() > 0 ? inisString
+				.split(SEPARATOR) : new String[phpExecutablesLocations.length];
+
+		// Load default inis settings
+		String loadDefaultInisString = prefs
+				.getString(PHPDebugCorePreferenceNames.INSTALLED_PHP_LOAD_DEFAULT_INIS);
+		if (loadDefaultInisString == null) {
+			loadDefaultInisString = ""; //$NON-NLS-1$
+		}
+		final String[] loadDefaultInis = loadDefaultInisString.length() > 0 ? loadDefaultInisString
 				.split(SEPARATOR) : new String[phpExecutablesLocations.length];
 
 		// Load the debuggers array
@@ -68,7 +78,10 @@
 				break;
 			}
 			final PHPexeItem item = new PHPexeItem(names[i],
-					phpExecutablesLocations[i], iniLocation, debuggers[i]);
+					phpExecutablesLocations[i], iniLocation, debuggers[i],
+					loadDefaultInis[i] != null
+							&& loadDefaultInis[i].equals(TRUE));
+
 			// the size of defaultItemForPHPVersions may be 0 when you use this
 			// first time
 			if (defaultItemForPHPVersions.length == phpExecutablesLocations.length) {
