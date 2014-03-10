@@ -1,6 +1,7 @@
 	@Override
 	public void createPartControl(final Composite parent) {
 		super.createPartControl(parent);
+
 		// workaround for code folding
 		if (isFoldingEnabled()) {
 			installProjectionSupport();
@@ -23,23 +24,8 @@
 		fInformationPresenter.setSizeConstraints(60, 10, true, true);
 		fInformationPresenter.install(getSourceViewer());
 
-		// bug fix - #154817
-		StyledText styledText = getTextViewer().getTextWidget();
-		styledText.getContent().addTextChangeListener(new TextChangeListener() {
-
-			public void textChanging(TextChangingEvent event) {
-			}
-
-			public void textChanged(TextChangedEvent event) {
-				// Mark AST dirty
-				PHPUiPlugin.getDefault().getASTProvider().markASTDirty();
-			}
-
-			public void textSet(TextChangedEvent event) {
-				refreshViewer();
-			}
-
-		});
+		addEditorReconcilingListener(getSourceViewerConfiguration(),
+				getTextViewer());
 
 		fEditorSelectionChangedListener = new EditorSelectionChangedListener();
 		fEditorSelectionChangedListener.install(getSelectionProvider());
