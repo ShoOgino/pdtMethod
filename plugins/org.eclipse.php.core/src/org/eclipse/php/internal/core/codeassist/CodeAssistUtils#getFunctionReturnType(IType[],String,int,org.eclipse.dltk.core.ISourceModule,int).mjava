@@ -1,49 +1,7 @@
-	/**
-	 * Determines the return type of the given method element.
-	 * 
-	 * @param method
-	 * @param mask
-	 * @param offset
-	 * @return
-	 */
 	public static IType[] getFunctionReturnType(IType[] types, String method,
 			int mask, org.eclipse.dltk.core.ISourceModule sourceModule,
 			int offset) {
-		PHPTypeInferencer typeInferencer = new PHPTypeInferencer();
-		ModuleDeclaration moduleDeclaration = SourceParserUtil
-				.getModuleDeclaration(sourceModule, null);
-		IContext context = ASTUtils.findContext(sourceModule,
-				moduleDeclaration, offset);
-
-		IEvaluatedType evaluatedType;
-		IType[] modelElements;
-		boolean usePhpDoc = (mask & USE_PHPDOC) != 0;
-		if (usePhpDoc) {
-			PHPDocMethodReturnTypeGoal phpDocGoal = new PHPDocMethodReturnTypeGoal(
-					context, types, method);
-			evaluatedType = typeInferencer.evaluateTypePHPDoc(phpDocGoal);
-
-			modelElements = PHPTypeInferenceUtils.getModelElements(
-					evaluatedType, (ISourceModuleContext) context, offset);
-			if (modelElements != null) {
-				return modelElements;
-			}
-		}
-
-		MethodElementReturnTypeGoal methodGoal = new MethodElementReturnTypeGoal(
-				context, types, method);
-		evaluatedType = typeInferencer.evaluateType(methodGoal);
-		if (evaluatedType instanceof PHPThisClassType
-				&& ((PHPThisClassType) evaluatedType).getType() != null) {
-			modelElements = new IType[] { ((PHPThisClassType) evaluatedType)
-					.getType() };
-		} else {
-			modelElements = PHPTypeInferenceUtils.getModelElements(
-					evaluatedType, (ISourceModuleContext) context, offset);
-		}
-		if (modelElements != null) {
-			return modelElements;
-		}
-		return EMPTY_TYPES;
+		return getFunctionReturnType(types, method, mask, sourceModule, offset,
+				null);
 	}
 
