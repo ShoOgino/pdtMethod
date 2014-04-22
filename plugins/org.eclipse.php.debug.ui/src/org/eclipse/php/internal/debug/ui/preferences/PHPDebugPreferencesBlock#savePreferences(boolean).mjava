@@ -1,22 +1,10 @@
 	private void savePreferences(boolean isProjectSpecific) {
-		String phpExe = fDefaultPHPExe.getText();
-		// Check if it's still valid, since this method can be called after
-		// removing a php executable from another preferences page (PHP
-		// Executables)
-		PHPexes exes = PHPexes.getInstance();
-		if (exes.getItem(getSelectedDebuggerId(), phpExe) == null) {
-			PHPexeItem item = exes.getDefaultItem(getSelectedDebuggerId());
-			if (item != null) {
-				phpExe = item.getName();
-			} else {
-				phpExe = ""; //$NON-NLS-1$
-			}
-		}
 		// TODO - Might do the same for the default server
 		Preferences prefs = PHPProjectPreferences.getModelPreferences();
 		IScopeContext[] preferenceScopes = createPreferenceScopes(propertyPage);
 		IEclipsePreferences debugUINode = preferenceScopes[0]
 				.getNode(getPreferenceNodeQualifier());
+		String phpExe = fDefaultPHPExe.getText();
 		IProject project = getProject(propertyPage);
 		if (isProjectSpecific && debugUINode != null
 				&& preferenceScopes[0] instanceof ProjectScope
@@ -27,13 +15,15 @@
 			debugUINode.putBoolean(
 					PHPDebugCorePreferenceNames.ENABLE_CLI_DEBUG,
 					fEnableCLIDebug.getSelection());
-			debugUINode.put(PHPDebugCorePreferenceNames.DEFAULT_PHP, phpExe);
+			if (!PHPDebugUIMessages.PhpDebugPreferencePage_noExeDefined
+					.equals(phpExe)) {
+				debugUINode
+						.put(PHPDebugCorePreferenceNames.DEFAULT_PHP, phpExe);
+			}
 			debugUINode.put(PHPDebugCorePreferenceNames.TRANSFER_ENCODING,
 					fDebugEncodingSettings.getText());
 			debugUINode.put(PHPDebugCorePreferenceNames.OUTPUT_ENCODING,
 					fOutputEncodingSettings.getText());
-			debugUINode.put(PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID,
-					getSelectedDebuggerId());
 
 			ServersManager.setDefaultServer(project, fDefaultServer.getText());
 			Server server = ServersManager.getServer(fDefaultServer.getText());
@@ -49,10 +39,11 @@
 						fDebugEncodingSettings.getText());
 				prefs.setValue(PHPDebugCorePreferenceNames.OUTPUT_ENCODING,
 						fOutputEncodingSettings.getText());
-				prefs.setValue(PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID,
-						getSelectedDebuggerId());
-				exes.setDefaultItem(getSelectedDebuggerId(), phpExe);
-
+				if (!PHPDebugUIMessages.PhpDebugPreferencePage_noExeDefined
+						.equals(phpExe)) {
+					prefs.setValue(PHPDebugCorePreferenceNames.DEFAULT_PHP,
+							phpExe);
+				}
 				ServersManager.setDefaultServer(project,
 						fDefaultServer.getText());
 			} else {
@@ -62,17 +53,12 @@
 							.remove(PHPDebugCorePreferenceNames.STOP_AT_FIRST_LINE);
 					debugUINode
 							.remove(PHPDebugCorePreferenceNames.ENABLE_CLI_DEBUG);
-					// debugUINode.remove(PHPDebugCorePreferenceNames.ZEND_DEBUG_PORT);
-					// // No need
 					debugUINode.remove(PHPDebugCorePreferenceNames.DEFAULT_PHP);
 					ServersManager.setDefaultServer(project, (Server) null);
 					debugUINode
 							.remove(PHPDebugCorePreferenceNames.TRANSFER_ENCODING);
 					debugUINode
 							.remove(PHPDebugCorePreferenceNames.OUTPUT_ENCODING);
-					debugUINode
-							.remove(PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID);
-
 					prefs.setValue(
 							PHPDebugCorePreferenceNames.DEFAULT_BASE_PATH,
 							defaultBasePath);
@@ -81,7 +67,6 @@
 		}
 		try {
 			debugUINode.flush();
-			exes.save();
 			PHPDebugPlugin.getDefault().savePluginPreferences();
 		} catch (BackingStoreException e) {
 			Logger.logException(e);

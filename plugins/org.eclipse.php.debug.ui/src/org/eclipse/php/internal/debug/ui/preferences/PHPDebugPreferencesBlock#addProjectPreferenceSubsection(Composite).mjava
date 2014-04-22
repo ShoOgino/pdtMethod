@@ -1,46 +1,71 @@
 	private void addProjectPreferenceSubsection(Composite composite) {
-
-		Group defultPrefsGroup = new Group(composite, SWT.NONE);
-		defultPrefsGroup.setText(PHPDebugUIMessages.PHPDebugPreferencesBlock_0);
-		defultPrefsGroup.setFont(composite.getFont());
+		Group defultServerGroup = new Group(composite, SWT.NONE);
+		defultServerGroup
+				.setText(PHPDebugUIMessages.PHPDebugPreferencesBlock_0);
+		defultServerGroup.setFont(composite.getFont());
 		GridLayout layout = new GridLayout();
 		layout.numColumns = 3;
 		layout.verticalSpacing = 10;
-		defultPrefsGroup.setLayout(layout);
-		defultPrefsGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
+		defultServerGroup.setLayout(layout);
+		defultServerGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
 
-		addLabelControl(defultPrefsGroup,
-				PHPDebugUIMessages.PhpDebugPreferencePage_phpDebugger,
-				PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID);
-		fDefaultDebugger = addCombo(defultPrefsGroup, 2);
-		addLink(defultPrefsGroup,
-				PHPDebugUIMessages.PHPDebugPreferencesBlock_1,
-				DEBUGGERS_PAGE_ID);
-
-		addLabelControl(defultPrefsGroup,
+		Label label = addLabelControl(defultServerGroup,
 				PHPDebugUIMessages.PhpDebugPreferencePage_9,
 				ServersManager.DEFAULT_SERVER_PREFERENCES_KEY);
-		fDefaultServer = addCombo(defultPrefsGroup, 2);
-		addLink(defultPrefsGroup,
+		GridData gd = new GridData();
+		gd.widthHint = 90;
+		label.setLayoutData(gd);
+		fDefaultServer = addCombo(defultServerGroup, 2);
+		addLink(defultServerGroup,
 				PHPDebugUIMessages.PhpDebugPreferencePage_serversLink,
 				SERVERS_PAGE_ID);
+		label = addLabelControl(defultServerGroup,
+				PHPDebugUIMessages.PHPDebugPreferencesBlock_ServerDebugger,
+				null);
+		gd = new GridData();
+		gd.widthHint = 90;
+		label.setLayoutData(gd);
+		fServerDebugger = new Label(defultServerGroup, SWT.NONE);
+		gd = new GridData(GridData.FILL_HORIZONTAL);
+		gd.horizontalIndent = 2;
+		fServerDebugger.setLayoutData(gd);
 
-		addLabelControl(defultPrefsGroup,
+		Group defultCLIGroup = new Group(composite, SWT.NONE);
+		defultCLIGroup
+				.setText(PHPDebugUIMessages.PHPDebugPreferencesBlock_CLISettings);
+		defultCLIGroup.setFont(composite.getFont());
+		layout = new GridLayout();
+		layout.numColumns = 3;
+		layout.verticalSpacing = 10;
+		defultCLIGroup.setLayout(layout);
+		defultCLIGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+		label = addLabelControl(defultCLIGroup,
 				PHPDebugUIMessages.PhpDebugPreferencePage_12,
 				PHPDebugCorePreferenceNames.DEFAULT_PHP);
-		fDefaultPHPExe = addCombo(defultPrefsGroup, 2);
-		addLink(defultPrefsGroup,
+		gd = new GridData();
+		gd.widthHint = 90;
+		label.setLayoutData(gd);
+		fDefaultPHPExe = addCombo(defultCLIGroup, 2);
+		addLink(defultCLIGroup,
 				PHPDebugUIMessages.PhpDebugPreferencePage_installedPHPsLink,
 				PHP_EXE_PAGE_ID);
+		label = addLabelControl(defultCLIGroup,
+				PHPDebugUIMessages.PHPDebugPreferencesBlock_CLIDebugger, null);
+		gd = new GridData();
+		gd.widthHint = 90;
+		label.setLayoutData(gd);
+		fCLIDebugger = new Label(defultCLIGroup, SWT.NONE);
+		gd = new GridData(GridData.FILL_HORIZONTAL);
+		gd.horizontalIndent = 2;
+		fCLIDebugger.setLayoutData(gd);
 
-		// fEnableCLIDebug = addCheckBox(defultPrefsGroup,
-		// PHPDebugUIMessages.PhpDebugPreferencePage_13,
-		// PHPDebugCorePreferenceNames.ENABLE_CLI_DEBUG, 1);
-		new Label(defultPrefsGroup, SWT.NONE); // dummy label
-		fEnableCLIDebug = new Button(defultPrefsGroup, SWT.CHECK);
+		new Label(defultCLIGroup, SWT.NONE); // dummy label
+		new Label(defultCLIGroup, SWT.NONE); // dummy label
+		fEnableCLIDebug = new Button(defultCLIGroup, SWT.CHECK);
 		fEnableCLIDebug.setText(PHPDebugUIMessages.PhpDebugPreferencePage_13);
 
-		GridData gd = new GridData(GridData.HORIZONTAL_ALIGN_FILL);
+		gd = new GridData(GridData.HORIZONTAL_ALIGN_FILL);
 		gd.horizontalIndent = 1;
 		gd.horizontalSpan = 2;
 
@@ -92,15 +117,17 @@
 				PHPDebugUIMessages.PhpDebugPreferencePage_1,
 				PHPDebugCorePreferenceNames.STOP_AT_FIRST_LINE, 0);
 
-		// Add a default debugger listener that will update the possible
-		// executables
-		// and, maybe, servers that can work with this debugger.
-		fDefaultDebugger.addSelectionListener(new SelectionAdapter() {
+		fDefaultPHPExe.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-				String selectedDebugger = getSelectedDebuggerId();
-				PHPexeItem[] items = PHPexes.getInstance().getItems(
-						selectedDebugger);
-				loadPHPExes(fDefaultPHPExe, items);
+				PHPexeItem item = PHPexes.getInstance().getItem(
+						fDefaultPHPExe.getText());
+				if (item != null) {
+					fCLIDebugger.setText(PHPDebuggersRegistry
+							.getDebuggerName(item.getDebuggerID()));
+				} else {
+					fCLIDebugger
+							.setText(PHPDebugUIMessages.PhpDebugPreferencePage_noExeDefined);
+				}
 			}
 		});
 
@@ -109,6 +136,10 @@
 				try {
 					PHPDebugPreferencesBlock.this
 							.refreshAutoGeneratedBaseURLDisplay();
+					String serverDebuggerId = PHPDebugPlugin
+							.getDebuggerId(fDefaultServer.getText());
+					fServerDebugger.setText(PHPDebuggersRegistry
+							.getDebuggerName(serverDebuggerId));
 				} catch (MalformedURLException e1) {
 					// safe Malformed URL - exisiting server
 				}

@@ -1,5 +1,24 @@
 	public static PHPexeItem getWorkspaceDefaultExe() {
-		String phpDebuggerId = PHPDebugPlugin.getCurrentDebuggerId();
-		return PHPexes.getInstance().getDefaultItem(phpDebuggerId);
+		Preferences prefs = PHPProjectPreferences.getModelPreferences();
+		if (prefs != null) {
+			String exeName = prefs
+					.getString(PHPDebugCorePreferenceNames.DEFAULT_PHP);
+			if (exeName != null && !exeName.isEmpty()) {
+				return PHPexes.getInstance().getItem(exeName);
+			}
+		}
+		PHPexeItem item = PHPexes.getInstance().getDefaultItem(
+				getCurrentDebuggerId());
+		if (item == null) {
+			PHPexeItem[] items = PHPexes.getInstance().getAllItems();
+			for (PHPexeItem phpExeItem : items) {
+				if (phpExeItem.isDefault()) {
+					return phpExeItem;
+				}
+			}
+		} else {
+			return item;
+		}
+		return null;
 	}
 
