@@ -1,17 +1,18 @@
 	private void handleUpdateSelection(Map items) {
-		Iterator keyIterator = items.keySet().iterator();
+		Iterator<Entry> iterator = items.entrySet().iterator();
 
 		// Update the store before the hierarchy to prevent updating parents
 		// before all of the children are done
-		while (keyIterator.hasNext()) {
-			Object key = keyIterator.next();
+		while (iterator.hasNext()) {
+			Entry entry = iterator.next();
+			Object key = entry.getKey();
 			// Replace the items in the checked state store with those from the
 			// supplied items
-			List selections = (List) items.get(key);
-			if (selections.size() == 0)
+			List selections = (List) entry.getValue();
+			if (selections.size() == 0) {
 				// If it is empty remove it from the list
 				fCheckedStateStore.remove(key);
-			else {
+			} else {
 				fCheckedStateStore.put(key, selections);
 				// proceed up the tree element hierarchy
 				Object parent = fTreeContentProvider.getParent(key);
@@ -22,15 +23,16 @@
 		}
 
 		// Now update hierarchies
-		keyIterator = items.keySet().iterator();
+		iterator = items.entrySet().iterator();
 
-		while (keyIterator.hasNext()) {
-			Object key = keyIterator.next();
+		while (iterator.hasNext()) {
+			Entry entry = iterator.next();
+			Object key = entry.getKey();
 			updateHierarchy(key);
 			if (fCurrentTreeSelection != null
 					&& fCurrentTreeSelection.equals(key)) {
 				fListViewer.setAllChecked(false);
-				fListViewer.setCheckedElements(((List) items.get(key))
+				fListViewer.setCheckedElements(((List) entry.getValue())
 						.toArray());
 			}
 		}
