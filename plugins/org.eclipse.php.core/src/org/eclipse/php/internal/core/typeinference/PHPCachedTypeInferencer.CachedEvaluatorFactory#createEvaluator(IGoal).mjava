@@ -1,0 +1,20 @@
+		@Override
+		public GoalEvaluator createEvaluator(IGoal goal) {
+			if (cache.containsKey(goal)) {
+				return new FakeGoalEvaluator(goal, cache.get(goal));
+			}
+
+			GoalEvaluator eval = super.createEvaluator(goal);
+			if (eval == null) { // std evaluator
+				if (goal.getClass() == FieldReferencesGoal.class) {
+					return new FieldReferencesGoalEvaluator(goal);
+				} else if (goal.getClass() == MethodCallsGoal.class) {
+					return new MethodCallsGoalEvaluator(goal);
+				}
+
+				return new NullGoalEvaluator(goal);
+			} else {
+				return eval;
+			}
+		}
+
