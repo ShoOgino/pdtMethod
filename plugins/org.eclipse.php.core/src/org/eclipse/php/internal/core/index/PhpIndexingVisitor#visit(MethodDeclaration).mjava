@@ -2,6 +2,7 @@
 	public boolean visit(MethodDeclaration method) throws Exception {
 		fNodes.push(method);
 		methodGlobalVars.add(new HashSet<String>());
+		int modifiers = method.getModifiers();
 		PHPDocBlock doc = null;
 		if (method instanceof IPHPDocAwareDeclaration) {
 			IPHPDocAwareDeclaration declaration = (IPHPDocAwareDeclaration) method;
@@ -25,7 +26,6 @@
 			method.setModifier(Modifiers.AccAbstract);
 		}
 
-		int modifiers = method.getModifiers();
 		String methodName = method.getName();
 
 		// Determine whether this method represents constructor:
@@ -44,6 +44,8 @@
 				&& !Flags.isPublic(modifiers)) {
 			modifiers |= Modifiers.AccPublic;
 		}
+
+		modifiers = markAsDeprecated(modifiers, method);
 
 		StringBuilder metadata = new StringBuilder();
 		List<Argument> arguments = method.getArguments();
