@@ -1,23 +1,14 @@
 	@Override
 	public TemplateBuffer evaluate(Template template)
 			throws BadLocationException, TemplateException {
-		boolean useTab = getPreferences().getBoolean(PHPCorePlugin.ID,
-				PHPCoreConstants.FORMATTER_USE_TABS);
+		IFormatterCommonPrferences prefs = FormatterUtils
+				.getFormatterCommonPrferences();
+		boolean useTab = prefs.useTab(getDocument());
 		if (!useTab) {
-			String lengthString = getPreferences().getString(PHPCorePlugin.ID,
-					PHPCoreConstants.FORMATTER_INDENTATION_SIZE);
-			int length = FormatPreferencesSupport.getInstance()
-					.getIndentationSize(null);
-			if (lengthString != null && lengthString.trim().length() != 0) {
-				try {
-					length = Integer.parseInt(lengthString);
-				} catch (Exception e) {
-				}
-			}
-
+			int length = prefs.getIndentationSize(getDocument());
 			StringBuffer sb = new StringBuffer();
 			for (int i = 0; i < length; i++) {
-				sb.append(" "); //$NON-NLS-1$
+				sb.append(prefs.getIndentationChar(getDocument())); //$NON-NLS-1$
 			}
 			String newPattern = TextUtils.replace(template.getPattern(), TAB,
 					sb.toString());
