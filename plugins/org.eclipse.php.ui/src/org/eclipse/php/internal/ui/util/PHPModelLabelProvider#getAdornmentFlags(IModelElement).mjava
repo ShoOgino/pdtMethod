@@ -1,0 +1,31 @@
+	private int getAdornmentFlags(IModelElement element) {
+		int adornments = 0;
+		int modifiers = 0;
+		if (element instanceof IMember) {
+			try {
+				modifiers = ((IMember) element).getFlags();
+			} catch (ModelException e) {
+				Logger.logException(e);
+			}
+		}
+		try {
+			if (element.getElementType() == IModelElement.METHOD
+					&& ((IMethod) element).isConstructor())
+				adornments |= PHPElementImageDescriptor.CONSTRUCTOR;
+		} catch (ModelException e) {
+			Logger.logException(e);
+		}
+		if (PHPFlags.isAbstract(modifiers))
+			adornments |= PHPElementImageDescriptor.ABSTRACT;
+		if (PHPFlags.isConstant(modifiers)) {
+			adornments |= PHPElementImageDescriptor.CONSTANT;
+		} else if (PHPFlags.isFinal(modifiers)) {
+			adornments |= PHPElementImageDescriptor.FINAL;
+		}
+		if (PHPFlags.isStatic(modifiers))
+			adornments |= PHPElementImageDescriptor.STATIC;
+		if (PHPFlags.isDeprecated(modifiers))
+			adornments |= PHPElementImageDescriptor.DEPRECATED;
+		return adornments;
+	}
+
