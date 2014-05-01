@@ -4,5 +4,27 @@
 		super(parent, verticalRuler, overviewRuler, showAnnotationsOverview,
 				styles);
 		this.fTextEditor = textEditor;
+		if (fTextEditor instanceof PHPStructuredEditor) {
+			PHPStructuredEditor phpEditor = (PHPStructuredEditor) fTextEditor;
+			phpEditor.addReconcileListener(new IPhpScriptReconcilingListener() {
+
+				@Override
+				public void reconciled(Program program, boolean forced,
+						IProgressMonitor progressMonitor) {
+					if (fPostSelectionLength != -1) {
+						Display.getDefault().asyncExec(new Runnable() {
+							public void run() {
+								firePostSelectionChanged(fPostSelectionOffset,
+										fPostSelectionLength);
+							}
+						});
+					}
+				}
+
+				@Override
+				public void aboutToBeReconciled() {
+				}
+			});
+		}
 	}
 
