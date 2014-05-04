@@ -16,11 +16,11 @@
 	 *      java.lang.Object)
 	 */
 	public static IStatus makeCommittable(IResource[] resources, Object context) {
-		List readOnlyFiles = new ArrayList();
+		List<IFile> readOnlyFiles = new ArrayList<IFile>();
 		for (int i = 0; i < resources.length; i++) {
 			IResource resource = resources[i];
 			if (resource.getType() == IResource.FILE && isReadOnly(resource)) {
-				readOnlyFiles.add(resource);
+				readOnlyFiles.add((IFile) resource);
 			}
 		}
 		if (readOnlyFiles.size() == 0) {
@@ -28,19 +28,19 @@
 					IStatus.OK, "", null); //$NON-NLS-1$
 		}
 
-		Map oldTimeStamps = createModificationStampMap(readOnlyFiles);
+		Map<IFile, Long> oldTimeStamps = createModificationStampMap(readOnlyFiles);
 		IStatus status = ResourcesPlugin.getWorkspace()
 				.validateEdit(
-						(IFile[]) readOnlyFiles.toArray(new IFile[readOnlyFiles
-								.size()]), context);
+						readOnlyFiles.toArray(new IFile[readOnlyFiles.size()]),
+						context);
 		if (!status.isOK()) {
 			return status;
 		}
 
 		IStatus modified = null;
-		Map newTimeStamps = createModificationStampMap(readOnlyFiles);
-		for (Entry entry : (Set<Entry>) oldTimeStamps.entrySet()) {
-			final IFile file = (IFile) entry.getKey();
+		Map<IFile, Long> newTimeStamps = createModificationStampMap(readOnlyFiles);
+		for (Entry<IFile, Long> entry : oldTimeStamps.entrySet()) {
+			final IFile file = entry.getKey();
 			if (!entry.getValue().equals(newTimeStamps.get(file))) {
 				modified = addModified(modified, file);
 			}

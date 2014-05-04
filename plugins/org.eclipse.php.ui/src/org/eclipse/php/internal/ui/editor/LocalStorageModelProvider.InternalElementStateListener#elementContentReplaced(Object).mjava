@@ -1,13 +1,17 @@
 		public void elementContentReplaced(Object element) {
 			StorageInfo info = (StorageInfo) getElementInfo(element);
-
+			if (info == null) {
+				fireElementContentReplaced(element);
+				fireElementDirtyStateChanged(element, false);
+				return;
+			}
 			/**
 			 * Force a reload of the markers into annotations since their
 			 * previous Positions have been deleted. Disconnecting and
 			 * reconnecting forces a call to the private catchupWithMarkers
 			 * method.
 			 */
-			if (info != null && info.fModel != null) {
+			if (info.fModel != null) {
 				info.fModel.disconnect(info.fDocument);
 			}
 
@@ -64,7 +68,7 @@
 			fireElementContentReplaced(element);
 			fireElementDirtyStateChanged(element, false);
 
-			if (info != null && info.fModel != null) {
+			if (info.fModel != null) {
 				info.fModel.connect(info.fDocument);
 			}
 		}
