@@ -1,0 +1,35 @@
+	/**
+	 * Check if IEvaluatedType is Simpletype
+	 * 
+	 * array, mixed, object[] etc...
+	 * 
+	 * @param object
+	 * @return
+	 * @since 3.3
+	 */
+	public static boolean isSimple(Object object) {
+		if (object == null || object instanceof SimpleType) {
+			return true;
+		} else if (PHPSimpleTypes.RESOURCE == object
+				|| PHPSimpleTypes.OBJECT == object) {
+			return true;
+		} else if (object instanceof MultiTypeType) {
+			for (IEvaluatedType type : ((MultiTypeType) object).getTypes()) {
+				if (!isSimple(type)) {
+					return false;
+				}
+			}
+			return true;
+		} else if (object instanceof AmbiguousType) {
+			for (IEvaluatedType type : ((AmbiguousType) object)
+					.getPossibleTypes()) {
+				if (!isSimple(type)) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		return false;
+	}
+

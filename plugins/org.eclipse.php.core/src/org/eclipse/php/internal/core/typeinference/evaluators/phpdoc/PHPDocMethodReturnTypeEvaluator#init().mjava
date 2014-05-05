@@ -17,8 +17,10 @@
 						.size()]);
 			}
 			if (typeNames != null) {
+				MultiTypeType evalMultiType = null;
 				for (String typeName : typeNames) {
 					Matcher m = ARRAY_TYPE_PATTERN.matcher(typeName);
+					Matcher multi = MULTITYPE_PATTERN.matcher(typeName);
 					if (m.find()) {
 						int offset = 0;
 						try {
@@ -27,6 +29,7 @@
 						}
 						evaluated.add(getArrayType(m.group(), currentNamespace,
 								offset));
+
 					} else if (typeName.endsWith(BRACKETS)
 							&& typeName.length() > 2) {
 						int offset = 0;
@@ -38,6 +41,15 @@
 								typeName.substring(0, typeName.length() - 2),
 								currentNamespace, offset));
 					} else {
+						boolean isMulti = false;
+
+						if (multi.find()) {
+							if (evalMultiType == null) {
+								evalMultiType = new MultiTypeType();
+							}
+							isMulti = true;
+							typeName = multi.group(1);
+						}
 						AbstractMethodReturnTypeGoal goal = (AbstractMethodReturnTypeGoal) getGoal();
 						IType[] types = goal.getTypes();
 						if (typeName.equals(SELF_RETURN_TYPE) && types != null) {
@@ -45,7 +57,11 @@
 								IEvaluatedType type = getEvaluatedType(
 										PHPModelUtils.getFullName(t), null);
 								if (type != null) {
-									evaluated.add(type);
+									if (isMulti) {
+										evalMultiType.addType(type);
+									} else {
+										evaluated.add(type);
+									}
 								}
 							}
 						} else {
@@ -106,10 +122,17 @@
 							IEvaluatedType type = getEvaluatedType(typeName,
 									currentNamespace);
 							if (type != null) {
-								evaluated.add(type);
+								if (isMulti) {
+									evalMultiType.addType(type);
+								} else {
+									evaluated.add(type);
+								}
 							}
 						}
 					}
+				}
+				if (evalMultiType != null) {
+					evaluated.add(evalMultiType);
 				}
 			}
 		}
