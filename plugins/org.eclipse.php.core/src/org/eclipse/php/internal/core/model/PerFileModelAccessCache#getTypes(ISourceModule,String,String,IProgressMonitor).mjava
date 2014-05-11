@@ -28,31 +28,8 @@
 		} else {
 			typeName = typeName.toLowerCase();
 
-			if (allTypesCache == null) {
-				allTypesCache = Collections
-						.synchronizedMap(new HashMap<String, Collection<IType>>());
-
-				IScriptProject scriptProject = sourceModule.getScriptProject();
-				IDLTKSearchScope scope = SearchEngine
-						.createSearchScope(scriptProject);
-
-				IType[] allTypes = PhpModelAccess.getDefault().findTypes(null,
-						MatchRule.PREFIX, 0, 0, scope, null);
-				for (IType type : allTypes) {
-					String elementName = type.getTypeQualifiedName()
-							.toLowerCase();
-					Collection<IType> typesList;
-					typesList = allTypesCache.get(elementName);
-					if (typesList == null) {
-						typesList = new LinkedList<IType>();
-						allTypesCache.put(elementName, typesList);
-					}
-					typesList.add(type);
-				}
-			}
-
 			// if the namespace is not blank, append it to the key.
-			StringBuffer key = new StringBuffer();
+			final StringBuffer key = new StringBuffer();
 			if (namespaceName != null && !"".equals(namespaceName.trim())) { //$NON-NLS-1$
 				String nameSpace = namespaceName;
 				if (namespaceName.startsWith("\\") //$NON-NLS-1$
@@ -64,8 +41,20 @@
 				}
 			}
 			key.append(typeName);
+			final String searchFor = key.toString();
+			if (!allTypesCache.containsKey(searchFor)) {
+				IScriptProject scriptProject = sourceModule.getScriptProject();
+				IDLTKSearchScope scope = SearchEngine
+						.createSearchScope(scriptProject);
 
-			types = allTypesCache.get(key.toString());
+				allTypesCache.put(
+						searchFor,
+						Arrays.asList(PhpModelAccess.getDefault().findTypes(
+								namespaceName, typeName, MatchRule.EXACT, 0, 0,
+								scope, null)));
+			}
+
+			types = allTypesCache.get(searchFor);
 		}
 		return filterElements(sourceModule, types, monitor);
 	}
