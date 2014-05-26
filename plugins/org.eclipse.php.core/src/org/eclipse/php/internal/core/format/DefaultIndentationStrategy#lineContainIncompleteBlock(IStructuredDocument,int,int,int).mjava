@@ -15,18 +15,20 @@
 						document, textSequence.getOriginalOffset(0)))) {
 			int statementStart = textSequence.getOriginalOffset(0);
 			// we only search for opening pear in textSequence
-			int openParenPeer = scanner.findOpeningPeer(checkedOffset,
+			int openParenPeer = scanner.findOpeningPeer(checkedOffset - 1,
 					statementStart, PHPHeuristicScanner.LPAREN,
 					PHPHeuristicScanner.RPAREN);
-			int openBracePeer = scanner.findOpeningPeer(checkedOffset,
+			int openBracePeer = scanner.findOpeningPeer(checkedOffset - 1,
 					statementStart, PHPHeuristicScanner.LBRACE,
 					PHPHeuristicScanner.RBRACE);
-			int openBracketPeer = scanner.findOpeningPeer(checkedOffset,
+			int openBracketPeer = scanner.findOpeningPeer(checkedOffset - 1,
 					statementStart, PHPHeuristicScanner.LBRACKET,
 					PHPHeuristicScanner.RBRACKET);
+
 			int biggest = Math.max(openParenPeer, openBracePeer);
 			biggest = Math.max(biggest, openBracketPeer);
-			if (biggest != PHPHeuristicScanner.NOT_FOUND && biggest > lineStart) {
+			if (biggest != PHPHeuristicScanner.NOT_FOUND
+					&& biggest >= lineStart) {
 				// the whole document
 				final IStructuredDocumentRegion sdRegion = document
 						.getRegionAtCharacterOffset(lineStart);
@@ -46,8 +48,9 @@
 				if (phpScriptRegion instanceof IPhpScriptRegion
 						&& lineStart <= phpScriptRegion.getEnd()) {
 					IPhpScriptRegion scriptRegion = (IPhpScriptRegion) phpScriptRegion;
-					ITextRegion[] tokens = scriptRegion.getPhpTokens(lineStart,
-							biggest - lineStart);
+					ITextRegion[] tokens = scriptRegion.getPhpTokens(
+							lineStart - 1, biggest - lineStart + 1);
+
 					if (tokens != null && tokens.length > 0) {
 						Set<String> tokenTypeSet = new HashSet<String>();
 						for (int i = 0; i < tokens.length; i++) {
@@ -67,6 +70,10 @@
 											.contains(PHPRegionTypes.PHP_FUNCTION)) {
 								return true;
 							}
+						} else if (biggest == openBracketPeer
+								&& scanner.previousToken(biggest - 1,
+										PHPHeuristicScanner.UNBOUND) < PHPHeuristicScanner.TokenIDENT) {
+							return true;
 						} else {
 							if (tokenTypeSet.contains(PHPRegionTypes.PHP_ARRAY)) {
 								return true;
