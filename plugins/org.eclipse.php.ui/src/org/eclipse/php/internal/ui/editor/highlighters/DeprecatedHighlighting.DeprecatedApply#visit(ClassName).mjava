@@ -6,9 +6,10 @@
 						.getName();
 				IModelAccessCache cache = classConst.getAST()
 						.getBindingResolver().getModelAccessCache();
-				if (cache != null) {
-					Collection<IType> types = cache.getTypes(getSourceModule(),
-							className, null, null);
+				try {
+					IType[] types = PHPModelUtils.getTypes(className,
+							getSourceModule(), classConst.getStart(), cache,
+							new NullProgressMonitor());
 					if (types != null) {
 						for (IType type : types) {
 							if (ModelUtils.isDeprecated(type)) {
@@ -17,7 +18,10 @@
 							}
 						}
 					}
+				} catch (ModelException e) {
+					Logger.logException(e);
 				}
+
 			}
 			return true;
 		}
