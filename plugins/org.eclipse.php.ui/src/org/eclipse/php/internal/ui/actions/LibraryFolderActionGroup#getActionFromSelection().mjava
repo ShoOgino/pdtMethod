@@ -20,7 +20,7 @@
 		IStructuredSelection selection = (IStructuredSelection) sel;
 		Iterator<?> iterator = selection.iterator();
 
-		Collection<IModelElement> selected = new HashSet<IModelElement>();
+		Collection<IFolder> selected = new HashSet<IFolder>();
 
 		// collect all folders from the current selection
 		while (iterator.hasNext()) {
@@ -42,26 +42,25 @@
 				// the selection contains a model element that is not a folder
 				return null;
 
-			selected.add(element);
+			selected.add((IFolder) resource);
 		}
 
-		IModelElement[] elements = selected.toArray(new IModelElement[selected
-				.size()]);
+		IFolder[] folders = selected.toArray(new IFolder[selected.size()]);
 
-		if (elements.length == 0)
+		if (folders.length == 0)
 			// no folders in the selection
 			return null;
 
-		if (!allOfSameKind(elements))
+		if (!allOfSameKind(folders))
 			// a mixture of source folders and library folders in the selection
 			return null;
 
-		if (LibraryFolderManager.getInstance().isInLibraryFolder(elements[0])) {
+		if (LibraryFolderManager.getInstance().isInLibraryFolder(folders[0])) {
 			// the selection contains only library folders
-			return new UseAsSourceFolderAction(fSite, elements);
+			return new UseAsSourceFolderAction(fSite, folders);
 		} else {
 			// the selection contains only source folders
-			return new UseAsLibraryFolderAction(elements);
+			return new UseAsLibraryFolderAction(folders);
 		}
 	}
 

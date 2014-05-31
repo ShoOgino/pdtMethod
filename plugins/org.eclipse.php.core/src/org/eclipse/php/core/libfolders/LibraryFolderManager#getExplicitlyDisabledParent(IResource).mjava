@@ -1,0 +1,40 @@
+	/**
+	 * Returns the explicitly disabled parent library folder of the given
+	 * resource.
+	 * 
+	 * <p>
+	 * This is a parent folder that was passed as parameter to the
+	 * {@link #disableValidation(IFolder)} method.
+	 * </p>
+	 * 
+	 * @param resource
+	 *            a resource
+	 * 
+	 * @return the explicitly disabled parent library folder of the given
+	 *         resource
+	 */
+	public IFolder getExplicitlyDisabledParent(IResource resource) {
+		if (resource == null)
+			return null;
+
+		if (resource.getType() == IResource.FILE) {
+			// the resource is a source file, so take its parent folder
+			resource = resource.getParent();
+		}
+
+		while (resource.getType() == IResource.FOLDER) {
+			IFolder folder = (IFolder) resource;
+			// check if the folder is disabled in the WTP Validation Framework
+			if (isExplicitlyDisabled(folder)) {
+				return folder;
+			}
+			// the folder is not disabled, so check its parent folder
+			resource = resource.getParent();
+		}
+
+		// none of the resource's parent folders is disabled in the WTP
+		// Validation Framework, so the resource is not inside a library folder
+		// and therefore has no explicitly disabled parent library folder
+		return null;
+	}
+

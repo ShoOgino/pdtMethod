@@ -4,39 +4,37 @@
 	 * <p>
 	 * A library folder is a source folder that is disabled for validation in
 	 * the WTP Validation Framework. So, this method checks if a parent folder
-	 * of the given model element is disabled for validation.
+	 * of the given resource is disabled for validation.
 	 * </p>
 	 * 
 	 * @param resource
 	 *            a resource to check if inside a library folder
 	 * 
-	 * @return <code>true</code> if the given model element is inside a library
+	 * @return <code>true</code> if the given resource is inside a library
 	 *         folder, and <code>false</code> otherwise
 	 * 
 	 * @see ValidationFramework#disableValidation(IResource)
 	 */
 	public boolean isInLibraryFolder(IResource resource) {
 		if (resource == null)
-			// the model element has no corresponding resource, so it is not
-			// part of any source file and hence cannot be in a library folder
 			return false;
 
 		if (resource.getType() == IResource.FILE) {
-			// the model element is a source file, so take its parent folder
+			// the resource is a source file, so take its parent folder
 			resource = resource.getParent();
 		}
 
 		while (resource.getType() == IResource.FOLDER) {
 			// check if the folder is disabled in the WTP Validation Framework
-			if (isTopmostLibraryFolder(resource)) {
+			if (isExplicitlyDisabled((IFolder) resource)) {
 				return true;
 			}
 			// the folder is not disabled, so check its parent folder
 			resource = resource.getParent();
 		}
 
-		// none of the element's parent folders is disabled in the WTP
-		// Validation Framework, so the element is not inside a library folder
+		// none of the resource's parent folders is disabled in the WTP
+		// Validation Framework, so the resource is not inside a library folder
 		return false;
 	}
 

@@ -1,33 +1,34 @@
 	@Override
 	public void run() {
 		boolean askForConfirmation = false;
-		Collection<IModelElement> topmostElements = new HashSet<IModelElement>();
+		Collection<IResource> explicitlyDisabledFolders = new HashSet<IResource>();
 		LibraryFolderManager lfm = LibraryFolderManager.getInstance();
 
-		// check if any of the selected library folders is not a topmost library
-		// folder
-		for (IModelElement element : fElements) {
-			IModelElement topmostLibraryFolder = lfm
-					.getTopmostLibraryFolder(element);
-			topmostElements.add(topmostLibraryFolder);
+		// check if any of the selected library folders is an explicitly
+		// disabled library folder
+		for (IFolder folder : fFolders) {
+			IFolder explicitlyDisabledParent = lfm
+					.getExplicitlyDisabledParent(folder);
+			explicitlyDisabledFolders.add(explicitlyDisabledParent);
 
-			if (!element.equals(topmostLibraryFolder)) {
-				// there is a selected folder which is not a topmost library
-				// folder, so ask the user for confirmation to mark the topmost
-				// library folder as source folder
+			if (!folder.equals(explicitlyDisabledParent)) {
+				// there is a selected folder which is not an explicitly
+				// disabled library folder, so ask the user for confirmation to
+				// mark the explicitly disabled parent library folder as source
+				// folder
 				askForConfirmation = true;
 			}
 		}
 
-		final IModelElement[] elements = topmostElements
-				.toArray(new IModelElement[topmostElements.size()]);
+		final IFolder[] folders = explicitlyDisabledFolders
+				.toArray(new IFolder[explicitlyDisabledFolders.size()]);
 
 		if (askForConfirmation) {
 			// show the confirmation dialog
 			String title = Messages.LibraryFolderAction_Dialog_title;
 			String message = NLS.bind(
 					Messages.LibraryFolderAction_Dialog_description,
-					StringUtils.join(getSortedElementNames(elements), ",\n\t"));
+					StringUtils.join(getSortedPaths(folders), ",\n\t"));
 
 			if (!MessageDialog.openConfirm(fSite.getShell(), title, message))
 				// the user clicked the Cancel button - abort the action
@@ -41,7 +42,7 @@
 			protected void execute(IProgressMonitor monitor)
 					throws CoreException, InvocationTargetException,
 					InterruptedException {
-				LibraryFolderManager.getInstance().useAsSourceFolder(elements,
+				LibraryFolderManager.getInstance().useAsSourceFolder(folders,
 						monitor);
 			}
 		};
