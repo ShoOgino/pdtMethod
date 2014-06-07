@@ -1,5 +1,6 @@
 	private IModelElement[] internalResolve(IStructuredDocument sDoc,
-			ISourceModule sourceModule, int offset, int end) {
+			ISourceModule sourceModule, IModelAccessCache cache, int offset,
+			int end) {
 		try {
 			IStructuredDocumentRegion sRegion = sDoc
 					.getRegionAtCharacterOffset(offset);
@@ -105,7 +106,7 @@
 						if (NEW.equalsIgnoreCase(prevWord)) { //$NON-NLS-1$
 							return getConstructorsIfAny(extractClasses(PHPModelUtils
 									.getTypes(elementName, sourceModule,
-											offset, null, null)));
+											offset, cache, null)));
 						}
 
 						// Handle extends and implements:
@@ -206,7 +207,7 @@
 						// We are at class trigger:
 						if (PAAMAYIM_NEKUDOTAIM.equals(nextWord)) { //$NON-NLS-1$
 							return PHPModelUtils.getTypes(elementName,
-									sourceModule, offset, null, null);
+									sourceModule, offset, cache, null);
 						}
 						if (NS_SEPARATOR.equals(nextWord)) { //$NON-NLS-1$
 							IDLTKSearchScope scope = SearchEngine
@@ -228,14 +229,16 @@
 								List<IMethod> methods = new LinkedList<IMethod>();
 								for (IType t : types) {
 									methods.addAll(Arrays.asList(PHPModelUtils
-											.getTypeHierarchyMethod(t,
-													elementName, true, null)));
+											.getTypeHierarchyMethod(t, cache
+													.getSuperTypeHierarchy(t,
+															null), elementName,
+													true, null)));
 								}
 								return methods.toArray(new IMethod[methods
 										.size()]);
 							}
 							return PHPModelUtils.getFunctions(elementName,
-									sourceModule, offset, null, null);
+									sourceModule, offset, cache, null);
 						}
 						if ("insteadof".equals(nextWord) //$NON-NLS-1$
 								|| "as".equals(nextWord)) { //$NON-NLS-1$
@@ -243,8 +246,10 @@
 								List<IMethod> methods = new LinkedList<IMethod>();
 								for (IType t : types) {
 									methods.addAll(Arrays.asList(PHPModelUtils
-											.getTypeHierarchyMethod(t,
-													elementName, true, null)));
+											.getTypeHierarchyMethod(t, cache
+													.getSuperTypeHierarchy(t,
+															null), elementName,
+													true, null)));
 								}
 								return methods.toArray(new IMethod[methods
 										.size()]);
@@ -277,8 +282,10 @@
 							final List<IField> fields = new ArrayList<IField>();
 							for (IType t : types) {
 								fields.addAll(Arrays
-										.asList(getTypeHierarchyField(t, null,
-												elementName, true, null)));
+										.asList(getTypeHierarchyField(t,
+												cache.getSuperTypeHierarchy(t,
+														null), elementName,
+												true, null)));
 							}
 							return fields.toArray(new IModelElement[fields
 									.size()]);
@@ -287,14 +294,14 @@
 						// This can be only global constant, if we've reached
 						// here:
 						IField[] fields = PHPModelUtils.getFields(elementName,
-								sourceModule, offset, null, null);
+								sourceModule, offset, cache, null);
 						if (fields != null && fields.length > 0) {
 							return fields;
 						}
 
 						// Return class if nothing else found.
 						return PHPModelUtils.getTypes(elementName,
-								sourceModule, offset, null, null);
+								sourceModule, offset, cache, null);
 					}
 				}
 			}
