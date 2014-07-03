@@ -25,18 +25,21 @@
 		int nextElementOffset = getEndOfWhiteSpacesOffset(document,
 				command.caretOffset, document.getLength());
 
-		IModelElement element = unit.getElementAt(nextElementOffset);
-		if (element == null)
+		IModelElement element = getElementAt(unit, nextElementOffset);
+		if (element == null) {
 			return null;
+		}
 
 		// Checking the element we got is not the element within the "/**" was
 		// typed
 		if (getCodeDataOffset(element) <= command.caretOffset) {
 			return null;
 		}
+
 		int type = element != null ? element.getElementType() : -1;
 		if (type != IModelElement.METHOD && type != IModelElement.TYPE
-				&& type != IModelElement.FIELD) {
+				&& type != IModelElement.FIELD
+				&& type != IModelElement.IMPORT_CONTAINER) {
 			assert false;
 			return null;
 		}
@@ -44,9 +47,18 @@
 		String comment = null;
 		try {
 			switch (type) {
+			case IModelElement.IMPORT_CONTAINER:
+				comment = createFileComment(unit, indentation, lineDelimiter);
+				break;
 			case IModelElement.TYPE:
-				comment = createTypeTags(document, command, indentation,
-						lineDelimiter, (IType) element);
+				IType sourceType = (IType) element;
+				if (PHPFlags.isNamespace(sourceType.getFlags())) {
+					comment = createFileComment(unit, indentation,
+							lineDelimiter);
+				} else {
+					comment = createTypeTags(document, command, indentation,
+							lineDelimiter, (IType) element);
+				}
 				break;
 			case IModelElement.FIELD:
 				comment = creatFieldTags(document, command, indentation,
