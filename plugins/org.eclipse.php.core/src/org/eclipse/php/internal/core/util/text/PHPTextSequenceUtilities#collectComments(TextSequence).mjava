@@ -1,0 +1,50 @@
+	private static List<IRegion> collectComments(TextSequence textSequence) {
+		Matcher commentStartMatcher = COMMENT_START_PATTERN
+				.matcher(textSequence);
+		List<IRegion> commentRegions = new ArrayList<IRegion>();
+		int start = 0;
+		while (commentStartMatcher.find(start)) {
+			String currentType = TextSequenceUtilities.getType(textSequence,
+					commentStartMatcher.start());
+			if (PHPPartitionTypes.isPHPCommentState(currentType)
+					&& !PHPPartitionTypes.isPHPQuotesState(currentType)) {
+				int commentStartPosition = commentStartMatcher.start();
+				String startCommentString = textSequence.subSequence(
+						commentStartPosition, commentStartPosition + 2)
+						.toString();
+				if (startCommentString.equals(START_COMMENT)) {
+					// we are inside comment.
+					Matcher commentEndMatcher = COMMENT_END_PATTERN
+							.matcher(textSequence);
+					boolean foundEnd = commentEndMatcher
+							.find(commentStartPosition);
+					if (foundEnd) {
+						int commentEndPosition = commentEndMatcher.end();
+						IRegion range = new Region(commentStartPosition,
+								commentEndPosition - commentStartPosition);
+						commentRegions.add(range);
+						start = commentEndPosition;
+					} else {
+						start = commentStartMatcher.start() + 2;
+					}
+				} else {
+					// we are inside line comment.
+					for (int commentEndPosition = commentStartPosition + 2; commentEndPosition < textSequence
+							.length(); commentEndPosition++) {
+						if (textSequence.charAt(commentEndPosition) == END_LINE) {
+							IRegion range = new Region(commentStartPosition,
+									commentEndPosition - commentStartPosition);
+							commentRegions.add(range);
+							start = commentEndPosition;
+							break;
+						}
+					}
+					start = commentStartMatcher.start() + 2;
+				}
+			} else {
+				start = commentStartMatcher.start() + 2;
+			}
+		}
+		return commentRegions;
+	}
+
