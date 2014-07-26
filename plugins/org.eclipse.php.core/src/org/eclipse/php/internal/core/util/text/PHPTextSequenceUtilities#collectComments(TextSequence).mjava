@@ -1,18 +1,19 @@
 	private static List<IRegion> collectComments(TextSequence textSequence) {
-		Matcher commentStartMatcher = COMMENT_START_PATTERN
-				.matcher(textSequence);
+		StringBuffer buffer = new StringBuffer(textSequence);
 		List<IRegion> commentRegions = new ArrayList<IRegion>();
 		int start = 0;
-		while (commentStartMatcher.find(start)) {
+		int foundIndex = 0;
+		while ((foundIndex = buffer.indexOf("/", start)) != -1) { //$NON-NLS-1$
+			int commentStartPosition = foundIndex;
 			String currentType = TextSequenceUtilities.getType(textSequence,
-					commentStartMatcher.start());
+					commentStartPosition);
 			if (PHPPartitionTypes.isPHPCommentState(currentType)
-					&& !PHPPartitionTypes.isPHPQuotesState(currentType)) {
-				int commentStartPosition = commentStartMatcher.start();
+					&& !PHPPartitionTypes.isPHPQuotesState(currentType)
+					&& commentStartPosition + 2 < textSequence.length()) {
 				String startCommentString = textSequence.subSequence(
 						commentStartPosition, commentStartPosition + 2)
 						.toString();
-				if (startCommentString.equals(START_COMMENT)) {
+				if (startCommentString.equals(START_BLOCK_COMMENT)) {
 					// we are inside comment.
 					Matcher commentEndMatcher = COMMENT_END_PATTERN
 							.matcher(textSequence);
@@ -25,9 +26,9 @@
 						commentRegions.add(range);
 						start = commentEndPosition;
 					} else {
-						start = commentStartMatcher.start() + 2;
+						start = commentStartPosition + 2;
 					}
-				} else {
+				} else if (startCommentString.equals(START_LINE_COMMENT)) {
 					// we are inside line comment.
 					for (int commentEndPosition = commentStartPosition + 2; commentEndPosition < textSequence
 							.length(); commentEndPosition++) {
@@ -39,10 +40,12 @@
 							break;
 						}
 					}
-					start = commentStartMatcher.start() + 2;
+					start = commentStartPosition + 2;
+				} else {
+					start = commentStartPosition + 1;
 				}
 			} else {
-				start = commentStartMatcher.start() + 2;
+				start = commentStartPosition + 2;
 			}
 		}
 		return commentRegions;

@@ -1,30 +1,13 @@
-	public void placeMatchingBlanksForStructuredDocument(
+	private void placeMatchingBlanksForStructuredDocument(
 			final IStructuredDocument document, final StringBuffer result,
 			final int lineNumber, final int forOffset, String commandText)
 			throws BadLocationException {
-
-		IFormatterCommonPrferences formatterCommonPrferences = FormatterUtils
-				.getFormatterCommonPrferences();
-		int indentationWrappedLineSize = FormatterUtils
-				.getFormatterCommonPrferences().getIndentationWrappedLineSize(
-						document);
-		int indentationArrayInitSize = FormatterUtils
-				.getFormatterCommonPrferences().getIndentationArrayInitSize(
-						document);
-		int indentationSize = getIndentationSize(document);
-		char indentationChar = getIndentationChar(document);
-		IndentationObject indentationObject = new IndentationObject();
-		indentationObject.indentationWrappedLineSize = indentationWrappedLineSize;
-		indentationObject.indentationArrayInitSize = indentationArrayInitSize;
-		indentationObject.indentationSize = indentationSize;
-		indentationObject.indentationChar = indentationChar;
-
-		boolean enterKeyPressed = document.getLineDelimiter().equals(
-				result.toString());
 		if (forOffset == 0) {
 			return;
 		}
-
+		IndentationObject indentationObject = new IndentationObject(document);
+		boolean enterKeyPressed = document.getLineDelimiter().equals(
+				result.toString());
 		int lineOfOffset = document.getLineOfOffset(forOffset);
 		IRegion lineInformationOfOffset = document
 				.getLineInformation(lineOfOffset);
@@ -51,10 +34,12 @@
 		// end
 		else {
 			newForOffset = forOffset;
-			lastNonEmptyLineIndex = getIndentationBaseLine(document,
+			IndentationBaseDetector indentationDetector = new IndentationBaseDetector(
+					document);
+			lastNonEmptyLineIndex = indentationDetector.getIndentationBaseLine(
 					lineNumber, newForOffset, false);
-			indentationBaseLineIndex = getIndentationBaseLine(document,
-					lineNumber, newForOffset, true);
+			indentationBaseLineIndex = indentationDetector
+					.getIndentationBaseLine(lineNumber, newForOffset, true);
 		}
 
 		final IRegion lastNonEmptyLine = document
@@ -76,7 +61,8 @@
 			line = lastNonEmptyLineIndex;
 		}
 		if (shouldIndent(document, offset, line)) {
-			indent(document, result, indentationChar, indentationSize);
+			indent(document, result, indentationObject.indentationChar,
+					indentationObject.indentationSize);
 		} else {
 			boolean intended = indentMultiLineCase(document, lineNumber,
 					newForOffset, enterKeyPressed, result, blanks, commandText,
@@ -117,8 +103,9 @@
 						int nonEmptyOffset = newForOffset;
 						if (!enterKeyPressed) {
 							if (nonEmptyOffset == lineInfo.getOffset()) {
-								nonEmptyOffset = moveLineStartToNonBlankChar(
-										document, nonEmptyOffset, lineNumber) - 1;
+								nonEmptyOffset = IndentationUtils
+										.moveLineStartToNonBlankChar(document,
+												nonEmptyOffset, lineNumber) - 1;
 							}
 						}
 						char lineStartChar = document.getChar(nonEmptyOffset);
@@ -180,8 +167,9 @@
 						// check if after braceless
 
 						if (shouldIndent(document, offset, line)) {
-							indent(document, result, indentationChar,
-									indentationSize);
+							indent(document, result,
+									indentationObject.indentationChar,
+									indentationObject.indentationSize);
 						}
 					}
 				}
