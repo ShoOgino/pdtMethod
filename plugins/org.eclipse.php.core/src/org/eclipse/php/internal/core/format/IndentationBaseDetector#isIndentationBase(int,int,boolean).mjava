@@ -1,8 +1,5 @@
-	private static boolean isIndentationBase(
-			final IStructuredDocument document, final int forOffset,
-			int currLineIndex, boolean checkMultiLine)
-			throws BadLocationException {
-
+	private boolean isIndentationBase(final int forOffset, int currLineIndex,
+			boolean checkMultiLine) throws BadLocationException {
 		final IRegion lineInfo = document.getLineInformation(currLineIndex);
 
 		if (lineInfo.getLength() == 0) {
@@ -14,12 +11,13 @@
 
 		int lineStart = lineInfo.getOffset();
 
-		if (isBlanks(document, lineStart, checkedOffset, forOffset))
+		if (IndentationUtils.isBlanks(document, lineStart, checkedOffset,
+				forOffset))
 			return false;
 
 		PHPHeuristicScanner scanner = PHPHeuristicScanner
 				.createHeuristicScanner(document, checkedOffset, true);
-		if (inBracelessBlock(scanner, document, checkedOffset)) {
+		if (IndentationUtils.inBracelessBlock(scanner, document, checkedOffset)) {
 			return true;
 		}
 
@@ -41,23 +39,34 @@
 		// the current potential line for formatting begin offset
 		final String forLineEndState = FormatterUtils.getPartitionType(
 				document, forOffset);
-		if (isMultilineAfterBraceless(document, checkedOffset)) {
+		if (isMultilineAfterBraceless(checkedOffset)) {
 			// braceless block end go up
 			return false;
 		}
-		boolean lineContainIncompleteBlock = lineContainIncompleteBlock(
-				document, checkedOffset, lineStart, currLineIndex);
+
+		boolean lineContainIncompleteBlock = false;
+		BlockCalculationCache result = new BlockCalculationCache(checkedOffset,
+				lineStart, currLineIndex);
+		int index = cache.indexOf(result);
+		if (index != -1) {
+			lineContainIncompleteBlock = cache.get(index).lineContainIncompleteBlock;
+		} else {
+			lineContainIncompleteBlock = lineContainIncompleteBlock(
+					checkedOffset, lineStart, currLineIndex);
+			result.lineContainIncompleteBlock = lineContainIncompleteBlock;
+			cache.add(result);
+		}
 		boolean shouldNotConsiderAsIndentationBase = shouldNotConsiderAsIndentationBase(
 				checkedLineBeginState, forLineEndState);
+
 		if (!lineContainIncompleteBlock && shouldNotConsiderAsIndentationBase) {
 			return false;
 		}
 		if (!lineContainIncompleteBlock
 				&& (shouldNotConsiderAsIndentationBase || (checkMultiLine
-						&& isInMultiLineStatement(document,
-								checkedLineBeginState, checkedLineEndState,
-								checkedOffset, lineStart, currLineIndex) && !isMultilineContentInsideBraceless(
-							document, checkedOffset)))) {
+						&& isInMultiLineStatement(checkedLineBeginState,
+								checkedLineEndState, checkedOffset, lineStart,
+								currLineIndex) && !isMultilineContentInsideBraceless(checkedOffset)))) {
 			return false;
 		}
 
