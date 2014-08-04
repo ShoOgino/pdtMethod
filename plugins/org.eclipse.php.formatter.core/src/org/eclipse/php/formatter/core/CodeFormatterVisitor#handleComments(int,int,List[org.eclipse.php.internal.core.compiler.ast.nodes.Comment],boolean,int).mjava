@@ -7,46 +7,57 @@
 		ignoreEmptyLineSetting = false;
 
 		int startLine = document.getLineOfOffset(offset);
-		int commentStartLine = -1;
 		int start = offset;
-		String afterNewLine = EMPTY_STRING;
 		boolean needIndentNewLine = false;
 		boolean indentationLevelDesending = this.indentationLevelDesending;
 		inComment = true;
 		boolean previousCommentIsSingleLine = false;
-		boolean justCommentLine = false;
 
 		comments: for (Iterator<org.eclipse.php.internal.core.compiler.ast.nodes.Comment> iter = commentList
 				.iterator(); iter.hasNext();) {
 			org.eclipse.php.internal.core.compiler.ast.nodes.Comment comment = iter
 					.next();
-			commentStartLine = document.getLineOfOffset(comment.sourceStart()
-					+ offset);
+			int commentStartLine = document.getLineOfOffset(comment
+					.sourceStart() + offset);
 			int position = replaceBuffer.indexOf(lineSeparator);
 			boolean startAtFirstColumn = (document
 					.getLineOffset(commentStartLine) == comment.sourceStart()
 					+ offset);
-			boolean indentOnFirstColumn;
 			boolean endWithNewLineIndent = endWithNewLineIndent(replaceBuffer
 					.toString());
+			String afterNewLine = EMPTY_STRING;
+			boolean indentOnFirstColumn;
 			switch (comment.getCommentType()) {
 			case org.eclipse.php.internal.core.compiler.ast.nodes.Comment.TYPE_SINGLE_LINE:
 				indentOnFirstColumn = !startAtFirstColumn
 						|| !this.preferences.never_indent_line_comments_on_first_column;
 				if (startLine == commentStartLine) {
+					indentOnFirstColumn = false;
+					IRegion startLinereg = document
+							.getLineInformation(startLine);
+					lineWidth = comment.sourceStart() + offset
+							- startLinereg.getOffset();
 					if (position >= 0) {
-						afterNewLine = replaceBuffer.substring(position
-								+ lineSeparator.length(),
-								replaceBuffer.length());
-						replaceBuffer.replace(position, replaceBuffer.length(),
-								" "); //$NON-NLS-1$
-						IRegion reg = document.getLineInformation(startLine);
-						lineWidth = comment.sourceStart() + offset
-								- reg.getOffset() + 1;
-						indentOnFirstColumn = false;
+						if (getBufferFirstChar(position
+								+ lineSeparator.length()) == '\0') {
+							afterNewLine = replaceBuffer.substring(position
+									+ lineSeparator.length(),
+									replaceBuffer.length());
+							replaceBuffer.replace(position,
+									replaceBuffer.length(), ""); //$NON-NLS-1$
+							insertSpaces(1);
+						} else {
+							insertSpace();
+						}
+					} else {
+						if (getBufferFirstChar(0) == '\0') {
+							replaceBuffer.setLength(0);
+							insertSpaces(1);
+						} else {
+							insertSpace();
+						}
 					}
 				} else {
-					afterNewLine = EMPTY_STRING;
 					if (indentationLevelDesending) {
 						IRegion reg = document
 								.getLineInformation(commentStartLine - 1);
@@ -74,8 +85,8 @@
 						}
 					}
 
-					if (replaceBuffer.toString().trim().length() == 0) {
-						if (replaceBuffer.toString().contains(lineSeparator)) {
+					if (getBufferFirstChar(0) == '\0') {
+						if (position >= 0) {
 							replaceBuffer.setLength(0);
 							lineWidth = 0;
 							insertNewLine();
@@ -173,8 +184,6 @@
 					commentContent = join(commentWords, " "); //$NON-NLS-1$
 					commentContent = commentContent.trim();
 
-					justCommentLine = true;
-
 					boolean newLineStart = true;
 					appendToBuffer("//"); //$NON-NLS-1$
 
@@ -183,9 +192,7 @@
 								&& !newLineStart
 								&& (lineWidth + 1 + word.length() > this.preferences.comment_line_length)) {
 							insertNewLine();
-							if (!justCommentLine && indentLengthForComment == 0)
-								indentBaseOnPrevLine(commentStartLine);
-							// start at first column,and more than
+							// start at first column, and more than
 							// comment_line_length
 							if (!startAtFirstColumn
 									|| (startAtFirstColumn && indentOnFirstColumn)) {
@@ -196,9 +203,6 @@
 									indent();
 								}
 							}
-							// if (indentOnFirstColumn) {
-							// indent();
-							// }
 							appendToBuffer("//"); //$NON-NLS-1$
 							insertSpaces(1);
 							appendToBuffer(word);
@@ -235,6 +239,7 @@
 						&& this.preferences.comment_format_javadoc_comment) {
 					PHPDocBlock block = (PHPDocBlock) comment;
 
+					newLineOfComment = false;
 					appendToBuffer("/**"); //$NON-NLS-1$
 
 					commentWords = new ArrayList<String>();
@@ -377,13 +382,12 @@
 				start = comment.sourceEnd() + offset;
 				insertNewLine();
 				indent();
-				afterNewLine = EMPTY_STRING;
 				break;
 			case org.eclipse.php.internal.core.compiler.ast.nodes.Comment.TYPE_MULTILINE:
 				previousCommentIsSingleLine = false;
 				// ignore multi line comments in the middle of code
 				// example while /* kuku */ ( /* kuku */$a > 0 )
-				if (getBufferFirstChar() != '\0') {
+				if (getBufferFirstChar(0) != '\0') {
 					replaceBuffer.setLength(0);
 					resetEnableStatus(document.get(comment.sourceStart()
 							+ offset,
@@ -404,49 +408,49 @@
 				indentOnFirstColumn = !startAtFirstColumn
 						|| !this.preferences.never_indent_block_comments_on_first_column;
 				if (startLine == commentStartLine) {
+					indentOnFirstColumn = false;
+					IRegion startLinereg = document
+							.getLineInformation(startLine);
+					lineWidth = comment.sourceStart() + offset
+							- startLinereg.getOffset();
 					if (position >= 0) {
+						// if (getBufferFirstChar(position
+						// + lineSeparator.length()) == '\0') {
 						afterNewLine = replaceBuffer.substring(position
 								+ lineSeparator.length(),
 								replaceBuffer.length());
 						replaceBuffer.replace(position, replaceBuffer.length(),
-								" "); //$NON-NLS-1$
-						IRegion startLinereg = document
-								.getLineInformation(startLine);
-						lineWidth = comment.sourceStart() + offset
-								- startLinereg.getOffset() + 1;
-						indentOnFirstColumn = false;
+								""); //$NON-NLS-1$
+						insertSpaces(1);
+						// } else {
+						// insertSpace();
+						// }
+					} else {
+						// if (getBufferFirstChar(0) == '\0') {
+						replaceBuffer.setLength(0);
+						insertSpaces(1);
+						// } else {
+						// insertSpace();
+						// }
 					}
 				} else {
-					afterNewLine = EMPTY_STRING;
-					needIndentNewLine = true;
-					if ((this.preferences.never_indent_block_comments_on_first_column)
-							&& indentOnFirstColumn) {
-						if (position >= 0) {
-							replaceBuffer.replace(
-									position + lineSeparator.length(),
-									replaceBuffer.length(), ""); //$NON-NLS-1$
-							lineWidth = 0;
-						} else {
-							if (replaceBuffer.toString().trim().length() == 0) {
-								replaceBuffer.setLength(0);
-								lineWidth = 0;
-							} else {
-								insertNewLine();
-							}
-						}
-					}
 					if (position >= 0) {
+						// if (getBufferFirstChar(position
+						// + lineSeparator.length()) == '\0') {
 						replaceBuffer.replace(
 								position + lineSeparator.length(),
 								replaceBuffer.length(), ""); //$NON-NLS-1$
 						lineWidth = 0;
+						// } else {
+						// insertNewLine();
+						// }
 					} else {
-						if (replaceBuffer.toString().trim().length() == 0) {
-							replaceBuffer.setLength(0);
-							lineWidth = 0;
-						} else {
-							insertNewLine();
-						}
+						// if (getBufferFirstChar(0) == '\0') {
+						replaceBuffer.setLength(0);
+						lineWidth = 0;
+						// } else {
+						// insertNewLine();
+						// }
 					}
 					if (indentationLevelDesending || blockEnd) {
 						// add single indentationChar * indentationSize
@@ -459,6 +463,7 @@
 									: 3;
 						}
 					}
+					needIndentNewLine = true;
 				}
 				resetCommentIndentVariables();
 				if (startLine != commentStartLine && blockEnd) {
