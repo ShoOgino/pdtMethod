@@ -1,0 +1,18 @@
+	public boolean visit(Expression expr) throws ModelException {
+		if (expr.sourceStart() < offset && expr.sourceEnd() > offset) {
+			if (expr instanceof Include) {
+				Expression fileExpr = ((Include) expr).getExpr();
+				if (fileExpr instanceof InfixExpression) {
+					processInfixExpression((InfixExpression) fileExpr);
+				} else if (fileExpr instanceof Scalar) {
+					processScalar((Scalar) fileExpr);
+				}
+				selectRegion = new Region(fileExpr.sourceStart(),
+						fileExpr.sourceEnd() - fileExpr.sourceStart());
+				found = true;
+				return false;
+			}
+		}
+		return !found;
+	}
+

@@ -1,0 +1,21 @@
+	/**
+	 * Resolves call expression. Actually only expressions with 'dirname' method
+	 * and only first argument from call list is resolved.
+	 * 
+	 * @param callExpression
+	 * @return path resolved from expression
+	 */
+	private String resolvePHPCallExpression(PHPCallExpression callExpression) {
+		if (callExpression.getCallName().getName().equals(DIRNAME_METHOD)) {
+			CallArgumentsList argsList = callExpression.getArgs();
+			for (ASTNode astNode : argsList.getChilds()) {
+				if (astNode instanceof Scalar) {
+					return resolveDirname(resolveScalarValue((Scalar) astNode));
+				} else if (astNode instanceof PHPCallExpression) {
+					return resolveDirname(resolvePHPCallExpression((PHPCallExpression) astNode));
+				}
+			}
+		}
+		return null;
+	}
+
