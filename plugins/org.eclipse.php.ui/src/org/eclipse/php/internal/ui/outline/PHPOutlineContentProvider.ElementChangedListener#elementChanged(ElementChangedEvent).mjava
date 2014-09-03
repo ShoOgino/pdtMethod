@@ -1,7 +1,13 @@
 		public void elementChanged(final ElementChangedEvent e) {
-
 			final Control control = fOutlineViewer.getControl();
 			if (control == null || control.isDisposed()) {
+				return;
+			}
+
+			// filter event from different source module
+			Set<ISourceModule> eventSources = new HashSet<ISourceModule>();
+			collectSourceModules(e.getDelta(), eventSources);
+			if (!eventSources.contains(fInput)) {
 				return;
 			}
 
@@ -10,7 +16,6 @@
 
 				@Override
 				protected IStatus run(IProgressMonitor monitor) {
-
 					fUseStatements = getUseStatements();
 
 					IWorkbenchWindow activeWorkbenchWindow = PlatformUI
@@ -38,7 +43,7 @@
 							}
 						}
 					}
-					IModelElementDelta delta = findElement(fSourceModule,
+					final IModelElementDelta delta = findElement(fSourceModule,
 							e.getDelta());
 					if ((delta != null || e.getType() == ElementChangedEvent.POST_CHANGE)
 							&& fOutlineViewer != null
@@ -48,10 +53,7 @@
 						if (d != null) {
 							d.asyncExec(new Runnable() {
 								public void run() {
-									if (fOutlineViewer.getTree() == null
-											|| (fOutlineViewer.getTree() != null && !fOutlineViewer
-													.getTree().isDisposed()))
-										fOutlineViewer.refresh();
+									refresh(delta);
 								}
 							});
 						}
