@@ -7,15 +7,24 @@
 		boolean isCU = (newInput instanceof ISourceModule);
 		// Add a listener if input is valid and there wasn't one
 		if (isCU && fListener == null) {
-			fInput = newInput;
+			fInput = (ISourceModule) newInput;
 			fListener = new ElementChangedListener();
 			DLTKCore.addElementChangedListener(fListener);
+
+			fProblemListener = new ProblemChangedListener();
+			PHPUiPlugin.getWorkspace().addResourceChangeListener(
+					fProblemListener, IResourceChangeEvent.POST_CHANGE);
 		}
 		// If the new input is not valid and there is a listener - remove it
 		else if (!isCU && fListener != null) {
-			fInput = null;
 			DLTKCore.removeElementChangedListener(fListener);
 			fListener = null;
+
+			PHPUiPlugin.getWorkspace().removeResourceChangeListener(
+					fProblemListener);
+			fProblemListener = null;
+
+			fInput = null;
 		}
 	}
 

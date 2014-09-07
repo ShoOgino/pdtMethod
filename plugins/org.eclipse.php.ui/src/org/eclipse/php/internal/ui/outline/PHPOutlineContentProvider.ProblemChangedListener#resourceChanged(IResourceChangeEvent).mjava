@@ -1,0 +1,42 @@
+		@Override
+		public void resourceChanged(final IResourceChangeEvent event) {
+			final Control control = fOutlineViewer.getControl();
+			if (control == null || control.isDisposed()) {
+				return;
+			}
+
+			Job job = new Job(PHPUIMessages.PHPOutlineContentProvider_0) {
+
+				@Override
+				protected IStatus run(IProgressMonitor monitor) {
+					toUpdate.clear();
+					try {
+						IResourceDelta delta = event.getDelta();
+						if (delta != null)
+							delta.accept(ProblemChangedListener.this);
+					} catch (CoreException e) {
+						PHPUiPlugin.log(e.getStatus());
+						return Status.OK_STATUS;
+					}
+
+					if (!toUpdate.isEmpty() && fOutlineViewer != null
+							&& fOutlineViewer.getControl() != null
+							&& !fOutlineViewer.getControl().isDisposed()) {
+						Display d = control.getDisplay();
+						if (d != null) {
+							d.asyncExec(new Runnable() {
+								public void run() {
+									fOutlineViewer.update(toUpdate.toArray(),
+											null);
+								}
+							});
+						}
+					}
+					return Status.OK_STATUS;
+				}
+			};
+			job.setPriority(Job.DECORATE);
+			job.setSystem(true);
+			job.schedule();
+		}
+

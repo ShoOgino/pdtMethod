@@ -1,18 +1,28 @@
 		private void visitAndUpdate(IModelElementDelta delta) {
-			if (delta == null) {
-				return;
-			}
-			switch (delta.getKind()) {
-			case IModelElementDelta.ADDED:
-				fOutlineViewer.add(delta.getElement().getParent(),
-						delta.getElement());
-				break;
-			case IModelElementDelta.CHANGED:
-				fOutlineViewer.update(delta.getElement(), null);
-				break;
-			case IModelElementDelta.REMOVED:
-				fOutlineViewer.remove(delta.getElement());
-				break;
+			if (delta.getElement() != null) {
+				IModelElement modelElement = delta.getElement();
+				switch (delta.getKind()) {
+				case IModelElementDelta.ADDED:
+					if (modelElement.getElementType() == IModelElement.IMPORT_CONTAINER) {
+						IModelElement parent = new ImportContainerFinder()
+								.findParent((IImportContainer) modelElement);
+						if (parent != null) {
+							fOutlineViewer.add(parent, modelElement);
+						}
+					} else {
+						fOutlineViewer.add(modelElement.getParent(),
+								modelElement);
+					}
+					refreshUseStatements(modelElement);
+					break;
+				case IModelElementDelta.CHANGED:
+					fOutlineViewer.update(modelElement, null);
+					break;
+				case IModelElementDelta.REMOVED:
+					fOutlineViewer.remove(modelElement);
+					refreshUseStatements(modelElement);
+					break;
+				}
 			}
 			for (IModelElementDelta child : delta.getAffectedChildren()) {
 				visitAndUpdate(child);
