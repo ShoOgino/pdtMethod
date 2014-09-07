@@ -17,30 +17,32 @@
 	 */
 	public Program getAST(ISourceModule input, WAIT_FLAG waitFlag,
 			IProgressMonitor progressMonitor) {
-		if (input == null || waitFlag == null)
+		if (input == null || waitFlag == null) {
 			throw new IllegalArgumentException("input or wait flag are null"); //$NON-NLS-1$
+		}
 
-		if (progressMonitor != null && progressMonitor.isCanceled())
+		if (progressMonitor != null && progressMonitor.isCanceled()) {
 			return null;
+		}
 
 		boolean isActiveElement;
 		synchronized (this) {
 			isActiveElement = input.equals(fActiveJavaElement);
 			if (isActiveElement) {
 				if (fAST != null && !isASTDirty) {
-					if (DEBUG)
+					if (DEBUG) {
 						System.out
 								.println(getThreadName()
 										+ " - " + DEBUG_PREFIX + "returning cached AST:" + toString(fAST) + " for: " + input.getElementName()); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-
+					}
 					return fAST;
 				}
 				if (waitFlag == SharedASTProvider.WAIT_NO) {
-					if (DEBUG)
+					if (DEBUG) {
 						System.out
 								.println(getThreadName()
 										+ " - " + DEBUG_PREFIX + "returning null (WAIT_NO) for: " + input.getElementName()); //$NON-NLS-1$ //$NON-NLS-2$
-
+					}
 					return null;
 
 				}
@@ -53,8 +55,9 @@
 		if (isActiveElement) {
 			synchronized (fReconcileLock) {
 				isReconciling = isReconciling(input);
-				if (!isReconciling && !canReturnNull)
+				if (!isReconciling && !canReturnNull) {
 					aboutToBeReconciled(input);
+				}
 			}
 		}
 
@@ -64,22 +67,22 @@
 
 				// Wait for AST
 				synchronized (fWaitLock) {
-					if (DEBUG)
+					if (DEBUG) {
 						System.out
 								.println(getThreadName()
 										+ " - " + DEBUG_PREFIX + "waiting for AST for: " + input.getElementName()); //$NON-NLS-1$ //$NON-NLS-2$
-
+					}
 					fWaitLock.wait();
 				}
 
 				// Check whether active element is still valid
 				synchronized (this) {
 					if (activeElement == fActiveJavaElement && fAST != null) {
-						if (DEBUG)
+						if (DEBUG) {
 							System.out
 									.println(getThreadName()
 											+ " - " + DEBUG_PREFIX + "...got AST for: " + input.getElementName()); //$NON-NLS-1$ //$NON-NLS-2$
-
+						}
 						return fAST;
 					}
 				}
@@ -95,20 +98,22 @@
 			ast = createAST(input, progressMonitor);
 			if (progressMonitor != null && progressMonitor.isCanceled()) {
 				ast = null;
-				if (DEBUG)
+				if (DEBUG) {
 					System.out
 							.println(getThreadName()
 									+ " - " + DEBUG_PREFIX + "Ignore created AST for: " + input.getElementName() + " - operation has been cancelled"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+				}
 			}
 		} finally {
 			if (isActiveElement) {
 				if (fAST != null) {
 					// in the meantime, reconcile created a new AST. Return that
 					// one
-					if (DEBUG)
+					if (DEBUG) {
 						System.out
 								.println(getThreadName()
 										+ " - " + DEBUG_PREFIX + "Ignore created AST for " + input.getElementName() + " - AST from reconciler is newer"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+					}
 					reconciled(fAST, input, null);
 					return fAST;
 				} else
