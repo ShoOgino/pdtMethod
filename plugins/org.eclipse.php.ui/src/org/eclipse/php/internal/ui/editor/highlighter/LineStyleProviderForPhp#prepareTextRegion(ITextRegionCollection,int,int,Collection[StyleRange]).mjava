@@ -16,6 +16,7 @@
 		int nRegions = regions.size();
 		StyleRange styleRange = null;
 		TextAttribute previousAttr = null;
+		int previousEndOffset = -1;
 		for (int i = 0; i < nRegions; i++) {
 			region = regions.get(i);
 			TextAttribute attr = null;
@@ -54,8 +55,8 @@
 						if ((styleRange != null)
 								&& (previousAttr != null)
 								&& (previousAttr.equals(attr))
-								&& styleRange.start + styleRange.length == region
-										.getStart()) {
+								&& previousEndOffset + 1 == blockedRegion
+										.getStartOffset(region)) {
 							styleRange.length += region.getLength();
 						} else {
 							styleRange = createStyleRange(blockedRegion,
@@ -68,6 +69,7 @@
 							// it hasn't changed
 							previousAttr = attr;
 						}
+						previousEndOffset = blockedRegion.getEndOffset(region);
 					} else {
 						previousAttr = null;
 					}
