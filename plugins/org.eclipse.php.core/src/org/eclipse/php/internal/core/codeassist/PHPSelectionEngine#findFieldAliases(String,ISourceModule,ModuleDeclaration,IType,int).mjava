@@ -1,0 +1,25 @@
+	private IField[] findFieldAliases(String fieldName,
+			ISourceModule sourceModule, ModuleDeclaration parsedUnit,
+			IType currentNamespace, int offset) throws ModelException {
+		IDLTKSearchScope scope = SearchEngine.createSearchScope(sourceModule
+				.getScriptProject());
+
+		Map<String, UsePart> useParts = PHPModelUtils.getAliasToNSMap(
+				fieldName, parsedUnit, offset, currentNamespace, true);
+		if (useParts.containsKey(fieldName)) {
+			String fullName = useParts.get(fieldName).getNamespace()
+					.getFullyQualifiedName();
+			IField[] elements = PhpModelAccess.getDefault().findFields(
+					fullName, MatchRule.EXACT, 0, 0, scope, null);
+			if (elements != null) {
+				List<IField> result = new ArrayList<IField>();
+				for (IField field : elements) {
+					result.add(new AliasField((ModelElement) field, field
+							.getFullyQualifiedName(), fieldName));
+				}
+				return result.toArray(new IField[0]);
+			}
+		}
+		return null;
+	}
+

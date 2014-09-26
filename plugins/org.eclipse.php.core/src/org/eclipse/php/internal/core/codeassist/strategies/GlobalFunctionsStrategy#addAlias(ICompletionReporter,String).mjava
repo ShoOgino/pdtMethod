@@ -1,0 +1,25 @@
+	protected void addAlias(ICompletionReporter reporter, String suffix)
+			throws BadLocationException {
+		ICompletionContext context = getContext();
+		AbstractCompletionContext abstractContext = (AbstractCompletionContext) context;
+		if (abstractContext.getCompletionRequestor().isContextInformationMode()) {
+			return;
+		}
+		String prefix = abstractContext.getPrefixWithoutProcessing();
+		if (prefix.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) != -1) {
+			return;
+		}
+		IModuleSource module = reporter.getModule();
+		org.eclipse.dltk.core.ISourceModule sourceModule = (org.eclipse.dltk.core.ISourceModule) module
+				.getModelElement();
+		ModuleDeclaration moduleDeclaration = SourceParserUtil
+				.getModuleDeclaration(sourceModule);
+		final int offset = abstractContext.getOffset();
+		IType namespace = PHPModelUtils.getCurrentNamespace(sourceModule,
+				offset);
+
+		final Map<String, UsePart> result = PHPModelUtils.getAliasToNSMap(
+				prefix, moduleDeclaration, offset, namespace, false);
+		reportAlias(reporter, suffix, abstractContext, module, result);
+	}
+

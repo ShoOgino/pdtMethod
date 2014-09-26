@@ -1,0 +1,29 @@
+	/*
+	 * Rewrite the parameter's variadic value of a {@link FormalParameter}
+	 * 
+	 * @param formalParameter
+	 */
+	private void rewriteFormalParameterVariadic(FormalParameter formalParameter) {
+		RewriteEvent event = getEvent(formalParameter,
+				FormalParameter.IS_VARIADIC_PROPERTY);
+		if (event != null && event.getChangeKind() == RewriteEvent.REPLACED) {
+			TextEditGroup editGroup = getEditGroup(event);
+			boolean isVariadic = (Boolean) event.getNewValue();
+			int start = formalParameter.getStart();
+			if (isVariadic) {
+				if (formalParameter.getParameterName() instanceof Reference) {
+					start++;
+				}
+				doTextInsert(start, "... ", //$NON-NLS-1$
+						editGroup);
+			} else {
+				if (formalParameter.getParameterName() instanceof Reference) {
+					start++;
+				} else {
+					start -= 3;
+				}
+				doTextRemove(start, 3, editGroup);
+			}
+		}
+	}
+

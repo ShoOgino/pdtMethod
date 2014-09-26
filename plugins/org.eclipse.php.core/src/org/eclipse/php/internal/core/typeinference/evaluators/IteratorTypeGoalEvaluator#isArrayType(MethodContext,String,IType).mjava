@@ -10,16 +10,26 @@
 	 * 
 	 * 
 	 * @param methodContext
+	 * @param variableName
 	 * @param type
 	 * @return boolean
 	 */
-	private boolean isArrayType(MethodContext methodContext, IType type) {
+	private boolean isArrayType(MethodContext methodContext,
+			String variableName, IType type) {
 
 		PHPMethodDeclaration methodDeclaration = (PHPMethodDeclaration) methodContext
 				.getMethodNode();
 
 		PHPDocBlock[] docBlocks = new PHPDocBlock[0];
-
+		for (Object object : methodDeclaration.getArguments()) {
+			if (object instanceof FormalParameter) {
+				FormalParameter formalParameter = (FormalParameter) object;
+				if (formalParameter.getName().equals(variableName)
+						&& formalParameter.isVariadic()) {
+					return true;
+				}
+			}
+		}
 		try {
 			IModelElement element = methodContext.getSourceModule()
 					.getElementAt(methodDeclaration.getNameStart());

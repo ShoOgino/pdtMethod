@@ -1,12 +1,13 @@
 	private ScriptCompletionProposal createMethodDeclarationProposal(
-			CompletionProposal proposal) {
+			final CompletionProposal proposal) {
 		if (getSourceModule() == null
 				|| getSourceModule().getScriptProject() == null) {
 			return null;
 		}
 
 		String name = String.valueOf(proposal.getName());
-
+		String completion = new String(proposal.getCompletion());
+		int replaceStart = proposal.getReplaceStart();
 		String[] paramTypes;
 
 		paramTypes = new String[0];
@@ -15,11 +16,37 @@
 		int length = getLength(proposal);
 		String label = ((PHPCompletionProposalLabelProvider) getLabelProvider())
 				.createOverrideMethodProposalLabel(proposal);
-		ScriptCompletionProposal scriptProposal = createParameterGuessingProposal(
-				proposal, getSourceModule().getScriptProject(),
-				getSourceModule(), name, paramTypes, start, length, label,
-				String.valueOf(proposal.getCompletion()),
-				proposal.getExtraInfo());
+
+		String displayString = ((PHPCompletionProposalLabelProvider) getLabelProvider())
+				.createMethodProposalLabel(proposal);
+
+		ScriptCompletionProposal scriptProposal = null;
+		if (ProposalExtraInfo.isNotInsertUse(proposal.getExtraInfo())) {
+			Image image = getImage(((PHPCompletionProposalLabelProvider) getLabelProvider())
+					.createMethodImageDescriptor(proposal));
+			scriptProposal = new PHPCompletionProposal(completion,
+					replaceStart, length, image, displayString, 0) {
+				public String getReplacementString() {
+					IMethod method = (IMethod) proposal.getModelElement();
+					if (ProposalExtraInfo.isNoInsert(proposal.getExtraInfo())) {
+						return method.getElementName();
+					}
+					setReplacementString(method.getFullyQualifiedName("\\")); //$NON-NLS-1$
+					return super.getReplacementString();
+				}
+
+				@Override
+				public Object getExtraInfo() {
+					return proposal.getExtraInfo();
+				}
+
+			};
+		} else {
+			scriptProposal = createParameterGuessingProposal(proposal, name,
+					paramTypes, start, length, label, completion,
+					proposal.getExtraInfo());
+		}
+
 		scriptProposal.setImage(getImage(getLabelProvider()
 				.createMethodImageDescriptor(proposal)));
 

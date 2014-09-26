@@ -14,6 +14,13 @@
 			return;
 		}
 
+		boolean isUseConstContext = context instanceof UseConstNameContext;
+		int extraInfo = getExtraInfo();
+		if (isUseConstContext) {
+			extraInfo |= ProposalExtraInfo.NO_INSERT_USE;
+			extraInfo |= ProposalExtraInfo.FULL_NAME;
+		}
+
 		MatchRule matchRule = MatchRule.PREFIX;
 		if (requestor.isContextInformationMode()) {
 			matchRule = MatchRule.EXACT;
@@ -59,8 +66,9 @@
 		// workaround end
 		SourceRange replaceRange = getReplacementRange(abstractContext);
 		for (IModelElement constant : enclosingTypeConstants) {
-			reporter.reportField((IField) constant, "", replaceRange, false); //$NON-NLS-1$
+			IField field = (IField) constant;
+			reporter.reportField(field, "", replaceRange, false, 0, extraInfo); //$NON-NLS-1$
 		}
-
+		addAlias(reporter);
 	}
 
