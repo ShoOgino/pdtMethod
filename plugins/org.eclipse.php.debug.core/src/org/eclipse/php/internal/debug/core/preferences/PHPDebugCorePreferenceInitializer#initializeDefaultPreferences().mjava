@@ -24,10 +24,9 @@
 				"org.eclipse.php.debug.core.defaultInitializer"); //$NON-NLS-1$
 
 		node.putBoolean(PHPDebugCorePreferenceNames.SORT_BY_NAME, false);
-
+		List<Inet4Address> clientHosts = new ArrayList<Inet4Address>();
+		clientHosts.add(LOCALHOST);
 		try {
-			StringBuilder b = new StringBuilder();
-			b.append("127.0.0.1"); //$NON-NLS-1$
 			Enumeration<NetworkInterface> ii = NetworkInterface
 					.getNetworkInterfaces();
 			while (ii.hasMoreElements()) {
@@ -39,12 +38,29 @@
 				while (aa.hasMoreElements()) {
 					InetAddress a = aa.nextElement();
 					if (a instanceof Inet4Address && !a.isLoopbackAddress()) {
-						b.append(",").append(a.getHostAddress()); //$NON-NLS-1$
+						clientHosts.add((Inet4Address) a);
 					}
 				}
 			}
-			node.put(PHPDebugCorePreferenceNames.CLIENT_IP, b.toString());
 		} catch (Exception e) {
+			// in this case continue with already detected hosts
 		}
+		Inet4Address[] hosts = clientHosts.toArray(new Inet4Address[clientHosts
+				.size()]);
+		Arrays.sort(hosts, new Comparator<Inet4Address>() {
+
+			@Override
+			public int compare(Inet4Address first, Inet4Address second) {
+				return getNetworkClass(second) - getNetworkClass(first);
+			}
+		});
+		StringBuilder clientIPs = new StringBuilder();
+		for (Inet4Address host : hosts) {
+			if (clientIPs.length() > 0) {
+				clientIPs.append(',');
+			}
+			clientIPs.append(host.getHostAddress());
+		}
+		node.put(PHPDebugCorePreferenceNames.CLIENT_IP, clientIPs.toString());
 	}
 
