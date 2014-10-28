@@ -6,7 +6,10 @@
 
 		SourceRange replaceRange = getReplacementRange(context);
 		ArrayKeyContext arrayContext = (ArrayKeyContext) context;
-		if (arrayContext.hasQuotes()) {// https://bugs.eclipse.org/bugs/show_bug.cgi?id=401766
+		boolean endsWithQuota = arrayContext.getNextChar() == '\''
+				|| arrayContext.getNextChar() == '\"';
+		if (arrayContext.hasQuotes() && !(endsWithQuota)) {
+			// https://bugs.eclipse.org/bugs/show_bug.cgi?id=401766
 			replaceRange = new SourceRange(replaceRange.getOffset(),
 					replaceRange.getLength() + 1);
 		}
@@ -16,7 +19,8 @@
 		ModuleDeclaration moduleDeclaration = SourceParserUtil
 				.getModuleDeclaration(arrayContext.getSourceModule());
 		try {
-			ArrayKeyFinder finder = new ArrayKeyFinder(prefix);
+			ArrayKeyFinder finder = new ArrayKeyFinder(prefix,
+					arrayContext.getOffset());
 			moduleDeclaration.traverse(finder);
 			Set<String> names = finder.getNames();
 			int extraObject = ProposalExtraInfo.DEFAULT;
