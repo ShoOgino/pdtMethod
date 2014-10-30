@@ -1,58 +1,48 @@
 	public void validate() {
 		PHPexeItem phpExeItem = getPHPExeItem();
-
-		// Check whether we can edit this item
-		if (phpExeItem != null && !phpExeItem.isEditable()) {
-			setMessage(PHPDebugUIMessages.addPHPexeDialog_readOnlyPHPExe,
-					IMessageProvider.INFORMATION);
-			return;
-		}
-
-		String locationName = fPHPExePath.getText();
-		if (locationName.length() == 0) {
+		// Let's reset previous state
+		setComplete(true);
+		setMessage(PHPDebugUIMessages.PHPExeCompositeFragment_0,
+				IMessageProvider.INFORMATION);
+		/* MESSAGES */
+		// Check if PHP executable location is empty
+		if (phpExeItem.getExecutable() == null
+				|| phpExeItem.getExecutable().getPath().length() == 0) {
+			setComplete(false);
 			setMessage(PHPDebugUIMessages.addPHPexeDialog_enterLocation,
 					IMessageProvider.INFORMATION);
 			return;
 		}
-		final File executableLocation = new File(locationName);
-		if (!executableLocation.exists()) {
-			setMessage(PHPDebugUIMessages.addPHPexeDialog_locationNotExists,
-					IMessageProvider.ERROR);
+		// Check if name is empty
+		if (phpExeItem.getName().isEmpty()) {
+			setComplete(false);
+			setMessage(PHPDebugUIMessages.addPHPexeDialog_enterName,
+					IMessageProvider.INFORMATION);
 			return;
 		}
-		if (!executableLocation.getName().toLowerCase().contains("php") //$NON-NLS-1$
-				|| executableLocation.isDirectory()) {
-			setMessage(PHPDebugUIMessages.PHPExeCompositeFragment_13,
-					IMessageProvider.ERROR);
-			return;
-		}
-
-		phpExeItem.setExecutable(executableLocation);
-
-		if (phpExeItem.getSapiType() != null
-				&& (fSapiTypes.getText() == null || fSapiTypes.getText().trim()
-						.length() == 0)) {
-			fSapiTypes.setText(phpExeItem.getSapiType());
-		}
-
+		/* ERRORS */
+		// Check PHP executable
 		if (phpExeItem.getExecutable() == null) {
 			setMessage(PHPDebugUIMessages.PHPExeCompositeFragment_13,
 					IMessageProvider.ERROR);
 			return;
 		}
-
-		String name = fPHPexeName.getText();
-		if (name == null || name.trim().length() == 0) {
-			setMessage(PHPDebugUIMessages.addPHPexeDialog_enterName,
-					IMessageProvider.INFORMATION);
+		if (!phpExeItem.getExecutable().exists()) {
+			setMessage(PHPDebugUIMessages.addPHPexeDialog_locationNotExists,
+					IMessageProvider.ERROR);
 			return;
 		}
-
+		PHPExeInfo phpExecInfo = getPHPInfo(phpExeItem.getExecutable());
+		if (phpExecInfo == null) {
+			setMessage(PHPDebugUIMessages.PHPExeCompositeFragment_13,
+					IMessageProvider.ERROR);
+			return;
+		}
 		// Check whether the name already exists:
 		if (existingItems != null) {
 			for (PHPexeItem item : existingItems) {
 				if (!item.getName().equals(initialName)
-						&& item.getName().equals(name)) {
+						&& item.getName().equals(phpExeItem.getName())) {
 					setMessage(
 							PHPDebugUIMessages.addPHPexeDialog_duplicateName,
 							IMessageProvider.ERROR);
@@ -60,46 +50,60 @@
 				}
 			}
 		}
-
-		String sapiType = fSapiTypes.getText().trim();
-		if (sapiType.length() == 0) {
+		// Check if SAPI type is provided
+		if (phpExeItem.getSapiType().isEmpty()) {
 			setMessage(PHPDebugUIMessages.PHPExeCompositeFragment_15,
 					IMessageProvider.ERROR);
 			return;
 		}
-
-		String iniLocationName = fPHPIni.getText();
-		File iniFile = null;
-		if (iniLocationName.trim().length() > 0) {
-			iniFile = new File(iniLocationName);
-			if (!iniFile.exists()) {
-				setMessage(
-						PHPDebugUIMessages.addPHPexeDialog_iniLocationNotExists,
-						IMessageProvider.ERROR);
-				return;
+		if (phpExecInfo.getSapiType() != null
+				&& !phpExeItem.getSapiType().equals(phpExecInfo.getSapiType())) {
+			setMessage(MessageFormat.format(
+					PHPDebugUIMessages.addPHPexeDialog_wrongSAPItype,
+					phpExecInfo.getSapiType()), IMessageProvider.ERROR);
+			return;
+		}
+		// Check INI file location
+		if (phpExeItem.getINILocation() != null) {
+			String iniLocationName = phpExeItem.getINILocation().getPath();
+			File iniFile = null;
+			if (iniLocationName.trim().length() > 0) {
+				iniFile = new File(iniLocationName);
+				if (!iniFile.exists()) {
+					setMessage(
+							PHPDebugUIMessages.addPHPexeDialog_iniLocationNotExists,
+							IMessageProvider.ERROR);
+					return;
+				}
 			}
 		}
-		if (phpExeItem != null && phpExeItem.isEditable()) {
-			phpExeItem.setLoadDefaultINI(fLoadDefaultPHPIni.getSelection());
-		}
-
-		phpExeItem.setName(name);
-		phpExeItem.setDebuggerID(debuggersIds.get(fDebuggers
-				.getSelectionIndex()));
-		phpExeItem.setINILocation(iniFile);
-		phpExeItem.setSapiType(sapiType);
-
-		IStatus status = phpExeItem.validateDebugger();
-		if (status.getSeverity() != IStatus.OK) {
-			if (status.getSeverity() == IStatus.ERROR) {
-				setMessage(status.getMessage(), IMessageProvider.ERROR);
-				return;
+		// Check debugger status
+		if (updateDebuggerStatus) {
+			IStatus debuggerStatus = Status.OK_STATUS;
+			AbstractDebuggerConfiguration[] debuggers = PHPDebuggersRegistry
+					.getDebuggersConfigurations();
+			for (AbstractDebuggerConfiguration debugger : debuggers) {
+				if (getPHPExeItem().getDebuggerID().equals(
+						debugger.getDebuggerId())) {
+					debuggerStatus = debugger.validate(getPHPExeItem());
+				}
+			}
+			if (debuggerStatus.getSeverity() != IStatus.OK) {
+				if (debuggerStatus.getSeverity() == IStatus.ERROR) {
+					setMessage(debuggerStatus.getMessage(),
+							IMessageProvider.ERROR);
+					// set complete ?
+					return;
+				} else {
+					setMessage(debuggerStatus.getMessage(),
+							IMessageProvider.WARNING);
+				}
 			} else {
-				setMessage(status.getMessage(), IMessageProvider.WARNING);
+				setMessage(getDescription(), IMessageProvider.NONE);
 			}
-		} else {
-			setMessage(getDescription(), IMessageProvider.NONE);
 		}
+		updateDebuggerStatus = true;
+		// Update control handler
 		controlHandler.update();
 	}
 

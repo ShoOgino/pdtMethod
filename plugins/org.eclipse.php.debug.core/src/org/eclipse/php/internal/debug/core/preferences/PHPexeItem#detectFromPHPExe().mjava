@@ -1,66 +1,20 @@
-	/**
-	 * Detects various things like: type, version, default configuration file,
-	 * etc. from the PHP binary
-	 */
 	protected void detectFromPHPExe() {
-		if (executable == null) {
-			throw new IllegalStateException("PHP executable path is null"); //$NON-NLS-1$
-		}
-
-		// Create empty configuration file:
-		File tempPHPIni = PHPINIUtil.createTemporaryPHPINIFile();
-
+		PHPExeInfo phpInfo;
 		try {
-			PHPexes.changePermissions(executable);
-
-			// Detect version and type:
-			String output = exec(
-					executable.getAbsolutePath(),
-					"-n", "-c", tempPHPIni.getParentFile().getAbsolutePath(), "-v"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-			Matcher m = PHP_VERSION.matcher(output);
-			if (m.find()) {
-				initFields(m);
-			} else {
-				output = exec(
-						executable.getAbsolutePath(),
-						"-c", tempPHPIni.getParentFile().getAbsolutePath(), "-v"); //$NON-NLS-1$ //$NON-NLS-2$
-				m = PHP_VERSION.matcher(output);
-				if (m.find()) {
-					initFields(m);
-				} else {
-					PHPDebugPlugin
-							.logErrorMessage("Can't determine version of the PHP executable"); //$NON-NLS-1$
-					// this.executable = null;
-					return;
-				}
-				return;
-			}
-
-			// Detect default PHP.ini location:
-			if (detectedConfig == null) {
-				output = exec(
-						executable.getAbsolutePath(),
-						this.loadDefaultINI ? "" : "-n", "-c", tempPHPIni.getParentFile().getAbsolutePath(), "-i"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
-				if (sapiType == SAPI_CLI) {
-					m = PHP_CLI_CONFIG.matcher(output);
-				} else if (sapiType == SAPI_CGI) {
-					m = PHP_CGI_CONFIG.matcher(output);
-				}
-				if (m.find()) {
-					String configDir = m.group(1);
-					detectedConfig = new File(configDir.trim(), "php.ini"); //$NON-NLS-1$
-					if (!detectedConfig.exists()) {
-						detectedConfig = null;
-					}
-				} else {
-					PHPDebugPlugin
-							.logErrorMessage("Can't determine PHP.ini location of the PHP executable"); //$NON-NLS-1$
-					// this.executable = null;
-					return;
-				}
-			}
-		} catch (IOException e) {
-			DebugPlugin.log(e);
+			phpInfo = PHPExeUtil.getPHPInfo(executable, false);
+		} catch (PHPExeException e) {
+			PHPDebugPlugin
+					.logErrorMessage("Could not detect PHP executable info during PHP exe item creation: " //$NON-NLS-1$
+							+ e.getMessage());
+			return;
 		}
+		if (name == null)
+			name = phpInfo.getName();
+		if (sapiType == null)
+			sapiType = phpInfo.getSapiType();
+		if (detectedConfig == null)
+			detectedConfig = phpInfo.getSystemINIFile();
+		if (version == null)
+			version = phpInfo.getVersion();
 	}
 

@@ -1,0 +1,84 @@
+	/**
+	 * Creates and returns PHP executable info.
+	 * 
+	 * @param executableFile
+	 * @param loadDefaultINI
+	 * @return PHP info
+	 * @throws PHPExeException
+	 */
+	public synchronized static PHPExeInfo getPHPInfo(File executableFile,
+			boolean reload) throws PHPExeException {
+		PHPExeInfo phpInfo = phpInfos.get(executableFile);
+		if (phpInfo != null && !reload)
+			return phpInfo;
+		String version = null, sapiType = null, name = null;
+		File configFile = null;
+		// Simple pre-check
+		if (executableFile == null || !executableFile.exists()
+				|| !executableFile.getName().toLowerCase().contains("php") //$NON-NLS-1$
+				|| executableFile.isDirectory()) {
+			throw new PHPExeException("Invalid PHP executable: " //$NON-NLS-1$
+					+ executableFile == null ? "<null>" //$NON-NLS-1$
+					: executableFile.getAbsolutePath());
+		}
+		// Create empty configuration file:
+		File tempPHPIni = PHPINIUtil.createTemporaryPHPINIFile();
+		try {
+			PHPexes.changePermissions(executableFile);
+			Matcher m;
+			String output = fetchVersion(executableFile, tempPHPIni, true);
+			m = PATTERN_PHP_VERSION.matcher(output);
+			if (!m.find()) {
+				output = fetchVersion(executableFile, tempPHPIni, false);
+				m = PATTERN_PHP_VERSION.matcher(output);
+				if (!m.find()) {
+					String message = "Can't determine version of the PHP executable"; //$NON-NLS-1$
+					PHPDebugPlugin.logErrorMessage(message);
+					throw new PHPExeException(message);
+				}
+			}
+			// Fetch version
+			version = m.group(1);
+			// Fetch SAPI type
+			String sType = m.group(2);
+			sapiType = null;
+			if (sType.startsWith("cgi")) { //$NON-NLS-1$
+				sapiType = PHPexeItem.SAPI_CGI;
+			} else if (sType.startsWith("cli")) { //$NON-NLS-1$
+				sapiType = PHPexeItem.SAPI_CLI;
+			} else {
+				String message = "Can't determine type of the PHP executable"; //$NON-NLS-1$
+				PHPDebugPlugin.logErrorMessage(message);
+				throw new PHPExeException(message);
+			}
+			// Fetch default name
+			name = "PHP " + version + " (" + sapiType + ")"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+			// Detect default PHP.ini location:
+			output = fetchInfo(executableFile, tempPHPIni, true);
+			m = getConfigMatcher(sapiType, m, output);
+			// Fetch INI file
+			if (!m.find()) {
+				output = fetchInfo(executableFile, tempPHPIni, false);
+				m = getConfigMatcher(sapiType, m, output);
+				if (!m.find()) {
+					String message = "Can't determine php.ini location of the PHP executable"; //$NON-NLS-1$
+					PHPDebugPlugin.logErrorMessage(message);
+					throw new PHPExeException(message);
+				}
+			}
+			String configDir = m.group(1);
+			configFile = new File(configDir.trim(), "php.ini"); //$NON-NLS-1$
+			if (!configFile.exists()) {
+				configFile = null;
+			}
+		} catch (IOException e) {
+			throw new PHPExeException("Invalid PHP executable: " //$NON-NLS-1$
+					+ executableFile == null ? "<null>" //$NON-NLS-1$
+					: executableFile.getAbsolutePath());
+		}
+		phpInfo = new PHPExeInfo(name, version, sapiType, executableFile,
+				configFile);
+		phpInfos.put(executableFile, phpInfo);
+		return phpInfo;
+	}
+
