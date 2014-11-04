@@ -1,0 +1,46 @@
+	/**
+	 * Checks and outputs list of modules installed on top of given PHP
+	 * executable item.
+	 * 
+	 * @param phpExeItem
+	 * @return list of installed module names
+	 */
+	public static List<PHPModuleInfo> getModules(PHPexeItem phpExeItem) {
+		List<PHPModuleInfo> modules = new ArrayList<PHPExeUtil.PHPModuleInfo>();
+		String result;
+		File iniFile = phpExeItem.getINILocation();
+		PHPVersion phpVersion = new PHPVersion(phpExeItem);
+		try {
+			if (iniFile != null) {
+				if (phpVersion.getMajor() >= 5)
+					result = PHPExeUtil
+							.exec(phpExeItem.getExecutable().getAbsolutePath(),
+									phpExeItem.isLoadDefaultINI() ? "" : "-n", "-c", iniFile //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+											.getAbsolutePath(), "-m"); //$NON-NLS-1$
+				else
+					result = PHPExeUtil.exec(phpExeItem.getExecutable()
+							.getAbsolutePath(), "-c", iniFile //$NON-NLS-1$
+							.getAbsolutePath(), "-m"); //$NON-NLS-1$
+			} else {
+				result = PHPExeUtil.exec(phpExeItem.getExecutable()
+						.getAbsolutePath(), "-m"); //$NON-NLS-1$
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			return modules;
+		}
+		Scanner scanner = new Scanner(result);
+		String currentGroup = null;
+		while (scanner.hasNextLine()) {
+			String line = scanner.nextLine().trim();
+			if (line.startsWith("[")) { //$NON-NLS-1$
+				currentGroup = line;
+				continue;
+			}
+			if (!line.isEmpty())
+				modules.add(new PHPModuleInfo(line, currentGroup));
+		}
+		scanner.close();
+		return modules;
+	}
+
