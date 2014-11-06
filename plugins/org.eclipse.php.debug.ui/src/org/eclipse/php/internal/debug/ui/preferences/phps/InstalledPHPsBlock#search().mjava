@@ -2,7 +2,6 @@
 	 * Search for installed VMs in the file system
 	 */
 	protected void search() {
-
 		// choose a root directory for the search
 		final DirectoryDialog dialog = new DirectoryDialog(getShell());
 		dialog.setMessage(PHPDebugUIMessages.InstalledPHPsBlock_9);
@@ -10,29 +9,46 @@
 		final String path = dialog.open();
 		if (path == null)
 			return;
-
 		// ignore installed locations
-		final Set<File> exstingLocations = new HashSet<File>();
-		Iterator<PHPexeItem> iter = fPHPexes.iterator();
-		while (iter.hasNext())
-			exstingLocations.add(iter.next().getExecutable().getParentFile());
-
+		// final Set<File> exstingLocations = new HashSet<File>();
+		// Iterator<PHPexeItem> iter = fPHPexes.iterator();
+		// while (iter.hasNext())
+		// exstingLocations.add(iter.next().getExecutable().getParentFile());
 		// search
 		final File rootDir = new File(path);
 		final List<File> locations = new ArrayList<File>();
-
+		final List<PHPexeItem> found = new ArrayList<PHPexeItem>();
 		final IRunnableWithProgress r = new IRunnableWithProgress() {
 			public void run(IProgressMonitor monitor) {
 				monitor.beginTask(PHPDebugUIMessages.InstalledPHPsBlock_11,
 						IProgressMonitor.UNKNOWN);
-				search(rootDir, locations, exstingLocations, monitor);
+				search(rootDir, locations, monitor);
+				if (!locations.isEmpty()) {
+					Iterator<File> iter2 = locations.iterator();
+					while (iter2.hasNext()) {
+						File location = iter2.next();
+						PHPexeItem phpExe = new PHPexeItem(null, location,
+								null,
+								PHPDebuggersRegistry.getDefaultDebuggerId(),
+								true);
+						String nameCopy = new String(phpExe.getName());
+						int i = 1;
+						while (isDuplicateName(nameCopy)) {
+							nameCopy = phpExe.getName() + ' ' + '[' + i++ + ']';
+						}
+						phpExe.setName(nameCopy);
+						if (phpExe.getExecutable() != null) {
+							found.add(phpExe);
+						}
+					}
+				}
 				monitor.done();
 			}
 		};
-
+		// Perform searching
 		try {
 			final ProgressMonitorDialog progress = new ProgressMonitorDialog(
-					getShell());
+					PlatformUI.getWorkbench().getDisplay().getActiveShell());
 			progress.run(true, true, r);
 		} catch (final InvocationTargetException e) {
 			PHPDebugUIPlugin.log(e);
@@ -40,34 +56,33 @@
 			// cancelled
 			return;
 		}
-
-		if (locations.isEmpty())
-			MessageDialog.openInformation(getShell(),
+		// Show results
+		if (!found.isEmpty()) {
+			Comparator<PHPexeItem> sorter = new Comparator<PHPexeItem>() {
+				@Override
+				public int compare(PHPexeItem a, PHPexeItem b) {
+					return b.getVersion().compareTo(a.getVersion());
+				}
+			};
+			Collections.sort(found, sorter);
+			PHPsSearchResultDialog searchDialog = new PHPsSearchResultDialog(
+					found,
+					MessageFormat
+							.format(PHPDebugUIMessages.InstalledPHPsBlock_Search_result_dialog_message,
+									path));
+			searchDialog.open();
+			List<PHPexeItem> itemsToAdd = searchDialog.getPHPExecutables();
+			for (PHPexeItem item : itemsToAdd) {
+				fPHPexes.add(item);
+				PHPexes.getInstance().addItem(item);
+			}
+			fPHPExeList.refresh();
+		} else {
+			MessageDialog.openInformation(PlatformUI.getWorkbench()
+					.getDisplay().getActiveShell(),
 					PHPDebugUIMessages.InstalledPHPsBlock_12, MessageFormat
 							.format(PHPDebugUIMessages.InstalledPHPsBlock_13,
 									new Object[] { path }));
-		else {
-			Iterator<File> iter2 = locations.iterator();
-			while (iter2.hasNext()) {
-				File location = iter2.next();
-				PHPexeItem phpExe = new PHPexeItem(null, location, null,
-						PHPDebuggersRegistry.getDefaultDebuggerId(), true);
-				String nameCopy = new String(phpExe.getName());
-				int i = 1;
-				while (isDuplicateName(nameCopy)) {
-					nameCopy = phpExe.getName() + '[' + i++ + ']';
-				}
-				phpExe.setName(nameCopy);
-				// Since the search for PHP exe option does not 'know' the
-				// debugger id it should assign to the PHPexeItem,
-				// we call for PHPexes.getDefaultDebuggerId() - which can also
-				// return null in some cases.
-				if (phpExe.getExecutable() != null) {
-					fPHPexes.add(phpExe);
-					phpExes.addItem(phpExe);
-					fPHPExeList.refresh();
-				}
-			}
 		}
 
 	}

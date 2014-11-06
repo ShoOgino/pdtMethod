@@ -10,17 +10,13 @@
 	 * @param ignore
 	 */
 	protected void search(final File directory, final List<File> found,
-			final Set<File> ignore, final IProgressMonitor monitor) {
+			final IProgressMonitor monitor) {
 		if (monitor.isCanceled())
 			return;
-
 		// Search the root directory
-		if (!ignore.contains(directory)) {
-			final File foundExe = findPHPExecutable(directory);
-			if (foundExe != null)
-				found.add(foundExe);
-		}
-
+		List<File> foundExecs = findPHPExecutable(directory);
+		if (!foundExecs.isEmpty())
+			found.addAll(foundExecs);
 		final String[] names = directory.list();
 		if (names == null)
 			return;
@@ -29,7 +25,6 @@
 			if (monitor.isCanceled())
 				return;
 			final File file = new File(directory, element);
-			// PHPexeItem[] vmTypes = phpExes.getEditableItems();
 			if (file.isDirectory()) {
 				try {
 					monitor.subTask(MessageFormat.format(
@@ -38,21 +33,14 @@
 									file.getCanonicalPath() }));
 				} catch (final IOException e) {
 				}
-				if (!ignore.contains(file)) {
-					if (monitor.isCanceled())
-						return;
-					final File foundExe = findPHPExecutable(file);
-					if (foundExe != null) {
-						found.add(foundExe);
-						ignore.add(file);
-					}
-					subDirs.add(file);
-				}
+				if (monitor.isCanceled())
+					return;
+				subDirs.add(file);
 			}
 		}
 		while (!subDirs.isEmpty()) {
 			final File subDir = subDirs.remove(0);
-			search(subDir, found, ignore, monitor);
+			search(subDir, found, monitor);
 			if (monitor.isCanceled())
 				return;
 		}
