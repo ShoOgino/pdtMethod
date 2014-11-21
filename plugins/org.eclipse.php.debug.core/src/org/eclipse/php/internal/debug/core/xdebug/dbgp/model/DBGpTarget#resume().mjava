@@ -4,8 +4,12 @@
 	 * @see org.eclipse.debug.core.model.ISuspendResume#resume()
 	 */
 	public void resume() throws DebugException {
-		stepping = false;
-		resumed(DebugEvent.RESUME);
+		synchronized (commandMutex) {
+			if (!canResume())
+				return;
+			stepping = false;
+			resumed(DebugEvent.RESUME);
+		}
 		// bug in eclipse 3.2. When I issue a resume when a disconnect
 		// is done, the resume button can still be pressed which
 		// wouldn't work as the session has gone.

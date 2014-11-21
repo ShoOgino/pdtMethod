@@ -4,8 +4,12 @@
 	 * @see org.eclipse.debug.core.model.IStep#stepOver()
 	 */
 	public void stepOver() throws DebugException {
-		stepping = true;
-		resumed(DebugEvent.STEP_OVER);
+		synchronized (commandMutex) {
+			if (!canStepOver())
+				return;
+			stepping = true;
+			resumed(DebugEvent.STEP_OVER);
+		}
 		session.sendAsyncCmd(DBGpCommand.stepOver);
 
 	}

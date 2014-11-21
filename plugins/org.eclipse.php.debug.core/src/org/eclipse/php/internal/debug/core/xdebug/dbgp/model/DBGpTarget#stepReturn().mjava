@@ -4,8 +4,12 @@
 	 * @see org.eclipse.debug.core.model.IStep#stepReturn()
 	 */
 	public void stepReturn() throws DebugException {
-		stepping = true;
-		resumed(DebugEvent.STEP_RETURN);
+		synchronized (commandMutex) {
+			if (!canStepReturn())
+				return;
+			stepping = true;
+			resumed(DebugEvent.STEP_RETURN);
+		}
 		session.sendAsyncCmd(DBGpCommand.StepOut);
 	}
 
