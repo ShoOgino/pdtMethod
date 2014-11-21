@@ -1,0 +1,41 @@
+	@Override
+	public void reportResource(IModelElement model, IPath relative,
+			String suffix, ISourceRange replaceRange) {
+		if (processedElements.containsKey(model)
+				|| processedPaths.contains(relative)) {
+			return;
+		}
+		processedElements.put(model, model);
+		processedPaths.add(relative);
+		noProposal = false;
+
+		CompletionProposal proposal = null;
+		if (model.getElementType() == IModelElement.SCRIPT_FOLDER
+				&& !requestor.isIgnored(CompletionProposal.PACKAGE_REF)) {
+			proposal = createProposal(CompletionProposal.PACKAGE_REF,
+					actualCompletionPosition);
+		} else if (model.getElementType() == IModelElement.PROJECT_FRAGMENT) {
+			proposal = createProposal(CompletionProposal.PACKAGE_REF,
+					actualCompletionPosition);
+		} else if (!requestor.isIgnored(CompletionProposal.KEYWORD)) {
+			proposal = createProposal(CompletionProposal.KEYWORD,
+					actualCompletionPosition);
+		}
+
+		if (proposal == null) {
+			return;
+		}
+
+		proposal.setName(relative.toString());
+		proposal.setCompletion((relative.toString() + suffix));
+		proposal.setRelevance(relevanceKeyword);
+		proposal.setReplaceRange(replaceRange.getOffset(),
+				replaceRange.getOffset() + replaceRange.getLength());
+		proposal.setModelElement(model);
+
+		this.requestor.accept(proposal);
+		if (DEBUG) {
+			this.printDebug(proposal);
+		}
+	}
+

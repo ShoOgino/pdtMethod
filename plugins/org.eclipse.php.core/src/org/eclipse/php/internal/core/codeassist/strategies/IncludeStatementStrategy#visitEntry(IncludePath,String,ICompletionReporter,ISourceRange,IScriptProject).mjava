@@ -1,0 +1,28 @@
+	private void visitEntry(IncludePath includePath, String prefix,
+			ICompletionReporter reporter, ISourceRange replaceRange,
+			IScriptProject project) {
+		// the root entry of this element
+		final Object entry = includePath.getEntry();
+
+		final IPath prefixPath = new Path(prefix);
+		IPath prefixPathFolder = prefixPath;
+		IPath lastSegmant = new Path(""); //$NON-NLS-1$
+		if (prefixPath.segmentCount() != 0 && !prefix.endsWith("\\") //$NON-NLS-1$
+				&& !prefix.endsWith("/")) { //$NON-NLS-1$
+			prefixPathFolder = prefixPath.removeLastSegments(1);
+			lastSegmant = new Path(prefixPath.lastSegment());
+		}
+		try {
+			if (!includePath.isBuildpath()) {
+				addInternalEntries(reporter, replaceRange, entry,
+						prefixPathFolder, lastSegmant);
+			} else {
+				addExternalEntries(reporter, replaceRange, project, entry,
+						prefixPathFolder, lastSegmant);
+			}
+		} catch (CoreException e) {
+			Logger.logException(e);
+
+		}
+	}
+
