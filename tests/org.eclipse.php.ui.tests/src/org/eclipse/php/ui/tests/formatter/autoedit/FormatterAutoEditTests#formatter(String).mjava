@@ -1,0 +1,72 @@
+	@Override
+	@Test
+	public void formatter(String fileName) throws Exception {
+		final PdttFile pdttFile = new PdttFile(fileName);
+		IFile file = createFile(pdttFile.getFile().trim());
+		ISourceModule modelElement = (ISourceModule) DLTKCore.create(file);
+		if (ScriptModelUtil.isPrimary(modelElement))
+			modelElement.becomeWorkingCopy(new IProblemRequestor() {
+
+				public void acceptProblem(IProblem problem) {
+				}
+
+				public void beginReporting() {
+				}
+
+				public void endReporting() {
+				}
+
+				public boolean isActive() {
+					return false;
+				}
+			}, null);
+		IStructuredModel modelForEdit = StructuredModelManager
+				.getModelManager().getModelForEdit(file);
+		try {
+			IDocument document = modelForEdit.getStructuredDocument();
+			String beforeFormat = document.get();
+			String data = document.get();
+			int offset = data.lastIndexOf(OFFSET_CHAR);
+			if (offset == -1) {
+				throw new IllegalArgumentException(
+						"Offset character is not set");
+			}
+
+			// replace the offset character
+			data = data.substring(0, offset) + data.substring(offset + 1);
+
+			document.set(data);
+
+			IAutoEditStrategy indentLineAutoEditStrategy = new MainAutoEditStrategy();
+
+			DocumentCommand cmd = new DocumentCommand() {
+			};
+
+			cmd.offset = offset;
+			cmd.length = 0;
+			if (pdttFile.getOther() != null) {
+				cmd.text = pdttFile.getOther();
+			} else {
+				cmd.text = "\n";
+			}
+
+			cmd.doit = true;
+			cmd.shiftsCaret = true;
+			cmd.caretOffset = -1;
+
+			indentLineAutoEditStrategy.customizeDocumentCommand(document, cmd);
+			document.replace(cmd.offset, cmd.length, cmd.text);
+
+			PDTTUtils.assertContents(pdttFile.getExpected(), document.get());
+
+			// change the document text as was before
+			// the formatting
+			document.set(beforeFormat);
+			modelForEdit.save();
+		} finally {
+			if (modelForEdit != null) {
+				modelForEdit.releaseFromEdit();
+			}
+		}
+	}
+

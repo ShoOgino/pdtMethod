@@ -1,0 +1,36 @@
+	@Parameters(name = "{1} - {2} - {3} - {4}")
+	public static Iterable<Object[]> data() throws Exception {
+		List<Object[]> list = new LinkedList<Object[]>();
+		for (String testsDirectory : TESTS) {
+			File folder = getResourceFolder(testsDirectory).toFile();
+			for (final File pharFolder : folder.listFiles()) {
+				if (pharFolder.getName().equalsIgnoreCase("CVS")) {
+					continue;
+				}
+				if (pharFolder.isDirectory()) {
+					IPath stubLocation = new Path(pharFolder.getAbsolutePath())
+							.append(PharConstants.STUB_PATH);
+					PharPackage pharPackage = new PharPackage();
+
+					if (stubLocation.toFile().exists()) {
+						pharPackage.setStubGenerated(false);
+						pharPackage.setStubLocation(stubLocation);
+					}
+					pharPackage.setExportType(PharConstants.PHAR);
+					list.add(new Object[] { pharFolder.getName(),
+							pharFolder.getAbsolutePath(), pharPackage,
+							PharConstants.NONE_COMPRESSED, Digest.SHA1_TYPE });
+
+					list.add(new Object[] { pharFolder.getName(),
+							pharFolder.getAbsolutePath(), pharPackage,
+							PharConstants.BZ2_COMPRESSED, Digest.SHA1_TYPE });
+
+					list.add(new Object[] { pharFolder.getName(),
+							pharFolder.getAbsolutePath(), pharPackage,
+							PharConstants.GZ_COMPRESSED, Digest.MD5_TYPE });
+				}
+			}
+		}
+		return list;
+	}
+

@@ -1,0 +1,26 @@
+	@Test
+	public void visitor(String fileName) throws Exception {
+		final PdttFile pdttFile = new PdttFile(fileName);
+
+		ByteArrayInputStream inputStream = new ByteArrayInputStream(pdttFile
+				.getFile().trim().getBytes());
+		ModuleDeclaration moduleDeclaration = (ModuleDeclaration) parser.parse(
+				new InputStreamReader(inputStream), null,
+				ProjectOptions.useShortTags((IProject) null));
+
+		final StringBuilder builder = new StringBuilder();
+
+		moduleDeclaration.traverse(new TypeDeclarationVisitor() {
+			@Override
+			public void visitType(TypeDeclaration s) {
+				builder.append(s.getName());
+				builder.append('\n');
+			}
+		});
+
+		String actual = builder.toString();
+		String expected = pdttFile.getExpected();
+
+		PDTTUtils.assertContents(expected, actual);
+	}
+

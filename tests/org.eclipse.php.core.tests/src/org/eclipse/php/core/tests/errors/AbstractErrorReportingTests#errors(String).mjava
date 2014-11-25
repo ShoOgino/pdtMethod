@@ -1,0 +1,24 @@
+	@Test
+	public void errors(String fileName) throws Exception {
+		IFile file = files.get(fileName);
+
+		StringBuilder buf = new StringBuilder();
+
+		IMarker[] markers = file.findMarkers(getMarkerType(), true,
+				IResource.DEPTH_ZERO);
+		Arrays.sort(markers, new MarkerComparator());
+		for (IMarker marker : markers) {
+			buf.append("\n[line=");
+			buf.append(marker.getAttribute(IMarker.LINE_NUMBER));
+			buf.append(", start=");
+			buf.append(marker.getAttribute(IMarker.CHAR_START));
+			buf.append(", end=");
+			buf.append(marker.getAttribute(IMarker.CHAR_END));
+			buf.append("] ");
+			buf.append(marker.getAttribute(IMarker.MESSAGE)).append('\n');
+		}
+
+		PDTTUtils.assertContents(pdttFiles.get(fileName).getExpected(),
+				buf.toString());
+	}
+

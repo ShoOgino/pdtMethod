@@ -1,0 +1,26 @@
+	@Test
+	public void concileField3() {
+		IFile file = null;
+		try {
+			file = setFileContent("<?class foo {var $f; public function f(){$this->$f;}} $cls= new foo(); $cls->f;?>");
+
+		} catch (CoreException e) {
+			fail(e.getMessage());
+		}
+
+		assertNotNull(file);
+
+		Program program = createProgram(file);
+
+		assertNotNull(program);
+
+		//
+		int start = 18;
+		ASTNode selectedNode = locateNode(program, start, 0);
+		selectedNode = selectedNode.getParent();
+		assertNotNull(selectedNode);
+
+		assertEquals(PhpElementConciliator.CONCILIATOR_CLASS_MEMBER,
+				PhpElementConciliator.concile(selectedNode));
+	}
+

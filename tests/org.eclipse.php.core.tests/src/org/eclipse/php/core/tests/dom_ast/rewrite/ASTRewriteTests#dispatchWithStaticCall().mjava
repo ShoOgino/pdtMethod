@@ -1,0 +1,19 @@
+	@Test
+	public void dispatchWithStaticCall() throws Exception {
+		String str = "<?php MyClass::$a->foo(); ?>";
+		initialize(str);
+
+		List<FunctionInvocation> functionInvocations = getAllOfType(program,
+				FunctionInvocation.class);
+		assertTrue("Unexpected list size.", functionInvocations.size() == 1);
+		functionInvocations.get(0).getFunctionName()
+				.setName(ast.newScalar("bar"));
+		List<MethodInvocation> methodInvocations = getAllOfType(program,
+				MethodInvocation.class);
+		assertTrue("Unexpected list size.", methodInvocations.size() == 1);
+		((StaticFieldAccess) methodInvocations.get(0).getDispatcher())
+				.getField().setName(ast.newScalar("boobo"));
+		rewrite();
+		checkResult("<?php MyClass::$boobo->bar(); ?>");
+	}
+

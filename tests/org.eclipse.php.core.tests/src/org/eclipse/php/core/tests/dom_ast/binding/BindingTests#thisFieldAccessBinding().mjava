@@ -1,0 +1,20 @@
+	@Test
+	public void thisFieldAccessBinding() throws Exception {
+		String str = "<?php class MyClass { public $myvar = \"test\"; public function mymethod(){ return $this->myvar; }} $a = new MyClass(); $a->mymethod();?>";
+		Program program = createAndParse(str);
+
+		ExpressionStatement statement = (ExpressionStatement) program
+				.statements().get(2);
+		MethodInvocation methodInvocation = (MethodInvocation) statement
+				.getExpression();
+		IMethodBinding methodBinding = methodInvocation.resolveMethodBinding();
+
+		assertNotNull(methodBinding);
+		assertTrue(methodBinding.getName().equals("mymethod"));
+		assertNotNull(methodBinding.getDeclaringClass());
+		assertTrue(methodBinding.getDeclaringClass().getName()
+				.equals("MyClass"));
+		assertTrue(methodBinding.isConstructor() == false);
+		assertTrue(methodBinding.getReturnType()[0].getName().equals("string"));
+	}
+

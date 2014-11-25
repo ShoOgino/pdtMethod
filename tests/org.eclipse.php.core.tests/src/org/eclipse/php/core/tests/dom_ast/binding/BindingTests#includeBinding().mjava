@@ -1,0 +1,25 @@
+	@Test
+	public void includeBinding() throws Exception {
+		String str = "<?php include('myFile.php');?>";
+		Program program = createAndParse(str);
+
+		IFile myFile = project.getFile("myFile.php");
+		myFile.create(new ByteArrayInputStream(new byte[] {}), true,
+				new NullProgressMonitor());
+		try {
+
+			ExpressionStatement statement = (ExpressionStatement) program
+					.statements().get(0);
+			Include include = (Include) statement.getExpression();
+
+			IBinding sourceBinding = include.resolveBinding();
+
+			assertTrue(sourceBinding.getName().equals("myFile.php") == true);
+			assertTrue(sourceBinding.getPHPElement().getElementType() == IModelElement.SOURCE_MODULE);
+			assertTrue(sourceBinding.getKind() == IBinding.INCLUDE);
+
+		} finally {
+			myFile.delete(true, new NullProgressMonitor());
+		}
+	}
+

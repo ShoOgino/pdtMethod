@@ -1,0 +1,45 @@
+	@Test
+	public void formatter(String fileName) throws Exception {
+		final PdttFile pdttFile = new PdttFile(fileName);
+		IFile file = createFile(pdttFile.getFile().trim());
+		ISourceModule modelElement = (ISourceModule) DLTKCore.create(file);
+		if (ScriptModelUtil.isPrimary(modelElement))
+			modelElement.becomeWorkingCopy(new IProblemRequestor() {
+
+				public void acceptProblem(IProblem problem) {
+
+				}
+
+				public void beginReporting() {
+
+				}
+
+				public void endReporting() {
+
+				}
+
+				public boolean isActive() {
+					return false;
+				}
+			}, null);
+		IStructuredModel modelForEdit = StructuredModelManager
+				.getModelManager().getModelForEdit(file);
+		try {
+			IDocument document = modelForEdit.getStructuredDocument();
+			String beforeFormat = document.get();
+
+			PhpFormatProcessorImpl formatter = new PhpFormatProcessorImpl();
+			formatter.formatDocument(document, 0, document.getLength());
+			PDTTUtils.assertContents(pdttFile.getExpected(), document.get());
+
+			// change the document text as was before
+			// the formatting
+			document.set(beforeFormat);
+			modelForEdit.save();
+		} finally {
+			if (modelForEdit != null) {
+				modelForEdit.releaseFromEdit();
+			}
+		}
+	}
+

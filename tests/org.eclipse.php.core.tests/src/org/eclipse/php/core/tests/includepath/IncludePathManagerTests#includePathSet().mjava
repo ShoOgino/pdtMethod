@@ -1,0 +1,24 @@
+	// This test checks how include path changes are saved:
+	@Test
+	public void includePathSet() throws Exception {
+		IFolder folder = project.getFolder("a");
+		folder.create(true, true, null);
+		folder = folder.getFolder("b");
+		folder.create(true, true, null);
+
+		// Add new resource to the include path:
+		IncludePathManager manager = IncludePathManager.getInstance();
+		IncludePath[] includePath = manager.getIncludePaths(project);
+		int count = includePath.length;
+		System.arraycopy(includePath, 0,
+				includePath = new IncludePath[count + 1], 0, count);
+		includePath[count] = new IncludePath(folder, project);
+
+		setIncludePath(manager, includePath);
+		includePath = manager.getIncludePaths(project);
+
+		assertTrue(includePath.length == 1);
+		assertFalse(includePath[0].isBuildpath());
+		assertEquals(((IResource) includePath[0].getEntry()), folder);
+	}
+

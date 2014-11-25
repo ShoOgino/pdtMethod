@@ -1,0 +1,34 @@
+		public DirRunner(Class<?> klass, PHPVersion phpVersion, String dir,
+				String testName) throws Throwable {
+			super(klass);
+			fTestName = testName;
+			fPHPVersion = phpVersion;
+
+			fFileList = buildFileList(new String[] { dir });
+			for (String fileName : fFileList) {
+				runners.add(new FileTestClassRunner(this, fileName));
+			}
+
+			Enumeration<String> entryPaths = getBundle().getEntryPaths(dir);
+			Bundle bundle = getBundle();
+			if (entryPaths != null) {
+				while (entryPaths.hasMoreElements()) {
+					final String path = (String) entryPaths.nextElement();
+					if (!path.endsWith("/")) {
+						continue;
+					}
+					final String namePath = path
+							.substring(0, path.length() - 1);
+					int pos = namePath.lastIndexOf('/');
+					final String name = (pos >= 0 ? namePath.substring(pos + 1)
+							: namePath);
+					try {
+						bundle.getEntry(path); // test Only
+						runners.add(new DirRunner(klass, phpVersion, path, name));
+					} catch (Exception e) {
+						continue;
+					}
+				}
+			}
+		}
+

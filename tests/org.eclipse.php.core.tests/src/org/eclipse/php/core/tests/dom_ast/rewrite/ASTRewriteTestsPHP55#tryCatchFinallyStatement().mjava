@@ -1,0 +1,20 @@
+	@Test
+	public void tryCatchFinallyStatement() throws Exception {
+		String str = "<?php try { $error = 'Always throw this error'; } finally { echo '' }\n ?>";
+		initialize(str);
+
+		List<TryStatement> statements = getAllOfType(program,
+				TryStatement.class);
+		assertTrue("Unexpected list size.", statements.size() == 1);
+		Block newBlock = ast.newBlock();
+		newBlock.statements().add(
+				ast.newEchoStatement(ast.newScalar("'Hello'")));
+		statements
+				.get(0)
+				.catchClauses()
+				.add(ast.newCatchClause(ast.newIdentifier("Boobo"),
+						ast.newVariable("b"), newBlock));
+		rewrite();
+		checkResult("<?php try { $error = 'Always throw this error'; } catch (Boobo $b) {\necho 'Hello';\n} finally { echo '' }\n  ?>");
+	}
+

@@ -1,0 +1,28 @@
+	private void readParameters() throws Exception {
+		for (FrameworkField field : getTestClass().getAnnotatedFields(
+				Parameters.class)) {
+			if (field.isPublic() && field.isPublic()) {
+				if (field.getType().isAssignableFrom(Map.class)) {
+					parameters = (Map<PHPVersion, String[]>) field.getField()
+							.get(null);
+				} else if (field.getType().isAssignableFrom(String[].class)) {
+					dirs = (String[]) field.getField().get(null);
+					isArray = true;
+				} else {
+					continue;
+				}
+				for (Annotation ann : field.getAnnotations()) {
+					if (ann instanceof Parameters) {
+						isRecursive = ((Parameters) ann).recursive();
+					}
+				}
+
+				return;
+			}
+		}
+
+		throw new Exception(
+				getTestClass().getName()
+						+ ": Public static Map<PHPVersion, String[]>|String[] field with @Parameters is required");
+	}
+

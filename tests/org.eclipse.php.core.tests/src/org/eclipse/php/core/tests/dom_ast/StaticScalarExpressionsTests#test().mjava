@@ -1,0 +1,22 @@
+	@Test
+	public void test() throws Exception {
+		StringReader reader = new StringReader(fileContent);
+		Program program = ASTParser.newParser(reader, PHPVersion.PHP5,
+				ProjectOptions.useShortTags((IProject) null)).createAST(
+				new NullProgressMonitor());
+
+		final ASTNode locateNode = Locator.locateNode(program, offset);
+		assertTrue(desc
+				+ " test fails. offset should locate an expression node was "
+				+ locateNode.getClass().getName(),
+				locateNode instanceof Expression);
+
+		Expression expression = (Expression) locateNode;
+		final boolean actualStaticScalar = expression.isStaticScalar();
+
+		assertTrue(desc + " test fails. Expression" + locateNode.toString()
+				+ " should " + (!expectedStaticScalar ? "not" : "")
+				+ "be static scalar",
+				actualStaticScalar == expectedStaticScalar);
+	}
+

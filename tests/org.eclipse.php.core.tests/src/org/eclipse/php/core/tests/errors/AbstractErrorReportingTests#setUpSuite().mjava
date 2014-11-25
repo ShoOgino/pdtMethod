@@ -1,0 +1,30 @@
+	@BeforeList
+	public void setUpSuite() throws Exception {
+		project = ResourcesPlugin.getWorkspace().getRoot()
+				.getProject(getPHPVersion() + "ErrorReportingTests");
+		if (project.exists()) {
+			return;
+		}
+
+		project.create(null);
+		project.open(null);
+
+		// configure nature
+		IProjectDescription desc = project.getDescription();
+		desc.setNatureIds(new String[] { PHPNature.ID });
+		project.setDescription(desc, null);
+
+		for (final String fileName : fileNames) {
+			PdttFile pdttFile = new PdttFile(fileName);
+			pdttFiles.put(fileName, pdttFile);
+			files.put(fileName, createFile(pdttFile.getFile().trim()));
+		}
+
+		PHPCoreTests.setProjectPhpVersion(project, getPHPVersion());
+		project.refreshLocal(IResource.DEPTH_INFINITE, null);
+		project.build(IncrementalProjectBuilder.FULL_BUILD, null);
+
+		PHPCoreTests.waitForIndexer();
+		PHPCoreTests.waitForAutoBuild();
+	}
+
