@@ -8,8 +8,16 @@
 		IType[] types = PHPTypeInferenceUtils.getModelElements(
 				context.getInstanceType(), context, offset, cache);
 		Map<PHPDocBlock, IField> docs = new HashMap<PHPDocBlock, IField>();
-
+		boolean lookOnlyForArrayTypes = false;
 		if (types != null) {
+			// remove array index from field name
+			if (variableName.endsWith("]")) { //$NON-NLS-1$
+				int index = variableName.indexOf("["); //$NON-NLS-1$
+				if (index != -1) {
+					variableName = variableName.substring(0, index);
+					lookOnlyForArrayTypes = true;
+				}
+			}
 			for (IType type : types) {
 				try {
 					// we look in whole hiearchy
@@ -40,36 +48,47 @@
 			}
 		}
 
+		if (!lookOnlyForArrayTypes) {
+			int start = offset + variableName.length();
+			int end = offset + variableName.length() + 1;
+			ASTNode node = ASTUtils.findMinimalNode(context.getRootNode(),
+					start, end);
+			if (node instanceof ForEachStatement) {
+				lookOnlyForArrayTypes = true;
+			}
+		}
+
 		for (Entry<PHPDocBlock, IField> entry : docs.entrySet()) {
 			PHPDocBlock doc = entry.getKey();
 			IField typeField = entry.getValue();
 			IType currentNamespace = PHPModelUtils
 					.getCurrentNamespace(typeField);
+
 			for (PHPDocTag tag : doc.getTags()) {
 				if (tag.getTagKind() == PHPDocTag.VAR) {
 					SimpleReference[] references = tag.getReferences();
 					for (SimpleReference ref : references) {
 						String typeName = ref.getName();
 						Matcher m = ARRAY_TYPE_PATTERN.matcher(typeName);
-						if (m.find()) {
-							evaluated.add(getArrayType(m.group(),
-									currentNamespace, doc.sourceStart()));
-						} else if (typeName.endsWith(BRACKETS)
-								&& typeName.length() > 2) {
-							offset = 0;
-							try {
-								offset = typeField.getSourceRange().getOffset();
-							} catch (ModelException e) {
-							}
-							evaluated.add(getArrayType(typeName.substring(0,
-									typeName.length() - 2), currentNamespace,
-									offset));
+						if (lookOnlyForArrayTypes) {
+							if (m.find()) {
+								evaluated.add(getArrayType(m.group(),
+										currentNamespace, doc.sourceStart()));
+							} else if (typeName.endsWith(BRACKETS)
+									&& typeName.length() > 2) {
+								offset = 0;
+								try {
+									offset = typeField.getSourceRange()
+											.getOffset();
+								} catch (ModelException e) {
+								}
+								evaluated.add(getArrayType(typeName.substring(
+										0, typeName.length() - 2),
+										currentNamespace, offset));
 
+							}
 						} else {
 							if (currentNamespace != null) {
-								ModuleDeclaration moduleDeclaration = SourceParserUtil
-										.getModuleDeclaration(currentNamespace
-												.getSourceModule());
 								if (typeName.indexOf(SPLASH) > 0) {
 									// check if the first part is an
 									// alias,then get the full name
@@ -77,7 +96,7 @@
 											typeName.indexOf(SPLASH));
 									final Map<String, UsePart> result = PHPModelUtils
 											.getAliasToNSMap(prefix,
-													moduleDeclaration,
+													context.getRootNode(),
 													doc.sourceStart(),
 													currentNamespace, true);
 									if (result.containsKey(prefix)) {
@@ -95,7 +114,7 @@
 									String prefix = typeName;
 									final Map<String, UsePart> result = PHPModelUtils
 											.getAliasToNSMap(prefix,
-													moduleDeclaration,
+													context.getRootNode(),
 													doc.sourceStart(),
 													currentNamespace, true);
 									if (result.containsKey(prefix)) {
