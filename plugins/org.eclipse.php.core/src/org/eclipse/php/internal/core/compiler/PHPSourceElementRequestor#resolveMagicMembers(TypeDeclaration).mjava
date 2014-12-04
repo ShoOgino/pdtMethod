@@ -39,8 +39,20 @@
 
 					} else if (tagKind == PHPDocTag.METHOD) {
 						// http://manual.phpdoc.org/HTMLSmartyConverter/HandS/phpDocumentor/tutorial_tags.method.pkg.html
+
+						// workaround for lack of method return type
+						String docTagValue = docTag.getValue().trim();
+						int index = docTagValue.indexOf('('); //$NON-NLS-1$
+						if (index != -1) {
+							String[] split = WHITESPACE_SEPERATOR
+									.split(docTagValue.substring(0, index));
+							if (split.length == 1) {
+								docTagValue = VOID_RETURN_TYPE
+										+ " " + docTagValue; //$NON-NLS-1$
+							}
+						}
 						final String[] split = WHITESPACE_SEPERATOR
-								.split(docTag.getValue().trim());
+								.split(docTagValue);
 						if (split.length < 2) {
 							break;
 						}
@@ -61,11 +73,11 @@
 						MagicMethod magicMethod;
 						if (mi.name != null && mi.name.indexOf('(') > 0) {
 							magicMethod = MagicMemberUtil
-									.getMagicMethod2(docTag.getValue());
+									.getMagicMethod2(docTagValue);
 							mi.name = magicMethod.name;
 						} else {
-							magicMethod = MagicMemberUtil.getMagicMethod(docTag
-									.getValue());
+							magicMethod = MagicMemberUtil
+									.getMagicMethod(docTagValue);
 						}
 						if (magicMethod != null) {
 							mi.parameterNames = magicMethod.parameterNames;
