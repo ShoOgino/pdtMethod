@@ -1,0 +1,37 @@
+	public Expression[] getCurrentVariables(int depth) {
+		byte[] value = getVariableValue(localsVariablePath, depth);
+		ExpressionValue variableValue = expressionValueDeserializer
+				.deserializer(null, value);
+		Expression[] variables = variableValue.getOriChildren();
+		if (variables == null) {
+			variables = EMPTY_VARIABLE_ARRAY;
+		}
+		boolean hasThis = false;
+		List<Expression> currentVariables = new ArrayList<Expression>();
+		for (int i = 0; i < variables.length - 1; i++) {
+			String s = variables[i].getFullName();
+			// Skip $GLOBALS variable (since PHP 5.0.0)
+			if (s.equals("$GLOBALS")) //$NON-NLS-1$
+				continue;
+			// Check if object context is active
+			if (s.equals("$this")) //$NON-NLS-1$
+				hasThis = true;
+			currentVariables.add(variables[i]);
+		}
+		// Last one in the list is dummy for a current class name
+		Expression dummyClass = variables[variables.length - 1];
+		String className = (String) dummyClass.getValue().getValue();
+		// Check if we are in static context
+		if (!hasThis && !className.isEmpty()) {
+			Expression statics = new StaticsExpression(className);
+			update(statics, 1);
+			Expression[] staticVariables = statics.getValue().getChildren();
+			if (staticVariables != null)
+				currentVariables.addAll(Arrays.asList(staticVariables));
+		}
+		variables = currentVariables.toArray(new Expression[currentVariables
+				.size()]);
+		hashResultDepthOne.put("LOCALS", variables); //$NON-NLS-1$
+		return variables;
+	}
+

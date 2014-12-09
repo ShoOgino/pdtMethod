@@ -2,7 +2,15 @@
 		String[] name = minimizeArray(expression.getName());
 		String[] path = new String[name.length - 1];
 		System.arraycopy(name, 1, path, 0, name.length - 1);
-		boolean status = debugger.assignValue(name[0], value, depth, path);
+		boolean status = true;
+		if (expression instanceof StaticMemberExpression) {
+			String member = expression.getLastName();
+			Expression changeStatic = new DefaultExpression(
+					MessageFormat.format("eval(''self::${0}={1};'')", member, //$NON-NLS-1$
+							value));
+			update(changeStatic, 1);
+		} else
+			status = debugger.assignValue(name[0], value, depth, path);
 		byte[] eValue = debugger.getVariableValue(name[0], depth, path);
 		if (status) {
 			String key = buildKey(name);
