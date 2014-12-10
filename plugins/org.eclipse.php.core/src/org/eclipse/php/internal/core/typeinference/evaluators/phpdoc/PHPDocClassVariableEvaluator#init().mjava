@@ -48,6 +48,7 @@
 			}
 		}
 
+		// check if is in ForEach statement
 		if (!lookOnlyForArrayTypes) {
 			int start = offset + variableName.length();
 			int end = offset + variableName.length() + 1;
@@ -57,6 +58,8 @@
 				lookOnlyForArrayTypes = true;
 			}
 		}
+
+		List<IEvaluatedType> arrayEvaluated = new LinkedList<IEvaluatedType>();
 
 		for (Entry<PHPDocBlock, IField> entry : docs.entrySet()) {
 			PHPDocBlock doc = entry.getKey();
@@ -69,24 +72,12 @@
 					SimpleReference[] references = tag.getReferences();
 					for (SimpleReference ref : references) {
 						String typeName = ref.getName();
-						Matcher m = ARRAY_TYPE_PATTERN.matcher(typeName);
-						if (lookOnlyForArrayTypes) {
-							if (m.find()) {
-								evaluated.add(getArrayType(m.group(),
-										currentNamespace, doc.sourceStart()));
-							} else if (typeName.endsWith(BRACKETS)
-									&& typeName.length() > 2) {
-								offset = 0;
-								try {
-									offset = typeField.getSourceRange()
-											.getOffset();
-								} catch (ModelException e) {
-								}
-								evaluated.add(getArrayType(typeName.substring(
-										0, typeName.length() - 2),
-										currentNamespace, offset));
 
-							}
+						IEvaluatedType evaluatedType = PHPEvaluationUtils
+								.extractArrayType(typeName, currentNamespace,
+										tag.sourceStart());
+						if (evaluatedType != null) {
+							arrayEvaluated.add(evaluatedType);
 						} else {
 							if (currentNamespace != null) {
 								if (typeName.indexOf(SPLASH) > 0) {
@@ -129,20 +120,24 @@
 									}
 								}
 							}
-
-							IEvaluatedType type = getEvaluatedType(typeName,
-									currentNamespace);
+							IEvaluatedType type = PHPEvaluationUtils
+									.getEvaluatedType(typeName,
+											currentNamespace);
 							if (type != null) {
 								evaluated.add(type);
 							}
-							// IEvaluatedType type = PHPClassType
-							// .fromSimpleReference(ref);
-							// evaluated.add(type);
 						}
-
 					}
 				}
 			}
+		}
+
+		if (variableName.startsWith("$")) { //$NON-NLS-1$
+			if (lookOnlyForArrayTypes) {
+				evaluated = arrayEvaluated;
+			}
+		} else {
+			evaluated.addAll(arrayEvaluated);
 		}
 
 		return IGoal.NO_GOALS;

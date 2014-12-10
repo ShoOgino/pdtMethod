@@ -1,50 +1,9 @@
+	/**
+	 * 
+	 * @deprecated will be removed in Mars
+	 */
 	public static MultiTypeType getArrayType(String type,
 			IType currentNamespace, int offset) {
-		int beginIndex = type.indexOf("[") + 1; //$NON-NLS-1$
-		int endIndex = type.lastIndexOf("]"); //$NON-NLS-1$
-		if (endIndex != -1) {
-			type = type.substring(beginIndex, endIndex);
-		}
-		MultiTypeType arrayType = new MultiTypeType();
-		Matcher m = ARRAY_TYPE_PATTERN.matcher(type);
-		if (m.find()) {
-			arrayType
-					.addType(getArrayType(m.group(), currentNamespace, offset));
-			type = m.replaceAll(""); //$NON-NLS-1$
-		}
-		String[] typeNames = type.split(","); //$NON-NLS-1$
-		for (String name : typeNames) {
-			if (!"".equals(name)) { //$NON-NLS-1$
-				int nsSeparatorIndex = name
-						.indexOf(NamespaceReference.NAMESPACE_SEPARATOR);
-				if (currentNamespace != null) {
-					// check if the first part is an
-					// alias,then get the full name
-					ModuleDeclaration moduleDeclaration = SourceParserUtil
-							.getModuleDeclaration(currentNamespace
-									.getSourceModule());
-					String prefix = name;
-					if (nsSeparatorIndex != -1) {
-						name.substring(
-								0,
-								name.indexOf(NamespaceReference.NAMESPACE_SEPARATOR));
-					}
-					final Map<String, UsePart> result = PHPModelUtils
-							.getAliasToNSMap(prefix, moduleDeclaration, offset,
-									currentNamespace, true);
-					if (result.containsKey(prefix)) {
-						String fullName = result.get(prefix).getNamespace()
-								.getFullyQualifiedName();
-						name = name.replace(prefix, fullName);
-						if (name.charAt(0) != NamespaceReference.NAMESPACE_SEPARATOR) {
-							name = NamespaceReference.NAMESPACE_SEPARATOR
-									+ name;
-						}
-					}
-				}
-				arrayType.addType(getEvaluatedType(name, currentNamespace));
-			}
-		}
-		return arrayType;
+		return PHPEvaluationUtils.getArrayType(type, currentNamespace, offset);
 	}
 

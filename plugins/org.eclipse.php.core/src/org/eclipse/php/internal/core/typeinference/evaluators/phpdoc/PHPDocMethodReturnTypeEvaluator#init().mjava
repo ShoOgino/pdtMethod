@@ -1,5 +1,4 @@
 	public IGoal[] init() {
-
 		for (IMethod method : getMethods()) {
 			IType currentNamespace = PHPModelUtils.getCurrentNamespace(method);
 			String[] typeNames = null;
@@ -19,30 +18,23 @@
 			if (typeNames != null) {
 				MultiTypeType evalMultiType = null;
 				for (String typeName : typeNames) {
-					Matcher m = ARRAY_TYPE_PATTERN.matcher(typeName);
-					Matcher multi = MULTITYPE_PATTERN.matcher(typeName);
-					if (m.find()) {
-						int offset = 0;
-						try {
-							offset = method.getSourceRange().getOffset();
-						} catch (ModelException e) {
-						}
-						evaluated.add(getArrayType(m.group(), currentNamespace,
-								offset));
-
-					} else if (typeName.endsWith(BRACKETS)
-							&& typeName.length() > 2) {
-						int offset = 0;
-						try {
-							offset = method.getSourceRange().getOffset();
-						} catch (ModelException e) {
-						}
-						evaluated.add(getArrayType(
-								typeName.substring(0, typeName.length() - 2),
-								currentNamespace, offset));
+					if (typeName.trim().isEmpty()) {
+						continue;
+					}
+					int offset = 0;
+					try {
+						offset = method.getSourceRange().getOffset();
+					} catch (ModelException e) {
+						PHPCorePlugin.log(e);
+					}
+					IEvaluatedType evaluatedType = PHPEvaluationUtils
+							.extractArrayType(typeName, currentNamespace,
+									offset);
+					if (evaluatedType != null) {
+						evaluated.add(evaluatedType);
 					} else {
 						boolean isMulti = false;
-
+						Matcher multi = MULTITYPE_PATTERN.matcher(typeName);
 						if (multi.find()) {
 							if (evalMultiType == null) {
 								evalMultiType = new MultiTypeType();
@@ -54,8 +46,10 @@
 						IType[] types = goal.getTypes();
 						if (typeName.equals(SELF_RETURN_TYPE) && types != null) {
 							for (IType t : types) {
-								IEvaluatedType type = getEvaluatedType(
-										PHPModelUtils.getFullName(t), null);
+								IEvaluatedType type = PHPEvaluationUtils
+										.getEvaluatedType(
+												PHPModelUtils.getFullName(t),
+												null);
 								if (type != null) {
 									if (isMulti) {
 										evalMultiType.addType(type);
@@ -66,7 +60,6 @@
 							}
 						} else {
 							if (currentNamespace != null) {
-
 								PHPDocBlock docBlock = PHPModelUtils
 										.getDocBlock(method);
 								ModuleDeclaration moduleDeclaration = SourceParserUtil
@@ -119,8 +112,9 @@
 									}
 								}
 							}
-							IEvaluatedType type = getEvaluatedType(typeName,
-									currentNamespace);
+							IEvaluatedType type = PHPEvaluationUtils
+									.getEvaluatedType(typeName,
+											currentNamespace);
 							if (type != null) {
 								if (isMulti) {
 									evalMultiType.addType(type);

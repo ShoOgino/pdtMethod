@@ -1,11 +1,10 @@
-	private MultiTypeType getArrayType(String type, IType currentNamespace,
-			int offset) {
+	public static MultiTypeType getArrayType(String type,
+			IType currentNamespace, int offset) {
 		int beginIndex = type.indexOf("[") + 1; //$NON-NLS-1$
 		int endIndex = type.lastIndexOf("]"); //$NON-NLS-1$
 		if (endIndex != -1) {
 			type = type.substring(beginIndex, endIndex);
 		}
-
 		MultiTypeType arrayType = new MultiTypeType();
 		Matcher m = ARRAY_TYPE_PATTERN.matcher(type);
 		if (m.find()) {
@@ -21,16 +20,20 @@
 		String[] typeNames = type.split(","); //$NON-NLS-1$
 		for (String name : typeNames) {
 			if (!"".equals(name)) { //$NON-NLS-1$
-
-				if (name.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) > 0
-						&& currentNamespace != null) {
+				int nsSeparatorIndex = name
+						.indexOf(NamespaceReference.NAMESPACE_SEPARATOR);
+				if (currentNamespace != null) {
 					// check if the first part is an
 					// alias,then get the full name
 					ModuleDeclaration moduleDeclaration = SourceParserUtil
 							.getModuleDeclaration(currentNamespace
 									.getSourceModule());
-					String prefix = name.substring(0, name
-							.indexOf(NamespaceReference.NAMESPACE_SEPARATOR));
+					String prefix = name;
+					if (nsSeparatorIndex != -1) {
+						name.substring(
+								0,
+								name.indexOf(NamespaceReference.NAMESPACE_SEPARATOR));
+					}
 					final Map<String, UsePart> result = PHPModelUtils
 							.getAliasToNSMap(prefix, moduleDeclaration, offset,
 									currentNamespace, true);
