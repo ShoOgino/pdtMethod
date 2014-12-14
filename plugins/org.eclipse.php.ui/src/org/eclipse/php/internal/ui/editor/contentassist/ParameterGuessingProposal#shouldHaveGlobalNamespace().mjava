@@ -1,0 +1,27 @@
+	private boolean shouldHaveGlobalNamespace() {
+		if (ProjectOptions.getPhpVersion(sProject.getProject()).isLessThan(
+				PHPVersion.PHP5_3)) {
+			return false;
+		}
+		IType type = method.getDeclaringType();
+		boolean isInNamespace = PHPModelUtils.getCurrentNamespaceIfAny(
+				fSourceModule, getReplacementOffset()) != null;
+		boolean globalType = PHPModelUtils.getCurrentNamespace(type) == null;
+		boolean isNotAlias = !(type instanceof AliasType);
+		try {
+			int flags = type == null ? 0 : type.getFlags();
+			if (!PHPFlags.isNamespace(flags)
+					&& globalType
+					&& isInNamespace
+					&& isNotAlias
+					&& document.getChar(getReplacementOffset() - 1) != NamespaceReference.NAMESPACE_SEPARATOR) {
+				return true;
+			}
+		} catch (ModelException e) {
+			PHPUiPlugin.log(e);
+		} catch (BadLocationException e) {
+			PHPUiPlugin.log(e);
+		}
+		return false;
+	}
+
