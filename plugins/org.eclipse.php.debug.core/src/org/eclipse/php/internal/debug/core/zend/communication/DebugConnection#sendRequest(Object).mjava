@@ -1,0 +1,85 @@
+	/**
+	 * Send a synchronous request & wait for a response
+	 * 
+	 * @param request
+	 *            The delivered Request message.
+	 * @return A response for the delivered request.
+	 */
+	public Object sendRequest(Object request) throws Exception {
+		if (!isConnected)
+			// Skip if already disconnected
+			return null;
+		Logger.debugMSG("SENDING SYNCHRONOUS REQUEST: " + request); //$NON-NLS-1$
+		try {
+			IDebugRequestMessage theMsg = (IDebugRequestMessage) request;
+			synchronized (connectionOut) {
+				byteArrayOutputStream.reset();
+				theMsg.setID(lastRequestID++);
+				theMsg.serialize(dataOutputStream);
+				int messageSize = byteArrayOutputStream.size();
+				requestsTable.put(theMsg.getID(), theMsg);
+				connectionOut.writeInt(messageSize);
+				byteArrayOutputStream.writeTo(connectionOut);
+				connectionOut.flush();
+			}
+			IDebugResponseMessage response = null;
+			int timeoutTick = 500; // 0.5 of second
+			int waitedTime = 0;
+			while (response == null && isConnected()) {
+				synchronized (request) {
+					response = (IDebugResponseMessage) responseTable
+							.remove(theMsg.getID());
+					if (response == null) {
+						/*
+						 * Display a progress dialog after a quarter of the
+						 * assigned time have passed.
+						 */
+						if (waitedTime > debugResponseTimeout / 4) {
+							/*
+							 * Display a message that we are waiting for the
+							 * server response. In case that the response
+							 * finally arrives, remove the message. In case we
+							 * have a timeout, close the connection and display
+							 * a different message.
+							 */
+							PHPLaunchUtilities.showWaitForDebuggerMessage(this);
+						}
+						// Wait for notify from MessageReceiver
+						request.wait(timeoutTick);
+					}
+				}
+				if (response == null) {
+					response = (IDebugResponseMessage) responseTable
+							.remove(theMsg.getID());
+				}
+				/*
+				 * if the response is null. it means that there is no answer
+				 * from the server. This can be because on the
+				 * peerResponseTimeout.
+				 */
+				if (response == null && isConnected()) {
+					Logger.debugMSG("COMMUNICATION PROBLEMS (response is null)"); //$NON-NLS-1$
+					// Handle time out will stop the communication if needed.
+					if (waitedTime < debugResponseTimeout - timeoutTick) {
+						waitedTime += timeoutTick;
+						handlePeerResponseTimeout();
+					} else {
+						disconnect();
+						PHPLaunchUtilities.hideWaitForDebuggerMessage();
+						PHPLaunchUtilities.showLaunchErrorMessage();
+					}
+					if (!isConnected())
+						break;
+				}
+			}
+			PHPLaunchUtilities.hideWaitForDebuggerMessage();
+			Logger.debugMSG("RECEIVED RESPONSE: " + response); //$NON-NLS-1$
+			return response;
+		} catch (IOException e) { // Return null for any exception
+			PHPDebugPlugin.log(e);
+		} catch (InterruptedException e) {// Return null for any exception
+			PHPDebugPlugin.log(e);
+		}
+		return null;
+	}
+

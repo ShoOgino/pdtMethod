@@ -1,0 +1,37 @@
+	/**
+	 * Send an asynchronous request.
+	 * 
+	 * @param request
+	 * @param responseHandler
+	 */
+	public void sendRequest(Object request, ResponseHandler responseHandler) {
+		if (!isConnected)
+			// Skip if already disconnected
+			return;
+		Logger.debugMSG("SENDING ASYNCHRONOUS REQUEST: " + request); //$NON-NLS-1$
+		int msgId = lastRequestID++;
+		IDebugRequestMessage theMsg = (IDebugRequestMessage) request;
+		try {
+			ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+			DataOutputStream dataOutputStream = new DataOutputStream(
+					byteArrayOutputStream);
+			theMsg.setID(msgId);
+			theMsg.serialize(dataOutputStream);
+			int messageSize = byteArrayOutputStream.size();
+			synchronized (connectionOut) {
+				requestsTable.put(msgId, request);
+				responseHandlers.put(Integer.valueOf(msgId), responseHandler);
+				connectionOut.writeInt(messageSize);
+				byteArrayOutputStream.writeTo(connectionOut);
+				connectionOut.flush();
+			}
+		} catch (Exception e) {
+			// Return null for any exception
+			String message = "Exception for request NO." + theMsg.getType() + e.toString(); //$NON-NLS-1$
+			Logger.debugMSG(message);
+			Logger.logException(e);
+			responseHandler.handleResponse(request, null);
+			responseHandlers.remove(Integer.valueOf(msgId));
+		}
+	}
+

@@ -1,0 +1,29 @@
+	/**
+	 * Deliver a Notification.
+	 * 
+	 * @param msg
+	 *            The delivered notification message.
+	 */
+	public void sendNotification(Object msg) {
+		if (!isConnected)
+			// Skip if already disconnected
+			return;
+		try {
+			synchronized (connectionOut) {
+				byteArrayOutputStream.reset();
+				((IDebugMessage) msg).serialize(dataOutputStream);
+				connectionOut.writeInt(byteArrayOutputStream.size());
+				byteArrayOutputStream.writeTo(connectionOut);
+				connectionOut.flush();
+			}
+		} catch (SocketException se) {
+			// Probably because the remote host disconnected.
+			// Just log a warning (might be removed in the near future).
+			if (PHPDebugPlugin.DEBUG) {
+				Logger.log(Logger.WARNING, se.getMessage(), se);
+			}
+		} catch (Exception exc) {
+			PHPDebugPlugin.log(exc);
+		}
+	}
+

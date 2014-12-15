@@ -1,0 +1,74 @@
+	/**
+	 * Hook the debug session to the correct ILaunch that started it.
+	 * 
+	 * @param debugSessionStartedNotification
+	 * @return True, if the debug session hook was successful; False, otherwise.
+	 */
+	public boolean hookDebugSession(
+			DebugSessionStartedNotification debugSessionStartedNotification)
+			throws CoreException {
+		String query = debugSessionStartedNotification.getQuery();
+		int sessionID = getSessionID(query);
+		if (sessionID == 0) {
+			sessionID = getSessionID(debugSessionStartedNotification
+					.getOptions());
+		}
+		/*
+		 * Get the launch, but keep it in the map for any other debug requests
+		 * that are related to the debug session id. The launch is mapped until
+		 * the launches are cleared.
+		 */
+		ILaunch launch = PHPSessionLaunchMapper.get(sessionID);
+		if (launch == null) {
+			/*
+			 * We cannot find a launch the we can associate to the given session
+			 * id (if any) Try to take the first launch that is terminated and
+			 * has a 'Debug all Pages' attribute.
+			 */
+			ILaunch[] launchs = DebugPlugin.getDefault().getLaunchManager()
+					.getLaunches();
+			for (ILaunch aLaunch : launchs) {
+				String debugType = aLaunch
+						.getAttribute(IPHPDebugConstants.DEBUGGING_PAGES);
+				if (aLaunch.isTerminated()
+						&& (IPHPDebugConstants.DEBUGGING_ALL_PAGES
+								.equals(debugType) || IPHPDebugConstants.DEBUGGING_START_FROM
+								.equals(debugType))) {
+					launch = aLaunch;
+					break;
+				}
+			}
+		}
+		if (launch != null) {
+			// Remove any debug targets and processes that were terminated.
+			IDebugTarget[] debugTargets = launch.getDebugTargets();
+			IProcess[] processes = launch.getProcesses();
+			for (IDebugTarget element : debugTargets) {
+				if (element.isTerminated()) {
+					launch.removeDebugTarget(element);
+				} else {
+					// Do not allow any other targets or processes when an
+					// active debug target exists - FIXME (should be done
+					// better)
+					return true;
+				}
+			}
+			for (IProcess element : processes) {
+				if (element.isTerminated()) {
+					launch.removeProcess(element);
+				}
+			}
+			// Hook by launch type
+			if (Boolean
+					.toString(true)
+					.equals(launch
+							.getAttribute(IDebugParametersKeys.WEB_SERVER_DEBUGGER))) {
+				hookServerDebug(launch, debugSessionStartedNotification);
+			} else {
+				hookPHPExeDebug(launch, debugSessionStartedNotification);
+			}
+			return true;
+		}
+		return handleHookError("No session id"); //$NON-NLS-1$
+	}
+
