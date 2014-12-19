@@ -17,7 +17,8 @@
 			cache = ((IModelCacheContext) context).getCache();
 		}
 
-		String variableName = typedGoal.getVariableName();
+		String variableName = PHPEvaluationUtils.removeArrayBrackets(typedGoal
+				.getVariableName());
 
 		final List<IGoal> subGoals = new LinkedList<IGoal>();
 		for (final IType type : types) {
@@ -68,17 +69,13 @@
 					}
 				}
 
-				if (subGoals.size() == 0) {
-					getGoalFromStaticDeclaration(variableName, subGoals, type,
-							null);
-				}
+				addGoalFromStaticDeclaration(variableName, subGoals, type, null);
+
 				fieldDeclaringTypeSet.remove(type);
-				if (subGoals.size() == 0 && !fieldDeclaringTypeSet.isEmpty()) {
-					for (Entry<IType, IType> entry : fieldDeclaringTypeSet
-							.entrySet()) {
-						getGoalFromStaticDeclaration(variableName, subGoals,
-								entry.getKey(), entry.getValue());
-					}
+				for (Entry<IType, IType> entry : fieldDeclaringTypeSet
+						.entrySet()) {
+					addGoalFromStaticDeclaration(variableName, subGoals,
+							entry.getKey(), entry.getValue());
 				}
 			} catch (CoreException e) {
 				if (DLTKCore.DEBUG) {
