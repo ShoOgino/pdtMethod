@@ -1,0 +1,30 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.eclipse.debug.internal.ui.viewers.update.DebugEventHandler#
+	 * handleLateSuspend(org.eclipse.debug.core.DebugEvent,
+	 * org.eclipse.debug.core.DebugEvent)
+	 */
+	@Override
+	protected void handleLateSuspend(DebugEvent suspend, DebugEvent resume) {
+		IThread thread = queueSuspendedThread(suspend);
+		if (suspend.isEvaluation()
+				&& suspend.getDetail() == DebugEvent.EVALUATION_IMPLICIT) {
+			// late implicit evaluation - update thread and frame
+			ModelDelta delta = buildRootDelta();
+			ModelDelta node = addPathToThread(delta, thread);
+			node = node.addNode(thread, IModelDelta.STATE);
+			try {
+				IStackFrame frame = thread.getTopStackFrame();
+				if (frame != null) {
+					node.addNode(frame, IModelDelta.STATE);
+					fireDelta(delta);
+				}
+			} catch (DebugException e) {
+			}
+		} else {
+			fireDeltaUpdatingSelectedFrame(thread, IModelDelta.STATE
+					| IModelDelta.EXPAND, suspend);
+		}
+	}
+
