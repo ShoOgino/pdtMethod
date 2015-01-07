@@ -1,0 +1,25 @@
+	/**
+	 * Adds nodes into the delta up to but not including the given thread.
+	 * 
+	 * @param delta
+	 *            root delta for the view (includes viewer input)
+	 * @param thread
+	 *            thread for which path is requested
+	 * @return
+	 */
+	protected ModelDelta addPathToThread(ModelDelta delta, IThread thread) {
+		ILaunch launch = thread.getLaunch();
+		Object[] children = launch.getChildren();
+		delta = delta.addNode(launch,
+				indexOf(getLaunchManager().getLaunches(), launch),
+				IModelDelta.NO_CHANGE, children.length);
+		IDebugTarget debugTarget = launch.getDebugTarget();
+		int numThreads = -1;
+		try {
+			numThreads = debugTarget.getThreads().length;
+		} catch (DebugException e) {
+		}
+		return delta.addNode(debugTarget, indexOf(children, debugTarget),
+				IModelDelta.NO_CHANGE, numThreads);
+	}
+

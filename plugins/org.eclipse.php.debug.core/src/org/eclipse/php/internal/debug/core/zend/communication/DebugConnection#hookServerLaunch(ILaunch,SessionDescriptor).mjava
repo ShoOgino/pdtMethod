@@ -6,9 +6,8 @@
 	 * @param startedNotification
 	 *            A DebugSessionStartedNotification
 	 */
-	protected void hookServerDebug(final ILaunch launch,
-			DebugSessionStartedNotification startedNotification)
-			throws CoreException {
+	protected void hookServerLaunch(final ILaunch launch,
+			SessionDescriptor sessionDescriptor) throws CoreException {
 		ILaunchConfiguration launchConfiguration = launch
 				.getLaunchConfiguration();
 		IProject project = getProject(launchConfiguration);
@@ -16,7 +15,7 @@
 				IDebugParametersKeys.TRANSFER_ENCODING, "")); //$NON-NLS-1$
 		messageReceiver.setOutputEncoding(launchConfiguration.getAttribute(
 				IDebugParametersKeys.OUTPUT_ENCODING, "")); //$NON-NLS-1$
-		String URL = getURL(launchConfiguration);
+		String URL = launchConfiguration.getAttribute(Server.BASE_URL, ""); //$NON-NLS-1$
 		boolean stopAtFirstLine = project == null ? true
 				: PHPProjectPreferences.getStopAtFirstLine(project);
 		int requestPort = PHPDebugPlugin
@@ -29,11 +28,7 @@
 		PHPProcess process = new PHPProcess(launch, URL);
 		debugTarget = (PHPDebugTarget) createDebugTarget(this, launch, URL,
 				requestPort, process, runWithDebug, stopAtFirstLine, project);
-		launch.addDebugTarget(debugTarget);
-		/*
-		 * A fix for Linux display problem. This code will auto-expand the
-		 * debugger view tree.
-		 */
-		autoExpand(launch);
+		// Bind debug target to the launch
+		bindTarget(launch);
 	}
 

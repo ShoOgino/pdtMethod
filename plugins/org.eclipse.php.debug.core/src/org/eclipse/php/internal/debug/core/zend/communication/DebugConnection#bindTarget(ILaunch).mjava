@@ -1,0 +1,46 @@
+	/**
+	 * Bind debug target to the launch finally.
+	 * 
+	 * @param launch
+	 * @throws CoreException
+	 */
+	private void bindTarget(ILaunch launch) throws CoreException {
+		IDebugTarget target = launch.getDebugTarget();
+		if (target != null) {
+			/*
+			 * Launch already has one multiple-threaded target, extend it with
+			 * incoming sub-target.
+			 */
+			if (target instanceof PHPMultiDebugTarget) {
+				PHPMultiDebugTarget multi = (PHPMultiDebugTarget) target;
+				multi.addSubTarget(debugTarget);
+			}
+			/*
+			 * Launch already has one single-threaded target, replace it with
+			 * multiple-threaded one.
+			 */
+			else if (target instanceof PHPDebugTarget) {
+				PHPDebugTarget single = (PHPDebugTarget) target;
+				// Cleanup 'single' info
+				launch.removeDebugTarget(single);
+				IProcess[] processes = launch.getProcesses();
+				for (IProcess p : processes)
+					launch.removeProcess(p);
+				// Create 'multi' process & target
+				PHPProcess process = new PHPProcess(launch,
+						"Parallel Requests' Process"); //$NON-NLS-1$
+				PHPMultiDebugTarget multi = new PHPMultiDebugTarget(launch,
+						process);
+				multi.addSubTarget(single);
+				multi.addSubTarget(debugTarget);
+				// Connect to launch
+				launch.addDebugTarget(multi);
+				launch.addProcess(process);
+			}
+		} else {
+			// It is just single-threaded target
+			launch.addDebugTarget(debugTarget);
+			launch.addProcess(debugTarget.getProcess());
+		}
+	}
+

@@ -1,0 +1,28 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.eclipse.debug.internal.ui.viewers.update.DebugEventHandler#handleSuspend
+	 * (org.eclipse.debug.core.DebugEvent)
+	 */
+	@Override
+	protected void handleSuspend(DebugEvent event) {
+		IThread thread = (IThread) event.getSource();
+		if (!event.isEvaluation()) {
+			int extras = IModelDelta.NO_CHANGE;
+			switch (event.getDetail()) {
+			case DebugEvent.BREAKPOINT:
+				// on breakpoint also position thread to be top element
+				extras = IModelDelta.EXPAND | IModelDelta.REVEAL;
+				break;
+			case DebugEvent.CLIENT_REQUEST:
+				extras = IModelDelta.EXPAND | IModelDelta.REVEAL;
+				break;
+			default:
+				break;
+			}
+			fireDeltaUpdatingSelectedFrame(thread, IModelDelta.NO_CHANGE
+					| extras, event);
+		}
+	}
+

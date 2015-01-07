@@ -1,0 +1,36 @@
+	protected boolean hookLaunch(SessionDescriptor sessionDescriptor)
+			throws CoreException {
+		// Try to hook any of the existing launches
+		ILaunch launch = PHPSessionLaunchMapper.get(sessionDescriptor.getId());
+		/*
+		 * There are no existing launches (created by user nor "mock" ones) for
+		 * incoming session ID, try to find/create new "mock" launch
+		 */
+		if (launch == null)
+			launch = fetchLaunch(sessionDescriptor);
+		/*
+		 * If session is primary (new one has come) and launch exists then it
+		 * means that session has been restarted. If so, terminate the previous
+		 * launch.
+		 */
+		else if (sessionDescriptor.isPrimary() && !launch.isTerminated())
+			try {
+				launch.terminate();
+			} catch (DebugException e) {
+				// ignore
+			}
+		// Move on with the launch
+		if (launch != null) {
+			// Remove terminated elements if any
+			cleanup(launch);
+			// Hook by launch type
+			if (isServerLaunch(launch)) {
+				hookServerLaunch(launch, sessionDescriptor);
+			} else {
+				hookPHPExeLaunch(launch, sessionDescriptor);
+			}
+			return true;
+		}
+		return false;
+	}
+
