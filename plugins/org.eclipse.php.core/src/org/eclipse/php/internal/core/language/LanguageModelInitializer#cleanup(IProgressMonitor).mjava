@@ -1,0 +1,54 @@
+	/**
+	 * Drop unsused patches
+	 * 
+	 * @see http://eclip.se/456902
+	 * @param projects
+	 * @throws CoreException
+	 */
+	@SuppressWarnings("restriction")
+	public static void cleanup(IProgressMonitor monitor) throws CoreException {
+		final IProject[] projects = ResourcesPlugin.getWorkspace().getRoot()
+				.getProjects();
+		Set<IPath> inUse = new HashSet<IPath>();
+		Set<IPath> toDrop = new HashSet<IPath>();
+		for (IProject project : projects) {
+			if (!PHPToolkitUtil.isPhpProject(project)) {
+				continue;
+			}
+			IBuildpathContainer container = DLTKCore.getBuildpathContainer(
+					Path.fromPortableString(CONTAINER_PATH),
+					DLTKCore.create(project));
+			for (IBuildpathEntry entry : container.getBuildpathEntries()) {
+				inUse.add(entry.getPath());
+			}
+		}
+
+		for (ILanguageModelProvider provider : getContributedProviders()) {
+			File dir = provider.getPlugin().getStateLocation()
+					.append(LANGUAGE_PREFIX).toFile();
+			if (!dir.exists() || !dir.isDirectory()) {
+				continue;
+			}
+			for (File lib : dir.listFiles()) {
+				IPath compare = EnvironmentPathUtils.getFullPath(
+						LocalEnvironment.ENVIRONMENT_ID,
+						Path.fromOSString(lib.getPath()));
+				if (inUse.contains(compare)) {
+					continue;
+				}
+
+				toDrop.add(compare);
+			}
+		}
+
+		final IndexManager indexManager = ModelManager.getModelManager()
+				.getIndexManager();
+		final IFileSystem efs = EFS.getLocalFileSystem();
+
+		for (IPath path : toDrop) {
+			indexManager.removeIndex(path);
+			efs.getStore(EnvironmentPathUtils.getLocalPath(path)).delete(
+					EFS.NONE, monitor);
+		}
+	}
+
