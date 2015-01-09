@@ -2,11 +2,11 @@
 	 * (non-Javadoc)
 	 * 
 	 * @see
-	 * org.eclipse.debug.ui.AbstractDebugView#createViewer(org.eclipse.swt.widgets
+	 * org.eclipse.ui.part.WorkbenchPart#createPartControl(org.eclipse.swt.widgets
 	 * .Composite)
 	 */
-	protected Viewer createViewer(Composite parent) {
-
+	@Override
+	public void createPartControl(Composite parent) {
 		int styles = SWT.V_SCROLL | SWT.H_SCROLL | SWT.MULTI
 				| SWT.FULL_SELECTION;
 		fSourceViewer = new StructuredTextViewer(parent, null, null, false,
@@ -16,33 +16,26 @@
 		getSite().getWorkbenchWindow().getSelectionService()
 				.addSelectionListener(IDebugUIConstants.ID_DEBUG_VIEW, this);
 		getSite().setSelectionProvider(fSourceViewer.getSelectionProvider());
-
 		setBackgroundColor();
-
-		terminateListener = new IDebugEventSetListener() {
-			IPHPDebugTarget target;
-
+		fTerminateListener = new IDebugEventSetListener() {
 			public void handleDebugEvents(DebugEvent[] events) {
 				if (events != null) {
 					int size = events.length;
 					for (int i = 0; i < size; i++) {
 						Object obj = events[i].getSource();
-						// 386462: [Regression] Debug Output does not refresh
-						// depending on the focus
-						// https://bugs.eclipse.org/bugs/show_bug.cgi?id=386462
 						if (!(obj instanceof IPHPDebugTarget || obj instanceof PHPThread))
 							continue;
-
 						if (events[i].getKind() == DebugEvent.TERMINATE
 								|| events[i].getKind() == DebugEvent.SUSPEND) {
+							final IPHPDebugTarget target;
 							if (obj instanceof IPHPDebugTarget) {
-
 								target = (IPHPDebugTarget) obj;
 							} else {
 								target = (IPHPDebugTarget) ((PHPThread) obj)
 										.getDebugTarget();
 							}
-							Job job = new UIJob("debug output") { //$NON-NLS-1$
+							Job job = new UIJob(
+									PHPDebugUIMessages.PHPDebugUIPlugin_1) {
 								public IStatus runInUIThread(
 										IProgressMonitor monitor) {
 									update(target);
@@ -55,10 +48,10 @@
 				}
 			}
 		};
-		DebugPlugin.getDefault().addDebugEventListener(terminateListener);
-
-		debugViewHelper = new DebugViewHelper();
-
-		return fSourceViewer;
+		DebugPlugin.getDefault().addDebugEventListener(fTerminateListener);
+		if (fPartListener == null) {
+			fPartListener = new DebugViewPartListener();
+			getSite().getPage().addPartListener(fPartListener);
+		}
 	}
 

@@ -1,0 +1,41 @@
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see
+		 * org.eclipse.php.internal.debug.ui.views.AbstractDebugOutputView.IUpdater
+		 * #update(org.eclipse.php.internal.debug.core.model.IPHPDebugTarget)
+		 */
+		@Override
+		public void update(IPHPDebugTarget target) {
+			int oldcount = fUpdateCount;
+			HTMLDocumentLoader ss = new HTMLDocumentLoader();
+			BasicStructuredDocument input = (BasicStructuredDocument) ss
+					.createNewStructuredDocument();
+			if (target != null) {
+				if ((target.isSuspended()) || (target.isTerminated())
+						|| (target.isWaiting())) {
+					DebugOutput debugOutput = target.getOutputBuffer();
+					fUpdateCount = debugOutput.getUpdateCount();
+					// check if output hasn't been updated
+					if (fUpdateCount == oldcount)
+						return;
+					String contentType = debugOutput.getContentType();
+					// we don't show garbage anymore
+					if (contentType != null && !contentType.startsWith("text")) { //$NON-NLS-1$
+						return;
+					}
+					input.setText(this, debugOutput.getOutput());
+				}
+				// Not Suspended or Terminated
+				else {
+					return;
+				}
+			}
+			try {
+				fSourceViewer.setInput(input);
+			} catch (Exception e) {
+				// Don't handle
+			}
+			fSourceViewer.refresh();
+		}
+
