@@ -1,0 +1,30 @@
+	public boolean visit(Include include) {
+		if (updateReference) {
+			Expression exp = include.getExpression();
+			Scalar scalar = null;
+			if (exp instanceof ParenthesisExpression) {
+				Expression expression = ((ParenthesisExpression) exp)
+						.getExpression();
+				// The expression can be other type.
+				if (expression instanceof Scalar) {
+					scalar = (Scalar) expression;
+				}
+			}
+			if (exp instanceof Scalar) {
+				scalar = (Scalar) exp;
+			}
+			if (scalar == null) {
+				return super.visit(include);
+			}
+
+			String stringValue = scalar.getStringValue();
+			if (isScalarNeedChange(scalar, stringValue)) {
+				addChange(scalar,
+						PhpRefactoringCoreMessages
+								.getString("RenameIncludeAndClassName.1")); //$NON-NLS-1$
+			}
+		}
+
+		return false;
+	}
+

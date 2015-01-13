@@ -1,0 +1,54 @@
+	private RenameSupport undoAndCreateRenameSupport(String newName)
+			throws CoreException {
+		// Assumption: the linked mode model should be shut down by now.
+
+		final ISourceViewer viewer = fEditor.getTextViewer();
+
+		try {
+			if (!fOriginalName.equals(newName)) {
+				fEditor.getSite().getWorkbenchWindow()
+						.run(false, true, new IRunnableWithProgress() {
+							public void run(IProgressMonitor monitor)
+									throws InvocationTargetException,
+									InterruptedException {
+								if (viewer instanceof ITextViewerExtension6) {
+									IUndoManager undoManager = ((ITextViewerExtension6) viewer)
+											.getUndoManager();
+									if (undoManager != null
+											&& undoManager.undoable()) {
+										undoManager.undo();
+									}
+								}
+							}
+						});
+			}
+		} catch (InvocationTargetException e) {
+			throw new CoreException(new Status(IStatus.ERROR,
+					RefactoringUIPlugin.PLUGIN_ID, Messages.RenameLinkedMode_0,
+					e));
+		} catch (InterruptedException e) {
+			// canceling is OK
+			return null;
+		} finally {
+			IFile file = ((IFileEditorInput) fEditor.getEditorInput())
+					.getFile();
+			ISourceModule sourceModule = DLTKCore.createSourceModuleFrom(file);
+			try {
+				Program program = ASTUtils
+						.createProgramFromSource(sourceModule);
+				ScriptModelUtil.reconcile(sourceModule);
+				fEditor.reconciled(program, true, new NullProgressMonitor());
+			} catch (Exception e) {
+			}
+
+		}
+
+		viewer.setSelectedRange(fOriginalSelection.x, fOriginalSelection.y);
+
+		final int elementType = PhpElementConciliator.concile(selectedNode);
+		RenameSupport renameSupport = RenameSupport.create(selectedNode
+				.getProgramRoot().getSourceModule().getResource(), elementType,
+				selectedNode, newName, RenameSupport.UPDATE_REFERENCES);
+		return renameSupport;
+	}
+

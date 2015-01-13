@@ -1,0 +1,55 @@
+	@Override
+	protected void collectReferences(Program program, IProgressMonitor pm) {
+		final ArrayList<IResource> list = new ArrayList<IResource>();
+
+		IScriptProject project = this.identifier.getProgramRoot()
+				.getSourceModule().getScriptProject();
+
+		IDLTKSearchScope scope = SearchEngine.createSearchScope(project,
+				getSearchFlags(false));
+
+		ASTNode node = identifier;
+		if (identifier instanceof Identifier) {
+			node = identifier.getParent();
+		}
+
+		SearchPattern pattern = null;
+
+		int matchMode = SearchPattern.R_EXACT_MATCH
+				| SearchPattern.R_ERASURE_MATCH;
+
+		if (isFunctionElement(node)) {
+			pattern = SearchPattern.createPattern(getCurrentElementName(),
+					IDLTKSearchConstants.METHOD,
+					IDLTKSearchConstants.ALL_OCCURRENCES, matchMode,
+					PHPLanguageToolkit.getDefault());
+			SearchEngine engine = new SearchEngine();
+			try {
+				engine.search(pattern, new SearchParticipant[] { SearchEngine
+						.getDefaultSearchParticipant() }, scope,
+						new SearchRequestor() {
+							@Override
+							public void acceptSearchMatch(SearchMatch match)
+									throws CoreException {
+
+								IModelElement element = (IModelElement) match
+										.getElement();
+								list.add(element.getResource());
+							}
+						}, new NullProgressMonitor());
+			} catch (CoreException e) {
+			}
+		}
+
+		for (Iterator<IResource> it = list.iterator(); it.hasNext();) {
+			IResource file = it.next();
+			if (file instanceof IFile) {
+				try {
+					participantFiles.put((IFile) file,
+							RefactoringUtility.getProgramForFile((IFile) file));
+				} catch (Exception e) {
+				}
+			}
+		}
+	}
+

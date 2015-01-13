@@ -1,0 +1,70 @@
+	/**
+	 * Derive the change
+	 */
+	private void createRenameTextChanges(IProgressMonitor pm,
+			CompositeChange rootChange) throws CoreException,
+			OperationCanceledException {
+
+		String fileName = program.getSourceModule().getResource().getName();
+		String extension = program.getSourceModule().getResource()
+				.getFileExtension();
+
+		int index = fileName.indexOf("." + extension); //$NON-NLS-1$
+		String className = null;
+
+		if (index > 0) {
+			className = fileName.substring(0, index);
+		}
+		if (className == null) {
+			return;
+		}
+
+		try {
+			pm.beginTask(RenameClassProcessor.RENAME_IS_PROCESSING, 1);
+			pm.setTaskName(RenameClassProcessor.CREATING_MODIFICATIONS_LABEL);
+
+			if (pm.isCanceled())
+				throw new OperationCanceledException();
+
+			// get target parameters
+			String newElementName = getNewElementName();
+			index = newElementName.indexOf("." + extension); //$NON-NLS-1$
+			if (index > 0) {
+				newElementName = newElementName.substring(0, index);
+			}
+
+			// If update class and update reference are all false, ignore the
+			// loop.
+
+			for (Entry<IFile, Program> entry : participantFiles.entrySet()) {
+				final IFile file = entry.getKey();
+				final Program program = entry.getValue();
+				final RenameIncludeAndClassName rename = new RenameIncludeAndClassName(
+						file, className, newElementName,
+						getUpdateTextualMatches(), getUpdateClassName(),
+						getUpdateReferences(), resource);
+
+				// aggregate the changes identifiers
+				program.accept(rename);
+
+				if (pm.isCanceled())
+					throw new OperationCanceledException();
+
+				pm.worked(1);
+
+				if (rename.hasChanges()) {
+					ProgramFileChange change = new ProgramFileChange(
+							file.getName(), file, program);
+					change.setEdit(new MultiTextEdit());
+					change.setTextType("php"); //$NON-NLS-1$
+
+					rootChange.add(change);
+					rename.updateChange(change);
+				}
+			}
+
+		} finally {
+			pm.done();
+		}
+	}
+

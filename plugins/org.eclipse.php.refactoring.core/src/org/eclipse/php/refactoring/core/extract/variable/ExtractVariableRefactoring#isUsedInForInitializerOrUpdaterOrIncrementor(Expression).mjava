@@ -1,0 +1,46 @@
+	/**
+	 * Checks if the current selection is in a for statement In this case, the
+	 * only valid area for a selection is the "action"/block of the for
+	 * statement and not the initializer/updater/condition
+	 * 
+	 * @param expression
+	 * @return true, in case the selection is in an invalid position in the for
+	 *         statement, false otherwise
+	 */
+	private boolean isUsedInForInitializerOrUpdaterOrIncrementor(
+			Expression expression) {
+		boolean isInForStatement = false;
+		boolean isInBlock = false;
+
+		ASTNode parent = expression.getParent();
+		while (parent != null) {
+
+			if (parent instanceof ForStatement) {
+				isInForStatement = true;
+
+				// the selection was in a block - therefore valid
+				if (isInBlock) {
+					return false;
+				}
+
+				// this for statement does not have a block (no parenthesis)
+				// in this case check if the selection is in the for action.
+				// if this is the case, return false. Otherwise it means the
+				// selection
+				// is one of the for initializers/updaters/incrementors
+				Statement action = ((ForStatement) parent).getBody();
+				return !(selectionIsInForAction(expression, action));
+
+			}
+
+			if (parent instanceof Block) {
+				isInBlock = true;
+			}
+
+			parent = parent.getParent();
+		}
+
+		return isInForStatement;
+
+	}
+

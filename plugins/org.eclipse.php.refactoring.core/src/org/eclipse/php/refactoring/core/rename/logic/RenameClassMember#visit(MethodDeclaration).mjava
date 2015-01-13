@@ -1,0 +1,36 @@
+	/**
+	 * context + Rename foo on: ... public foo() { }; ...
+	 */
+	public boolean visit(MethodDeclaration methodDeclaration) {
+		if (isChangeMethod()) {
+			try {
+				Identifier identifier = methodDeclaration.getFunction()
+						.getFunctionName();
+				if (!identifier.getName().equals(oldName)
+						|| methodDeclaration.resolveMethodBinding() == null) {
+					return super.visit(methodDeclaration);
+				}
+				ITypeBinding declClass = methodDeclaration
+						.resolveMethodBinding().getDeclaringClass();
+				if (declClass != null) {
+					if (declClass.equals(type)
+							|| traitEqual(declClass, identifier)) {
+						addChange(identifier.getStart());
+					} else if (declClass.isSubTypeCompatible(type)
+							|| type.isSubTypeCompatible(declClass)) {
+						if (methodDeclaration.getModifier() != Modifiers.AccPrivate) {
+							addChange(identifier.getStart());
+						}
+					} else if (traitInSuperEqual(declClass, identifier)) {
+						addChange(identifier.getStart());
+					}
+				}
+			} catch (Exception e) {
+				RefactoringPlugin.logException(e);
+			}
+
+		}
+
+		return super.visit(methodDeclaration);
+	}
+

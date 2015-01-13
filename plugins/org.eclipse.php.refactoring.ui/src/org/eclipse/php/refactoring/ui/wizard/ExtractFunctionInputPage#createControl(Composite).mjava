@@ -1,0 +1,168 @@
+	public void createControl(Composite parent) {
+		fRefactoring = (ExtractFunctionRefactoring) getRefactoring();
+		loadSettings();
+
+		Composite result = new Composite(parent, SWT.NONE);
+		setControl(result);
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 2;
+		result.setLayout(layout);
+		RowLayouter layouter = new RowLayouter(2);
+		GridData gd = null;
+
+		initializeDialogUnits(result);
+
+		Label label = new Label(result, SWT.NONE);
+		label.setText(getLabelText());
+
+		fTextField = createTextInputField(result, SWT.BORDER);
+		fTextField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+		layouter.perform(label, fTextField, 1);
+
+		// ASTNode[] destinations= fRefactoring.getDestinations();
+		// if (destinations.length > 1) {
+		// label= new Label(result, SWT.NONE);
+		// label.setText(RefactoringMessages.ExtractMethodInputPage_destination_type);
+		// final Combo combo= new Combo(result, SWT.READ_ONLY | SWT.DROP_DOWN);
+		// combo.setVisibleItemCount(30);
+		// for (int i= 0; i < destinations.length; i++) {
+		// ASTNode declaration= destinations[i];
+		// combo.add(getLabel(declaration));
+		// }
+		// combo.select(0);
+		// combo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		// combo.addSelectionListener(new SelectionListener() {
+		// public void widgetSelected(SelectionEvent e) {
+		// fRefactoring.setDestination(combo.getSelectionIndex());
+		// }
+		// public void widgetDefaultSelected(SelectionEvent e) {
+		// // nothing
+		// }
+		// });
+		// }
+
+		if (fRefactoring.isClassMethod()) {
+			label = new Label(result, SWT.NONE);
+			label.setText(RefactoringMessages.ExtractMethodInputPage_access_Modifiers);
+
+			Composite group = new Composite(result, SWT.NONE);
+			group.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+			layout = new GridLayout();
+			layout.numColumns = 4;
+			layout.marginWidth = 0;
+			group.setLayout(layout);
+
+			String[] labels = new String[] {
+					RefactoringMessages.ExtractMethodInputPage_public,
+					RefactoringMessages.ExtractMethodInputPage_protected,
+					RefactoringMessages.ExtractMethodInputPage_default,
+					RefactoringMessages.ExtractMethodInputPage_private };
+			Integer[] data = new Integer[] { new Integer(Modifiers.AccPublic),
+					new Integer(Modifiers.AccProtected),
+					new Integer(Modifiers.AccDefault),
+					new Integer(Modifiers.AccPrivate) };
+			Integer visibility = new Integer(fRefactoring.getVisibility());
+			for (int i = 0; i < labels.length; i++) {
+				Button radio = new Button(group, SWT.RADIO);
+				radio.setText(labels[i]);
+				radio.setData(data[i]);
+				if (data[i].equals(visibility))
+					radio.setSelection(true);
+				radio.addSelectionListener(new SelectionAdapter() {
+					public void widgetSelected(SelectionEvent event) {
+						setVisibility((Integer) event.widget.getData());
+					}
+				});
+			}
+			layouter.perform(label, group, 1);
+		}
+
+		if (!fRefactoring.getParameterInfos().isEmpty()) {
+			ChangeParametersControl cp = new ChangeParametersControl(result,
+					SWT.NONE,
+					RefactoringMessages.ExtractMethodInputPage_parameters,
+					new IParameterListChangeListener() {
+						public void parameterChanged(ParameterInfo parameter) {
+							parameterModified();
+						}
+
+						public void parameterListChanged() {
+							parameterModified();
+						}
+
+						public void parameterAdded(ParameterInfo parameter) {
+							updatePreview(getText());
+						}
+					}, ChangeParametersControl.Mode.EXTRACT_METHOD);
+			gd = new GridData(GridData.FILL_BOTH);
+			gd.horizontalSpan = 2;
+			cp.setLayoutData(gd);
+			cp.setInput(fRefactoring.getParameterInfos());
+		}
+
+		// Button checkBox= new Button(result, SWT.CHECK);
+		// checkBox.setText(RefactoringMessages.ExtractMethodInputPage_throwRuntimeExceptions);
+		// checkBox.setSelection(fSettings.getBoolean(THROW_RUNTIME_EXCEPTIONS));
+		// checkBox.addSelectionListener(new SelectionAdapter() {
+		// public void widgetSelected(SelectionEvent e) {
+		// setRethrowRuntimeException(((Button)e.widget).getSelection());
+		// }
+		// });
+		// layouter.perform(checkBox);
+
+		Button checkBox = new Button(result, SWT.CHECK);
+		if (fRefactoring.isClassMethod()) {
+			checkBox.setText(PHPRefactoringUIMessages
+					.getString("ExtractFunctionInputPage_2")); //$NON-NLS-1$
+		} else {
+			checkBox.setText(PHPRefactoringUIMessages
+					.getString("ExtractFunctionInputPage_1")); //$NON-NLS-1$
+		}
+		boolean generate = computeGeneratePHPdoc();
+		setGeneratePHPdoc(generate);
+		checkBox.setSelection(generate);
+		checkBox.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				setGeneratePHPdoc(((Button) e.widget).getSelection());
+			}
+		});
+		layouter.perform(checkBox);
+
+		int duplicates = fRefactoring.getNumberOfDuplicates();
+		checkBox = new Button(result, SWT.CHECK);
+		if (duplicates == 0) {
+			checkBox.setText(RefactoringMessages.ExtractMethodInputPage_duplicates_none);
+		} else if (duplicates == 1) {
+			checkBox.setText(RefactoringMessages.ExtractMethodInputPage_duplicates_single);
+		} else {
+			checkBox.setText(NLS
+					.bind(RefactoringMessages.ExtractMethodInputPage_duplicates_multi,
+							new Integer(duplicates)));
+		}
+		boolean enabled = duplicates > 0;
+
+		if (enabled) {
+			checkBox.setSelection(fRefactoring.getReplaceDuplicates());
+		} else {
+			checkBox.setSelection(false);
+		}
+		checkBox.setEnabled(enabled);
+
+		checkBox.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				fRefactoring.setReplaceDuplicates(((Button) e.widget)
+						.getSelection());
+			}
+		});
+		layouter.perform(checkBox);
+
+		label = new Label(result, SWT.SEPARATOR | SWT.HORIZONTAL);
+		label.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		layouter.perform(label);
+
+		createSignaturePreview(result, layouter);
+
+		Dialog.applyDialogFont(result);
+	}
+

@@ -1,0 +1,69 @@
+	private Block createFunctionBody(ASTNode[] selectedNodes,
+			TextEditGroup substitute) {
+		Block result = fAST.newBlock();
+		ListRewrite statements = fRewriter.getListRewrite(result,
+				Block.STATEMENTS_PROPERTY);
+
+		for (Iterator<ParameterInfo> iter = fParameterInfos.iterator(); iter
+				.hasNext();) {
+			ParameterInfo parameter = iter.next();
+			if (parameter.isRenamed()) {
+				for (int n = 0; n < selectedNodes.length; n++) {
+					Identifier[] oldNames = LinkedNodeFinder.findByBinding(
+							selectedNodes[n], parameter.getOldBinding());
+					for (int i = 0; i < oldNames.length; i++) {
+						fRewriter.replace(oldNames[i], fAST
+								.newIdentifier(removeDollar(parameter
+										.getNewName())), substitute);
+					}
+				}
+			}
+		}
+
+		boolean extractsExpression = fAnalyzer.isExpressionSelected();
+		ASTNode[] callNodes = createCallNodes(null);
+		ASTNode replacementNode;
+		if (callNodes.length == 1) {
+			replacementNode = callNodes[0];
+		} else {
+			replacementNode = fRewriter.createGroupNode(callNodes);
+		}
+		if (extractsExpression) {
+			// if we have an expression then only one node is selected.
+			ReturnStatement rs = fAST.newReturnStatement();
+			rs.setExpression((Expression) fRewriter
+					.createMoveTarget(selectedNodes[0]));
+			statements.insertLast(rs, null);
+			fRewriter.replace(selectedNodes[0], replacementNode, substitute);
+		} else {
+			if (selectedNodes.length == 1) {
+				statements.insertLast(
+						fRewriter.createMoveTarget(selectedNodes[0]),
+						substitute);
+				fRewriter
+						.replace(selectedNodes[0], replacementNode, substitute);
+			} else {
+				ListRewrite source = fRewriter.getListRewrite(selectedNodes[0]
+						.getParent(),
+						(ChildListPropertyDescriptor) selectedNodes[0]
+								.getLocationInParent());
+
+				ASTNode[] nodes = filterComments(selectedNodes);
+				if (nodes.length > 0) {
+					ASTNode toMove = source.createMoveTarget(nodes[0],
+							selectedNodes[nodes.length - 1], replacementNode,
+							substitute);
+					statements.insertLast(toMove, substitute);
+				}
+			}
+			IVariableBinding returnValue = fAnalyzer.getReturnValue();
+			if (returnValue != null) {
+				ReturnStatement rs = fAST.newReturnStatement();
+				rs.setExpression(fAST.newIdentifier((getName(returnValue))));
+				statements.insertLast(rs, null);
+			}
+		}
+		return result;
+
+	}
+

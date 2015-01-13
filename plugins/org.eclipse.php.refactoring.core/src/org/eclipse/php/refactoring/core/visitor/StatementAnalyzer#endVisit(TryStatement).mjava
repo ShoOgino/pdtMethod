@@ -1,0 +1,32 @@
+	/*
+	 * (non-Javadoc) Method declared in ASTVisitor
+	 */
+	public void endVisit(TryStatement node) {
+		ASTNode firstSelectedNode = getFirstSelectedNode();
+		if (getSelection().getEndVisitSelectionMode(node) == Selection.AFTER) {
+			if (firstSelectedNode == node.getBody()) {
+				invalidSelection("Selection must either cover whole try statement or parts of try or catch block."); //$NON-NLS-1$
+			} else {
+				List catchClauses = node.catchClauses();
+				for (Iterator iterator = catchClauses.iterator(); iterator
+						.hasNext();) {
+					CatchClause element = (CatchClause) iterator.next();
+					if (element == firstSelectedNode
+							|| element.getBody() == firstSelectedNode) {
+						invalidSelection("Selection must either cover whole try statement or parts of try or catch block."); //$NON-NLS-1$
+						// TODO - make sure this is the right condition
+					} else if (element.getClassName() == firstSelectedNode) {
+						invalidSelection("Operation is not applicable to a catch block's argument declaration."); //$NON-NLS-1$
+					}
+				}
+			}
+		}
+
+		try {
+			throw new Exception(""); //$NON-NLS-1$
+		} catch (Exception e) {
+
+		}
+		super.endVisit(node);
+	}
+

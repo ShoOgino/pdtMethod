@@ -1,0 +1,27 @@
+	private PhpLanguageNode getChangeElement(Map map, ASTNode element,
+			List children, TextEditChangeNode cunitChange) {
+		PhpLanguageNode result = (PhpLanguageNode) map.get(element);
+		if (result != null)
+			return result;
+
+		final int type = element.getType();
+		if (type == ASTNode.CLASS_DECLARATION
+				|| type == ASTNode.INTERFACE_DECLARATION
+				|| type == ASTNode.FUNCTION_DECLARATION) {
+			result = new PhpLanguageNode(cunitChange, element);
+			children.add(result);
+			map.put(element, result);
+		} else {
+			assert element.getType() == ASTNode.METHOD_DECLARATION;
+
+			ASTNode parentNode = getParentContext(element);
+			final PhpLanguageNode parentChange = getChangeElement(map,
+					parentNode, children, cunitChange);
+			result = new PhpLanguageNode(parentChange, element);
+			parentChange.addChild(result);
+			map.put(element, result);
+		}
+
+		return result;
+	}
+

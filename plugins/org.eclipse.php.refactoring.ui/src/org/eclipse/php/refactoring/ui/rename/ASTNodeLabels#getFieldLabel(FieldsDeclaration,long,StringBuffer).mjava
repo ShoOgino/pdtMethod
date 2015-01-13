@@ -1,0 +1,27 @@
+	public static void getFieldLabel(FieldsDeclaration field, long flags,
+			StringBuffer buf) {
+
+		final Variable[] variableNames = field.getVariableNames();
+		for (int i = 0; i < variableNames.length; i++) {
+			Variable variable = variableNames[i];
+			assert variable.getName() instanceof Identifier;
+			Identifier identifier = (Identifier) variable.getName();
+			buf.append(identifier.getName());
+			buf.append(" ,"); //$NON-NLS-1$
+		}
+
+		// post qualification
+		if (getFlag(flags, F_POST_QUALIFIED)) {
+			buf.append(CONCAT_STRING);
+			ASTNode container = field.getParent().getParent();
+			assert container.getType() == ASTNode.CLASS_DECLARATION
+					|| container.getType() == ASTNode.INTERFACE_DECLARATION;
+			TypeDeclaration declaration = (TypeDeclaration) container;
+			if (declaration != null) {
+				getTypeLabel(declaration, T_FULLY_QUALIFIED
+						| (flags & P_COMPRESSED), buf);
+			}
+		}
+
+	}
+

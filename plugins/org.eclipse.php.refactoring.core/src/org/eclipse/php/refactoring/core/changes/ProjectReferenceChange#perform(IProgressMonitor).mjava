@@ -1,0 +1,22 @@
+	@Override
+	public Change perform(IProgressMonitor pm) throws CoreException {
+
+		try {
+			pm.beginTask(getName(), 1);
+
+			pm.beginTask(Messages.ProjectReferenceChange_1, referencing.length);
+			for (int i = 0; i < referencing.length; i++) {
+				IScriptProject jp = DLTKCore.create(referencing[i]);
+				if (jp != null && jp.exists()) {
+					modifyBuildpath(jp, new SubProgressMonitor(pm, 1));
+				} else {
+					pm.worked(1);
+				}
+			}
+		} finally {
+			pm.done();
+		}
+
+		return new ProjectReferenceChange(newName, oldName, referencing);
+	}
+

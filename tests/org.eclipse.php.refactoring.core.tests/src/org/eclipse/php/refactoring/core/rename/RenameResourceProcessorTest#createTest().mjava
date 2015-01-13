@@ -1,0 +1,38 @@
+	public List<TestCase> createTest() {
+		List<TestCase> tests = new ArrayList<TestCase>();
+		try {
+			initFiles();
+		} catch (Exception e1) {
+			return tests;
+		}
+
+		for (final String fileName : filesMap.keySet()) {
+			final PdttFileExt testFile = filesMap.get(fileName);
+			tests.add(new RenameResourceProcessorTest(fileName){
+				@Override
+				protected void runTest() throws Throwable {
+					IFile file = project.findFile(testFile.getTestFiles().get(0).getName());
+
+					Program program = createProgram(file);
+
+					assertNotNull(program);
+
+					RenameFileProcessor processor = new RenameFileProcessor(file, program);
+					processor.setNewElementName(testFile.getConfig().get("newName"));
+					
+					processor.setUpdateRefernces(Boolean.valueOf(testFile.getConfig().get("updateReference")));
+					processor.setAttribute(RenameFileProcessor.UPDATECLASSNAME, testFile.getConfig().get("updateClassName"));
+
+					checkInitCondition(processor);
+					performChange(processor);
+					checkTestResult(testFile);
+				}
+				@Override
+				protected void tearDown() throws Exception {
+
+				}	
+			});
+		}
+		return tests;
+	}
+

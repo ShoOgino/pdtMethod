@@ -1,0 +1,43 @@
+	private Button createAddButton(Composite buttonComposite) {
+		Button button = new Button(buttonComposite, SWT.PUSH);
+		button.setText(RefactoringMessages.ChangeParametersControl_buttons_add);
+		button.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		SWTUtil.setButtonDimensionHint(button);
+		button.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				String[] excludedParamNames = new String[fParameterInfos.size()];
+				for (int i = 0; i < fParameterInfos.size(); i++) {
+					ParameterInfo info = (ParameterInfo) fParameterInfos.get(i);
+					excludedParamNames[i] = info.getNewDisplayName();
+				}
+				// IScriptProject javaProject =
+				// fTypeContext.getCuHandle().getSourceModule().getScriptProject();
+				// TODO: guess new argument name.
+				// String newParamName=
+				// StubUtility.suggestArgumentName(javaProject, "default name",
+				// excludedParamNames);
+				String newParamName = "argu"; //$NON-NLS-1$
+				ParameterInfo newInfo = ParameterInfo
+						.createInfoForAddedParameter(
+								"Object", newParamName, "null"); //$NON-NLS-1$ //$NON-NLS-2$
+				int insertIndex = fParameterInfos.size();
+				for (int i = fParameterInfos.size() - 1; i >= 0; i--) {
+					ParameterInfo info = (ParameterInfo) fParameterInfos.get(i);
+					if (info.isNewVarargs()) {
+						insertIndex = i;
+						break;
+					}
+				}
+				fParameterInfos.add(insertIndex, newInfo);
+				fListener.parameterAdded(newInfo);
+				fTableViewer.refresh();
+				fTableViewer.getControl().setFocus();
+				fTableViewer.setSelection(new StructuredSelection(newInfo),
+						true);
+				updateButtonsEnabledState();
+				editColumnOrNextPossible(0);
+			}
+		});
+		return button;
+	}
+

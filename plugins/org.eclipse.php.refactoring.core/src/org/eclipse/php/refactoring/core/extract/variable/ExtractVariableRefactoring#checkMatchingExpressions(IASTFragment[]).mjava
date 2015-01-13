@@ -1,0 +1,27 @@
+	/**
+	 * Look for non fatal errors /warning in the matching fragments
+	 * 
+	 * @param allMatches
+	 * @return RefactoringStatus
+	 */
+	private RefactoringStatus checkMatchingExpressions(IASTFragment[] allMatches) {
+		RefactoringStatus status = new RefactoringStatus();
+
+		IExpressionFragment selectedExpression = getSelectedExpression();
+
+		for (int i = 0; i < allMatches.length; i++) {
+			Expression associatedExpression = getExpressionFromFragment(
+					allMatches[i]).getAssociatedExpression();
+			boolean matchAppearsBeforeVariableDeclaration = createVariableDeclaration
+					&& (associatedExpression.getStart() < selectedExpression
+							.getStartPosition());
+			if (matchAppearsBeforeVariableDeclaration) {
+				status.merge(RefactoringStatus
+						.createErrorStatus(PhpRefactoringCoreMessages
+								.getString("ExtractVariableRefactoring.8"))); //$NON-NLS-1$
+			}
+		}
+
+		return status;
+	}
+

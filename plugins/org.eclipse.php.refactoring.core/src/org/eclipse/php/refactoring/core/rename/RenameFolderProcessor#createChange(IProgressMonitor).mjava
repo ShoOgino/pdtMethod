@@ -1,0 +1,34 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @seeorg.eclipse.ltk.core.refactoring.participants.RefactoringProcessor#
+	 * createChange(org.eclipse.core.runtime.IProgressMonitor)
+	 */
+	@Override
+	public Change createChange(IProgressMonitor pm) throws CoreException,
+			OperationCanceledException {
+
+		CompositeChange rootChange = new NoReverseCompositeChange(
+				RENAME_FOLDER_PROCESSOR_NAME);
+		rootChange.markAsSynthetic();
+
+		try {
+			pm.beginTask(PhpRefactoringCoreMessages
+					.getString("RenameFolderProcessor.RenamingFile"), 100); //$NON-NLS-1$
+
+			if (pm.isCanceled())
+				throw new OperationCanceledException();
+
+			if (getUpdateReferences()) {
+				createRenameTextChanges(pm, rootChange);
+				createRenameReferenceChange(pm, rootChange);
+				createRenameLibraryFolderChange(rootChange);
+			} else {
+				createFileRenameChange(rootChange);
+			}
+		} finally {
+			pm.done();
+		}
+		return rootChange;
+	}
+

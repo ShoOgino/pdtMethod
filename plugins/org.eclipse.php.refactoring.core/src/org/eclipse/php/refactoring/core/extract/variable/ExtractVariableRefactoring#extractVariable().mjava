@@ -1,0 +1,34 @@
+	/**
+	 * Handle the creation of changes for extracting a variable for the current
+	 * selection (not including the other occurrences)
+	 * 
+	 * @throws CoreException
+	 * @throws BadLocationException
+	 */
+	private void extractVariable() throws CoreException, BadLocationException {
+
+		IExpressionFragment selectedExpressionFragment = getSelectedExpression();
+
+		Expression selectedExpression = selectedExpressionFragment
+				.getAssociatedExpression(); // whole expression selected
+
+		if (shouldReplaceSelectedExpressionWithVariableDeclaration()) {
+			createVariableDeclaration = true;
+			ASTNode parentStatement = getParentStatement(selectedExpression);
+			// the new text that will replace the selected expression
+			String replacement = getFullVariableName()
+					+ " = " //$NON-NLS-1$
+					+ getASTNodeValue(getSelectedExpression()
+							.getAssociatedNode()) + ";"; //$NON-NLS-1$
+			replaceSelectedExpressionWithTempDeclaration(replacement);
+			// addReplaceExpressionWithTemp();
+		} else {
+			ISourceRange range = getReplaceOffsets(selectedExpressionFragment);
+
+			createAndInsertVariableDeclaration(selectedExpression, range);
+
+			addReplaceExpressionWithTemp();
+
+		}
+	}
+

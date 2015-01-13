@@ -1,0 +1,55 @@
+	/**
+	 * Look for semantic problems in the matching fragments
+	 * 
+	 * @param allMatches
+	 * @return RefactoringStatus
+	 */
+	private RefactoringStatus checkSemanticProblems(IASTFragment[] allMatches) {
+
+		boolean firstRighHandSideFlag = false;
+		boolean firstLeftHandSideFlag = false;
+		boolean hasSemanticProblem = false;
+
+		RefactoringStatus status = new RefactoringStatus();
+
+		// look for semantic problems.
+		// The user wants to extract $a. $a is assigned to variables twice,
+		// and between them it is assigned a new value
+		// warn from the following case:
+		// $a = 4;
+		// $c = $a;
+		// $a = 5;
+		// $b = $a;
+
+		ISourceRange region = null;
+		for (int i = 0; i < allMatches.length; i++) {
+			Expression associatedExpression = getExpressionFromFragment(
+					allMatches[i]).getAssociatedExpression();
+
+			if (isExpressionRightHandSide(associatedExpression)) {
+				if (!firstRighHandSideFlag) {
+					firstRighHandSideFlag = true;
+				} else if (firstLeftHandSideFlag) {
+					hasSemanticProblem = true;
+					break;
+				}
+			} else if (isExpressionLeftHandSide(associatedExpression)
+					&& !firstLeftHandSideFlag) {
+				if (firstRighHandSideFlag) {
+					firstLeftHandSideFlag = true;
+					region = new org.eclipse.dltk.corext.SourceRange(
+							associatedExpression.getStart(),
+							associatedExpression.getLength());
+				}
+			}
+		}
+
+		if (hasSemanticProblem) {
+			status.merge(RefactoringStatus.createWarningStatus(
+					PhpRefactoringCoreMessages
+							.getString("ExtractVariableRefactoring.7"), new SourceModuleSourceContext(sourceModule, region))); //$NON-NLS-1$
+		}
+
+		return status;
+	}
+

@@ -1,0 +1,44 @@
+	@Override
+	public Change createChange(IProgressMonitor pm) throws CoreException,
+			OperationCanceledException {
+		try {
+			pm.beginTask(PhpRefactoringCoreMessages
+					.getString("ExtractVariableRefactoring.28"), 1); //$NON-NLS-1$
+
+			MultiTextEdit root = new MultiTextEdit();
+
+			rootChange = new CompositeChange(CHANGE_DESCRIPTION);
+			rootChange.markAsSynthetic();
+
+			textFileChange = new ProgramDocumentChange(CHANGE_DESCRIPTION,
+					document, astRoot);
+			textFileChange.setEdit(root);
+			textFileChange.setTextType("php"); //$NON-NLS-1$
+			rootChange.add(textFileChange);
+
+			fAst = getSelectedExpression().getAssociatedNode().getAST();
+			fRewriter = ASTRewrite.create(fAst);
+
+			try {
+				extractVariable();
+			} catch (CoreException exception) {
+				RefactoringPlugin.logException(PhpRefactoringCoreMessages
+						.getString("ExtractVariableRefactoring.29"), exception); //$NON-NLS-1$
+			} catch (BadLocationException e) {
+				RefactoringPlugin.logException(PhpRefactoringCoreMessages
+						.getString("ExtractVariableRefactoring.30"), e); //$NON-NLS-1$
+			}
+
+			// handle matching occurrences
+			if (fReplaceAllOccurrences) {
+				replaceOccurances();
+			}
+			TextEdit edit = fRewriter.rewriteAST(document, null);
+			root.addChild(edit);
+
+		} finally {
+			pm.done();
+		}
+		return rootChange;
+	}
+

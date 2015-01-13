@@ -1,0 +1,33 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @seeorg.eclipse.ltk.core.refactoring.participants.RefactoringProcessor#
+	 * checkFinalConditions(org.eclipse.core.runtime.IProgressMonitor,
+	 * org.eclipse.ltk.core.refactoring.participants.CheckConditionsContext)
+	 */
+	@Override
+	public RefactoringStatus checkFinalConditions(IProgressMonitor pm,
+			CheckConditionsContext context) throws CoreException,
+			OperationCanceledException {
+
+		RefactoringStatus result = RefactoringStatus.create(Status.OK_STATUS);
+
+		final SubProgressMonitor subProgressMonitor = new SubProgressMonitor(
+				pm, 100);
+		subProgressMonitor
+				.beginTask(
+						PhpRefactoringCoreMessages
+								.getString("RenameProcessorBase.1"), participantFiles.size()); //$NON-NLS-1$
+
+		for (Entry<IFile, Program> entry : participantFiles.entrySet()) {
+			final IFile key = entry.getKey();
+			final Program program = entry.getValue();
+
+			RefactoringStatus status = getRefactoringStatus(key, program);
+			result.merge(status);
+			subProgressMonitor.worked(1);
+		}
+		subProgressMonitor.done();
+		return result;
+	}
+

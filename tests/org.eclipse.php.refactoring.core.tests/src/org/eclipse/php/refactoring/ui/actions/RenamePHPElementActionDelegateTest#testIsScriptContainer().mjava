@@ -1,0 +1,38 @@
+	public void testIsScriptContainer() {
+		RenamePHPElementActionDelegateProxy action = new RenamePHPElementActionDelegateProxy();
+
+		// script project case
+		final IScriptProject scriptProject = DLTKCore.create(project1
+				.getProject());
+		assertTrue(action.isScriptContainer(scriptProject));
+
+		// script fragment case
+		IPath fPath = new Path("/project1/src");
+		IFolder folder = project1.getFolder(fPath);
+		IModelElement element = scriptProject.getProjectFragment(folder);
+		assertTrue(action.isScriptContainer(element));
+
+		// script folder case
+		fPath = new Path("/project1/src/src1");
+		folder = project1.getFolder(fPath);
+		element = DLTKCore.create(folder);
+		assertTrue(action.isScriptContainer(element));
+
+		// resource folder case
+		folder = project1.getFolder("src2");
+		assertFalse(action.isScriptContainer(folder));
+
+		// resource file case
+		IFile file = project1.getFile("src/src1/test1.php");
+		assertFalse(action.isScriptContainer(folder));
+
+		// IModelElement case
+		Program program = null;
+		try {
+			program = RefactoringUtility.getProgramForFile(file);
+		} catch (Exception e) {
+			fail(e.getMessage());
+		}
+		assertFalse(action.isScriptContainer(program));
+	}
+

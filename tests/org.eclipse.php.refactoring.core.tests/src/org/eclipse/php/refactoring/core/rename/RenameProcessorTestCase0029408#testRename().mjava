@@ -1,0 +1,31 @@
+	public void testRename() {
+
+		Program program = createProgram(file);
+
+		assertNotNull(program);
+
+		int start = 117;
+		ASTNode selectedNode = locateNode(program, start, 0);
+		assertNotNull(selectedNode);
+
+		RenameClassProcessor processor = new RenameClassProcessor(file,
+				selectedNode);
+
+		processor.setNewElementName("MyClassNewName");
+		processor.setUpdateTextualMatches(true);
+
+		checkInitCondition(processor);
+
+		performChange(processor);
+
+		try {
+			String content = FileUtils.getContents(file);
+			assertEquals(
+					"<?php class MyClassNewName{const constant = 'constant value';function showCons1tant() {echo self::constant;}}$class = new MyClassNewName ();$class->showConstant ();echo $class::constant;?>",
+					content);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+

@@ -1,0 +1,58 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.eclipse.php.refactoring.core.rename.AbstractRenameProcessor#
+	 * checkInitialConditions(org.eclipse.core.runtime.IProgressMonitor)
+	 */
+	public RefactoringStatus checkInitialConditions(IProgressMonitor pm)
+			throws OperationCanceledException {
+		RefactoringStatus status = new RefactoringStatus();
+
+		if (!checkReadOnlyAndNull(resource)) {
+			status.merge(RefactoringStatus.createFatalErrorStatus(NLS.bind(
+					PhpRefactoringCoreMessages
+							.getString("RenameFileProcessor.7"), resource))); //$NON-NLS-1$
+		}
+		try {
+			boolean hasExternalDependencies = false;
+
+			participantFiles = new HashMap<IFile, Program>();
+
+			if (resource instanceof IContainer) {
+
+				IContainer container = (IContainer) resource;
+
+				Set<IFile> phpFilesSet = new HashSet<IFile>();
+				MoveUtils.getAllPHPFiles(new IResource[] { container },
+						phpFilesSet);
+				for (IFile file : phpFilesSet) {
+					ISourceModule sourceModule = DLTKCore
+							.createSourceModuleFrom(file);
+					IProject project = file.getProject();
+					PHPVersion version = ProjectOptions.getPhpVersion(project);
+
+					ASTParser newParser = ASTParser.newParser(version,
+							sourceModule);
+					Program program = newParser.createAST(null);
+					participantFiles.put(file, program);
+
+					collectReferences(program, pm);
+				}
+			}
+
+			if (hasExternalDependencies) {
+				final String message = PhpRefactoringCoreMessages
+						.getString("AbstractRenameProcessor.1"); //$NON-NLS-1$
+				return RefactoringStatus.createWarningStatus(message);
+			}
+
+			return new RefactoringStatus();
+		} catch (Exception e) {
+			final String exceptionMessage = e.getMessage();
+			final String formattedString = REFACTORING_ACTION_INTERNAL_ERROR
+					.concat(exceptionMessage == null ? "" : exceptionMessage); //$NON-NLS-1$
+			return RefactoringStatus.createFatalErrorStatus(formattedString);
+
+		}
+	}
+

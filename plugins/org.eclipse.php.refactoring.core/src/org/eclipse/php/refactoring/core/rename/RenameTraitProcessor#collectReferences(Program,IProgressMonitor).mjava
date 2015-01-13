@@ -1,0 +1,47 @@
+	@Override
+	protected void collectReferences(Program program, IProgressMonitor pm) {
+		final HashSet<IResource> list = new HashSet<IResource>();
+
+		IScriptProject project = this.identifier.getProgramRoot()
+				.getSourceModule().getScriptProject();
+
+		IDLTKSearchScope scope = SearchEngine.createSearchScope(project,
+				getSearchFlags(false));
+
+		SearchPattern pattern = null;
+		int matchMode = SearchPattern.R_EXACT_MATCH
+				| SearchPattern.R_ERASURE_MATCH;
+
+		SearchEngine engine = new SearchEngine();
+
+		pattern = SearchPattern.createPattern(getCurrentElementName(),
+				IDLTKSearchConstants.TYPE,
+				IDLTKSearchConstants.ALL_OCCURRENCES, matchMode,
+				PHPLanguageToolkit.getDefault());
+		try {
+			engine.search(pattern, new SearchParticipant[] { SearchEngine
+					.getDefaultSearchParticipant() }, scope,
+					new SearchRequestor() {
+						@Override
+						public void acceptSearchMatch(SearchMatch match)
+								throws CoreException {
+							IModelElement element = (IModelElement) match
+									.getElement();
+							list.add(element.getResource());
+						}
+					}, new NullProgressMonitor());
+		} catch (CoreException e) {
+		}
+
+		for (Iterator<IResource> it = list.iterator(); it.hasNext();) {
+			IResource file = it.next();
+			if (file instanceof IFile) {
+				try {
+					participantFiles.put((IFile) file,
+							RefactoringUtility.getProgramForFile((IFile) file));
+				} catch (Exception e) {
+				}
+			}
+		}
+	}
+

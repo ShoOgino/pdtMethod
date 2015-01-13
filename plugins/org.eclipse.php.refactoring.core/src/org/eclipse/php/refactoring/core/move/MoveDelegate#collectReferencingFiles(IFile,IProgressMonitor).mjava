@@ -1,0 +1,24 @@
+	private Map<IFile, Program> collectReferencingFiles(IFile sourceFile,
+			IProgressMonitor pm) {
+		ISourceModule sourceModule = DLTKCore
+				.createSourceModuleFrom(sourceFile);
+
+		Map<IFile, Program> participantFiles = new HashMap<IFile, Program>();
+
+		Collection<Node> references = MoveUtils
+				.getReferencingFiles(sourceModule);
+		if (references != null) {
+			for (Iterator<Node> it = references.iterator(); it.hasNext();) {
+				Node node = it.next();
+				IFile file = (IFile) node.getFile().getResource();
+				try {
+					participantFiles.put(file,
+							RefactoringUtility.getProgramForFile(file));
+				} catch (Exception e) {
+				}
+			}
+		}
+
+		return participantFiles;
+	}
+

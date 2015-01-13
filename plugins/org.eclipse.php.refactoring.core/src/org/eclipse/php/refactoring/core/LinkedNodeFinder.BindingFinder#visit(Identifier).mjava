@@ -1,0 +1,21 @@
+		public boolean visit(Identifier node) {
+			IBinding binding = node.resolveBinding();
+			if (binding == null) {
+				return false;
+			}
+
+			if (fBinding.equals(binding)) {
+				fResult.add(node);
+			} else if (binding.getKind() != fBinding.getKind()) {
+				return false;
+			} else if (binding.getKind() == IBinding.METHOD) {
+				IMethodBinding curr = (IMethodBinding) binding;
+				IMethodBinding methodBinding = (IMethodBinding) fBinding;
+				if (methodBinding.overrides(curr)
+						|| curr.overrides(methodBinding)) {
+					fResult.add(node);
+				}
+			}
+			return false;
+		}
+

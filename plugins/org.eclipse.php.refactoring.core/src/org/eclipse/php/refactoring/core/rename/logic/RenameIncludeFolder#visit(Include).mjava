@@ -1,0 +1,69 @@
+	public boolean visit(Include include) {
+		if (updateReference) {
+			Expression exp = include.getExpression();
+			Scalar scalar = null;
+			if (exp instanceof ParenthesisExpression) {
+				Expression object = ((ParenthesisExpression) exp)
+						.getExpression();
+				if (object instanceof Scalar) {
+					scalar = (Scalar) object;
+				} else {
+					// Ignore other cases.
+				}
+			}
+			if (exp instanceof Scalar) {
+				scalar = (Scalar) exp;
+			}
+			if (scalar == null) {
+				return super.visit(include);
+			}
+
+			if (isScalarNeedChange(scalar)) {
+				String includeString = scalar.getStringValue();
+				// remove "" or ''
+				int len = 0;
+				if (includeString.startsWith("\"") || includeString.startsWith("'")) { //$NON-NLS-1$ //$NON-NLS-2$
+					includeString = includeString.substring(1,
+							includeString.length() - 1);
+					len = 1;
+				}
+
+				if (includeString.startsWith(".")) { //$NON-NLS-1$
+					IPath path = new Path(includeString);
+					if (!path.isAbsolute()) {
+						path = changedFile.getParent().getFullPath()
+								.append(path);
+					}
+
+					String lastString = path.makeRelativeTo(folderPath)
+							.toString();
+					len = len + includeString.indexOf(lastString)
+							- oldName.length() - 1;
+
+					addChange(scalar.getStart() + len,
+							PhpRefactoringCoreMessages
+									.getString("RenameIncludeAndClassName.1")); //$NON-NLS-1$
+				} else {
+
+					IPath path = getPath(includeString);
+					String lastString = path.makeRelativeTo(folderPath)
+							.toString();
+
+					// if no change is required - skip
+					if (!lastString.equalsIgnoreCase(includeString)) {
+						len = len + includeString.indexOf(lastString)
+								- oldName.length() - 1;
+
+						addChange(
+								scalar.getStart() + len,
+								PhpRefactoringCoreMessages
+										.getString("RenameIncludeAndClassName.1")); //$NON-NLS-1$
+					}
+				}
+
+			}
+		}
+
+		return false;
+	}
+

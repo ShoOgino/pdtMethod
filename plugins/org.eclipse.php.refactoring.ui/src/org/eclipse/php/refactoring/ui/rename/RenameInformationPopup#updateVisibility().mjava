@@ -1,0 +1,32 @@
+	private void updateVisibility() {
+		if (fPopup != null && !fPopup.isDisposed() && fDelayJobFinished) {
+			boolean visible = false;
+			// TODO: Check for visibility of linked position, not whether popup
+			// is outside of editor?
+			if (fRenameLinkedMode.isCaretInLinkedPosition()) {
+				StyledText textWidget = fEditor.getTextViewer().getTextWidget();
+				Rectangle eArea = Geometry.toDisplay(textWidget,
+						textWidget.getClientArea());
+				Rectangle pBounds = fPopup.getBounds();
+				pBounds.x -= GAP;
+				pBounds.y -= GAP;
+				pBounds.width += 2 * GAP;
+				pBounds.height += 2 * GAP;
+				if (eArea.intersects(pBounds)) {
+					visible = true;
+				}
+			}
+			if (visible && !fPopup.isVisible()) {
+				ISourceViewer viewer = fEditor.getTextViewer();
+				if (viewer instanceof IWidgetTokenOwnerExtension) {
+					IWidgetTokenOwnerExtension widgetTokenOwnerExtension = (IWidgetTokenOwnerExtension) viewer;
+					widgetTokenOwnerExtension.requestWidgetToken(this,
+							WIDGET_PRIORITY);
+				}
+			} else if (!visible && fPopup.isVisible()) {
+				releaseWidgetToken();
+			}
+			fPopup.setVisible(visible);
+		}
+	}
+

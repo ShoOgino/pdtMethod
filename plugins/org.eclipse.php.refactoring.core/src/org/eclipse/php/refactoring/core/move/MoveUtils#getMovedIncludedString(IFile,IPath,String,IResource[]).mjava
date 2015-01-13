@@ -1,0 +1,70 @@
+	/**
+	 * For a file that is being moved, get the string of an include statement in
+	 * it and returns what the new include string should be based on the new
+	 * location
+	 * 
+	 * @param sourceFile
+	 * @param destinationDirectoryPath
+	 * @param value
+	 * @param selectedResource
+	 * @return the new include string
+	 */
+	public static String getMovedIncludedString(IFile sourceFile,
+			IPath destinationDirectoryPath, String value,
+			IResource[] selectedResource) {
+		if (!isRelativeAndExistingResource(sourceFile.getParent(), value)) {
+			return value;
+		}
+
+		IPath projectPath = sourceFile.getProject().getFullPath();
+		// moving in same project
+		if (projectPath.isPrefixOf(destinationDirectoryPath)) {
+
+			IPath destPath = destinationDirectoryPath;
+			String destFile = sourceFile.getName();
+			for (IResource resouce : selectedResource) {
+				if (resouce instanceof IFolder
+						&& resouce.getProjectRelativePath().isPrefixOf(
+								sourceFile.getProjectRelativePath())) {
+					// if the parent folder is moving, append the folder name to
+					// the fileName.
+					destFile = resouce.getName() + "/" + destFile; //$NON-NLS-1$
+					break;
+				}
+			}
+
+			// remove the fileName;
+			destPath = destPath.append(destFile).removeLastSegments(1);
+
+			IPath includingPath = new Path(value);
+			IPath destIncludedFilePath = sourceFile.getParent().getFullPath()
+					.append(value);
+
+			for (IResource resouce : selectedResource) {
+				if (resouce instanceof IFile
+						&& resouce.getFullPath().equals(destIncludedFilePath)) {
+					// if the parent folder is moving, append the folder name to
+					// the fileName.
+					destIncludedFilePath = destPath.append(resouce.getName());
+					break;
+				}
+			}
+
+			String fileName = includingPath.lastSegment();
+			for (IResource resouce : selectedResource) {
+				if (resouce instanceof IFolder
+						&& resouce.getProjectRelativePath().isPrefixOf(
+								includingPath)) {
+					destIncludedFilePath = destinationDirectoryPath.append(
+							resouce.getName()).append(fileName);
+					break;
+				}
+			}
+
+			return destIncludedFilePath.makeRelativeTo(destPath).toString();
+
+		} else {
+			return value;
+		}
+	}
+

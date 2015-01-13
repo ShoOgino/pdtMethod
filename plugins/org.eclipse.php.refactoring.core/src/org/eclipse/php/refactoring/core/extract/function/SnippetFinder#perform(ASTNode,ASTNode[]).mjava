@@ -1,0 +1,20 @@
+	public static Match[] perform(ASTNode start, ASTNode[] snippet) {
+		Assert.isTrue(start instanceof ClassDeclaration
+				|| start instanceof FunctionDeclaration
+				|| start instanceof Program);
+		SnippetFinder finder = new SnippetFinder(snippet);
+		start.accept(finder);
+		for (Iterator iter = finder.fResult.iterator(); iter.hasNext();) {
+			Match match = (Match) iter.next();
+			ASTNode[] nodes = match.getNodes();
+			// doesn't match if the candidate is the left hand side of an
+			// assignment and the snippet consists of a single node.
+			// Otherwise y= i; i= z; results in y= e(); e()= z;
+			if (nodes.length == 1 && isLeftHandSideOfAssignment(nodes[0])) {
+				iter.remove();
+			}
+		}
+		return (Match[]) finder.fResult
+				.toArray(new Match[finder.fResult.size()]);
+	}
+

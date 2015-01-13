@@ -1,0 +1,17 @@
+	public static RefactoringStatus validateModifiesFiles(
+			IResource[] iResources, Object context) {
+		RefactoringStatus result = new RefactoringStatus();
+		IStatus status = Resources.checkInSync(iResources);
+		if (!status.isOK())
+			result.merge(RefactoringStatus.create(status));
+		status = Resources.makeCommittable(iResources, context);
+		if (!status.isOK()) {
+			result.merge(RefactoringStatus.create(status));
+			if (!result.hasFatalError()) {
+				result.addFatalError(PhpRefactoringCoreMessages
+						.getString("ExtractVariableRefactoring.1")); //$NON-NLS-1$
+			}
+		}
+		return result;
+	}
+

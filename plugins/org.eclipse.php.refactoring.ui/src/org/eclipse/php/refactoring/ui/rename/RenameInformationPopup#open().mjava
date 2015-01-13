@@ -1,0 +1,69 @@
+	public void open() {
+		// Must cache here, since editor context is not available in menu from
+		// popup shell:
+		fOpenDialogBinding = getOpenDialogBinding();
+
+		Shell workbenchShell = fEditor.getSite().getShell();
+		final Display display = workbenchShell.getDisplay();
+
+		fPopup = new Shell(workbenchShell, SWT.ON_TOP | SWT.NO_TRIM | SWT.TOOL);
+		fPopupLayout = new GridLayout(2, false);
+		fPopupLayout.marginWidth = 1;
+		fPopupLayout.marginHeight = 1;
+		fPopupLayout.marginLeft = 4;
+		fPopupLayout.horizontalSpacing = 0;
+		fPopup.setLayout(fPopupLayout);
+
+		createContent(fPopup);
+		updatePopupLocation(true);
+		new PopupVisibilityManager().start();
+
+		// Leave linked mode when popup loses focus
+		// (except when focus goes back to workbench window or menu is open):
+		fPopup.addShellListener(new ShellAdapter() {
+			public void shellDeactivated(ShellEvent e) {
+				if (fIsMenuUp)
+					return;
+
+				final Shell editorShell = fEditor.getSite().getShell();
+				display.asyncExec(new Runnable() {
+					// post to UI thread since editor shell only gets activated
+					// after popup has lost focus
+					public void run() {
+						Shell activeShell = display.getActiveShell();
+						if (activeShell != editorShell) {
+							fRenameLinkedMode.cancel();
+						}
+					}
+				});
+			}
+		});
+
+		if (!CARBON) { // carbon draws its own border...
+			fPopup.addPaintListener(new PaintListener() {
+				public void paintControl(PaintEvent pe) {
+					pe.gc.drawPolygon(getPolygon(true));
+				}
+			});
+		}
+
+		// fPopup.moveBelow(null); // make sure hovers are on top of the info
+		// popup
+		// XXX workaround for
+		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=170774
+		// fPopup.moveBelow(workbenchShell.getShells()[0]);
+
+		UIJob delayJob = new UIJob(display, Messages.RenameInformationPopup_1) {
+			public IStatus runInUIThread(IProgressMonitor monitor) {
+				fDelayJobFinished = true;
+				if (fPopup != null && !fPopup.isDisposed()) {
+					updateVisibility();
+				}
+				return Status.OK_STATUS;
+			}
+		};
+		delayJob.setSystem(true);
+		delayJob.setPriority(Job.INTERACTIVE);
+		delayJob.schedule(POPUP_VISIBILITY_DELAY);
+	}
+

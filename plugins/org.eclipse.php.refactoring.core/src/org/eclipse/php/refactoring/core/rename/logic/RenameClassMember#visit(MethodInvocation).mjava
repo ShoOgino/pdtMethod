@@ -1,0 +1,29 @@
+	/**
+	 * Rename foo() on: $a->foo();
+	 */
+	public boolean visit(MethodInvocation methodInvocation) {
+		if (isChangeMethod() && methodInvocation.getDispatcher() != null) {
+			ITypeBinding declClass = methodInvocation.getDispatcher()
+					.resolveTypeBinding();
+			if (declClass != null) {
+				if (declClass.equals(type)
+						|| traitEqual(declClass, methodInvocation.getMethod()
+								.getFunctionName().getName())) {
+					handleDispatch(methodInvocation);
+				} else if (declClass.isSubTypeCompatible(type)
+						|| type.isSubTypeCompatible(declClass)) {
+					IMethodBinding methodBinding = methodInvocation
+							.resolveMethodBinding();
+					if (methodBinding != null
+							&& methodBinding.getModifiers() != Modifiers.AccPrivate) {
+						handleDispatch(methodInvocation);
+					}
+				} else if (traitInSuperEqual(declClass, methodInvocation
+						.getMethod().getFunctionName().getName())) {
+					handleDispatch(methodInvocation);
+				}
+			}
+		}
+		return super.visit(methodInvocation);
+	}
+

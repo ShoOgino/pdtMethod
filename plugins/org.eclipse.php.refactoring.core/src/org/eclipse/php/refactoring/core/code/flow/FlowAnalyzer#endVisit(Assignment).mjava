@@ -1,0 +1,22 @@
+	public void endVisit(Assignment node) {
+		if (skipNode(node))
+			return;
+		FlowInfo lhs = getFlowInfo(node.getLeftHandSide());
+		FlowInfo rhs = getFlowInfo(node.getRightHandSide());
+		if (lhs instanceof LocalFlowInfo) {
+			LocalFlowInfo llhs = (LocalFlowInfo) lhs;
+			llhs.setWriteAccess(fFlowContext);
+			if (node.getOperator() != Assignment.OP_EQUAL) {
+				GenericSequentialFlowInfo tmp = createSequential();
+				tmp.merge(new LocalFlowInfo(llhs, FlowInfo.READ, fFlowContext),
+						fFlowContext);
+				tmp.merge(rhs, fFlowContext);
+				rhs = tmp;
+			}
+		}
+		GenericSequentialFlowInfo info = createSequential(node);
+		// first process right and side and then left hand side.
+		info.merge(rhs, fFlowContext);
+		info.merge(lhs, fFlowContext);
+	}
+

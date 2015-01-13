@@ -1,0 +1,25 @@
+	private boolean isScalarNeedChange(Scalar scalar, final String stringValue) {
+		String value = getUnQuotedString(stringValue);
+		IPath includePath = new Path(value);
+		if (includePath.toString().startsWith("..")) { //$NON-NLS-1$
+			includePath = participateFile.getParent().getFullPath()
+					.append(includePath)
+					.makeRelativeTo(file.getProject().getFullPath());
+		}
+
+		IPath fileDirectory = file.getParent().getProjectRelativePath();
+		if (isIncluded) {
+			return true;
+		}
+
+		if (fileDirectory.isPrefixOf(includePath)) {
+			return includePath.equals(file.getProjectRelativePath());
+		} else {
+			IPath fullPath = participateFile.getParent()
+					.getProjectRelativePath().append(includePath);
+
+			return fullPath.equals(file.getProjectRelativePath());
+		}
+
+	}
+

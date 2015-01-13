@@ -1,0 +1,19 @@
+	protected void collectBrakePoint(IResource resource) throws CoreException {
+		fBreakpoints = new BucketMap<IResource, IBreakpoint>(6);
+		fBreakpointAttributes = new HashMap<IBreakpoint, Map<String, Object>>(6);
+		final IBreakpointManager breakpointManager = DebugPlugin.getDefault()
+				.getBreakpointManager();
+		IMarker[] markers = resource.findMarkers(
+				IBreakpoint.LINE_BREAKPOINT_MARKER, true,
+				IResource.DEPTH_INFINITE);
+		for (IMarker marker : markers) {
+			IResource markerResource = marker.getResource();
+			IBreakpoint breakpoint = breakpointManager.getBreakpoint(marker);
+			if (breakpoint != null) {
+				fBreakpoints.add(markerResource, breakpoint);
+				fBreakpointAttributes.put(breakpoint, breakpoint.getMarker()
+						.getAttributes());
+			}
+		}
+	}
+

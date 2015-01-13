@@ -1,0 +1,50 @@
+	/**
+	 * Adds the text and move changes to the root change This change is the a
+	 * more global change, it includes both the file(s) move, the update of it's
+	 * includes and update all the references, all the files that have includes
+	 * to the moved file.
+	 * 
+	 * @param pm
+	 *            - progress monitor
+	 * @param rootChange
+	 *            - the root change that the new changes are added to
+	 * @return the root change after the additions
+	 */
+	private Change createReferenceUpdatingMoveChange(IProgressMonitor pm,
+			CompositeChange rootChange) throws CoreException,
+			OperationCanceledException {
+		try {
+			pm.beginTask(
+					PhpRefactoringCoreMessages.getString("MoveDelegate.0"), 100); //$NON-NLS-1$
+
+			IResource[] sourceResources = fProcessor.getSourceSelection();
+
+			createTextChanges(new SubProgressMonitor(pm, 80), rootChange,
+					phpFiles, sourceResources);
+			pm.worked(80);
+
+			// update configuration file.
+			createRunConfigurationChange(sourceResources, rootChange);
+
+			// There is a tricky thing here.
+			// The resource move must be happened after text change, and run
+			// configuration changes(this is because the share file under the
+			// project)
+			// but before the other changes, e.g. break point and etc.
+			createMoveChange(sourceResources, rootChange);
+
+			// update associated break point.
+			createBreakPointChange(sourceResources, rootChange);
+
+			createBuildPathChange(sourceResources, rootChange);
+
+			createRenameLibraryFolderChange(sourceResources, rootChange);
+
+			pm.worked(20);
+
+		} finally {
+			pm.done();
+		}
+		return rootChange;
+	}
+

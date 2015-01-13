@@ -1,0 +1,32 @@
+	/**
+	 * Based on the user selection, recursively populates a set of all of the
+	 * php files
+	 * 
+	 * @param sourceResources
+	 * @param phpFilesSet
+	 */
+	public static void getAllPHPFiles(IResource[] sourceResources,
+			Set<IFile> phpFilesSet) {
+
+		for (IResource current : sourceResources) {
+			if (current instanceof IFolder) {
+				IResource[] fldChildrens;
+				IFolder fld = (IFolder) current;
+				try {
+					fldChildrens = fld.members();
+				} catch (CoreException e) {
+					RefactoringPlugin
+							.logException(
+									"Failed getting folder children in move operation", e); //$NON-NLS-1$
+					continue;
+				}
+				getAllPHPFiles(fldChildrens, phpFilesSet);
+			} else if (current instanceof IFile) {
+				IFile file = (IFile) current;
+				if (PHPToolkitUtil.isPhpFile(file)) {
+					phpFilesSet.add(file);
+				}
+			}
+		}
+	}
+

@@ -1,0 +1,36 @@
+	/**
+	 * Tries to get the shared AST from the ASTProvider. If the shared AST is
+	 * not available, parses the type root with a RefactoringASTParser that uses
+	 * settings similar to the ASTProvider.
+	 * 
+	 * @param typeRoot
+	 *            the type root
+	 * @param resolveBindings
+	 *            whether bindings are to be resolved if a new AST needs to be
+	 *            created
+	 * @param pm
+	 *            an {@link IProgressMonitor}, or <code>null</code>
+	 * @return the parsed Program
+	 * @throws Exception
+	 */
+	public static Program parseWithASTProvider(ISourceModule typeRoot,
+			boolean resolveBindings, IProgressMonitor pm) throws Exception {
+		Program cuNode = null;
+		try {
+			cuNode = SharedASTProvider.getAST(typeRoot,
+					SharedASTProvider.WAIT_ACTIVE_ONLY, pm);
+		} catch (ModelException e) {
+			RefactoringUIPlugin.log(e);
+		} catch (IOException e) {
+			RefactoringUIPlugin.log(e);
+		}
+		if (cuNode != null) {
+			return cuNode;
+		} else {
+			return new RefactoringASTParser(ASTProvider.SHARED_AST_LEVEL, true)
+					.parse(typeRoot, null, resolveBindings,
+							ASTProvider.SHARED_AST_STATEMENT_RECOVERY,
+							ASTProvider.SHARED_BINDING_RECOVERY, pm);
+		}
+	}
+

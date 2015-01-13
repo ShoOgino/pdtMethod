@@ -1,0 +1,105 @@
+	public static String getMovedIncludingString(IFile sourceFile,
+			IPath oldDirectoryPath, IPath destinationDirectoryPath,
+			IFile includingFile, String value, IResource[] selectedResource) {
+		IPath projectPath = sourceFile.getProject().getFullPath();
+
+		boolean isInSaveProject = false;
+		if (includingFile.getProject() == sourceFile.getProject()) {
+			isInSaveProject = true;
+		}
+		// moving in same project
+		if (projectPath.isPrefixOf(destinationDirectoryPath)) {
+			IPath includePath = new Path(value);
+
+			String fileName = value;
+			if (includePath.segmentCount() > 1) {
+				fileName = includePath.lastSegment();
+				// includePath = includePath.removeLastSegments(1);
+			}
+
+			IPath includeFilePath = includingFile.getParent()
+					.getProjectRelativePath().append(includePath);
+
+			// Check if the parent folder is moving.
+			for (IResource resouce : selectedResource) {
+				if (resouce instanceof IFolder
+						&& ((resouce.getProjectRelativePath()
+								.isPrefixOf(includePath)) || resouce
+								.getProjectRelativePath().isPrefixOf(
+										includeFilePath))
+
+				) {
+					// if the parent folder is moving, append the folder name to
+					// the fileName.
+					fileName = resouce.getName() + "/" + fileName; //$NON-NLS-1$
+					break;
+				}
+			}
+
+			IPath path = destinationDirectoryPath.append(fileName);
+			IPath includingPath = includingFile.getParent().getFullPath();
+
+			// Check if the including file is moving.
+			for (IResource resouce : selectedResource) {
+				// the folder of including file is moving
+				if (resouce.getProjectRelativePath().isPrefixOf(includingPath)) {
+					// if the parent folder is moving, append the folder name to
+					// the fileName.
+					includePath = destinationDirectoryPath.append(includePath
+							.makeRelativeTo(resouce.getProjectRelativePath()));
+					break;
+				}
+
+				// the including file is moving
+				if (resouce.equals(includingFile)) {
+					// if the parent folder is moving, append the folder name to
+					// the fileName.
+					includePath = destinationDirectoryPath;
+					break;
+				}
+			}
+
+			if (value.startsWith("..") || value.startsWith(".")) { //$NON-NLS-1$ //$NON-NLS-2$
+				return path.makeRelativeTo(includingPath).toOSString()
+						.replaceAll("\\\\", "/"); //$NON-NLS-1$ //$NON-NLS-2$
+			} else {
+				if (isInSaveProject) {
+					return path.makeRelativeTo(includingPath).toOSString()
+							.replaceAll("\\\\", "/"); //$NON-NLS-1$ //$NON-NLS-2$
+				} else {
+					return path.makeRelativeTo(projectPath).toOSString()
+							.replaceAll("\\\\", "/"); //$NON-NLS-1$ //$NON-NLS-2$
+				}
+			}
+
+			// return path.makeRelativeTo(includingPath).toString();
+
+		} else {
+			IPath oldDirectory = oldDirectoryPath.removeFirstSegments(1);
+			String fileName = value;
+			IPath includePath = new Path(value);
+			if (includePath.segmentCount() > 1) {
+				fileName = includePath.lastSegment();
+			}
+
+			IPath path = destinationDirectoryPath.append(oldDirectory).append(
+					fileName);
+			IPath destPath = destinationDirectoryPath;
+
+			if (destPath.isPrefixOf(path)) {
+				if (value.startsWith("..") || value.startsWith(".")) { //$NON-NLS-1$ //$NON-NLS-2$
+					IPath includingPath = includingFile.getParent()
+							.getProjectRelativePath();
+					return path.makeRelativeTo(destPath.append(includingPath))
+							.toString().replaceAll("\\\\", "/"); //$NON-NLS-1$ //$NON-NLS-2$
+				} else {
+					return path.makeRelativeTo(destPath).toOSString()
+							.replaceAll("\\\\", "/"); //$NON-NLS-1$ //$NON-NLS-2$
+				}
+			}
+
+			return path.removeFirstSegments(1).toOSString();
+		}
+
+	}
+

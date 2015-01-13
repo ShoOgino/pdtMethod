@@ -1,0 +1,35 @@
+	/**
+	 * Find all nodes connected to the given name node. If the node has a
+	 * binding then all nodes connected to this binding are returned. If the
+	 * node has no binding, then all nodes that also miss a binding and have the
+	 * same name are returned.
+	 * 
+	 * @param root
+	 *            The root of the AST tree to search
+	 * @param name
+	 *            The node to find linked nodes for
+	 * @return Return
+	 */
+	public static OccurrenceLocation[] findByNode(Program root, ASTNode node) {
+		ASTNode selectedNode = node;
+		if (selectedNode != null && selectedNode.getType() == ASTNode.VARIABLE) {
+			final Expression name = ((Variable) selectedNode).getName();
+			if (name instanceof Identifier) {
+				selectedNode = name;
+			}
+		}
+
+		OccurrenceLocation[] locations = null;
+		int type = PhpElementConciliator.concile(selectedNode);
+
+		IOccurrencesFinder finder = OccurrencesFinderFactory
+				.getOccurrencesFinder(type);
+		if (finder != null) {
+			if (finder.initialize(root, selectedNode) == null) {
+				locations = finder.getOccurrences();
+			}
+		}
+
+		return locations;
+	}
+

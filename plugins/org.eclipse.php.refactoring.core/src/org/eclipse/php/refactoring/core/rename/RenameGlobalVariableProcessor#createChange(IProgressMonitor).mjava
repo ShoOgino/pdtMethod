@@ -1,0 +1,51 @@
+	/**
+	 * Derive the change
+	 */
+	public Change createChange(IProgressMonitor pm) throws CoreException,
+			OperationCanceledException {
+		CompositeChange rootChange = new CompositeChange(
+				PhpRefactoringCoreMessages
+						.getString("RenameGlobalVariableProcessor.4")); //$NON-NLS-1$
+		rootChange.markAsSynthetic();
+		try {
+			pm.beginTask(RenameGlobalVariableProcessor.RENAME_IS_PROCESSING,
+					participantFiles.size());
+			pm.setTaskName(RenameGlobalVariableProcessor.CREATING_MODIFICATIONS_LABEL);
+
+			if (pm.isCanceled())
+				throw new OperationCanceledException();
+
+			// get target parameters
+			final String newElementName = getNewElementName();
+
+			// go over the files and check for global variable usage
+			for (Entry<IFile, Program> entry : participantFiles.entrySet()) {
+				final IFile file = entry.getKey();
+				final Program program = entry.getValue();
+				final RenameGlobalVariable rename = new RenameGlobalVariable(
+						file, getIdentifierName(), newElementName,
+						getUpdateTextualMatches());
+
+				// aggregate the changes identifiers
+				program.accept(rename);
+
+				if (pm.isCanceled())
+					throw new OperationCanceledException();
+
+				pm.worked(1);
+
+				if (rename.hasChanges()) {
+					// create the change
+					TextFileChange change = acquireChange(file, program);
+					rename.updateChange(change);
+					rootChange.add(change);
+				}
+			}
+
+			return rootChange;
+
+		} finally {
+			pm.done();
+		}
+	}
+

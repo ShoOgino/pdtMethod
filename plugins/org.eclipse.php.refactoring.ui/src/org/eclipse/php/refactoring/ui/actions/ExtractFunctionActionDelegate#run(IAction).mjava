@@ -1,0 +1,48 @@
+	public void run(IAction action) {
+		if (targetEditor == null) {
+			targetEditor = PlatformUI.getWorkbench().getActiveWorkbenchWindow()
+					.getActivePage().getActiveEditor();
+		}
+		if (shell == null) {
+			shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow()
+					.getShell();
+		}
+		if (!(targetEditor instanceof PHPStructuredEditor))
+			return;
+
+		PHPStructuredEditor phpEditor = (PHPStructuredEditor) targetEditor;
+
+		IFile file = ((IFileEditorInput) phpEditor.getEditorInput()).getFile();
+
+		IStructuredModel model = null;
+		try {
+			// get the document
+			model = StructuredModelManager.getModelManager()
+					.getExistingModelForEdit(file);
+			IStructuredDocument structuredDocument = model
+					.getStructuredDocument();
+
+			// get the selection offsets
+			ITextSelection fTextSelection = (ITextSelection) phpEditor
+					.getSelectionProvider().getSelection();
+			int startOffset = fTextSelection.getOffset();
+			int length = fTextSelection.getLength();
+
+			final ExtractFunctionRefactoring refactoring = new ExtractFunctionRefactoring(
+					DLTKCore.createSourceModuleFrom(file), structuredDocument,
+					startOffset, length);
+			new RefactoringStarter()
+					.activate(
+							refactoring,
+							new ExtractFunctionWizard(refactoring),
+							shell,
+							RefactoringMessages.ExtractMethodAction_dialog_title,
+							false); //$NON-NLS-1$
+		} finally {
+			if (model != null) {
+				model.releaseFromEdit();
+			}
+			targetEditor = null;
+		}
+	}
+

@@ -1,0 +1,102 @@
+	public void run(IStructuredSelection selection) {
+
+		if (!isEnabled())
+			return;
+
+		try {
+			IResource resource;
+			IFile file = null;
+			ASTNode locateNode = null;
+			IProject project;
+
+			// we are not operating with an editor, the selection most likely
+			// are from the explorer
+			if (fEditor == null) {
+				// rename resource (file, folder, project)
+				if (selection.getFirstElement() instanceof IResource) {
+					resource = (IResource) selection.getFirstElement();
+					// if it's a file we can extract the document
+					// Seva: XXX why won't we process projects with PHP?
+					/*
+					 * if (resource instanceof IProject && action != null) {
+					 * resource.refreshLocal(IResource.DEPTH_INFINITE, null);
+					 * action.run(); return; }
+					 */
+					if (resource instanceof IFile) {
+						file = (IFile) resource;
+					}
+
+					project = resource.getProject();
+
+					// rename php element from the project expolrer
+				}
+				// else if (selection.getFirstElement() instanceof CodeData) {
+				// //extract the file, document and offset from the code data
+				// CodeData data = (CodeData) selection.getFirstElement();
+				// if (data.getUserData() == null)
+				// return;
+				// String fileName = data.getUserData().getFileName();
+				// Path path = new Path(fileName);
+				// resource =
+				// ResourcesPlugin.getWorkspace().getRoot().getFile(path);
+				// file = (IFile) resource;
+				// project = resource.getProject();
+				//
+				// final int offset = data.getUserData().getStopPosition();
+				//
+				// // locate the php element to refactor
+				// InputStreamReader inputStreamReader = new
+				// InputStreamReader(file.getContents(), file.getCharset());
+				// final Program program = ASTParser.parse(inputStreamReader,
+				// UseAspTagsHandler.useAspTagsAsPhp(project),
+				// PhpVersionProjectPropertyHandler.getVersion(project));
+				// locateNode = Locator.locateNode(program, offset);
+				// inputStreamReader.close();
+				//
+				// // else not supported
+				// }
+				else {
+					throw new UnsupportedOperationException(
+							PHPRefactoringUIMessages
+									.getString("RefactoringRenameElementAction.0") + selection.getFirstElement().getClass().getName()); //$NON-NLS-1$
+				}
+
+				// rename an element from the editor
+			} else {
+
+				resource = file = ((IFileEditorInput) fEditor.getEditorInput())
+						.getFile();
+				if (file == null) {
+					throw new UnsupportedOperationException(
+							PHPRefactoringUIMessages
+									.getString("RefactoringRenameElementAction.0") + selection.getFirstElement().getClass().getName()); //$NON-NLS-1$
+				}
+				final IDocument doc = fEditor.getDocumentProvider()
+						.getDocument(fEditor.getEditorInput());
+				final ITextSelection sel = (ITextSelection) fEditor
+						.getSelectionProvider().getSelection();
+				final int offset = sel.getOffset() + sel.getLength();
+
+				project = resource.getProject();
+
+				// locate the php element to refactor
+				final Program program = ASTParser.parse(doc,
+						ProjectOptions.isSupportingAspTags(project),
+						ProjectOptions.getPhpVersion(project),
+						ProjectOptions.useShortTags(project));
+				locateNode = Locator.locateNode(program, offset);
+			}
+
+			// starts the rename refactoring operation
+			if (checkProjectSaved(project)) {
+				RefactoringExecutionStarter.startRenameRefactoring(resource,
+						locateNode, getShell());
+			}
+
+		} catch (Exception e) {
+			MessageDialog.openInformation(getShell(),
+					PHPUIMessages.RenamePHPElementAction_name,
+					PHPUIMessages.RenamePHPElementAction_not_available);
+		}
+	}
+

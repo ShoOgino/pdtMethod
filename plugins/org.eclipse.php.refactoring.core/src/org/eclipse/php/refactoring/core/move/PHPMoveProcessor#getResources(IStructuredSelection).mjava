@@ -1,0 +1,47 @@
+	public static IResource[] getResources(IStructuredSelection sel) {
+		List<Object> resources = new ArrayList<Object>(sel.size());
+		for (Iterator<?> e = sel.iterator(); e.hasNext();) {
+			Object next = e.next();
+			if (next instanceof IResource) {
+				resources.add(next);
+				continue;
+			} else if (next instanceof IAdaptable) {
+				Object resource = ((IAdaptable) next)
+						.getAdapter(IResource.class);
+				if (resource != null) {
+					resources.add(resource);
+					continue;
+				}
+			} else if (next != null) {
+				IAdapterManager adapterManager = Platform.getAdapterManager();
+
+				ResourceMapping mapping = (ResourceMapping) adapterManager
+						.getAdapter(next, ResourceMapping.class);
+
+				if (mapping != null) {
+
+					ResourceTraversal[] traversals = null;
+					try {
+						traversals = mapping.getTraversals(
+								ResourceMappingContext.LOCAL_CONTEXT,
+								new NullProgressMonitor());
+					} catch (CoreException exception) {
+					}
+
+					if (traversals != null) {
+						for (int i = 0; i < traversals.length; i++) {
+							IResource[] traversalResources = traversals[i]
+									.getResources();
+							if (traversalResources != null) {
+								for (int j = 0; j < traversalResources.length; j++) {
+									resources.add(traversalResources[j]);
+								}// for
+							}// if
+						}// for
+					}// if
+				}// if
+			}
+		}
+		return (IResource[]) resources.toArray(new IResource[resources.size()]);
+	}
+

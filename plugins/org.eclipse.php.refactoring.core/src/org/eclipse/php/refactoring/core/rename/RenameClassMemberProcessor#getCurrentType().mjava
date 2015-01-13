@@ -1,0 +1,95 @@
+	public ITypeBinding getCurrentType() {
+		if (identifier instanceof Identifier) {
+			if (identifier.getParent().getType() == ASTNode.FULLY_QUALIFIED_TRAIT_METHOD_REFERENCE) {
+				FullyQualifiedTraitMethodReference reference = (FullyQualifiedTraitMethodReference) identifier
+						.getParent();
+				return reference.getClassName().resolveTypeBinding();
+			} else if (identifier.getParent().getType() == ASTNode.TRAIT_ALIAS) {
+				TraitAlias traitAlias = (TraitAlias) identifier.getParent();
+				List<NamespaceName> nameList = ((TraitUseStatement) traitAlias
+						.getParent().getParent()).getTraitList();
+				String memberName = null;
+				if (identifier == traitAlias.getFunctionName()) {
+					Expression expression = traitAlias.getTraitMethod();
+					if (expression.getType() == ASTNode.FULLY_QUALIFIED_TRAIT_METHOD_REFERENCE) {
+						FullyQualifiedTraitMethodReference fqtm = (FullyQualifiedTraitMethodReference) expression;
+						memberName = fqtm.getFunctionName().getName();
+					} else {
+						memberName = ((Identifier) expression).getName();
+					}
+				} else {
+					memberName = ((Identifier) identifier).getName();
+				}
+				for (NamespaceName namespaceName : nameList) {
+					ITypeBinding typeBinding = namespaceName
+							.resolveTypeBinding();
+					if (typeBinding != null && typeBinding.isTrait()
+							&& typeBinding.getPHPElement() != null) {
+						try {
+							IModelElement[] members = ((IType) typeBinding
+									.getPHPElement()).getChildren();
+							for (IModelElement modelElement : members) {
+								if (modelElement.getElementName().equals(
+										memberName)
+										|| modelElement.getElementName()
+												.equals("$" + memberName)) { //$NON-NLS-1$
+									return typeBinding;
+								}
+							}
+						} catch (ModelException e) {
+						}
+
+					}
+				}
+			}
+		}
+		if (identifier instanceof Expression) {
+			ASTNode parent = identifier.getParent();
+
+			Dispatch dispatch = getDispatch(parent);
+			if (dispatch != null) {
+				return dispatch.getDispatcher().resolveTypeBinding();
+			}
+
+			TypeDeclaration type = RefactoringUtility.getType(identifier);
+			if (type != null) {
+				return type.resolveTypeBinding();
+			}
+
+			StaticDispatch staticDispatch = getStaticDispatch(parent);
+
+			if (staticDispatch != null) {
+				return staticDispatch.getClassName().resolveTypeBinding();
+			}
+		}
+
+		if (identifier instanceof FieldsDeclaration) {
+			TypeDeclaration type = RefactoringUtility.getType(identifier);
+			if (type != null) {
+				return type.resolveTypeBinding();
+			}
+		}
+
+		if (identifier instanceof FunctionDeclaration) {
+			TypeDeclaration type = RefactoringUtility.getType(identifier);
+			if (type != null) {
+				return type.resolveTypeBinding();
+			}
+		}
+
+		if (identifier instanceof MethodDeclaration) {
+			TypeDeclaration type = RefactoringUtility.getType(identifier);
+			if (type != null) {
+				return type.resolveTypeBinding();
+			}
+		}
+
+		if (identifier instanceof ConstantDeclaration) {
+			TypeDeclaration type = RefactoringUtility.getType(identifier);
+			if (type != null) {
+				return type.resolveTypeBinding();
+			}
+		}
+		return null;
+	}
+

@@ -1,0 +1,27 @@
+	public boolean visit(FunctionDeclaration function) {
+		boolean result = super.visit(function);
+		// Searching for matching text at the program level.
+		if (this.searchTextual) {
+			searchTextualOccurrences(function.getProgramRoot());
+			return result;
+		}
+		IMethod method = ModelUtils.getFunctionMethod(function);
+		if (method != null) {
+			PHPDocBlock doc = ModelUtils.getPHPDoc(method);
+			if (doc != null) {
+				PHPDocTag[] tags = doc.getTags();
+				for (PHPDocTag tag : tags) {
+					SimpleReference[] references = tag.getReferences();
+					for (SimpleReference ref : references) {
+						if (ref instanceof VariableReference
+								&& ref.getName().equals("$" + oldName)) { //$NON-NLS-1$
+							addChange(ref.sourceStart() + 1,
+									getRenameDescription());
+						}
+					}
+				}
+			}
+		}
+		return result;
+	}
+

@@ -1,0 +1,65 @@
+	/**
+	 * Starts the refactoring process
+	 */
+	public void run(IStructuredSelection selection) {
+
+		if (fShell == null) {
+			fShell = PlatformUI.getWorkbench().getActiveWorkbenchWindow()
+					.getShell();
+		}
+
+		if (selection == null) {
+			unableToRunMoveAction();
+			return;
+		}
+		// first check if the selection is a project
+		if (ActionUtils.containsOnlyProjects(selection.toList())) {
+			// createWorkbenchAction(selection).run();
+			IProject project = null;
+			if (selection.toList().get(0) instanceof IProject) {
+				project = (IProject) selection.toList().get(0);
+			} else if (selection.toList().get(0) instanceof IScriptProject) {
+				project = ((IScriptProject) selection.toList().get(0))
+						.getProject();
+			} else {
+				return;
+			}
+			PHPProjectMoveProcessor processor = new PHPProjectMoveProcessor(
+					project);
+
+			MoveRefactoring refactoring = new MoveRefactoring(processor);
+			PHPProjectMoveWizard wizard = new PHPProjectMoveWizard(refactoring,
+					project);
+			new RefactoringStarter().activate(refactoring, wizard, fShell,
+					PHPRefactoringUIMessages
+							.getString("RefactoringMoveAction.0"), true); //$NON-NLS-1$
+			return;
+		}
+
+		// if the selection is empty and the run process started notify the user
+		if (selectedResources != null && selectedResources.isEmpty()) {
+			unableToRunMoveAction();
+			return;
+		}
+
+		// check for external files
+		final IResource[] resources = PHPMoveProcessor
+				.getResources(selectedResources);
+		if (checkForExternalFiles(resources) || resources.length == 0) {
+			unableToRunMoveAction();
+			return;
+		}
+
+		// run the move operation on the resources
+		PHPMoveProcessor processor = new PHPMoveProcessor(resources);
+		if (target != null) {
+			processor.setDestination(target);
+		}
+
+		MoveRefactoring refactoring = new MoveRefactoring(processor);
+		PHPMoveWizard wizard = new PHPMoveWizard(refactoring);
+		new RefactoringStarter()
+				.activate(refactoring, wizard, fShell, PHPRefactoringUIMessages
+						.getString("RefactoringMoveAction.0"), true); //$NON-NLS-1$
+	}
+

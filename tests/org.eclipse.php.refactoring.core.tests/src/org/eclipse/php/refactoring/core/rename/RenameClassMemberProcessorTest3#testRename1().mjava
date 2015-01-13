@@ -1,0 +1,27 @@
+	public void testRename1() {
+		Program program = createProgram(file);
+
+		assertNotNull(program);
+
+		int start = 102;
+		ASTNode selectedNode = locateNode(program, start, 0);
+		assertNotNull(selectedNode);
+
+		RenameClassMemberProcessor processor = new RenameClassMemberProcessor(
+				file, selectedNode);
+		processor.setNewElementName("title1");
+
+		checkInitCondition(processor);
+
+		performChange(processor);
+
+		try {
+			String content = FileUtils.getContents(file);
+			assertEquals(
+					"<?php class Item { public $title1;} class ItemEx extends Item{public $title1;} $a=new ItemEx(); $a->title1;?>",
+					content);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+

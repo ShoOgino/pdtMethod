@@ -1,0 +1,34 @@
+	private Button createRemoveButton(Composite buttonComposite) {
+		final Button button = new Button(buttonComposite, SWT.PUSH);
+		button.setText(RefactoringMessages.ChangeParametersControl_buttons_remove);
+		button.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		SWTUtil.setButtonDimensionHint(button);
+		button.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				int index = getTable().getSelectionIndices()[0];
+				ParameterInfo[] selected = getSelectedElements();
+				for (int i = 0; i < selected.length; i++) {
+					if (selected[i].isAdded())
+						fParameterInfos.remove(selected[i]);
+					else
+						selected[i].markAsDeleted();
+				}
+				restoreSelection(index);
+			}
+
+			private void restoreSelection(int index) {
+				fTableViewer.refresh();
+				fTableViewer.getControl().setFocus();
+				int itemCount = getTableItemCount();
+				if (itemCount != 0) {
+					if (index >= itemCount)
+						index = itemCount - 1;
+					getTable().setSelection(index);
+				}
+				fListener.parameterListChanged();
+				updateButtonsEnabledState();
+			}
+		});
+		return button;
+	}
+

@@ -1,0 +1,31 @@
+	/**
+	 * Checks whether the user given name already exists in the visible scope
+	 * 
+	 * @return the status including necessary warnings
+	 */
+	private RefactoringStatus doesNameAlreadyExist(String name) {
+
+		RefactoringStatus status = new RefactoringStatus();
+
+		// if the selection is enclosed by a function,
+		// check if the user given variable name already exists in the function
+		// scope
+		if (enclosingBodyNode.getType() == ASTNode.FUNCTION_DECLARATION) {
+			if (PhpElementConciliator.localVariableAlreadyExists(
+					(FunctionDeclaration) enclosingBodyNode, name)) {
+				status.addWarning(NLS.bind(PhpRefactoringCoreMessages
+						.getString("ExtractVariableRefactoring.26"), name)); //$NON-NLS-1$
+			}
+		} else {
+			// check if the user given variable name already exists in the
+			// global scope
+			if (PhpElementConciliator.globalVariableAlreadyExists(
+					(Program) astRoot, name)) {
+				status.addWarning(NLS.bind(PhpRefactoringCoreMessages
+						.getString("ExtractVariableRefactoring.27"), name)); //$NON-NLS-1$
+			}
+		}
+
+		return status;
+	}
+

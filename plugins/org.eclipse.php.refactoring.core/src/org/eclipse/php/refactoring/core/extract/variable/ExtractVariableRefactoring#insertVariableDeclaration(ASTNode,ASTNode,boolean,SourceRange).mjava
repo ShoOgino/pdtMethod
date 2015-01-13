@@ -1,0 +1,105 @@
+	/**
+	 * Add the needed TextChanges (Insert and Replace) for the extraction
+	 * 
+	 * @param range
+	 * @param selectedExpression
+	 * @param change
+	 * @throws CoreException
+	 * @throws BadLocationException
+	 */
+	private void insertVariableDeclaration(ASTNode target, ASTNode expr,
+			boolean shouldWrapStatement, SourceRange range)
+			throws CoreException, BadLocationException {
+
+		ASTNode parentStatement = getParentStatement(target);
+		int statementOffset = parentStatement.getStart();
+		String indentationBuffer = getLineIndentation(statementOffset);
+
+		Block block = fAst.newBlock();
+		block.setIsCurly(true);
+		ListRewrite replacementRewrite = fRewriter.getListRewrite(block,
+				Block.STATEMENTS_PROPERTY);
+
+		// replacementRewrite.insertFirst(expr, null);
+
+		ASTNode move = fRewriter.createMoveTarget(target.getParent());
+
+		// if (move.getType() == ASTNode.IF_STATEMENT) {
+		// IfStatement ifState = (IfStatement) move;
+		// IfStatement orgTarget = (IfStatement) target;
+		//
+		// Statement trueStatment = orgTarget.getTrueStatement();
+		//
+		// Scalar condition = (Scalar) orgTarget.getCondition();
+		//
+		// ASTNode copyCondition = fRewriter.createMoveTarget(condition);
+		//
+		// ExpressionStatement copyTrue = (ExpressionStatement) fRewriter
+		// .createMoveTarget(((ExpressionStatement) trueStatment));
+		// copyTrue.setExpression((Expression) fRewriter
+		// .createMoveTarget(((ExpressionStatement) trueStatment)
+		// .getExpression()));
+		//
+		// Statement falseStatment = orgTarget.getFalseStatement();
+		// ExpressionStatement copyFalse = (ExpressionStatement) fRewriter
+		// .createMoveTarget(((ExpressionStatement) falseStatment));
+		//
+		// copyFalse.setExpression((Expression) fRewriter
+		// .createMoveTarget(((ExpressionStatement) falseStatment)
+		// .getExpression()));
+		// // ConditionalExpression conditionExp =
+		// // fAst.newConditionalExpression(
+		// // (Expression) copyCondition, (Expression) copyTrue,
+		// // (Expression) copyFalse);
+		// // condition.setCondition(orgTarget.getCondition());
+		// // condition.setIfFalse(orgTarget.get);
+		// ifState.setCondition((Expression) copyCondition);
+		// ifState.setFalseStatement((Statement) copyFalse);
+		// ifState.setTrueStatement((Statement) copyTrue);
+		//
+		// // ifState.setParent(parent, location)
+		// }
+
+		String expressionBuffer = getASTNodeValue(range.getOffset(),
+				range.getLength());
+		String insertionString = getFullVariableName() + " = " //$NON-NLS-1$
+				+ expressionBuffer + ";"; //$NON-NLS-1$
+		//+ System.getProperty("line.separator") + indentationBuffer; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+		ASTNode declaration = fRewriter.createStringPlaceholder(
+				insertionString, ASTNode.EXPRESSION_STATEMENT);
+
+		replacementRewrite.insertFirst(declaration, null);
+
+		replacementRewrite.insertLast(move, null);
+
+		TextEditGroup insertDesc = new TextEditGroup(
+				PhpRefactoringCoreMessages
+						.getString("ExtractFunctionRefactoring.4")); //$NON-NLS-1$
+		textFileChange.addTextEditGroup(insertDesc);
+
+		fRewriter.replace(target.getParent(), block, insertDesc);
+
+		// if (shouldWrapStatement) {
+		//			insertionString = "{" + System.getProperty("line.separator") + insertionString; //$NON-NLS-1$ //$NON-NLS-2$
+		// }
+
+		// insert the new statement
+		// InsertEdit insertEdit = new InsertEdit(statementOffset,
+		// insertionString);
+		// addTextEditChange(insertEdit);
+
+		// replace the existing statement
+		String replacementStr = getFullVariableName();
+		// replaceSelectedExpressionWithVariableDeclaration(replacementStr,
+		// range,
+		// expr);
+
+		// if needed, close the wrapping block
+		// if (shouldWrapStatement) {
+		//			String closeCurlyStr = "}"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+		// insertEdit = new InsertEdit(parentStatement.getEnd(), closeCurlyStr);
+		// addTextEditChange(insertEdit);
+		// }
+
+	}
+

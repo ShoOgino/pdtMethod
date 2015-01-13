@@ -1,0 +1,83 @@
+	@SuppressWarnings("unchecked")
+	@Override
+	public Change perform(IProgressMonitor pm) throws CoreException {
+
+		final IPath dest = fDest.append(fNewName);
+
+		// Collect launch configurations:
+		fConfigurationChanges = new HashMap<ILaunchConfiguration, Map<String, String>>();
+		ILaunchConfiguration[] launchConfigurations = DebugPlugin.getDefault()
+				.getLaunchManager().getLaunchConfigurations();
+		for (ILaunchConfiguration launchConfiguration : launchConfigurations) {
+			Map<String, Object> attributes = launchConfiguration
+					.getAttributes();
+			Map<String, String> changes = new HashMap<String, String>();
+			for (Entry<String, Object> attribute : attributes.entrySet()) {
+				Object attributeValue = attribute.getValue();
+				if (!(attributeValue instanceof String)) {
+					continue;
+				}
+				String attributeString = (String) attributeValue;
+				String attributeName = attribute.getKey();
+
+				// resource is renamed/moved:
+				IPath attributeValuePath = new Path(attributeString);
+				if (fResource.getFullPath().isPrefixOf(attributeValuePath)) {
+					String newValue;
+					if (fResource instanceof IContainer) {
+						newValue = dest
+								.append(attributeValuePath.removeFirstSegments(attributeValuePath
+										.matchingFirstSegments(fResource
+												.getFullPath())))
+								.makeAbsolute().toString();
+					} else {
+						newValue = dest.makeAbsolute().toString();
+					}
+
+					changes.put(attributeName, newValue);
+				}
+				if (fResource.getLocation().isPrefixOf(attributeValuePath)) {
+					String newValue = null;
+					if (fResource instanceof IContainer) {
+						IPath projectPath = fResource.getFullPath();
+						IPath fileSystemPath = fResource.getLocation()
+								.removeLastSegments(projectPath.segmentCount());
+
+						newValue = fileSystemPath
+								.append(dest)
+								.append(attributeValuePath.removeFirstSegments(attributeValuePath
+										.matchingFirstSegments(fResource
+												.getLocation()))).toString();
+					} else {
+						IPath projectPath = fResource.getFullPath();
+						IPath fileSystemPath = fResource.getLocation()
+								.removeLastSegments(projectPath.segmentCount());
+						newValue = fileSystemPath.append(dest).toString();
+					}
+					changes.put(attributeName, newValue);
+				}
+			}
+			if (changes.size() > 0) {
+				fConfigurationChanges.put(launchConfiguration, changes);
+			}
+		}
+		for (Entry<ILaunchConfiguration, Map<String, String>> configurationChange : fConfigurationChanges
+				.entrySet()) {
+			ILaunchConfiguration configuration = configurationChange.getKey();
+			ILaunchConfigurationWorkingCopy configurationCopy;
+			if (configuration instanceof ILaunchConfigurationWorkingCopy) {
+				configurationCopy = (ILaunchConfigurationWorkingCopy) configuration;
+			} else {
+				configurationCopy = configuration.getWorkingCopy();
+			}
+			for (Entry<String, String> change : configurationChange.getValue()
+					.entrySet()) {
+				configurationCopy.setAttribute(change.getKey(),
+						change.getValue());
+			}
+			configurationCopy.doSave();
+		}
+
+		return new RenameConfigurationChange(fDest, fSource, fNewName, fName);
+	}
+

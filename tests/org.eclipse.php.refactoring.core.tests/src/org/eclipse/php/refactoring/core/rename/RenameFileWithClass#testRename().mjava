@@ -1,0 +1,42 @@
+	public void testRename() {
+		Program program = createProgram(file);
+
+		assertNotNull(program);
+
+		
+		RenameFileProcessor processor = new RenameFileProcessor(file, program);
+		processor.setNewElementName("RenameFileWithClass3.php");
+		processor.setUpdateRefernces(true);
+		processor.setUpdateTextualMatches(false);
+		processor.setAttribute(RenameFileProcessor.UPDATECLASSNAME, "true");
+
+		checkInitCondition(processor);
+
+		performChange(processor);
+		
+		
+		IFile file = project1.getFile("RenameFileWithClass3.php");
+		assertNotNull(file);
+		assertTrue(file.exists());
+		
+		try {
+			String content = FileUtils.getContents(file);
+			assertEquals(
+					"<?php class RenameFileWithClass3{}?>",
+					content);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		
+		try {
+			String content = FileUtils.getContents(file1);
+			assertEquals(
+					"<?php include 'RenameFileWithClass3.php'; ?>",
+					content);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+

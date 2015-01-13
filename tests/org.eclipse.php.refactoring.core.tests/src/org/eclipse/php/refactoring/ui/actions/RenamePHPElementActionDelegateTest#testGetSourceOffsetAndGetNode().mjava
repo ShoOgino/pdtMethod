@@ -1,0 +1,48 @@
+	public void testGetSourceOffsetAndGetNode() {
+		IFile file = project1.getFile("src/src1/test1.php");
+
+		IModelElement source = null;
+		try {
+			source = DLTKCore.create(file);
+		} catch (Exception e) {
+			fail(e.getMessage());
+		}
+		assertNotNull(source);
+
+		final ArrayList<IType> type = new ArrayList<IType>();
+		try {
+			source.accept(new IModelElementVisitor() {
+				@Override
+				public boolean visit(IModelElement element) {
+					if (element.getElementType() == ISourceModule.TYPE) {
+						type.add((IType) element);
+						return false;
+					}
+					return true;
+				}
+			});
+
+		} catch (ModelException e) {
+			fail(e.getMessage());
+		}
+		assertTrue(type.size() > 0);
+
+		RenamePHPElementActionDelegateProxy action = new RenamePHPElementActionDelegateProxy();
+		int offset = -1;
+		try {
+			offset = action.getSourceOffset(type.get(0));
+		} catch (ModelException e) {
+			fail(e.getMessage());
+		}
+
+		assertTrue(offset >= 0);
+		Program program;
+		try {
+			program = RefactoringUtility.getProgramForFile(file);
+			ASTNode node = action.getSelectedNode(program, offset, 0);
+			assertTrue(node instanceof ClassDeclaration);
+		} catch (Exception e) {
+			fail(e.getMessage());
+		}
+	}
+

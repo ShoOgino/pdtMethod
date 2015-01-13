@@ -1,0 +1,70 @@
+	@SuppressWarnings("restriction")
+	private RefactoringStatus canExtract(Expression expression) {
+
+		if (expression.getType() == ASTNode.SCALAR) {
+			Scalar scalar = (Scalar) expression;
+			if (scalar.getScalarType() == Scalar.TYPE_STRING
+					&& scalar.getStringValue().equalsIgnoreCase("null")) { //$NON-NLS-1$
+				return RefactoringStatus
+						.createFatalErrorStatus(PhpRefactoringCoreMessages
+								.getString("ExtractVariableRefactoring.5")); //$NON-NLS-1$
+			}
+		}
+
+		if (isDispatch(expression)) {
+			return RefactoringStatus
+					.createFatalErrorStatus(PhpRefactoringCoreMessages
+							.getString("ExtractVariableRefactoring.9")); //$NON-NLS-1$
+		}
+
+		if (isFunctionName(expression)) {
+			return RefactoringStatus
+					.createFatalErrorStatus(PhpRefactoringCoreMessages
+							.getString("ExtractVariableRefactoring.9")); //$NON-NLS-1$
+		}
+
+		if (isClassName(expression)) {
+			return RefactoringStatus
+					.createFatalErrorStatus(PhpRefactoringCoreMessages
+							.getString("ExtractVariableRefactoring.9")); //$NON-NLS-1$
+		}
+
+		if (isExpressionLeftHandSide(expression)) {
+			return RefactoringStatus
+					.createFatalErrorStatus(PhpRefactoringCoreMessages
+							.getString("ExtractVariableRefactoring.10")); //$NON-NLS-1$
+		}
+
+		if (isUsedInForInitializerOrUpdaterOrIncrementor(expression))
+			return RefactoringStatus
+					.createFatalErrorStatus(PhpRefactoringCoreMessages
+							.getString("ExtractVariableRefactoring.11")); //$NON-NLS-1$
+
+		if (assignmentInStaticStatement(expression)) {
+			return RefactoringStatus
+					.createFatalErrorStatus(PhpRefactoringCoreMessages
+							.getString("ExtractVariableRefactoring.12")); //$NON-NLS-1$
+		}
+
+		if (expressionOfCatchVariable(expression)) {
+			return RefactoringStatus
+					.createFatalErrorStatus(PhpRefactoringCoreMessages
+							.getString("ExtractVariableRefactoring.13")); //$NON-NLS-1$
+		}
+
+		if (expression.isStaticScalar()) {
+			return RefactoringStatus
+					.createFatalErrorStatus(PhpRefactoringCoreMessages
+							.getString("ExtractVariableRefactoring.14")); //$NON-NLS-1$
+		}
+
+		if (expression.getType() == ASTNode.FORMAL_PARAMETER
+				|| (expression.getParent() != null && expression.getParent()
+						.getType() == ASTNode.FORMAL_PARAMETER)) {
+			return RefactoringStatus
+					.createFatalErrorStatus(PhpRefactoringCoreMessages
+							.getString("ExtractVariableRefactoring.15")); //$NON-NLS-1$
+		}
+		return new RefactoringStatus();
+	}
+

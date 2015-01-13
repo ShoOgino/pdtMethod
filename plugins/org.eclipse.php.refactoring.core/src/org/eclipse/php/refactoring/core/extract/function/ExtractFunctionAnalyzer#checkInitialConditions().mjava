@@ -1,0 +1,33 @@
+	public RefactoringStatus checkInitialConditions() {
+		RefactoringStatus result = getStatus();
+		checkExpression(result);
+		if (result.hasFatalError())
+			return result;
+
+		fReturnKind = UNDEFINED;
+
+		fMaxVariableId = LocalVariableIndex
+				.perform(getEnclosingBodyDeclaration());
+		if (analyzeSelection(result).hasFatalError())
+			return result;
+
+		int returns = fReturnKind == NO ? 0 : 1;
+		if (fReturnValue != null) {
+			fReturnKind = ACCESS_TO_LOCAL;
+			returns++;
+		}
+		if (isExpressionSelected()) {
+			fReturnKind = EXPRESSION;
+			returns++;
+		}
+
+		if (returns > 1) {
+			// result.addFatalError(RefactoringCoreMessages.ExtractMethodAnalyzer_ambiguous_return_value,
+			// JavaStatusContext.create(fCUnit, getSelection()));
+			fReturnKind = MULTIPLE;
+			return result;
+		}
+		// initReturnType(rewriter);
+		return result;
+	}
+

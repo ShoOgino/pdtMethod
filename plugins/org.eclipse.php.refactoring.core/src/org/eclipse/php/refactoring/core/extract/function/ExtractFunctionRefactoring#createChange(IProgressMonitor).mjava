@@ -1,0 +1,189 @@
+	@Override
+	public Change createChange(IProgressMonitor pm) throws CoreException,
+			OperationCanceledException {
+		try {
+			pm.beginTask(PhpRefactoringCoreMessages
+					.getString("ExtractFunctionRefactoring"), 1); //$NON-NLS-1$
+
+			ASTNode declaration = fAnalyzer.getEnclosingBodyDeclaration();
+			fRewriter = ASTRewrite.create(declaration.getAST());
+
+			rootChange = new CompositeChange(
+					PhpRefactoringCoreMessages
+							.format("ExtractFunctionRefactoring.2", new String[] { fNewFunctionName })); //$NON-NLS-1$
+			rootChange.markAsSynthetic();
+
+			MultiTextEdit root = new MultiTextEdit();
+			textFileChange = new ProgramDocumentChange(
+					PhpRefactoringCoreMessages
+							.format("ExtractFunctionRefactoring.2", new String[] { fNewFunctionName }), document, astRoot); //$NON-NLS-1$
+			textFileChange.setEdit(root);
+			textFileChange.setTextType("php"); //$NON-NLS-1$
+
+			rootChange.add(textFileChange);
+
+			ASTNode[] selectedNodes = fAnalyzer.getSelectedNodes();
+
+			TextEditGroup substituteDesc = new TextEditGroup(
+					PhpRefactoringCoreMessages
+							.format("ExtractFunctionRefactoring.2", new String[] { fNewFunctionName })); //$NON-NLS-1$
+			textFileChange.addTextEditGroup(substituteDesc);
+
+			String lineDelimiter = Util.getLineSeparator(astRoot
+					.getSourceModule().getSource(), astRoot.getSourceModule()
+					.getScriptProject());
+
+			FunctionDeclaration function = createNewFunction(selectedNodes,
+					lineDelimiter, substituteDesc);
+			MethodDeclaration method = null;
+
+			Comment funcComment = null;
+			if (isClassMethod()) {
+				method = fAST.newMethodDeclaration();
+				method.setFunction(function);
+				int flags = fVisibility;
+				if (isStaticMethod()) {
+					flags = flags | Modifiers.AccStatic;
+				}
+				method.setModifier(flags);
+				if (fGeneratePHPDoc) {
+					IScriptProject sp = fAnalyzer.getEnclosingBodyDeclaration()
+							.getProgramRoot().getSourceModule()
+							.getScriptProject();
+					ITypeBinding classDecl = ((MethodDeclaration) fAnalyzer
+							.getEnclosingBodyDeclaration())
+							.resolveMethodBinding().getDeclaringClass();
+					List<FormalParameter> parameters = method.getFunction()
+							.formalParameters();
+					String[] paramNames = new String[parameters.size()];
+					for (int i = 0; i < parameters.size(); i++) {
+						Expression name = parameters.get(i).getParameterName();
+						if (name instanceof Scalar) {
+							paramNames[i] = removeDollar(((Scalar) name)
+									.getStringValue());
+						}
+						if (name instanceof Identifier) {
+							paramNames[i] = ((Identifier) name).getName();
+						}
+					}
+					String comments = CodeGeneration.getMethodComment(sp,
+							classDecl.getName(), method.getFunction()
+									.getFunctionName().getName(), paramNames,
+							null, null, null, lineDelimiter, null);
+
+					Comment commentNode = (Comment) fRewriter
+							.createStringPlaceholder(comments, ASTNode.COMMENT);
+					commentNode.setCommentType(Comment.TYPE_PHPDOC);
+					method.setComment(commentNode);
+				}
+			} else {
+				if (fGeneratePHPDoc) {
+					IScriptProject sp = fAnalyzer.getEnclosingBodyDeclaration()
+							.getProgramRoot().getSourceModule()
+							.getScriptProject();
+
+					List<FormalParameter> parameters = function
+							.formalParameters();
+					String[] paramNames = new String[parameters.size()];
+					for (int i = 0; i < parameters.size(); i++) {
+						Expression name = parameters.get(i).getParameterName();
+						if (name instanceof Scalar) {
+							paramNames[i] = removeDollar(((Scalar) name)
+									.getStringValue());
+						}
+						if (name instanceof Identifier) {
+							paramNames[i] = ((Identifier) name).getName();
+						}
+					}
+
+					String comments = CodeGeneration.getMethodComment(sp,
+							"", //$NON-NLS-1$
+							function.getFunctionName().getName(), paramNames,
+							null, null, null, lineDelimiter, null);
+					comments = lineDelimiter + comments + lineDelimiter;
+
+					funcComment = (Comment) fRewriter.createStringPlaceholder(
+							comments, ASTNode.COMMENT);
+					funcComment.setCommentType(Comment.TYPE_PHPDOC);
+				}
+
+			}
+
+			TextEditGroup insertDesc = new TextEditGroup(
+					PhpRefactoringCoreMessages
+							.getString("ExtractFunctionRefactoring.4")); //$NON-NLS-1$
+			textFileChange.addTextEditGroup(insertDesc);
+
+			ChildListPropertyDescriptor desc = (ChildListPropertyDescriptor) declaration
+					.getLocationInParent();
+
+			ListRewrite container = null;
+			if (declaration instanceof Program) {
+				container = fRewriter.getListRewrite(declaration,
+						Program.STATEMENTS_PROPERTY);
+			} else {
+				container = fRewriter.getListRewrite(declaration.getParent(),
+						desc);
+			}
+			if (method != null) {
+				container.insertAfter(method, declaration, insertDesc);
+			} else {
+				if (declaration instanceof Program) {
+					// This is a work around to add the new function before the
+					// empty statement of the Program.
+
+					List<Statement> statements = ((Program) declaration)
+							.statements();
+					int length = statements.size();
+					// Since the program at least has the select expression and
+					// a empty statement,
+					// it's safe for assuming the length > 1.
+					// Work ground for now.
+					Statement node = statements.get(length - 1);
+					if (length >= 2 && (node instanceof InLineHtml)) {
+						container.insertBefore(function,
+								(ASTNode) statements.get(length - 2),
+								insertDesc);
+						if (funcComment != null) {
+							container.insertBefore(funcComment, function,
+									insertDesc);
+						}
+					} else if (length > 1 && node instanceof EmptyStatement) {
+						container.insertBefore(function,
+								(ASTNode) statements.get(length - 1),
+								insertDesc);
+						if (funcComment != null) {
+							container.insertBefore(funcComment, function,
+									insertDesc);
+						}
+
+					} else {
+						container.insertLast(function, insertDesc);
+						if (funcComment != null) {
+							container.insertBefore(funcComment, function,
+									insertDesc);
+						}
+					}
+
+				} else {
+					container.insertAfter(function, declaration, insertDesc);
+					if (funcComment != null) {
+						container.insertBefore(funcComment, function,
+								insertDesc);
+					}
+				}
+			}
+
+			if (getReplaceDuplicates()) {
+				replaceDuplicates(textFileChange);
+			}
+			TextEdit edit = fRewriter.rewriteAST(document, null);
+			root.addChild(edit);
+
+			return rootChange;
+		} finally {
+			pm.done();
+		}
+
+	}
+

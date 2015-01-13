@@ -1,0 +1,37 @@
+	private void modifyBuildpath(IScriptProject referencingProject,
+			IProgressMonitor pm) throws ModelException {
+		pm.beginTask("", 1); //$NON-NLS-1$
+
+		IProject project = referencingProject.getProject();
+
+		IBuildpathEntry[] oldEntries = referencingProject.getRawBuildpath();
+		IBuildpathEntry[] newEntries = new IBuildpathEntry[oldEntries.length];
+		for (int i = 0; i < newEntries.length; i++) {
+			if (isOurEntry(oldEntries[i]))
+				newEntries[i] = createModifiedEntry(oldEntries[i]);
+			else
+				newEntries[i] = oldEntries[i];
+		}
+
+		IncludePath[] includes = IncludePathManager.getInstance()
+				.getIncludePaths(project);
+
+		IncludePath[] newInclude = new IncludePath[includes.length];
+
+		for (int i = 0; i < includes.length; i++) {
+			if (isOurEntry(includes[i]))
+				newInclude[i] = createModifiedIncludePath(includes[i], project);
+			else
+				newInclude[i] = includes[i];
+		}
+
+		referencingProject.setRawBuildpath(newEntries, pm);
+
+		IncludePathManager.getInstance().setIncludePath(project, newInclude);
+
+		IncludePathManager.getInstance().refresh(project);
+
+		pm.done();
+
+	}
+

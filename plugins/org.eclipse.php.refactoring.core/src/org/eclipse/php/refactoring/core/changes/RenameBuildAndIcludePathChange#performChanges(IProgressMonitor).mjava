@@ -1,0 +1,28 @@
+	protected void performChanges(IProgressMonitor pm) throws CoreException {
+
+		IResource newResource = RefactoringUtility.getResource(fDest
+				.append(fNewName));
+		IProject newProject = newResource.getProject();
+
+		IScriptProject newScriptProject = DLTKCore.create(newProject);
+
+		// Added new paths
+		if (newBuildEntries.size() > 0) {
+			// Remove all old paths
+			newScriptProject.setRawBuildpath(null, pm);
+
+			newScriptProject
+					.setRawBuildpath(
+							newBuildEntries
+									.toArray(new IBuildpathEntry[newBuildEntries
+											.size()]), null);
+		}
+
+		if (newIncludePathEntries.size() > 0) {
+			IncludePathManager.getInstance().addEntriesToIncludePath(
+					newProject, newIncludePathEntries);
+		}
+
+		IncludePathManager.getInstance().refresh(newProject);
+	}
+

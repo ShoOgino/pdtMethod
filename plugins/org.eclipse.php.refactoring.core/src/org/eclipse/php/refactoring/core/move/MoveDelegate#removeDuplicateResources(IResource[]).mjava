@@ -1,0 +1,44 @@
+	private IResource[] removeDuplicateResources(IResource[] sourceResources) {
+		// ignore empty array
+		if (sourceResources == null || sourceResources.length == 0) {
+			return sourceResources;
+		}
+
+		ArrayList<IResource> result = new ArrayList<IResource>();
+
+		for (IResource source : sourceResources) {
+			if (result.size() == 0) {
+				result.add(source);
+			} else {
+				// check if the resource is parent of any item in the result
+				for (IResource existing : result) {
+					// if the resource is parent of an existing item in the
+					// result.
+					// remove the existing item, add the new one.
+					if (source.getFullPath().isPrefixOf(existing.getFullPath())) {
+						result.remove(existing);
+						result.add(source);
+					}
+				}
+
+				boolean noNeedAdded = false;
+				for (IResource existing : result) {
+					// if the resource is parent of an existing item in the
+					// result.
+					// remove the existing item, add the new one.
+					if (existing.getFullPath().isPrefixOf(source.getFullPath())) {
+						noNeedAdded = true;
+					}
+				}
+				// the source is not in the result after loop
+				if (!result.contains(source) && !noNeedAdded) {
+					result.add(source);
+				}
+			}
+		}
+
+		IResource[] ret = new IResource[result.size()];
+
+		return result.toArray(ret);
+	}
+

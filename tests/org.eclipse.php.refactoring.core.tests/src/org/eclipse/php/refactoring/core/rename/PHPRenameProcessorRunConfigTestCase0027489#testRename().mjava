@@ -1,0 +1,34 @@
+	public void testRename(){
+		RenameFolderProcessor processor = new RenameFolderProcessor(project1.getProject().getFolder("src"));
+		
+		RefactoringStatus status = processor.checkInitialConditions(new NullProgressMonitor());
+		
+		assertEquals(IStatus.OK, status.getSeverity());
+		
+		processor.setUpdateRefernces(true);
+		processor.setNewElementName("src1");
+		
+		try {
+			Change change = processor.createChange(new NullProgressMonitor());
+			change.perform(new NullProgressMonitor());
+		} catch (OperationCanceledException e) {
+			fail(e.getMessage());
+		} catch (CoreException e) {
+			fail(e.getMessage());
+		} catch (Exception e) {
+			fail(e.getMessage());
+		}
+		
+		try {
+			config = DebugPlugin.getDefault().getLaunchManager().getLaunchConfiguration(configFile);
+
+			String path = config.getAttribute("ATTR_FILE", "");
+			assertEquals("/TestProject1/src1/RenameRunConfigTest0027489.php", path);
+			
+			path = config.getAttribute("ATTR_FILE_FULL_PATH", "");
+			assertEquals(project1.getFile("/src1/RenameRunConfigTest0027489.php").getLocation().toString(), path);
+		} catch (CoreException e) {
+			fail(e.getMessage());
+		}
+	}
+

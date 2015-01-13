@@ -1,0 +1,25 @@
+	private Button createEditButton(Composite buttonComposite) {
+		Button button = new Button(buttonComposite, SWT.PUSH);
+		button.setText(RefactoringMessages.ChangeParametersControl_buttons_edit);
+		button.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		SWTUtil.setButtonDimensionHint(button);
+		button.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				try {
+					ParameterInfo[] selected = getSelectedElements();
+					Assert.isTrue(selected.length == 1);
+					ParameterInfo parameterInfo = selected[0];
+					ParameterEditDialog dialog = new ParameterEditDialog(
+							getShell(), parameterInfo,
+							fMode.canChangeDefault(), fTypeContext);
+					dialog.open();
+					fListener.parameterChanged(parameterInfo);
+					fTableViewer.update(parameterInfo, PROPERTIES);
+				} finally {
+					fTableViewer.getControl().setFocus();
+				}
+			}
+		});
+		return button;
+	}
+

@@ -1,0 +1,41 @@
+	private void createBuildPathChange(IResource[] sourceResources,
+			CompositeChange rootChange) throws ModelException {
+		IResource[] uniqueSourceResources = removeDuplicateResources(sourceResources);
+		for (IResource element : uniqueSourceResources) {
+			// only container need handle build/include path.
+			if (element instanceof IContainer) {
+				IProject project = element.getProject();
+
+				// if moving to another project
+				if (RefactoringUtility.getResource(fMainDestinationPath)
+						.getProject() != project) {
+					removeBuildPath(element, project);
+					IPath path = element.getFullPath().removeLastSegments(1);
+					RenameBuildAndIcludePathChange biChange = new RenameBuildAndIcludePathChange(
+							path, path, element.getName(), "", oldBuildEntries, //$NON-NLS-1$
+							newBuildEntries, oldIncludePath,
+							newIncludePathEntries);
+
+					if (newBuildEntries.size() > 0
+							|| newIncludePathEntries.size() > 0) {
+						rootChange.add(biChange);
+					}
+
+				} else {
+					updateBuildPath(element, project);
+					RenameBuildAndIcludePathChange biChange = new RenameBuildAndIcludePathChange(
+							element.getFullPath().removeLastSegments(1),
+							fMainDestinationPath, element.getName(),
+							element.getName(), oldBuildEntries,
+							newBuildEntries, oldIncludePath,
+							newIncludePathEntries);
+					if (newBuildEntries.size() > 0
+							|| newIncludePathEntries.size() > 0) {
+						rootChange.add(biChange);
+					}
+				}
+			}
+		}
+
+	}
+

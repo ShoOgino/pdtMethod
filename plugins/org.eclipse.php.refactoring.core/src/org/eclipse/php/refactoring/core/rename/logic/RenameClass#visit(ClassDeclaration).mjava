@@ -1,0 +1,29 @@
+	public boolean visit(ClassDeclaration classDeclaration) {
+		ITypeBinding originalType = null;
+
+		if (originalDeclaration != null) {
+			if (originalDeclaration instanceof TypeDeclaration) {
+				originalType = ((TypeDeclaration) originalDeclaration)
+						.resolveTypeBinding();
+			}
+			if (originalDeclaration instanceof ClassInstanceCreation) {
+				originalType = ((ClassInstanceCreation) originalDeclaration)
+						.resolveTypeBinding();
+			}
+		}
+
+		ITypeBinding currType = classDeclaration.resolveTypeBinding();
+		if (originalDeclaration == null
+				|| currType == null
+				|| originalDeclaration.getStart() == classDeclaration
+						.getStart() || originalType.equals(currType)
+				|| originalType.isSubTypeCompatible(currType)) {
+			checkIdentifier(classDeclaration.getName());
+		}
+
+		checkSuper((Identifier) classDeclaration.getSuperClass(),
+				classDeclaration.interfaces());
+
+		return true;
+	}
+

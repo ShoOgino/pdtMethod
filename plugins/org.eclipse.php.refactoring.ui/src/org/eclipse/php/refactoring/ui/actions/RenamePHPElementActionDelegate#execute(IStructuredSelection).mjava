@@ -1,0 +1,66 @@
+	private void execute(IStructuredSelection selection) {
+		Object object = selection.getFirstElement();
+		setWindowIfEmpty();
+
+		if (isScriptContainer(object)) {
+			IModelElement element = (IModelElement) object;
+			try {
+				RefactoringExecutionStarter.startRenameRefactoring(
+						element.getResource(), null, fWindow.getShell());
+			} catch (CoreException e) {
+				MessageDialog.openInformation(fWindow.getShell(), DIALOG_TITLE,
+						Messages.RenamePHPElementActionDelegate_2);
+			}
+			return;
+		} else if (isSourceReference(object) && isModelElement(object)) {
+			IModelElement element = (IModelElement) object;
+
+			IModelElement type = element.getPrimaryElement();
+			ISourceModule source = RefactoringUtility.getSourceModule(type);
+
+			if (source == null) {
+				MessageDialog.openInformation(fWindow.getShell(), DIALOG_TITLE,
+						Messages.RenamePHPElementActionDelegate_2);
+				return;
+			}
+
+			Program program = null;
+			try {
+				program = ASTUtils.createProgramFromSource(source);
+
+			} catch (ModelException e) {
+			} catch (IOException e) {
+			} catch (Exception e) {
+			}
+
+			if (program == null) {
+				MessageDialog.openInformation(fWindow.getShell(), DIALOG_TITLE,
+						Messages.RenamePHPElementActionDelegate_2);
+				return;
+			}
+
+			try {
+				int offset = getSourceOffset(element);
+				run(element.getResource(), program, offset, 0, fWindow
+						.getActivePage().getActiveEditor(), false);
+
+			} catch (ModelException e) {
+				MessageDialog.openInformation(fWindow.getShell(), DIALOG_TITLE,
+						Messages.RenamePHPElementActionDelegate_2);
+				return;
+			}
+
+		} else {
+			RenameResourceAction renameAction = new RenameResourceAction(
+					new IShellProvider() {
+						public Shell getShell() {
+							return fWindow.getShell();
+						}
+					});
+
+			renameAction.selectionChanged(selection);
+			renameAction.run();
+		}
+
+	}
+

@@ -1,0 +1,27 @@
+	@Override
+	protected void setUp() throws Exception {
+		PHPCoreTests.waitForIndexer();
+		PHPCoreTests.waitForAutoBuild();
+
+		project1 = FileUtils.createProject("project1");
+
+		IFolder folder = project1.getFolder("src");
+
+		if (!folder.exists()) {
+			folder.create(true, true, new NullProgressMonitor());
+		}
+		file = folder.getFile("ProgramDocument.php");
+
+		InputStream source = new ByteArrayInputStream(
+				"<?php class Item { public static function foo(){} } class ItemEx extends Item{public static function foo(){}} ItemEx::foo();?>".getBytes());
+
+		if (!file.exists()) {
+			file.create(source, true, new NullProgressMonitor());
+		} else {
+			file.setContents(source, IFile.FORCE, new NullProgressMonitor());
+		}
+
+		PHPCoreTests.waitForIndexer();
+		PHPCoreTests.waitForAutoBuild();
+	}
+

@@ -1,0 +1,54 @@
+	private ITypeBinding resolveDispatcherType(Identifier identifier) {
+		ITypeBinding typeBinding = null;
+		ASTNode parent = identifier.getParent();
+		if (parent.getType() == ASTNode.FULLY_QUALIFIED_TRAIT_METHOD_REFERENCE) {
+			FullyQualifiedTraitMethodReference reference = (FullyQualifiedTraitMethodReference) parent;
+			typeBinding = reference.getClassName().resolveTypeBinding();
+			ITypeBinding temp = getTypeBinding(typeBinding, reference
+					.getFunctionName().getName());
+			if (temp != null) {
+				return temp;
+			}
+		} else if (parent.getType() == ASTNode.TRAIT_ALIAS) {
+			TraitAlias traitAlias = (TraitAlias) parent;
+			List<NamespaceName> nameList = ((TraitUseStatement) traitAlias
+					.getParent().getParent()).getTraitList();
+			String memberName = null;
+			if (identifier == traitAlias.getFunctionName()) {
+				Expression expression = traitAlias.getTraitMethod();
+				if (expression.getType() == ASTNode.FULLY_QUALIFIED_TRAIT_METHOD_REFERENCE) {
+					FullyQualifiedTraitMethodReference fqtm = (FullyQualifiedTraitMethodReference) expression;
+					memberName = fqtm.getFunctionName().getName();
+				} else {
+					memberName = ((Identifier) expression).getName();
+				}
+			} else {
+				memberName = identifier.getName();
+			}
+			for (NamespaceName namespaceName : nameList) {
+				typeBinding = namespaceName.resolveTypeBinding();
+				ITypeBinding temp = getTypeBinding(typeBinding, memberName);
+				if (temp != null) {
+					return temp;
+				}
+				// if (typeBinding != null && typeBinding.isTrait()
+				// && typeBinding.getPHPElement() != null) {
+				// try {
+				// IModelElement[] members = ((IType) typeBinding
+				// .getPHPElement()).getChildren();
+				// for (IModelElement modelElement : members) {
+				// if (modelElement.getElementName()
+				// .equals(memberName)) {
+				// return typeBinding;
+				// }
+				// }
+				// } catch (ModelException e) {
+				// }
+				//
+				// }
+			}
+			return null;
+		}
+		return typeBinding;
+	}
+

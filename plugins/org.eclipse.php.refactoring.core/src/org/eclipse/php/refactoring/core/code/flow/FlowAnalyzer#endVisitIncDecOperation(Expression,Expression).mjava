@@ -1,0 +1,19 @@
+	private void endVisitIncDecOperation(Expression node, Expression operand) {
+		if (skipNode(node))
+			return;
+		FlowInfo info = getFlowInfo(operand);
+		if (info instanceof LocalFlowInfo) {
+			// Normally we should do this in the parent node since the write
+			// access take place later.
+			// But I couldn't come up with a case where this influences the flow
+			// analysis. So I kept
+			// it here to simplify the code.
+			GenericSequentialFlowInfo result = createSequential(node);
+			result.merge(info, fFlowContext);
+			result.merge(new LocalFlowInfo((LocalFlowInfo) info,
+					FlowInfo.WRITE, fFlowContext), fFlowContext);
+		} else {
+			setFlowInfo(node, info);
+		}
+	}
+

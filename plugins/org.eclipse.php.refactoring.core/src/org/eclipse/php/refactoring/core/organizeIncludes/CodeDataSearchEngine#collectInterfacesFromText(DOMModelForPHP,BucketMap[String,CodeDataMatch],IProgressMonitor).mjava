@@ -1,0 +1,62 @@
+	/**
+	 * @param model
+	 * @param classData
+	 * @param searchResults
+	 */
+	// private static void collectInterfacesFromImplementor(PHPClassData
+	// classData, BucketMap<String, CodeDataMatch> searchResults) {
+	// PHPInterfaceNameData[] interfaceNameDatas =
+	// classData.getInterfacesNamesData();
+	// if (interfaceNameDatas == null)
+	// return;
+	// for (PHPInterfaceNameData interfaceNameData : interfaceNameDatas) {
+	// String interfaceName = interfaceNameData.getName();
+	// searchResults.add(interfaceName, new CodeDataMatch(interfaceName,
+	// ELEMENT_CLASS_INTERFACE));
+	// }
+	// }
+	//
+	// private static void collectInterfacesFromModel(PHPFileData fileData,
+	// BucketMap<String, CodeDataMatch> searchResults, IProgressMonitor monitor)
+	// {
+	// PHPClassData[] classDatas = fileData.getClasses();
+	//		monitor.beginTask(PhpRefactoringCoreMessages.getString("CodeDataSearchEngine.13"), classDatas.length + 1); //$NON-NLS-1$
+	// for (int i = 0; i < classDatas.length; ++i) {
+	// PHPClassData classData = classDatas[i];
+	// if (classIsInterface(classData))
+	// collectExtendedClass(classData, searchResults);
+	// collectInterfacesFromImplementor(classData, searchResults);
+	// collectMethodParameterClasses(classData, searchResults);
+	// if (monitor.isCanceled())
+	// return;
+	// monitor.worked(1);
+	// }
+	// if (monitor.isCanceled())
+	// return;
+	// collectClassesFromFunctionParameters(fileData, searchResults, new
+	// SubProgressMonitor(monitor, 1));
+	// }
+
+	private static void collectInterfacesFromText(DOMModelForPHP model,
+			BucketMap<String, CodeDataMatch> searchResults,
+			IProgressMonitor monitor) {
+		monitor.beginTask(
+				PhpRefactoringCoreMessages.getString("CodeDataSearchEngine.14"), 4); //$NON-NLS-1$
+		if (monitor.isCanceled())
+			return;
+		Set<String> set = searchElementNames(model, PATTERN_CLASS_MEMBER, 1,
+				new SubProgressMonitor(monitor, 1));
+		if (monitor.isCanceled())
+			return;
+		fillSearchResults(searchResults, set, ELEMENT_CLASS_MEMBER,
+				new SubProgressMonitor(monitor, 1));
+		if (monitor.isCanceled())
+			return;
+		set = searchElementNames(model, PATTERN_CLASS_INSTANCE, 1,
+				new SubProgressMonitor(monitor, 1));
+		if (monitor.isCanceled())
+			return;
+		fillSearchResults(searchResults, set, ELEMENT_CLASS_INSTANCE,
+				new SubProgressMonitor(monitor, 1));
+	}
+

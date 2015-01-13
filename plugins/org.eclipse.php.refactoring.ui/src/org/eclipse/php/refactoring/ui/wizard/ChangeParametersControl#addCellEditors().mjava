@@ -1,0 +1,64 @@
+	private void addCellEditors() {
+		fTableViewer.setColumnProperties(PROPERTIES);
+
+		final TableTextCellEditor editors[] = new TableTextCellEditor[PROPERTIES.length];
+
+		// editors[TYPE_PROP] = new TableTextCellEditor(fTableViewer,
+		// TYPE_PROP);
+		editors[NEWNAME_PROP] = new TableTextCellEditor(fTableViewer,
+				NEWNAME_PROP);
+		editors[DEFAULT_PROP] = new TableTextCellEditor(fTableViewer,
+				DEFAULT_PROP);
+
+		// if (fMode.canChangeTypes()) {
+		// SubjectControlContentAssistant assistant =
+		// installParameterTypeContentAssist(editors[TYPE_PROP].getText());
+		// // editors[TYPE_PROP].setContentAssistant(assistant);
+		// }
+		if (fParamNameProposals.length > 0) {
+			SubjectControlContentAssistant assistant = installParameterNameContentAssist(editors[NEWNAME_PROP]
+					.getText());
+			// editors[NEWNAME_PROP].setContentAssistant(assistant);
+		}
+
+		for (int i = 0; i < editors.length; i++) {
+			final int editorColumn = i;
+			final TableTextCellEditor editor = editors[i];
+			// support tabbing between columns while editing:
+			editor.getText().addTraverseListener(new TraverseListener() {
+				public void keyTraversed(TraverseEvent e) {
+					switch (e.detail) {
+					case SWT.TRAVERSE_TAB_NEXT:
+						editColumnOrNextPossible(nextColumn(editorColumn));
+						e.detail = SWT.TRAVERSE_NONE;
+						break;
+
+					case SWT.TRAVERSE_TAB_PREVIOUS:
+						editColumnOrPrevPossible(prevColumn(editorColumn));
+						e.detail = SWT.TRAVERSE_NONE;
+						break;
+
+					default:
+						break;
+					}
+				}
+			});
+			TextFieldNavigationHandler.install(editor.getText());
+		}
+
+		editors[NEWNAME_PROP]
+				.setActivationListener(new TableTextCellEditor.IActivationListener() {
+					public void activate() {
+						ParameterInfo[] selected = getSelectedElements();
+						if (selected.length == 1
+								&& fNameContentAssistHandler != null) {
+							fNameContentAssistHandler.setEnabled(selected[0]
+									.isAdded());
+						}
+					}
+				});
+
+		fTableViewer.setCellEditors(editors);
+		fTableViewer.setCellModifier(new ParametersCellModifier());
+	}
+

@@ -1,0 +1,43 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.eclipse.jface.dialogs.IDialogPage#createControl(org.eclipse.swt.widgets
+	 * .Composite)
+	 */
+	public void createControl(Composite parent) {
+		initializeDialogUnits(parent);
+		Composite result = new Composite(parent, SWT.NONE);
+		setControl(result);
+		result.setLayout(new GridLayout());
+
+		IResource[] initialSelections = new IResource[] { getPHPMoveProcessor()
+				.getDestination() };
+
+		verifyDestination(initialSelections, true);
+
+		addLabel(result);
+
+		fViewer = createViewer(result);
+
+		IResource target = initialSelections[0];
+		if (target instanceof IFile) {
+			target = target.getParent();
+		}
+
+		if (target != null) {
+			fViewer.setSelection(new StructuredSelection(target), true);
+		}
+		fViewer.addSelectionChangedListener(new ISelectionChangedListener() {
+			public void selectionChanged(SelectionChangedEvent event) {
+				viewerSelectionChanged(event);
+			}
+		});
+
+		addUpdateReferenceComponent(result);
+		// TODO add fully qualified names checkbox (? enhancement)
+
+		Dialog.applyDialogFont(result);
+
+	}
+

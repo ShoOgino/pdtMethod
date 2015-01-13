@@ -1,0 +1,34 @@
+	public void testExtract() {
+
+		IStructuredModel model = null;
+		try {
+			model = StructuredModelManager.getModelManager()
+					.createUnManagedStructuredModelFor(file);
+		} catch (IOException e) {
+			fail(e.getMessage());
+		} catch (CoreException e) {
+			fail(e.getMessage());
+		}
+		assertNotNull(model);
+
+		IStructuredDocument structuredDocument = model.getStructuredDocument();
+		assertNotNull(structuredDocument);
+
+		ExtractVariableRefactoring processor;
+		try {
+			processor = new ExtractVariableRefactoring(DLTKCore
+					.createSourceModuleFrom(file), structuredDocument, 19, 2);
+			processor.setNewVariableName("c");
+
+			RefactoringStatus status = processor
+					.checkInitialConditions(new NullProgressMonitor());
+			assertEquals(Status.OK, status.getSeverity());
+
+			status = processor.checkFinalConditions(new NullProgressMonitor());
+			assertEquals(Status.WARNING, status.getSeverity());
+
+		} catch (CoreException e) {
+			fail(e.getMessage());
+		}
+	}
+

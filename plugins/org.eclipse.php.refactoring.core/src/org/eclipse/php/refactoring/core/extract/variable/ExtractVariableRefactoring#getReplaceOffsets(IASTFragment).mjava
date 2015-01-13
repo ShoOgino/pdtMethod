@@ -1,0 +1,24 @@
+	/**
+	 * For a given fragment, returns the exact start offset and length for the
+	 * replacement AssociativeInfixExpressionFragment have special replacements
+	 * logic
+	 * 
+	 * @param fragment
+	 * @return Source range with the relevant start offset and length
+	 */
+	private ISourceRange getReplaceOffsets(IASTFragment fragment) {
+
+		ASTNode associatedNode = fragment.getAssociatedNode();
+
+		int start = associatedNode.getStart();
+		int length = associatedNode.getLength();
+		if (fragment instanceof AssociativeInfixExpressionFragment) {
+			AssociativeInfixExpressionFragment infixExpressionFragment = (AssociativeInfixExpressionFragment) fragment;
+			List<Expression> operands = infixExpressionFragment.getOperands();
+			start = operands.get(0).getStart();
+			length = operands.get(operands.size() - 1).getEnd() - start;
+		}
+
+		return new SourceRange(start, length);
+	}
+

@@ -1,0 +1,175 @@
+	public void start() {
+		if (getActiveLinkedMode() != null) {
+			// for safety; should already be handled in RenameJavaElementAction
+			fgActiveLinkedMode.startFullDialog();
+			return;
+		}
+
+		ISourceViewer viewer = fEditor.getTextViewer();
+		IDocument document = viewer.getDocument();
+		fOriginalSelection = viewer.getSelectedRange();
+		int offset = fOriginalSelection.x;
+
+		IEditorInput input = fEditor.getEditorInput();
+
+		// Not applicable to other editor input.
+		// E.g. external file.
+		if (!(input instanceof IFileEditorInput)) {
+			MessageDialog.openError(fEditor.getEditorSite().getShell(),
+					Messages.RenameLinkedMode_1, Messages.RenameLinkedMode_4);
+			return;
+		}
+		IFile file = ((IFileEditorInput) input).getFile();
+
+		ISourceModule sourceModule = DLTKCore.createSourceModuleFrom(file);
+
+		if (!(sourceModule instanceof ISourceModule)) {
+			MessageDialog.openError(fEditor.getEditorSite().getShell(),
+					Messages.RenameLinkedMode_1, Messages.RenameLinkedMode_2);
+			return;
+		}
+
+		try {
+			Program root = ASTUtils.createProgramFromSource(sourceModule);
+
+			fLinkedPositionGroup = new LinkedPositionGroup();
+			selectedNode = NodeFinder.perform(root, fOriginalSelection.x,
+					fOriginalSelection.y);
+			if (!(selectedNode instanceof ASTNode)) {
+				MessageDialog.openError(fEditor.getEditorSite().getShell(),
+						Messages.RenameLinkedMode_1,
+						Messages.RenameLinkedMode_4);
+				return;
+			}
+			if (((ASTNode) selectedNode).getParent() instanceof NamespaceName) {
+				NamespaceName namespaceName = (NamespaceName) ((ASTNode) selectedNode)
+						.getParent();
+				if (namespaceName.segments() != null
+						&& namespaceName.segments().size() > 0) {
+
+					if (!namespaceName.segments()
+							.get(namespaceName.segments().size() - 1)
+							.equals(selectedNode)) {
+						MessageDialog.openError(fEditor.getEditorSite()
+								.getShell(), Messages.RenameLinkedMode_1,
+								Messages.RenameLinkedMode_4);
+						return;
+					}
+				}
+			}
+
+			fOriginalName = getCurrentElementName(selectedNode);
+
+			final int pos = selectedNode.getStart();
+
+			OccurrenceLocation[] sameNodes = LinkedNodeFinder.findByNode(root,
+					selectedNode);
+
+			// TODO: copied from LinkedNamesAssistProposal#apply(..):
+			// sort for iteration order, starting with the node @ offset
+			Arrays.sort(sameNodes, new Comparator() {
+				public int compare(Object o1, Object o2) {
+					return rank((OccurrenceLocation) o1)
+							- rank((OccurrenceLocation) o2);
+				}
+
+				/**
+				 * Returns the absolute rank of an <code>ASTNode</code>. Nodes
+				 * preceding <code>pos</code> are ranked last.
+				 * 
+				 * @param node
+				 *            the node to compute the rank for
+				 * @return the rank of the node with respect to the invocation
+				 *         offset
+				 */
+				private int rank(OccurrenceLocation node) {
+					int relativeRank = node.getOffset() + node.getLength()
+							- pos;
+					if (relativeRank < 0)
+						return Integer.MAX_VALUE + relativeRank;
+					else
+						return relativeRank;
+				}
+			});
+
+			String name = ""; //$NON-NLS-1$
+			for (int i = 0; i < sameNodes.length; i++) {
+				OccurrenceLocation elem = sameNodes[i];
+
+				PHPElementLinkedPosition linkedPosition = null;
+				String oriName = document.get(elem.getOffset(),
+						elem.getLength());
+				int index = oriName
+						.lastIndexOf(NamespaceReference.NAMESPACE_SEPARATOR);
+				if (index > 0) {
+					linkedPosition = new PHPElementLinkedPosition(document,
+							elem.getOffset() + (index + 1), elem.getLength()
+									- (index + 1), i);
+				} else if (index == 0) {
+					linkedPosition = new PHPElementLinkedPosition(document,
+							elem.getOffset() + (index + 1), elem.getLength()
+									- (index + 1), i);
+				} else {
+					linkedPosition = new PHPElementLinkedPosition(document,
+							elem.getOffset(), elem.getLength(), i);
+				}
+
+				if (i == 0) {
+					fNamePosition = linkedPosition;
+					name = getName(linkedPosition);
+				}
+
+				// make sure the name of the locations are the same.
+				if (isSameString(linkedPosition, name)) {
+					fLinkedPositionGroup.addPosition(linkedPosition);
+				}
+			}
+			fLinkedModeModel = new LinkedModeModel();
+			fLinkedModeModel.addGroup(fLinkedPositionGroup);
+			fLinkedModeModel.forceInstall();
+			fLinkedModeModel
+					.addLinkingListener(new EditorHighlightingSynchronizer(
+							fEditor));
+			fLinkedModeModel.addLinkingListener(new EditorSynchronizer());
+
+			EditorLinkedModeUI ui = new EditorLinkedModeUI(fLinkedModeModel,
+					viewer);
+			ui.setExitPosition(viewer, offset, 0, Integer.MAX_VALUE);
+			ui.setExitPolicy(new ExitPolicy(document));
+			((PHPStructuredTextViewer) viewer).setFireSelectionChanged(false);
+			ui.enter();
+			String selectedText = ""; //$NON-NLS-1$
+			if (fOriginalSelection.y == 0) {
+				// place the cursor under the name
+				selectedText = name;
+			} else {
+				selectedText = viewer.getTextWidget().getText(
+						fOriginalSelection.x,
+						fOriginalSelection.x + fOriginalSelection.y - 1);
+			}
+
+			if (selectedText.startsWith("$")) { //$NON-NLS-1$
+				viewer.setSelectedRange(fOriginalSelection.x + 1,
+						fOriginalSelection.y - 1);
+			} else {
+				viewer.setSelectedRange(fOriginalSelection.x,
+						fOriginalSelection.y); // by default,full word is
+												// selected; restore original
+												// selection
+			}
+
+			if (viewer instanceof IEditingSupportRegistry) {
+				IEditingSupportRegistry registry = (IEditingSupportRegistry) viewer;
+				registry.register(fFocusEditingSupport);
+			}
+
+			openSecondaryPopup();
+			// startAnimation();
+			fgActiveLinkedMode = this;
+
+		} catch (Exception e) {
+			MessageDialog.openError(fEditor.getEditorSite().getShell(),
+					Messages.RenameLinkedMode_1, Messages.RenameLinkedMode_4);
+		}
+	}
+

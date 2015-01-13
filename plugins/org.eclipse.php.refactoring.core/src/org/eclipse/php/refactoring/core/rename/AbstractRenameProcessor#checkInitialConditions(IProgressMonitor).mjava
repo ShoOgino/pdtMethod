@@ -1,0 +1,43 @@
+	@Override
+	public RefactoringStatus checkInitialConditions(IProgressMonitor pm)
+			throws CoreException, OperationCanceledException {
+		boolean hasExternalDependencies = false;
+
+		try {
+
+			participantFiles = new HashMap<IFile, Program>();
+
+			if (resource instanceof IFile
+					&& PHPToolkitUtil.isPhpFile((IFile) resource)) {
+
+				IFile file = (IFile) resource;
+
+				ISourceModule sourceModule = DLTKCore
+						.createSourceModuleFrom(file);
+				IProject project = file.getProject();
+				PHPVersion version = ProjectOptions.getPhpVersion(project);
+
+				ASTParser newParser = ASTParser
+						.newParser(version, sourceModule);
+				Program program = newParser.createAST(null);
+				participantFiles.put(file, program);
+
+				collectReferences(program, pm);
+			}
+			// }
+		} catch (Exception e) {
+			final String exceptionMessage = e.getMessage();
+			final String formattedString = REFACTORING_ACTION_INTERNAL_ERROR
+					.concat(exceptionMessage == null ? "" : exceptionMessage); //$NON-NLS-1$
+			return RefactoringStatus.createFatalErrorStatus(formattedString);
+		}
+
+		if (hasExternalDependencies) {
+			final String message = PhpRefactoringCoreMessages
+					.getString("AbstractRenameProcessor.1"); //$NON-NLS-1$
+			return RefactoringStatus.createWarningStatus(message);
+		}
+
+		return new RefactoringStatus();
+	}
+

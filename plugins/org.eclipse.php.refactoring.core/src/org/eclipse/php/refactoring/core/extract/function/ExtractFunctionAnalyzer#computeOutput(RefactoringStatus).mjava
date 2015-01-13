@@ -1,0 +1,74 @@
+	private void computeOutput(RefactoringStatus status) {
+		// First find all writes inside the selection.
+		FlowContext flowContext = new FlowContext(0, fMaxVariableId + 1);
+		flowContext.setConsiderAccessMode(true);
+		flowContext.setComputeMode(FlowContext.RETURN_VALUES);
+		FlowInfo returnInfo = new InOutFlowAnalyzer(flowContext)
+				.perform(getSelectedNodes());
+		IVariableBinding[] returnValues = returnInfo.get(flowContext,
+				FlowInfo.WRITE | FlowInfo.WRITE_POTENTIAL | FlowInfo.UNKNOWN);
+
+		// Compute a selection that exactly covers the selected nodes
+		IRegion region = getSelectedNodeRange();
+		Selection selection = Selection.createFromStartLength(
+				region.getOffset(), region.getLength());
+
+		int counter = 0;
+		flowContext.setComputeMode(FlowContext.ARGUMENTS);
+
+		FlowInfo argInfo = null;
+		if (fEnclosingBodyDeclaration instanceof MethodDeclaration) {
+			argInfo = new InputFlowAnalyzer(flowContext, selection, true)
+					.perform(((MethodDeclaration) fEnclosingBodyDeclaration)
+							.getFunction());
+		} else if (fEnclosingBodyDeclaration instanceof FunctionDeclaration) {
+			argInfo = new InputFlowAnalyzer(flowContext, selection, true)
+					.perform(fEnclosingBodyDeclaration);
+		} else {
+			argInfo = new InputFlowAnalyzer(flowContext, selection, true)
+					.perform(fEnclosingBodyDeclaration);
+		}
+
+		IVariableBinding[] reads = argInfo.get(flowContext, FlowInfo.READ
+				| FlowInfo.READ_POTENTIAL | FlowInfo.UNKNOWN);
+		outer: for (int i = 0; i < returnValues.length && counter <= 1; i++) {
+			IVariableBinding binding = returnValues[i];
+			for (int x = 0; x < reads.length; x++) {
+				if (reads[x].equals(binding)) {
+					counter++;
+					fReturnValue = binding;
+					continue outer;
+				}
+			}
+		}
+		switch (counter) {
+		case 0:
+			fReturnValue = null;
+			break;
+		case 1:
+			break;
+		default:
+			fReturnValue = null;
+			status.addFatalError(PhpRefactoringCoreMessages
+					.getString("ExtractFunctionAnalyzer.1")); //$NON-NLS-1$
+			return;
+		}
+		// List callerLocals= new ArrayList(5);
+		// FlowInfo localInfo= new InputFlowAnalyzer(flowContext, selection,
+		// false).perform(fEnclosingBodyDeclaration);
+		// IVariableBinding[] writes= localInfo.get(flowContext, FlowInfo.WRITE
+		// | FlowInfo.WRITE_POTENTIAL | FlowInfo.UNKNOWN);
+		// for (int i= 0; i < writes.length; i++) {
+		// IVariableBinding write= writes[i];
+		// if (getSelection().covers(ASTNodes.findDeclaration(write,
+		// fEnclosingBodyDeclaration)))
+		// callerLocals.add(write);
+		// }
+		// fCallerLocals= (IVariableBinding[])callerLocals.toArray(new
+		// IVariableBinding[callerLocals.size()]);
+		// if (fReturnValue != null &&
+		// getSelection().covers(ASTNodes.findDeclaration(fReturnValue,
+		// fEnclosingBodyDeclaration)))
+		// fReturnLocal= fReturnValue;
+	}
+

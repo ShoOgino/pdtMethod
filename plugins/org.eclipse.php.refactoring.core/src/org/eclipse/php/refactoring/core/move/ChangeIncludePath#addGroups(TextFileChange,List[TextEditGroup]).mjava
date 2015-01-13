@@ -1,0 +1,31 @@
+	/**
+	 * Adds the edit groups to an existing change
+	 * 
+	 * @param change
+	 *            - the change that will be used as a container
+	 * @param groups
+	 *            - the groups to add
+	 */
+	private final static void addGroups(TextFileChange change,
+			List<TextEditGroup> groups) {
+		assert change != null && groups != null;
+
+		TextEditChangeGroup[] textEditChangeGroups = change
+				.getTextEditChangeGroups();
+		OUTER: for (TextEditGroup editGroup : groups) {
+			TextEditChangeGroup textEditChangeGroup = new TextEditChangeGroup(
+					change, editGroup);
+			final TextEdit textEdit = editGroup.getTextEdits()[0];
+			for (TextEditChangeGroup existingTextEditChangeGroup : textEditChangeGroups) {
+				TextEdit existingTextEdit = existingTextEditChangeGroup
+						.getTextEdits()[0];
+				// avoid overlapping edits
+				if (existingTextEdit.getOffset() == textEdit.getOffset()) {
+					continue OUTER;
+				}
+			}
+			change.addTextEditChangeGroup(textEditChangeGroup);
+			change.addEdit(textEdit);
+		}
+	}
+

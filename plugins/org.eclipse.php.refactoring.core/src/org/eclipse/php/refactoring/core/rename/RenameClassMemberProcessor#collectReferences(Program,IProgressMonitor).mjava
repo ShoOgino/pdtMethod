@@ -1,0 +1,122 @@
+	@Override
+	protected void collectReferences(Program program, IProgressMonitor pm) {
+		final ArrayList<IResource> list = new ArrayList<IResource>();
+
+		if (identifier instanceof Identifier) {
+			if (identifier.getParent().getType() == ASTNode.FULLY_QUALIFIED_TRAIT_METHOD_REFERENCE) {
+				list.add(this.identifier.getProgramRoot().getSourceModule()
+						.getResource());
+			} else if (identifier.getParent().getType() == ASTNode.TRAIT_ALIAS) {
+				list.add(this.identifier.getProgramRoot().getSourceModule()
+						.getResource());
+			}
+		}
+		try {
+			IModelElement[] elements = this.identifier.getProgramRoot()
+					.getSourceModule().codeSelect(identifier.getStart(), 0);
+			for (IModelElement modelElement : elements) {
+				if (modelElement instanceof ITraitMember) {
+					ITraitMember tm = (ITraitMember) modelElement;
+					list.add(tm.getHostType().getResource());
+				}
+			}
+		} catch (ModelException e1) {
+		}
+		IScriptProject project = this.identifier.getProgramRoot()
+				.getSourceModule().getScriptProject();
+
+		IDLTKSearchScope scope = SearchEngine.createSearchScope(project,
+				getSearchFlags(false));
+
+		ASTNode node = getParent(identifier);
+
+		SearchPattern pattern = null;
+		if (node instanceof Variable || node instanceof FieldsDeclaration) {
+			pattern = SearchPattern.createPattern(
+					"$" + getCurrentElementName(), IDLTKSearchConstants.FIELD, //$NON-NLS-1$
+					IDLTKSearchConstants.ALL_OCCURRENCES,
+					SearchPattern.R_ERASURE_MATCH,
+					PHPLanguageToolkit.getDefault());
+			SearchEngine engine = new SearchEngine();
+			try {
+				engine.search(pattern, new SearchParticipant[] { SearchEngine
+						.getDefaultSearchParticipant() }, scope,
+						new SearchRequestor() {
+							@Override
+							public void acceptSearchMatch(SearchMatch match)
+									throws CoreException {
+
+								IModelElement element = (IModelElement) match
+										.getElement();
+								list.add(element.getResource());
+
+							}
+						}, new NullProgressMonitor());
+			} catch (CoreException e) {
+			}
+		}
+
+		if (node instanceof ConstantDeclaration
+				|| node instanceof StaticConstantAccess) {
+			pattern = SearchPattern.createPattern(getCurrentElementName(),
+					IDLTKSearchConstants.FIELD,
+					IDLTKSearchConstants.ALL_OCCURRENCES,
+					SearchPattern.R_ERASURE_MATCH,
+					PHPLanguageToolkit.getDefault());
+			SearchEngine engine = new SearchEngine();
+			try {
+				engine.search(pattern, new SearchParticipant[] { SearchEngine
+						.getDefaultSearchParticipant() }, scope,
+						new SearchRequestor() {
+							@Override
+							public void acceptSearchMatch(SearchMatch match)
+									throws CoreException {
+
+								IModelElement element = (IModelElement) match
+										.getElement();
+								list.add(element.getResource());
+							}
+						}, new NullProgressMonitor());
+			} catch (CoreException e) {
+			}
+		}
+
+		int matchMode = SearchPattern.R_EXACT_MATCH
+				| SearchPattern.R_ERASURE_MATCH;
+
+		if (node instanceof FunctionDeclaration
+				|| node instanceof MethodDeclaration
+				|| node instanceof FunctionName) {
+			pattern = SearchPattern.createPattern(getCurrentElementName(),
+					IDLTKSearchConstants.METHOD,
+					IDLTKSearchConstants.ALL_OCCURRENCES, matchMode,
+					PHPLanguageToolkit.getDefault());
+			SearchEngine engine = new SearchEngine();
+			try {
+				engine.search(pattern, new SearchParticipant[] { SearchEngine
+						.getDefaultSearchParticipant() }, scope,
+						new SearchRequestor() {
+							@Override
+							public void acceptSearchMatch(SearchMatch match)
+									throws CoreException {
+								IModelElement element = (IModelElement) match
+										.getElement();
+								list.add(element.getResource());
+							}
+						}, new NullProgressMonitor());
+			} catch (CoreException e) {
+			}
+		}
+
+		for (Iterator<IResource> it = list.iterator(); it.hasNext();) {
+			IResource file = it.next();
+			if (file instanceof IFile) {
+				try {
+					participantFiles.put((IFile) file,
+							RefactoringUtility.getProgramForFile((IFile) file));
+				} catch (Exception e) {
+				}
+			}
+		}
+	}
+

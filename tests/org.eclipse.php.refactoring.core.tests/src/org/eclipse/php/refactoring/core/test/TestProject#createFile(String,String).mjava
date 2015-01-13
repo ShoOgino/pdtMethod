@@ -1,0 +1,19 @@
+	public IFile createFile(String path, String content) throws CoreException {
+		IPath filePath = new Path(path);
+		if (filePath.segmentCount() > 1) {
+			createFolder(filePath.removeLastSegments(1));
+		}
+
+		if (project != null) {
+			InputStream source = new ByteArrayInputStream(content.getBytes());
+			IFile file = project.getFile(path);
+			if (!file.exists()) {
+				file.create(source, true, new NullProgressMonitor());
+			} else {
+				file.setContents(source, IFile.FORCE, new NullProgressMonitor());
+			}
+			return file;
+		}
+		return null;
+	}
+

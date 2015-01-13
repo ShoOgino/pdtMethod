@@ -1,0 +1,44 @@
+	private void handlStaticDispatch(StaticDispatch dispatch) {
+		ASTNode member = dispatch.getMember();
+		Identifier identifier = null;
+		VariableBase variable = null;
+		if (member instanceof Variable) {
+			variable = (VariableBase) dispatch.getMember();
+		}
+
+		if (member instanceof FunctionInvocation) {
+			variable = (VariableBase) member;
+		}
+
+		if (variable instanceof Variable) {
+			identifier = getIdentifer((Variable) variable);
+		}
+		if (variable instanceof FunctionInvocation) {
+			Expression functionName = ((FunctionInvocation) variable)
+					.getFunctionName().getName();
+			if (functionName instanceof Variable) {
+				identifier = getIdentifer((Variable) functionName);
+			}
+			if (functionName instanceof Identifier) {
+				identifier = (Identifier) functionName;
+			}
+		}
+
+		if (member instanceof Identifier) {
+			identifier = (Identifier) member;
+		}
+		if (identifier != null && identifier.getName().equals(oldName)) {
+			ITypeBinding typeBinding = dispatch.getClassName()
+					.resolveTypeBinding();
+			if (typeBinding != null) {
+				if (type.equals(typeBinding)
+						|| type.isSubTypeCompatible(typeBinding)
+						|| typeBinding.isSubTypeCompatible(type)
+						|| traitEqual(typeBinding, identifier)
+						|| traitInSuperEqual(typeBinding, identifier)) {
+					addChange(identifier.getStart());
+				}
+			}
+		}
+	}
+

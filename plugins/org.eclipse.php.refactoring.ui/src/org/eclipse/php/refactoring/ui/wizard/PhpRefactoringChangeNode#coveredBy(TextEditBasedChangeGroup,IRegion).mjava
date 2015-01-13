@@ -1,0 +1,26 @@
+	private boolean coveredBy(TextEditBasedChangeGroup group,
+			IRegion sourceRegion) {
+		int sLength = sourceRegion.getLength();
+		if (sLength == 0)
+			return false;
+		int sOffset = sourceRegion.getOffset();
+		int sEnd = sOffset + sLength - 1;
+		TextEdit[] edits = group.getTextEdits();
+		for (int i = 0; i < edits.length; i++) {
+			TextEdit edit = edits[i];
+			if (edit.isDeleted())
+				return false;
+			int rOffset = edit.getOffset();
+			int rLength = edit.getLength();
+			int rEnd = rOffset + rLength - 1;
+			if (rLength == 0) {
+				if (!(sOffset < rOffset && rOffset <= sEnd))
+					return false;
+			} else {
+				if (!(sOffset <= rOffset && rEnd <= sEnd))
+					return false;
+			}
+		}
+		return true;
+	}
+

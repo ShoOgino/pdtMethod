@@ -1,0 +1,49 @@
+	private void createRenameReferenceChange(IProgressMonitor pm,
+			CompositeChange rootChange) throws CoreException {
+		pm.beginTask(
+				PhpRefactoringCoreMessages.getString("RenameFolderProcessor.0"), 0); //$NON-NLS-1$
+		pm.setTaskName(PhpRefactoringCoreMessages
+				.getString("RenameFolderProcessor.1")); //$NON-NLS-1$
+
+		IPath source = resource.getFullPath().removeLastSegments(1);
+		String oldName = resource.getName();
+		IPath dest = getNewFilePath();
+
+		RenameConfigurationChange confChange = new RenameConfigurationChange(
+				source.removeLastSegments(0), dest.removeLastSegments(0),
+				oldName, fNewElementName);
+		rootChange.add(confChange);
+
+		if (pm.isCanceled())
+			throw new OperationCanceledException();
+
+		createFileRenameChange(rootChange);
+		if (resource instanceof IProject) {
+			IProject[] referencing = ((IProject) resource)
+					.getReferencingProjects();
+			if (referencing != null && referencing.length > 0) {
+				ProjectReferenceChange change = new ProjectReferenceChange(
+						resource.getName(), getNewElementName(), referencing);
+
+				rootChange.add(change);
+			}
+		}
+
+		collectBuildPath();
+		RenameBuildAndIcludePathChange biChange = new RenameBuildAndIcludePathChange(
+				source, dest, oldName, fNewElementName, oldBuildEntries,
+				newBuildEntries, oldIncludePath, newIncludePathEntries);
+
+		if (newBuildEntries.size() > 0 || newIncludePathEntries.size() > 0) {
+			rootChange.add(biChange);
+		}
+
+		collectBrakePoint();
+		if (fBreakpoints.getKeys().size() > 0) {
+			RenameBreackpointChange breakePointchange = new RenameBreackpointChange(
+					source, dest, oldName, fNewElementName, fBreakpoints,
+					fBreakpointAttributes);
+			rootChange.add(breakePointchange);
+		}
+	}
+

@@ -1,0 +1,28 @@
+	public void testRename1() {
+		Program program = createProgram(file1);
+
+		assertNotNull(program);
+
+		int start = 24;
+		ASTNode selectedNode = locateNode(program, start, 0);
+		assertNotNull(selectedNode);
+
+		RenameClassMemberProcessor processor = new RenameClassMemberProcessor(
+				file1, selectedNode);
+		processor.setNewElementName("foo1");
+
+		checkInitCondition(processor);
+
+		performChange(processor);
+
+		try {
+			String content = FileUtils.getContents(file);
+			assertEquals("<?php $a = new A(); $a->foo1();", content);
+
+			content = FileUtils.getContents(file1);
+			assertEquals("<?php class A {function foo1(){}}", content);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+

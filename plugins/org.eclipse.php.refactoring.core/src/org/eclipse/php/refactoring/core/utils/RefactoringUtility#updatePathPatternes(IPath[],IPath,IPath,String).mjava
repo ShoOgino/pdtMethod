@@ -1,0 +1,26 @@
+	private static IPath[] updatePathPatternes(IPath[] updatingPaths,
+			IPath entryPath, IPath filePath, String newName) {
+		IPath[] paths = updatingPaths;
+		IPath relativePath = filePath.makeRelativeTo(entryPath);
+		ArrayList<IPath> excludeList = new ArrayList<IPath>();
+		for (IPath path : paths) {
+			if (!relativePath.isEmpty() && relativePath.isPrefixOf(path)) {
+				int mattchedPath = path.matchingFirstSegments(relativePath);
+				IPath truncatedPath = path.uptoSegment(mattchedPath);
+				IPath remaingPath = path.removeFirstSegments(mattchedPath);
+				if (mattchedPath == 0) {
+					excludeList.add(truncatedPath.removeLastSegments(1).append(
+							newName + "/")); //$NON-NLS-1$
+				} else {
+					excludeList.add(truncatedPath.removeLastSegments(1)
+							.append(newName + "/") //$NON-NLS-1$
+							.append(remaingPath.toString()));
+				}
+			} else {
+				excludeList.add(path);
+			}
+		}
+
+		return excludeList.toArray(new IPath[excludeList.size()]);
+	}
+

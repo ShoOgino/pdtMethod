@@ -1,0 +1,52 @@
+	protected Control createDialogArea(Composite parent) {
+		Composite result = (Composite) super.createDialogArea(parent);
+		GridLayout layout = (GridLayout) result.getLayout();
+		layout.numColumns = 2;
+		Label label;
+		GridData gd;
+
+		label = new Label(result, SWT.NONE);
+		String newName = fParameter.getNewDisplayName();
+		if (newName.length() == 0)
+			label.setText(RefactoringMessages.ParameterEditDialog_message_new);
+		else {
+			label.setText(NLS.bind(
+					RefactoringMessages.ParameterEditDialog_message, newName));
+		}
+		gd = new GridData(GridData.FILL_HORIZONTAL);
+		gd.horizontalSpan = 2;
+		label.setLayoutData(gd);
+
+		label = new Label(result, SWT.NONE);
+		fName = new Text(result, SWT.BORDER);
+		initializeDialogUnits(fName);
+		label.setText(RefactoringMessages.ParameterEditDialog_name);
+		gd = new GridData(GridData.FILL_HORIZONTAL);
+		gd.widthHint = convertWidthInCharsToPixels(45);
+		fName.setLayoutData(gd);
+		fName.setText(newName);
+		fName.addModifyListener(new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+				validate((Text) e.widget);
+			}
+		});
+		TextFieldNavigationHandler.install(fName);
+
+		if (fEditDefault && fParameter.isAdded()) {
+			label = new Label(result, SWT.NONE);
+			label.setText(RefactoringMessages.ParameterEditDialog_defaultValue);
+			fDefaultValue = new Text(result, SWT.BORDER);
+			gd = new GridData(GridData.FILL_HORIZONTAL);
+			fDefaultValue.setLayoutData(gd);
+			fDefaultValue.setText(fParameter.getDefaultValue());
+			fDefaultValue.addModifyListener(new ModifyListener() {
+				public void modifyText(ModifyEvent e) {
+					validate((Text) e.widget);
+				}
+			});
+			TextFieldNavigationHandler.install(fDefaultValue);
+		}
+		applyDialogFont(result);
+		return result;
+	}
+

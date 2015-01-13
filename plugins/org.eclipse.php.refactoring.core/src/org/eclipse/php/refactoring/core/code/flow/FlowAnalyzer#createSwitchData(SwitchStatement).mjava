@@ -1,0 +1,36 @@
+	protected SwitchData createSwitchData(SwitchStatement node) {
+		SwitchData result = new SwitchData();
+		List statements = node.getBody().statements();
+		if (statements.isEmpty())
+			return result;
+
+		int start = -1, end = -1;
+		GenericSequentialFlowInfo info = null;
+
+		for (Iterator iter = statements.iterator(); iter.hasNext();) {
+			Statement statement = (Statement) iter.next();
+			if (statement instanceof SwitchCase) {
+				SwitchCase switchCase = (SwitchCase) statement;
+				if (switchCase.isDefault()) {
+					result.setHasDefaultCase();
+				}
+				if (info == null) {
+					info = createSequential();
+					start = statement.getStart();
+				} else {
+					if (info.isReturn() || info.isPartialReturn()
+							|| info.branches()) {
+						result.add(new Region(start, end - start + 1), info);
+						info = createSequential();
+						start = statement.getStart();
+					}
+				}
+			} else {
+				info.merge(getFlowInfo(statement), fFlowContext);
+			}
+			end = statement.getStart() + statement.getLength() - 1;
+		}
+		result.add(new Region(start, end - start + 1), info);
+		return result;
+	}
+

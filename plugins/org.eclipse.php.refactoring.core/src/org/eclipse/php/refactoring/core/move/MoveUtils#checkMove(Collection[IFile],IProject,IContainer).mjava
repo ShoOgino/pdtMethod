@@ -1,0 +1,59 @@
+	public static RefactoringStatus checkMove(Collection<IFile> files,
+			IProject srcProject, IContainer destination) {
+		RefactoringStatus status = new RefactoringStatus();
+		// // collecting included files from source network
+		BucketMap<IFile, IFile> errors = new BucketMap<IFile, IFile>();
+		for (IFile file : files) {
+			Collection<Node> allIncludedNodes = getReferencedFiles(file);
+			if (allIncludedNodes == null) {
+				continue;
+			}
+			for (Node includedNode : allIncludedNodes) {
+				IFile includedFile = (IFile) includedNode.getFile()
+						.getResource();
+				if (!includedNode.getFile().getParent().getElementName()
+						.equals(phpunitFramework)
+						&& !files.contains(includedFile)
+						&& destination.findMember(includedFile
+								.getProjectRelativePath()) == null) {
+					errors.add(file, includedFile);
+				}
+			}
+		}
+		for (IFile node : errors.getKeys()) {
+			status.addWarning(MessageFormat.format(PhpRefactoringCoreMessages
+					.getString("MoveUtils.8"), node.getName())); //$NON-NLS-1$
+			for (IFile value : errors.get(node)) {
+				status.addWarning(MessageFormat.format(
+						PhpRefactoringCoreMessages.getString("MoveUtils.9"), node.getProjectRelativePath().toString(), value.getProjectRelativePath().toString())); //$NON-NLS-1$
+			}
+		}
+		//
+		// collecting including files from source network
+		errors = new BucketMap<IFile, IFile>();
+
+		for (IFile file : files) {
+			Collection<Node> allIncludingNodes = getReferencingFiles(file);
+			if (allIncludingNodes == null) {
+				continue;
+			}
+			for (Node includingNode : allIncludingNodes) {
+				IFile includingFile = (IFile) includingNode.getFile()
+						.getResource();
+
+				if (!files.contains(includingFile)) {
+					errors.add(file, includingFile);
+				}
+			}
+		}
+		for (IFile node : errors.getKeys()) {
+			status.addWarning(MessageFormat.format(PhpRefactoringCoreMessages
+					.getString("MoveUtils.10"), node.getName())); //$NON-NLS-1$
+			for (IFile includingNode : errors.get(node)) {
+				status.addWarning(MessageFormat.format(
+						PhpRefactoringCoreMessages.getString("MoveUtils.11"), node.getProjectRelativePath().toString(), includingNode.getProjectRelativePath().toString())); //$NON-NLS-1$
+			}
+		}
+		return status;
+	}
+

@@ -1,0 +1,43 @@
+	public void testRename() {
+		Program program = createProgram(file);
+
+		assertNotNull(program);
+
+		int start = 17;
+		ASTNode selectedNode = locateNode(program, start, 0);
+		assertNotNull(selectedNode);
+
+		RenameFunctionProcessor processor = new RenameFunctionProcessor(file,
+				selectedNode);
+		processor.setNewElementName("foo2749721");
+		processor.setUpdateTextualMatches(true);
+
+		checkInitCondition(processor);
+
+		performChange(processor);
+
+		IFile file = project1.getFile("src/RenameFuncTest0027497.php");
+		assertTrue(file.exists());
+
+		try {
+			String content = FileUtils.getContents(file);
+
+			assertEquals("<?php function foo2749721(){}; ?>", content);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		file = project1.getFile("RenameFuncTest00274972.php");
+		assertTrue(file.exists());
+
+		try {
+			String content = FileUtils.getContents(file);
+
+			assertEquals(
+					"<?php include \"src/RenameFuncTest0027497.php\"; foo2749721(); ?>",
+					content);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+

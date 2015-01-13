@@ -1,0 +1,28 @@
+	private void replaceDuplicates(DocumentChange textFileChange2) {
+		int numberOf = getNumberOfDuplicates();
+		if (numberOf == 0 || !fReplaceDuplicates)
+			return;
+		String label = null;
+		if (numberOf == 1)
+			label = PhpRefactoringCoreMessages
+					.format("ExtractFunctionRefactoring.5", new String[] { fNewFunctionName }); //$NON-NLS-1$
+		else
+			label = PhpRefactoringCoreMessages
+					.format("ExtractFunctionRefactoring.6", new String[] { fNewFunctionName }); //$NON-NLS-1$
+
+		TextEditGroup description = new TextEditGroup(label);
+		textFileChange2.addTextEditGroup(description);
+
+		for (int d = 0; d < fDuplicates.length; d++) {
+			SnippetFinder.Match duplicate = fDuplicates[d];
+			if (!duplicate.isMethodBody()) {
+				ASTNode[] callNodes = createCallNodes(duplicate);
+
+				ASTNode[] nodes = duplicate.getNodes();
+				for (ASTNode node : nodes) {
+					fRewriter.replace(node, callNodes[0], description);
+				}
+			}
+		}
+	}
+

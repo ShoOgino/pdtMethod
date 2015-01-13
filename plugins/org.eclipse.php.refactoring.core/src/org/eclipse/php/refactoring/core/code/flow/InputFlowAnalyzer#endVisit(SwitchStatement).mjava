@@ -1,0 +1,19 @@
+	public void endVisit(SwitchStatement node) {
+		if (skipNode(node))
+			return;
+		SwitchData data = createSwitchData(node);
+		IRegion[] ranges = data.getRanges();
+		for (int i = 0; i < ranges.length; i++) {
+			IRegion range = ranges[i];
+			if (fSelection.coveredBy(range)) {
+				GenericSequentialFlowInfo info = createSequential();
+				setFlowInfo(node, info);
+				info.merge(getFlowInfo(node.getExpression()), fFlowContext);
+				info.merge(data.getInfo(i), fFlowContext);
+				info.removeLabel(null);
+				return;
+			}
+		}
+		super.endVisit(node, data);
+	}
+

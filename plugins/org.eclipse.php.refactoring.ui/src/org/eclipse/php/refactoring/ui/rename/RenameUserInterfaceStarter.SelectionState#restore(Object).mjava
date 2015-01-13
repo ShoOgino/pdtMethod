@@ -1,0 +1,48 @@
+		public void restore(Object newElement) {
+			if (fDisplay == null)
+				return;
+			for (int i = 0; i < fParts.size(); i++) {
+				IStructuredSelection currentSelection = (IStructuredSelection) fSelections
+						.get(i);
+				boolean changed = false;
+				final ISetSelectionTarget target = (ISetSelectionTarget) fParts
+						.get(i);
+				final IStructuredSelection[] newSelection = new IStructuredSelection[1];
+				newSelection[0] = currentSelection;
+				if (currentSelection instanceof TreeSelection) {
+					TreeSelection treeSelection = (TreeSelection) currentSelection;
+					TreePath[] paths = treeSelection.getPaths();
+					for (int p = 0; p < paths.length; p++) {
+						TreePath path = paths[p];
+						if (path.getSegmentCount() > 0
+								&& path.getLastSegment().equals(fElement)) {
+							paths[p] = createTreePath(path, newElement);
+							changed = true;
+						}
+					}
+					if (changed) {
+						newSelection[0] = new TreeSelection(paths,
+								treeSelection.getElementComparer());
+					}
+				} else {
+					Object[] elements = currentSelection.toArray();
+					for (int e = 0; e < elements.length; e++) {
+						if (elements[e].equals(fElement)) {
+							elements[e] = newElement;
+							changed = true;
+						}
+					}
+					if (changed) {
+						newSelection[0] = new StructuredSelection(elements);
+					}
+				}
+				if (changed) {
+					fDisplay.asyncExec(new Runnable() {
+						public void run() {
+							target.selectReveal(newSelection[0]);
+						}
+					});
+				}
+			}
+		}
+

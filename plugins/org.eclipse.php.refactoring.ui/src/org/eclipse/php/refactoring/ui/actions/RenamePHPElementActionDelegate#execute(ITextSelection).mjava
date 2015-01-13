@@ -1,0 +1,52 @@
+	private void execute(ITextSelection selection) {
+		setWindowIfEmpty();
+		IEditorPart fEditor = fWindow.getActivePage().getActiveEditor();
+
+		if (fEditor != null && fEditor instanceof PHPStructuredEditor) {
+			IModelElement source = ((PHPStructuredEditor) fEditor)
+					.getModelElement();
+
+			if (!(source instanceof ISourceModule)) {
+				MessageDialog.openError(fWindow.getShell(), DIALOG_TITLE,
+						Messages.RenamePHPElementActionDelegate_1);
+				return;
+			}
+			Program program = null;
+
+			try {
+				program = ASTUtils
+						.createProgramFromSource((ISourceModule) source);
+			} catch (Exception e) {
+				MessageDialog.openError(fWindow.getShell(), DIALOG_TITLE,
+						"Unexpected error happenned:" + e.getMessage()); //$NON-NLS-1$
+			}
+
+			if (program == null) {
+				MessageDialog.openInformation(fWindow.getShell(), DIALOG_TITLE,
+						Messages.RenamePHPElementActionDelegate_2);
+				return;
+			}
+
+			IPreferenceStore store = RefactoringUIPlugin.getDefault()
+					.getPreferenceStore();
+			boolean isInline = store
+					.getBoolean(PreferenceConstants.REFACTOR_LIGHTWEIGHT);
+
+			ISourceViewer viewer = ((PHPStructuredEditor) fEditor)
+					.getTextViewer();
+			IDocument document = viewer.getDocument();
+
+			// this is work around for the case
+			// that the offset from editor is not accurate
+			// use the offset from source viewer instead.
+			Point originalSelection = viewer.getSelectedRange();
+			if (originalSelection != null) {
+				run(source.getResource(), program, originalSelection.x,
+						originalSelection.y, fEditor, isInline);
+			} else {
+				run(source.getResource(), program, selection.getOffset(),
+						selection.getLength(), fEditor, isInline);
+			}
+		}
+	}
+

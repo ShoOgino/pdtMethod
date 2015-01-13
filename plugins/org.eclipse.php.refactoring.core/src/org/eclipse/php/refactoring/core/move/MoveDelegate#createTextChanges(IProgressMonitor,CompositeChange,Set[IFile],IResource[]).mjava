@@ -1,0 +1,147 @@
+	/**
+	 * Creates the text changes for all the affected files. Updates all the
+	 * include statements in the current file and all the includes in the
+	 * "including " files. In case of folders, creates the changes recursively
+	 * 
+	 * @param pm
+	 *            - progress monitor
+	 * @param rootChange
+	 *            - the root change that the new changes are added to
+	 * @param sourceResources
+	 * @return the root change after the additions
+	 * @throws CoreException
+	 */
+	private Change createTextChanges(IProgressMonitor pm,
+			CompositeChange rootChange, Set<IFile> phpFiles,
+			IResource[] sourceResources) throws CoreException {
+		List<ProgramFileChange> changes = new ArrayList<ProgramFileChange>();
+		try {
+			pm.beginTask(
+					PhpRefactoringCoreMessages.getString("MoveDelegate.1"), 100); //$NON-NLS-1$
+
+			// creat text changes:
+			// for each file that will be moved, update its includes
+			// and update all the files that include it,
+
+			IResource[] uniqueSourceResources = removeDuplicateResources(sourceResources);
+
+			for (Iterator<IFile> it = phpFiles.iterator(); it.hasNext();) {
+				IFile currentMovedResource = it.next();
+
+				Map<IFile, Program> participantFiles = collectReferencingFiles(
+						currentMovedResource, pm);
+
+				for (Entry<IFile, Program> entry : participantFiles.entrySet()) {
+					final IFile file = entry.getKey();
+					if (phpFiles.contains(file)) {
+						continue;
+					}
+					final Program program = entry.getValue();
+
+					final ChangeIncludePath rename = new ChangeIncludePath(
+							currentMovedResource, file, fMainDestinationPath,
+							false, uniqueSourceResources);
+					// aggregate the changes identifiers
+					program.accept(rename);
+
+					if (pm.isCanceled())
+						throw new OperationCanceledException();
+
+					pm.worked(1);
+
+					if (rename.hasChanges()) {
+						ProgramFileChange change = new ProgramFileChange(
+								file.getName(), file, program);
+						change.setEdit(new MultiTextEdit());
+						change.setTextType("php"); //$NON-NLS-1$
+
+						changes.add(change);
+						rename.updateChange(change);
+					}
+				}
+
+				ISourceModule sourceModule = DLTKCore
+						.createSourceModuleFrom(currentMovedResource);
+
+				if (sourceModule instanceof ISourceModule) {
+
+					Program program = null;
+					try {
+						program = ASTUtils
+								.createProgramFromSource(sourceModule);
+					} catch (Exception e) {
+					}
+
+					if (program != null) {
+						final ChangeIncludePath rename = new ChangeIncludePath(
+								currentMovedResource, currentMovedResource,
+								fMainDestinationPath, true,
+								uniqueSourceResources);
+
+						// aggregate the changes identifiers
+						program.accept(rename);
+
+						if (pm.isCanceled())
+							throw new OperationCanceledException();
+
+						pm.worked(1);
+
+						if (rename.hasChanges()) {
+							ProgramFileChange change = new ProgramFileChange(
+									currentMovedResource.getName(),
+									currentMovedResource, program);
+							change.setEdit(new MultiTextEdit());
+							change.setTextType("php"); //$NON-NLS-1$
+
+							changes.add(change);
+							rename.updateChange(change);
+						}
+					}
+				}
+			}
+			pm.worked(70);
+
+		} finally {
+			pm.done();
+		}// getChildren()
+
+		Map<IFile, List<TextEdit>> changeMap = new HashMap<IFile, List<TextEdit>>();
+		Map<IFile, ProgramFileChange> fileMap = new HashMap<IFile, ProgramFileChange>();
+		for (ProgramFileChange programFileChange : changes) {
+			List<TextEdit> list = changeMap.get(programFileChange.getFile());
+			if (list == null) {
+				list = new ArrayList<TextEdit>();
+				changeMap.put(programFileChange.getFile(), list);
+				fileMap.put(programFileChange.getFile(), programFileChange);
+			} else {
+
+			}
+			list.addAll(Arrays
+					.asList(programFileChange.getEdit().getChildren()));
+		}
+		for (IFile file : changeMap.keySet()) {
+			ProgramFileChange change = new ProgramFileChange(file.getName(),
+					file, fileMap.get(file).getProgram());
+			change.setEdit(new MultiTextEdit());
+			change.setTextType("php"); //$NON-NLS-1$
+
+			List<TextEdit> list = changeMap.get(file);
+			Collections.sort(list, new Comparator<TextEdit>() {
+				public int compare(TextEdit o1, TextEdit o2) {
+					return o2.getOffset() - o1.getOffset();
+				}
+			});
+
+			for (TextEdit textEdit : list) {
+				if (textEdit instanceof ReplaceEdit) {
+					ReplaceEdit replaceEdit = (ReplaceEdit) textEdit;
+					change.addEdit(new ReplaceEdit(replaceEdit.getOffset(),
+							replaceEdit.getLength(), replaceEdit.getText()));
+				}
+			}
+			rootChange.add(change);
+
+		}
+		return rootChange;
+	}
+

@@ -1,0 +1,69 @@
+	@Override
+	protected void setUp() throws Exception {
+		System.setProperty("disableStartupRunner","true");
+		PHPCoreTests.waitForIndexer();
+		PHPCoreTests.waitForAutoBuild();
+		
+
+		project1 = FileUtils.createProject("TestProject1");
+		
+		IFolder folder = project1.getFolder("src");
+		
+		if(!folder.exists()){
+			folder.create(true, true, new NullProgressMonitor());
+		}
+		IFile file = folder.getFile("test1.php");
+
+		InputStream source = new ByteArrayInputStream(
+				"<?php class TestRenameClass{}?>".getBytes());
+
+		if (!file.exists()) {
+			file.create(source, true, new NullProgressMonitor());
+		} else {
+			file.setContents(source, IFile.FORCE, new NullProgressMonitor());
+		}
+
+		project2 = FileUtils.createProject("TestProject2");
+
+		file = project2.getFile("test2.php");
+
+		source = new ByteArrayInputStream("<?php include('src/test1.php'); ?>"
+				.getBytes());
+
+		if (!file.exists()) {
+			file.create(source, true, new NullProgressMonitor());
+		} else {
+			file.setContents(source, IFile.FORCE, new NullProgressMonitor());
+		}
+		
+		IAccessRule[] accesRules = new IAccessRule[0];
+
+		boolean combineAccessRules = false;
+		IBuildpathEntry buildPath = DLTKCore.newProjectEntry(project1
+				.getProject().getFullPath(), accesRules, combineAccessRules,
+				new IBuildpathAttribute[0], false);
+
+		final IScriptProject scriptProject = DLTKCore.create(project2.getProject());
+
+		final List<IBuildpathEntry> entriesList = new ArrayList<IBuildpathEntry>();
+		IBuildpathEntry[] entries;
+		try {
+			entries = scriptProject.getRawBuildpath();
+			entriesList.addAll(Arrays.asList(entries));
+			entriesList.add(buildPath);
+		} catch (ModelException e) {
+			e.printStackTrace();
+		}
+
+		final IBuildpathEntry[] newEntries = new IBuildpathEntry[entriesList
+				.size()];
+
+		scriptProject.setRawBuildpath(null,
+				new NullProgressMonitor());
+		scriptProject.setRawBuildpath(entriesList
+				.toArray(newEntries), new NullProgressMonitor());
+		
+		PHPCoreTests.waitForIndexer();
+		PHPCoreTests.waitForAutoBuild();
+	}
+

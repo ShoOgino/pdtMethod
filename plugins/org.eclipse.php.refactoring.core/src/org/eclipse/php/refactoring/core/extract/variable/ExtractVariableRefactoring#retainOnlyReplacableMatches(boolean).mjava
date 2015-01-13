@@ -1,0 +1,42 @@
+	/**
+	 * Remove from the matching fragments, the invalid ones and look for non
+	 * fatal errors/warnings
+	 * 
+	 * @param recalculate
+	 * @return
+	 */
+	@SuppressWarnings("restriction")
+	private IASTFragment[] retainOnlyReplacableMatches(boolean recalculate) {
+
+		// if (validMatchingFragments != null && !recalculate)
+		// return validMatchingFragments;
+
+		matchingFragmentsStatus = new RefactoringStatus();
+
+		IASTFragment[] allMatches = getMatchingFragments(recalculate);
+
+		matchingFragmentsStatus.merge(checkSemanticProblems(allMatches));
+
+		List<IASTFragment> result = new ArrayList<IASTFragment>(
+				allMatches.length);
+		for (int i = 0; i < allMatches.length; i++) {
+
+			Expression associatedExpression = getExpressionFromFragment(
+					allMatches[i]).getAssociatedExpression();
+			RefactoringStatus status = canExtract(associatedExpression);
+			// if the match has a fatal error, it is not added to the final
+			// array
+			if (!status.hasFatalError()) {
+				result.add(allMatches[i]);
+			}
+		}
+
+		validMatchingFragments = result
+				.toArray(new IASTFragment[result.size()]);
+
+		matchingFragmentsStatus
+				.merge(checkMatchingExpressions(validMatchingFragments));
+
+		return validMatchingFragments;
+	}
+
