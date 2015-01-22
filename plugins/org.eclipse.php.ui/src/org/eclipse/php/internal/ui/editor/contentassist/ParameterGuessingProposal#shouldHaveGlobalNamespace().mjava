@@ -6,12 +6,15 @@
 		IType type = method.getDeclaringType();
 		boolean isInNamespace = PHPModelUtils.getCurrentNamespaceIfAny(
 				fSourceModule, getReplacementOffset()) != null;
-		boolean globalType = PHPModelUtils.getCurrentNamespace(type) == null;
+
 		boolean isNotAlias = !(type instanceof AliasType);
+		boolean isNamespacedType = PHPModelUtils.getCurrentNamespace(type) != null;
+
 		try {
-			int flags = type == null ? 0 : type.getFlags();
-			if (!PHPFlags.isNamespace(flags)
-					&& globalType
+			boolean globalMethod = (type == null && method.getNamespace() == null)
+					|| (type != null && !isNamespacedType && method
+							.isConstructor());
+			if (globalMethod
 					&& isInNamespace
 					&& isNotAlias
 					&& document.getChar(getReplacementOffset() - 1) != NamespaceReference.NAMESPACE_SEPARATOR) {
