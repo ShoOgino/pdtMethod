@@ -1,0 +1,54 @@
+	/**
+	 * Opens URL from debug/run launch configuration. Users of this method
+	 * should handle exceptions that might be thrown but without need to log the
+	 * exception info (it is already handled by this implementation).
+	 * 
+	 * @param launchURL
+	 * @throws DebugException
+	 * @throws MalformedURLException
+	 */
+	public static void openLaunchURL(final String launchURL)
+			throws DebugException {
+		final SyncObject<DebugException> e = new SyncObject<DebugException>();
+		// Run synchronously to pass exception if any
+		PlatformUI.getWorkbench().getDisplay().syncExec(new Runnable() {
+			public void run() {
+				try {
+					final URL urlToOpen = new URL(launchURL);
+					StringBuilder browserTitle = new StringBuilder(urlToOpen
+							.getProtocol()).append("://").append( //$NON-NLS-1$
+							urlToOpen.getHost());
+					if (urlToOpen.getPort() != -1)
+						browserTitle.append(':').append(urlToOpen.getPort());
+					browserTitle.append(urlToOpen.getPath());
+					IWorkbenchBrowserSupport browserSupport = PlatformUI
+							.getWorkbench().getBrowserSupport();
+					IWebBrowser browser = browserSupport.createBrowser(
+							IWorkbenchBrowserSupport.LOCATION_BAR
+									| IWorkbenchBrowserSupport.NAVIGATION_BAR
+									| IWorkbenchBrowserSupport.STATUS,
+							"PHP Debugger Browser", //$NON-NLS-1$
+							browserTitle.toString(), browserTitle.toString());
+					if (PHPDebugPlugin.DEBUG)
+						System.out
+								.println("Opening debug/launch URL in a Web Browser: " //$NON-NLS-1$
+										+ urlToOpen.toString());
+					browser.openURL(urlToOpen);
+				} catch (Throwable t) {
+					Logger.logException(
+							MessageFormat
+									.format("Error initializing the Web Browser for debug/launch URL: {0}", launchURL), //$NON-NLS-1$
+							t);
+					String errorMessage = PHPDebugCoreMessages.Debugger_Unexpected_Error_1;
+					e.set(new DebugException(new Status(IStatus.ERROR,
+							PHPDebugPlugin.getID(),
+							IPHPDebugConstants.INTERNAL_ERROR, errorMessage, t)));
+				}
+			}
+		});
+		DebugException ex = e.get();
+		if (ex != null) {
+			throw ex;
+		}
+	}
+
