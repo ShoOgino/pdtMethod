@@ -1,0 +1,26 @@
+		@Override
+		public boolean visit(StaticConstantAccess staticConstantAccess) {
+			ITypeBinding type = staticConstantAccess.getClassName()
+					.resolveTypeBinding();
+
+			if (type != null && ModelUtils.isDeprecated(type.getPHPElement())) {
+				highlight(staticConstantAccess.getClassName());
+			}
+
+			String fieldName = staticConstantAccess.getConstant().getName();
+			if (type != null && fieldName != null) {
+				IVariableBinding[] fields = type.getDeclaredFields();
+				for (IVariableBinding field : fields) {
+					if (field.getName().toLowerCase()
+							.equals(fieldName.toLowerCase())) {
+						if (ModelUtils.isDeprecated(field.getPHPElement())) {
+							highlight(staticConstantAccess.getConstant());
+						}
+						break;
+					}
+				}
+			}
+
+			return super.visit(staticConstantAccess);
+		}
+
