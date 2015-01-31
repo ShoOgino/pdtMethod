@@ -1,0 +1,27 @@
+	@Test
+	public void test(String fileName) throws Exception {
+		PdttFileExt testFile = filesMap.get(fileName);
+		IFile file = project.findFile(testFile.getTestFiles().get(0).getName());
+
+		Program program = createProgram(file);
+		assertNotNull(program);
+		PHPMoveProcessor processor = new PHPMoveProcessor(file);
+
+		processor.setUpdateReferences(Boolean.valueOf(testFile.getConfig().get("updateReference")));
+
+		IContainer destination = null;
+
+		String dest = testFile.getConfig().get("dest");
+		if ("/".equals(dest)) {
+			destination = project.getProject();
+		} else {
+			destination = project.createFolder(dest);
+		}
+
+		processor.setDestination(destination);
+
+		checkInitCondition(processor);
+		performChange(processor);
+		checkTestResult(testFile);
+	}
+

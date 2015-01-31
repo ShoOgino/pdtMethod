@@ -1,0 +1,23 @@
+	@Test
+	public void test(String fileName) throws Exception {
+		PdttFileExt testFile = filesMap.get(fileName);
+		IFile file = project.findFile(testFile.getTestFiles().get(0).getName());
+
+		Program program = createProgram(file);
+
+		assertNotNull(program);
+
+		int start = Integer.valueOf(testFile.getConfig().get("start"));
+		ASTNode selectedNode = locateNode(program, start, 0);
+		assertNotNull(selectedNode);
+
+		RenameGlobalVariableProcessor processor = new RenameGlobalVariableProcessor(file, selectedNode);
+
+		processor.setNewElementName(testFile.getConfig().get("newName"));
+		processor.setUpdateTextualMatches(Boolean.valueOf(testFile.getConfig().get("updateTextualMatches")));
+
+		checkInitCondition(processor);
+		performChange(processor);
+		checkTestResult(testFile);
+	}
+
