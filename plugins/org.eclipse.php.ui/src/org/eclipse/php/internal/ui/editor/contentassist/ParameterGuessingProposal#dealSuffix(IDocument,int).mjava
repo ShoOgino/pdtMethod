@@ -2,16 +2,37 @@
 		boolean toggleEating = isToggleEating();
 		boolean insertCompletion = insertCompletion();
 		String replacement = getReplacementString();
-		if (replacement.endsWith(RPAREN)) {
-			int pos = -1;
+		int posReplacementLP = replacement.indexOf(LPAREN);
+		if (posReplacementLP >= 0
+				&& replacement.endsWith(String.valueOf(RPAREN))) {
+			int searchOffset;
 			if (!insertCompletion || toggleEating) {
-				pos = getRelativePositionAfterBrackets(document,
-						getReplacementOffset() + getReplacementLength());
+				searchOffset = getReplacementOffset() + getReplacementLength();
 			} else {
-				pos = getRelativePositionAfterBrackets(document, offset);
+				searchOffset = offset;
 			}
-			if (pos >= 0) {
-				setReplacementLength(getReplacementLength() + pos);
+			// https://bugs.eclipse.org/bugs/show_bug.cgi?id=459377
+			int posLP = getRelativePositionOf(document, searchOffset, LPAREN);
+			int posRP = -1;
+			if (posLP >= 0) {
+				posRP = getRelativePositionOf(document, searchOffset
+						+ (posLP + 1), RPAREN);
+			}
+			if (posLP >= 0) {
+				if (posRP < 0) {
+					// we truncate the replacement text starting
+					// from left parenthesis (included)
+					replacement = replacement.substring(0, posReplacementLP);
+					setReplacementString(replacement);
+					// put the cursor before left parenthesis in document,
+					// it will be put after left parenthesis through
+					// PHPOverrideCompletionProposal#calculateCursorPosition()
+					setReplacementLength(getReplacementLength() + posLP);
+				} else {
+					// put the cursor after right parenthesis in document
+					setReplacementLength(getReplacementLength() + (posLP + 1)
+							+ (posRP + 1));
+				}
 			}
 		} else {
 			// deal with case that a method that do not have parameters but with
@@ -19,8 +40,8 @@
 			// getA|($a),we should generate getA()($a) instead of getA($a),but
 			// for getA|(),we should generate getA()
 			if (insertCompletion
-					&& getRelativePositionAfterBrackets(document, offset) < 0) {
-				replacement = replacement + PARENS;
+					&& getRelativePositionOf(document, offset, LPAREN) < 0) {
+				replacement = replacement + LPAREN + RPAREN;
 				setReplacementString(replacement);
 			}
 		}

@@ -1,0 +1,32 @@
+	/**
+	 * Retrieves the position of the first occurrence of a "search" character,
+	 * starting from "offset" position and until end of line.
+	 * 
+	 * @param document
+	 * @param offset
+	 * @param search
+	 *            character to search
+	 * @return position of "search" character relative to offset, -1 if not
+	 *         found or if there are non-whitespace characters between "offset"
+	 *         position and the first occurrence of the "search" character
+	 */
+	private int getRelativePositionOf(IDocument document, int offset,
+			char search) {
+		try {
+			IRegion line = document.getLineInformationOfOffset(offset);
+			int lineEnd = line.getOffset() + line.getLength();
+			if (offset >= lineEnd) {
+				// end of line
+				return -1;
+			}
+			int pos = 0;
+			while (offset + pos < lineEnd - 1 // 1 = "search" length
+					&& Character.isWhitespace(document.getChar(offset + pos))) {
+				pos++;
+			}
+			return document.getChar(offset + pos) == search ? pos : -1;
+		} catch (BadLocationException e) {
+		}
+		return -1;
+	}
+
