@@ -8,14 +8,12 @@
 		IType[] types = PHPTypeInferenceUtils.getModelElements(
 				context.getInstanceType(), context, offset, cache);
 		Map<PHPDocBlock, IField> docs = new HashMap<PHPDocBlock, IField>();
-		boolean lookOnlyForArrayTypes = false;
 		if (types != null) {
 			// remove array index from field name
 			if (variableName.endsWith("]")) { //$NON-NLS-1$
 				int index = variableName.indexOf("["); //$NON-NLS-1$
 				if (index != -1) {
 					variableName = variableName.substring(0, index);
-					lookOnlyForArrayTypes = true;
 				}
 			}
 			for (IType type : types) {
@@ -48,19 +46,6 @@
 			}
 		}
 
-		// check if is in ForEach statement
-		if (!lookOnlyForArrayTypes) {
-			int start = offset + variableName.length();
-			int end = offset + variableName.length() + 1;
-			ASTNode node = ASTUtils.findMinimalNode(context.getRootNode(),
-					start, end);
-			if (node instanceof ForEachStatement) {
-				lookOnlyForArrayTypes = true;
-			}
-		}
-
-		List<IEvaluatedType> arrayEvaluated = new LinkedList<IEvaluatedType>();
-
 		for (Entry<PHPDocBlock, IField> entry : docs.entrySet()) {
 			PHPDocBlock doc = entry.getKey();
 			IField typeField = entry.getValue();
@@ -77,7 +62,7 @@
 								.extractArrayType(typeName, currentNamespace,
 										tag.sourceStart());
 						if (evaluatedType != null) {
-							arrayEvaluated.add(evaluatedType);
+							evaluated.add(evaluatedType);
 						} else {
 							if (currentNamespace != null) {
 								if (typeName.indexOf(SPLASH) > 0) {
@@ -130,14 +115,6 @@
 					}
 				}
 			}
-		}
-
-		if (variableName.startsWith("$")) { //$NON-NLS-1$
-			if (lookOnlyForArrayTypes) {
-				evaluated = arrayEvaluated;
-			}
-		} else {
-			evaluated.addAll(arrayEvaluated);
 		}
 
 		return IGoal.NO_GOALS;
