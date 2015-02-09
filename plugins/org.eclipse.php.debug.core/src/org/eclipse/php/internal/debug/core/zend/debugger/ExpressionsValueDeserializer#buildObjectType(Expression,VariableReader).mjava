@@ -2,13 +2,11 @@
 			VariableReader reader) {
 		String className = reader.readString();
 		int objectLength = reader.readInt();
-
+		int originalLength = objectLength;
 		if (reader.isLastEnd()) {
 			objectLength = 0;
 		}
-
 		Expression[] expressionNodes = new Expression[objectLength];
-
 		for (int i = 0; i < objectLength; i++) {
 			char type = reader.readType();
 			// System.out.println("type " + type);
@@ -25,13 +23,12 @@
 				expressionNodes[i] = createDefaultVariable(name);
 			} else {
 				expressionNodes[i] = expression.createChildExpression(name,
-						"->" + name); //$NON-NLS-1$
+						"->" + name, KIND_OBJECT_MEMBER); //$NON-NLS-1$
 			}
 			expressionNodes[i].setValue(build(expression, reader));
 		}
 		String valueAsString = "Object of: " + className; //$NON-NLS-1$
-
-		return new ObjectExpressionValue(className, valueAsString,
-				expressionNodes);
+		return new ExpressionValue(ExpressionValue.OBJECT_TYPE, className,
+				valueAsString, expressionNodes, originalLength);
 	}
 

@@ -1,12 +1,21 @@
 	public String createWatchExpression(IVariable variable)
 			throws CoreException {
-
+		if (variable instanceof PHPVariable) {
+			PHPVariable phpVariable = (PHPVariable) variable;
+			Expression expression = (Expression) phpVariable
+					.getAdapter(Expression.class);
+			if (expression.hasFacet(MOD_STATIC)) {
+				String className = ExpressionsUtil
+						.fetchStaticMemberClassName(expression);
+				return MessageFormat.format(STATIC_MEMBER_PATTERN, className,
+						expression.getLastName());
+			}
+		}
 		IValue value = variable.getValue();
 		if (value instanceof PHPValue) {
 			PHPValue phpValue = (PHPValue) value;
 			return phpValue.getVariable().getFullName();
 		}
 		return variable.getName();
-
 	}
 

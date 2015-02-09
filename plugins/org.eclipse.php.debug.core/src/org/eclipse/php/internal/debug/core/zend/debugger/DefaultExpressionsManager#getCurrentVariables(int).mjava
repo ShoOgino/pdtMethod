@@ -1,7 +1,8 @@
 	public Expression[] getCurrentVariables(int depth) {
-		byte[] value = getVariableValue(currentContextPath, depth);
+		Expression contextExpression = new CurrentContextExpression();
+		byte[] value = getExpressionValue(contextExpression, depth);
 		ExpressionValue variableValue = expressionValueDeserializer
-				.deserializer(null, value);
+				.deserializer(contextExpression, value);
 		Expression[] variables = variableValue.getOriChildren();
 		if (variables == null || variables.length == 0) {
 			return EMPTY_VARIABLE_ARRAY;
@@ -22,15 +23,16 @@
 		Expression dummyClass = variables[variables.length - 1];
 		String className = (String) dummyClass.getValue().getValue();
 		// Check if we are in static context
-		if (!hasThis && className!= null && !className.isEmpty()) {
-			Expression statics = new StaticsExpression(className);
-			update(statics, 1);
-			Expression[] staticVariables = statics.getValue().getChildren();
-			if (staticVariables != null)
-				currentVariables.addAll(Arrays.asList(staticVariables));
+		if (!hasThis && className != null && !className.isEmpty()) {
+			Expression staticClassContext = ExpressionsUtil.fetchStaticContext(
+					className, this);
+			if (staticClassContext != null)
+				currentVariables.add(staticClassContext);
 		}
 		variables = currentVariables.toArray(new Expression[currentVariables
 				.size()]);
+		// Sort by type (default order: this or class, locals, super globals)
+		VariablesUtil.sortContextMembers(variables);
 		hashResultDepthOne.put("LOCALS", variables); //$NON-NLS-1$
 		return variables;
 	}

@@ -1,0 +1,36 @@
+	/**
+	 * Returns expressions of static members for given class.
+	 * 
+	 * @param className
+	 * @param expressionsManager
+	 * @return expressions of static members for given class
+	 */
+	public static Expression[] fetchStaticMembers(String className,
+			ExpressionsManager expressionsManager) {
+		Expression staticMembers = new FetchStaticsExpression(className);
+		expressionsManager.update(staticMembers, 1);
+		Expression[] members = staticMembers.getValue().getChildren();
+		// Possibly interrupted, crash, etc.
+		if (members == null)
+			return new Expression[0];
+		int[] mods = fetchStaticMembersVisibility(className, members,
+				expressionsManager);
+		// Possibly interrupted, crash, etc.
+		if (mods == null)
+			return new Expression[0];
+		if (members.length > 0) {
+			for (int i = 0; i < members.length; i++) {
+				Expression member = members[i];
+				staticMemberClassNames.put(member, className);
+				if ((mods[i] & PROP_MOD_PRIVATE) > 0)
+					member.addFacets(Facet.MOD_PRIVATE);
+				else if ((mods[i] & PROP_MOD_PROTECTED) > 0)
+					member.addFacets(Facet.MOD_PROTECTED);
+				else if ((mods[i] & PROP_MOD_PUBLIC) > 0)
+					member.addFacets(Facet.MOD_PUBLIC);
+			}
+			return members;
+		}
+		return new Expression[0];
+	}
+
