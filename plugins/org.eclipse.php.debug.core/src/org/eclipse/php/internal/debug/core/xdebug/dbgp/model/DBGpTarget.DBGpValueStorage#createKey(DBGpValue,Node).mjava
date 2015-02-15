@@ -1,0 +1,38 @@
+		private String createKey(DBGpValue value, Node property) {
+			String key;
+			String level = value == null ? "0" : value.getOwner().getStackLevel(); //$NON-NLS-1$
+			String valuePath = DBGpResponse.getAttribute(property, "fullname"); //$NON-NLS-1$
+			/*
+			 * If is empty then it means that this is watch expression result.
+			 * In this case build dummy chain from scratch to cache its value.
+			 */
+			if (valuePath.isEmpty()) {
+				StringBuilder chain = new StringBuilder();
+				boolean done = false;
+				Object exp = (Object) property.getUserData("eval-watch"); //$NON-NLS-1$
+				if (exp == null) {
+					chain.append(DBGpResponse.getAttribute(property, "name")); //$NON-NLS-1$
+				} else {
+					chain.append((String) exp);
+					done = true;
+				}
+				Node next = property.getParentNode();
+				while (!done && next != null) {
+					String element = DBGpResponse.getAttribute(next, "name"); //$NON-NLS-1$
+					if (element.isEmpty()) {
+						element = (String) next.getUserData("eval-watch"); //$NON-NLS-1$
+						chain.insert(0, element + KEY_SEPARATOR);
+						break;
+					}
+					chain.insert(0, element + KEY_SEPARATOR);
+					next = next.getParentNode();
+				}
+				key = TAG_WATCH + KEY_SEPARATOR + level + KEY_SEPARATOR
+						+ chain.toString();
+			} else {
+				key = TAG_CONTEXT + KEY_SEPARATOR + level + KEY_SEPARATOR
+						+ valuePath;
+			}
+			return key;
+		}
+
