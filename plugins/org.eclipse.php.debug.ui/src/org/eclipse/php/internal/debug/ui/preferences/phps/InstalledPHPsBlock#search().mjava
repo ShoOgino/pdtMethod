@@ -9,12 +9,6 @@
 		final String path = dialog.open();
 		if (path == null)
 			return;
-		// ignore installed locations
-		// final Set<File> exstingLocations = new HashSet<File>();
-		// Iterator<PHPexeItem> iter = fPHPexes.iterator();
-		// while (iter.hasNext())
-		// exstingLocations.add(iter.next().getExecutable().getParentFile());
-		// search
 		final File rootDir = new File(path);
 		final List<File> locations = new ArrayList<File>();
 		final List<PHPexeItem> found = new ArrayList<PHPexeItem>();
@@ -24,17 +18,50 @@
 						IProgressMonitor.UNKNOWN);
 				search(rootDir, locations, monitor);
 				if (!locations.isEmpty()) {
+					monitor.setTaskName(PHPDebugUIMessages.InstalledPHPsBlock_Processing_search_results);
 					Iterator<File> iter2 = locations.iterator();
 					while (iter2.hasNext()) {
+						if (monitor.isCanceled())
+							break;
 						File location = iter2.next();
 						PHPexeItem phpExe = new PHPexeItem(null, location,
-								null,
-								PHPDebuggersRegistry.getDefaultDebuggerId(),
-								true);
+								null, null, true);
+						if (phpExe.getName() == null)
+							continue;
 						String nameCopy = new String(phpExe.getName());
+						monitor.subTask(MessageFormat
+								.format(PHPDebugUIMessages.InstalledPHPsBlock_Fetching_php_exe_info,
+										nameCopy));
+						List<PHPModuleInfo> modules = PHPExeUtil
+								.getModules(phpExe);
+						AbstractDebuggerConfiguration[] debuggers = PHPDebuggersRegistry
+								.getDebuggersConfigurations();
+						for (AbstractDebuggerConfiguration debugger : debuggers) {
+							for (PHPModuleInfo m : modules)
+								if (m.getName().equalsIgnoreCase(
+										debugger.getModuleId())) {
+									phpExe.setDebuggerID(debugger
+											.getDebuggerId());
+									break;
+								}
+						}
 						int i = 1;
-						while (isDuplicateName(nameCopy)) {
-							nameCopy = phpExe.getName() + ' ' + '[' + i++ + ']';
+						// Check for duplicated names
+						duplicates: while (true) {
+							if (isDuplicateName(nameCopy)) {
+								nameCopy = phpExe.getName() + ' ' + '[' + i++
+										+ ']';
+								continue duplicates;
+							} else {
+								for (PHPexeItem item : found)
+									if (nameCopy.equalsIgnoreCase(item
+											.getName())) {
+										nameCopy = phpExe.getName() + ' ' + '['
+												+ i++ + ']';
+										continue duplicates;
+									}
+							}
+							break duplicates;
 						}
 						phpExe.setName(nameCopy);
 						if (phpExe.getExecutable() != null) {
@@ -48,7 +75,12 @@
 		// Perform searching
 		try {
 			final ProgressMonitorDialog progress = new ProgressMonitorDialog(
-					PlatformUI.getWorkbench().getDisplay().getActiveShell());
+					PlatformUI.getWorkbench().getDisplay().getActiveShell()) {
+				protected void configureShell(Shell shell) {
+					super.configureShell(shell);
+					shell.setText(PHPDebugUIMessages.InstalledPHPsBlock_PHP_executables_search);
+				};
+			};
 			progress.run(true, true, r);
 		} catch (final InvocationTargetException e) {
 			PHPDebugUIPlugin.log(e);
