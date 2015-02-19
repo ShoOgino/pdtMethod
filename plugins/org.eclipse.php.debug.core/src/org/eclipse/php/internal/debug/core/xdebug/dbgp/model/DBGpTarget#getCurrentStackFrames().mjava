@@ -29,11 +29,20 @@
 							.sendSyncCmd(DBGpCommand.stackGet);
 					if (DBGpUtils.isGoodDBGpResponse(this, resp)) {
 						Node parent = resp.getParentNode();
-						NodeList stackNodes = parent.getChildNodes(); // <stack>
-						// entries
+						NodeList stackNodes = parent.getChildNodes();
+						// <stack> entries
 						stackFrames = new IStackFrame[stackNodes.getLength()];
 						for (int i = 0; i < stackNodes.getLength(); i++) {
 							Node stackNode = stackNodes.item(i);
+							// merge top frame
+							if (i == 0 && previousFrames != null) {
+								// merge top frame
+								stackFrames[0] = mergeFrame(
+										(DBGpStackFrame) previousFrames[0],
+										new DBGpStackFrame(langThread,
+												stackNode));
+								continue;
+							}
 							stackFrames[i] = new DBGpStackFrame(langThread,
 									stackNode);
 						}
