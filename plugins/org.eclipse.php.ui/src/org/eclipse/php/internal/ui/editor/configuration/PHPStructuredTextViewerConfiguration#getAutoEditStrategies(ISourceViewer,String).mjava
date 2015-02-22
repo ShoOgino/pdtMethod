@@ -2,7 +2,19 @@
 	public IAutoEditStrategy[] getAutoEditStrategies(
 			ISourceViewer sourceViewer, String contentType) {
 		if (contentType.equals(PHPPartitionTypes.PHP_DEFAULT)) {
-			return phpStrategies;
+			IAutoEditStrategy[] autoEditStrategies = super
+					.getAutoEditStrategies(sourceViewer, contentType);
+			List<IAutoEditStrategy> strategies = new LinkedList<IAutoEditStrategy>();
+			strategies.add(mainAutoEditStrategy);
+			for (IAutoEditStrategy strategy : autoEditStrategies) {
+				if (strategy instanceof org.eclipse.wst.html.ui.internal.autoedit.AutoEditStrategyForTabs
+						|| !(strategy instanceof IAutoEditStrategy)) {
+					continue;
+				}
+				strategies.add(strategy);
+			}
+
+			return strategies.toArray(new IAutoEditStrategy[strategies.size()]);
 		}
 
 		return getPhpAutoEditStrategy(sourceViewer, contentType);
