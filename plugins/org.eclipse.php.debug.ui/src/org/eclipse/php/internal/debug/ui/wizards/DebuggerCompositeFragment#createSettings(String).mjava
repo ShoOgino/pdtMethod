@@ -1,0 +1,28 @@
+	void createSettings(String debuggerId) {
+		IUniqueIdentityElement debuggerOwner = getDebuggerOwner();
+		if (debuggerOwner == null || debuggerId == null)
+			return;
+		IDebuggerSettings settings = DebuggerSettingsManager.INSTANCE
+				.findSettings(debuggerOwner.getUniqueId(), debuggerId);
+		if (debuggerSettingsSection != null) {
+			debuggerSettingsSection.getComposite().dispose();
+		}
+		if (settings == null) {
+			debuggerSettingsSection = new DebuggerUnsupportedSettingsSection(
+					this);
+		} else {
+			debuggerSettingsWC = getSettingsWC(debuggerId, settings);
+			IDebuggerSettingsProvider provider = DebuggerSettingsProviderRegistry
+					.getProvider(debuggerId);
+			IDebuggerSettingsSectionBuilder sectionBuilder = DebuggerSettingsSectionBuildersRegistry
+					.getBuilder(provider.getId());
+			debuggerSettingsSection = sectionBuilder.build(this,
+					debuggerSettingsWC);
+		}
+		if (!debuggerSettingsSection.canTest())
+			debuggerTest.setVisible(false);
+		else
+			debuggerTest.setVisible(true);
+		this.getParent().layout(true, true);
+	}
+

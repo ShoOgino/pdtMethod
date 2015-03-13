@@ -1,0 +1,29 @@
+	private Map<String, ICommunicationDaemon> fetchDaemons(List<Entry> entries) {
+		Map<String, ICommunicationDaemon> daemons = new HashMap<String, ICommunicationDaemon>();
+		List<Entry> topHierarchyEntries = new ArrayList<Entry>();
+		for (Entry entryToCheck : entries) {
+			boolean isTopHierarchy = true;
+			for (Entry entry : entries) {
+				if (entryToCheck.id.equals(entry.overridenDaemonId)) {
+					isTopHierarchy = false;
+					break;
+				}
+			}
+			if (isTopHierarchy)
+				topHierarchyEntries.add(entryToCheck);
+		}
+		for (Entry entry : topHierarchyEntries) {
+			ICommunicationDaemon daemon;
+			try {
+				daemon = (ICommunicationDaemon) createInstance(entry.element,
+						PROP_CLASS, ICommunicationDaemon.class);
+			} catch (CoreException e) {
+				Logger.logException(
+						"Could not instantiate communication daemon from extension point data.", e); //$NON-NLS-1$
+				continue;
+			}
+			daemons.put(entry.id, daemon);
+		}
+		return daemons;
+	}
+

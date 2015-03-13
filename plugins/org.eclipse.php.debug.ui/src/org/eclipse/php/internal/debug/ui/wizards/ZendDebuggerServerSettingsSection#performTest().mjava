@@ -1,0 +1,27 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.eclipse.php.internal.debug.ui.wizards.IDebuggerSettingsSection#
+	 * performTest()
+	 */
+	@Override
+	public void performTest() {
+		IDebugServerConnectionTest[] tests = DebugServerConnectionTestRegistry
+				.getTests(ZendDebuggerConfiguration.ID);
+		Server server = (Server) compositeFragment.getData();
+		int port = ZendDebuggerSettingsUtil.getDebugPort(settingsWorkingCopy
+				.getOwnerId());
+		Set<Integer> allDebugPorts = PHPDebugUtil
+				.getDebugPorts(ZendDebuggerConfiguration.ID);
+		AbstractDebuggerCommunicationDaemon tmpDaemon = null;
+		if (!allDebugPorts.contains(port))
+			tmpDaemon = DebuggerCommunicationDaemon.createDaemon(port);
+		for (IDebugServerConnectionTest test : tests) {
+			test.testConnection(server, PlatformUI.getWorkbench().getDisplay()
+					.getActiveShell());
+		}
+		if (tmpDaemon != null) {
+			tmpDaemon.stopListen();
+		}
+	}
+

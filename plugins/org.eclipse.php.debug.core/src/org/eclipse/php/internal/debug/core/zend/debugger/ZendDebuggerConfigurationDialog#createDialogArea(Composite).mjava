@@ -1,32 +1,33 @@
 	protected Control createDialogArea(Composite parent) {
 		initializeDialogUnits(parent);
-
 		parent = (Composite) super.createDialogArea(parent);
+		GridData ptGridData = (GridData) parent.getLayoutData();
+		ptGridData.widthHint = convertWidthInCharsToPixels(120);
+		// Set dialog title. image, etc.
+		getShell()
+				.setText(
+						PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_Dialog_title);
 		setTitle(PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_zendDebuggerSettings);
-
-		Composite composite = createSubsection(
+		setMessage(PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_Dialog_description);
+		titleImage = getDialogImage();
+		if (titleImage != null)
+			setTitleImage(titleImage);
+		getShell().addDisposeListener(new DisposeListener() {
+			@Override
+			public void widgetDisposed(DisposeEvent e) {
+				if (titleImage != null)
+					titleImage.dispose();
+			}
+		});
+		// Connection settings
+		Composite connectionSettingsGroup = createSubsection(
 				parent,
-				PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_zendDebugger);
-
-		fRunWithDebugInfo = addCheckBox(
-				composite,
-				PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_runWithDebugInfo,
-				PHPDebugCorePreferenceNames.RUN_WITH_DEBUG_INFO, 0);
-
-		addLabelControl(composite,
-				PHPDebugCoreMessages.DebuggerConfigurationDialog_debugPort,
-				PHPDebugCorePreferenceNames.ZEND_DEBUG_PORT);
-		fDebugTextBox = addTextField(composite,
-				PHPDebugCorePreferenceNames.ZEND_DEBUG_PORT, 6, 2);
-		GridData gridData = (GridData) fDebugTextBox.getLayoutData();
-		gridData.widthHint = convertWidthInCharsToPixels(100);
-		fDebugTextBox.addModifyListener(new DebugPortValidateListener());
-
+				PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_Connection_settings_group);
 		addLabelControl(
-				composite,
+				connectionSettingsGroup,
 				PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_client_host_ip,
 				PHPDebugCorePreferenceNames.CLIENT_IP);
-		autoModeButton = new Button(composite, SWT.RADIO);
+		autoModeButton = new Button(connectionSettingsGroup, SWT.RADIO);
 		autoModeButton
 				.setText(PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_AutoMode);
 		autoModeButton.addSelectionListener(new SelectionAdapter() {
@@ -41,7 +42,7 @@
 				}
 			}
 		});
-		manualModeButton = new Button(composite, SWT.RADIO);
+		manualModeButton = new Button(connectionSettingsGroup, SWT.RADIO);
 		manualModeButton
 				.setText(PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_ManualMode);
 		manualModeButton.addSelectionListener(new SelectionAdapter() {
@@ -50,29 +51,49 @@
 				fClientIP.setEnabled(manualModeButton.getSelection());
 			}
 		});
-		new Label(composite, SWT.NONE);
-		fClientIP = addTextField(composite,
+		new Label(connectionSettingsGroup, SWT.NONE);
+		fClientIP = addTextField(connectionSettingsGroup,
 				PHPDebugCorePreferenceNames.CLIENT_IP, 0, 2);
-		gridData = (GridData) fClientIP.getLayoutData();
-		gridData.widthHint = convertWidthInCharsToPixels(100);
-
+		GridData gridData = (GridData) fClientIP.getLayoutData();
+		gridData.widthHint = convertWidthInCharsToPixels(80);
+		addLabelControl(connectionSettingsGroup,
+				PHPDebugCoreMessages.DebuggerConfigurationDialog_debugPort,
+				PHPDebugCorePreferenceNames.ZEND_DEBUG_PORT);
+		fDebugTextBox = addTextField(connectionSettingsGroup,
+				PHPDebugCorePreferenceNames.ZEND_DEBUG_PORT, 6, 2);
+		gridData = (GridData) fDebugTextBox.getLayoutData();
+		gridData.widthHint = convertWidthInCharsToPixels(80);
+		fDebugTextBox.addModifyListener(new DebugPortValidateListener());
 		addLabelControl(
-				composite,
+				connectionSettingsGroup,
 				PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_debug_response_timeout,
 				PHPDebugCorePreferenceNames.DEBUG_RESPONSE_TIMEOUT);
-		fDebugResponseTimeout = addTextField(composite,
+		fDebugResponseTimeout = addTextField(connectionSettingsGroup,
 				PHPDebugCorePreferenceNames.DEBUG_RESPONSE_TIMEOUT, 0, 2);
 		gridData = (GridData) fDebugResponseTimeout.getLayoutData();
-		gridData.widthHint = convertWidthInCharsToPixels(100);
+		gridData.widthHint = convertWidthInCharsToPixels(80);
 		fDebugResponseTimeout
 				.addModifyListener(new DebugResponseTimeoutListener());
+		createNoteComposite(
+				connectionSettingsGroup.getFont(),
+				connectionSettingsGroup,
+				PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_Note_label,
+				PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_Note_text,
+				3);
+		// General settings
+		Composite generalSettingsGroup = createSubsection(
+				parent,
+				PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_General_settings_group);
+		fRunWithDebugInfo = addCheckBox(
+				generalSettingsGroup,
+				PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_runWithDebugInfo,
+				PHPDebugCorePreferenceNames.RUN_WITH_DEBUG_INFO, 0);
 		fUseNewProtocol = addCheckBox(
-				composite,
+				generalSettingsGroup,
 				PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_useNewProtocol,
 				PHPDebugCorePreferenceNames.ZEND_NEW_PROTOCOL, 0);
-
-		internalInitializeValues(); // Initialize the dialog's values.
-
-		return composite;
+		// Initialize the dialog's values.
+		internalInitializeValues();
+		return parent;
 	}
 

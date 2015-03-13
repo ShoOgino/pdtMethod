@@ -1,13 +1,28 @@
 	protected void handleConfigureDebuggerSelected() {
-		String selectedDebugger = getSelectedDebuggerId();
-
-		AbstractDebuggerConfiguration[] debuggersConfigurations = PHPDebuggersRegistry
-				.getDebuggersConfigurations();
-		for (AbstractDebuggerConfiguration debuggerConfig : debuggersConfigurations) {
-			if (debuggerConfig.getDebuggerId().equals(selectedDebugger)) {
-				debuggerConfig.openConfigurationDialog(Display.getDefault()
-						.getActiveShell());
-			}
+		String serverName = null;
+		try {
+			serverName = launchConfiguration.getAttribute(Server.NAME,
+					(String) null);
+		} catch (CoreException e) {
+			// TODO handle
 		}
+		if (serverName != null) {
+			Server server = ServersManager.getServer(serverName);
+			Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow()
+					.getShell();
+			NullProgressMonitor monitor = new NullProgressMonitor();
+			ServerEditDialog dialog = new ServerEditDialog(shell, server,
+					DebuggerCompositeFragment.ID);
+			if (dialog.open() == Window.CANCEL) {
+				monitor.setCanceled(true);
+				return;
+			}
+			ServersManager.save();
+			String previousDebuggerId = debuggerId;
+			debuggerId = server.getDebuggerId();
+			if (!debuggerId.equals(previousDebuggerId))
+				setDebugger();
+		}
+
 	}
 

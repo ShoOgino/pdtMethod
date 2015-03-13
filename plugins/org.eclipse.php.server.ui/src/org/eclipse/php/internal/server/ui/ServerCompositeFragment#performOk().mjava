@@ -3,34 +3,12 @@
 	 */
 	public boolean performOk() {
 		try {
-			Server defaultServer = ServersManager.getDefaultServer(null);
-			boolean isDefault = false;
-			isDefault = defaultServer != null
-					&& defaultServer.getName().equals(
-							originalValuesCache.serverName);
-
 			Server server = getServer();
-			// Save any modification logged into the modified value cache
-			// object.
-			if (server != null) {
-				server.setPort(String.valueOf(modifiedValuesCache.port));
-				server.setBaseURL(modifiedValuesCache.url);
-			}
-			server.setHost(modifiedValuesCache.host);
-			server.setName(modifiedValuesCache.serverName);
-			server.setDocumentRoot(modifiedValuesCache.webroot);
-			server.setDebuggerId(modifiedValuesCache.debuggerId);
-			if (originalValuesCache.serverName != null
-					&& !originalValuesCache.serverName.equals("") && //$NON-NLS-1$
-					!originalValuesCache.serverName
-							.equals(modifiedValuesCache.serverName)) {
-				// Update the ServerManager with the new server name
-
-				ServersManager.removeServer(originalValuesCache.serverName);
-				ServersManager.addServer(server);
-				if (isDefault) {
-					ServersManager.setDefaultServer(null, server);
-				}
+			Server originalServer = ServersManager.findServer(server
+					.getUniqueId());
+			// Server exists, update it
+			if (originalServer != null) {
+				originalServer.update(server);
 			}
 		} catch (Throwable e) {
 			Logger.logException("Error while saving the server settings", e); //$NON-NLS-1$

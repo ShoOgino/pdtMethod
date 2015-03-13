@@ -1,5 +1,4 @@
 	protected void createURLGroup(Composite parent) {
-
 		Group group = new Group(parent, SWT.NONE);
 		group.setFont(parent.getFont());
 		GridLayout layout = new GridLayout(3, false);
@@ -8,50 +7,44 @@
 		group.setLayoutData(data);
 		group.setText(PHPServerUIMessages
 				.getString("ServerCompositeFragment.serverProperties")); //$NON-NLS-1$
-
 		Label urlLabel = new Label(group, SWT.None);
 		urlLabel.setText(PHPServerUIMessages
 				.getString("ServerCompositeFragment.baseURL")); //$NON-NLS-1$
-
 		url = new Text(group, SWT.BORDER);
 		GridData layoutData = new GridData(GridData.FILL_HORIZONTAL);
 		layoutData.horizontalSpan = 2;
 		url.setLayoutData(layoutData);
-
 		url.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
 				if (getServer() != null) {
 					String urlStr = url.getText();
-					// server.setBaseURL(urlStr);
-					modifiedValuesCache.url = urlStr;
+					try {
+						getServer().setBaseURL(urlStr);
+					} catch (MalformedURLException e1) {
+						// ignore
+					}
 				}
 				validate();
 			}
 		});
-
 		Label labelRoot = new Label(group, SWT.None);
 		labelRoot.setText(PHPServerUIMessages
 				.getString("ServerCompositeFragment.localWebRoot")); //$NON-NLS-1$
 		labelRoot.setLayoutData(new GridData());
-
 		webroot = new Text(group, SWT.BORDER);
 		webroot.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-
 		webroot.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
 				if (getServer() != null) {
 					String webrootStr = webroot.getText();
-					// server.setBaseURL(urlStr);
-					modifiedValuesCache.webroot = webrootStr;
+					getServer().setDocumentRoot(webrootStr);
 				}
 				validate();
 			}
 		});
-
 		Button browseButton = new Button(group, SWT.PUSH);
 		browseButton.setText(PHPServerUIMessages
 				.getString("ServerCompositeFragment.browse")); //$NON-NLS-1$
-
 		browseButton.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
 				DirectoryDialog dialog = new DirectoryDialog(getShell());
@@ -63,7 +56,6 @@
 				if (result != null)
 					webroot.setText(result.toString());
 			}
-
 		});
 
 	}

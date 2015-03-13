@@ -7,6 +7,8 @@
 	 */
 	public Hashtable<String, String> getDebugParameters(ILaunch launch) {
 		Hashtable<String, String> parameters = new Hashtable<String, String>();
+		ILaunchConfiguration launchConfiguration = launch
+				.getLaunchConfiguration();
 		parameters.put(START_DEBUG, "1"); //$NON-NLS-1$
 
 		String port = launch.getAttribute(IDebugParametersKeys.PORT);
@@ -26,9 +28,25 @@
 
 		if (getBooleanValue(launch
 				.getAttribute(IDebugParametersKeys.WEB_SERVER_DEBUGGER))) {
-			parameters.put(DEBUG_HOST, PHPDebugPlugin.getDebugHosts());
-			parameters.put(DEBUG_NO_CACHE, Long.toString(System
-					.currentTimeMillis()));
+			String debugHosts = PHPDebugPlugin.getDebugHosts();
+			// Set up custom server debug hosts if any
+			if (launchConfiguration != null) {
+				try {
+					Server server = ServersManager
+							.getServer(launchConfiguration.getAttribute(
+									Server.NAME, "")); //$NON-NLS-1$
+					String customHosts = ZendDebuggerSettingsUtil
+							.getDebugHosts(server.getUniqueId());
+					if (!customHosts.isEmpty())
+						debugHosts = customHosts;
+				} catch (CoreException ce) {
+					Logger.logException(ce);
+				}
+			}
+			parameters.put(DEBUG_HOST, debugHosts);
+
+			parameters.put(DEBUG_NO_CACHE,
+					Long.toString(System.currentTimeMillis()));
 		}
 
 		if (ILaunchManager.DEBUG_MODE.equals(launch.getLaunchMode())
@@ -40,8 +58,6 @@
 		if (url != null) {
 			parameters.put(ORIGINAL_URL, url);
 		}
-		ILaunchConfiguration launchConfiguration = launch
-				.getLaunchConfiguration();
 		if (launchConfiguration != null) {
 			try {
 				String sessionSetting = launchConfiguration.getAttribute(
@@ -56,8 +72,7 @@
 				} else if (IPHPDebugConstants.DEBUGGING_START_FROM
 						.equals(sessionSetting)) {
 					parameters
-							.put(
-									DEBUG_START_URL,
+							.put(DEBUG_START_URL,
 									launchConfiguration
 											.getAttribute(
 													IPHPDebugConstants.DEBUGGING_START_FROM_URL,

@@ -1,0 +1,28 @@
+	/**
+	 * Read XML nodes to values map
+	 * 
+	 * @param nodeList
+	 * @param skipEmptyNodes
+	 * @return values map
+	 */
+	private static Map<String, Object> read(NodeList nodeList,
+			boolean skipEmptyNodes) {
+		Map<String, Object> map = new HashMap<String, Object>(
+				nodeList.getLength());
+		for (int i = 0; i < nodeList.getLength(); ++i) {
+			Node n = nodeList.item(i);
+			if (n.hasChildNodes()) {
+				if (n.getFirstChild().getNodeType() == Node.TEXT_NODE) {
+					map.put(n.getNodeName(), getUnEscaped(n.getFirstChild()
+							.getNodeValue()));
+				} else {
+					map.put(n.getNodeName(),
+							read(n.getChildNodes(), skipEmptyNodes));
+				}
+			} else if (!skipEmptyNodes) {
+				map.put(n.getNodeName(), ""); //$NON-NLS-1$
+			}
+		}
+		return map;
+	}
+

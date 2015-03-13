@@ -2,26 +2,17 @@
 		Server server = getServer();
 		if (name == null || server == null)
 			return;
-
-		originalValuesCache.url = server.getBaseURL();
-		originalValuesCache.serverName = server.getName();
-		originalValuesCache.host = server.getHost();
-		originalValuesCache.webroot = server.getDocumentRoot();
-		originalValuesCache.debuggerId = server.getDebuggerId();
-		// Clone the cache
-		modifiedValuesCache = new ValuesCache(originalValuesCache);
-
-		if (originalValuesCache.serverName != null) {
+		if (getServer().getName() != null) {
 			boolean nameSet = false;
-			String serverName = originalValuesCache.serverName;
+			String serverName = getServer().getName();
 			String orgName = serverName;
 			if (!isForEditing()) {
 				for (int i = 0; i < 10; i++) {
 					boolean ok = checkServerName(serverName);
 					if (ok) {
 						name.setText(serverName);
-						// workingCopy.setName(serverName);
-						modifiedValuesCache.serverName = serverName;
+						getServer().setName(serverName);
+						;
 						nameSet = true;
 						break;
 					}
@@ -29,8 +20,7 @@
 				}
 				if (!nameSet) {
 					name.setText(""); //$NON-NLS-1$
-					// workingCopy.setName("");
-					modifiedValuesCache.serverName = ""; //$NON-NLS-1$
+					getServer().setName(""); //$NON-NLS-1$
 				}
 			} else {
 				name.setText(serverName);
@@ -38,28 +28,16 @@
 		} else {
 			name.setText(""); //$NON-NLS-1$
 		}
-		if (originalValuesCache.webroot != null) {
-			webroot.setText(originalValuesCache.webroot);
+		if (getServer().getDocumentRoot() != null) {
+			webroot.setText(getServer().getDocumentRoot());
 		}
-		if (originalValuesCache.debuggerId != null) {
-			String name = PHPDebuggersRegistry
-					.getDebuggerName(originalValuesCache.debuggerId);
-			String[] values = debuggerCombo.getItems();
-			for (int i = 0; i < values.length; i++) {
-				if (values[i].equals(name)) {
-					debuggerCombo.select(i);
-					break;
-				}
-			}
-		}
-		String baseURL = originalValuesCache.url;
+		String baseURL = getServer().getBaseURL();
 		if (!baseURL.equals("")) { //$NON-NLS-1$
 			url.setText(baseURL);
 			try {
 				URL originalURL = new URL(baseURL);
 				int port = originalURL.getPort();
-				originalValuesCache.port = port;
-				modifiedValuesCache.port = port;
+				getServer().setPort(String.valueOf(port));
 			} catch (Exception e) {
 				setMessage(
 						PHPServerUIMessages
@@ -68,21 +46,20 @@
 		} else {
 			baseURL = "http://" + server.getHost(); //$NON-NLS-1$
 			url.setText(baseURL);
-			modifiedValuesCache.url = baseURL;
 			try {
+				getServer().setBaseURL(baseURL);
 				URL createdURL = new URL(baseURL);
 				int port = createdURL.getPort();
-				modifiedValuesCache.port = port;
+				getServer().setPort(String.valueOf(port));
 			} catch (Exception e) {
 				setMessage(
 						PHPServerUIMessages
 								.getString("ServerCompositeFragment.enterValidURL"), IMessageProvider.ERROR); //$NON-NLS-1$
 			}
 		}
-		if (originalValuesCache.serverName != null
-				&& originalValuesCache.serverName.length() > 0) {
+		if (getServer().getName() != null && getServer().getName().length() > 0) {
 			setTitle(PHPServerUIMessages
-					.getString("ServerCompositeFragment.editServer") + " [" + originalValuesCache.serverName + ']'); //$NON-NLS-1$ //$NON-NLS-2$
+					.getString("ServerCompositeFragment.editServer") + " [" + getServer().getName() + ']'); //$NON-NLS-1$ //$NON-NLS-2$
 		} else {
 			setTitle(PHPServerUIMessages
 					.getString("ServerCompositeFragment.configureServer")); //$NON-NLS-1$

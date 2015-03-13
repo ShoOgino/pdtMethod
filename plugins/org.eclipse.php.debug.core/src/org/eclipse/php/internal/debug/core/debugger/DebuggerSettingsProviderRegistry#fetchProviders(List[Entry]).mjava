@@ -1,0 +1,35 @@
+	private Map<String, IDebuggerSettingsProvider> fetchProviders(
+			List<Entry> entries) {
+		Map<String, IDebuggerSettingsProvider> providers = new HashMap<String, IDebuggerSettingsProvider>();
+		List<Entry> highestLevelEntries = new ArrayList<Entry>();
+		for (Entry entry : entries) {
+			boolean isHighestLevel = true;
+			for (Entry e : entries) {
+				if (entry.id.equals(e.overridenProviderId)) {
+					isHighestLevel = false;
+					break;
+				}
+			}
+			if (isHighestLevel)
+				highestLevelEntries.add(entry);
+		}
+		for (Entry entry : highestLevelEntries) {
+			IDebuggerSettingsProvider provider;
+			try {
+				provider = (IDebuggerSettingsProvider) createInstance(
+						entry.element, PROP_PROVIDER,
+						IDebuggerSettingsProvider.class);
+			} catch (CoreException e) {
+				Logger.logException(
+						"Could not instantiate debugger settings provider from extension point data.", e); //$NON-NLS-1$
+				continue;
+			}
+			if (provider instanceof AbstractDebuggerSettingsProvider) {
+				((AbstractDebuggerSettingsProvider) provider).setId(entry.id);
+				((AbstractDebuggerSettingsProvider) provider).load();
+			}
+			providers.put(entry.debuggerId, provider);
+		}
+		return providers;
+	}
+

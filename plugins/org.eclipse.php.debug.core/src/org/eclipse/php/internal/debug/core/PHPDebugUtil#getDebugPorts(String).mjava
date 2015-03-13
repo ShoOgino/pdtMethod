@@ -1,0 +1,46 @@
+	/**
+	 * Computes and returns a set of non-duplicated port numbers that are common
+	 * for all of the possible settings for particular debugger type.
+	 * 
+	 * @param debuggerId
+	 * @return set of unique port numbers for given debugger type
+	 */
+	public static Set<Integer> getDebugPorts(String debuggerId) {
+		Set<Integer> ports = new HashSet<Integer>();
+		if (debuggerId.equals(ZendDebuggerConfiguration.ID)) {
+			// Get default port from preferences first
+			Integer defaultPort = PHPDebugPlugin.getDebugPort(debuggerId);
+			ports.add(defaultPort);
+			// Get ports from dedicated settings
+			List<IDebuggerSettings> allSettings = DebuggerSettingsManager.INSTANCE
+					.findSettings(debuggerId);
+			for (IDebuggerSettings settings : allSettings) {
+				String clientPort = settings
+						.getAttribute(ZendDebuggerSettingsConstants.PROP_CLIENT_PORT);
+				try {
+					Integer dedicatedPort = Integer.valueOf(clientPort);
+					ports.add(dedicatedPort);
+				} catch (Exception e) {
+					// ignore
+				}
+			}
+		} else if (debuggerId.equals(XDebugDebuggerConfiguration.ID)) {
+			// Get default port from preferences first
+			Integer defaultPort = PHPDebugPlugin.getDebugPort(debuggerId);
+			ports.add(defaultPort);
+			// Get ports from all of debugger dedicated settings
+			for (IDebuggerSettings settings : DebuggerSettingsManager.INSTANCE
+					.findSettings(debuggerId)) {
+				String clientPort = settings
+						.getAttribute(XDebugDebuggerSettingsConstants.PROP_CLIENT_PORT);
+				try {
+					Integer dedicatedPort = Integer.valueOf(clientPort);
+					ports.add(dedicatedPort);
+				} catch (Exception e) {
+					// ignore
+				}
+			}
+		}
+		return ports;
+	}
+

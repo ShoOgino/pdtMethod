@@ -1,90 +1,113 @@
 	protected Control createDialogArea(Composite parent) {
 		comboListener = new ComboListener();
 		parent = (Composite) super.createDialogArea(parent);
+		GridData ptGridData = (GridData) parent.getLayoutData();
+		ptGridData.widthHint = convertWidthInCharsToPixels(120);
+		// Set dialog title. image, etc.
+		getShell().setText(PHPDebugCoreMessages.XDebugConfigurationDialog_Dialog_title);
 		setTitle(PHPDebugCoreMessages.XDebugConfigurationDialog_mainTitle);
+		setMessage(PHPDebugCoreMessages.XDebugConfigurationDialog_Dialog_description);
+		titleImage = getDialogImage();
+		if (titleImage != null)
+			setTitleImage(titleImage);
+		getShell().addDisposeListener(new DisposeListener() {
+			@Override
+			public void widgetDisposed(DisposeEvent e) {
+				if (titleImage != null)
+					titleImage.dispose();
+			}
+		});
+		// Create main groups
 		Composite[] subsections = createSubsections(parent,
-				PHPDebugCoreMessages.XDebugConfigurationDialog_generalGroup,
-				PHPDebugCoreMessages.XDebugConfigurationDialog_captureGroup,
-				PHPDebugCoreMessages.XDebugConfigurationDialog_proxyGroup);
-
-		// main
-		Composite mainSubSection = subsections[0];
-		addLabelControl(mainSubSection,
+				PHPDebugCoreMessages.XDebugConfigurationDialog_Connection_settings_group, PHPDebugCoreMessages.XDebugConfigurationDialog_General_settings_group);
+		// Connection settings
+		Composite connectionSettingsGroup = subsections[0];
+		addLabelControl(connectionSettingsGroup,
 				PHPDebugCoreMessages.DebuggerConfigurationDialog_debugPort,
-				XDebugPreferenceMgr.XDEBUG_PREF_PORT); 
-		portTextBox = addNumTextField(mainSubSection,
+				XDebugPreferenceMgr.XDEBUG_PREF_PORT);
+		portTextBox = addNumTextField(connectionSettingsGroup,
 				XDebugPreferenceMgr.XDEBUG_PREF_PORT, 5, 2, false);
-		showGlobals = addCheckBox(
-				mainSubSection,
-				PHPDebugCoreMessages.XDebugConfigurationDialog_showSuperGlobals,
-				XDebugPreferenceMgr.XDEBUG_PREF_SHOWSUPERGLOBALS, 0);
-
-		addLabelControl(mainSubSection,
-				PHPDebugCoreMessages.XDebugConfigurationDialog_maxArrayDepth,
-				XDebugPreferenceMgr.XDEBUG_PREF_ARRAYDEPTH);
-		variableDepth = addVariableLevel(mainSubSection,
-				XDebugPreferenceMgr.XDEBUG_PREF_ARRAYDEPTH, 1, 150, 2);
-
-		addLabelControl(mainSubSection,
-				PHPDebugCoreMessages.XDebugConfigurationDialog_maxChildren,
-				XDebugPreferenceMgr.XDEBUG_PREF_CHILDREN);
-		maxChildren = addVariableLevel(mainSubSection,
-				XDebugPreferenceMgr.XDEBUG_PREF_CHILDREN, 1, 500, 2);
-
-		addLabelControl(mainSubSection,
-				PHPDebugCoreMessages.XDebugConfigurationDialog_MaxData,
-				XDebugPreferenceMgr.XDEBUG_PREF_DATA);
-		maxData = addVariableLevel(mainSubSection,
-				XDebugPreferenceMgr.XDEBUG_PREF_DATA, 1, Integer.MAX_VALUE, 2);
-
-		useMultiSession = addCheckBox(mainSubSection,
-				PHPDebugCoreMessages.XDebugConfigurationDialog_useMultisession,
-				XDebugPreferenceMgr.XDEBUG_PREF_MULTISESSION, 0);
-
-		acceptRemoteSession = addComboField(mainSubSection,
-				PHPDebugCoreMessages.XDebugConfigurationDialog_remoteSession,
-				XDebugPreferenceMgr.remoteSessionOptions);
-
-		// output capture
-		Composite captureSubSection = subsections[1];
-		captureStdout = addComboField(captureSubSection,
-				PHPDebugCoreMessages.XDebugConfigurationDialog_captureStdout,
-				XDebugPreferenceMgr.captureOutputOptions);
-		captureStderr = addComboField(captureSubSection,
-				PHPDebugCoreMessages.XDebugConfigurationDialog_captureStderr,
-				XDebugPreferenceMgr.captureOutputOptions);
-
-		// proxy
-		Composite proxySubSection = subsections[2];
-		useProxy = addCheckBox(proxySubSection,
+		Group proxyGroup = new Group(connectionSettingsGroup, SWT.SHADOW_NONE);
+		proxyGroup
+				.setText(PHPDebugCoreMessages.XDebugConfigurationDialog_proxyGroup);
+		GridData pgGridata = new GridData(SWT.FILL, SWT.FILL, true, true);
+		pgGridata.horizontalSpan = 2;
+		proxyGroup.setLayoutData(pgGridata);
+		GridLayout pgLayout = new GridLayout();
+		pgLayout.numColumns = 2;
+		proxyGroup.setLayout(pgLayout);
+		useProxy = addCheckBox(proxyGroup,
 				PHPDebugCoreMessages.XDebugConfigurationDialog_useProxy,
 				XDebugPreferenceMgr.XDEBUG_PREF_USEPROXY, 0);
 		useProxy.addSelectionListener(new SelectionListener() {
 			public void widgetSelected(SelectionEvent e) {
 				toggleProxyFields(useProxy.getSelection());
-
 			}
 
 			public void widgetDefaultSelected(SelectionEvent e) {
 				toggleProxyFields(useProxy.getSelection());
 			}
 		});
-		addLabelControl(proxySubSection,
+		addLabelControl(proxyGroup,
 				PHPDebugCoreMessages.XDebugConfigurationDialog_idekey,
-				XDebugPreferenceMgr.XDEBUG_PREF_IDEKEY); 
-		idekeyTextBox = addATextField(proxySubSection,
+				XDebugPreferenceMgr.XDEBUG_PREF_IDEKEY);
+		idekeyTextBox = addATextField(proxyGroup,
 				XDebugPreferenceMgr.XDEBUG_PREF_IDEKEY, 100, 2);
-		addLabelControl(proxySubSection,
+		addLabelControl(proxyGroup,
 				PHPDebugCoreMessages.XDebugConfigurationDialog_proxy,
-				XDebugPreferenceMgr.XDEBUG_PREF_PROXY); 
-		proxyTextBox = addATextField(proxySubSection,
+				XDebugPreferenceMgr.XDEBUG_PREF_PROXY);
+		proxyTextBox = addATextField(proxyGroup,
 				XDebugPreferenceMgr.XDEBUG_PREF_PROXY, 100, 2);
-
-		GridData gridData = (GridData) proxyTextBox.getLayoutData();
-		gridData.widthHint = convertWidthInCharsToPixels(90);
-
-		internalInitializeValues(); // Initialize the dialog's values.
-
+		createNoteComposite(
+				connectionSettingsGroup.getFont(),
+				connectionSettingsGroup,
+				PHPDebugCoreMessages.XDebugConfigurationDialog_Note_label,
+				PHPDebugCoreMessages.XDebugConfigurationDialog_Note_text,
+				3);
+		// General settings
+		Composite generalSettingsGroup = subsections[1];
+		acceptRemoteSession = addComboField(generalSettingsGroup,
+				PHPDebugCoreMessages.XDebugConfigurationDialog_remoteSession,
+				XDebugPreferenceMgr.remoteSessionOptions);
+		useMultiSession = addCheckBox(generalSettingsGroup,
+				PHPDebugCoreMessages.XDebugConfigurationDialog_useMultisession,
+				XDebugPreferenceMgr.XDEBUG_PREF_MULTISESSION, 0);
+		showGlobals = addCheckBox(
+				generalSettingsGroup,
+				PHPDebugCoreMessages.XDebugConfigurationDialog_showSuperGlobals,
+				XDebugPreferenceMgr.XDEBUG_PREF_SHOWSUPERGLOBALS, 0);
+		addLabelControl(generalSettingsGroup,
+				PHPDebugCoreMessages.XDebugConfigurationDialog_maxArrayDepth,
+				XDebugPreferenceMgr.XDEBUG_PREF_ARRAYDEPTH);
+		variableDepth = addVariableLevel(generalSettingsGroup,
+				XDebugPreferenceMgr.XDEBUG_PREF_ARRAYDEPTH, 1, 150, 2);
+		addLabelControl(generalSettingsGroup,
+				PHPDebugCoreMessages.XDebugConfigurationDialog_maxChildren,
+				XDebugPreferenceMgr.XDEBUG_PREF_CHILDREN);
+		maxChildren = addVariableLevel(generalSettingsGroup,
+				XDebugPreferenceMgr.XDEBUG_PREF_CHILDREN, 1, 500, 2);
+		addLabelControl(generalSettingsGroup,
+				PHPDebugCoreMessages.XDebugConfigurationDialog_MaxData,
+				XDebugPreferenceMgr.XDEBUG_PREF_DATA);
+		maxData = addVariableLevel(generalSettingsGroup,
+				XDebugPreferenceMgr.XDEBUG_PREF_DATA, 1, Integer.MAX_VALUE, 2);
+		Group captureGroup = new Group(generalSettingsGroup, SWT.SHADOW_NONE);
+		captureGroup
+				.setText(PHPDebugCoreMessages.XDebugConfigurationDialog_captureGroup);
+		GridData cGridData = new GridData(SWT.FILL, SWT.FILL, true, true);
+		cGridData.horizontalSpan = 2;
+		captureGroup.setLayoutData(cGridData);
+		GridLayout cLayout = new GridLayout();
+		cLayout.numColumns = 3;
+		captureGroup.setLayout(cLayout);
+		captureStdout = addComboField(captureGroup,
+				PHPDebugCoreMessages.XDebugConfigurationDialog_captureStdout,
+				XDebugPreferenceMgr.captureOutputOptions);
+		captureStderr = addComboField(captureGroup,
+				PHPDebugCoreMessages.XDebugConfigurationDialog_captureStderr,
+				XDebugPreferenceMgr.captureOutputOptions);
+		// Initialize the dialog's values.
+		internalInitializeValues();
 		return parent;
 	}
 

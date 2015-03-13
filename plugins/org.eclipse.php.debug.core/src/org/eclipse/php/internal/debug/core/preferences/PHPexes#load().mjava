@@ -49,6 +49,15 @@
 		final String[] loadDefaultInis = loadDefaultInisString.length() > 0 ? loadDefaultInisString
 				.split(SEPARATOR) : new String[phpExecutablesLocations.length];
 
+		// Load the PHP items unique IDs
+		String uniqueIdsString = prefs
+				.getString(PHPDebugCorePreferenceNames.INSTALLED_PHP_UNIQUE_IDS);
+		if (uniqueIdsString == null) {
+			uniqueIdsString = "";
+		}
+		final String[] phpExecutablesUniqueIds = uniqueIdsString.length() > 0 ? uniqueIdsString
+				.split(SEPARATOR) : new String[0];
+
 		// Load the debuggers array
 		String debuggersString = prefs
 				.getString(PHPDebugCorePreferenceNames.INSTALLED_PHP_DEBUGGERS);
@@ -81,7 +90,10 @@
 					phpExecutablesLocations[i], iniLocation, debuggers[i],
 					loadDefaultInis[i] != null
 							&& loadDefaultInis[i].equals(TRUE));
-
+			// Overwrite the one generated in new executable constructor with
+			// one that is stored in preferences
+			if (phpExecutablesUniqueIds.length != 0)
+				item.setUniqueId(phpExecutablesUniqueIds[i]);
 			// the size of defaultItemForPHPVersions may be 0 when you use this
 			// first time
 			if (defaultItemForPHPVersions.length == phpExecutablesLocations.length) {
@@ -115,7 +127,6 @@
 				}
 			}
 		}
-
 		// Load the defaults
 		String defaultsString = prefs
 				.getString(PHPDebugCorePreferenceNames.INSTALLED_PHP_DEFAULTS);
@@ -132,5 +143,7 @@
 				setDefaultItem(debuggerDefault[0], debuggerDefault[1]);
 			}
 		}
+		// Check if PHP exe items preferences need upgrade
+		(new PHPexesUpgrade()).upgrade();
 	}
 

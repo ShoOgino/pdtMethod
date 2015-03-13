@@ -1,0 +1,145 @@
+		/**
+		 * create a launch and appropriate debug targets to automate launch
+		 * initiation. If any problems occurred, we can throw the session away
+		 * using session.endSession();
+		 * 
+		 * @param session
+		 *            the DBGpSession.
+		 * @throws CoreException
+		 */
+		private void createLaunch(DBGpSession session) throws CoreException {
+			boolean stopAtFirstLine = PHPProjectPreferences
+					.getStopAtFirstLine(null);
+			DBGpTarget target = null;
+			PathMapper mapper = null;
+			PHPSourceLookupDirector srcLocator = new PHPSourceLookupDirector();
+			srcLocator
+					.setSourcePathComputer(DebugPlugin
+							.getDefault()
+							.getLaunchManager()
+							.getSourcePathComputer(
+									"org.eclipse.php.debug.core.sourcePathComputer.php")); //$NON-NLS-1$
+			ILaunchConfigurationType type = null;
+			ILaunchManager lm = DebugPlugin.getDefault().getLaunchManager();
+			if (session.getSessionId() == null) {
+				// WEB launch
+				type = lm
+						.getLaunchConfigurationType(IPHPDebugConstants.PHPServerLaunchType);
+			} else {
+				// CLI launch
+				type = lm
+						.getLaunchConfigurationType(IPHPDebugConstants.PHPEXELaunchType);
+			}
+			ILaunchConfiguration launchConfig = type.newInstance(null,
+					PHPDebugCoreMessages.XDebugMessage_remoteSessionTitle);
+			srcLocator.initializeDefaults(launchConfig);
+			srcLocator.initializeParticipants();
+			ILaunch remoteLaunch = new Launch(launchConfig,
+					ILaunchManager.DEBUG_MODE, srcLocator);
+			boolean multiSession = XDebugPreferenceMgr.useMultiSession();
+			if (session.getSessionId() == null && !multiSession) {
+				// Non multi-session web launch
+				target = new DBGpTarget(remoteLaunch, null, null,
+						session.getIdeKey(), null, stopAtFirstLine);
+				/*
+				 * try to locate a relevant server definition so we can get its
+				 * path mapper
+				 */
+				Server server = null;
+				Server[] servers = ServersManager.getServers();
+				for (int i = 0; i < servers.length; i++) {
+					if (servers[i].getPort() == session.getRemotePort()
+							&& servers[i].getHost().equalsIgnoreCase(
+									session.getRemoteHostname())) {
+						server = servers[i];
+						break;
+					}
+				}
+				if (server != null) {
+					mapper = PathMapperRegistry.getByServer(server);
+				}
+				if (mapper == null) {
+					/*
+					 * Create a temporary path mapper, we may look to holding
+					 * these via the pathmapper registry in the future but they
+					 * would be persisted.
+					 */
+					mapper = new PathMapper();
+				}
+				/*
+				 * Need to add ourselves as a session listener for future
+				 * sessions.
+				 */
+				DBGpSessionHandler.getInstance().addSessionListener(
+						(IDBGpSessionListener) target);
+			} else {
+				// CLI launch or multisession web launch: create a single target
+				target = new DBGpTarget(remoteLaunch,
+						null /* no script name */, session.getIdeKey(),
+						session.getSessionId(), stopAtFirstLine);
+				// Create a temporary path mapper
+				mapper = new PathMapper();
+			}
+
+			// Set up the target with the relevant connections
+			target.setPathMapper(mapper);
+			target.setSession(session);
+			session.setDebugTarget(target);
+
+			if (multiSession && session.getSessionId() == null) {
+				// We are a multisession web launch
+				DBGpMultiSessionTarget multiSessionTarget = new DBGpMultiSessionTarget(
+						remoteLaunch, null, null, session.getIdeKey(),
+						stopAtFirstLine);
+				DBGpSessionHandler.getInstance().addSessionListener(
+						(IDBGpSessionListener) multiSessionTarget);
+				remoteLaunch.addDebugTarget(multiSessionTarget);
+				multiSessionTarget.sessionReceived(
+						(DBGpBreakpointFacade) IDELayerFactory.getIDELayer(),
+						XDebugPreferenceMgr.createSessionPreferences(), target,
+						mapper);
+			} else {
+				// Not a mult-isession web launch, so just add to the launch
+				remoteLaunch.addDebugTarget(target);
+				// Tell the target it now has a session.
+				target.sessionReceived(
+						(DBGpBreakpointFacade) IDELayerFactory.getIDELayer(),
+						XDebugPreferenceMgr.createSessionPreferences());
+				/*
+				 * Probably could do waitForInitialSession as session has
+				 * already been set.
+				 */
+			}
+
+			// add the remote launch to the launch manager
+			DebugPlugin.getDefault().getLaunchManager().addLaunch(remoteLaunch);
+
+			/*
+			 * Check to see owning session target is still active, if so do a
+			 * perspective switch
+			 */
+			if (target.isTerminated() == false
+					&& target.isTerminating() == false) {
+				Display.getDefault().asyncExec(new Runnable() {
+
+					public void run() {
+						IWorkbenchWindow window = PlatformUI.getWorkbench()
+								.getActiveWorkbenchWindow();
+						// Code the Debug perspective.
+						// org.eclipse.debug.ui.DebugPerspective
+						// also look at the PHPLaunchUtilities
+						if (!PerspectiveManager.isCurrentPerspective(window,
+								IDebugUIConstants.ID_DEBUG_PERSPECTIVE)) {
+							if (PerspectiveManager.shouldSwitchPerspective(
+									window,
+									IDebugUIConstants.ID_DEBUG_PERSPECTIVE)) {
+								PerspectiveManager.switchToPerspective(window,
+										IDebugUIConstants.ID_DEBUG_PERSPECTIVE);
+							}
+						}
+					}
+
+				});
+			}
+		}
+

@@ -1,0 +1,22 @@
+	/**
+	 * Finds and returns debugger settings for given debugger type and owner.
+	 * May return <code>null</code> if there is no settings provider for
+	 * particular debugger type.
+	 * 
+	 * @param ownerId
+	 * @param debuggerId
+	 * @return debugger settings
+	 */
+	public IDebuggerSettings findSettings(String ownerId, String debuggerId) {
+		IDebuggerSettingsProvider provider = settingsCache.get(debuggerId);
+		if (provider == null)
+			// There is no provider registered
+			return null;
+		IDebuggerSettings settings = provider.get(ownerId);
+		// Check if there is any pending working copy
+		IDebuggerSettingsWorkingCopy pendingCopy = findWorkingCopy(settings);
+		if (pendingCopy != null)
+			return pendingCopy;
+		return settings;
+	}
+
