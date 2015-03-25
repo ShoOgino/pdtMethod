@@ -1,0 +1,55 @@
+	public Object execute(ExecutionEvent event) throws ExecutionException {
+		IEditorPart editor = HandlerUtil.getActiveEditor(event);
+		ITextEditor textEditor = null;
+		if (editor instanceof ITextEditor) {
+			textEditor = (ITextEditor) editor;
+		} else {
+			Object o = editor.getAdapter(ITextEditor.class);
+			if (o != null) {
+				textEditor = (ITextEditor) o;
+			}
+		}
+		if (textEditor != null) {
+			IDocument document = textEditor.getDocumentProvider().getDocument(
+					textEditor.getEditorInput());
+
+			if (document != null) {
+				if (textEditor.getSelectionProvider() == null
+						|| !(textEditor.getSelectionProvider().getSelection() instanceof ITextSelection)) {
+					return null;
+				}
+				ITextSelection textSelection = (ITextSelection) textEditor
+						.getSelectionProvider().getSelection();
+
+				if (textSelection.isEmpty()) {
+					return null;
+				}
+				if (document instanceof IStructuredDocument) {
+					int selectionOffset = textSelection.getOffset() - 1;
+					IStructuredDocument sDoc = (IStructuredDocument) document;
+					IStructuredDocumentRegion sdRegion = sDoc
+							.getRegionAtCharacterOffset(selectionOffset);
+					ITextRegion textRegion = sdRegion
+							.getRegionAtCharacterOffset(selectionOffset);
+
+					ITextRegionCollection container = sdRegion;
+
+					if (textRegion instanceof ITextRegionContainer) {
+						container = (ITextRegionContainer) textRegion;
+						textRegion = container
+								.getRegionAtCharacterOffset(selectionOffset);
+					}
+					if (textRegion == null) {
+						return null;
+					}
+					if (sdRegion instanceof IStructuredDocumentRegion
+							&& textRegion.getType() == PHPRegionContext.PHP_CONTENT) {
+						run(textEditor, document, textSelection,
+								(IStructuredDocumentRegion) sdRegion);
+					}
+				}
+			}
+		}
+		return null;
+	}
+

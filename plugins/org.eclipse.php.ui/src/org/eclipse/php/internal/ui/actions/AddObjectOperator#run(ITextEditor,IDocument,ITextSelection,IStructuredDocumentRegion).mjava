@@ -1,0 +1,39 @@
+	private void run(ITextEditor textEditor, IDocument document,
+			ITextSelection textSelection, IStructuredDocumentRegion textRegion) {
+
+		if (textSelection.getLength() != 0) {
+			return;
+		}
+
+		IStructuredModel model = StructuredModelManager.getModelManager()
+				.getExistingModelForEdit(document);
+		if (model != null) {
+			try {
+				TextSequence statement = PHPTextSequenceUtilities.getStatement(
+						textSelection.getOffset(), textRegion, true);
+				String insert = PHPTextSequenceUtilities
+						.suggestObjectOperator(statement);
+				if (insert == null) {
+					return;
+				}
+				model.beginRecording(this,
+						PHPUIMessages.AddObjectOperator_tooltip);
+				model.aboutToChangeModel();
+				try {
+					document.replace(textSelection.getOffset(), 0, insert);
+					textEditor.selectAndReveal(textSelection.getOffset()
+							+ insert.length(), 0);
+				} catch (BadLocationException e) {
+					Logger.logException(e);
+				} finally {
+					model.changedModel();
+					model.endRecording(this);
+				}
+			} finally {
+				model.releaseFromEdit();
+				AutoActivationTrigger.register(document);
+
+			}
+		}
+	}
+
