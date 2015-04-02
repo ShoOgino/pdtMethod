@@ -1,0 +1,112 @@
+  /** Parse forward using stored lookahead Symbols.  In this case we have
+   *  already verified that parsing will make it through the stored lookahead
+   *  Symbols and we are now getting back to the point at which we can hand
+   *  control back to the normal parser.  Consequently, this version of the
+   *  parser performs all actions and modifies the real parse configuration.  
+   *  This returns once we have consumed all the stored input or we accept.
+   *
+   * @param debug should we produce debugging messages as we parse.
+   */
+  protected void parse_lookahead(boolean debug)
+    throws java.lang.Exception
+    {
+      /* the current action code */
+      int act;
+
+      /* the Symbol/stack element returned by a reduce */
+      Symbol lhs_sym = null;
+
+      /* information about production being reduced with */
+      short handle_size, lhs_sym_num;
+
+      /* restart the saved input at the beginning */
+      lookahead_pos = 0;
+
+      if (debug) 
+	{
+	  debug_message("# Reparsing saved input with actions");
+	  debug_message("# Current Symbol is #" + cur_err_token().sym);
+	  debug_message("# Current state is #" + 
+			((Symbol)stack.peek()).parse_state);
+	}
+
+      /* continue until we accept or have read all lookahead input */
+      while(!_done_parsing)
+	{
+	  /* current state is always on the top of the stack */
+
+	  /* look up action out of the current state with the current input */
+	  act = 
+	    get_action(((Symbol)stack.peek()).parse_state, cur_err_token().sym);
+
+	  /* decode the action -- > 0 encodes shift */
+	  if (act > 0)
+	    {
+	      /* shift to the encoded state by pushing it on the stack */
+	      cur_err_token().parse_state = act-1;
+	      cur_err_token().used_by_parser = true;
+	      if (debug) debug_shift(cur_err_token());
+	      stack.push(cur_err_token());
+	      tos++;
+
+	      /* advance to the next Symbol, if there is none, we are done */
+	      if (!advance_lookahead()) 
+		{
+		  if (debug) debug_message("# Completed reparse");
+
+		  /* scan next Symbol so we can continue parse */
+		  // BUGFIX by Chris Harris <ckharris@ucsd.edu>:
+		  //   correct a one-off error by commenting out
+		  //   this next line.
+		  /*cur_token = scan();*/
+
+		  /* go back to normal parser */
+		  return;
+		}
+	      
+	      if (debug) 
+		debug_message("# Current Symbol is #" + cur_err_token().sym);
+	    }
+	  /* if its less than zero, then it encodes a reduce action */
+	  else if (act < 0)
+	    {
+	      /* perform the action for the reduce */
+	      lhs_sym = do_action((-act)-1, this, stack, tos);
+
+	      /* look up information about the production */
+	      lhs_sym_num = production_tab[(-act)-1][0];
+	      handle_size = production_tab[(-act)-1][1];
+
+	      if (debug) debug_reduce((-act)-1, lhs_sym_num, handle_size);
+
+	      /* pop the handle off the stack */
+	      for (int i = 0; i < handle_size; i++)
+		{
+		  stack.pop();
+		  tos--;
+		}
+	      
+	      /* look up the state to go to from the one popped back to */
+	      act = get_reduce(((Symbol)stack.peek()).parse_state, lhs_sym_num);
+
+	      /* shift to that state */
+	      lhs_sym.parse_state = act;
+	      lhs_sym.used_by_parser = true;
+	      stack.push(lhs_sym);
+	      tos++;
+	       
+	      if (debug) debug_message("# Goto state #" + act);
+
+	    }
+	  /* finally if the entry is zero, we have an error 
+	     (shouldn't happen here, but...)*/
+	  else if (act == 0)
+	    {
+	      report_fatal_error("Syntax error", lhs_sym);
+	      return;
+	    }
+	}
+
+	
+    }
+

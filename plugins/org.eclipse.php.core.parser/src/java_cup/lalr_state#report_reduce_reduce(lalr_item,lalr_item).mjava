@@ -1,0 +1,33 @@
+  /** Produce a warning message for one reduce/reduce conflict. 
+   *
+   * @param itm1 first item in conflict.
+   * @param itm2 second item in conflict.
+   */
+  protected void report_reduce_reduce(lalr_item itm1, lalr_item itm2)
+    throws internal_error
+    {
+      boolean comma_flag = false;
+      
+      String message = "*** Reduce/Reduce conflict found in state #"+index()+"\n" +
+      "  between " + itm1.to_simple_string() + "\n" +
+      "  and     " + itm2.to_simple_string() + "\n" +
+	  "  under symbols: {";
+      for (int t = 0; t < terminal.number(); t++)
+	{
+	  if (itm1.lookahead().contains(t) && itm2.lookahead().contains(t))
+	    {
+	      if (comma_flag) message+=(", "); else comma_flag = true;
+	      message += (terminal.find(t).name());
+	    }
+	}
+      message += "}\n  Resolved in favor of ";
+      if (itm1.the_production().index() < itm2.the_production().index())
+	message+="the first production.\n";
+      else
+	message+="the second production.\n";
+
+      /* count the conflict */
+      emit.num_conflicts++;
+      ErrorManager.getManager().emit_warning(message);
+    }
+

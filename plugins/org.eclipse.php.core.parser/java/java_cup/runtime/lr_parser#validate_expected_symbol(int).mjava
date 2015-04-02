@@ -1,0 +1,45 @@
+  private boolean validate_expected_symbol(int id){
+	  short lhs,rhs_size;
+	  int act;
+	  try {
+		  virtual_parse_stack vstack = new virtual_parse_stack(stack);
+		  /* parse until we fail or get past the lookahead input */
+		  for (;;)
+		  {
+			  /* look up the action from the current state (on top of stack) */
+			  act = get_action(vstack.top(), id);
+
+			  /* if its an error, we fail */
+			  if (act == 0) return false;
+
+			  /* > 0 encodes a shift */
+			  if (act > 0)
+			  {
+				  /* push the new state on the stack */
+				  vstack.push(act-1);
+
+				  /* advance simulated input, if we run off the end, we are done */
+				  if (!advance_lookahead()) return true;
+			  }
+			  /* < 0 encodes a reduce */
+			  else
+			  {
+				  /* if this is a reduce with the start production we are done */
+				  if ((-act)-1 == start_production())  return true;
+
+				  /* get the lhs Symbol and the rhs size */
+				  lhs = production_tab[(-act)-1][0];
+				  rhs_size = production_tab[(-act)-1][1];
+				  /* pop handle off the stack */
+				  for (int i = 0; i < rhs_size; i++) vstack.pop();
+
+				  vstack.push(get_reduce(vstack.top(), lhs));
+			  }
+		  }
+
+	  } catch (Exception e) {
+		  e.printStackTrace();
+	  }
+	  return true;
+  }
+

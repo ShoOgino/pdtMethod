@@ -1,0 +1,52 @@
+  /** Helper routine to merge adjacent actions in a set of RHS parts 
+   * @param rhs_parts array of RHS parts.
+   * @param len       amount of that array that is valid.
+   * @return          remaining valid length.
+   */
+  protected int merge_adjacent_actions(production_part rhs_parts[], int len)
+    {
+      int from_loc, to_loc, merge_cnt;
+
+      /* bail out early if we have no work to do */
+      if (rhs_parts == null || len == 0) return 0;
+
+      merge_cnt = 0;
+      to_loc = -1;
+      for (from_loc=0; from_loc<len; from_loc++)
+	{
+	  /* do we go in the current position or one further */
+	  if (to_loc < 0 || !rhs_parts[to_loc].is_action() 
+			 || !rhs_parts[from_loc].is_action())
+	    {
+	      /* next one */
+	      to_loc++;
+
+	      /* clear the way for it */
+	      if (to_loc != from_loc) rhs_parts[to_loc] = null;
+	    }
+
+	  /* if this is not trivial? */
+	  if (to_loc != from_loc)
+	    {
+	      /* do we merge or copy? */
+	      if (rhs_parts[to_loc] != null && rhs_parts[to_loc].is_action() && 
+		  rhs_parts[from_loc].is_action())
+	      {
+	        /* merge */
+	        rhs_parts[to_loc] = new action_part(
+		  ((action_part)rhs_parts[to_loc]).code_string() +
+		  ((action_part)rhs_parts[from_loc]).code_string());
+	        merge_cnt++;
+	      }
+	    else
+	      {
+	        /* copy */
+	        rhs_parts[to_loc] = rhs_parts[from_loc];
+	      }
+	    }
+	}
+
+      /* return the used length */
+      return len - merge_cnt;
+    }
+

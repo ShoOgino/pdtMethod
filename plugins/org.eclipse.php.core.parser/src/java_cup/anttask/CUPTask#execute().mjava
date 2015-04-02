@@ -1,0 +1,105 @@
+    /**
+     * executes the task
+     * parses all attributes and validates options...
+     *
+     */
+
+    public void execute() throws BuildException 
+    {
+        List sc = new ArrayList();  // sc = simulated commandline
+	// here, we parse our elements
+	if (parser!=null)  { sc.add("-parser"); sc.add(parser);}
+        else parser="parser"; // set the default name to check actuality
+	if (_package!=null){ sc.add("-package"); sc.add(_package); }
+	if (symbols!=null) { sc.add("-symbols"); sc.add(symbols); }
+        else symbols="sym";
+	if (expect!=null)  {  sc.add("-expect"); sc.add(expect); }
+	if (_interface)    {  sc.add("-interface"); }
+	if (nonterms)      {  sc.add("-nonterms"); }
+	if (compact_red)   {  sc.add("-compact_red"); }
+	if (nowarn)        {  sc.add("-nowarn"); }
+	if (nosummary)     {  sc.add("-nosummary");}
+	if (progress)      {  sc.add("-progress"); }
+	if (dump_grammar)  {  sc.add("-dump_grammar"); }
+	if (dump_states)   {  sc.add("-dump_states"); }
+	if (dump_tables)   {  sc.add("-dump_tables"); }
+	if (dump)          {  sc.add("-dump"); }
+	if (time)          {  sc.add("-time"); }
+	if (debug)         {  sc.add("-debug"); }
+	if (debugsymbols)  {  sc.add("-debugsymbols"); }
+	if (nopositions)   {  sc.add("-nopositions"); }
+	if (locations)     {  sc.add("-locations"); }
+	if (genericlabels) {  sc.add("-genericlabels"); }
+	if (xmlactions)    {  sc.add("-xmlactions"); }
+	if (noscanner)     {  sc.add("-noscanner"); }
+	if (!quiet) log ("This is "+version.title_str);
+        if (!quiet) log ("Authors : "+version.author_str);
+	if (!quiet) log ("Bugreports to petter@cs.tum.edu");
+
+	// look for package name and add to destdir
+	String packagename = inspect(srcfile);
+	
+
+	// now, that's sweet:
+	if (destdir==null) {
+	    destdir=System.getProperty("user.dir");
+	    if (!quiet) log("No destination directory specified; using working directory: "+destdir);
+	}
+	File dest = new File(destdir+packagename);
+	if (!(dest).exists()) {
+	    if (!quiet) log("Destination directory didn't exist; creating new one: "+destdir+packagename);
+	    dest.mkdirs();
+	    force=true;
+	}
+	else {
+	    if (force&& !quiet) { log("anyway, this generation will be processed because of option force set to \"true\""); }
+	    else { if (!quiet) log("checking, whether this run is necessary"); }
+	    // let's check, whether there exists any Parser fragment...
+	    File parserfile = new File(destdir+packagename,parser+".java");
+	    File symfile    = new File(destdir+packagename,symbols+".java");
+	    File cupfile    = new File(srcfile);
+	    
+	    if (!parserfile.exists() || !symfile.exists()) {
+		if (!quiet) log("Either Parserfile or Symbolfile didn't exist");
+		force=true;	    
+	    }else { if (!quiet) log("Parserfile and symbolfile are existing"); }
+	    
+	    
+	    if (parserfile.lastModified()<=cupfile.lastModified()) {
+		if (!quiet) log("Parserfile "+parserfile+" isn't actual");
+		force=true;
+	    }else { if (!quiet) log("Parserfile "+parserfile+" is actual"); }
+	    
+	    if (symfile.lastModified()<=cupfile.lastModified()) {
+		if (!quiet) log("Symbolfile "+symfile+" isn't actual");
+		force=true;
+	    }else { if (!quiet) log("Symbolfile"+symfile+" is actual"); }
+	    
+	    
+	    if (!force) {
+		if (!quiet) log("skipping generation of "+srcfile);
+		if (!quiet) log("use option force=\"true\" to override");
+		return;
+	    }
+	}
+        
+	sc.add("-destdir");
+        sc.add(dest.getAbsolutePath());
+        
+        // also catch the not existing input file
+	if (srcfile==null) throw new BuildException("Input file needed: Specify <cup srcfile=\"myfile.cup\"> ");
+	if (!(new File(srcfile)).exists()) throw new BuildException("Input file not found: srcfile=\""+srcfile+"\" ");
+	
+        sc.add(srcfile);
+	String[] args = new String[sc.size()];
+        for (int i=0;i<args.length;i++) args[i]=(String)sc.get(i);
+        
+
+	try {
+            java_cup.Main.main(args);
+        }catch(Exception e){
+            log("CUP error occured int CUP task: "+e);
+        }
+	
+    }
+
