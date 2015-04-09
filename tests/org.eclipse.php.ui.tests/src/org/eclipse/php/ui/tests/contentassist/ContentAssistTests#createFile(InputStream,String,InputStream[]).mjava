@@ -1,0 +1,32 @@
+	protected void createFile(InputStream inputStream, String fileName,
+			InputStream[] other) throws Exception {
+		testFile = project.getFile(new Path(fileName).removeFileExtension()
+				.addFileExtension("php").lastSegment());
+		testFile.create(inputStream, true, null);
+		otherFiles = new IFile[other.length];
+		for (int i = 0; i < other.length; i++) {
+			otherFiles[i] = project.getFile(new Path(i + fileName)
+					.addFileExtension("php").lastSegment());
+			otherFiles[i].create(other[i], true, null);
+		}
+		project.refreshLocal(IResource.DEPTH_INFINITE, null);
+
+		project.build(IncrementalProjectBuilder.FULL_BUILD, null);
+		PHPCoreTests.waitForIndexer();
+		IWorkbenchWindow workbenchWindow = PlatformUI.getWorkbench()
+				.getActiveWorkbenchWindow();
+		IWorkbenchPage page = workbenchWindow.getActivePage();
+		IEditorInput input = new FileEditorInput(testFile);
+		/*
+		 * This should take care of testing init, createPartControl,
+		 * beginBackgroundOperation, endBackgroundOperation methods
+		 */
+		IEditorPart part = page.openEditor(input, "org.eclipse.php.editor",
+				true);
+		if (part instanceof PHPStructuredEditor) {
+			fEditor = (PHPStructuredEditor) part;
+		} else {
+			assertTrue("Unable to open php editor", false);
+		}
+	}
+
