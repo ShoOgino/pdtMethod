@@ -5,11 +5,16 @@
 		IDebuggerSettings settings = DebuggerSettingsManager.INSTANCE
 				.findSettings(debuggerOwner.getUniqueId(), debuggerId);
 		if (debuggerSettingsSection != null) {
-			debuggerSettingsSection.getComposite().dispose();
+			debuggerSettingsComposite.dispose();
 		}
+		// Rebuild settings composite
+		debuggerSettingsComposite = new Composite(mainComposite, SWT.NONE);
+		debuggerSettingsComposite.setLayout(new GridLayout());
+		debuggerSettingsComposite.setLayoutData(new GridData(SWT.FILL,
+				SWT.FILL, true, true));
 		if (settings == null) {
 			debuggerSettingsSection = new DebuggerUnsupportedSettingsSection(
-					this);
+					this, debuggerSettingsComposite);
 		} else {
 			debuggerSettingsWC = getSettingsWC(debuggerId, settings);
 			IDebuggerSettingsProvider provider = DebuggerSettingsProviderRegistry
@@ -17,7 +22,7 @@
 			IDebuggerSettingsSectionBuilder sectionBuilder = DebuggerSettingsSectionBuildersRegistry
 					.getBuilder(provider.getId());
 			debuggerSettingsSection = sectionBuilder.build(this,
-					debuggerSettingsWC);
+					debuggerSettingsComposite, debuggerSettingsWC);
 		}
 		if (!debuggerSettingsSection.canTest())
 			debuggerTest.setVisible(false);
