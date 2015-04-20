@@ -4,8 +4,16 @@
 		IDecoratorManager decoratorMgr = PlatformUI.getWorkbench()
 				.getDecoratorManager();
 		if (decoratorMgr.getEnabled("org.eclipse.php.ui.override.decorator")) { //$NON-NLS-1$
-			((ScriptUILabelProvider) viewer.getLabelProvider())
-					.addLabelDecorator(new OverrideIndicatorLabelDecorator());
+			IBaseLabelProvider labelProvider = viewer.getLabelProvider();
+			if (labelProvider instanceof ScriptUILabelProvider) {
+				((ScriptUILabelProvider) viewer.getLabelProvider())
+						.addLabelDecorator(new OverrideIndicatorLabelDecorator());
+			} else if (labelProvider instanceof StyledDecoratingModelLabelProvider) {
+				// DLTK 5.2
+				((ScriptUILabelProvider) ((StyledDecoratingModelLabelProvider) labelProvider)
+						.getStyledStringProvider())
+						.addLabelDecorator(new OverrideIndicatorLabelDecorator());
+			}
 		}
 		return viewer;
 	}
