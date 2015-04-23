@@ -2,19 +2,27 @@
 		IPreferenceStore store = EditorsPlugin.getDefault()
 				.getPreferenceStore();
 		fSourceViewer.getTextWidget().setBackground(getBackgroundColor(store));
-		IPropertyChangeListener listener = new IPropertyChangeListener() {
-			public void propertyChange(PropertyChangeEvent event) {
-				IPreferenceStore store = EditorsPlugin.getDefault()
-						.getPreferenceStore();
-				String prop = event.getProperty();
-				if (prop.equals(AbstractTextEditor.PREFERENCE_COLOR_BACKGROUND_SYSTEM_DEFAULT)
-						|| prop.equals(AbstractTextEditor.PREFERENCE_COLOR_BACKGROUND)) {
-					fSourceViewer.getTextWidget().setBackground(
-							getBackgroundColor(store));
-				}
+		if (fPropertyChangeListener == null) {
+			fPropertyChangeListener = new IPropertyChangeListener() {
+				public void propertyChange(PropertyChangeEvent event) {
+					IPreferenceStore store = EditorsPlugin.getDefault()
+							.getPreferenceStore();
+					String prop = event.getProperty();
+					if (prop.equals(AbstractTextEditor.PREFERENCE_COLOR_BACKGROUND_SYSTEM_DEFAULT)
+							|| prop.equals(AbstractTextEditor.PREFERENCE_COLOR_BACKGROUND)) {
+						if (fSourceViewer == null
+								|| fSourceViewer.getTextWidget() == null
+								|| fSourceViewer.getTextWidget().isDisposed()) {
+							return;
+						}
+						fSourceViewer.getTextWidget().setBackground(
+								getBackgroundColor(store));
+					}
 
-			}
-		};
-		store.addPropertyChangeListener(listener);
+				}
+			};
+			store.addPropertyChangeListener(fPropertyChangeListener);
+		}
+
 	}
 
