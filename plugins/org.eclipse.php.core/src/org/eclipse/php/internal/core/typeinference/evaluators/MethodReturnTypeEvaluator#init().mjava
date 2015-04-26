@@ -37,8 +37,18 @@
 									.getCache());
 				}
 
+				final MethodDeclaration topDeclaration = decl;
+
 				ASTVisitor visitor = new ASTVisitor() {
 					public boolean visitGeneral(ASTNode node) throws Exception {
+						// https://bugs.eclipse.org/bugs/show_bug.cgi?id=464921
+						// do not evaluate content of inner lambda functions
+						if (node instanceof LambdaFunctionDeclaration
+						// but never exclude top node (even if this case cannot
+						// happen here)
+								&& node != topDeclaration) {
+							return false;
+						}
 						if (node instanceof ReturnStatement) {
 							ReturnStatement statement = (ReturnStatement) node;
 							Expression expr = statement.getExpr();
