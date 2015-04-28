@@ -1,36 +1,43 @@
 	/**
-	 * Ensures that both text fields are set.
+	 * This method is overridden to set additional validation specific to html
+	 * files.
 	 */
-	protected void dialogChanged() {
-		final String container = getContainerName();
+	protected boolean validatePage() {
+		setMessage(null);
+		setErrorMessage(null);
+
+		if (!super.validatePage()) {
+			return false;
+		}
+		IPath fullPath = getContainerFullPath();
 		final String fileName = getFileName();
 
-		if (container.length() == 0) {
-			updateStatus(PHPUIMessages.PHPFileCreationWizardPage_10);
-			return;
+		if (fullPath == null) {
+			setErrorMessage(PHPUIMessages.PHPFileCreationWizardPage_10);
+			return false;
 		}
-		final IContainer containerFolder = getContainer(container);
+		final IContainer containerFolder = getContainer(fullPath);
 		if (containerFolder == null || !containerFolder.exists()) {
-			updateStatus(PHPUIMessages.PHPFileCreationWizardPage_11);
-			return;
+			setErrorMessage(PHPUIMessages.PHPFileCreationWizardPage_11);
+			return false;
 		}
 		if (!containerFolder.getProject().isOpen()) {
-			updateStatus(PHPUIMessages.PHPFileCreationWizardPage_12);
-			return;
+			setErrorMessage(PHPUIMessages.PHPFileCreationWizardPage_12);
+			return false;
 		}
 		if (fileName == null) {
-			updateStatus(PHPUIMessages.PHPFileCreationWizardPage_15);
-			return;
+			setErrorMessage(PHPUIMessages.PHPFileCreationWizardPage_15);
+			return false;
 		}
 		if (!fileName.equals("") && containerFolder.getFile(new Path(fileName)).exists()) { //$NON-NLS-1$
-			updateStatus(PHPUIMessages.PHPFileCreationWizardPage_14);
-			return;
+			setErrorMessage(PHPUIMessages.PHPFileCreationWizardPage_14);
+			return false;
 		}
 
 		int dotIndex = fileName.lastIndexOf('.');
 		if (fileName.length() == 0 || dotIndex == 0) {
-			updateStatus(PHPUIMessages.PHPFileCreationWizardPage_15);
-			return;
+			setErrorMessage(PHPUIMessages.PHPFileCreationWizardPage_15);
+			return false;
 		}
 
 		if (dotIndex != -1) {
@@ -38,8 +45,8 @@
 			for (int i = 0; i < fileNameWithoutExtention.length(); i++) {
 				char ch = fileNameWithoutExtention.charAt(i);
 				if (!(Character.isJavaIdentifierPart(ch) || ch == '.' || ch == '-')) {
-					updateStatus(PHPUIMessages.PHPFileCreationWizardPage_16);
-					return;
+					setErrorMessage(PHPUIMessages.PHPFileCreationWizardPage_16);
+					return false;
 				}
 			}
 		}
@@ -58,10 +65,10 @@
 				buffer.append(", ").append(extension); //$NON-NLS-1$
 			}
 			buffer.append("]"); //$NON-NLS-1$
-			updateStatus(buffer.toString());
-			return;
+			setErrorMessage(buffer.toString());
+			return false;
 		}
 
-		updateStatus(null);
+		return true;
 	}
 

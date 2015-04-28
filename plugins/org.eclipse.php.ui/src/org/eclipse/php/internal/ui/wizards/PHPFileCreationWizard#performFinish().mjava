@@ -4,15 +4,21 @@
 	 */
 	public boolean performFinish() {
 		final String containerName = phpFileCreationWizardPage
-				.getContainerName();
+				.getContainerFullPath().toString();
 		final String fileName = phpFileCreationWizardPage.getFileName();
 		newPhpTemplatesWizardPage.resetTableViewerInput();
 		IScriptProject project = null;
 		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-		IResource resource = root.findMember(new Path(containerName));
+		IResource resource = root.findMember(phpFileCreationWizardPage
+				.getContainerFullPath());
 		if (!resource.exists() || !(resource instanceof IContainer)) {
 			project = DLTKCore.create(resource.getProject());
 		}
+		final IFile file = phpFileCreationWizardPage.createNewFile();
+		if (file == null) {
+			return false;
+		}
+
 		String lineSeparator = Util.getLineSeparator(null, project);
 		final PHPTemplateStore.CompiledTemplate template = this.newPhpTemplatesWizardPage
 				.compileTemplate(containerName, fileName, lineSeparator);
@@ -22,8 +28,7 @@
 					throws InvocationTargetException {
 				try {
 					new FileCreator().createFile(PHPFileCreationWizard.this,
-							containerName, fileName, monitor, template.string,
-							template.offset);
+							file, monitor, template.string, template.offset);
 				} catch (CoreException e) {
 					throw new InvocationTargetException(e);
 				} finally {

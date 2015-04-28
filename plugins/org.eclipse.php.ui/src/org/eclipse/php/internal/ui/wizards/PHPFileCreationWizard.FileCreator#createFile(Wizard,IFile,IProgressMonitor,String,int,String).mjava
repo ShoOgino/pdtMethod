@@ -1,0 +1,91 @@
+		/**
+		 * The worker method. It will find the container, create the file if
+		 * missing or just replace its contents, and open the editor on the
+		 * newly created file.
+		 * 
+		 * @param wizard
+		 * @param containerName
+		 * @param fileName
+		 * @param monitor
+		 * @param contents
+		 * @param editorID
+		 *            An optional editor ID to use when opening the file (can be
+		 *            null).
+		 * @throws CoreException
+		 */
+		public void createFile(Wizard wizard, final IFile file,
+				IProgressMonitor monitor, String contents, final int offset,
+				final String editorID) throws CoreException {
+			// create a sample file
+			IContainer container = file.getParent();
+			if (file != null) {
+				if (!file.isLinked()) {
+					// adopt project's/workspace's line delimiter (separator)
+					String lineSeparator = Platform.getPreferencesService()
+							.getString(
+									Platform.PI_RUNTIME,
+									Platform.PREF_LINE_SEPARATOR,
+									null,
+									new IScopeContext[] { new ProjectScope(
+											container.getProject()) });
+					if (lineSeparator == null)
+						lineSeparator = Platform
+								.getPreferencesService()
+								.getString(
+										Platform.PI_RUNTIME,
+										Platform.PREF_LINE_SEPARATOR,
+										null,
+										new IScopeContext[] { InstanceScope.INSTANCE });
+					if (lineSeparator == null)
+						lineSeparator = System
+								.getProperty(Platform.PREF_LINE_SEPARATOR);
+					if (contents != null) {
+						contents = contents.replaceAll(
+								"(\n\r?|\r\n?)", lineSeparator); //$NON-NLS-1$
+					}
+
+					try {
+						InputStream stream = openContentStream(contents,
+								getCharSetValue(container));
+						if (file.exists()) {
+							file.setContents(stream, true, true, monitor);
+						} else {
+							file.create(stream, true, monitor);
+						}
+						stream.close();
+					} catch (IOException e) {
+						Logger.logException(e);
+						return;
+					}
+
+				}
+				monitor.worked(1);
+				monitor.setTaskName(NLS.bind(PHPUIMessages.newPhpFile_openning,
+						file.getName()));
+				wizard.getShell().getDisplay().asyncExec(new Runnable() {
+					public void run() {
+						IWorkbenchPage page = PlatformUI.getWorkbench()
+								.getActiveWorkbenchWindow().getActivePage();
+						try {
+							normalizeFile(file);
+							IEditorPart editor;
+							if (editorID == null) {
+								editor = IDE.openEditor(page, file, true);
+							} else {
+								editor = IDE.openEditor(page, file, editorID,
+										true);
+							}
+							if (editor instanceof PHPStructuredEditor) {
+								StructuredTextViewer textViewer = ((PHPStructuredEditor) editor)
+										.getTextViewer();
+								textViewer.setSelectedRange(offset, 0);
+							}
+						} catch (PartInitException e) {
+						}
+					}
+				});
+				monitor.worked(1);
+			}
+
+		}
+
