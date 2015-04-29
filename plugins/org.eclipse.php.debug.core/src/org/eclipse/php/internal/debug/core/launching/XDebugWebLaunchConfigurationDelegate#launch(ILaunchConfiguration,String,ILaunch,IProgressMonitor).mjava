@@ -1,19 +1,6 @@
 	public void launch(ILaunchConfiguration configuration, String mode,
 			ILaunch launch, IProgressMonitor monitor) throws CoreException {
 		String debuggerId = XDebugCommunicationDaemon.XDEBUG_DEBUGGER_ID;
-		if (!DaemonPlugin.getDefault().validateCommunicationDaemons(debuggerId)) {
-			int port = PHPDebugPlugin.getDebugPort(debuggerId);
-			if (!PHPLaunchUtilities.isPortAvailable(port)) {
-				PHPLaunchUtilities
-						.showLaunchErrorMessage(NLS
-								.bind(PHPDebugCoreMessages.XDebug_WebLaunchConfigurationDelegate_PortInUse,
-										port));
-			}
-			monitor.setCanceled(true);
-			monitor.done();
-			DebugPlugin.getDefault().getLaunchManager().removeLaunch(launch);
-			return;
-		}
 		if (mode.equals(ILaunchManager.DEBUG_MODE)) {
 			if (XDebugLaunchListener.getInstance().isWebLaunchActive()) {
 				displayErrorMessage(PHPDebugCoreMessages.XDebug_WebLaunchConfigurationDelegate_0);
@@ -115,6 +102,18 @@
 			}
 			DBGpSessionHandler.getInstance().addSessionListener(
 					(IDBGpSessionListener) target);
+			int requestPort = getDebugPort(server);
+			if (!PHPLaunchUtilities.isDebugDaemonActive(requestPort,
+					XDebugCommunicationDaemon.XDEBUG_DEBUGGER_ID)) {
+				PHPLaunchUtilities
+						.showLaunchErrorMessage(NLS
+								.bind(PHPDebugCoreMessages.WebLaunchConfigurationDelegate_PortInUse,
+										requestPort, server.getName()));
+				monitor.setCanceled(true);
+				monitor.done();
+				return;
+			}
+
 		} else {
 			startStopURLs = new String[] { baseURL, null };
 		}

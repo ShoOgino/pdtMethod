@@ -5,7 +5,14 @@
 			DebugPlugin.getDefault().getLaunchManager().removeLaunch(launch);
 			return;
 		}
-
+		PHPexeItem phpExeItem = PHPExeUtil.getPHPExeItem(configuration);
+		if (phpExeItem == null) {
+			Logger.log(Logger.ERROR,
+					"Launch configuration could not find PHP exe item"); //$NON-NLS-1$
+			monitor.setCanceled(true);
+			monitor.done();
+			return;
+		}
 		// get the launch info: php exe, php ini
 		final String phpExeString = configuration.getAttribute(
 				IPHPDebugConstants.ATTR_EXECUTABLE_LOCATION, (String) null);
@@ -123,8 +130,6 @@
 			String sessionID = DBGpSessionHandler.getInstance()
 					.generateSessionId();
 			String ideKey = null;
-			PHPexeItem phpExeItem = PHPexes.getInstance().getItemForFile(
-					phpExeString, phpIniString);
 			if (phpExeItem != null) {
 				DBGpProxyHandler proxyHandler = DBGpProxyHandlersManager.INSTANCE
 						.getHandler(phpExeItem.getUniqueId());
@@ -148,6 +153,22 @@
 			DBGpSessionHandler.getInstance().addSessionListener(target);
 			envVarString = createDebugLaunchEnvironment(configuration,
 					sessionID, ideKey, phpExe);
+
+			int requestPort = getDebugPort(phpExeItem);
+			// Check that the debug daemon is functional
+			// DEBUGGER - Make sure that the active debugger id is indeed Zend's
+			// debugger
+			if (!PHPLaunchUtilities.isDebugDaemonActive(requestPort,
+					XDebugCommunicationDaemon.XDEBUG_DEBUGGER_ID)) {
+				PHPLaunchUtilities
+						.showLaunchErrorMessage(NLS
+								.bind(PHPDebugCoreMessages.ExeLaunchConfigurationDelegate_PortInUse,
+										requestPort, phpExeItem.getName()));
+				monitor.setCanceled(true);
+				monitor.done();
+				return;
+			}
+
 		} else {
 			envVarString = PHPLaunchUtilities.getEnvironment(configuration,
 					new String[] { getLibraryPath(phpExe) });
