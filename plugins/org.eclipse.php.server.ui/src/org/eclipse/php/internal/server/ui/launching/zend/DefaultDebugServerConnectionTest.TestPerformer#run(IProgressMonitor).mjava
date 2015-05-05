@@ -1,0 +1,103 @@
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see
+		 * org.eclipse.jface.operation.IRunnableWithProgress#run(org.eclipse
+		 * .core.runtime.IProgressMonitor)
+		 */
+		public void run(IProgressMonitor monitor)
+				throws InvocationTargetException, InterruptedException {
+			DebugServerTestController.getInstance().addListener(
+					DefaultDebugServerConnectionTest.this);
+			monitor.beginTask(
+					PHPServerUIMessages
+							.getString("DefaultDebugServerConnectionTest_testingConnectivity"), IProgressMonitor.UNKNOWN); //$NON-NLS-1$
+			try {
+				// Check existence of debugger owner and dummy.php
+				monitor.subTask(NLS.bind(
+						PHPServerUIMessages
+								.getString("DefaultDebugServerConnectionTest_testingServerExistence"), fServer.getName())); //$NON-NLS-1$
+				checkServer();
+				if (monitor.isCanceled()) {
+					return;
+				}
+				String[] clientHosts = getAllLocalHostsAddresses();
+				// Check connection with any of provided client IPs
+				for (String clientHost : clientHosts) {
+					if (monitor.isCanceled()) {
+						return;
+					}
+					fCurrentHost = clientHost;
+					// Build query to call debugger via GET
+					String debugQuery = generateDebugQuery(clientHost);
+					monitor.subTask(NLS.bind(
+							PHPServerUIMessages
+									.getString("DefaultDebugServerConnectionTest_testingCommunication"), clientHost)); //$NON-NLS-1$
+					try {
+						// Calling the debugger client test
+						checkClient(monitor, debugQuery);
+					} catch (SocketTimeoutException ste) {
+						// Debugger caused timeout
+						if (!fIsFinished) {
+							fTimeoutServerList.add(clientHost);
+							continue;
+						}
+					}
+					// Go out if cancelled or finished
+					if (monitor.isCanceled() || fIsFinished) {
+						return;
+					}
+					/*
+					 * The following condition test is due to immediate return,
+					 * but the client host that was sent is unavailable, i.e the
+					 * debugger will not return to 'Neon' version of debugger.
+					 */
+					if (!checkTimeout(monitor)) {
+						break;
+					}
+					fTimeoutServerList.add(clientHost);
+				}
+				// Go out if cancelled, succeeded or finished
+				if (monitor.isCanceled() || fIsFinished) {
+					return;
+				}
+				// All client IPs caused timeout
+				showCustomErrorDialog(addTimeOutsMessage(PHPServerUIMessages
+						.getString("DefaultDebugServerConnectionTest.1"))); //$NON-NLS-1$
+			} catch (FileNotFoundException fnfe) {
+				// dummy.php was not found
+				showCustomErrorDialog(NLS
+						.bind(PHPServerUIMessages
+								.getString("DefaultDebugServerConnectionTest_theURLCouldNotBeFound"), fURL)); //$NON-NLS-1$
+				return;
+			} catch (SocketTimeoutException ste) {
+				// Timeout occurred when trying to connect to debugger owner
+				showCustomErrorDialog(NLS
+						.bind(PHPServerUIMessages
+								.getString("DefaultDebugServerConnectionTest_timeOutMessage"), fURL)); //$NON-NLS-1$
+				return;
+			} catch (ConnectException ce) {
+				// Usually when firewall blocks
+				showCustomErrorDialog(NLS
+						.bind(PHPServerUIMessages
+								.getString("DefaultDebugServerConnectionTest_webServerConnectionFailed"), fURL)); //$NON-NLS-1$
+				return;
+			} catch (IOException er) {
+				// Server not found / server is down
+				showCustomErrorDialog(NLS
+						.bind(PHPServerUIMessages
+								.getString("DefaultDebugServerConnectionTest_webServerConnectionFailed"), fURL)); //$NON-NLS-1$
+				return;
+			} catch (Exception ex) {
+				// Something unexpected happened, report it
+				Logger.logException(ex);
+				showCustomErrorDialog(PHPServerUIMessages
+						.getString("DefaultDebugServerConnectionTest_Unexpected_error_occurred")); //$NON-NLS-1$
+			}
+
+			finally {
+				DebugServerTestController.getInstance().removeListener(
+						DefaultDebugServerConnectionTest.this);
+			}
+		}
+
