@@ -1,0 +1,37 @@
+	public void updateFolding(List<IInteractionElement> elements) {
+		for (IInteractionElement element : elements) {
+			if (updater == null || !enabled) {
+				return;
+			} else {
+				Object object = bridge.getObjectForHandle(element
+						.getHandleIdentifier());
+				if (object instanceof IMember) {
+					IMember member = (IMember) object;
+					if (element.getInterest().isInteresting()) {
+						updater.expandElements(new IModelElement[] { member });
+						// expand the next 2 children down (e.g. anonymous
+						// types)
+						try {
+							IModelElement[] children = ((IParent) member)
+									.getChildren();
+							if (children.length == 1) {
+								updater.expandElements(new IModelElement[] { children[0] });
+								if (children[0] instanceof IParent) {
+									IModelElement[] childsChildren = ((IParent) children[0])
+											.getChildren();
+									if (childsChildren.length == 1) {
+										updater.expandElements(new IModelElement[] { childsChildren[0] });
+									}
+								}
+							}
+						} catch (ModelException e) {
+							// ignore
+						}
+					} else {
+						updater.collapseElements(new IModelElement[] { member });
+					}
+				}
+			}
+		}
+	}
+

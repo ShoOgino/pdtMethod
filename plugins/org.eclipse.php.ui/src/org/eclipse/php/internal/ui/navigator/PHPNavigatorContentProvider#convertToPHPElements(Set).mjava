@@ -1,0 +1,36 @@
+	/**
+	 * Converts the shape modification to use PHP elements.
+	 *
+	 *
+	 * @param currentChildren
+	 *            The set of current children that would be contributed or
+	 *            refreshed in the viewer.
+	 * @return returns true if the conversion took place
+	 */
+	private boolean convertToPHPElements(Set currentChildren) {
+
+		LinkedHashSet<Object> convertedChildren = new LinkedHashSet<Object>();
+		IModelElement newChild;
+		for (Iterator<Object> childrenItr = currentChildren.iterator(); childrenItr
+				.hasNext();) {
+			Object child = childrenItr.next();
+			// only convert IFolders and IFiles
+			if (child instanceof IFile) {
+				if ((newChild = DLTKCore.create((IResource) child)) != null
+						&& newChild.exists()) {
+					childrenItr.remove();
+					convertedChildren.add(newChild);
+				}
+			} else if (child instanceof IScriptProject) {
+				childrenItr.remove();
+				convertedChildren.add(((IScriptProject) child).getProject());
+			}
+		}
+		if (!convertedChildren.isEmpty()) {
+			currentChildren.addAll(convertedChildren);
+			return true;
+		}
+		return false;
+
+	}
+

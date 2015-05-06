@@ -1,0 +1,44 @@
+	public void updateFolding() {
+		if (!enabled || !ContextCore.getContextManager().isContextActive()) {
+			if (editor instanceof ScriptEditor) {
+				((ScriptEditor) editor).resetProjection();
+			}
+		} else if (editor.getEditorInput() == null) {
+			return;
+		} else {
+			try {
+				List<IModelElement> toExpand = new ArrayList<IModelElement>();
+				List<IModelElement> toCollapse = new ArrayList<IModelElement>();
+
+				IModelElement element = DLTKUIPlugin
+						.getEditorInputModelElement(editor.getEditorInput());
+				if (element instanceof ISourceModule) {
+					ISourceModule compilationUnit = (ISourceModule) element;
+					List<IModelElement> allChildren = getAllChildren(compilationUnit);
+					for (IModelElement child : allChildren) {
+						IInteractionElement interactionElement = ContextCore
+								.getContextManager().getElement(
+										bridge.getHandleIdentifier(child));
+						if (interactionElement != null
+								&& interactionElement.getInterest()
+										.isInteresting()) {
+							toExpand.add(child);
+						} else {
+							toCollapse.add(child);
+						}
+					}
+				}
+				if (updater != null) {
+					updater.collapseComments();
+					updater.collapseMembers();
+					updater.expandElements(toExpand
+							.toArray(new IModelElement[toExpand.size()]));
+				}
+			} catch (Exception e) {
+				StatusHandler.log(new Status(IStatus.ERROR,
+						DLTKUiBridgePlugin.ID_PLUGIN,
+						"Could not update folding", e)); //$NON-NLS-1$
+			}
+		}
+	}
+
