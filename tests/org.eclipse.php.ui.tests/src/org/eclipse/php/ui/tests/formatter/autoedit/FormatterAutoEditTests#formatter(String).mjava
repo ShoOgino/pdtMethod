@@ -19,6 +19,16 @@
 					return false;
 				}
 			}, null);
+
+		IWorkbenchWindow window = PlatformUI.getWorkbench()
+				.getActiveWorkbenchWindow();
+		if (window == null || window.getActivePage() == null) {
+			return;
+		}
+		IWorkbenchPage page = window.getActivePage();
+
+		IEditorPart part = null;
+
 		IStructuredModel modelForEdit = StructuredModelManager
 				.getModelManager().getModelForEdit(file);
 		try {
@@ -51,6 +61,9 @@
 
 			document.set(data);
 
+			part = page.openEditor(new FileEditorInput(file),
+					PHPUiConstants.PHP_EDITOR_ID);
+
 			IAutoEditStrategy indentLineAutoEditStrategy = new MainAutoEditStrategy();
 
 			if (pdttFile.getOther() != null) {
@@ -79,6 +92,9 @@
 		} finally {
 			if (modelForEdit != null) {
 				modelForEdit.releaseFromEdit();
+			}
+			if (part != null) {
+				page.closeEditor(part, false);
 			}
 		}
 	}
