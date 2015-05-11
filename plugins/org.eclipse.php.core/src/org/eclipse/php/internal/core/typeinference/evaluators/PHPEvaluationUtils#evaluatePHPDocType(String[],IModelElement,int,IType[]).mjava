@@ -1,0 +1,124 @@
+	/**
+	 * @param typeName
+	 * @param space
+	 *            namespace (IType) or file (ISourceModule)
+	 * @param offset
+	 * @param types
+	 * @return
+	 */
+	public static IEvaluatedType[] evaluatePHPDocType(String[] typeNames,
+			IModelElement space, int offset, IType[] types) {
+
+		ISourceModule sourceModule = space.getAncestor(ISourceModule.class);
+		IType currentNamespace = space instanceof IType ? (IType) space : null;
+		MultiTypeType evalMultiType = null;
+		List<IEvaluatedType> res = new LinkedList<IEvaluatedType>();
+		for (String typeName : typeNames) {
+			List<IEvaluatedType> evaluated = new LinkedList<IEvaluatedType>();
+			if (typeName.trim().isEmpty()) {
+				continue;
+			}
+			IEvaluatedType evaluatedType = PHPEvaluationUtils.extractArrayType(
+					typeName, currentNamespace, offset);
+			if (evaluatedType != null) {
+				evaluated.add(evaluatedType);
+			} else {
+				boolean isMulti = false;
+				Matcher multi = MULTITYPE_PATTERN.matcher(typeName);
+				if (multi.find()) {
+					isMulti = true;
+					typeName = multi.group(1);
+				}
+				if (PHPSimpleTypes.isSimpleTypeCS(typeName)) {
+					ClassFinder classFinder = new ClassFinder(typeName);
+					try {
+						space.accept(classFinder);
+					} catch (ModelException e) {
+						Logger.logException(e);
+					}
+					if (classFinder.found) {
+						evaluated.add(PHPEvaluationUtils.getEvaluatedType(
+								typeName, currentNamespace));
+					} else {
+						evaluated.add(PHPSimpleTypes.fromStringCS(typeName));
+					}
+				} else if (typeName.equals(SELF_RETURN_TYPE) && types != null) {
+					for (IType t : types) {
+						IEvaluatedType type = PHPEvaluationUtils
+								.getEvaluatedType(PHPModelUtils.getFullName(t),
+										null);
+						if (type != null) {
+							evaluated.add(type);
+						}
+					}
+				} else if (typeName
+						.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) == 0) {
+					evaluated.add(new PHPClassType(typeName));
+				} else {
+					if (currentNamespace != null) {
+						ModuleDeclaration moduleDeclaration = SourceParserUtil
+								.getModuleDeclaration(sourceModule);
+						if (typeName
+								.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) > 0) {
+							String prefix = typeName
+									.substring(
+											0,
+											typeName.indexOf(NamespaceReference.NAMESPACE_SEPARATOR));
+							final Map<String, UsePart> result = PHPModelUtils
+									.getAliasToNSMap(prefix, moduleDeclaration,
+											offset, currentNamespace, true);
+							if (result.containsKey(prefix)) {
+								String fullName = result.get(prefix)
+										.getNamespace().getFullyQualifiedName();
+								typeName = typeName.replace(prefix, fullName);
+								if (typeName.charAt(0) != NamespaceReference.NAMESPACE_SEPARATOR) {
+									typeName = NamespaceReference.NAMESPACE_SEPARATOR
+											+ typeName;
+								}
+							}
+						} else if (typeName
+								.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) < 0) {
+
+							String prefix = typeName;
+							final Map<String, UsePart> result = PHPModelUtils
+									.getAliasToNSMap(prefix, moduleDeclaration,
+											offset, currentNamespace, true);
+							if (result.containsKey(prefix)) {
+								String fullName = result.get(prefix)
+										.getNamespace().getFullyQualifiedName();
+								typeName = fullName;
+								if (typeName.charAt(0) != NamespaceReference.NAMESPACE_SEPARATOR) {
+									typeName = NamespaceReference.NAMESPACE_SEPARATOR
+											+ typeName;
+								}
+							}
+						}
+					}
+					IEvaluatedType type = PHPEvaluationUtils.getEvaluatedType(
+							typeName, currentNamespace);
+					if (type != null) {
+						evaluated.add(type);
+					}
+				}
+				if (isMulti) {
+					if (evalMultiType == null) {
+						evalMultiType = new MultiTypeType();
+					}
+					for (IEvaluatedType t : evaluated) {
+						evalMultiType.addType(t);
+					}
+					continue;
+				}
+			}
+			res.addAll(evaluated);
+		}
+		if (evalMultiType != null) {
+			res.add(evalMultiType);
+		}
+		if (res.isEmpty()) {
+			return EMPTY_LIST;
+		}
+
+		return res.toArray(new IEvaluatedType[res.size()]);
+	}
+

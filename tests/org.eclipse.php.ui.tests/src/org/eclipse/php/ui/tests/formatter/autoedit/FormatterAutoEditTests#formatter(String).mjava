@@ -1,7 +1,7 @@
 	@Test
 	public void formatter(String fileName) throws Exception {
 		final PdttFile pdttFile = new PdttFile(fileName);
-		IFile file = createFile(pdttFile.getFile().trim());
+		final IFile file = createFile(pdttFile.getFile().trim());
 		ISourceModule modelElement = (ISourceModule) DLTKCore.create(file);
 		if (ScriptModelUtil.isPrimary(modelElement))
 			modelElement.becomeWorkingCopy(new IProblemRequestor() {
@@ -20,19 +20,13 @@
 				}
 			}, null);
 
-		IWorkbenchWindow window = PlatformUI.getWorkbench()
-				.getActiveWorkbenchWindow();
-		if (window == null || window.getActivePage() == null) {
-			return;
-		}
-		IWorkbenchPage page = window.getActivePage();
-
-		IEditorPart part = null;
+		final Exception[] err = new Exception[1];
+		final IEditorPart[] part = new IEditorPart[1];
 
 		IStructuredModel modelForEdit = StructuredModelManager
 				.getModelManager().getModelForEdit(file);
 		try {
-			IDocument document = modelForEdit.getStructuredDocument();
+			final IDocument document = modelForEdit.getStructuredDocument();
 			String beforeFormat = document.get();
 			String data = document.get();
 			int firstOffset = data.indexOf(OFFSET_CHAR);
@@ -42,7 +36,7 @@
 						"Offset character is not set");
 			}
 
-			DocumentCommand cmd = new DocumentCommand() {
+			final DocumentCommand cmd = new DocumentCommand() {
 			};
 
 			// replace the offset character(s)
@@ -58,30 +52,67 @@
 				cmd.offset = firstOffset;
 				cmd.length = lastOffset - (firstOffset + 1);
 			}
+			final String newContent = data;
 
-			document.set(data);
+			Display.getDefault().syncExec(new Runnable() {
 
-			part = page.openEditor(new FileEditorInput(file),
-					PHPUiConstants.PHP_EDITOR_ID);
+				@Override
+				public void run() {
+					try {
+						IWorkbenchWindow window = PlatformUI.getWorkbench()
+								.getActiveWorkbenchWindow();
+						IWorkbenchPage page = window.getActivePage();
+						part[0] = page.openEditor(new FileEditorInput(file),
+								PHPUiConstants.PHP_EDITOR_ID);
+						part[0].setFocus();
 
-			IAutoEditStrategy indentLineAutoEditStrategy = new MainAutoEditStrategy();
-
-			if (pdttFile.getOther() != null) {
-				cmd.text = pdttFile.getOther();
-				if (cmd.text != null && cmd.text.trim().length() == 1) {
-					// support single (non-blank) character insertion
-					cmd.text = cmd.text.trim();
+						document.set(newContent);
+					} catch (Exception e) {
+						err[0] = e;
+					}
 				}
-			} else {
-				cmd.text = "\n";
+			});
+			if (err[0] != null) {
+				throw err[0];
 			}
+			// wait for initial reconcile
+			SharedASTProvider.getAST(modelElement, SharedASTProvider.WAIT_YES,
+					null);
 
-			cmd.doit = true;
-			cmd.shiftsCaret = true;
-			cmd.caretOffset = -1;
+			Display.getDefault().syncExec(new Runnable() {
 
-			indentLineAutoEditStrategy.customizeDocumentCommand(document, cmd);
-			document.replace(cmd.offset, cmd.length, cmd.text);
+				@Override
+				public void run() {
+					try {
+						IAutoEditStrategy indentLineAutoEditStrategy = new MainAutoEditStrategy();
+
+						if (pdttFile.getOther() != null) {
+							cmd.text = pdttFile.getOther();
+							if (cmd.text != null
+									&& cmd.text.trim().length() == 1) {
+								// support single (non-blank) character
+								// insertion
+								cmd.text = cmd.text.trim();
+							}
+						} else {
+							cmd.text = "\n";
+						}
+
+						cmd.doit = true;
+						cmd.shiftsCaret = true;
+						cmd.caretOffset = -1;
+
+						indentLineAutoEditStrategy.customizeDocumentCommand(
+								document, cmd);
+						document.replace(cmd.offset, cmd.length, cmd.text);
+					} catch (Exception e) {
+						err[0] = e;
+					}
+				}
+			});
+			if (err[0] != null) {
+				throw err[0];
+			}
 
 			PDTTUtils.assertContents(pdttFile.getExpected(), document.get());
 
@@ -93,8 +124,25 @@
 			if (modelForEdit != null) {
 				modelForEdit.releaseFromEdit();
 			}
-			if (part != null) {
-				page.closeEditor(part, false);
+			if (part[0] != null) {
+				Display.getDefault().syncExec(new Runnable() {
+
+					@Override
+					public void run() {
+						try {
+							IWorkbenchWindow window = PlatformUI.getWorkbench()
+									.getActiveWorkbenchWindow();
+							IWorkbenchPage page = window.getActivePage();
+							page.closeEditor(part[0], false);
+						} catch (Exception e) {
+							err[0] = e;
+						}
+					}
+				});
+				if (err[0] != null) {
+					throw err[0];
+				}
+
 			}
 		}
 	}

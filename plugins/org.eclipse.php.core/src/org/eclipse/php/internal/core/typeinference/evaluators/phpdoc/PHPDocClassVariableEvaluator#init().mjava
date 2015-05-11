@@ -52,70 +52,14 @@
 			IType currentNamespace = PHPModelUtils
 					.getCurrentNamespace(typeField);
 
+			IModelElement space = currentNamespace != null ? currentNamespace
+					: typeField.getSourceModule();
+
 			for (PHPDocTag tag : doc.getTags()) {
 				if (tag.getTagKind() == PHPDocTag.VAR) {
-					SimpleReference[] references = tag.getReferences();
-					for (SimpleReference ref : references) {
-						String typeName = ref.getName();
-
-						IEvaluatedType evaluatedType = PHPEvaluationUtils
-								.extractArrayType(typeName, currentNamespace,
-										tag.sourceStart());
-						if (evaluatedType != null) {
-							evaluated.add(evaluatedType);
-						} else {
-							if (currentNamespace != null) {
-								ModuleDeclaration moduleDeclaration = SourceParserUtil
-										.getModuleDeclaration(currentNamespace
-												.getSourceModule());
-								if (typeName.indexOf(SPLASH) > 0) {
-									// check if the first part is an
-									// alias,then get the full name
-									String prefix = typeName.substring(0,
-											typeName.indexOf(SPLASH));
-									final Map<String, UsePart> result = PHPModelUtils
-											.getAliasToNSMap(prefix,
-													moduleDeclaration,
-													doc.sourceStart(),
-													currentNamespace, true);
-									if (result.containsKey(prefix)) {
-										String fullName = result.get(prefix)
-												.getNamespace()
-												.getFullyQualifiedName();
-										typeName = typeName.replace(prefix,
-												fullName);
-										if (typeName.charAt(0) != NamespaceReference.NAMESPACE_SEPARATOR) {
-											typeName = NamespaceReference.NAMESPACE_SEPARATOR
-													+ typeName;
-										}
-									}
-								} else if (typeName.indexOf(SPLASH) < 0) {
-									String prefix = typeName;
-									final Map<String, UsePart> result = PHPModelUtils
-											.getAliasToNSMap(prefix,
-													moduleDeclaration,
-													doc.sourceStart(),
-													currentNamespace, true);
-									if (result.containsKey(prefix)) {
-										String fullName = result.get(prefix)
-												.getNamespace()
-												.getFullyQualifiedName();
-										typeName = fullName;
-										if (typeName.charAt(0) != NamespaceReference.NAMESPACE_SEPARATOR) {
-											typeName = NamespaceReference.NAMESPACE_SEPARATOR
-													+ typeName;
-										}
-									}
-								}
-							}
-							IEvaluatedType type = PHPEvaluationUtils
-									.getEvaluatedType(typeName,
-											currentNamespace);
-							if (type != null) {
-								evaluated.add(type);
-							}
-						}
-					}
+					evaluated.addAll(Arrays.asList(PHPEvaluationUtils
+							.evaluatePHPDocType(tag.getReferences(), space,
+									tag.sourceStart(), null)));
 				}
 			}
 		}
