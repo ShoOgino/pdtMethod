@@ -1,77 +1,7 @@
 	public static IType[] getTypes(String typeName, ISourceModule sourceModule,
 			int offset, IModelAccessCache cache, IProgressMonitor monitor,
 			boolean isType) throws ModelException {
-
-		if (typeName == null || typeName.length() == 0) {
-			return PhpModelAccess.NULL_TYPES;
-		}
-
-		String namespace = extractNamespaceName(typeName, sourceModule, offset);
-		typeName = extractElementName(typeName);
-		if (namespace != null) {
-			if (namespace.length() > 0) {
-				typeName = getRealName(typeName, sourceModule, offset, typeName);
-
-				IType[] types = getNamespaceType(namespace, typeName, true,
-						sourceModule, cache, monitor, isType);
-				types = filterType(types, isType);
-				if (types.length > 0) {
-					return types;
-				}
-				return PhpModelAccess.NULL_TYPES;
-			}
-			// it's a global reference: \A
-		} else {
-			// look for the element in current namespace:
-			IType currentNamespace = getCurrentNamespace(sourceModule, offset);
-			if (currentNamespace != null) {
-				namespace = currentNamespace.getElementName();
-				IType[] types = getNamespaceType(namespace, typeName, true,
-						sourceModule, cache, monitor, isType);
-				types = filterType(types, isType);
-				if (types.length > 0) {
-					return types;
-				}
-			}
-		}
-
-		List<IType> result = new ArrayList<IType>();
-		Collection<IType> types;
-		if (cache == null) {
-			IDLTKSearchScope scope = SearchEngine
-					.createSearchScope(sourceModule.getScriptProject());
-			IType[] r;
-			if (isType) {
-				r = PhpModelAccess.getDefault().findTypes(typeName,
-						MatchRule.EXACT, 0, 0, scope, null);
-			} else {
-				r = PhpModelAccess.getDefault().findTraits(typeName,
-						MatchRule.EXACT, 0, 0, scope, null);
-			}
-			for (IType type : r) {
-				if (getCurrentNamespace(type) == null) {
-					result.add(type);
-				}
-			}
-			List<IType> tempList = new ArrayList<IType>(result.size());
-			tempList.addAll(result);
-			types = filterElements(sourceModule, tempList, null, monitor);
-		} else {
-			if (isType) {
-				types = cache.getTypes(sourceModule, typeName, null, monitor);
-			} else {
-				types = cache.getTraits(sourceModule, typeName, null, monitor);
-			}
-			if (types == null) {
-				return PhpModelAccess.NULL_TYPES;
-			}
-		}
-		result.clear();
-		for (IType type : types) {
-			if (getCurrentNamespace(type) == null) {
-				result.add(type);
-			}
-		}
-		return (IType[]) result.toArray(new IType[result.size()]);
+		return getTypes(typeName, sourceModule, offset, cache, monitor, isType,
+				false);
 	}
 
