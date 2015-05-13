@@ -1,0 +1,142 @@
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see
+		 * org.eclipse.debug.core.model.ILaunchConfigurationDelegate#launch(
+		 * org.eclipse.debug.core.ILaunchConfiguration, java.lang.String,
+		 * org.eclipse.debug.core.ILaunch,
+		 * org.eclipse.core.runtime.IProgressMonitor)
+		 */
+		@Override
+		public void launch(ILaunchConfiguration configuration, String mode,
+				ILaunch launch, IProgressMonitor monitor) throws CoreException {
+			// Check for previous launches.
+			if (!PHPLaunchUtilities.notifyPreviousLaunches(launch)) {
+				monitor.setCanceled(true);
+				monitor.done();
+				return;
+			}
+			String phpExeString = configuration.getAttribute(
+					IPHPDebugConstants.ATTR_EXECUTABLE_LOCATION, (String) null);
+			String phpIniPath = configuration.getAttribute(
+					IPHPDebugConstants.ATTR_INI_LOCATION, (String) null);
+			String fileName = configuration.getAttribute(
+					IPHPDebugConstants.ATTR_FILE_FULL_PATH, (String) null);
+			IProject project = null;
+			String file = configuration.getAttribute(
+					IPHPDebugConstants.ATTR_FILE, (String) null);
+			if (file != null) {
+				IResource resource = ResourcesPlugin.getWorkspace().getRoot()
+						.findMember(file);
+				if (resource != null) {
+					project = resource.getProject();
+				} else {
+					String projectName = configuration
+							.getAttribute(IPHPDebugConstants.ATTR_PROJECT_NAME,
+									(String) null);
+					if (projectName != null) {
+						IProject resolved = ResourcesPlugin.getWorkspace()
+								.getRoot().getProject(projectName);
+						if (resolved != null && resolved.isAccessible()) {
+							project = resolved;
+						}
+					}
+				}
+			}
+			if (monitor.isCanceled()) {
+				return;
+			}
+			IProgressMonitor subMonitor = new SubProgressMonitor(monitor, 10);
+			/*
+			 * Locate the php.ini by using the attribute. If the attribute was
+			 * null, try to locate an php.ini that exists next to the
+			 * executable.
+			 */
+			File phpIni = (phpIniPath != null && new File(phpIniPath).exists()) ? new File(
+					phpIniPath) : PHPINIUtil.findPHPIni(phpExeString);
+			File tempIni = PHPINIUtil.prepareBeforeDebug(phpIni, phpExeString,
+					project);
+			launch.setAttribute(IDebugParametersKeys.PHP_INI_LOCATION,
+					tempIni.getAbsolutePath());
+			// Resolve location
+			IPath phpExe = new Path(phpExeString);
+			String[] envp = DebugPlugin.getDefault().getLaunchManager()
+					.getEnvironment(configuration);
+			File phpExeFile = new File(phpExeString);
+			String phpIniLocation = launch
+					.getAttribute(IDebugParametersKeys.PHP_INI_LOCATION);
+			// Determine PHP configuration file location:
+			String phpConfigDir = phpExeFile.getParent();
+			if (phpIniLocation != null && !phpIniLocation.equals("")) { //$NON-NLS-1$
+				phpConfigDir = new File(phpIniLocation).getParent();
+			}
+			// Detect PHP SAPI type:
+			String sapiType = null;
+			String phpVersion = null;
+			PHPexeItem[] items = PHPexes.getInstance().getAllItems();
+			for (PHPexeItem item : items) {
+				if (item.getExecutable().equals(phpExeFile)) {
+					sapiType = item.getSapiType();
+					phpVersion = item.getVersion();
+					break;
+				}
+			}
+			String[] args = PHPLaunchUtilities.getProgramArguments(launch
+					.getLaunchConfiguration());
+			String[] cmdLine = PHPLaunchUtilities.getCommandLine(
+					launch.getLaunchConfiguration(), phpExeString,
+					phpConfigDir, fileName,
+					PHPexeItem.SAPI_CLI.equals(sapiType) ? args : null,
+					phpVersion);
+			// Set library search path:
+			String libPath = PHPLaunchUtilities
+					.getLibrarySearchPathEnv(phpExeFile.getParentFile());
+			if (libPath != null) {
+				String[] envpNew = new String[envp == null ? 1
+						: envp.length + 1];
+				if (envp != null) {
+					System.arraycopy(envp, 0, envpNew, 0, envp.length);
+				}
+				envpNew[envpNew.length - 1] = libPath;
+				envp = envpNew;
+			}
+			if (monitor.isCanceled()) {
+				return;
+			}
+			File workingDir = new File(fileName).getParentFile();
+			Process process = workingDir.exists() ? DebugPlugin.exec(cmdLine,
+					workingDir, envp) : DebugPlugin.exec(cmdLine, null, envp);
+			// Attach a crash detector
+			new Thread(new ProcessCrashDetector(launch, process)).start();
+			IProcess runtimeProcess = null;
+			// Add process type to process attributes
+			Map<String, String> processAttributes = new HashMap<String, String>();
+			String programName = phpExe.lastSegment();
+			String extension = phpExe.getFileExtension();
+			if (extension != null) {
+				programName = programName.substring(0, programName.length()
+						- (extension.length() + 1));
+			}
+			programName = programName.toLowerCase();
+			processAttributes.put(IProcess.ATTR_PROCESS_TYPE, programName);
+			if (process != null) {
+				subMonitor = new SubProgressMonitor(monitor, 90);
+				subMonitor
+						.beginTask(
+								MessageFormat
+										.format(PHPDebugCoreMessages.NoneDebuggerConfiguration_Launching,
+												new Object[] { configuration
+														.getName() }),
+								IProgressMonitor.UNKNOWN);
+				runtimeProcess = DebugPlugin.newProcess(launch, process,
+						phpExe.toOSString(), processAttributes);
+				if (runtimeProcess == null) {
+					process.destroy();
+					throw new CoreException(new Status(IStatus.ERROR,
+							PHPDebugPlugin.getID(), 0, null, null));
+				}
+				subMonitor.done();
+			}
+			runtimeProcess.setAttribute(IProcess.ATTR_CMDLINE, fileName);
+		}
+

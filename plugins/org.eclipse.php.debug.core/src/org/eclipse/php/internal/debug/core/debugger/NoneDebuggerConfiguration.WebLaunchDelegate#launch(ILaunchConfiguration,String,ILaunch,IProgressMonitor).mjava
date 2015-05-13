@@ -1,0 +1,50 @@
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see
+		 * org.eclipse.debug.core.model.ILaunchConfigurationDelegate#launch(
+		 * org.eclipse.debug.core.ILaunchConfiguration, java.lang.String,
+		 * org.eclipse.debug.core.ILaunch,
+		 * org.eclipse.core.runtime.IProgressMonitor)
+		 */
+		@Override
+		public void launch(ILaunchConfiguration configuration, String mode,
+				ILaunch launch, IProgressMonitor monitor) throws CoreException {
+			// Check for previous launches
+			if (!PHPLaunchUtilities.notifyPreviousLaunches(launch)) {
+				monitor.setCanceled(true);
+				monitor.done();
+				return;
+			}
+			String fileName = configuration.getAttribute(Server.FILE_NAME,
+					(String) null);
+			// Get the project from the file name
+			IPath filePath = new Path(fileName);
+			IProject project = null;
+			try {
+				project = ResourcesPlugin.getWorkspace().getRoot()
+						.getProject(filePath.segment(0));
+			} catch (Throwable t) {
+				// ignore
+			}
+			ILaunchConfigurationWorkingCopy wc = configuration.getWorkingCopy();
+			String projectLocation = project.getFullPath().toString();
+			wc.setAttribute(IPHPDebugConstants.PHP_Project, projectLocation);
+			// Set transfer encoding:
+			wc.setAttribute(IDebugParametersKeys.TRANSFER_ENCODING,
+					PHPProjectPreferences.getTransferEncoding(project));
+			wc.setAttribute(IDebugParametersKeys.OUTPUT_ENCODING,
+					PHPProjectPreferences.getOutputEncoding(project));
+			wc.setAttribute(IDebugParametersKeys.PHP_DEBUG_TYPE,
+					IDebugParametersKeys.PHP_WEB_PAGE_DEBUG);
+			wc.doSave();
+			final String launchURL = new String(configuration.getAttribute(
+					Server.BASE_URL, "") //$NON-NLS-1$
+					.getBytes());
+			launch.setAttribute(IDebugParametersKeys.WEB_SERVER_DEBUGGER,
+					Boolean.toString(true));
+			launch.setAttribute(IDebugParametersKeys.ORIGINAL_URL, launchURL);
+			DebugPlugin.newProcess(launch, new MockProcess(launchURL),
+					launchURL, new HashMap<String, String>());
+		}
+

@@ -60,6 +60,24 @@
 					return false;
 				}
 			}
+			PHPexeItem phpExeItem = phpsComboBlock != null ? phpsComboBlock
+					.getPHPexe() : null;
+			if (phpExeItem == null) {
+				String storedPHPexePath = launchConfig.getAttribute(
+						PHPRuntime.PHP_CONTAINER, (String) null);
+				phpExeItem = storedPHPexePath != null ? PHPRuntime
+						.getPHPexeItem(Path
+								.fromPortableString(storedPHPexePath)) : null;
+			}
+			if (phpExeItem != null
+					&& isLaunchMode(ILaunchManager.DEBUG_MODE)
+					&& PHPDebuggersRegistry.NONE_DEBUGGER_ID.equals(phpExeItem
+							.getDebuggerID())) {
+				setErrorMessage(MessageFormat
+						.format(PHPDebugUIMessages.PHPExecutableLaunchTab_No_debugger_is_attached,
+								phpExeItem.getName()));
+				return false;
+			}
 			// Check if script arguments can be passed (CLI SAPI required)
 			String exeProgramArgs = fPrgmArgumentsText != null ? fPrgmArgumentsText
 					.getText() : null;
@@ -67,16 +85,6 @@
 				exeProgramArgs = launchConfig.getAttribute(
 						IDebugParametersKeys.EXE_CONFIG_PROGRAM_ARGUMENTS, ""); //$NON-NLS-1$
 			if (!exeProgramArgs.isEmpty()) {
-				PHPexeItem phpExeItem = phpsComboBlock != null ? phpsComboBlock
-						.getPHPexe() : null;
-				if (phpExeItem == null) {
-					String storedPHPexePath = launchConfig.getAttribute(
-							PHPRuntime.PHP_CONTAINER, (String) null);
-					phpExeItem = storedPHPexePath != null ? PHPRuntime
-							.getPHPexeItem(Path
-									.fromPortableString(storedPHPexePath))
-							: null;
-				}
 				if (phpExeItem != null
 						&& !(PHPexeItem.SAPI_CLI.equals(phpExeItem
 								.getSapiType())))
