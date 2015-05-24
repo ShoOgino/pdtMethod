@@ -9,70 +9,10 @@
 	 */
 	@Override
 	public String getText(Object element) {
-
-		if (element instanceof ExternalProjectFragment) {
-			ExternalProjectFragment fragment = (ExternalProjectFragment) element;
-			String name = LanguageModelInitializer
-					.getPathName(EnvironmentPathUtils.getLocalPath(fragment
-							.getPath()));
-			if (name != null) {
-				return name;
-			}
-			return fragment.toStringWithAncestors();
+		String label = doGetText(element);
+		if (label != null) {
+			return label;
 		}
-		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=295256
-		if (element instanceof IProjectFragment) {
-			IProjectFragment fragment = (IProjectFragment) element;
-			return fragment.getElementName();
-		}
-		// end
-		if (element instanceof IncludePath) {
-			Object entry = ((IncludePath) element).getEntry();
-
-			// An included PHP project
-			if (entry instanceof IBuildpathEntry) {
-				IBuildpathEntry iBuildpathEntry = (IBuildpathEntry) entry;
-				if (iBuildpathEntry.getEntryKind() == IBuildpathEntry.BPE_PROJECT) {
-					return iBuildpathEntry.getPath().lastSegment();
-				}
-				if (iBuildpathEntry.getEntryKind() == IBuildpathEntry.BPE_CONTAINER) {
-					return getEntryDescription(element, iBuildpathEntry);
-				} else {
-					String result = LabelProviderUtil.getVariableName(
-							iBuildpathEntry.getPath(),
-							iBuildpathEntry.getEntryKind());
-					if (result == null) {
-						IPath localPath = EnvironmentPathUtils
-								.getLocalPath(iBuildpathEntry.getPath());
-						return localPath.toOSString();
-					}
-					return result;
-				}
-			}
-			if (entry instanceof ExternalProjectFragment) {
-				return ((ExternalProjectFragment) entry)
-						.toStringWithAncestors();
-			}
-
-			if (entry instanceof IResource) {
-				return (((IResource) entry).getFullPath().toString())
-						.substring(1);
-			}
-
-			return null;
-		}
-
-		if (element != null) {
-			for (ILabelProvider provider : TreeContentProviderRegistry
-					.getInstance().getLabelProviders()) {
-				String label = provider.getText(element);
-
-				if (label != null) {
-					return label;
-				}
-			}
-		}
-
 		return super.getText(element);
 	}
 
