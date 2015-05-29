@@ -3,19 +3,20 @@
 		// Check if debugger module is installed on top of PHP executable
 		if (data instanceof PHPexeItem) {
 			PHPexeItem exeItem = (PHPexeItem) data;
-			List<PHPModuleInfo> modules = PHPExeUtil.getModules(exeItem);
-			AbstractDebuggerConfiguration[] debuggers = PHPDebuggersRegistry
-					.getDebuggersConfigurations();
-			for (AbstractDebuggerConfiguration debugger : debuggers) {
-				for (PHPModuleInfo module : modules)
-					if (module.getName().equalsIgnoreCase(
-							debugger.getModuleId())) {
-						detectedDebuggerId = debugger.getDebuggerId();
-						break;
-					}
+			modifiedValuesCache.debuggerId = detectedDebuggerId = fetchDebugger(exeItem);
+		}
+		if (detectedDebuggerId == null
+				&& (modifiedValuesCache.debuggerId == null || modifiedValuesCache.debuggerId
+						.equals(PHPDebuggersRegistry.NONE_DEBUGGER_ID)))
+			detectedDebuggerId = PHPDebuggersRegistry.NONE_DEBUGGER_ID;
+		// Set combo to appropriate debugger ID
+		String name = PHPDebuggersRegistry.getDebuggerName(detectedDebuggerId);
+		String[] values = debuggerCombo.getItems();
+		for (int i = 0; i < values.length; i++) {
+			if (values[i].equals(name)) {
+				debuggerCombo.select(i);
+				break;
 			}
-			if (detectedDebuggerId == null)
-				detectedDebuggerId = PHPDebuggersRegistry.NONE_DEBUGGER_ID;
 		}
 	}
 

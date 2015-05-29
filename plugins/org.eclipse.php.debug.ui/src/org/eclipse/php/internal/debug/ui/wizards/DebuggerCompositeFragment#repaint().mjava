@@ -1,0 +1,22 @@
+	private void repaint() {
+		Shell shell = this.getShell();
+		Point previousSize = new Point(shell.getSize().x, shell.getSize().y);
+		Rectangle previousClientArea = shell.getClientArea();
+		shell.layout(true, true);
+		final Point computedSize = shell.computeSize(previousClientArea.width,
+				SWT.DEFAULT, false);
+		boolean resize = computedSize.y > previousSize.y;
+		if (resize) {
+			shell.setSize(shell.computeSize(previousClientArea.width,
+					computedSize.y, true));
+		} else {
+			// Workaround for incorrect redrawing in GTK 3
+			shell.setRedraw(false);
+			shell.setSize(shell.computeSize(previousClientArea.width + 1,
+					previousClientArea.height, true));
+			shell.setRedraw(true);
+			shell.setSize(shell.computeSize(previousClientArea.width,
+					previousClientArea.height, true));
+		}
+	}
+
