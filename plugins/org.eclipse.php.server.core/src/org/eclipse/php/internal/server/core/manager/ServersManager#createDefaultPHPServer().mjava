@@ -1,10 +1,11 @@
 	private void createDefaultPHPServer() {
 		Collection<Server> loaded = servers.values();
-		if (loaded.size() == 0) {
+		if (loaded.size() == 1 && isNoneServer(loaded.iterator().next())) {
 			Server defaultWebServer = null;
 			try {
-				defaultWebServer = new Server(Default_Server_Name, "localhost", //$NON-NLS-1$
-						BASE_URL, ""); //$NON-NLS-1$
+				defaultWebServer = new Server(DEFAULT_SERVER_NAME, "localhost", //$NON-NLS-1$
+						BASE_URL,
+						"");
 				servers.put(defaultWebServer.getName(), defaultWebServer);
 			} catch (MalformedURLException e) {
 			}
@@ -14,6 +15,9 @@
 			// Save configurations
 			List<IXMLPreferencesStorable> serversToSave = new ArrayList<IXMLPreferencesStorable>();
 			for (Server toSave : servers.values()) {
+				// <none> server only in memory
+				if (isNoneServer(toSave))
+					continue;
 				serversToSave.add(toSave);
 			}
 			IEclipsePreferences preferences = InstanceScope.INSTANCE

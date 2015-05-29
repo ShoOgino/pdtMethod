@@ -1,27 +1,16 @@
-	/**
-	 * Returns an array on newly initialized WizardFragments that complies to
-	 * the given server type id. The returned fragments array contains a union
-	 * of the server specific fragments and the global fragments that can be
-	 * defined by adding a fragments extention with a visibility of 'Always'.
-	 * 
-	 * @param serverType
-	 *            The id of the server.
-	 * @return An array of ICompositeFragmentFactory.
-	 */
-	public static ICompositeFragmentFactory[] getFragmentsFactories(
+	public static Map<String, ICompositeFragmentFactory> getFragmentsFactories(
 			String fragmentsGroupID) {
 		WizardFragmentsFactoryRegistry registry = getInstance();
-		ICompositeFragmentFactory[] factories = (ICompositeFragmentFactory[]) registry.factories
+		Map<String, ICompositeFragmentFactory> factories = registry.factories
 				.get(fragmentsGroupID);
 		if (factories == null) {
-			List fragments = (List) registry.fragments.get(fragmentsGroupID);
-			List factoriesList = new ArrayList();
+			factories = new LinkedHashMap<String, ICompositeFragmentFactory>();
+			List<FragmentsFactory> fragments = registry.fragments
+					.get(fragmentsGroupID);
 			for (int i = 0; i < fragments.size(); i++) {
 				FragmentsFactory factory = (FragmentsFactory) fragments.get(i);
-				factoriesList.add(factory.createFragmentFactory());
+				factories.put(factory.getID(), factory.createFragmentFactory());
 			}
-			factories = new ICompositeFragmentFactory[factoriesList.size()];
-			factoriesList.toArray(factories);
 			registry.factories.put(fragmentsGroupID, factories);
 			// Clear the fragments mapping, since it is no longer needed.
 			registry.fragments.remove(fragmentsGroupID);

@@ -1,0 +1,30 @@
+	private WizardFragment createRootFragment(final IServerType type) {
+		WizardFragment fragment = new WizardFragment() {
+			private WizardFragment[] children;
+
+			protected void createChildFragments(List list) {
+				if (children != null) {
+					loadChildren(children, list);
+					return;
+				}
+				IServerTypeDescriptor serverTypeDescriptor = ServerTypesDescriptorRegistry
+						.getDescriptor(type);
+				ICompositeFragmentFactory[] factories = serverTypeDescriptor
+						.getWizardFragmentFactories();
+				int index = 0;
+				if (ServerTypesManager.getInstance().getAll().size() > 1) {
+					children = new WizardFragment[factories.length + 1];
+					children[index] = serverTypeWizardFragment;
+					index = 1;
+				} else {
+					children = new WizardFragment[factories.length];
+				}
+				for (int i = 0; i < factories.length; i++) {
+					children[i + index] = factories[i].createWizardFragment();
+				}
+				loadChildren(children, list);
+			}
+		};
+		return fragment;
+	}
+

@@ -1,0 +1,53 @@
+	// Sort the fragments according to the 'place-after' attribute
+	private void sortFragmentsByPlace(List<FragmentsFactory> fragments) {
+		// Scan the fragments and separate the fragments that lacks the
+		// place-after property from
+		// those that have it.
+		List<List<FragmentsFactory>> rootsFragments = new ArrayList<List<FragmentsFactory>>();
+		List<List<FragmentsFactory>> nonRootFragments = new ArrayList<List<FragmentsFactory>>();
+		for (int i = 0; i < fragments.size(); i++) {
+			FragmentsFactory factory = (FragmentsFactory) fragments.get(i);
+			if (factory.getPlaceAfter() == null
+					|| factory.getPlaceAfter().equals("")) { //$NON-NLS-1$
+				addAsList(rootsFragments, factory);
+			} else {
+				addAsList(nonRootFragments, factory);
+			}
+		}
+
+		// Traverse over the non-root fragments and position them.
+		for (int i = 0; i < nonRootFragments.size(); i++) {
+			List<FragmentsFactory> fragmentsGroup = nonRootFragments.get(i);
+			// try to move it to the roots fragments first (order is important).
+			boolean moved = placeFragment(rootsFragments, fragmentsGroup);
+			if (!moved) {
+				// in case we can't find it there, try to move it inside the
+				// non-roots fragments.
+				moved = placeFragment(nonRootFragments, fragmentsGroup);
+			}
+			if (!moved) {
+				// move it to the roots anyway, since there is an error in the
+				// extention definitions.
+				FragmentsFactory invalidFactory = getFactory(nonRootFragments,
+						i);
+				addAsList(rootsFragments, invalidFactory);
+				PHPUiPlugin
+						.log(new Status(
+								IStatus.WARNING,
+								PHPUiPlugin.ID,
+								0,
+								"Invalid 'placeAfter' id (" + invalidFactory.getPlaceAfter() + ')', null)); //$NON-NLS-1$
+			}
+		}
+
+		// At this stage, the root fragments should hold all the fragments
+		// sorted.
+		fragments.clear();
+		for (int i = 0; i < rootsFragments.size(); i++) {
+			List<FragmentsFactory> list = rootsFragments.get(i);
+			for (int j = 0; j < list.size(); j++) {
+				fragments.add(list.get(j));
+			}
+		}
+	}
+

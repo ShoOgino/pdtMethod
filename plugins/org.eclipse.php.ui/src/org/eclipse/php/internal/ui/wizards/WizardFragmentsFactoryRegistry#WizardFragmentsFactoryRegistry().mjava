@@ -1,6 +1,6 @@
 	private WizardFragmentsFactoryRegistry() {
-		factories = new HashMap(4);
-		fragments = new HashMap(5);
+		factories = new HashMap<String, Map<String, ICompositeFragmentFactory>>();
+		fragments = new HashMap<String, List<FragmentsFactory>>();
 		IExtensionRegistry registry = Platform.getExtensionRegistry();
 		IConfigurationElement[] elements = registry
 				.getConfigurationElementsFor(PHPUiPlugin.ID,
@@ -12,9 +12,9 @@
 				String id = element.getAttribute(ID_ATTRIBUTE);
 				String groupID = element.getAttribute(FRAGMENTS_GROUP_ID);
 				String placeAfter = element.getAttribute(PLACE_AFTER_ATTRIBUTE);
-				ArrayList list = (ArrayList) fragments.get(groupID);
+				List<FragmentsFactory> list = fragments.get(groupID);
 				if (list == null) {
-					list = new ArrayList(5);
+					list = new ArrayList<WizardFragmentsFactoryRegistry.FragmentsFactory>();
 					fragments.put(groupID, list);
 				}
 				if (element.getNamespaceIdentifier().equals(PHPUiPlugin.ID)) {
@@ -28,9 +28,9 @@
 			}
 		}
 		// Sort all the fragment groups
-		Iterator keys = fragments.keySet().iterator();
+		Iterator<String> keys = fragments.keySet().iterator();
 		while (keys.hasNext()) {
-			sortFragmentsByPlace((ArrayList) fragments.get(keys.next()));
+			sortFragmentsByPlace(fragments.get(keys.next()));
 		}
 	}
 

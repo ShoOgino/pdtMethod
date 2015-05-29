@@ -4,9 +4,11 @@
 
 		final WizardFragment cFragment = currentFragment;
 
+		status = Status.OK_STATUS;
+
 		final List list = getAllWizardFragments();
-		IWorkspaceRunnable runnable = new IWorkspaceRunnable() {
-			public void run(IProgressMonitor monitor) throws CoreException {
+		IRunnableWithProgress runnable = new IRunnableWithProgress() {
+			public void run(IProgressMonitor monitor) {
 				// enter & exit the remaining pages
 				int index = list.indexOf(cFragment);
 				while (index > 0 && index < list.size() - 1) {
@@ -60,8 +62,17 @@
 				} else {
 					Iterator iterator = list.iterator();
 					while (iterator.hasNext())
-						executeTask((WizardFragment) iterator.next(), FINISH,
-								monitor);
+						try {
+							WizardFragment fragment = (WizardFragment) iterator
+									.next();
+							if (!executeTask(fragment, FINISH, monitor)) {
+								status = new Status(IStatus.ERROR,
+										PHPUiPlugin.ID,
+										"error during wizard page execution");
+							}
+						} catch (CoreException e) {
+							PHPUiPlugin.log(e);
+						}
 				}
 			}
 		};
@@ -69,10 +80,12 @@
 		Throwable t = null;
 		try {
 			if (getContainer() != null)
-				getContainer().run(true, true,
-						new WorkspaceRunnableAdapter(runnable));
+				getContainer().run(true, true, runnable);
 			else
 				runnable.run(new NullProgressMonitor());
+			if (status.getSeverity() != IStatus.OK) {
+				return false;
+			}
 			return true;
 		} catch (InvocationTargetException te) {
 			PHPUiPlugin.log(new Status(IStatus.ERROR, PHPUiPlugin.ID, 0,
