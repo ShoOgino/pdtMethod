@@ -1,23 +1,23 @@
 	public ILabelProvider getLabelProvider(final TreeViewer viewer) {
-
 		if (fLabelProvider == null) {
-			fLabelProvider = new DecoratingModelLabelProvider(
-					new PHPAppearanceAwareLabelProvider(
-							AppearanceAwareLabelProvider.DEFAULT_TEXTFLAGS
-									| ScriptElementLabels.F_APP_TYPE_SIGNATURE
-									| ScriptElementLabels.ALL_CATEGORY,
-							AppearanceAwareLabelProvider.DEFAULT_IMAGEFLAGS,
-							fStore));
+			fLabelProvider = new PHPAppearanceAwareLabelProvider(
+					AppearanceAwareLabelProvider.DEFAULT_TEXTFLAGS
+							| ScriptElementLabels.F_APP_TYPE_SIGNATURE
+							| ScriptElementLabels.ALL_CATEGORY,
+					AppearanceAwareLabelProvider.DEFAULT_IMAGEFLAGS, fStore);
 		}
 
+		if (fLabelProviderHTML == null) {
+			fLabelProviderHTML = new PHPOutlineLabelProvider(fLabelProvider);
+			fLabelProviderHTML.fShowAttributes = fShowAttributes;
+		}
 		if (MODE_PHP == mode) {
-			viewer.setLabelProvider(fLabelProvider);
+			return new PHPStyledDecoratingModelLabelProvider(
+					(IStyledLabelProvider) fLabelProvider,
+					new ProblemsLabelDecorator());
 		} else if (MODE_HTML == mode) {
-			if (fLabelProviderHTML == null) {
-				fLabelProviderHTML = new PHPOutlineLabelProvider(fLabelProvider);
-				fLabelProviderHTML.fShowAttributes = fShowAttributes;
-			}
-			viewer.setLabelProvider(fLabelProviderHTML);
+			return new PHPStyledDecoratingModelLabelProvider(
+					(IStyledLabelProvider) fLabelProviderHTML, null);
 		}
 		return (ILabelProvider) viewer.getLabelProvider();
 	}
