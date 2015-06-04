@@ -1,20 +1,18 @@
 	private boolean lineContainIncompleteBlock(int checkedOffset,
-			int lineStart, int currLineIndex) throws BadLocationException {
-		PHPHeuristicScanner scanner = PHPHeuristicScanner
-				.createHeuristicScanner(document, lineStart, true);
+			int lineStartOffset) throws BadLocationException {
 		if (checkedOffset == document.getLength() && checkedOffset > 0) {
 			checkedOffset--;
 		}
-
-		TextSequence textSequence = PHPTextSequenceUtilities
-				.getStatement(lineStart,
-						document.getRegionAtCharacterOffset(lineStart), true);
-		if (textSequence.length() != 0
-				&& IndentationUtils.isRegionTypeAllowedMultiline(FormatterUtils
-						.getRegionType(document,
-								textSequence.getOriginalOffset(0)))) {
-			int statementStart = textSequence.getOriginalOffset(0);
-			// we only search for opening pear in textSequence
+		if (textSequenceRegion.getLength() != 0
+				&& IndentationUtils
+						.isRegionTypeAllowedMultiline(FormatterUtils
+								.getRegionType(document,
+										textSequenceRegion.getOffset()))) {
+			PHPHeuristicScanner scanner = PHPHeuristicScanner
+					.createHeuristicScanner(document, lineStartOffset, true);
+			// search for opening pear only in this line
+			int statementStart = document.getLineInformationOfOffset(
+					checkedOffset).getOffset();
 
 			int openParenPeer = scanner.findOpeningPeer(checkedOffset - 1,
 					statementStart, PHPHeuristicScanner.LPAREN,
@@ -36,31 +34,29 @@
 			int biggest = Math.max(openParenPeer, openBracePeer);
 			biggest = Math.max(biggest, openBracketPeer);
 			if (biggest != PHPHeuristicScanner.NOT_FOUND
-					&& biggest >= lineStart) {
+					&& biggest >= lineStartOffset) {
 				// the whole document
 				final IStructuredDocumentRegion sdRegion = document
-						.getRegionAtCharacterOffset(lineStart);
+						.getRegionAtCharacterOffset(lineStartOffset);
 				// the whole PHP script
 				ITextRegion phpScriptRegion = sdRegion
-						.getRegionAtCharacterOffset(lineStart);
-				int phpContentStartOffset = sdRegion
-						.getStartOffset(phpScriptRegion);
+						.getRegionAtCharacterOffset(lineStartOffset);
 
 				if (phpScriptRegion instanceof ITextRegionContainer) {
 					ITextRegionContainer container = (ITextRegionContainer) phpScriptRegion;
 					phpScriptRegion = container
-							.getRegionAtCharacterOffset(lineStart);
-					phpContentStartOffset += phpScriptRegion.getStart();
+							.getRegionAtCharacterOffset(lineStartOffset);
 				}
 
 				if (phpScriptRegion instanceof IPhpScriptRegion
-						&& lineStart <= phpScriptRegion.getEnd()) {
+						&& lineStartOffset <= phpScriptRegion.getEnd()) {
 					IPhpScriptRegion scriptRegion = (IPhpScriptRegion) phpScriptRegion;
 					ITextRegion[] tokens = null;
 					try {
 						tokens = scriptRegion.getPhpTokens(
-								Math.min(lineStart - 1, scriptRegion.getEnd()),
-								biggest - lineStart + 1);
+								Math.min(lineStartOffset - 1,
+										scriptRegion.getEnd()), biggest
+										- lineStartOffset + 1);
 					} catch (BadLocationException e) {
 						// ignore it, scriptRegion.getEnd() is greater than last
 						// phpToken

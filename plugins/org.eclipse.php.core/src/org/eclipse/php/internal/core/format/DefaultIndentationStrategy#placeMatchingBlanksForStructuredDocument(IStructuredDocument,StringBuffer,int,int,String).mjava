@@ -13,16 +13,17 @@
 		int lineOfOffset = document.getLineOfOffset(forOffset);
 		IRegion lineInformationOfOffset = document
 				.getLineInformation(lineOfOffset);
-		final String lineText = document.get(
-				lineInformationOfOffset.getOffset(),
-				lineInformationOfOffset.getLength());
 
 		int lastNonEmptyLineIndex;
 		final int indentationBaseLineIndex;
 		final int newForOffset;
 
 		// code for not formatting comments
-		if (lineText.trim().startsWith("//") && enterKeyPressed) { //$NON-NLS-1$
+		if (enterKeyPressed
+				&& document
+						.get(lineInformationOfOffset.getOffset(),
+								lineInformationOfOffset.getLength()).trim()
+						.startsWith("//")) { //$NON-NLS-1$
 			lastNonEmptyLineIndex = lineOfOffset;
 			indentationBaseLineIndex = lineOfOffset;
 			int i = lineInformationOfOffset.getOffset();
@@ -31,17 +32,16 @@
 					&& document.getChar(i) != '/'; i++)
 				;
 			newForOffset = (i < forOffset) ? i : forOffset;
-
 		}
 		// end
 		else {
 			newForOffset = forOffset;
 			IndentationBaseDetector indentationDetector = new IndentationBaseDetector(
-					document);
-			lastNonEmptyLineIndex = indentationDetector.getIndentationBaseLine(
-					lineNumber, newForOffset, false);
+					document, lineNumber, newForOffset);
+			lastNonEmptyLineIndex = indentationDetector
+					.getIndentationBaseLine(false);
 			indentationBaseLineIndex = indentationDetector
-					.getIndentationBaseLine(lineNumber, newForOffset, true);
+					.getIndentationBaseLine(true);
 		}
 
 		final IRegion lastNonEmptyLine = document

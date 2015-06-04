@@ -1,0 +1,104 @@
+	/**
+	 * <p>
+	 * This function returns statement region depending on the current offset.
+	 * It searches backwards (starting from offset - 1) until it finds ';', '{'
+	 * or '}'.
+	 * </p>
+	 * <p>
+	 * <b> Be careful, empty region can be returned (i.e. region's length is 0)
+	 * when no statement was found. In this case, the offset from the returned
+	 * region has no special meaning.
+	 * </p>
+	 * </b>
+	 * 
+	 * @param offset
+	 *            The absolute offset in the document
+	 * @param sdRegion
+	 *            Structured document region of the offset
+	 * @param ignoreStartComments
+	 *            move start offset to no-comment region
+	 * 
+	 * @return text sequence region, cannot be null
+	 */
+	public static Region getStatementRegion(int offset,
+			IStructuredDocumentRegion sdRegion, boolean ignoreStartComments) {
+		int documentOffset = offset;
+		if (documentOffset == sdRegion.getEndOffset()) {
+			documentOffset -= 1;
+		}
+		ITextRegion tRegion = sdRegion
+				.getRegionAtCharacterOffset(documentOffset);
+
+		ITextRegionCollection container = sdRegion;
+
+		if (tRegion instanceof ITextRegionContainer) {
+			container = (ITextRegionContainer) tRegion;
+			tRegion = container.getRegionAtCharacterOffset(offset);
+		}
+		if (tRegion != null && tRegion.getType() == PHPRegionContext.PHP_CLOSE) {
+			tRegion = container.getRegionAtCharacterOffset(container
+					.getStartOffset() + tRegion.getStart() - 1);
+		}
+
+		// This text region must be of type PhpScriptRegion:
+		if (tRegion != null
+				&& tRegion.getType() == PHPRegionContext.PHP_CONTENT) {
+			IPhpScriptRegion phpScriptRegion = (IPhpScriptRegion) tRegion;
+
+			try {
+				// Set default starting position to the beginning of the
+				// PhpScriptRegion:
+				int startOffset = container.getStartOffset()
+						+ phpScriptRegion.getStart();
+
+				// Now, search backwards for the statement start (in this
+				// PhpScriptRegion):
+				ITextRegion startTokenRegion;
+				if (documentOffset == startOffset) {
+					startTokenRegion = phpScriptRegion.getPhpToken(0);
+				} else {
+					startTokenRegion = phpScriptRegion.getPhpToken(offset
+							- startOffset - 1);
+				}
+				while (true) {
+					// If statement start is at the beginning of the PHP script
+					// region:
+					if (startTokenRegion.getStart() == 0) {
+						break;
+					}
+					if (startTokenRegion.getType() == PHPRegionTypes.PHP_CURLY_CLOSE
+							|| startTokenRegion.getType() == PHPRegionTypes.PHP_CURLY_OPEN
+							|| startTokenRegion.getType() == PHPRegionTypes.PHP_SEMICOLON
+					/* || startTokenRegion.getType() == PHPRegionTypes.PHP_IF */) {
+						// Calculate starting position of the statement (it
+						// should go right after this startTokenRegion):
+						startOffset += startTokenRegion.getEnd();
+						break;
+					}
+					startTokenRegion = phpScriptRegion
+							.getPhpToken(startTokenRegion.getStart() - 1);
+				}
+
+				if (ignoreStartComments) {
+					ITextRegion textRegion = phpScriptRegion
+							.getPhpToken(startOffset);
+					while (textRegion.getType() == PHPRegionTypes.PHP_COMMENT
+							|| textRegion.getType() == PHPRegionTypes.PHP_COMMENT_START
+							|| textRegion.getType() == PHPRegionTypes.PHP_COMMENT_END) {
+						textRegion = phpScriptRegion.getPhpToken(textRegion
+								.getEnd());
+						startOffset = textRegion.getEnd();
+					}
+				}
+
+				startOffset = readForwardSpaces(sdRegion.getParentDocument(),
+						startOffset, offset);
+
+				return new Region(startOffset, offset - startOffset);
+			} catch (BadLocationException e) {
+			}
+		}
+
+		return new Region(0, 0);
+	}
+

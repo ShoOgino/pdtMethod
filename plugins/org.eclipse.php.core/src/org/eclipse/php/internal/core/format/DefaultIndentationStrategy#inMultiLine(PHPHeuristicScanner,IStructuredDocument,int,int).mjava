@@ -1,34 +1,34 @@
 	private static boolean inMultiLine(PHPHeuristicScanner scanner,
 			IStructuredDocument document, int lineNumber, int offset) {
-		int lineStart = offset;
+		int lineStartOffset = offset;
 		try {
 			IRegion region = document.getLineInformation(lineNumber);
-			char[] line = document.get(lineStart,
-					region.getOffset() + region.getLength() - lineStart)
-					.toCharArray();
-			for (int i = 0; i < line.length; i++) {
-				char c = line[i];
-				if (Character.isWhitespace(c)) {
+			int start = lineStartOffset;
+			int end = region.getOffset() + region.getLength() - lineStartOffset;
+			for (int i = start; i < end; i++) {
+				if (Character.isWhitespace(document.getChar(i))) {
 				} else {
 					// move line start to first non blank char
 					// and do + 1 to adjust offset of
 					// PHPTextSequenceUtilities.getStatement(...)
-					lineStart += i + 1;
+					lineStartOffset += i + 1;
 					break;
 				}
 			}
 		} catch (BadLocationException e) {
 		}
-		TextSequence textSequence = PHPTextSequenceUtilities
-				.getStatement(lineStart,
-						document.getRegionAtCharacterOffset(lineStart), true);
-		if (textSequence.length() == 0) {
+
+		Region textSequenceRegion = PHPTextSequenceUtilities
+				.getStatementRegion(lineStartOffset,
+						document.getRegionAtCharacterOffset(lineStartOffset),
+						true);
+		if (textSequenceRegion.getLength() == 0) {
 			return false;
 		}
 		String regionType = FormatterUtils.getRegionType(document,
-				textSequence.getOriginalOffset(0));
+				textSequenceRegion.getOffset());
 		if (IndentationUtils.isRegionTypeAllowedMultiline(regionType)) {
-			int statementStart = textSequence.getOriginalOffset(0);
+			int statementStart = textSequenceRegion.getOffset();
 			// we only search for opening pear in textSequence
 			int bound = statementStart;
 			int parenPeer = scanner.findOpeningPeer(offset - 1, bound,
