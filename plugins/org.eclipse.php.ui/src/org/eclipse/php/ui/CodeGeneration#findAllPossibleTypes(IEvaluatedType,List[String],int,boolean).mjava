@@ -1,0 +1,38 @@
+	private static boolean findAllPossibleTypes(IEvaluatedType type,
+			List<String> foundTypes, int level, boolean firstCall) {
+		if (type instanceof AmbiguousType) {
+			// https://bugs.eclipse.org/bugs/show_bug.cgi?id=467148
+			IEvaluatedType[] allPossibleTypes = ((AmbiguousType) type)
+					.getPossibleTypes();
+			// XXX: allPossibleTypes should not be empty
+			for (IEvaluatedType possibleType : allPossibleTypes) {
+				findAllPossibleTypes(possibleType, foundTypes, level, false);
+			}
+			return true;
+		}
+		if (type instanceof MultiTypeType) {
+			// https://bugs.eclipse.org/bugs/show_bug.cgi?id=467151
+			List<IEvaluatedType> allPossibleTypes = ((MultiTypeType) type)
+					.getTypes();
+			// XXX: allPossibleTypes should not be empty
+			for (IEvaluatedType possibleType : allPossibleTypes) {
+				findAllPossibleTypes(possibleType, foundTypes, level + 1, false);
+			}
+			return true;
+		}
+		if (!firstCall) {
+			StringBuilder buffer = new StringBuilder();
+			buffer.append(type.getTypeName());
+			for (int i = 1; i <= level; i++) {
+				buffer.append("[]"); //$NON-NLS-1$
+			}
+			String foundType = buffer.toString();
+			// do not insert duplicates
+			if (!foundTypes.contains(foundType)) {
+				foundTypes.add(foundType);
+			}
+			return true;
+		}
+		return false;
+	}
+
