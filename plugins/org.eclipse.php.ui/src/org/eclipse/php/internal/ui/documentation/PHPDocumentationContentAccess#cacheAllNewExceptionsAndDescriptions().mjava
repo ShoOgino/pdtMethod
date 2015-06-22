@@ -1,0 +1,31 @@
+	void cacheAllNewExceptionsAndDescriptions() {
+		if (fExceptionDescriptions != null) {
+			return;
+		}
+		fExceptionDescriptions = new HashMap<String, StringBuffer>();
+		fExceptions = new ArrayList<PHPDocTag>();
+
+		List tags = Arrays.asList(fJavadoc.getTags());
+		for (Iterator iter = tags.iterator(); iter.hasNext();) {
+			PHPDocTag tag = (PHPDocTag) iter.next();
+			if (PHPDocTag.THROWS == tag.getTagKind()) {
+				fExceptions.add(tag);
+				SimpleReference[] fragments = tag.getReferences();
+				if (fragments.length > 0) {
+					Object first = fragments[0];
+					if (first instanceof TypeReference) {
+						String name = ((TypeReference) first).getName();
+						// keep the first found match
+						if (!fExceptionDescriptions.containsKey(name)) {
+							StringBuffer description = new StringBuffer();
+							fExceptionDescriptions.put(name, description);
+							fBuf = description;
+							handleContentElements(tag);
+							fBuf = null;
+						}
+					}
+				}
+			}
+		}
+	}
+
