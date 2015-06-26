@@ -1,0 +1,24 @@
+		@Override
+		public void build(IBuildContext context) throws CoreException {
+			IModelElement element = context.getModelElement();
+			if (LibraryFolderManager.getInstance()
+					.isInLibraryFolder(element.getResource())) {
+				// skip syntax check for code inside library folders
+				return;
+			}
+			final ModuleDeclaration moduleDeclaration = (ModuleDeclaration) context
+					.get(IBuildContext.ATTR_MODULE_DECLARATION);
+
+			if (moduleDeclaration != null) {
+				// Run the validation visitor:
+				try {
+					UseStatement[] statements = ASTUtils.getUseStatements(
+							moduleDeclaration, context.getContents().length);
+
+					moduleDeclaration.traverse(
+							new ImportValidationVisitor(context, statements));
+				} catch (Exception e) {
+				}
+			}
+		}
+

@@ -1,0 +1,66 @@
+	/**
+	 * Filter and sort a list of Use statements from a document
+	 */
+	public static List<UseStatement> filterAndSort(UseStatement[] statements,
+			IDocument doc, ModuleDeclaration moduleDeclaration) {
+		Vector<UseStatement> total = new Vector<UseStatement>();
+
+		NamespaceFinder visitor = new DocumentUtils.NamespaceFinder();
+		try {
+			moduleDeclaration.traverse(visitor);
+		} catch (Exception e1) {
+		}
+
+		for (UseStatement statement : statements) {
+			String contents;
+			NamespaceDeclaration currentNamespace = visitor
+					.getNamespaceDeclarationFor(statement);
+			if (currentNamespace != null && currentNamespace.isBracketed()) {
+				contents = DocumentUtils.stripUseStatements(statements, doc,
+						currentNamespace.sourceStart(),
+						currentNamespace.sourceEnd());
+			} else {
+				contents = stripUseStatements(statements, doc);
+			}
+
+			Vector<UsePart> parts = new Vector<UsePart>();
+			for (UsePart part : statement.getParts()) {
+				if (containsUseStatement(part, contents)) {
+					parts.add(part);
+				}
+			}
+
+			if (parts.size() > 0) {
+				total.add(new UseStatement(statement.start(), statement.end(),
+						parts));
+			}
+		}
+
+		Collections.sort(total, new Comparator<UseStatement>() {
+			@Override
+			public int compare(UseStatement a, UseStatement b) {
+				String partA = DocumentUtils.createStringFromUseStatement(a)
+						.trim().toLowerCase();
+				String partB = DocumentUtils.createStringFromUseStatement(b)
+						.trim().toLowerCase();
+				String[] partsA = partA.substring(4, partA.length() - 1)
+						.split("\\\\");
+				String[] partsB = partB.substring(4, partB.length() - 1)
+						.split("\\\\");
+
+				int checkLength = Math.min(partsA.length, partsB.length);
+				for (int i = 0; i < checkLength; i++) {
+					int comp = partsA[i].compareTo(partsB[i]);
+
+					if (comp != 0) {
+						return comp;
+					}
+				}
+
+				return partsA.length == partsB.length ? 1 : 0;
+			}
+		});
+
+		return total;
+	}
+

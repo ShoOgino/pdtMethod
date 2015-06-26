@@ -1,0 +1,36 @@
+		public boolean visit(UseStatement s) throws Exception {
+			if (this.statements.length == 0) {
+				return super.visit(s);
+			}
+
+			String total;
+			if (this.currentNamespace != null
+					&& this.currentNamespace.isBracketed()) {
+				total = DocumentUtils.stripUseStatements(statements, doc,
+						this.currentNamespace.sourceStart(),
+						this.currentNamespace.sourceEnd());
+			} else {
+				total = DocumentUtils.stripUseStatements(statements, doc);
+			}
+
+			for (UsePart part : s.getParts()) {
+				if (DocumentUtils.containsUseStatement(part, total)) {
+					continue;
+				}
+				int lineNumber = context.getLineTracker()
+						.getLineNumberOfOffset(s.sourceStart());
+
+				DefaultProblem problem = new DefaultProblem(
+						context.getFile().getName(),
+						Messages.format(UNUSED_MESSAGE,
+								part.getNamespace().getFullyQualifiedName()),
+						PhpProblemIdentifier.USE_STATEMENTS, new String[0],
+						ProblemSeverities.Warning, s.sourceStart(),
+						s.sourceEnd(), lineNumber, -1);
+
+				context.getProblemReporter().reportProblem(problem);
+			}
+
+			return super.visit(s);
+		}
+

@@ -1,0 +1,30 @@
+	/**
+	 * Remove all the given use statements from a document
+	 */
+	public static String stripUseStatements(UseStatement[] statements,
+			IDocument old_doc, int start, int end) {
+		int offset = 0;
+		IDocument doc = new Document(old_doc.get());
+
+		for (UseStatement statement : statements) {
+			if (statement.sourceStart() < start
+					|| statement.sourceEnd() > end) {
+				continue;
+			}
+			int length = statement.sourceEnd() - statement.sourceStart();
+
+			try {
+				doc.replace(statement.sourceStart() - offset, length, "");
+			} catch (BadLocationException e) {
+			}
+
+			offset += length;
+		}
+
+		try {
+			return doc.get(start, end - offset - start);
+		} catch (BadLocationException e) {
+			return doc.get();
+		}
+	}
+
