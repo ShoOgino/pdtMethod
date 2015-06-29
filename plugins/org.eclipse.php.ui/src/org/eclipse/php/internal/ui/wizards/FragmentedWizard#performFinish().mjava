@@ -6,7 +6,7 @@
 
 		status = Status.OK_STATUS;
 
-		final List list = getAllWizardFragments();
+		final List<WizardFragment> list = getAllWizardFragments();
 		IRunnableWithProgress runnable = new IRunnableWithProgress() {
 			public void run(IProgressMonitor monitor) {
 				// enter & exit the remaining pages
@@ -17,6 +17,12 @@
 					try {
 						Display.getDefault().syncExec(new Runnable() {
 							public void run() {
+								FragmentedWizardPage page = getFragmentData(
+										fragment);
+								if (page.getControl() == null
+										&& pageContainerHook != null) {
+									page.createControl(pageContainerHook);
+								}
 								fragment.enter();
 								fragment.exit();
 							}
@@ -40,11 +46,11 @@
 
 						public IStatus run(IProgressMonitor monitor2) {
 							try {
-								Iterator iterator = list.iterator();
+								Iterator<WizardFragment> iterator = list
+										.iterator();
 								while (iterator.hasNext())
-									executeTask(
-											(WizardFragment) iterator.next(),
-											FINISH, monitor2);
+									executeTask(iterator.next(), FINISH,
+											monitor2);
 							} catch (CoreException ce) {
 								Status status = new Status(IStatus.ERROR,
 										PHPUiPlugin.ID, 0,
@@ -60,7 +66,7 @@
 					job.setUser(true);
 					job.schedule();
 				} else {
-					Iterator iterator = list.iterator();
+					Iterator<WizardFragment> iterator = list.iterator();
 					while (iterator.hasNext())
 						try {
 							WizardFragment fragment = (WizardFragment) iterator
@@ -68,7 +74,7 @@
 							if (!executeTask(fragment, FINISH, monitor)) {
 								status = new Status(IStatus.ERROR,
 										PHPUiPlugin.ID,
-										"error during wizard page execution");
+										"Error during wizard page execution."); //$NON-NLS-1$
 							}
 						} catch (CoreException e) {
 							PHPUiPlugin.log(e);
