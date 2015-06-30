@@ -1,32 +1,56 @@
 	private void updateReferences(int start, int end) {
+		// (re)set references
+		variableReference = null;
+		singleTypeReference = null;
+		typeReferences = new ArrayList<TypeReference>();
+		allReferencesWithOrigOrder = new ArrayList<SimpleReference>();
+		descTexts = new ArrayList<String>();
 
-		int valueStart = start + getTagKind(tagKind).length() + 1;
+		int valueStart = start + matchedTag.length();
+		// For all unsupported tags
+		int wordsToSkip = 0;
 
 		if (tagKind == RETURN || tagKind == VAR || tagKind == THROWS
 				|| tagKind == SEE) {
 
+			// Read first word
 			int wordStart = getNonWhitespaceIndex(value, 0);
 			int wordEnd = getWhitespaceIndex(value, wordStart);
+
+			if (tagKind == VAR && wordStart < wordEnd) {
+
+				String word = value.substring(wordStart, wordEnd);
+				if (word.charAt(0) == '$') {
+					variableReference = new VariableReference(valueStart
+							+ wordStart, valueStart + wordEnd, word);
+					allReferencesWithOrigOrder.add(variableReference);
+					wordsToSkip++;
+					// Read next word
+					wordStart = getNonWhitespaceIndex(value, wordEnd);
+					wordEnd = getWhitespaceIndex(value, wordStart);
+				}
+			}
 			if (wordStart < wordEnd) {
 
 				String word = value.substring(wordStart, wordEnd);
+				singleTypeReference = new TypeReference(valueStart + wordStart,
+						valueStart + wordEnd, word);
+				splitSingleTypeReference(singleTypeReference, typeReferences);
+				allReferencesWithOrigOrder.addAll(typeReferences);
+				wordsToSkip++;
+				// Read next word
+				wordStart = getNonWhitespaceIndex(value, wordEnd);
+				wordEnd = getWhitespaceIndex(value, wordStart);
+			}
+			if (tagKind == VAR && variableReference == null
+					&& wordStart < wordEnd) {
 
-				int classStart = getClassStartIndex(word, 0);
-				int classEnd = getClassEndIndex(word, classStart);
-				List<TypeReference> types = new LinkedList<TypeReference>();
-
-				while (classStart < classEnd) {
-					String className = word.substring(classStart, classEnd);
-					types.add(new TypeReference(valueStart + wordStart
-							+ classStart, valueStart + wordStart + classEnd,
-							className));
-
-					classStart = getClassStartIndex(word, classEnd);
-					classEnd = getClassEndIndex(word, classStart);
-				}
-				if (types.size() > 0) {
-					references = types.toArray(new TypeReference[types.size()]);
-					referencesWithOrigOrder = references;
+				String word = value.substring(wordStart, wordEnd);
+				if (word.charAt(0) == '$') {
+					variableReference = new VariableReference(valueStart
+							+ wordStart, valueStart + wordEnd, word);
+					allReferencesWithOrigOrder.add(variableReference);
+					wordsToSkip++;
 				}
 			}
 		} else if (tagKind == PARAM || tagKind == PROPERTY
@@ -44,36 +68,42 @@
 							firstWordEnd);
 					String secondWord = value.substring(secondWordStart,
 							secondWordEnd);
-					if (firstWord.charAt(0) == '$') {
-						references = new SimpleReference[2];
-						references[0] = new VariableReference(valueStart
+					if (firstWord.charAt(0) == '$'
+							|| firstWord.startsWith("...$")) { //$NON-NLS-1$
+						variableReference = new VariableReference(valueStart
 								+ firstWordStart, valueStart + firstWordEnd,
 								firstWord);
-						references[1] = new TypeReference(valueStart
+						singleTypeReference = new TypeReference(valueStart
 								+ secondWordStart, valueStart + secondWordEnd,
 								secondWord);
-						referencesWithOrigOrder = references;
+						splitSingleTypeReference(singleTypeReference,
+								typeReferences);
+						allReferencesWithOrigOrder.add(variableReference);
+						allReferencesWithOrigOrder.addAll(typeReferences);
+						// The two words following the tag name were splitted
+						// into two references
+						wordsToSkip = 2;
 					} else if (secondWord.charAt(0) == '$'
-							|| secondWord.startsWith("...$")) {
-						references = new SimpleReference[2];
-						references[0] = new VariableReference(valueStart
+							|| secondWord.startsWith("...$")) { //$NON-NLS-1$
+						variableReference = new VariableReference(valueStart
 								+ secondWordStart, valueStart + secondWordEnd,
 								secondWord);
-						references[1] = new TypeReference(valueStart
+						singleTypeReference = new TypeReference(valueStart
 								+ firstWordStart, valueStart + firstWordEnd,
 								firstWord);
-						referencesWithOrigOrder = new SimpleReference[2];
-						referencesWithOrigOrder[0] = references[1];
-						referencesWithOrigOrder[1] = references[0];
+						splitSingleTypeReference(singleTypeReference,
+								typeReferences);
+						allReferencesWithOrigOrder.addAll(typeReferences);
+						allReferencesWithOrigOrder.add(variableReference);
+						// The two words following the tag name were splitted
+						// into two references
+						wordsToSkip = 2;
 					}
 				}
 			}
 		}
-		if (references == null) {
-			references = EMPTY;
-		}
-		if (referencesWithOrigOrder == null) {
-			referencesWithOrigOrder = EMPTY;
-		}
+
+		descTexts = getDescTexts(wordsToSkip);
+		trimmedDescText = getTrimmedDescText(wordsToSkip);
 	}
 

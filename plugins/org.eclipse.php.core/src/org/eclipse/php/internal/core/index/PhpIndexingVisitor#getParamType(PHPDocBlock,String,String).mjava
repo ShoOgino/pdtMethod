@@ -2,22 +2,14 @@
 			String defaultType) {
 		String result = defaultType;
 		if (docBlock != null) {
-			for (PHPDocTag tag : docBlock.getTags()) {
-				if (tag.getTagKind() == PHPDocTag.PARAM) {
-					SimpleReference[] references = tag.getReferences();
-					if (references.length == 2) {
-						if (references[0].getName().equals(paramName)) {
-							String typeName = references[1].getName();
-							if (typeName
-									.endsWith(PHPDocClassVariableEvaluator.BRACKETS)) {
-								typeName = typeName.substring(0,
-										typeName.length() - 2);
-							}
-							result = typeName.replace(
-									Constants.TYPE_SEPERATOR_CHAR,
-									Constants.DOT);
-						}
-					}
+			for (PHPDocTag tag : docBlock.getTags(PHPDocTag.PARAM)) {
+				if (tag.isValidParamTag()
+						&& tag.getVariableReference().getName()
+								.equals(paramName)) {
+					String typeNames = tag.getSingleTypeReference().getName();
+					result = typeNames.replace(Constants.TYPE_SEPERATOR_CHAR,
+							Constants.DOT);
+					break;
 				}
 			}
 		}

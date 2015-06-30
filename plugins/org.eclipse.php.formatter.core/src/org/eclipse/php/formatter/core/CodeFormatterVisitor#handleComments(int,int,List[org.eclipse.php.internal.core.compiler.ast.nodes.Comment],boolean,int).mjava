@@ -191,7 +191,8 @@
 					}
 					int commentTokLen = commentContent.startsWith("#") ? 1 : 2;//$NON-NLS-1$
 					commentWords = Arrays.asList(commentContent
-							.substring(commentTokLen).trim().split("[ \t]")); //$NON-NLS-1$
+							.substring(commentTokLen).trim()
+							.split("[ \\t\\v\\f]")); //$NON-NLS-1$
 					commentWords = removeEmptyString(commentWords);
 					commentContent = join(commentWords, " "); //$NON-NLS-1$
 					commentContent = commentContent.trim();
@@ -354,7 +355,8 @@
 						for (int i = 0; i < tags.length; i++) {
 							PHPDocTag phpDocTag = tags[i];
 							boolean insertTag = true;
-							String[] words = phpDocTag.getDescTexts();
+							String[] words = phpDocTag.getDescTexts().toArray(
+									new String[0]);
 
 							if ((i == tags.length - 1)
 									&& !this.preferences.comment_new_lines_at_javadoc_boundaries) {
@@ -364,7 +366,7 @@
 
 							if (getNonblankWords(words).length == 0) {
 								boolean hasRefs = phpDocTag
-										.getReferencesWithOrigOrder().length != 0;
+										.getAllReferencesWithOrigOrder().size() != 0;
 								int nbLines = words.length;
 								// https://bugs.eclipse.org/bugs/show_bug.cgi?id=433938
 								if (!hasRefs && nbLines > 1) {
@@ -424,7 +426,8 @@
 					// indent all lines, even empty lines
 					for (int i = 1; i < lines.size(); i++) {
 						insertNewLineForPHPDoc(false);
-						appendToBuffer(lines.get(i).replaceFirst("^[ \t]+", "")); //$NON-NLS-1$
+						appendToBuffer(lines.get(i).replaceFirst(
+								"^[ \\t\\v\\f]+", "")); //$NON-NLS-1$ //$NON-NLS-2$
 					}
 					handleCharsWithoutComments(comment.sourceStart() + offset,
 							comment.sourceEnd() + offset, true);
@@ -703,7 +706,8 @@
 					for (int i = 1; i < lines.size(); i++) {
 						insertNewLineForPHPBlockComment(indentLengthForComment,
 								indentStringForComment, false);
-						appendToBuffer(lines.get(i).replaceFirst("^[ \t]+", "")); //$NON-NLS-1$
+						appendToBuffer(lines.get(i).replaceFirst(
+								"^[ \\t\\v\\f]+", "")); //$NON-NLS-1$  //$NON-NLS-2$
 					}
 					handleCharsWithoutComments(comment.sourceStart() + offset,
 							comment.sourceEnd() + offset, true);

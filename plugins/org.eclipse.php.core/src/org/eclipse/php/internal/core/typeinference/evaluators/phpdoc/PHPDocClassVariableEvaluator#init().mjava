@@ -8,14 +8,14 @@
 		IType[] types = PHPTypeInferenceUtils.getModelElements(
 				context.getInstanceType(), context, offset, cache);
 		Map<PHPDocBlock, IField> docs = new HashMap<PHPDocBlock, IField>();
-		if (types != null) {
-			// remove array index from field name
-			if (variableName.endsWith("]")) { //$NON-NLS-1$
-				int index = variableName.indexOf("["); //$NON-NLS-1$
-				if (index != -1) {
-					variableName = variableName.substring(0, index);
-				}
+		// remove array index from field name
+		if (variableName.endsWith("]")) { //$NON-NLS-1$
+			int index = variableName.indexOf("["); //$NON-NLS-1$
+			if (index != -1) {
+				variableName = variableName.substring(0, index);
 			}
+		}
+		if (types != null) {
 			for (IType type : types) {
 				try {
 					// we look in whole hiearchy
@@ -55,12 +55,20 @@
 			IModelElement space = currentNamespace != null ? currentNamespace
 					: typeField.getSourceModule();
 
-			for (PHPDocTag tag : doc.getTags()) {
-				if (tag.getTagKind() == PHPDocTag.VAR) {
-					evaluated.addAll(Arrays.asList(PHPEvaluationUtils
-							.evaluatePHPDocType(tag.getReferences(), space,
-									tag.sourceStart(), null)));
+			for (PHPDocTag tag : doc.getTags(PHPDocTag.VAR)) {
+				// do it like for
+				// PHPDocumentationContentAccess#handleBlockTags(List tags):
+				// variable name can be optional, but if present keep only
+				// the good ones
+				if (tag.getVariableReference() != null
+						&& !tag.getVariableReference().getName()
+								.equals(variableName)) {
+					continue;
 				}
+
+				evaluated.addAll(Arrays.asList(PHPEvaluationUtils
+						.evaluatePHPDocType(tag.getTypeReferences(), space,
+								tag.sourceStart(), null)));
 			}
 		}
 

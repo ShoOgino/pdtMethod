@@ -11,11 +11,20 @@
 		PHPDocBlock doc = declaration.getPHPDoc();
 		if (doc != null) {
 			for (PHPDocTag tag : doc.getTags(PHPDocTag.VAR)) {
-				SimpleReference[] references = tag.getReferences();
-				if (references.length > 0) {
-					info.type = PHPModelUtils.extractElementName(references[0]
-							.getName());
-					// info.type = references[0].getName();
+				// do it like for
+				// PHPDocumentationContentAccess#handleBlockTags(List tags):
+				// variable name can be optional, but if present keep only
+				// the good ones
+				if (tag.getVariableReference() != null
+						&& !tag.getVariableReference().getName()
+								.equals(declaration.getName())) {
+					continue;
+				}
+
+				if (tag.getTypeReferences().size() > 0) {
+					info.type = PHPModelUtils.appendTypeReferenceNames(tag
+							.getTypeReferences());
+					break;
 				}
 			}
 		}

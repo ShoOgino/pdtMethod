@@ -1,4 +1,4 @@
-	private String[] processParamterTypes(MethodDeclaration methodDeclaration) {
+	private String[] processParameterTypes(MethodDeclaration methodDeclaration) {
 		List<?> args = methodDeclaration.getArguments();
 		PHPDocBlock docBlock = ((PHPMethodDeclaration) methodDeclaration)
 				.getPHPDoc();
@@ -12,11 +12,12 @@
 					parameterType[a] = type.getName();
 				} else if (docBlock != null) {
 					for (PHPDocTag tag : docBlock.getTags(PHPDocTag.PARAM)) {
-						SimpleReference[] refs = tag.getReferences();
-						if (refs.length == 2) {
-							if (refs[0].getName().equals(arg.getName())) {
-								parameterType[a] = refs[1].getName();
-							}
+						if (tag.isValidParamTag()
+								&& tag.getVariableReference().getName()
+										.equals(arg.getName())) {
+							parameterType[a] = tag.getSingleTypeReference()
+									.getName();
+							break;
 						}
 					}
 				}

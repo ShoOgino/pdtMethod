@@ -61,17 +61,19 @@
 				if (docBlocks[i] == null) {
 					continue;
 				}
-				PHPDocTag[] tags = docBlocks[i].getTags();
+				PHPDocTag[] tags = docBlocks[i].getTags(PHPDocTag.PARAM);
 				for (int j = 0; j < tags.length; j++) {
 					PHPDocTag tag = tags[j];
-					if (tag.getTagKind() == PHPDocTag.PARAM) {
-						SimpleReference[] refs = tag.getReferences();
-						if (refs != null
-								&& refs.length > 1
-								&& refs[1].getName().equals(
-										type.getElementName() + PHPEvaluationUtils.BRACKETS)) {
-							return true;
+					if (tag.isValidParamTag()
+							&& tag.getVariableReference().getName()
+									.equals(variableName)) {
+						for (TypeReference reference : tag.getTypeReferences()) {
+							if (PHPEvaluationUtils.isArrayType(reference
+									.getName())) {
+								return true;
+							}
 						}
+						break;
 					}
 				}
 			}

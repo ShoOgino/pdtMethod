@@ -70,42 +70,37 @@
 						break;
 					}
 					if (docBlock != null) {
-						for (PHPDocTag tag : docBlock.getTags()) {
-							if (tag.getTagKind() != PHPDocTag.PARAM) {
+						for (PHPDocTag tag : docBlock.getTags(PHPDocTag.PARAM)) {
+							if (!tag.isValidParamTag()) {
 								continue;
 							}
-							SimpleReference[] references = tag.getReferences();
-							if (references.length == 2) {
-								String parameterName = parameter.getName();
-								if (parameter.isVariadic()) {
-									parameterName = ELLIPSIS + parameterName;
+							String parameterName = parameter.getName();
+							if (parameter.isVariadic()) {
+								parameterName = ELLIPSIS + parameterName;
+							}
+							if (tag.getVariableReference().getName()
+									.equals(parameterName)) {
+								MultiTypeType multiType = new MultiTypeType();
+								for (TypeReference paramType : tag
+										.getTypeReferences()) {
+									String typeName = paramType.getName();
+
+									typeName = PHPEvaluationUtils
+											.extractArrayType(typeName);
+
+									multiType.addType(PHPClassType
+											.fromTypeName(typeName,
+													sourceModule,
+													paramType.sourceStart()));
 								}
-								if (references[0].getName().equals(
-										parameterName)) {
-
-									int offset = references[1].sourceStart();
-									String[] typeNames = references[1]
-											.getName().split("\\|"); //$NON-NLS-1$
-									MultiTypeType multiType = new MultiTypeType();
-									for (String typeName : typeNames) {
-										if (typeName.trim().isEmpty()) {
-											continue;
-										}
-
-										typeName = PHPEvaluationUtils
-												.removeArrayBrackets(typeName);
-
-										multiType.addType(PHPClassType
-												.fromTypeName(typeName,
-														sourceModule, offset));
-									}
-									// when it is not true multi type
-									if (multiType.size() == 1) {
-										result = multiType.get(0);
-									} else if (multiType.size() > 1) {
-										result = multiType;
-									}
+								// when it is not true multi type
+								if (multiType.size() == 1) {
+									result = multiType.get(0);
+								} else if (multiType.size() > 1) {
+									result = multiType;
 								}
+
+								break;
 							}
 						}
 					}

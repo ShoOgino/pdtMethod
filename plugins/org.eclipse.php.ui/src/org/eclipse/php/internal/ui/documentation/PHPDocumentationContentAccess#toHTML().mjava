@@ -26,20 +26,14 @@
 		for (PHPDocTag tag : tags) {
 			if (PHPDocTag.PARAM == tag.getTagKind()) {
 				parameters.add(tag);
-				SimpleReference[] fragments = tag.getReferences();
-				if (fragments.length == 0) {
+				if (!tag.isValidParamTag()) {
 					if (parameterNames.size() > parameters.indexOf(tag))
 						parameterNames.set(parameters.indexOf(tag), null);
-				}
-				for (SimpleReference reference : fragments) {
-					String name = reference.getName();
-					if (reference instanceof TypeReference) {
-						// parameterTypes.add(name);
-					} else if (reference instanceof VariableReference) {
-						int paramIndex = parameterNames.indexOf(name);
-						if (paramIndex != -1) {
-							parameterNames.set(paramIndex, null);
-						}
+				} else {
+					int paramIndex = parameterNames.indexOf(tag
+							.getVariableReference().getName());
+					if (paramIndex != -1) {
+						parameterNames.set(paramIndex, null);
 					}
 				}
 			} else if (PHPDocTag.RETURN == tag.getTagKind()) {
@@ -53,12 +47,9 @@
 
 			} else if (PHPDocTag.THROWS == tag.getTagKind()) {
 				exceptions.add(tag);
-				SimpleReference[] fragments = tag.getReferences();
-				if (fragments.length > 0) {
-					Object first = fragments[0];
-					if (first instanceof TypeReference) {
-						exceptionNames.add(((TypeReference) first).getName());
-					}
+				List<TypeReference> fragments = tag.getTypeReferences();
+				if (fragments.size() > 0) {
+					exceptionNames.add(fragments.get(0).getName());
 				}
 
 			} else if (PHPDocTag.SINCE == tag.getTagKind()) {
