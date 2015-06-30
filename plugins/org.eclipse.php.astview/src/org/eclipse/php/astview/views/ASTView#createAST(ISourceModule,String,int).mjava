@@ -2,50 +2,66 @@
 		long startTime;
 		long endTime;
 		Program root = null;
-		
+
 		if ((getCurrentInputKind() == ASTInputKindAction.USE_RECONCILE)) {
-			final IProblemRequestor problemRequestor= new IProblemRequestor() { //strange: don't get bindings when supplying null as problemRequestor
+			final IProblemRequestor problemRequestor = new IProblemRequestor() { // strange:
+																					// don't
+																					// get
+																					// bindings
+																					// when
+																					// supplying
+																					// null
+																					// as
+																					// problemRequestor
 				@Override
-				public void acceptProblem(IProblem problem) {/*not interested*/}
+				public void acceptProblem(IProblem problem) {
+					/* not interested */}
+
 				@Override
-				public void beginReporting() {/*not interested*/}
+				public void beginReporting() {
+					/* not interested */}
+
 				@Override
-				public void endReporting() {/*not interested*/}
+				public void endReporting() {
+					/* not interested */}
+
 				@Override
 				public boolean isActive() {
 					return true;
 				}
 			};
-			WorkingCopyOwner workingCopyOwner= new WorkingCopyOwner() {
+			WorkingCopyOwner workingCopyOwner = new WorkingCopyOwner() {
 				public IProblemRequestor getProblemRequestor(ISourceModule workingCopy) {
 					return problemRequestor;
 				}
 			};
-			ISourceModule wc= input.getWorkingCopy(workingCopyOwner, null, new NullProgressMonitor());
+			ISourceModule wc = input.getWorkingCopy(workingCopyOwner, null, new NullProgressMonitor());
 			try {
-				startTime= System.currentTimeMillis();
-				wc.reconcile(true, wc.getOwner(), new NullProgressMonitor()) ; //  getCurrentASTLevel(), null, null);
-				
-				root= SharedASTProvider.getAST(wc, SharedASTProvider.WAIT_YES, null);
-				endTime= System.currentTimeMillis();
+				startTime = System.currentTimeMillis();
+				wc.reconcile(true, wc.getOwner(), new NullProgressMonitor()); // getCurrentASTLevel(),
+																				// null,
+																				// null);
+
+				root = SharedASTProvider.getAST(wc, SharedASTProvider.WAIT_YES, null);
+				endTime = System.currentTimeMillis();
 
 			} finally {
 				wc.discardWorkingCopy();
 			}
-			
+
 		} else if (input instanceof ISourceModule && (getCurrentInputKind() == ASTInputKindAction.USE_CACHE)) {
-			ISourceModule cu= input;
-			startTime= System.currentTimeMillis();
-			root= SharedASTProvider.getAST(cu, SharedASTProvider.WAIT_YES, null);
-			endTime= System.currentTimeMillis();
-			
+			ISourceModule cu = input;
+			startTime = System.currentTimeMillis();
+			root = SharedASTProvider.getAST(cu, SharedASTProvider.WAIT_YES, null);
+			endTime = System.currentTimeMillis();
+
 		} else {
 			ISourceModule sm = input;
-			StringReader st = new StringReader (sm.getBuffer().getContents());
-			ASTParser parser= ASTParser.newParser(st, PHPVersion.byAlias(astLevel),  false, sm);
-			startTime= System.currentTimeMillis();
-			root= parser.createAST(null);
-			endTime= System.currentTimeMillis();
+			StringReader st = new StringReader(sm.getBuffer().getContents());
+			ASTParser parser = ASTParser.newParser(st, PHPVersion.byAlias(astLevel), false, sm);
+			startTime = System.currentTimeMillis();
+			root = parser.createAST(null);
+			endTime = System.currentTimeMillis();
 		}
 		if (root != null) {
 			updateContentDescription(input, root, endTime - startTime);
