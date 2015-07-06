@@ -1,28 +1,17 @@
 	protected void handleConfigureDebuggerSelected() {
-		String serverName = null;
-		try {
-			serverName = launchConfiguration.getAttribute(Server.NAME,
-					(String) null);
-		} catch (CoreException e) {
-			// TODO handle
+		Server server = getServer();
+		if (server == null || ServersManager.isNoneServer(server))
+			return;
+		Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow()
+				.getShell();
+		NullProgressMonitor monitor = new NullProgressMonitor();
+		WizardDialog dialog = new WizardDialog(shell,
+				new ServerEditWizard(server, DebuggerCompositeFragment.ID));
+		if (dialog.open() == Window.CANCEL) {
+			monitor.setCanceled(true);
+			return;
 		}
-		if (serverName != null) {
-			Server server = ServersManager.getServer(serverName);
-			Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow()
-					.getShell();
-			NullProgressMonitor monitor = new NullProgressMonitor();
-			WizardDialog dialog = new WizardDialog(shell, new ServerEditWizard(
-					server, DebuggerCompositeFragment.ID));
-			if (dialog.open() == Window.CANCEL) {
-				monitor.setCanceled(true);
-				return;
-			}
-			ServersManager.save();
-			String previousDebuggerId = debuggerId;
-			debuggerId = server.getDebuggerId();
-			if (!debuggerId.equals(previousDebuggerId))
-				setDebugger();
-		}
-
+		ServersManager.save();
+		setDebugger();
 	}
 
