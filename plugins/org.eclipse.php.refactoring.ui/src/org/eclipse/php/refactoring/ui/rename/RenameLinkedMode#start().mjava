@@ -23,7 +23,7 @@
 
 		ISourceModule sourceModule = DLTKCore.createSourceModuleFrom(file);
 
-		if (!(sourceModule instanceof ISourceModule)) {
+		if (sourceModule == null) {
 			MessageDialog.openError(fEditor.getEditorSite().getShell(),
 					Messages.RenameLinkedMode_1, Messages.RenameLinkedMode_2);
 			return;
@@ -35,7 +35,7 @@
 			fLinkedPositionGroup = new LinkedPositionGroup();
 			selectedNode = NodeFinder.perform(root, fOriginalSelection.x,
 					fOriginalSelection.y);
-			if (!(selectedNode instanceof ASTNode)) {
+			if (selectedNode == null) {
 				MessageDialog.openError(fEditor.getEditorSite().getShell(),
 						Messages.RenameLinkedMode_1,
 						Messages.RenameLinkedMode_4);
@@ -50,8 +50,9 @@
 					if (!namespaceName.segments()
 							.get(namespaceName.segments().size() - 1)
 							.equals(selectedNode)) {
-						MessageDialog.openError(fEditor.getEditorSite()
-								.getShell(), Messages.RenameLinkedMode_1,
+						MessageDialog.openError(
+								fEditor.getEditorSite().getShell(),
+								Messages.RenameLinkedMode_1,
 								Messages.RenameLinkedMode_4);
 						return;
 					}
@@ -67,10 +68,10 @@
 
 			// TODO: copied from LinkedNamesAssistProposal#apply(..):
 			// sort for iteration order, starting with the node @ offset
-			Arrays.sort(sameNodes, new Comparator() {
-				public int compare(Object o1, Object o2) {
-					return rank((OccurrenceLocation) o1)
-							- rank((OccurrenceLocation) o2);
+			Arrays.sort(sameNodes, new Comparator<OccurrenceLocation>() {
+				public int compare(OccurrenceLocation o1,
+						OccurrenceLocation o2) {
+					return rank(o1) - rank(o2);
 				}
 
 				/**
@@ -103,12 +104,12 @@
 						.lastIndexOf(NamespaceReference.NAMESPACE_SEPARATOR);
 				if (index > 0) {
 					linkedPosition = new PHPElementLinkedPosition(document,
-							elem.getOffset() + (index + 1), elem.getLength()
-									- (index + 1), i);
+							elem.getOffset() + (index + 1),
+							elem.getLength() - (index + 1), i);
 				} else if (index == 0) {
 					linkedPosition = new PHPElementLinkedPosition(document,
-							elem.getOffset() + (index + 1), elem.getLength()
-									- (index + 1), i);
+							elem.getOffset() + (index + 1),
+							elem.getLength() - (index + 1), i);
 				} else {
 					linkedPosition = new PHPElementLinkedPosition(document,
 							elem.getOffset(), elem.getLength(), i);
@@ -127,9 +128,8 @@
 			fLinkedModeModel = new LinkedModeModel();
 			fLinkedModeModel.addGroup(fLinkedPositionGroup);
 			fLinkedModeModel.forceInstall();
-			fLinkedModeModel
-					.addLinkingListener(new EditorHighlightingSynchronizer(
-							fEditor));
+			fLinkedModeModel.addLinkingListener(
+					new EditorHighlightingSynchronizer(fEditor));
 			fLinkedModeModel.addLinkingListener(new EditorSynchronizer());
 
 			EditorLinkedModeUI ui = new EditorLinkedModeUI(fLinkedModeModel,
