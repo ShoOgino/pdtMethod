@@ -1,9 +1,8 @@
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * org.eclipse.php.internal.core.ast.visitor.AbstractVisitor#visit(org.eclipse
-	 * .php.internal.core.ast.nodes.FunctionDeclaration)
+	 * @see org.eclipse.php.internal.core.ast.visitor.AbstractVisitor#visit(org.
+	 * eclipse .php.internal.core.ast.nodes.FunctionDeclaration)
 	 */
 	public boolean visit(FunctionDeclaration functionDeclaration) {
 		if (!hasChildrenChanges(functionDeclaration)) {
@@ -29,6 +28,25 @@
 			voidVisit(functionDeclaration,
 					FunctionDeclaration.FORMAL_PARAMETERS_PROPERTY);
 		}
+
+		if (isChanged(functionDeclaration,
+				FunctionDeclaration.RETURN_TYPE_PROPERTY)) {
+			try {
+				int startOffset = getRightParenthesesStartPosition(pos) + 1;
+				rewriteNode(functionDeclaration,
+						FunctionDeclaration.RETURN_TYPE_PROPERTY, startOffset,
+						new Prefix() {
+
+							@Override
+							public String getPrefix(int indent) {
+								return ": "; //$NON-NLS-1$
+							}
+						});
+			} catch (CoreException e) {
+				handleException(e);
+			}
+		}
+
 		// Body
 		rewriteRequiredNode(functionDeclaration,
 				FunctionDeclaration.BODY_PROPERTY);
