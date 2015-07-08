@@ -1,16 +1,19 @@
 	private void innerSaveDefaultServer(IProject project, Server server) {
-		Preferences prefs = Activator.getDefault().getPluginPreferences();
+		IEclipsePreferences preferences = InstanceScope.INSTANCE
+				.getNode(Activator.PLUGIN_ID);
+		// Preferences prefs = Activator.getDefault().getPluginPreferences();
 		if (project == null && server != null) {
-			prefs.setValue(DEFAULT_SERVER_PREFERENCES_KEY, server.getName());
-			Activator.getDefault().savePluginPreferences();
+			preferences.put(DEFAULT_SERVER_PREFERENCES_KEY, server.getName());
+			try {
+				preferences.flush();
+			} catch (BackingStoreException e) {
+				Logger.logException(e);
+			}
 		} else if (project != null) {
-			String defaultWorkspaceServer = prefs
-					.getString(DEFAULT_SERVER_PREFERENCES_KEY);
 			IScopeContext[] scopeContexts = createPreferenceScopes(project);
 			IEclipsePreferences prefsNode = scopeContexts[0]
 					.getNode(NODE_QUALIFIER);
-			if (server != null
-					&& !defaultWorkspaceServer.equals(server.getName())) {
+			if (server != null) {
 				prefsNode.put(DEFAULT_SERVER_PREFERENCES_KEY, server.getName());
 			} else {
 				prefsNode.remove(DEFAULT_SERVER_PREFERENCES_KEY);

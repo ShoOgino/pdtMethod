@@ -13,30 +13,24 @@
 		// replace the default to the
 		// first in the list.
 		ServersManager manager = ServersManager.getInstance();
-		Server removedServer = (Server) manager.servers.remove(serverName);
 		Server workspaceDefault = getDefaultServer(null);
-		// if (workspaceDefault == null) {
-		// // Should not happen
-		// Logger.log(IStatus.ERROR,
-		// "There is no defined default server for the workspace.");
-		// return null;
-		// }
+		Server removedServer = (Server) manager.servers.remove(serverName);
 		if (removedServer == null) {
 			// if the name is not existing, just quit.
 			return null;
 		}
-
 		if (workspaceDefault == removedServer) {
 			// If the workspace default server is the same as the one we wish to
 			// remove,
 			// we should replace it.
 			Server[] servers = getServers();
-			if (servers.length > 0) {
-				workspaceDefault = servers[0];
-				setDefaultServer(null, workspaceDefault);
+			if (servers.length == 1) {
+				setDefaultServer(null, servers[0]);
+			} else if (servers.length > 1) {
+				// Take second one as first one is '<none>'
+				setDefaultServer(null, servers[1]);
 			}
 		}
-
 		// Check that if any one of the mapped projects holds a reference to the
 		// removed server.
 		// If so, replace it with the new default server.
@@ -46,7 +40,6 @@
 				setDefaultServer((IProject) element, workspaceDefault);
 			}
 		}
-
 		if (removedServer != null) {
 			// Fire the event for the removal
 			removedServer.removePropertyChangeListener(manager);
