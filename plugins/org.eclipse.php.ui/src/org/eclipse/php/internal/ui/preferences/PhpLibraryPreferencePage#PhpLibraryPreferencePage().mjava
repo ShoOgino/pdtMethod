@@ -59,8 +59,11 @@
 			buttonLabels[i] = handlers.get(i).getLabel();
 		}
 
+		IDecoratorManager decoratorManager = PlatformUI.getWorkbench()
+				.getDecoratorManager();
 		fLibraryList = new TreeListDialogField(adapter, buttonLabels,
-				new BPListLabelProvider());
+				new DecoratingLabelProvider(new BPListLabelProvider(),
+						decoratorManager));
 		fLibraryList
 				.setLabelText(PreferencesMessages.UserLibraryPreferencePage_libraries_label);
 
@@ -68,18 +71,25 @@
 		ArrayList elements = new ArrayList();
 
 		for (int i = 0; i < names.length; i++) {
-			IPath path = new Path(DLTKCore.USER_LIBRARY_CONTAINER_ID)
-					.append(UserLibraryManager.makeLibraryName(names[i],
-							getLanguageToolkit()));
-			try {
-				IBuildpathContainer container = DLTKCore.getBuildpathContainer(
-						path, fDummyProject);
-				elements.add(new BPUserLibraryElement(names[i], container,
-						fDummyProject));
-			} catch (ModelException e) {
-				DLTKUIPlugin.log(e);
-				// ignore
+			UserLibrary lib = ModelManager.getUserLibraryManager()
+					.getUserLibrary(names[i], getLanguageToolkit());
+
+			if (lib != null) {
+				IPath path = new Path(DLTKCore.USER_LIBRARY_CONTAINER_ID)
+						.append(UserLibraryManager.makeLibraryName(names[i],
+								getLanguageToolkit()));
+
+				try {
+					IBuildpathContainer container = DLTKCore
+							.getBuildpathContainer(path, fDummyProject);
+					elements.add(new BPUserLibraryElement(names[i], container,
+							fDummyProject, lib.getAttributes()));
+				} catch (ModelException e) {
+					DLTKUIPlugin.log(e);
+					// ignore
+				}
 			}
+
 		}
 		fLibraryList.setElements(elements);
 		fLibraryList.setViewerSorter(new BPListElementSorter());
