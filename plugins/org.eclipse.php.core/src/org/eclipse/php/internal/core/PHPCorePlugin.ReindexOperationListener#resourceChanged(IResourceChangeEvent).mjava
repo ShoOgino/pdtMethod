@@ -4,42 +4,13 @@
 				try {
 					if (source instanceof IProject) {
 						IProject project = (IProject) source;
-						ProjectIndexerManager.removeProject(project
-								.getFullPath());
+						ProjectIndexerManager
+								.removeProject(project.getFullPath());
 						ProjectIndexerManager.indexProject(project);
 
 					} else if (source instanceof IWorkspace) {
 						IWorkspace workspace = (IWorkspace) source;
-						IProject[] projects = workspace.getRoot().getProjects();
-
-						// remove from index:
-						for (IProject project : projects) {
-							if (!project.isAccessible()) {
-								continue;
-							}
-							IScriptProject scriptProject = DLTKCore
-									.create(project);
-							if (scriptProject.isOpen()) {
-								IProjectFragment[] projectFragments = scriptProject
-										.getProjectFragments();
-								for (IProjectFragment projectFragment : projectFragments) {
-									ProjectIndexerManager
-											.removeProjectFragment(
-													scriptProject,
-													projectFragment.getPath());
-								}
-								ProjectIndexerManager.removeProject(project
-										.getFullPath());
-							}
-						}
-
-						// add to index:
-						for (IProject project : projects) {
-							if (!project.isAccessible()) {
-								continue;
-							}
-							ProjectIndexerManager.indexProject(project);
-						}
+						reindexAllProjects(workspace);
 					}
 				} catch (CoreException e) {
 					Logger.logException(e);

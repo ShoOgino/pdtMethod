@@ -1,0 +1,29 @@
+	/**
+	 * Check if model version is changed and re-index PHP projects if necessary.
+	 * 
+	 * @see PHPCoreConstants.STRUCTURE_VERSION
+	 */
+	private void checkStructureVersionAndReindex() {
+		IEclipsePreferences preferences = InstanceScope.INSTANCE.getNode(ID);
+		String modelVersion = preferences
+				.get(PHPCoreConstants.STRUCTURE_VERSION_PREFERENCE, null);
+		if (PHPCoreConstants.STRUCTURE_VERSION.equals(modelVersion)) {
+			return;
+		}
+
+		preferences.put(PHPCoreConstants.STRUCTURE_VERSION_PREFERENCE,
+				PHPCoreConstants.STRUCTURE_VERSION);
+		try {
+			preferences.flush();
+		} catch (BackingStoreException e1) {
+			Logger.logException(e1);
+		}
+
+		IWorkspace workspace = ResourcesPlugin.getWorkspace();
+		try {
+			reindexAllProjects(workspace);
+		} catch (ModelException e) {
+			PHPCorePlugin.log(e);
+		}
+	}
+
