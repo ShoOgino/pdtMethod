@@ -6,8 +6,24 @@
 	protected boolean visit(UsePart usePart) {
 		String ns = usePart.getNamespace().getFullyQualifiedName();
 
+		boolean isGroupStatement = currentUseStatement != null
+				&& currentUseStatement.getNamespace() != null;
+		if (isGroupStatement) {
+			String curentFQN = currentUseStatement.getNamespace()
+					.getFullyQualifiedName();
+			ns = PHPModelUtils.concatFullyQualifiedNames(curentFQN, ns);
+		}
+
 		if (namespace.equalsIgnoreCase(ns)) {
-			result = usePart;
+			if (isGroupStatement) {
+				FullyQualifiedReference fqn = createCombinedFQN(usePart);
+
+				result = new UsePart(fqn, usePart.getAlias(),
+						Math.max(currentUseStatement.getStatementType(),
+								usePart.getStatementType()));
+			} else {
+				result = usePart;
+			}
 			return false;
 		}
 
