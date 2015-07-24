@@ -1,0 +1,69 @@
+	/**
+	 * Returns the variable for selected node
+	 * 
+	 * @param selectedNode
+	 * @return Variable
+	 */
+	private static ASTNode getVariableNode(ASTNode selectedNode) {
+
+		// state machine to find PHP variable
+
+		ASTNode variableNode = null;
+		final int START = 1;
+		final int PROCESS_PARENT = 2;
+		final int PROCESS_EXPRESSION = 3;
+		final int FINISH = 4;
+		int state = START;
+
+		while (selectedNode != null && state != FINISH) {
+
+			switch (selectedNode.getType()) {
+			case ASTNode.VARIABLE:
+				if (((Variable) selectedNode).isDollared()) {
+					// variable found!
+					state = FINISH;
+					variableNode = selectedNode;
+				} else if (PROCESS_EXPRESSION == state) {
+					// expression doesn't start with a variable
+					state = FINISH;
+				} else {
+					state = PROCESS_PARENT;
+					selectedNode = selectedNode.getParent();
+				}
+				break;
+
+			case ASTNode.EXPRESSION_STATEMENT:
+				if (PROCESS_EXPRESSION == state) {
+					// prevent endless loop
+					state = FINISH;
+				} else {
+					// does expression start with a variable?
+					selectedNode = NodeFinder.perform(selectedNode,
+							selectedNode.getStart(), 0);
+					state = PROCESS_EXPRESSION;
+				}
+				break;
+
+			case ASTNode.FIELD_ACCESS:
+			case ASTNode.IDENTIFIER:
+			case ASTNode.FUNCTION_NAME:
+			case ASTNode.FUNCTION_INVOCATION:
+			case ASTNode.METHOD_INVOCATION:
+				if (PROCESS_EXPRESSION == state) {
+					// expression doesn't start with a variable
+					state = FINISH;
+				} else {
+					state = PROCESS_PARENT;
+					selectedNode = selectedNode.getParent();
+				}
+				break;
+
+			default:
+				// not expected node; stop here
+				state = FINISH;
+			}
+		}
+
+		return variableNode;
+	}
+
