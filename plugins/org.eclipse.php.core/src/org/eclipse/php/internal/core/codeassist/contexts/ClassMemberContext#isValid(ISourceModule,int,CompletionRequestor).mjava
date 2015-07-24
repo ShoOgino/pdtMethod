@@ -13,19 +13,19 @@
 		// .getOriginalOffset(0) - 2);
 		// statementText1.toString();
 		int totalLength = statementText.length();
-		elementStart = PHPTextSequenceUtilities.readBackwardSpaces(
-				statementText, totalLength);
-		elementStart = PHPTextSequenceUtilities.readIdentifierStartIndex(
-				statementText, elementStart, true);
-		elementStart = PHPTextSequenceUtilities.readBackwardSpaces(
-				statementText, elementStart);
+		elementStart = PHPTextSequenceUtilities
+				.readBackwardSpaces(statementText, totalLength);
+		elementStart = PHPTextSequenceUtilities
+				.readIdentifierStartIndex(statementText, elementStart, true);
+		elementStart = PHPTextSequenceUtilities
+				.readBackwardSpaces(statementText, elementStart);
 		if (elementStart <= 2) { // there's no trigger of length less than 2
 			// characters
 			return false;
 		}
 
-		String triggerText = statementText.subSequence(elementStart - 2,
-				elementStart).toString();
+		String triggerText = statementText
+				.subSequence(elementStart - 2, elementStart).toString();
 		if (triggerText.equals("->")) { //$NON-NLS-1$
 			triggerType = Trigger.OBJECT;
 		} else if (triggerText.equals("::")) { //$NON-NLS-1$
@@ -34,7 +34,24 @@
 			return false;
 		}
 
-		types = getCompanion().getLeftHandType(this, !isInUseTraitStatement());
+		// to support anonymous classes fields/methods CA
+		List<IType> tmpTypes = new ArrayList<IType>();
+		try {
+			IModelElement enclosingElement = sourceModule.getElementAt(offset);
+			while (enclosingElement instanceof IMethod) {
+				enclosingElement = enclosingElement.getParent();
+			}
+			if (enclosingElement instanceof IType && PHPFlags
+					.isAnonymous(((IType) enclosingElement).getFlags())) {
+				tmpTypes.add((IType) enclosingElement);
+			}
+		} catch (ModelException e) {
+			PHPCorePlugin.log(e);
+		}
+
+		tmpTypes.addAll(Arrays.asList(getCompanion().getLeftHandType(this,
+				!isInUseTraitStatement())));
+		types = tmpTypes.toArray(new IType[0]);
 		return true;
 	}
 

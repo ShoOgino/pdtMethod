@@ -1,0 +1,19 @@
+	public boolean visit(AnonymousClassDeclaration node) throws Exception {
+		ISourceModuleContext parentContext = (ISourceModuleContext) contextStack
+				.peek();
+
+		MultiTypeType multiTypeType = new MultiTypeType();
+		if (node.getSuperClass() != null) {
+			multiTypeType.addType(
+					PHPClassType.fromSimpleReference(node.getSuperClass()));
+		}
+		if (node.getInterfaceList() != null) {
+			for (TypeReference typeReference : node.getInterfaceList()) {
+				multiTypeType.addType(
+						PHPClassType.fromSimpleReference(typeReference));
+			}
+		}
+		contextStack.push(new TypeContext(parentContext, multiTypeType));
+		return visitGeneral(node);
+	}
+

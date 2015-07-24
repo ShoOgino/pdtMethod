@@ -1,0 +1,74 @@
+	public boolean visit(AnonymousClassDeclaration anonymousClassDeclaration)
+			throws Exception {
+
+		fNodes.push(anonymousClassDeclaration);
+
+		ASTNode parentDeclaration = null;
+		if (!declarations.empty()) {
+			parentDeclaration = declarations.peek();
+		}
+
+		if (parentDeclaration instanceof MethodDeclaration) {
+			if (fLastNamespace == null) {
+				deferredDeclarations.add(anonymousClassDeclaration);
+			} else {
+				deferredNamespacedDeclarations.add(anonymousClassDeclaration);
+			}
+			return false;
+		}
+
+		declarations.push(anonymousClassDeclaration);
+
+		for (PHPSourceElementRequestorExtension visitor : extensions) {
+			visitor.visit(anonymousClassDeclaration);
+		}
+
+		List<String> superClasses = new ArrayList<String>();
+		String name = null;
+		if (anonymousClassDeclaration.getSuperClass() != null) {
+			name = String.format(ANONYMOUS_CLASS_TEMPLATE,
+					anonymousClassDeclaration.getSuperClass().getName());
+
+			String superClass = processNameNode(
+					anonymousClassDeclaration.getSuperClass());
+			if (superClass != null) {
+				superClasses.add(superClass);
+			}
+		}
+		if (anonymousClassDeclaration.getInterfaceList() != null
+				&& !anonymousClassDeclaration.getInterfaceList().isEmpty()) {
+			if (name == null) {
+				name = String.format(ANONYMOUS_CLASS_TEMPLATE,
+						anonymousClassDeclaration.getInterfaceList().get(0)
+								.getName());
+			}
+
+			for (TypeReference reference : anonymousClassDeclaration
+					.getInterfaceList()) {
+				String interfaceName = processNameNode(reference);
+				if (interfaceName != null) {
+					superClasses.add(interfaceName);
+				}
+			}
+		}
+		if (name == null) {
+			name = String.format(ANONYMOUS_CLASS_TEMPLATE,
+					PHPCoreConstants.ANONYMOUS);
+		}
+
+		ISourceElementRequestor.TypeInfo mi = new ISourceElementRequestor.TypeInfo();
+		mi.name = name;
+		mi.modifiers = Modifiers.AccPrivate | IPHPModifiers.AccAnonymous;
+
+		mi.nameSourceStart = anonymousClassDeclaration.sourceStart();
+		mi.nameSourceEnd = anonymousClassDeclaration.sourceEnd();
+		mi.declarationStart = mi.nameSourceStart;
+
+		mi.superclasses = superClasses.toArray(new String[0]);
+
+		this.fRequestor.enterType(mi);
+		this.fInClass = true;
+
+		return true;
+	}
+
