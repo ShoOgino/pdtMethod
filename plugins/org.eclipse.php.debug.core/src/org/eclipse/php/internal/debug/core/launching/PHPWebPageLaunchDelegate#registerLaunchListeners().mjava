@@ -3,30 +3,27 @@
 	 */
 	private void registerLaunchListeners() {
 		IConfigurationElement[] config = Platform.getExtensionRegistry()
-				.getConfigurationElementsFor(ILAUNCH_LISTENER_EXTENTION_ID);
+				.getConfigurationElementsFor(LAUNCH_LISTENERS_EXTENSION_ID);
 		try {
 			for (IConfigurationElement e : config) {
-
 				final Object o = e.createExecutableExtension("class"); //$NON-NLS-1$
 				if (o instanceof ILaunchDelegateListener) {
 					ISafeRunnable runnable = new ISafeRunnable() {
-
 						public void run() throws Exception {
 							ILaunchDelegateListener listener = (ILaunchDelegateListener) o;
-							addLaunchDelegateListener(listener);
+							Assert.isNotNull(listener);
+							preLaunchListeners.add(listener);
 						}
 
 						public void handleException(Throwable exception) {
-							System.out.println("One of the" //$NON-NLS-1$
-									+ ILAUNCH_LISTENER_EXTENTION_ID
-									+ "extensions fail"); //$NON-NLS-1$
+							Logger.logException(exception);
 						}
 					};
 					SafeRunner.run(runnable);
 				}
 			}
 		} catch (CoreException ex) {
-			System.out.println(ex.getMessage());
+			Logger.logException(ex);
 		}
 	}
 

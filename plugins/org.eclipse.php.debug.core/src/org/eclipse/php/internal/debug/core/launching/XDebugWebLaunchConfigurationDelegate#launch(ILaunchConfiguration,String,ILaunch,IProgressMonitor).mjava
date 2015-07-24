@@ -1,6 +1,12 @@
 	public void launch(ILaunchConfiguration configuration, String mode,
 			ILaunch launch, IProgressMonitor monitor) throws CoreException {
-		String debuggerId = XDebugCommunicationDaemon.XDEBUG_DEBUGGER_ID;
+		// Notify all listeners of a pre-launch event.
+		int resultCode = notifyPreLaunch(configuration, mode, launch, monitor);
+		if (resultCode != 0) { // cancel launch
+			monitor.setCanceled(true);
+			monitor.done();
+			return; // canceled
+		}
 		if (mode.equals(ILaunchManager.DEBUG_MODE)) {
 			if (XDebugLaunchListener.getInstance().isWebLaunchActive()) {
 				displayErrorMessage(PHPDebugCoreMessages.XDebug_WebLaunchConfigurationDelegate_0);
@@ -73,7 +79,7 @@
 				ideKey = proxyHandler.getCurrentIdeKey();
 				if (proxyHandler.registerWithProxy() == false) {
 					displayErrorMessage(PHPDebugCoreMessages.XDebug_WebLaunchConfigurationDelegate_2
-							+ proxyHandler.getErrorMsg());
+									+ proxyHandler.getErrorMsg());
 					DebugPlugin.getDefault().getLaunchManager()
 							.removeLaunch(launch);
 					return;
@@ -108,7 +114,7 @@
 				PHPLaunchUtilities
 						.showLaunchErrorMessage(NLS
 								.bind(PHPDebugCoreMessages.WebLaunchConfigurationDelegate_PortInUse,
-										requestPort, server.getName()));
+						requestPort, server.getName()));
 				monitor.setCanceled(true);
 				monitor.done();
 				return;
