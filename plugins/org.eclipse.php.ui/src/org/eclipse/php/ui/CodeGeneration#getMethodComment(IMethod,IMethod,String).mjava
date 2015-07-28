@@ -137,28 +137,29 @@
 				if (parameterType != null) {
 					String typeName = ((Identifier) parameterType).getName();
 					parameterTypes[i++] = typeName;
-				} else {
-					if (formalParameter.getDefaultValue() != null
-							&& formalParameter.getDefaultValue() instanceof Scalar
-							&& !formalParameter.getDefaultValue()
-									.isNullExpression()) {
-						Scalar scalar = (Scalar) formalParameter
-								.getDefaultValue();
-						IEvaluatedType simpleType = PHPSimpleTypes
-								.fromString(Scalar.getType(scalar
-										.getScalarType()));
-						if (simpleType == null) {
-							parameterTypes[i++] = Scalar.getType(scalar
-									.getScalarType());
-						} else {
-							parameterTypes[i++] = simpleType.getTypeName();
-						}
-
-					} else {
-						parameterTypes[i++] = UNKNOWN_TYPE;
-					}
-
+					continue;
 				}
+				if (formalParameter.getDefaultValue() != null
+						&& formalParameter.getDefaultValue() instanceof Scalar
+						&& !formalParameter.getDefaultValue()
+								.isNullExpression()) {
+					Scalar scalar = (Scalar) formalParameter.getDefaultValue();
+					IEvaluatedType simpleType = PHPSimpleTypes
+							.fromString(Scalar.getType(scalar.getScalarType()));
+					if (simpleType == null) {
+						parameterTypes[i++] = Scalar.getType(scalar
+								.getScalarType());
+					} else {
+						parameterTypes[i++] = simpleType.getTypeName();
+					}
+					continue;
+				}
+				if (formalParameter.getDefaultValue() != null
+						&& formalParameter.getDefaultValue() instanceof ArrayCreation) {
+					parameterTypes[i++] = "array"; //$NON-NLS-1$
+					continue;
+				}
+				parameterTypes[i++] = UNKNOWN_TYPE;
 			}
 		}
 
