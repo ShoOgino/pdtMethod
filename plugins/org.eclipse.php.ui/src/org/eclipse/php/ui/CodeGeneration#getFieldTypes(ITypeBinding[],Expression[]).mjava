@@ -1,0 +1,57 @@
+	/**
+	 * 
+	 * @param varTypes
+	 *            (can have null entries)
+	 * @param expressions
+	 *            (can have null entries)
+	 * @return non-null field types
+	 */
+	public static String[] getFieldTypes(ITypeBinding[] varTypes,
+			Expression[] expressions) {
+		String[] fieldTypes = new String[expressions.length];
+
+		for (int i = 0; i < expressions.length; i++) {
+			Expression expression = expressions[i];
+			ITypeBinding varType = varTypes[i];
+
+			if (expression instanceof ArrayCreation) {
+				fieldTypes[i] = "array"; //$NON-NLS-1$
+			} else if (expression instanceof Scalar) {
+				Scalar scalar = (Scalar) expression;
+				switch (scalar.getScalarType()) {
+				case Scalar.TYPE_INT:
+					fieldTypes[i] = "integer"; //$NON-NLS-1$
+					break;
+				case Scalar.TYPE_STRING:
+					if (!expression.isNullExpression()) {
+						fieldTypes[i] = "string"; //$NON-NLS-1$
+					} else {
+						// we don't want to use varType to describe
+						// null values (because varType.isAmbiguous() will
+						// return true and varType.getName() will return
+						// "NULL"), but preferably UNKNOWN_TYPE when
+						// fieldType is null
+						varType = null;
+					}
+					break;
+				}
+			}
+
+			if (null == fieldTypes[i] && null != varType) {
+				if (varType.isArray()) {
+					fieldTypes[i] = "array"; //$NON-NLS-1$
+				} else if (varType.isAmbiguous()) {
+					fieldTypes[i] = "Ambiguous"; //$NON-NLS-1$
+				} else {
+					fieldTypes[i] = varType.getName();
+				}
+			}
+
+			if (null == fieldTypes[i]) {
+				fieldTypes[i] = UNKNOWN_TYPE;
+			}
+		}
+
+		return fieldTypes;
+	}
+
