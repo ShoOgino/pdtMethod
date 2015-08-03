@@ -1,0 +1,20 @@
+	/**
+	 * Read and returns all the bytes from the given file URI
+	 */
+	private byte[] getBytesFromURI(URI uri) throws Exception {
+		IFileStore fileStore = EFS.getStore(uri);
+		IFileInfo fileInfo = fileStore.fetchInfo();
+		long length = fileInfo.getLength();
+		if (length > Integer.MAX_VALUE) {
+			throw new Exception(
+					"The requested file '" + lastFileName + "' is too big"); //$NON-NLS-1$ //$NON-NLS-2$
+		}
+		// TODO - There is no handle of file encoding!
+		byte[] bytes = new byte[(int) length];
+		InputStream openInputStream = fileStore.openInputStream(EFS.NONE, null);
+		DataInputStream in = new DataInputStream(openInputStream);
+		in.readFully(bytes);
+		in.close();
+		return bytes;
+	}
+

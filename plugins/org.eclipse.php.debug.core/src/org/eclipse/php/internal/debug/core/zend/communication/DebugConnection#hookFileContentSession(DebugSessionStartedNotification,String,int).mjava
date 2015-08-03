@@ -1,0 +1,42 @@
+	/**
+	 * Hook a session that should handle a file content request only when the
+	 * Zend Platform GUI is asking to display the source code of the script that
+	 * caused an event.
+	 * 
+	 * @param fileName
+	 *            The requested file.
+	 * @param lineNumber
+	 *            Line number
+	 */
+	protected void hookFileContentSession(
+			DebugSessionStartedNotification notification, String fileName,
+			int lineNumber) {
+		try {
+			FileContentDebugHandler handler = new FileContentDebugHandler(this);
+			RemoteDebugger debugger = (RemoteDebugger) handler
+					.getRemoteDebugger();
+			if (!debugger.isActive()) {
+				throw new IllegalStateException(
+						"Could not read the content of the file. The debugger is not connected."); //$NON-NLS-1$
+			}
+			try {
+				debugger.setProtocol(RemoteDebugger.PROTOCOL_ID_LATEST);
+				try {
+					fileName = URLDecoder.decode(fileName, "UTF-8"); //$NON-NLS-1$
+				} catch (UnsupportedEncodingException e) {
+				}
+				byte[] content = debugger.getFileContent(fileName);
+				if (content == null) {
+					content = new byte[0];
+				}
+				IFileContentRequestor requester = new OpenRemoteFileRequestor(
+						notification);
+				requester.fileContentReceived(content, fileName, lineNumber);
+			} finally {
+				debugger.closeDebugSession();
+			}
+		} catch (Exception e) {
+			Logger.logException(e);
+		}
+	}
+

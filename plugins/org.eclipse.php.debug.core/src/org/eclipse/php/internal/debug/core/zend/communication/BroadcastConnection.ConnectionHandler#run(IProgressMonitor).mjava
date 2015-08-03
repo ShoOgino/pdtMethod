@@ -1,0 +1,59 @@
+		@Override
+		protected IStatus run(IProgressMonitor monitor) {
+			InputStream inputStream = null;
+			OutputStream outputStream = null;
+			try {
+				inputStream = socket.getInputStream();
+				outputStream = socket.getOutputStream();
+				BufferedReader reader = new BufferedReader(
+						new InputStreamReader(inputStream));
+				PrintWriter writer = new PrintWriter(
+						new OutputStreamWriter(outputStream));
+				List<String> requestLines = new ArrayList<String>();
+				String currentLine;
+				while (true) {
+					currentLine = reader.readLine();
+					if (currentLine == null || currentLine.isEmpty())
+						break;
+					requestLines.add(currentLine);
+				}
+				String firstLine = requestLines.isEmpty() ? null
+						: requestLines.get(0);
+				String host;
+				int port;
+				Server server = lookupServer(requestLines);
+				host = lookupHosts(server);
+				port = lookupPort(server);
+				writer.write(getStandardHTTPResponse());
+				if (isRequestFromZendServer(firstLine)) {
+					writer.println(getJSonResponseString(false, host, port));
+				} else {
+					String platform = getPlatformValue(firstLine);
+					if (platform == null) {
+						writer.println(getResponseString(false, host, port));
+					} else {
+						writer.write(getHTMLContent(platform, host, port));
+					}
+				}
+				writer.flush();
+			} catch (Exception e) {
+				DebugPlugin.log(e);
+			} finally {
+				if (outputStream != null) {
+					try {
+						outputStream.close();
+					} catch (IOException oe) {
+						DebugPlugin.log(oe);
+					}
+				}
+				if (socket != null) {
+					try {
+						socket.close();
+					} catch (IOException ioe) {
+						DebugPlugin.log(ioe);
+					}
+				}
+			}
+			return Status.OK_STATUS;
+		}
+

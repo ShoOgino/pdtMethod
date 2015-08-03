@@ -1,12 +1,35 @@
 	protected void validate() {
 		// Reset state
-		setMessage(PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_Dialog_description);
+		setMessage(
+				PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_Dialog_description);
 		// Check errors
 		String debugPort = fDebugTextBox.getText();
-		Integer portNumber = null;
+		Integer debugPortNumber = null;
 		try {
-			portNumber = Integer.valueOf(debugPort);
-			int i = portNumber.intValue();
+			debugPortNumber = Integer.valueOf(debugPort);
+			int i = debugPortNumber.intValue();
+			if (i < 1 || i > 65535) {
+				setMessage(
+						PHPDebugCoreMessages.DebugConfigurationDialog_invalidPortRange,
+						IMessageProvider.ERROR);
+				return;
+			}
+		} catch (NumberFormatException ex) {
+			setMessage(
+					PHPDebugCoreMessages.DebugConfigurationDialog_invalidPort,
+					IMessageProvider.ERROR);
+			return;
+		} catch (Exception e) {
+			setMessage(
+					PHPDebugCoreMessages.DebugConfigurationDialog_invalidPort,
+					IMessageProvider.ERROR);
+			return;
+		}
+		String broadcastPort = fBroadcastPortText.getText();
+		Integer broadcastPortNumber = null;
+		try {
+			broadcastPortNumber = Integer.valueOf(broadcastPort);
+			int i = broadcastPortNumber.intValue();
 			if (i < 1 || i > 65535) {
 				setMessage(
 						PHPDebugCoreMessages.DebugConfigurationDialog_invalidPortRange,
@@ -43,12 +66,23 @@
 			return;
 		}
 		// Check warnings
-		if (!PHPLaunchUtilities.isPortAvailable(portNumber)
-				&& !PHPLaunchUtilities.isDebugDaemonActive(portNumber,
+		if (!PHPLaunchUtilities.isPortAvailable(debugPortNumber)
+				&& !PHPLaunchUtilities.isDebugDaemonActive(debugPortNumber,
 						DebuggerCommunicationDaemon.ZEND_DEBUGGER_ID)) {
 			setMessage(NLS.bind(
 					PHPDebugCoreMessages.DebugConfigurationDialog_PortInUse,
 					debugPort), IMessageProvider.WARNING);
+		}
+		if (!PHPLaunchUtilities.isPortAvailable(broadcastPortNumber)) {
+			for (ICommunicationDaemon daemon : DaemonsRegistry.getDaemons()) {
+				if (daemon instanceof BroadcastDaemon
+						&& !((BroadcastDaemon) daemon)
+								.isListening(broadcastPortNumber)) {
+					setMessage(NLS.bind(
+							PHPDebugCoreMessages.DebugConfigurationDialog_PortInUse,
+							broadcastPort), IMessageProvider.WARNING);
+				}
+			}
 		}
 	}
 

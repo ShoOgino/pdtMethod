@@ -1,0 +1,65 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.eclipse.php.debug.core.debugger.handlers.IDebugRequestHandler#
+	 * getResponseMessage()
+	 */
+	public IDebugResponseMessage getResponseMessage() {
+		FileContentResponse response = new FileContentResponse();
+		response.setID(reqID);
+		try {
+			byte[] content = null;
+			if (!lastFileName.endsWith(EXCLUDED_EXTENSION)) {
+				if (isFirstFileToDebug
+						&& PHPDebugPlugin.isDummyFile(lastFileName)) {
+					content = getDummyContent();
+					// Blacklist dummy.php file, so it won't be requested for
+					// mapping:
+					debugTarget.getContextManager().addToResolveBlacklist(
+							new VirtualPath(lastFileName),
+							ResolveBlackList.Type.FILE);
+				} else {
+					RemoteDebugger remoteDebugger = (RemoteDebugger) debugTarget
+							.getRemoteDebugger();
+					String localPath = remoteDebugger
+							.convertToLocalFilename(lastFileName);
+					if (localPath != null) {
+						IResource resource = ResourcesPlugin.getWorkspace()
+								.getRoot().findMember(localPath);
+						if (resource != null) {
+							IPath location = resource.getLocation();
+							if (location != null) {
+								content = getBytesFromURI(
+										location.toFile().toURI());
+							} else if (resource.exists()) {
+								// probably RSE
+								content = getBytesFromURI(
+										resource.getLocationURI());
+							}
+						} else {
+							File file = new File(localPath);
+							if (file.exists()) {
+								content = getBytesFromURI(file.toURI());
+							}
+						}
+					}
+				}
+			}
+			if (content == null) {
+				content = new byte[0];
+			}
+			setResponseContent(response, contentRequest, content);
+		} catch (FileNotFoundException e) {
+			// No need to log it. The server will throw an error notification to
+			// the console indicating that the file was not found.
+		} catch (NullPointerException e) {
+			// No need to log it. The server will throw an error notification to
+			// the console indicating that the file was not found.
+		} catch (Throwable t) {
+			Logger.logException("Fail to send the file content to the server", //$NON-NLS-1$
+					t);
+		}
+		isFirstFileToDebug = false;
+		return response;
+	}
+

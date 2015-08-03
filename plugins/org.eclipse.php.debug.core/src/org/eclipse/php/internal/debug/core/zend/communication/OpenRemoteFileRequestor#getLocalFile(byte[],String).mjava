@@ -1,0 +1,52 @@
+	/**
+	 * Finds and returns the appropriate editor input.
+	 * 
+	 * @param content
+	 * @param remoteFile
+	 * @return editor input
+	 */
+	private String getLocalFile(byte[] content, String remoteFile) {
+		PathMapper mapper = null;
+		PathEntry entry = null;
+		final IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+		// Check if we have local file that is a direct match of the remote one
+		final IFile file = root.getFileForLocation(new Path(remoteFile));
+		if (file != null) {
+			return file.getLocation().toOSString();
+		}
+		// Check for a server address to find a perfect match.
+		String serverAddress = extractParameterFromQuery(
+				notification.getOptions(), OPTION_SERVER_ADDRESS);
+		try {
+			String serverURL = "http://" + serverAddress; //$NON-NLS-1$
+			// Try perfect match first
+			Server serverMatch = ServersManager.findByURL(serverURL);
+			if (serverMatch != null) {
+				mapper = PathMapperRegistry.getByServer(serverMatch);
+				entry = mapper.getLocalFile(remoteFile);
+				// If no mapping, try to find one
+				if (entry == null) {
+					LocalFileSearchEngine searchEngine = new LocalFileSearchEngine();
+					LocalFileSearchResult searchResult = searchEngine.find(root,
+							remoteFile, serverMatch.getUniqueId());
+					entry = searchResult.getPathEntry();
+				}
+			} else {
+				// Check all servers
+				for (Server server : ServersManager.getServers()) {
+					mapper = PathMapperRegistry.getByServer(server);
+					entry = mapper.getLocalFile(remoteFile);
+					if (entry != null)
+						break;
+				}
+			}
+		} catch (InterruptedException e) {
+			DebugPlugin.log(e);
+		}
+		if (entry != null) {
+			return entry.getResolvedPath();
+		}
+		return null;
+
+	}
+

@@ -1,0 +1,53 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.eclipse.debug.core.model.ILaunchConfigurationDelegate#launch(org.
+	 * eclipse.debug.core.ILaunchConfiguration, java.lang.String,
+	 * org.eclipse.debug.core.ILaunch,
+	 * org.eclipse.core.runtime.IProgressMonitor)
+	 */
+	public void launch(ILaunchConfiguration configuration, String mode,
+			ILaunch launch, IProgressMonitor monitor) throws CoreException {
+		boolean runWithDebug = configuration
+				.getAttribute(IPHPDebugConstants.RUN_WITH_DEBUG_INFO, true);
+		this.launch = launch;
+		if (mode.equals(ILaunchManager.RUN_MODE) && !runWithDebug) {
+			return;
+		}
+		IProject proj = null;
+		String fileName = configuration.getAttribute(Server.FILE_NAME,
+				(String) null);
+		if (fileName != null) {
+			// Get the project from the file name
+			IPath filePath = new Path(fileName);
+			try {
+				proj = ResourcesPlugin.getWorkspace().getRoot()
+						.getProject(filePath.segment(0));
+			} catch (Throwable t) {
+			}
+		}
+		ILaunchConfigurationWorkingCopy wc = configuration.getWorkingCopy();
+		if (proj != null) {
+			String project = proj.getFullPath().toString();
+			wc.setAttribute(IPHPDebugConstants.PHP_Project, project);
+		}
+		wc.doSave();
+		String URL = configuration.getAttribute(Server.BASE_URL, ""); //$NON-NLS-1$
+		if (mode.equals(ILaunchManager.DEBUG_MODE) || runWithDebug == true) {
+			boolean isStopAtFirstLine = wc.getAttribute(
+					IDebugParametersKeys.FIRST_LINE_BREAKPOINT,
+					PHPProjectPreferences.getStopAtFirstLine(proj));
+			int requestPort = PHPDebugPlugin
+					.getDebugPort(DebuggerCommunicationDaemon.ZEND_DEBUGGER_ID);
+			// Fill all debug attributes:
+			launch.setAttribute(IDebugParametersKeys.PORT,
+					Integer.toString(requestPort));
+			launch.setAttribute(IDebugParametersKeys.WEB_SERVER_DEBUGGER,
+					Boolean.toString(true));
+			launch.setAttribute(IDebugParametersKeys.FIRST_LINE_BREAKPOINT,
+					Boolean.toString(isStopAtFirstLine));
+			launch.setAttribute(IDebugParametersKeys.ORIGINAL_URL, URL);
+		}
+	}
+

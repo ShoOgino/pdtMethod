@@ -1,0 +1,28 @@
+	/**
+	 * Finds and returns all registered Zend Debugger client hosts/IPs.
+	 * 
+	 * @return all registered Zend Debugger client hosts/IPs.
+	 */
+	public static String getZendAllHosts() {
+		Set<String> merged = new LinkedHashSet<String>();
+		// Check default list from preferences first
+		String defaultHosts = PHPDebugPlugin.getDebugHosts();
+		for (String host : getZendHostsArray(defaultHosts)) {
+			merged.add(host);
+		}
+		// Check all possible server settings
+		List<IDebuggerSettings> allSettings = DebuggerSettingsManager.INSTANCE
+				.findSettings(ZendDebuggerConfiguration.ID);
+		for (IDebuggerSettings settings : allSettings) {
+			if (settings.getKind() == DebuggerSettingsKind.PHP_SERVER) {
+				String settingsHosts = ZendDebuggerSettingsUtil
+						.getDebugHosts(settings.getOwnerId());
+				for (String host : getZendHostsArray(settingsHosts)) {
+					merged.add(host);
+				}
+			}
+		}
+		String[] mergedArray = merged.toArray(new String[merged.size()]);
+		return getZendHostsString(mergedArray);
+	}
+

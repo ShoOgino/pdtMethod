@@ -1,0 +1,53 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.eclipse.jface.dialogs.Dialog#createDialogArea(org.eclipse.swt.widgets
+	 * .Composite)
+	 */
+	@Override
+	protected Control createDialogArea(Composite parent) {
+		parent = (Composite) super.createDialogArea(parent);
+		GridLayout layout = (GridLayout) parent.getLayout();
+		layout.numColumns = 2;
+		initializeDialogUnits(parent);
+		FontData[] fontData = parent.getFont().getFontData();
+		for (FontData d : fontData) {
+			d.setStyle(SWT.BOLD);
+		}
+		GridData layoutData;
+		final Font boldFont = new Font(parent.getFont().getDevice(), fontData);
+		Label remoteLabel = new Label(parent, SWT.NONE);
+		remoteLabel.setText(
+				Messages.OpenLocalFileSearchFilter_Select_the_local_resource_match);
+		layoutData = new GridData();
+		layoutData.horizontalSpan = 2;
+		remoteLabel.setLayoutData(layoutData);
+		Label label = new Label(parent, SWT.NONE);
+		label.setFont(boldFont);
+		label.setText(path.toString());
+		layoutData = new GridData();
+		layoutData.horizontalSpan = 2;
+		layoutData.horizontalIndent = convertVerticalDLUsToPixels(10);
+		label.setLayoutData(layoutData);
+		entriesViewer = new TreeViewer(parent,
+				SWT.SINGLE | SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER);
+		layoutData = new GridData(GridData.FILL_BOTH);
+		layoutData.horizontalSpan = 2;
+		layoutData.minimumHeight = convertVerticalDLUsToPixels(80);
+		layoutData.verticalIndent = 10;
+		entriesViewer.getControl().setLayoutData(layoutData);
+		entriesViewer.setContentProvider(new ContentProvider());
+		entriesViewer.setLabelProvider(new LabelProvider());
+		entriesViewer.setSorter(new Sorter());
+		entriesViewer.setInput(this);
+		entriesViewer
+				.addSelectionChangedListener(new ISelectionChangedListener() {
+					public void selectionChanged(SelectionChangedEvent event) {
+						validate();
+					}
+				});
+		entriesViewer.expandAll();
+		return parent;
+	}
+

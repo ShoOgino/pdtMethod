@@ -1,0 +1,79 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.eclipse.php.debug.core.debugger.handlers.IDebugMessageHandler#handle(
+	 * org.eclipse.php.debug.core.debugger.messages.IDebugMessage,
+	 * org.eclipse.php.internal.debug.core.zend.model.PHPDebugTarget)
+	 */
+	public void handle(IDebugMessage request, PHPDebugTarget debugTarget) {
+		this.debugTarget = debugTarget;
+		RemoteDebugger remoteDebugger = (RemoteDebugger) debugTarget
+				.getRemoteDebugger();
+		boolean isWebServerDebugger = Boolean.toString(true)
+				.equals(debugTarget.getLaunch().getAttribute(
+						IDebugParametersKeys.WEB_SERVER_DEBUGGER));
+		contentRequest = (FileContentRequest) request;
+		reqID = contentRequest.getID();
+		String currentFileName = contentRequest.getFileName();
+		debugTarget.setLastFileName(currentFileName);
+		String debugType = getDebugType();
+		lastFileName = currentFileName;
+		encoding = contentRequest.getTransferEncoding();
+		// If is full Path
+		if (VirtualPath.isAbsolute(lastFileName)) {
+			Path testWSPath = new Path(lastFileName);
+			IFile testWSFile = null;
+			if (testWSPath.segmentCount() > 1) {
+				testWSFile = ResourcesPlugin.getWorkspace().getRoot()
+						.getFile(testWSPath);
+			}
+			if (isFirstFileToDebug && testWSFile != null
+					&& testWSFile.exists()) {
+				// this is an RSE file, do nothing
+			}
+			// not a Dummy file request
+			else if (isDummyFile()) {
+				return;
+			}
+			// Exe script
+			else if (debugType
+					.equals(IDebugParametersKeys.PHP_EXE_SCRIPT_DEBUG)) {
+				lastFileName = null;// this will inform the debugger to use its
+									// own copy when getResponseMessage() is
+									// called
+				isFirstFileToDebug = false;
+				return;
+			}
+			// web script OR web page OR toolbar debug
+			else if (isWebServerDebugger) {
+				if (isFirstFileToDebug) {// we already checked this it not the
+											// Dummy file
+					mapFirstFile(currentFileName);
+					if (debugType.equals(
+							IDebugParametersKeys.PHP_WEB_SCRIPT_DEBUG)) {
+						VirtualPath remotePath = new VirtualPath(
+								currentFileName);
+						remotePath.removeLastSegment();
+						remoteDebugger.setCurrentWorkingDirectory(
+								remotePath.toString());
+					}
+				}
+				lastFileName = remoteDebugger
+						.convertToLocalFilename(currentFileName);
+			}
+		}
+		// Other - Relative,RSE
+		else {
+			lastFileName = remoteDebugger
+					.convertToLocalFilename(currentFileName);
+		}
+		// For each file request in Debug mode, send breakpoint request to the
+		// debugger
+		if (lastFileName != null && debugTarget.getLaunch().getLaunchMode()
+				.equals(ILaunchManager.DEBUG_MODE)) {
+			addBreakPoints(debugTarget, currentFileName);
+		}
+		isFirstFileToDebug = false;
+	}
+

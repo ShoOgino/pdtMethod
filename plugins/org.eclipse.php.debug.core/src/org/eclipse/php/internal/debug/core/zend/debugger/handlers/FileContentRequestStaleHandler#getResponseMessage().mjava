@@ -1,0 +1,48 @@
+	public IDebugResponseMessage getResponseMessage() {
+		FileContentResponse response = new FileContentResponse();
+		response.setID(reqID);
+		try {
+			byte[] content = null;
+			if (isDummyFile()) {
+				content = getDummyContent();
+			} else {
+				IResource member = null;
+				if (lastFileName != null) {
+					member = ResourcesPlugin.getWorkspace().getRoot()
+							.findMember(new Path(lastFileName));
+				}
+				if (member != null) {
+					IPath location = member.getLocation();
+					if (location != null) {
+						File file = member.getLocation().toFile();
+						content = getBytesFromFile(file);
+					} else if (member.exists()) {
+						// probably RSE
+						URI uri = member.getLocationURI();
+						content = getBytesFromURI(uri);
+					}
+				} else if (lastFileName != null) {
+					// try to get the file content directly from the file system
+					File file = new File(lastFileName);
+					if (file.exists()) {
+						content = getBytesFromFile(file);
+					}
+				}
+			}
+			if (content == null) {
+				content = new byte[0];
+			}
+			setResponseContent(response, contentRequest, content);
+		} catch (FileNotFoundException e) {
+			// No need to log it. The server will throw an error notification to
+			// the console indicating that the file was not found.
+		} catch (NullPointerException npe) {
+			// No need to log it. The server will throw an error notification to
+			// the console indicating that the file was not found.
+		} catch (Throwable t) {
+			Logger.logException("Fail to send the file content to the server", //$NON-NLS-1$
+					t);
+		}
+		return response;
+	}
+

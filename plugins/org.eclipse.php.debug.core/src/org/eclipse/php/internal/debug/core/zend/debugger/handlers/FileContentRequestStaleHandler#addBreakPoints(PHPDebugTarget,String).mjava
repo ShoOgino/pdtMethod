@@ -1,0 +1,73 @@
+	private void addBreakPoints(PHPDebugTarget debugTarget,
+			String currentFileName) {
+		// send synchronized Breakpoint request
+		IBreakpointManager breakpointManager = debugTarget
+				.getBreakpointManager();
+		if (!breakpointManager.isEnabled()) {
+			return;
+		}
+		IBreakpoint[] breakpoints = breakpointManager
+				.getBreakpoints(IPHPDebugConstants.ID_PHP_DEBUG_CORE);
+		for (IBreakpoint element : breakpoints) {
+			IResource resourceWithBreakPoint = element.getMarker()
+					.getResource();
+			String resourcePathName = ""; //$NON-NLS-1$
+			// handle a breakpoint on external file
+			if (resourceWithBreakPoint instanceof WorkspaceRoot) {// external
+				try {
+					resourcePathName = element.getMarker()
+							.getAttribute(
+									StructuredResourceMarkerAnnotationModel.SECONDARY_ID_KEY)
+							.toString();
+				} catch (CoreException ce) {
+					PHPDebugPlugin.log(ce);
+					return;
+				}
+			} else {// workspace
+				IPath resourceLocation = resourceWithBreakPoint.getLocation();
+				if (resourceLocation == null) {
+					resourcePathName = resourceWithBreakPoint.getLocationURI()
+							.toString();
+				} else {
+					resourcePathName = resourceLocation.toOSString();
+				}
+			}
+			String comparablePathName = ""; //$NON-NLS-1$
+			if (new File(lastFileName).exists()) {
+				comparablePathName = lastFileName;
+			} else {
+				IFile tmpIFile = ResourcesPlugin.getWorkspace().getRoot()
+						.getFile(new Path(lastFileName));
+				IPath tmpLocation = tmpIFile.getLocation();
+				if (tmpIFile.exists()) {
+					if (tmpLocation == null) {
+						comparablePathName = tmpIFile.getLocationURI()
+								.toString();
+					} else {
+						comparablePathName = tmpLocation.toOSString();
+					}
+				}
+			}
+			if (new VirtualPath(resourcePathName)
+					.equals(new VirtualPath(comparablePathName))) {
+				// send break point
+				try {
+					PHPConditionalBreakpoint phpBP = (PHPConditionalBreakpoint) element;
+					Breakpoint runtimeBreakpoint = phpBP.getRuntimeBreakpoint();
+
+					int lineNumber = (Integer) element.getMarker()
+							.getAttribute(IMarker.LINE_NUMBER);
+					Breakpoint tmpBreakpoint = new Breakpoint(currentFileName,
+							lineNumber);
+					if (tmpBreakpoint.isEnable()) {
+						debugTarget.getRemoteDebugger()
+								.addBreakpoint(tmpBreakpoint);
+					}
+					runtimeBreakpoint.setID(tmpBreakpoint.getID());
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+

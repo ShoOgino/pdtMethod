@@ -1,0 +1,25 @@
+	@Override
+	public LocalFileSearchResult filter(final PathEntry[] entries,
+			final VirtualPath remotePath, final String serverName) {
+		final SyncObject<LocalFileSearchResult> searchResult = new SyncObject<LocalFileSearchResult>();
+		PlatformUI.getWorkbench().getDisplay().syncExec(new Runnable() {
+			@Override
+			public void run() {
+				MapLocalFileDialog dialog = new MapLocalFileDialog(
+						PlatformUI.getWorkbench().getDisplay().getActiveShell(),
+						Messages.OpenLocalFileSearchFilter_Open_file_request,
+						remotePath, entries);
+				LocalFileSearchResult filteredResult;
+				if (dialog.open() == Window.OK) {
+					filteredResult = new LocalFileSearchResult(
+							dialog.getResult());
+				} else {
+					filteredResult = new LocalFileSearchResult(null,
+							Status.CANCEL_STATUS);
+				}
+				searchResult.set(filteredResult);
+			}
+		});
+		return searchResult.get();
+	}
+
