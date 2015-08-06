@@ -1,0 +1,47 @@
+	/**
+	 * Method overrides default status line label provider because HTML version
+	 * can freeze UI during searching image for status line for large PHP files.
+	 * 
+	 * @see http://eclip.se\474115
+	 */
+	@Override
+	public ILabelProvider getStatusLineLabelProvider(
+			ISourceViewer sourceViewer) {
+		if (fStatusLineLabelProvider == null) {
+			fStatusLineLabelProvider = new JFaceNodeLabelProvider() {
+				public String getText(Object element) {
+					if (element == null)
+						return null;
+
+					StringBuffer s = new StringBuffer();
+					Node node = (Node) element;
+					while (node != null) {
+						if (node.getNodeType() != Node.DOCUMENT_NODE) {
+							s.insert(0, super.getText(node));
+						}
+
+						if (node.getNodeType() == Node.ATTRIBUTE_NODE)
+							node = ((Attr) node).getOwnerElement();
+						else
+							node = node.getParentNode();
+
+						if (node != null
+								&& node.getNodeType() != Node.DOCUMENT_NODE) {
+							s.insert(0, IPath.SEPARATOR);
+						}
+					}
+					return s.toString();
+				}
+
+				@Override
+				public Image getImage(Object element) {
+					if (element instanceof ElementImplForPhp) {
+						return null;
+					}
+					return super.getImage(element);
+				}
+			};
+		}
+		return fStatusLineLabelProvider;
+	}
+
