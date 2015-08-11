@@ -3,20 +3,6 @@
 
 		fNodes.push(anonymousClassDeclaration);
 
-		ASTNode parentDeclaration = null;
-		if (!declarations.empty()) {
-			parentDeclaration = declarations.peek();
-		}
-
-		if (parentDeclaration instanceof MethodDeclaration) {
-			if (fLastNamespace == null) {
-				deferredDeclarations.add(anonymousClassDeclaration);
-			} else {
-				deferredNamespacedDeclarations.add(anonymousClassDeclaration);
-			}
-			return false;
-		}
-
 		declarations.push(anonymousClassDeclaration);
 
 		for (PHPSourceElementRequestorExtension visitor : extensions) {
@@ -60,8 +46,11 @@
 		mi.name = name;
 		mi.modifiers = Modifiers.AccPrivate | IPHPModifiers.AccAnonymous;
 
-		mi.nameSourceStart = anonymousClassDeclaration.sourceStart();
-		mi.nameSourceEnd = anonymousClassDeclaration.sourceEnd();
+		if (fLastInstanceCreation != null) {
+			Expression className = fLastInstanceCreation.getClassName();
+			mi.nameSourceStart = className.sourceStart();
+			mi.nameSourceEnd = className.sourceEnd() - 1;
+		}
 		mi.declarationStart = mi.nameSourceStart;
 
 		mi.superclasses = superClasses.toArray(new String[0]);
