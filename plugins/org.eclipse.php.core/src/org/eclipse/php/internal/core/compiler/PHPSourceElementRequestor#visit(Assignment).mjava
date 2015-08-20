@@ -14,6 +14,7 @@
 					info.nameSourceEnd = ref.sourceEnd() - 1;
 					info.nameSourceStart = ref.sourceStart();
 					info.declarationStart = assignment.sourceStart();
+					fInfoStack.push(info);
 					fRequestor.enterField(info);
 					fNodes.push(assignment);
 				}
@@ -30,16 +31,28 @@
 					return false;
 				}
 			}
-
+			if (!fInfoStack.isEmpty() && fInfoStack
+					.peek() instanceof ISourceElementRequestor.FieldInfo) {
+				if (!fDeferredVariables.containsKey(fInfoStack.peek())) {
+					fDeferredVariables.put(fInfoStack.peek(),
+							new LinkedList<Assignment>());
+				}
+				fDeferredVariables.get(fInfoStack.peek()).add(assignment);
+				return false;
+			}
 			ISourceElementRequestor.FieldInfo info = new ISourceElementRequestor.FieldInfo();
 			info.modifiers = Modifiers.AccPublic;
 			info.name = ((VariableReference) left).getName();
 			info.nameSourceEnd = left.sourceEnd() - 1;
 			info.nameSourceStart = left.sourceStart();
 			info.declarationStart = assignment.sourceStart();
+
+			fInfoStack.push(info);
 			fRequestor.enterField(info);
+
 			fNodes.push(assignment);
 		}
 		return true;
+
 	}
 
