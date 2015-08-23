@@ -73,7 +73,7 @@
 			}
 
 			PHPVersion phpVersion = ProjectOptions.getPhpVersion(modelElement);
-			// if the class/namesapce has not been imported
+			// if the class/namespace has not been imported
 			// add use statement
 			if (program != null
 					&& !importedTypeName.contains(typeName)
@@ -98,16 +98,42 @@
 							.statements();
 					// insert in the beginning of the current
 					// namespace:
-					insertUseStatement(offset, newUseStatement, statements,
+					addUseStatement(offset, newUseStatement, statements,
 							document);
 				} else {
-					insertUseStatement(offset, newUseStatement,
+					addUseStatement(offset, newUseStatement,
 							program.statements(), document);
 				}
 
 				ast.setInsertUseStatement(true);
 				TextEdit edits = program.rewrite(document,
 						createOptions(modelElement));
+				// workaround for bug 400976:
+				// when current offset is in a php section that only contains
+				// AstErrors, the use statements will be added at the beginning
+				// of the previous php section.
+				// If luckily there is a previous php section in the document,
+				// we're good, otherwise we have to create one now at the
+				// beginning of the document.
+				// Text edits that will be correctly inserted in an existing
+				// php section have all their offset > 0, so looking for text
+				// edits having all their offset = 0 (and their length = 0)
+				// should be enough to detect use statements that will be
+				// wrongly inserted outside any existing php section...
+				if (new Region(0, 0).equals(edits.getRegion())) {
+					String lineDelim = TextUtilities
+							.getDefaultLineDelimiter(document);
+					MultiTextEdit newEdits = new MultiTextEdit();
+					newEdits.addChild(new InsertEdit(0, "<?php"));
+					newEdits.addChild(new InsertEdit(0, lineDelim));
+					for (TextEdit edit : edits.getChildren()) {
+						// we have to copy the text edit to reset its parent
+						newEdits.addChild(edit.copy());
+					}
+					newEdits.addChild(new InsertEdit(0, "?>"));
+					newEdits.addChild(new InsertEdit(0, lineDelim));
+					edits = newEdits;
+				}
 				edits.apply(document);
 				ast.setInsertUseStatement(false);
 
