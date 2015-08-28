@@ -1,30 +1,20 @@
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.eclipse.jdt.core.dom.ASTVisitor#visit(Program)
-	 */
 	public boolean visit(Program node) {
 		if (!hasChildrenChanges(node)) {
 			return doVisitUnchangedChildren(node);
 		}
-		int pos = content.length; // TODO - Check if this is right (using 0
-		// cause for the code to be inserted before
-		// the <?php section).
+		int pos = node.getStart() + 2;
+		if (content.length > node.getStart() + 3) {
+			if (Character.toLowerCase(content[node.getStart() + 2]) == 'p'
+					&& Character
+							.toLowerCase(content[node.getStart() + 3]) == 'h'
+					&& Character
+							.toLowerCase(content[node.getStart() + 4]) == 'p') {
+				pos += 4;
+			}
+		}
 		rewriteNodeList(node, Program.STATEMENTS_PROPERTY, pos, "", //$NON-NLS-1$
 				getLineDelimiter());
-		// int startPos = rewriteNode(node, Program.PACKAGE_PROPERTY, 0,
-		// ASTRewriteFormatter.NONE);
-		//
-		// if (getChangeKind(node, Program.PACKAGE_PROPERTY) ==
-		// RewriteEvent.INSERTED) {
-		// doTextInsert(0, getLineDelimiter(), getEditGroup(node,
-		// Program.PACKAGE_PROPERTY));
-		// }
-		//
-		// startPos = rewriteParagraphList(node, Program.IMPORTS_PROPERTY,
-		// startPos, 0, 0, 2);
-		// rewriteParagraphList(node, Program.TYPES_PROPERTY, startPos, 0, -1,
-		// 2);
+
 		return false;
 	}
 

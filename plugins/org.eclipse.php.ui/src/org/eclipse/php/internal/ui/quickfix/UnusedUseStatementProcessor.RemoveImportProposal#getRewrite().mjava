@@ -1,0 +1,25 @@
+		protected ASTRewrite getRewrite() throws CoreException {
+			ASTNode coveringNode = context.getCoveringNode();
+			ASTRewrite rewrite = ASTRewrite.create(coveringNode.getAST());
+			TextEditGroup editGroup = new TextEditGroup(
+					Messages.UnusedUseStatementProcessor_RemoveImport);
+			if (coveringNode != null) {
+				if (coveringNode instanceof Identifier) {
+					coveringNode = coveringNode.getParent();
+				}
+				if (coveringNode instanceof NamespaceName) {
+					coveringNode = coveringNode.getParent();
+				}
+				if (coveringNode instanceof UseStatement) {
+					rewrite.remove(coveringNode, editGroup);
+				} else if (coveringNode instanceof UseStatementPart) {
+					UseStatement part = (UseStatement) coveringNode.getParent();
+					if (part.parts().size() == 1) {
+						rewrite.remove(part, editGroup);
+					} else {
+						rewrite.remove(coveringNode, editGroup);
+					}
+				}
+			}
+			return rewrite;
+		}
