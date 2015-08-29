@@ -1,3 +1,4 @@
+	@SuppressWarnings("deprecation")
 	public ProblemLocation(IProblem problem) {
 		if (problem.getID() != null) {
 			Scanner scan = new Scanner(problem.getID().name());
@@ -7,6 +8,7 @@
 				fId = -1;
 			}
 			fIdentifier = problem.getID();
+			scan.close();
 		} else {
 			fId = -1;
 			fIdentifier = null;
@@ -15,7 +17,13 @@
 		fOffset = problem.getSourceStart();
 		fLength = problem.getSourceEnd() - fOffset + 1;
 		fIsError = problem.isError();
-		fMarkerType = problem instanceof CategorizedProblem ? ((CategorizedProblem) problem)
-				.getMarkerType() : IScriptModelMarker.DLTK_MODEL_PROBLEM_MARKER;
+		if (problem.getID() instanceof IProblemIdentifierExtension) {
+			fMarkerType = ((IProblemIdentifierExtension) problem.getID())
+					.getMarkerType();
+		} else if (problem instanceof CategorizedProblem) {
+			fMarkerType = ((CategorizedProblem) problem).getMarkerType();
+		} else {
+			fMarkerType = IModelMarker.SCRIPT_MODEL_PROBLEM_MARKER;
+		}
 	}
 
