@@ -1,0 +1,29 @@
+	public boolean isValid(ISourceModule sourceModule, int offset,
+			CompletionRequestor requestor) {
+		if (!super.isValid(sourceModule, offset, requestor)) {
+			return false;
+		}
+		if (getPhpVersion().isLessThan(PHPVersion.PHP7_0)) {
+			return false;
+		}
+
+		TextSequence statementText = getStatementText();
+		int curr = statementText.length();
+		curr = PHPTextSequenceUtilities.readBackwardSpaces(statementText, curr);
+		if (curr < 1) {
+			return false;
+		}
+		curr = PHPTextSequenceUtilities.readIdentifierStartIndex(statementText,
+				curr, false);
+		if (curr < 1) {
+			return false;
+		}
+
+		curr = PHPTextSequenceUtilities.readBackwardSpaces(statementText, curr);
+		if (curr > 0 && statementText.charAt(curr - 1) == ':') {
+			return true;
+		}
+
+		return false;
+	}
+

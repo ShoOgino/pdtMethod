@@ -8,9 +8,8 @@
 		while (matcher.find()) {
 			// verify char before 'function' word.
 			int functionStart = matcher.start();
-			if (functionStart != 0
-					&& Character.isJavaIdentifierStart(textSequence
-							.charAt(functionStart - 1))) {
+			if (functionStart != 0 && Character.isJavaIdentifierStart(
+					textSequence.charAt(functionStart - 1))) {
 				continue;
 			}
 
@@ -20,14 +19,27 @@
 			if (PHPPartitionTypes.isPHPRegularState(type)) {
 				// verify the function is not closed.
 				int offset;
-				for (offset = matcher.end(); offset < textSequence.length(); offset++) {
+				boolean possibleReturnType = false;
+				boolean returnType = false;
+				for (offset = matcher.end(); offset < textSequence
+						.length(); offset++) {
 					if (textSequence.charAt(offset) == ')') {
 						// verify state
 						type = TextSequenceUtilities.getType(textSequence,
 								offset);
 						if (PHPPartitionTypes.isPHPRegularState(type)) {
-							break;
+							possibleReturnType = true;
 						}
+					} else if ((possibleReturnType || returnType)
+							&& textSequence.charAt(offset) == '{') {
+						break;
+					} else if (possibleReturnType
+							&& textSequence.charAt(offset) == ':') {
+						possibleReturnType = false;
+						returnType = true;
+					} else if (possibleReturnType && !Character
+							.isWhitespace(textSequence.charAt(offset))) {
+						break;
 					}
 				}
 				if (offset == textSequence.length()) {
