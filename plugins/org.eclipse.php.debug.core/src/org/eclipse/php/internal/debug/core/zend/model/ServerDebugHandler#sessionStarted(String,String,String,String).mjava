@@ -1,11 +1,35 @@
 	public void sessionStarted(String remoteFile, String uri, String query,
 			String options) {
 		super.sessionStarted(remoteFile, uri, query, options);
-
 		if (isUsingPathMapper()) {
-			// Hack for the case when htdocs is symlinked to the workspace.
-			// Zend Debugger resolves symbolic links later, and it fucks up the
-			// path mapper:
+			/*
+			 * Hack for the case when htdocs is symlinked to the workspace. Zend
+			 * Debugger resolves symbolic links later and it breaks path mapper.
+			 */
+			ILaunchConfiguration launchConfiguration = fDebugTarget.getLaunch()
+					.getLaunchConfiguration();
+			try {
+				String lcServerName = launchConfiguration
+						.getAttribute(Server.NAME, (String) null);
+				if (lcServerName == null || lcServerName.isEmpty()) {
+					// Bind server with this configuration, if we can find any.
+					String serverName = null;
+					Server serverLookup = ServersManager
+							.findByURL(fDebugTarget.getURL());
+					if (serverLookup != null)
+						serverName = serverLookup.getName();
+					if (serverName != null) {
+						ILaunchConfigurationWorkingCopy wc = launchConfiguration
+								.getWorkingCopy();
+						wc.setAttribute(Server.NAME, serverName);
+						synchronized (launchConfiguration) {
+							wc.doSave();
+						}
+					}
+				}
+			} catch (CoreException e) {
+				DebugPlugin.log(e);
+			}
 			try {
 				File file = new File(remoteFile);
 				if (file.exists()) {
@@ -13,7 +37,6 @@
 				}
 			} catch (Exception e) {
 			}
-
 			fDebugTarget.mapFirstDebugFile(remoteFile);
 		}
 
@@ -21,7 +44,6 @@
 		if (!fDebugTarget.isPHPCGI()) {
 			fDebugTarget.setServerWindows(false);
 		}
-
 		StartLock startLock = fDebugTarget.getStartLock();
 		synchronized (startLock) {
 			if (startLock.isRunStart()) {

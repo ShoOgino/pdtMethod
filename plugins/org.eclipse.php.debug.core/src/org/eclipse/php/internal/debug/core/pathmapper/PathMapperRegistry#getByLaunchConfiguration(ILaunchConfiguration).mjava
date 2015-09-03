@@ -12,17 +12,25 @@
 			String serverName = launchConfiguration.getAttribute(Server.NAME,
 					(String) null);
 			if (serverName != null) {
+				/*
+				 * Try to find path mapper with the use of the server that might
+				 * be bound to the corresponding launch configuration.
+				 */
 				pathMapper = getByServer(ServersManager.getServer(serverName));
-			}/*
-			 * else { String phpExe =
-			 * launchConfiguration.getAttribute(PHPCoreConstants
-			 * .ATTR_EXECUTABLE_LOCATION, (String) null); String phpIni =
-			 * launchConfiguration
-			 * .getAttribute(PHPCoreConstants.ATTR_INI_LOCATION, (String) null);
-			 * if (phpExe != null) { pathMapper =
-			 * getByPHPExe(PHPexes.getInstance().getItemForFile(phpExe,
-			 * phpIni)); } }
-			 */
+			} else {
+				/*
+				 * If no server could be found (launch configuration for
+				 * externally triggered sessions), create temporary one and bind
+				 * it with the launch configuration.
+				 */
+				pathMapper = getInstance().launchConfigPathMapper
+						.get(launchConfiguration);
+				if (pathMapper == null) {
+					pathMapper = new PathMapper();
+					getInstance().launchConfigPathMapper
+							.put(launchConfiguration, pathMapper);
+				}
+			}
 		} catch (CoreException e) {
 			PHPDebugPlugin.log(e);
 		}

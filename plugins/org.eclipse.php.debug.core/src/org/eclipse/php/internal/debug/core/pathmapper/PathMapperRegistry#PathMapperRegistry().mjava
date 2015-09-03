@@ -1,6 +1,15 @@
 	private PathMapperRegistry() {
+		// Make it weak to remove entry after dropping the launch configuration
+		launchConfigPathMapper = new WeakHashMap<ILaunchConfiguration, PathMapper>();
 		serverPathMapper = new HashMap<Server, PathMapper>();
 		phpExePathMapper = new HashMap<PHPexeItem, PathMapper>();
-		loadFromPreferences();
+		ownerListener = new MapperOwnerListener();
+		// Load persistent mappings from preferences
+		List<Map<String, Object>> elements = XMLPreferencesReader.read(
+				InstanceScope.INSTANCE.getNode(PHPDebugPlugin.ID),
+				PATH_MAPPER_PREF_KEY, true);
+		if (elements.size() == 1) {
+			restoreFromMap(elements.get(0));
+		}
 	}
 
