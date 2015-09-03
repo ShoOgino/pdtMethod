@@ -1,47 +1,33 @@
-	public PathEntry[] filter(PathEntry[] entries,
+	public PathEntry[] filter(final PathEntry[] entries,
 			final VirtualPath remotePath, final IDebugTarget debugTarget) {
-		entries = removeDuplicate(entries);
 		final List<PathEntry> l = new LinkedList<PathEntry>();
-		final PathEntry[] mostMatchEntries = getMostMatchEntries(entries,
-				remotePath);
-		PathEntry matchByConfig = null;
-		if (mostMatchEntries.length == 0 || mostMatchEntries.length > 1) {
-			matchByConfig = getMatchFromLaunchConfiguration(entries,
-					debugTarget.getLaunch().getLaunchConfiguration());
-		}
-		if (mostMatchEntries.length == 1) {
-			l.add(mostMatchEntries[0]);
-		} else if (matchByConfig != null) {
-			l.add(matchByConfig);
-		} else {
-			Runnable r = new Runnable() {
-				public void run() {
-					// grab usable shell from somewhere:
-					Shell shell = Display.getDefault().getActiveShell();
-					if (shell == null) {
-						IWorkbenchWindow window = PlatformUI.getWorkbench()
-								.getActiveWorkbenchWindow();
-						if (window == null) {
-							IWorkbenchWindow windows[] = PlatformUI
-									.getWorkbench().getWorkbenchWindows();
-							window = windows[0];
-						}
-						if (window != null) {
-							shell = window.getShell();
-						}
+		Runnable r = new Runnable() {
+			public void run() {
+				// grab usable shell from somewhere:
+				Shell shell = Display.getDefault().getActiveShell();
+				if (shell == null) {
+					IWorkbenchWindow window = PlatformUI.getWorkbench()
+							.getActiveWorkbenchWindow();
+					if (window == null) {
+						IWorkbenchWindow windows[] = PlatformUI.getWorkbench()
+								.getWorkbenchWindows();
+						window = windows[0];
 					}
-					PathEntry entry = runFilterDialog(shell, remotePath,
-							mostMatchEntries, debugTarget);
-					if (entry != null) {
-						l.add(entry);
+					if (window != null) {
+						shell = window.getShell();
 					}
 				}
-			};
-			if (Display.getCurrent() != null) {
-				r.run();
-			} else {
-				Display.getDefault().syncExec(r);
+				PathEntry entry = runFilterDialog(shell, remotePath, entries,
+						debugTarget);
+				if (entry != null) {
+					l.add(entry);
+				}
 			}
+		};
+		if (Display.getCurrent() != null) {
+			r.run();
+		} else {
+			Display.getDefault().syncExec(r);
 		}
 		return l.toArray(new PathEntry[l.size()]);
 	}
