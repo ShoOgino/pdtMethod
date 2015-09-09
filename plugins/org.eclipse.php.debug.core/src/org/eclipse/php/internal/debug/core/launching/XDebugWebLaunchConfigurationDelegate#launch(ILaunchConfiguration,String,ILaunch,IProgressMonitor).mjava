@@ -1,3 +1,12 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.eclipse.debug.core.model.ILaunchConfigurationDelegate#launch(org.
+	 * eclipse.debug.core.ILaunchConfiguration, java.lang.String,
+	 * org.eclipse.debug.core.ILaunch,
+	 * org.eclipse.core.runtime.IProgressMonitor)
+	 */
 	public void launch(ILaunchConfiguration configuration, String mode,
 			ILaunch launch, IProgressMonitor monitor) throws CoreException {
 		// Notify all listeners of a pre-launch event.
@@ -105,6 +114,12 @@
 				target = new DBGpTarget(launch, launchScript, startStopURLs[1],
 						ideKey, null, stopAtFirstLine);
 				target.setPathMapper(PathMapperRegistry.getByServer(server));
+				IProcess process = new PHPProcess(launch, PHPDebugCoreMessages.XDebugWebLaunchConfigurationDelegate_PHP_process);
+				process.setAttribute(IProcess.ATTR_PROCESS_TYPE,
+						IPHPDebugConstants.PHPProcessType);
+				((DBGpTarget) target).setProcess(process);
+				((PHPProcess) process).setDebugTarget(target);
+				launch.addProcess(process);
 			}
 			DBGpSessionHandler.getInstance().addSessionListener(
 					(IDBGpSessionListener) target);
