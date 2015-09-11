@@ -37,6 +37,7 @@
 
 			// go over the file, one line at a time, and search for the markers
 			String curLine = reader.readLine();
+			int lineNumber = 0;
 			while (curLine != null) {
 				for (int i = 0; i < markers.length; i++) {
 					int lineOffset = curLine.indexOf(markers[i]);
@@ -48,8 +49,13 @@
 					}
 				}
 				// update global offset
-				offset += curLine.length() + endLine;
+				String curLineDelimiter = structuredDocument
+						.getLineDelimiter(lineNumber);
+				// use original line endings to shift the offset
+				offset += curLine.length() + (curLineDelimiter != null
+						? curLineDelimiter.length() : 0);
 				curLine = reader.readLine();
+				lineNumber++;
 			}
 		} finally {
 			reader.close();
