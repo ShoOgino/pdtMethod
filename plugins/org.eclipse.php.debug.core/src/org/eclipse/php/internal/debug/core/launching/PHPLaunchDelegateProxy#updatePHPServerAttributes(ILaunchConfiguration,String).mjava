@@ -1,5 +1,6 @@
 	private ILaunchConfiguration updatePHPServerAttributes(
-			ILaunchConfiguration configuration) throws CoreException {
+			ILaunchConfiguration configuration, String mode)
+					throws CoreException {
 		ILaunchConfigurationWorkingCopy wc = configuration.getWorkingCopy();
 		Server server = ServersManager
 				.getServer(configuration.getAttribute(Server.NAME, "")); //$NON-NLS-1$
@@ -12,6 +13,12 @@
 			wc.setAttribute(
 					PHPDebugCorePreferenceNames.CONFIGURATION_DELEGATE_CLASS,
 					debuggerConfiguration.getWebLaunchDelegateClass());
+			if ((mode.equals(ILaunchManager.DEBUG_MODE)
+					|| mode.equals(ILaunchManager.PROFILE_MODE))
+					&& debuggerConfiguration.getDebuggerId()
+							.equals(PHPDebuggersRegistry.NONE_DEBUGGER_ID)) {
+				wc.setAttribute(IDebugUIConstants.ATTR_PRIVATE, true);
+			}
 			configuration = wc.doSave();
 		}
 		return configuration;
