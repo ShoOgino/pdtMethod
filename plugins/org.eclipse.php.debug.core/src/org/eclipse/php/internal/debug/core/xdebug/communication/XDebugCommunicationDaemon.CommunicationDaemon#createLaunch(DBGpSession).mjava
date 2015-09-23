@@ -36,6 +36,8 @@
 			srcLocator.initializeParticipants();
 			ILaunch remoteLaunch = new XDebugLaunch(launchConfig,
 					ILaunchManager.DEBUG_MODE, srcLocator);
+			// Add the remote launch to the launch manager
+			DebugPlugin.getDefault().getLaunchManager().addLaunch(remoteLaunch);
 			boolean multiSession = XDebugPreferenceMgr.useMultiSession();
 			if (session.getSessionId() == null && !multiSession) {
 				// Non multi-session web launch
@@ -116,37 +118,6 @@
 				 * Probably could do waitForInitialSession as session has
 				 * already been set.
 				 */
-			}
-
-			// add the remote launch to the launch manager
-			DebugPlugin.getDefault().getLaunchManager().addLaunch(remoteLaunch);
-
-			/*
-			 * Check to see owning session target is still active, if so do a
-			 * perspective switch
-			 */
-			if (target.isTerminated() == false
-					&& target.isTerminating() == false) {
-				Display.getDefault().asyncExec(new Runnable() {
-
-					public void run() {
-						IWorkbenchWindow window = PlatformUI.getWorkbench()
-								.getActiveWorkbenchWindow();
-						// Code the Debug perspective.
-						// org.eclipse.debug.ui.DebugPerspective
-						// also look at the PHPLaunchUtilities
-						if (!PerspectiveManager.isCurrentPerspective(window,
-								IDebugUIConstants.ID_DEBUG_PERSPECTIVE)) {
-							if (PerspectiveManager.shouldSwitchPerspective(
-									window,
-									IDebugUIConstants.ID_DEBUG_PERSPECTIVE)) {
-								PerspectiveManager.switchToPerspective(window,
-										IDebugUIConstants.ID_DEBUG_PERSPECTIVE);
-							}
-						}
-					}
-
-				});
 			}
 		}
 
