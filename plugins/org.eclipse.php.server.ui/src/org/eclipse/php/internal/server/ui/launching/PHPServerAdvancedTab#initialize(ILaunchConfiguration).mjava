@@ -1,18 +1,17 @@
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * org.eclipse.debug.ui.ILaunchConfigurationTab#initializeFrom(org.eclipse
-	 * .debug.core.ILaunchConfiguration)
+	 * @see org.eclipse.php.internal.debug.ui.launching.
+	 * AbstractPHPLaunchConfigurationTab#initialize(org.eclipse.debug.core.
+	 * ILaunchConfiguration)
 	 */
-	public void initializeFrom(ILaunchConfiguration configuration) {
-		launchConfiguration = configuration;
+	public void initialize(ILaunchConfiguration configuration) {
 		initializeDebuggerControl(configuration);
 		configureDebugger.setEnabled(!ServersManager.isNoneServer(getServer()));
-		boolean isXdebugger = isXdebug();
+		boolean isXdebug = isXDebug();
 		try {
-			boolean isUsingTunnel = configuration.getAttribute(
-					IPHPDebugConstants.USE_SSH_TUNNEL, false);
+			boolean isUsingTunnel = configuration
+					.getAttribute(IPHPDebugConstants.USE_SSH_TUNNEL, false);
 			debugThroughTunnel.setSelection(isUsingTunnel);
 			updateTunnelComponents(isUsingTunnel);
 			if (isUsingTunnel) {
@@ -22,9 +21,8 @@
 					// Load the password from the Secured Storage
 					try {
 						password.setText(PHPLaunchUtilities
-								.getSecurePreferences(
-										PHPLaunchUtilities
-												.getDebugHost(launchConfiguration))
+								.getSecurePreferences(PHPLaunchUtilities
+										.getDebugHost(getConfiguration()))
 								.get(userName.getText(), "")); //$NON-NLS-1$
 					} catch (StorageException e) {
 						Logger.logException(
@@ -38,19 +36,18 @@
 			// Zend debugger have the option not to use a browser to start a
 			// session. Since XDebug seems to start only
 			// with a browser instance, we check for it and enable it anyway.
-			isOpenInBrowser = isXdebugger
-					|| configuration.getAttribute(
-							IPHPDebugConstants.OPEN_IN_BROWSER,
-							PHPDebugPlugin.getOpenInBrowserOption());
+			isOpenInBrowser = isXdebug || configuration.getAttribute(
+					IPHPDebugConstants.OPEN_IN_BROWSER,
+					PHPDebugPlugin.getOpenInBrowserOption());
 			// isUsingExternalBrowser = internalWebBrowserAvailable
 			// && configuration.getAttribute(
 			// IPHPDebugConstants.USE_INTERNAL_BROWSER, false);
 			openBrowser.setSelection(isOpenInBrowser);
-			if (isXdebugger) {
+			if (isXdebug) {
 				openBrowser.setEnabled(false);
 			}
 
-			sessionGroup.setVisible(!isXdebugger);
+			sessionGroup.setVisible(!isXdebug);
 
 			String debugSetting = configuration.getAttribute(
 					IPHPDebugConstants.DEBUGGING_PAGES,
@@ -79,8 +76,8 @@
 			updateDebugFrom();
 			// in case we are dealing with XDebug, enable the browser control
 			// anyway and do not restrict to debug mode
-			enableSessionSettingButtons(isXdebugger
-					|| (isOpenInBrowser && ILaunchManager.DEBUG_MODE
+			enableSessionSettingButtons(
+					isXdebug || (isOpenInBrowser && ILaunchManager.DEBUG_MODE
 							.equals(getLaunchConfigurationDialog().getMode())));
 			if (breakOnFirstLine != null) {
 				// init the breakpoint settings

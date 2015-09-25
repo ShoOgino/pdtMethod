@@ -1,0 +1,23 @@
+	/**
+	 * Populates the debuggers with the debuggers defined in the workspace.
+	 */
+	protected void updateDebugger() {
+		Server server = getServer();
+		if (server == null) {
+			server = ServersManager.getDefaultServer(null);
+		}
+		debuggerId = server.getDebuggerId();
+		debuggerName.setText(PHPDebuggersRegistry.getDebuggerName(debuggerId));
+		// Update debugger type in original configuration
+		try {
+			ILaunchConfigurationWorkingCopy wc = getOriginalConfiguration()
+					.getWorkingCopy();
+			wc.setAttribute(PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID,
+					debuggerId);
+			wc.doSave();
+		} catch (CoreException e) {
+			Logger.logException(e);
+		}
+		handleDebuggerChanged();
+	}
+
