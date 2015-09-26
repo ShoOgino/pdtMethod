@@ -13,18 +13,23 @@
 		if (!isTernaryOperator) {
 			appendToBuffer(QUESTION_MARK);
 		}
-		if (this.preferences.insert_space_after_conditional_question_mark) {
-			insertSpace();
-		}
+
 		Expression ifTrue = conditionalExpression.getIfTrue();
 		Expression ifFalse = conditionalExpression.getIfFalse();
 		int offset = conditionalExpression.getCondition().getStart();
 
 		int colonOffset = 0;
 		if (ifTrue != null) {
+			if (this.preferences.insert_space_after_conditional_question_mark) {
+				insertSpace();
+			}
 			handleChars(conditionalExpression.getCondition().getEnd(),
 					ifTrue.getStart());
 			ifTrue.accept(this);
+			// iftrue -> iffalse
+			if (this.preferences.insert_space_before_conditional_colon) {
+				insertSpace();
+			}
 		} else {
 			int length = offset;
 			if (ifFalse != null) {
@@ -36,10 +41,6 @@
 					colonOffset);
 		}
 
-		// iftrue -> iffalse
-		if (this.preferences.insert_space_before_conditional_colon) {
-			insertSpace();
-		}
 		if (isTernaryOperator) {
 			appendToBuffer(COLON);
 
