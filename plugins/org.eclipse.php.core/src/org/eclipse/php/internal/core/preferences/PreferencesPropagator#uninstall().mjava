@@ -5,29 +5,27 @@
 		if (!isInstalled) {
 			return;
 		}
+		InstanceScope.INSTANCE.getNode(nodeQualifier).removePreferenceChangeListener(propertyChangeListener);
 		// remove the node listeners
-		Iterator projects = projectToNodeListener.keySet().iterator();
+		Iterator<IProject> projects = projectToNodeListener.keySet().iterator();
 		try {
 			while (projects.hasNext()) {
-				Object project = projects.next();
-				ProjectScope scope = (ProjectScope) projectToScope.get(project);
+				IProject project = projects.next();
+				ProjectScope scope = projectToScope.get(project);
 				IEclipsePreferences node = scope.getNode(nodeQualifier);
 				if (node != null) {
-					node
-							.removeNodeChangeListener((INodeChangeListener) projectToNodeListener
-									.get(project));
+					node.removeNodeChangeListener(projectToNodeListener.get(project));
 				}
 			}
 		} catch (Exception e) {
 		}
 		// uninstall the project propagators
-		Iterator propagators = projectToPropagator.values().iterator();
+		Iterator<ProjectPreferencesPropagator> propagators = projectToPropagator.values().iterator();
 		while (propagators.hasNext()) {
-			((ProjectPreferencesPropagator) propagators.next()).uninstall();
+			propagators.next().uninstall();
 		}
 
-		preferenceChangeListeners = null; // TODO - remove the listening, if
-											// needed ???
+		preferenceChangeListeners = null;
 		projectToScope = null;
 		projectToPropagator = null;
 		projectToNodeListener = null;

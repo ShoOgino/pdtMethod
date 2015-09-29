@@ -16,8 +16,7 @@
 		int entryKind = entryKindFromString(entryKindAttr);
 		switch (entryKind) {
 		case IBuildpathEntry.BPE_PROJECT:
-			path = ResourcesPlugin.getWorkspace().getRoot().getProject(
-					resourceAttr).getFullPath();
+			path = ResourcesPlugin.getWorkspace().getRoot().getProject(resourceAttr).getFullPath();
 			if (path != null) {
 				entry = DLTKCore.newProjectEntry(path, isExported);
 			}
@@ -26,35 +25,27 @@
 			if ("var".equalsIgnoreCase(entryKindAttr)) { //$NON-NLS-1$
 				variableName = pathAttr;
 				if (variableName != null && variableName.length() > 0) {
-					String resolvedPath = ""; //$NON-NLS-1$
-					Preferences pluginPreferences = PHPCorePlugin.getDefault()
-							.getPluginPreferences();
-					String pathString = pluginPreferences
-							.getString(variableName);
+					String pathString = PreferencesSupport.getWorkspacePreferencesValue(PHPCorePlugin.ID,
+							PHPCorePlugin.ID);
 					// try to read from default values
 					if (pathString != null) {
-						path = IncludePathVariableManager.instance()
-								.getIncludePathVariable(pathString);
+						path = IncludePathVariableManager.instance().getIncludePathVariable(pathString);
 						// second chance, try to read from old workspace
 						// configuration
 						if (path == null) {
-							path = IncludePathVariableManager.instance()
-									.resolveVariablePath(variableName);
+							path = IncludePathVariableManager.instance().resolveVariablePath(variableName);
 						}
 					}
 
 					if (path != null) {
-						entry = DLTKCore
-								.newExtLibraryEntry(EnvironmentPathUtils
-										.getFullPath(LocalEnvironment
-												.getInstance(), path));
+						entry = DLTKCore.newExtLibraryEntry(
+								EnvironmentPathUtils.getFullPath(LocalEnvironment.getInstance(), path));
 					} else {
 						notImportedIncludePathVariableNames.add(variableName);
 					}
 				}
 			} else {
-				entry = DLTKCore.newLibraryEntry(new Path(pathAttr)
-						.makeAbsolute());
+				entry = DLTKCore.newLibraryEntry(new Path(pathAttr).makeAbsolute());
 			}
 		case IBuildpathEntry.BPE_CONTAINER:
 			break;

@@ -1,26 +1,21 @@
-	private void notifyEvent(PreferencesPropagatorEvent event,
-			String propertyKey, IProject project) {
+	private void notifyEvent(PreferencesPropagatorEvent event, String propertyKey, IProject project) {
 		synchronized (lock) {
 			if (project != null) {
 				// The event arrived from the NodePreferenceChangeListener when
 				// we moved to a project-specific settings.
-				ProjectPreferencesPropagator ppp = (ProjectPreferencesPropagator) projectToPropagator
-						.get(project);
+				ProjectPreferencesPropagator ppp = projectToPropagator.get(project);
 				if (ppp == null) {
-					ppp = new ProjectPreferencesPropagator(project,
-							nodeQualifier);
+					ppp = new ProjectPreferencesPropagator(project, nodeQualifier);
 					projectToPropagator.put(project, ppp);
 				}
 				ppp.notifyPropagatorEvent(event);
 			} else {
-				List list = getPropagatorListeners(propertyKey);
+				List<IPreferencesPropagatorListener> list = getPropagatorListeners(propertyKey);
 				if (list == null)
 					return;
-				IPreferencesPropagatorListener[] listeners = new IPreferencesPropagatorListener[list
-						.size()];
-				list.toArray(listeners);
-				for (IPreferencesPropagatorListener element : listeners) {
-					element.preferencesEventOccured(event);
+				Iterator<IPreferencesPropagatorListener> iterator = list.iterator();
+				while (iterator.hasNext()) {
+					iterator.next().preferencesEventOccured(event);
 				}
 			}
 		}
