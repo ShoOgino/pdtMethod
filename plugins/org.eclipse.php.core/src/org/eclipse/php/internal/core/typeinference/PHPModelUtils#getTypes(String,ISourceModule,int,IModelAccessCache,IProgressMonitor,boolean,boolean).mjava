@@ -1,22 +1,18 @@
-	public static IType[] getTypes(String typeName, ISourceModule sourceModule,
-			int offset, IModelAccessCache cache, IProgressMonitor monitor,
-			boolean isType, boolean isGlobal) throws ModelException {
+	public static IType[] getTypes(String typeName, ISourceModule sourceModule, int offset, IModelAccessCache cache,
+			IProgressMonitor monitor, boolean isType, boolean isGlobal) throws ModelException {
 
 		if (typeName == null || typeName.length() == 0) {
 			return PhpModelAccess.NULL_TYPES;
 		}
 
 		if (!isGlobal) {
-			String namespace = extractNamespaceName(typeName, sourceModule,
-					offset);
+			String namespace = extractNamespaceName(typeName, sourceModule, offset);
 			typeName = extractElementName(typeName);
 			if (namespace != null) {
 				if (namespace.length() > 0) {
-					typeName = getRealName(typeName, sourceModule, offset,
-							typeName);
+					typeName = getRealName(typeName, sourceModule, offset, typeName);
 
-					IType[] types = getNamespaceType(namespace, typeName, true,
-							sourceModule, cache, monitor, isType);
+					IType[] types = getNamespaceType(namespace, typeName, true, sourceModule, cache, monitor, isType);
 					if (types.length > 0) {
 						return types;
 					}
@@ -25,12 +21,10 @@
 				// it's a global reference: \A
 			} else {
 				// look for the element in current namespace:
-				IType currentNamespace = getCurrentNamespace(sourceModule,
-						offset);
+				IType currentNamespace = getCurrentNamespace(sourceModule, offset);
 				if (currentNamespace != null) {
 					namespace = currentNamespace.getElementName();
-					IType[] types = getNamespaceType(namespace, typeName, true,
-							sourceModule, cache, monitor, isType);
+					IType[] types = getNamespaceType(namespace, typeName, true, sourceModule, cache, monitor, isType);
 					if (types.length > 0) {
 						return types;
 					}
@@ -41,15 +35,12 @@
 		List<IType> result = new ArrayList<IType>();
 		Collection<IType> types;
 		if (cache == null) {
-			IDLTKSearchScope scope = SearchEngine
-					.createSearchScope(sourceModule.getScriptProject());
+			IDLTKSearchScope scope = SearchEngine.createSearchScope(sourceModule.getScriptProject());
 			IType[] r;
 			if (isType) {
-				r = PhpModelAccess.getDefault().findTypes(typeName,
-						MatchRule.EXACT, 0, 0, scope, null);
+				r = PhpModelAccess.getDefault().findTypes(typeName, MatchRule.EXACT, 0, 0, scope, null);
 			} else {
-				r = PhpModelAccess.getDefault().findTraits(typeName,
-						MatchRule.EXACT, 0, 0, scope, null);
+				r = PhpModelAccess.getDefault().findTraits(typeName, MatchRule.EXACT, 0, 0, scope, null);
 			}
 			for (IType type : r) {
 				if (getCurrentNamespace(type) == null) {

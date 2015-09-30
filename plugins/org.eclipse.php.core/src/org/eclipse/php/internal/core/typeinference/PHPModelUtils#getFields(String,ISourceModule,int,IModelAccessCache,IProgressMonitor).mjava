@@ -17,21 +17,19 @@
 	 *         there's no IField found
 	 * @throws ModelException
 	 */
-	public static IField[] getFields(String fieldName,
-			ISourceModule sourceModule, int offset, IModelAccessCache cache,
+	public static IField[] getFields(String fieldName, ISourceModule sourceModule, int offset, IModelAccessCache cache,
 			IProgressMonitor monitor) throws ModelException {
 		if (fieldName == null || fieldName.length() == 0) {
 			return PhpModelAccess.NULL_FIELDS;
 		}
-		if (!fieldName.startsWith("$")) { // variables are not supported by //$NON-NLS-1$
+		if (!fieldName.startsWith("$")) { // variables are not //$NON-NLS-1$
+											// supported by
 			// namespaces in PHP 5.3
-			String namespace = extractNamespaceName(fieldName, sourceModule,
-					offset);
+			String namespace = extractNamespaceName(fieldName, sourceModule, offset);
 			fieldName = extractElementName(fieldName);
 			if (namespace != null) {
 				if (namespace.length() > 0) {
-					IField[] fields = getNamespaceField(namespace, fieldName,
-							true, sourceModule, cache, monitor);
+					IField[] fields = getNamespaceField(namespace, fieldName, true, sourceModule, cache, monitor);
 					if (fields.length > 0) {
 						return fields;
 					}
@@ -40,12 +38,10 @@
 				// it's a global reference: \C
 			} else {
 				// look for the element in current namespace:
-				IType currentNamespace = getCurrentNamespace(sourceModule,
-						offset);
+				IType currentNamespace = getCurrentNamespace(sourceModule, offset);
 				if (currentNamespace != null) {
 					namespace = currentNamespace.getElementName();
-					IField[] fields = getNamespaceField(namespace, fieldName,
-							true, sourceModule, cache, monitor);
+					IField[] fields = getNamespaceField(namespace, fieldName, true, sourceModule, cache, monitor);
 					if (fields.length > 0) {
 						return fields;
 					}
@@ -53,31 +49,24 @@
 					// For functions and constants, PHP will fall back to global
 					// functions or constants if a namespaced function or
 					// constant does not exist:
-					IDLTKSearchScope scope = SearchEngine
-							.createSearchScope(sourceModule.getScriptProject());
-					fields = PhpModelAccess.getDefault().findFields(fieldName,
-							MatchRule.EXACT,
-							Modifiers.AccConstant | Modifiers.AccGlobal, 0,
-							scope, null);
+					IDLTKSearchScope scope = SearchEngine.createSearchScope(sourceModule.getScriptProject());
+					fields = PhpModelAccess.getDefault().findFields(fieldName, MatchRule.EXACT,
+							Modifiers.AccConstant | Modifiers.AccGlobal, 0, scope, null);
 
-					Collection<IField> filteredElements = filterElements(
-							sourceModule, Arrays.asList(fields), cache, monitor);
-					return (IField[]) filteredElements
-							.toArray(new IField[filteredElements.size()]);
+					Collection<IField> filteredElements = filterElements(sourceModule, Arrays.asList(fields), cache,
+							monitor);
+					return (IField[]) filteredElements.toArray(new IField[filteredElements.size()]);
 				}
 			}
 		}
-		IDLTKSearchScope scope = SearchEngine.createSearchScope(sourceModule
-				.getScriptProject());
-		IField[] fields = PhpModelAccess.getDefault().findFields(fieldName,
-				MatchRule.EXACT, Modifiers.AccGlobal, 0, scope, null);
+		IDLTKSearchScope scope = SearchEngine.createSearchScope(sourceModule.getScriptProject());
+		IField[] fields = PhpModelAccess.getDefault().findFields(fieldName, MatchRule.EXACT, Modifiers.AccGlobal, 0,
+				scope, null);
 
 		Collection<IField> filteredElements = null;
 		if (fields != null) {
-			filteredElements = filterElements(sourceModule,
-					Arrays.asList(fields), cache, monitor);
-			return (IField[]) filteredElements
-					.toArray(new IField[filteredElements.size()]);
+			filteredElements = filterElements(sourceModule, Arrays.asList(fields), cache, monitor);
+			return (IField[]) filteredElements.toArray(new IField[filteredElements.size()]);
 		}
 		return PhpModelAccess.NULL_FIELDS;
 	}

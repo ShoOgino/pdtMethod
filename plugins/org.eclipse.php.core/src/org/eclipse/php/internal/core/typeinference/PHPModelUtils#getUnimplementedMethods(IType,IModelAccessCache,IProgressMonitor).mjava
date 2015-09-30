@@ -11,22 +11,24 @@
 	 * @return unimplemented methods
 	 * @throws ModelException
 	 */
-	public static IMethod[] getUnimplementedMethods(IType type,
-			IModelAccessCache cache, IProgressMonitor monitor)
+	public static IMethod[] getUnimplementedMethods(IType type, IModelAccessCache cache, IProgressMonitor monitor)
 			throws ModelException {
 
 		HashMap<String, IMethod> abstractMethods = new HashMap<String, IMethod>();
 		HashSet<String> nonAbstractMethods = new HashSet<String>();
 
-		internalGetUnimplementedMethods(type, nonAbstractMethods,
-				abstractMethods, new HashSet<String>(), cache, monitor, true);
+		internalGetUnimplementedMethods(type, nonAbstractMethods, abstractMethods, new HashSet<String>(), cache,
+				monitor, true);
 
 		for (String methodName : nonAbstractMethods) {
-			abstractMethods.remove(methodName);
+			for (String key : abstractMethods.keySet()) {
+				if (methodName.equalsIgnoreCase(key)) {
+					abstractMethods.remove(key);
+				}
+			}
 		}
 
 		Collection<IMethod> unimplementedMethods = abstractMethods.values();
-		return (IMethod[]) unimplementedMethods
-				.toArray(new IMethod[unimplementedMethods.size()]);
+		return (IMethod[]) unimplementedMethods.toArray(new IMethod[unimplementedMethods.size()]);
 	}
 

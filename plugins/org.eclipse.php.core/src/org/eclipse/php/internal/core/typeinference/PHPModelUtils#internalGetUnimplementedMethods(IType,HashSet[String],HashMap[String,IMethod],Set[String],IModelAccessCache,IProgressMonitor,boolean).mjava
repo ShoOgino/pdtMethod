@@ -1,9 +1,6 @@
-	private static void internalGetUnimplementedMethods(IType type,
-			HashSet<String> nonAbstractMethods,
-			HashMap<String, IMethod> abstractMethods,
-			Set<String> processedTypes, IModelAccessCache cache,
-			IProgressMonitor monitor, boolean checkConstructor)
-			throws ModelException {
+	private static void internalGetUnimplementedMethods(IType type, HashSet<String> nonAbstractMethods,
+			HashMap<String, IMethod> abstractMethods, Set<String> processedTypes, IModelAccessCache cache,
+			IProgressMonitor monitor, boolean checkConstructor) throws ModelException {
 
 		int typeFlags = type.getFlags();
 		IMethod[] methods = getTypeMethod(type, "", false); //$NON-NLS-1$
@@ -36,31 +33,23 @@
 
 				Collection<IType> types = null;
 				if (cache == null) {
-					IDLTKSearchScope scope = SearchEngine
-							.createSearchScope(type.getScriptProject());
-					IType[] superTypes = PhpModelAccess.getDefault().findTypes(
-							superClass, MatchRule.EXACT, 0,
+					IDLTKSearchScope scope = SearchEngine.createSearchScope(type.getScriptProject());
+					IType[] superTypes = PhpModelAccess.getDefault().findTypes(superClass, MatchRule.EXACT, 0,
 							Modifiers.AccNameSpace, scope, null);
-					types = fileNetworkFilter(type.getSourceModule(),
-							Arrays.asList(superTypes), null, monitor);
+					types = fileNetworkFilter(type.getSourceModule(), Arrays.asList(superTypes), null, monitor);
 				} else {
 					String namespaceName = null;
-					int i = superClass
-							.lastIndexOf(NamespaceReference.NAMESPACE_SEPARATOR);
+					int i = superClass.lastIndexOf(NamespaceReference.NAMESPACE_SEPARATOR);
 					if (i != -1) {
 						namespaceName = superClass.substring(0, i);
 						superClass = superClass.substring(i + 1);
 					}
-					types = cache.getClassesOrInterfaces(
-							type.getSourceModule(), superClass, namespaceName,
-							monitor);
+					types = cache.getClassesOrInterfaces(type.getSourceModule(), superClass, namespaceName, monitor);
 				}
 				if (types != null) {
 					for (IType superType : types) {
-						internalGetUnimplementedMethods(superType,
-								nonAbstractMethods, abstractMethods,
-								processedTypes, cache, monitor,
-								checkConstructor);
+						internalGetUnimplementedMethods(superType, nonAbstractMethods, abstractMethods, processedTypes,
+								cache, monitor, checkConstructor);
 					}
 				}
 			}

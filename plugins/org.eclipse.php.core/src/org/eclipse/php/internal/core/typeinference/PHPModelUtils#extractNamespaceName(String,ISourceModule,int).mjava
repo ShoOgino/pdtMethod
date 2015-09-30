@@ -14,33 +14,26 @@
 	 *   1. &lt;code&gt;&quot;&quot;&lt;/code&gt; (empty string) indicates global namespace
 	 *   2. non-empty string indicates a real namespace
 	 *   3. &lt;code&gt;null&lt;/code&gt; indicates that there's no namespace prefix in element name
-	 * </pre>
+	 *         </pre>
 	 */
-	public static String extractNamespaceName(String elementName,
-			ISourceModule sourceModule, final int offset) {
+	public static String extractNamespaceName(String elementName, ISourceModule sourceModule, final int offset) {
 
 		// Check class name aliasing:
-		ModuleDeclaration moduleDeclaration = SourceParserUtil
-				.getModuleDeclaration(sourceModule);
-		UsePart usePart = ASTUtils.findUseStatementByAlias(moduleDeclaration,
-				elementName, offset);
+		ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule);
+		UsePart usePart = ASTUtils.findUseStatementByAlias(moduleDeclaration, elementName, offset);
 		if (usePart != null) {
 			elementName = usePart.getNamespace().getFullyQualifiedName();
-			if (elementName != null
-					&& elementName.length() > 0
+			if (elementName != null && elementName.length() > 0
 					&& elementName.charAt(0) != NamespaceReference.NAMESPACE_SEPARATOR) {
-				elementName = NamespaceReference.NAMESPACE_SEPARATOR
-						+ elementName;
+				elementName = NamespaceReference.NAMESPACE_SEPARATOR + elementName;
 			}
 		}
 
 		boolean isGlobal = false;
 		int nsIndex = -1;
 		if (elementName != null) {
-			nsIndex = elementName
-					.lastIndexOf(NamespaceReference.NAMESPACE_SEPARATOR);
-			if (elementName.length() > 0
-					&& elementName.charAt(0) == NamespaceReference.NAMESPACE_SEPARATOR) {
+			nsIndex = elementName.lastIndexOf(NamespaceReference.NAMESPACE_SEPARATOR);
+			if (elementName.length() > 0 && elementName.charAt(0) == NamespaceReference.NAMESPACE_SEPARATOR) {
 				isGlobal = true;
 			}
 		}
@@ -54,40 +47,32 @@
 				// 1. It can be a special 'namespace' keyword, which points to
 				// the current namespace:
 				if ("namespace".equalsIgnoreCase(namespace)) { //$NON-NLS-1$
-					IType currentNamespace = PHPModelUtils.getCurrentNamespace(
-							sourceModule, offset);
+					IType currentNamespace = PHPModelUtils.getCurrentNamespace(sourceModule, offset);
 					// https://bugs.eclipse.org/bugs/show_bug.cgi?id=470673
-					return currentNamespace != null ? currentNamespace
-							.getElementName() : null;
+					return currentNamespace != null ? currentNamespace.getElementName() : null;
 				}
 
 				// 2. it can be an alias - try to find relevant USE statement
 				if (namespace.indexOf('\\') == -1) {
-					usePart = ASTUtils.findUseStatementByAlias(
-							moduleDeclaration, namespace, offset);
+					usePart = ASTUtils.findUseStatementByAlias(moduleDeclaration, namespace, offset);
 					if (usePart != null) {
 						return usePart.getNamespace().getFullyQualifiedName();
 					}
 				} else {
-					nsIndex = namespace
-							.indexOf(NamespaceReference.NAMESPACE_SEPARATOR);
+					nsIndex = namespace.indexOf(NamespaceReference.NAMESPACE_SEPARATOR);
 					String alias = namespace.substring(0, nsIndex);
-					usePart = ASTUtils.findUseStatementByAlias(
-							moduleDeclaration, alias, offset);
+					usePart = ASTUtils.findUseStatementByAlias(moduleDeclaration, alias, offset);
 					if (usePart != null) {
-						return usePart.getNamespace().getFullyQualifiedName()
-								+ NamespaceReference.NAMESPACE_SEPARATOR
+						return usePart.getNamespace().getFullyQualifiedName() + NamespaceReference.NAMESPACE_SEPARATOR
 								+ namespace.substring(nsIndex + 1);
 					}
 				}
 
 				// 3. it can be a sub-namespace of the current namespace:
-				IType currentNamespace = PHPModelUtils.getCurrentNamespace(
-						sourceModule, offset);
+				IType currentNamespace = PHPModelUtils.getCurrentNamespace(sourceModule, offset);
 				if (currentNamespace != null) {
 					return new StringBuilder(currentNamespace.getElementName())
-							.append(NamespaceReference.NAMESPACE_SEPARATOR)
-							.append(namespace).toString();
+							.append(NamespaceReference.NAMESPACE_SEPARATOR).append(namespace).toString();
 				}
 			}
 
