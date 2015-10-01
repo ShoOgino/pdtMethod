@@ -1,0 +1,45 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.eclipse.php.internal.debug.ui.launching.
+	 * IDebuggerLaunchSettingsSection#initialize(org.eclipse.debug.core.
+	 * ILaunchConfiguration)
+	 */
+	@Override
+	public void initialize(ILaunchConfiguration configuration) {
+		this.configuration = configuration;
+		try {
+			boolean isUsingTunnel = configuration
+					.getAttribute(IPHPDebugConstants.USE_SSH_TUNNEL, false);
+			debugThroughTunnel.setSelection(isUsingTunnel);
+			updateTunnelComponents(isUsingTunnel);
+			if (isUsingTunnel && tunnelGroup != null) {
+				userName.setText(configuration.getAttribute(
+						IPHPDebugConstants.SSH_TUNNEL_USER_NAME, "")); //$NON-NLS-1$
+				if (userName.getText().length() > 0) {
+					// Load the password from the Secured Storage
+					try {
+						password.setText(PHPLaunchUtilities
+								.getSecurePreferences(PHPLaunchUtilities
+										.getDebugHost(getConfiguration()))
+								.get(userName.getText(), "")); //$NON-NLS-1$
+					} catch (StorageException e) {
+						Logger.logException(
+								"Error accessing the secured storage", e); //$NON-NLS-1$
+						password.setText(""); //$NON-NLS-1$
+					}
+				} else {
+					password.setText(""); //$NON-NLS-1$
+				}
+			}
+			if (breakpointGroup != null) {
+				// Initialize the breakpoint settings
+				breakOnFirstLine.setSelection(configuration.getAttribute(
+						IDebugParametersKeys.FIRST_LINE_BREAKPOINT,
+						PHPDebugPlugin.getStopAtFirstLine()));
+			}
+		} catch (CoreException e) {
+		}
+		isValid(configuration);
+	}
+

@@ -1,0 +1,84 @@
+	protected void createBrowserGroup(Composite parent) {
+		browserGroup = new Group(parent, SWT.NONE);
+		browserGroup.setLayout(new GridLayout(1, false));
+		browserGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		browserGroup
+				.setText(Messages.ZendDebuggerWebLaunchSettingsSection_Browser);
+		// Add the Browser group controls
+		openBrowser = new Button(browserGroup, SWT.CHECK);
+		openBrowser.setText(
+				Messages.ZendDebuggerWebLaunchSettingsSection_Open_in_browser);
+		GridData data = new GridData(GridData.FILL_HORIZONTAL);
+		data.horizontalSpan = 3;
+		openBrowser.setLayoutData(data);
+		sessionGroup = new Composite(browserGroup, SWT.NONE);
+		sessionGroup.setLayout(new GridLayout(3, false));
+		sessionGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		openBrowser.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent se) {
+				Button b = (Button) se.getSource();
+				boolean isOpenInBrowser = b.getSelection();
+				if (!isOpenInBrowser) {
+					debugFirstPageBt.setSelection(true);
+					debugAllPagesBt.setSelection(false);
+				} else {
+					debugFirstPageBt.setSelection(false);
+					debugAllPagesBt.setSelection(true);
+				}
+				debugStartFromBt.setSelection(false);
+				debugContinueBt.setSelection(false);
+				enableSessionSettingButtons(isOpenInBrowser);
+			}
+		});
+		// Add the Session group controls
+		debugAllPagesBt = SWTFactory.createRadioButton(sessionGroup,
+				Messages.ZendDebuggerWebLaunchSettingsSection_Debug_all_pages);
+		data = (GridData) debugAllPagesBt.getLayoutData();
+		data.horizontalSpan = 3;
+		data.horizontalIndent = 20;
+		debugFirstPageBt = SWTFactory.createRadioButton(sessionGroup,
+				Messages.ZendDebuggerWebLaunchSettingsSection_Debug_first_page);
+		data = (GridData) debugFirstPageBt.getLayoutData();
+		data.horizontalSpan = 3;
+		data.horizontalIndent = 20;
+		debugStartFromBt = SWTFactory.createRadioButton(sessionGroup,
+				Messages.ZendDebuggerWebLaunchSettingsSection_Start_debug_from);
+		data = (GridData) debugStartFromBt.getLayoutData();
+		data.horizontalIndent = 20;
+		debugFromTxt = new Text(sessionGroup, SWT.SINGLE | SWT.BORDER);
+		debugFromTxt.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		resetBt = SWTFactory.createPushButton(sessionGroup,
+				Messages.ZendDebuggerWebLaunchSettingsSection_Default, null);
+		resetBt.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				if (getConfiguration() != null) {
+					try {
+						debugFromTxt.setText(getConfiguration()
+								.getAttribute(Server.BASE_URL, "")); //$NON-NLS-1$
+					} catch (CoreException e1) {
+					}
+				}
+			}
+		});
+		debugContinueBt = SWTFactory.createCheckButton(sessionGroup,
+				Messages.ZendDebuggerWebLaunchSettingsSection_Continue_debug_from,
+				null, false, 1);
+		data = (GridData) debugContinueBt.getLayoutData();
+		data.horizontalSpan = 3;
+		data.horizontalIndent = 40;
+		// Add listeners
+		debugStartFromBt.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				updateDebugFrom();
+			}
+		});
+		updateDebugFrom();
+		// Add widget listeners
+		openBrowser.addSelectionListener(widgetListener);
+		debugFirstPageBt.addSelectionListener(widgetListener);
+		debugAllPagesBt.addSelectionListener(widgetListener);
+		debugContinueBt.addSelectionListener(widgetListener);
+		debugStartFromBt.addSelectionListener(widgetListener);
+		debugFromTxt.addModifyListener(widgetListener);
+	}
+
