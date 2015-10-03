@@ -2,7 +2,7 @@
 	 * Save the edited PHP executable items to the plug-in preferences.
 	 */
 	public void save() {
-		Preferences prefs = PHPProjectPreferences.getModelPreferences();
+		IEclipsePreferences prefs = PHPDebugPlugin.getInstancePreferences();
 		final PHPexeItem[] phpItems = getEditableItems();
 		final StringBuffer locationsString = new StringBuffer();
 		final StringBuffer inisString = new StringBuffer();
@@ -23,8 +23,7 @@
 				loadIniDefaultString.append(SEPARATOR);
 			}
 			locationsString.append(item.getExecutable().toString());
-			inisString.append(item.getINILocation() != null ? item
-					.getINILocation().toString() : NULL_PLACE_HOLDER);
+			inisString.append(item.getINILocation() != null ? item.getINILocation().toString() : NULL_PLACE_HOLDER);
 			namesString.append(item.getName());
 			uniqueIdsString.append(item.getUniqueId());
 			debuggersString.append(item.getDebuggerID());
@@ -33,33 +32,27 @@
 			if (item.geDefaultForPHPVersionSize() > 0) {
 				for (int j = 0; j < item.geDefaultForPHPVersionSize(); j++) {
 					if (j > 0) {
-						defaultItemForPHPVersionString
-								.append(SEPARATOR_FOR_PHPVERSION);
+						defaultItemForPHPVersionString.append(SEPARATOR_FOR_PHPVERSION);
 					}
-					defaultItemForPHPVersionString.append(item
-							.getPHPVersionAtDefaultList(j).getAlias());
+					defaultItemForPHPVersionString.append(item.getPHPVersionAtDefaultList(j).getAlias());
 				}
 			} else {
 				defaultItemForPHPVersionString.append(NULL_PLACE_HOLDER);
 			}
 
 		}
-		prefs.setValue(PHPDebugCorePreferenceNames.INSTALLED_PHP_NAMES,
-				namesString.toString());
-		prefs.setValue(PHPDebugCorePreferenceNames.INSTALLED_PHP_UNIQUE_IDS,
-				uniqueIdsString.toString());
-		prefs.setValue(PHPDebugCorePreferenceNames.INSTALLED_PHP_LOCATIONS,
-				locationsString.toString());
-		prefs.setValue(PHPDebugCorePreferenceNames.INSTALLED_PHP_INIS,
-				inisString.toString());
-		prefs.setValue(PHPDebugCorePreferenceNames.INSTALLED_PHP_DEBUGGERS,
-				debuggersString.toString());
-		prefs.setValue(
-				PHPDebugCorePreferenceNames.INSTALLED_PHP_DEFAULT_FOR_VERSIONS,
+		prefs.put(PHPDebugCorePreferenceNames.INSTALLED_PHP_NAMES, namesString.toString());
+		prefs.put(PHPDebugCorePreferenceNames.INSTALLED_PHP_UNIQUE_IDS, uniqueIdsString.toString());
+		prefs.put(PHPDebugCorePreferenceNames.INSTALLED_PHP_LOCATIONS, locationsString.toString());
+		prefs.put(PHPDebugCorePreferenceNames.INSTALLED_PHP_INIS, inisString.toString());
+		prefs.put(PHPDebugCorePreferenceNames.INSTALLED_PHP_DEBUGGERS, debuggersString.toString());
+		prefs.put(PHPDebugCorePreferenceNames.INSTALLED_PHP_DEFAULT_FOR_VERSIONS,
 				defaultItemForPHPVersionString.toString());
-		prefs.setValue(
-				PHPDebugCorePreferenceNames.INSTALLED_PHP_LOAD_DEFAULT_INIS,
-				loadIniDefaultString.toString());
-		PHPDebugPlugin.getDefault().savePluginPreferences();
+		prefs.put(PHPDebugCorePreferenceNames.INSTALLED_PHP_LOAD_DEFAULT_INIS, loadIniDefaultString.toString());
+		try {
+			prefs.flush();
+		} catch (BackingStoreException e) {
+			Logger.logException(e);
+		}
 	}
 

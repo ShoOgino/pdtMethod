@@ -3,12 +3,10 @@
 	 */
 	private void loadExtensions() {
 		final IExtensionRegistry registry = Platform.getExtensionRegistry();
-		final IConfigurationElement[] elements = registry
-				.getConfigurationElementsFor(PHPDebugPlugin.getID(),
-						EXTENSION_POINT_NAME);
+		final IConfigurationElement[] elements = registry.getConfigurationElementsFor(PHPDebugPlugin.getID(),
+				EXTENSION_POINT_NAME);
 
-		boolean isWindows = System
-				.getProperty("os.name").toLowerCase().startsWith("windows"); //$NON-NLS-1$ //$NON-NLS-2$
+		boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows"); //$NON-NLS-1$ //$NON-NLS-2$
 
 		for (final IConfigurationElement element : elements) {
 			if (PHPEXE_TAG.equals(element.getName())) {
@@ -25,25 +23,22 @@
 				if (isWindows)
 					location = location + ".exe"; //$NON-NLS-1$
 
-				final String pluginId = element.getDeclaringExtension()
-						.getNamespaceIdentifier();
+				final String pluginId = element.getDeclaringExtension().getNamespaceIdentifier();
 				final String finalDebuggerID = debuggerID;
 				// Filter the executable if needed.
-				boolean filterItem = WorkbenchActivityHelper
-						.filterItem(new IPluginContribution() {
-							public String getLocalId() {
-								return finalDebuggerID;
-							}
+				boolean filterItem = WorkbenchActivityHelper.filterItem(new IPluginContribution() {
+					public String getLocalId() {
+						return finalDebuggerID;
+					}
 
-							public String getPluginId() {
-								return PHPDebugPlugin.ID;
-							}
-						});
+					public String getPluginId() {
+						return PHPDebugPlugin.ID;
+					}
+				});
 				if (filterItem) {
 					continue;
 				}
-				URL url = FileLocator.find(Platform.getBundle(pluginId),
-						new Path(location), new HashMap());
+				URL url = FileLocator.find(Platform.getBundle(pluginId), new Path(location), new HashMap());
 				boolean itemFound = false;
 				if (url != null)
 					try {
@@ -51,11 +46,8 @@
 						final String filename = url.getFile();
 						final File file = new File(filename);
 						if (file.exists()) {
-							final PHPexeItem newItem = new PHPexeItem(name,
-									file, null, debuggerID, false);
-							if (null == newItem
-									|| null == newItem.getExecutable()
-									|| newItem.getVersion() == null)
+							final PHPexeItem newItem = new PHPexeItem(name, file, null, debuggerID, false);
+							if (null == newItem || null == newItem.getExecutable() || newItem.getVersion() == null)
 								continue; // not adding "problematic"
 							// executables
 							if (version != null) {
@@ -80,19 +72,12 @@
 					} catch (final IOException e) {
 					}
 				if (!itemFound)
-					PHPDebugPlugin
-							.getDefault()
-							.getLog()
-							.log(new Status(
-									1,
-									PHPDebugPlugin.getID(),
-									1001,
+					PHPDebugPlugin.getDefault().getLog()
+							.log(new Status(1, PHPDebugPlugin.getID(), 1001,
 									"PHP executable " //$NON-NLS-1$
-											+ location
-											+ " not found neither in plugin " //$NON-NLS-1$
-											+ pluginId
-											+ " nor in fragments attached to it", //$NON-NLS-1$
-									null));
+											+ location + " not found neither in plugin " //$NON-NLS-1$
+											+ pluginId + " nor in fragments attached to it", //$NON-NLS-1$
+							null));
 			}
 		}
 	}

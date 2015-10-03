@@ -1,26 +1,23 @@
 	protected void okPressed() {
-		Preferences prefs = PHPProjectPreferences.getModelPreferences();
-		prefs.setValue(PHPDebugCorePreferenceNames.RUN_WITH_DEBUG_INFO,
-				fRunWithDebugInfo.getSelection());
-		prefs.setValue(PHPDebugCorePreferenceNames.ZEND_DEBUG_PORT,
-				fDebugTextBox.getText());
-		prefs.setValue(PHPDebugCorePreferenceNames.ZEND_DEBUG_BROADCAST_PORT,
+		IEclipsePreferences prefs = InstanceScope.INSTANCE.getNode(PHPDebugPlugin.ID);
+		prefs.putBoolean(PHPDebugCorePreferenceNames.RUN_WITH_DEBUG_INFO, fRunWithDebugInfo.getSelection());
+		prefs.put(PHPDebugCorePreferenceNames.ZEND_DEBUG_PORT, fDebugTextBox.getText());
+		prefs.putInt(PHPDebugCorePreferenceNames.ZEND_DEBUG_BROADCAST_PORT,
 				Integer.parseInt(fBroadcastPortText.getText()));
-		prefs.setValue(PHPDebugCorePreferenceNames.ZEND_DEBUG_DUMMY_FILE,
-				fDummyFileText.getText().trim());
-		IEclipsePreferences instanceScope = InstanceScope.INSTANCE
-				.getNode(PHPDebugPlugin.ID);
+		prefs.put(PHPDebugCorePreferenceNames.ZEND_DEBUG_DUMMY_FILE, fDummyFileText.getText().trim());
 		if (autoModeButton.getSelection()) {
-			instanceScope.remove(PHPDebugCorePreferenceNames.CLIENT_IP);
+			prefs.remove(PHPDebugCorePreferenceNames.CLIENT_IP);
 		} else {
-			instanceScope.put(PHPDebugCorePreferenceNames.CLIENT_IP,
-					fClientIP.getText());
+			prefs.put(PHPDebugCorePreferenceNames.CLIENT_IP, fClientIP.getText());
 		}
-		prefs.setValue(PHPDebugCorePreferenceNames.DEBUG_RESPONSE_TIMEOUT,
+		prefs.putInt(PHPDebugCorePreferenceNames.DEBUG_RESPONSE_TIMEOUT,
 				Integer.parseInt(fDebugResponseTimeout.getText()));
-		prefs.setValue(PHPDebugCorePreferenceNames.ZEND_NEW_PROTOCOL,
-				fUseNewProtocol.getSelection());
-		PHPDebugPlugin.getDefault().savePluginPreferences(); // save
+		prefs.putBoolean(PHPDebugCorePreferenceNames.ZEND_NEW_PROTOCOL, fUseNewProtocol.getSelection());
+		try {
+			prefs.flush();
+		} catch (BackingStoreException e) {
+			Logger.logException(e);
+		}
 		super.okPressed();
 	}
 

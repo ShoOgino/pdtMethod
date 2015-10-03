@@ -1,6 +1,5 @@
 	// Load executables from the preferences.
 	private void load() {
-		Preferences prefs = PHPProjectPreferences.getModelPreferences();
 		items = new HashMap<String, HashMap<String, PHPexeItem>>();
 
 		// Load the executable items that were defined in the registered
@@ -10,26 +9,25 @@
 		// Load the user-defined executable items
 
 		// Load the item names array
-		String namesString = prefs
-				.getString(PHPDebugCorePreferenceNames.INSTALLED_PHP_NAMES);
+		String namesString = Platform.getPreferencesService().getString(PHPDebugPlugin.ID,
+				PHPDebugCorePreferenceNames.INSTALLED_PHP_NAMES, null, null);
 		if (namesString == null) {
 			namesString = ""; //$NON-NLS-1$
 		}
-		final String[] names = namesString.length() > 0 ? namesString
-				.split(SEPARATOR) : new String[0];
+		final String[] names = namesString.length() > 0 ? namesString.split(SEPARATOR) : new String[0];
 
 		// Load the item executable locations array
-		String locationsString = prefs
-				.getString(PHPDebugCorePreferenceNames.INSTALLED_PHP_LOCATIONS);
+		String locationsString = Platform.getPreferencesService().getString(PHPDebugPlugin.ID,
+				PHPDebugCorePreferenceNames.INSTALLED_PHP_LOCATIONS, null, null);
 		if (locationsString == null) {
 			locationsString = ""; //$NON-NLS-1$
 		}
-		final String[] phpExecutablesLocations = locationsString.length() > 0 ? locationsString
-				.split(SEPARATOR) : new String[0];
+		final String[] phpExecutablesLocations = locationsString.length() > 0 ? locationsString.split(SEPARATOR)
+				: new String[0];
 
 		// Load the item executable ini's array
-		String inisString = prefs
-				.getString(PHPDebugCorePreferenceNames.INSTALLED_PHP_INIS);
+		String inisString = Platform.getPreferencesService().getString(PHPDebugPlugin.ID,
+				PHPDebugCorePreferenceNames.INSTALLED_PHP_INIS, null, null);
 		if (inisString == null) {
 			inisString = ""; //$NON-NLS-1$
 		}
@@ -37,59 +35,54 @@
 		// In case there is no preference value for the
 		// PHPDebugCorePreferenceNames.INSTALLED_PHP_INIS,
 		// the size of the array is set to be the same as the executables array.
-		final String[] phpIniLocations = inisString.length() > 0 ? inisString
-				.split(SEPARATOR) : new String[phpExecutablesLocations.length];
+		final String[] phpIniLocations = inisString.length() > 0 ? inisString.split(SEPARATOR)
+				: new String[phpExecutablesLocations.length];
 
 		// Load default inis settings
-		String loadDefaultInisString = prefs
-				.getString(PHPDebugCorePreferenceNames.INSTALLED_PHP_LOAD_DEFAULT_INIS);
+		String loadDefaultInisString = Platform.getPreferencesService().getString(PHPDebugPlugin.ID,
+				PHPDebugCorePreferenceNames.INSTALLED_PHP_LOAD_DEFAULT_INIS, null, null);
 		if (loadDefaultInisString == null) {
 			loadDefaultInisString = ""; //$NON-NLS-1$
 		}
-		final String[] loadDefaultInis = loadDefaultInisString.length() > 0 ? loadDefaultInisString
-				.split(SEPARATOR) : new String[phpExecutablesLocations.length];
+		final String[] loadDefaultInis = loadDefaultInisString.length() > 0 ? loadDefaultInisString.split(SEPARATOR)
+				: new String[phpExecutablesLocations.length];
 
 		// Load the PHP items unique IDs
-		String uniqueIdsString = prefs
-				.getString(PHPDebugCorePreferenceNames.INSTALLED_PHP_UNIQUE_IDS);
+		String uniqueIdsString = Platform.getPreferencesService().getString(PHPDebugPlugin.ID,
+				PHPDebugCorePreferenceNames.INSTALLED_PHP_UNIQUE_IDS, null, null);
 		if (uniqueIdsString == null) {
 			uniqueIdsString = "";
 		}
-		final String[] phpExecutablesUniqueIds = uniqueIdsString.length() > 0 ? uniqueIdsString
-				.split(SEPARATOR) : new String[0];
+		final String[] phpExecutablesUniqueIds = uniqueIdsString.length() > 0 ? uniqueIdsString.split(SEPARATOR)
+				: new String[0];
 
 		// Load the debuggers array
-		String debuggersString = prefs
-				.getString(PHPDebugCorePreferenceNames.INSTALLED_PHP_DEBUGGERS);
+		String debuggersString = Platform.getPreferencesService().getString(PHPDebugPlugin.ID,
+				PHPDebugCorePreferenceNames.INSTALLED_PHP_DEBUGGERS, null, null);
 		if (debuggersString == null) {
 			debuggersString = ""; //$NON-NLS-1$
 		}
-		final String[] debuggers = debuggersString.length() > 0 ? debuggersString
-				.split(SEPARATOR) : new String[0];
+		final String[] debuggers = debuggersString.length() > 0 ? debuggersString.split(SEPARATOR) : new String[0];
 
 		// Load the PHP Versions array
-		String defaultItemForPHPVersionString = prefs
-				.getString(PHPDebugCorePreferenceNames.INSTALLED_PHP_DEFAULT_FOR_VERSIONS);
+		String defaultItemForPHPVersionString = Platform.getPreferencesService().getString(PHPDebugPlugin.ID,
+				PHPDebugCorePreferenceNames.INSTALLED_PHP_DEFAULT_FOR_VERSIONS, null, null);
 		if (defaultItemForPHPVersionString == null) {
 			defaultItemForPHPVersionString = ""; //$NON-NLS-1$
 		}
-		final String[] defaultItemForPHPVersions = defaultItemForPHPVersionString
-				.length() > 0 ? defaultItemForPHPVersionString.split(SEPARATOR)
-				: new String[0];
+		final String[] defaultItemForPHPVersions = defaultItemForPHPVersionString.length() > 0
+				? defaultItemForPHPVersionString.split(SEPARATOR) : new String[0];
 
 		// Add the executable items
 		assert names.length == phpExecutablesLocations.length;
 		for (int i = 0; i < phpExecutablesLocations.length; i++) {
-			String iniLocation = NULL_PLACE_HOLDER.equals(phpIniLocations[i]) ? null
-					: phpIniLocations[i];
+			String iniLocation = NULL_PLACE_HOLDER.equals(phpIniLocations[i]) ? null : phpIniLocations[i];
 			// 361399: PDT Project Properties Debug page cause hang
 			if ((names.length <= i) || (debuggers.length <= i)) {
 				break;
 			}
-			final PHPexeItem item = new PHPexeItem(names[i],
-					phpExecutablesLocations[i], iniLocation, debuggers[i],
-					loadDefaultInis[i] != null
-							&& loadDefaultInis[i].equals(TRUE));
+			final PHPexeItem item = new PHPexeItem(names[i], phpExecutablesLocations[i], iniLocation, debuggers[i],
+					loadDefaultInis[i] != null && loadDefaultInis[i].equals(TRUE));
 			// Overwrite the one generated in new executable constructor with
 			// one that is stored in preferences
 			if (phpExecutablesUniqueIds.length != 0)
@@ -98,12 +91,10 @@
 			// first time
 			if (defaultItemForPHPVersions.length == phpExecutablesLocations.length) {
 				if (!NULL_PLACE_HOLDER.equals(defaultItemForPHPVersions[i])) {
-					final String[] phpVersions = defaultItemForPHPVersions[i]
-							.length() > 0 ? defaultItemForPHPVersions[i]
-							.split(SEPARATOR_FOR_PHPVERSION) : new String[0];
+					final String[] phpVersions = defaultItemForPHPVersions[i].length() > 0
+							? defaultItemForPHPVersions[i].split(SEPARATOR_FOR_PHPVERSION) : new String[0];
 					for (int j = 0; j < phpVersions.length; j++) {
-						PHPVersion phpVersion = PHPVersion
-								.byAlias(phpVersions[j]);
+						PHPVersion phpVersion = PHPVersion.byAlias(phpVersions[j]);
 						if (phpVersion != null) {
 							item.addPHPVersionToDefaultList(phpVersion);
 							defaultItemsForPHPVersion.put(phpVersion, item);
@@ -112,16 +103,15 @@
 				}
 			}
 			if (item.getExecutable() != null) {
-				boolean filterItem = WorkbenchActivityHelper
-						.filterItem(new IPluginContribution() {
-							public String getLocalId() {
-								return item.getDebuggerID();
-							}
+				boolean filterItem = WorkbenchActivityHelper.filterItem(new IPluginContribution() {
+					public String getLocalId() {
+						return item.getDebuggerID();
+					}
 
-							public String getPluginId() {
-								return PHPDebugPlugin.ID;
-							}
-						});
+					public String getPluginId() {
+						return PHPDebugPlugin.ID;
+					}
+				});
 				if (!filterItem) {
 					storeItem(item);
 				}

@@ -13,43 +13,36 @@
 	 * debug views in case it was not chosen from the preferences.
 	 */
 	public static void showDebugView() {
-		Preferences prefs = PHPProjectPreferences.getModelPreferences();
-		if (!prefs.getBoolean(PHPDebugCorePreferenceNames.OPEN_DEBUG_VIEWS)) {
+		if (!Platform.getPreferencesService().getBoolean(PHPDebugPlugin.ID,
+				PHPDebugCorePreferenceNames.OPEN_DEBUG_VIEWS, true, null)) {
 			return;
 		}
 		// Get the page through a UI thread! Otherwise, it wont work...
 		Display.getDefault().syncExec(new Runnable() {
 			public void run() {
-				IWorkbenchPage page = PlatformUI.getWorkbench()
-						.getActiveWorkbenchWindow().getActivePage();
+				IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
 				if (page != null) {
 					try {
-						IViewPart debugOutputPart = page.findView(
-								"org.eclipse.debug.ui.PHPDebugOutput"); //$NON-NLS-1$
-						IViewPart browserOutputPart = page.findView(
-								"org.eclipse.debug.ui.PHPBrowserOutput"); //$NON-NLS-1$
+						IViewPart debugOutputPart = page.findView("org.eclipse.debug.ui.PHPDebugOutput"); //$NON-NLS-1$
+						IViewPart browserOutputPart = page.findView("org.eclipse.debug.ui.PHPBrowserOutput"); //$NON-NLS-1$
 
 						// Test if the Debug Output view is alive and visible.
 						boolean shouldShowDebug = false;
-						if (debugOutputPart == null
-								|| !page.isPartVisible(debugOutputPart)) {
+						if (debugOutputPart == null || !page.isPartVisible(debugOutputPart)) {
 							shouldShowDebug = true;
 						}
 
 						// If the Browser Output is visible, do not switch to
 						// the Debug Output.
-						if (browserOutputPart != null
-								&& page.isPartVisible(browserOutputPart)) {
+						if (browserOutputPart != null && page.isPartVisible(browserOutputPart)) {
 							shouldShowDebug = false;
 						}
 
 						if (shouldShowDebug) {
-							page.showView(
-									"org.eclipse.debug.ui.PHPDebugOutput"); //$NON-NLS-1$
+							page.showView("org.eclipse.debug.ui.PHPDebugOutput"); //$NON-NLS-1$
 						}
 					} catch (Exception e) {
-						Logger.logException(
-								"Error switching to the Debug Output view", e); //$NON-NLS-1$
+						Logger.logException("Error switching to the Debug Output view", e); //$NON-NLS-1$
 					}
 				}
 			}

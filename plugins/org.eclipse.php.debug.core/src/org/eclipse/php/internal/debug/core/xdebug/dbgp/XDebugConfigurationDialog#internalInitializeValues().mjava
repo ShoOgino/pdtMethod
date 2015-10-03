@@ -1,44 +1,39 @@
 	// Initialize the dialog's values.
 	private void internalInitializeValues() {
 		// TODO: move to preference manager
+		IPreferencesService service = Platform.getPreferencesService();
 
-		Preferences prefs = XDebugPreferenceMgr.getPreferences();
-
-		int port = prefs.getInt(XDebugPreferenceMgr.XDEBUG_PREF_PORT);
+		int port = PHPDebugPlugin.getDefaultPreferences().getInt(XDebugPreferenceMgr.XDEBUG_PREF_PORT, 0);
 		if (0 == port) {
 			XDebugPreferenceMgr.setDefaults();
-			port = prefs.getInt(XDebugPreferenceMgr.XDEBUG_PREF_PORT);
+			port = XDebugPreferenceMgr.getPort();
 		}
 		portTextBox.setText(Integer.toString(port));
-		showGlobals.setSelection(prefs
-				.getBoolean(XDebugPreferenceMgr.XDEBUG_PREF_SHOWSUPERGLOBALS));
-		useMultiSession.setSelection(prefs
-				.getBoolean(XDebugPreferenceMgr.XDEBUG_PREF_MULTISESSION));
-		variableDepth.setSelection(prefs
-				.getInt(XDebugPreferenceMgr.XDEBUG_PREF_ARRAYDEPTH));
-		maxChildren.setSelection(prefs
-				.getInt(XDebugPreferenceMgr.XDEBUG_PREF_CHILDREN));
-		maxData.setSelection(prefs.getInt(XDebugPreferenceMgr.XDEBUG_PREF_DATA));
-		acceptRemoteSession.select(prefs
-				.getInt(XDebugPreferenceMgr.XDEBUG_PREF_REMOTESESSION));
+		showGlobals.setSelection(
+				service.getBoolean(PHPDebugPlugin.ID, XDebugPreferenceMgr.XDEBUG_PREF_SHOWSUPERGLOBALS, false, null));
+		useMultiSession.setSelection(
+				service.getBoolean(PHPDebugPlugin.ID, XDebugPreferenceMgr.XDEBUG_PREF_MULTISESSION, false, null));
+		variableDepth
+				.setSelection(service.getInt(PHPDebugPlugin.ID, XDebugPreferenceMgr.XDEBUG_PREF_ARRAYDEPTH, 0, null));
+		maxChildren.setSelection(service.getInt(PHPDebugPlugin.ID, XDebugPreferenceMgr.XDEBUG_PREF_CHILDREN, 0, null));
+		maxData.setSelection(service.getInt(PHPDebugPlugin.ID, XDebugPreferenceMgr.XDEBUG_PREF_DATA, 0, null));
+		acceptRemoteSession
+				.select(service.getInt(PHPDebugPlugin.ID, XDebugPreferenceMgr.XDEBUG_PREF_REMOTESESSION, 0, null));
 
 		// capture output
-		captureStdout.select(prefs
-				.getInt(XDebugPreferenceMgr.XDEBUG_PREF_CAPTURESTDOUT));
-		captureStderr.select(prefs
-				.getInt(XDebugPreferenceMgr.XDEBUG_PREF_CAPTURESTDERR));
+		captureStdout.select(service.getInt(PHPDebugPlugin.ID, XDebugPreferenceMgr.XDEBUG_PREF_CAPTURESTDOUT, 0, null));
+		captureStderr.select(service.getInt(PHPDebugPlugin.ID, XDebugPreferenceMgr.XDEBUG_PREF_CAPTURESTDERR, 0, null));
 
 		// proxy defaults
-		boolean useProxyState = prefs
-				.getBoolean(XDebugPreferenceMgr.XDEBUG_PREF_USEPROXY);
+		boolean useProxyState = service.getBoolean(PHPDebugPlugin.ID, XDebugPreferenceMgr.XDEBUG_PREF_USEPROXY, false,
+				null);
 		useProxy.setSelection(useProxyState);
-		String ideKey = prefs.getString(XDebugPreferenceMgr.XDEBUG_PREF_IDEKEY);
+		String ideKey = service.getString(PHPDebugPlugin.ID, XDebugPreferenceMgr.XDEBUG_PREF_IDEKEY, "", null);
 		if (ideKey == null || ideKey.length() == 0) {
 			ideKey = ""; //$NON-NLS-1$
 		}
 		idekeyTextBox.setText(ideKey);
-		proxyTextBox.setText(prefs
-				.getString(XDebugPreferenceMgr.XDEBUG_PREF_PROXY));
+		proxyTextBox.setText(service.getString(PHPDebugPlugin.ID, XDebugPreferenceMgr.XDEBUG_PREF_PROXY, "", null)); //$NON-NLS-1$
 		toggleProxyFields(useProxyState);
 	}
 

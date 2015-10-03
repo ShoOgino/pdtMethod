@@ -5,9 +5,8 @@
 	 * 
 	 * @throws CoreException
 	 */
-	public static boolean checkDebugAllPages(
-			final ILaunchConfiguration newLaunchConfiguration,
-			final ILaunch newLaunch) throws CoreException {
+	public static boolean checkDebugAllPages(final ILaunchConfiguration newLaunchConfiguration, final ILaunch newLaunch)
+			throws CoreException {
 		// If the remote debugger already supports multiple debugging with the
 		// 'debug all pages',
 		// we do not have to do a thing and we can return.
@@ -17,20 +16,16 @@
 		// Make sure we set the attributes on the ILaunch since the
 		// ILaunchConfiguration reference never changes, while the
 		// ILaunch is created for each launch.
-		newLaunch.setAttribute(IPHPDebugConstants.DEBUGGING_PAGES,
-				newLaunchConfiguration.getAttribute(
-						IPHPDebugConstants.DEBUGGING_PAGES,
-						IPHPDebugConstants.DEBUGGING_ALL_PAGES));
+		newLaunch.setAttribute(IPHPDebugConstants.DEBUGGING_PAGES, newLaunchConfiguration
+				.getAttribute(IPHPDebugConstants.DEBUGGING_PAGES, IPHPDebugConstants.DEBUGGING_ALL_PAGES));
 		checkAutoRemoveLaunches();
-		ILaunch[] launches = DebugPlugin.getDefault().getLaunchManager()
-				.getLaunches();
+		ILaunch[] launches = DebugPlugin.getDefault().getLaunchManager().getLaunches();
 		boolean hasContiniousLaunch = false;
 		// check for a launch that has a 'debug all pages' or 'start debug from'
 		// attribute
 		for (int i = 0; !hasContiniousLaunch && i < launches.length; i++) {
 			ILaunch launch = launches[i];
-			if (launch != newLaunch && ILaunchManager.DEBUG_MODE
-					.equals(launch.getLaunchMode())) {
+			if (launch != newLaunch && ILaunchManager.DEBUG_MODE.equals(launch.getLaunchMode())) {
 				if (isDebugAllPages(launch) || isStartDebugFrom(launch)) {
 					hasContiniousLaunch = true;
 				}
@@ -38,36 +33,29 @@
 		}
 		// Check if the new launch is 'debug all pages'
 
-		boolean newLaunchIsDebug = ILaunchManager.DEBUG_MODE
-				.equals(newLaunch.getLaunchMode());
-		final boolean newIsDebugAllPages = newLaunchIsDebug
-				&& isDebugAllPages(newLaunch);
-		final boolean newIsStartDebugFrom = newLaunchIsDebug
-				&& isStartDebugFrom(newLaunch);
+		boolean newLaunchIsDebug = ILaunchManager.DEBUG_MODE.equals(newLaunch.getLaunchMode());
+		final boolean newIsDebugAllPages = newLaunchIsDebug && isDebugAllPages(newLaunch);
+		final boolean newIsStartDebugFrom = newLaunchIsDebug && isStartDebugFrom(newLaunch);
 		final boolean fHasContiniousLaunch = hasContiniousLaunch;
 
-		if ((fHasContiniousLaunch || newIsDebugAllPages || newIsStartDebugFrom)
-				&& launches.length > 1) {
+		if ((fHasContiniousLaunch || newIsDebugAllPages || newIsStartDebugFrom) && launches.length > 1) {
 			final DialogResultHolder resultHolder = new DialogResultHolder();
 			Display.getDefault().syncExec(new Runnable() {
 				public void run() {
 					// TODO - Advanced message dialog with 'don't show this
 					// again' check.
 					if (fHasContiniousLaunch) {
-						resultHolder.setResult(MessageDialog.openConfirm(
-								Display.getDefault().getActiveShell(),
+						resultHolder.setResult(MessageDialog.openConfirm(Display.getDefault().getActiveShell(),
 								PHPDebugCoreMessages.PHPLaunchUtilities_confirmation,
 								PHPDebugCoreMessages.PHPLaunchUtilities_0));
 					} else {
 						if (newIsDebugAllPages) {
-							resultHolder.setResult(MessageDialog.openConfirm(
-									Display.getDefault().getActiveShell(),
+							resultHolder.setResult(MessageDialog.openConfirm(Display.getDefault().getActiveShell(),
 									PHPDebugCoreMessages.PHPLaunchUtilities_confirmation,
 									PHPDebugCoreMessages.PHPLaunchUtilities_7));
 						} else {
 							// newIsStartDebugFrom == true
-							resultHolder.setResult(MessageDialog.openConfirm(
-									Display.getDefault().getActiveShell(),
+							resultHolder.setResult(MessageDialog.openConfirm(Display.getDefault().getActiveShell(),
 									PHPDebugCoreMessages.PHPLaunchUtilities_confirmation,
 									PHPDebugCoreMessages.PHPLaunchUtilities_8));
 						}
@@ -80,8 +68,7 @@
 						removeAndTerminateOldLaunches(newLaunch);
 					} else {
 						// Remove the latest launch
-						DebugPlugin.getDefault().getLaunchManager()
-								.removeLaunch(newLaunch);
+						DebugPlugin.getDefault().getLaunchManager().removeLaunch(newLaunch);
 					}
 				}
 			});
@@ -92,11 +79,10 @@
 			} else {
 				// There are no other launches AND the new launch doesn't have a
 				// debug-all-pages.
-				PHPDebugPlugin.setDisableAutoRemoveLaunches(!PHPDebugPlugin
-						.getDefault().getInitialAutoRemoveLaunches());
+				PHPDebugPlugin
+						.setDisableAutoRemoveLaunches(!PHPDebugPlugin.getDefault().getInitialAutoRemoveLaunches());
 				// This will manually remove the old launches if needed
-				DebugUIPlugin.getDefault().getLaunchConfigurationManager()
-						.launchAdded(newLaunch);
+				DebugUIPlugin.getDefault().getLaunchConfigurationManager().launchAdded(newLaunch);
 			}
 			return true;
 		}
