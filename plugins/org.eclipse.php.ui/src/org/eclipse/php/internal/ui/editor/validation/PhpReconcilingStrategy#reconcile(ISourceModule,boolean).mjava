@@ -10,8 +10,7 @@
 	 *             if the original Java element does not exist
 	 * @since 3.4
 	 */
-	private Program reconcile(ISourceModule unit, boolean initialReconcile)
-			throws ModelException {
+	private Program reconcile(ISourceModule unit, boolean initialReconcile) throws ModelException {
 		/* fix for missing cancel flag communication */
 		IProblemRequestorExtension extension = getProblemRequestorExtension();
 		if (extension != null) {
@@ -20,23 +19,20 @@
 		}
 
 		try {
-			final ASTProvider astProvider = PHPUiPlugin.getDefault()
-					.getASTProvider();
+			final ASTProvider astProvider = PHPUiPlugin.getDefault().getASTProvider();
 
 			synchronized (unit) {
 				unit.reconcile(true, null, fProgressMonitor);
 			}
 
 			// read DOM AST from provider if avaiable
-			Program createdAST = astProvider.getAST(unit,
-					SharedASTProvider.WAIT_NO, fProgressMonitor);
+			Program createdAST = astProvider.getAST(unit, SharedASTProvider.WAIT_NO, fProgressMonitor);
 			if (astProvider.isActive(unit) && createdAST != null) {
 				return createdAST;
 			}
 
 			if (initialReconcile || astProvider.isActive(unit)) {
-				PHPVersion phpVersion = ProjectOptions.getPhpVersion(unit
-						.getScriptProject().getProject());
+				PHPVersion phpVersion = ProjectOptions.getPhpVersion(unit.getScriptProject().getProject());
 				ASTParser newParser = ASTParser.newParser(phpVersion, unit);
 				createdAST = newParser.createAST(null);
 				if (createdAST != null && document != null) {
@@ -48,8 +44,7 @@
 			}
 
 		} catch (OperationCanceledException ex) {
-			Assert.isTrue(fProgressMonitor == null
-					|| fProgressMonitor.isCanceled());
+			Assert.isTrue(fProgressMonitor == null || fProgressMonitor.isCanceled());
 
 		} catch (Exception e) {
 			throw new ModelException(e, IStatus.ERROR);
