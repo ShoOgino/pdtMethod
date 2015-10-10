@@ -25,21 +25,19 @@
 		gd.horizontalSpan = 2;
 		label.setLayoutData(gd);
 
-		TableLayoutComposite layouter = new TableLayoutComposite(
-				hoverComposite, SWT.NONE);
+		TableLayoutComposite layouter = new TableLayoutComposite(hoverComposite, SWT.NONE);
 		addColumnLayoutData(layouter);
 
 		// Hover table
-		fHoverTable = new Table(layouter, SWT.H_SCROLL | SWT.V_SCROLL
-				| SWT.SINGLE | SWT.BORDER | SWT.FULL_SELECTION | SWT.CHECK);
+		fHoverTable = new Table(layouter,
+				SWT.H_SCROLL | SWT.V_SCROLL | SWT.SINGLE | SWT.BORDER | SWT.FULL_SELECTION | SWT.CHECK);
 		fHoverTable.setHeaderVisible(true);
 		fHoverTable.setLinesVisible(true);
 
 		gd = new GridData(GridData.FILL_HORIZONTAL);
 		gd.heightHint = SWTUtil.getTableHeightHint(fHoverTable, 10);
 		gd.horizontalSpan = 2;
-		gd.widthHint = new PixelConverter(parent)
-				.convertWidthInCharsToPixels(30);
+		gd.widthHint = new PixelConverter(parent).convertWidthInCharsToPixels(30);
 		layouter.setLayoutData(gd);
 
 		fHoverTable.addSelectionListener(new SelectionListener() {
@@ -55,52 +53,44 @@
 		fHoverTable.setLayout(tableLayout);
 
 		fNameColumn = new TableColumn(fHoverTable, SWT.NONE);
-		fNameColumn
-				.setText(PHPUIMessages.PHPEditorHoverConfigurationBlock_nameColumnTitle);
+		fNameColumn.setText(PHPUIMessages.PHPEditorHoverConfigurationBlock_nameColumnTitle);
 		fNameColumn.setResizable(true);
 
 		fModifierColumn = new TableColumn(fHoverTable, SWT.NONE);
-		fModifierColumn
-				.setText(PHPUIMessages.PHPEditorHoverConfigurationBlock_modifierColumnTitle);
+		fModifierColumn.setText(PHPUIMessages.PHPEditorHoverConfigurationBlock_modifierColumnTitle);
 		fModifierColumn.setResizable(true);
 
 		fHoverTableViewer = new CheckboxTableViewer(fHoverTable);
 		fHoverTableViewer.setUseHashlookup(true);
-		fHoverTableViewer
-				.setContentProvider(new PHPEditorTextHoverDescriptorContentProvider());
-		fHoverTableViewer
-				.setLabelProvider(new PHPEditorTextHoverDescriptorLabelProvider());
+		fHoverTableViewer.setContentProvider(new PHPEditorTextHoverDescriptorContentProvider());
+		fHoverTableViewer.setLabelProvider(new PHPEditorTextHoverDescriptorLabelProvider());
 
-		((CheckboxTableViewer) fHoverTableViewer)
-				.addCheckStateListener(new ICheckStateListener() {
-					/*
-					 * @seeorg.eclipse.jface.viewers.ICheckStateListener#
-					 * checkStateChanged
-					 * (org.eclipse.jface.viewers.CheckStateChangedEvent)
-					 */
-					public void checkStateChanged(CheckStateChangedEvent event) {
-						String id = ((PHPEditorTextHoverDescriptor) event
-								.getElement()).getId();
-						if (id == null)
-							return;
-						PHPEditorTextHoverDescriptor[] descriptors = getContributedHovers();
-						HoverConfig hoverConfig = null;
-						int i = 0, length = fHoverConfigs.length;
-						while (i < length) {
-							if (id.equals(descriptors[i].getId())) {
-								hoverConfig = fHoverConfigs[i];
-								hoverConfig.fIsEnabled = event.getChecked();
-								fModifierEditor.setEnabled(event.getChecked());
-								fHoverTableViewer
-										.setSelection(new StructuredSelection(
-												descriptors[i]));
-							}
-							i++;
-						}
-						handleHoverListSelection();
-						updateStatus(hoverConfig);
+		((CheckboxTableViewer) fHoverTableViewer).addCheckStateListener(new ICheckStateListener() {
+			/*
+			 * @seeorg.eclipse.jface.viewers.ICheckStateListener#
+			 * checkStateChanged
+			 * (org.eclipse.jface.viewers.CheckStateChangedEvent)
+			 */
+			public void checkStateChanged(CheckStateChangedEvent event) {
+				String id = ((PHPEditorTextHoverDescriptor) event.getElement()).getId();
+				if (id == null)
+					return;
+				PHPEditorTextHoverDescriptor[] descriptors = getContributedHovers();
+				HoverConfig hoverConfig = null;
+				int i = 0, length = fHoverConfigs.length;
+				while (i < length) {
+					if (id.equals(descriptors[i].getId())) {
+						hoverConfig = fHoverConfigs[i];
+						hoverConfig.fIsEnabled = event.getChecked();
+						fModifierEditor.setEnabled(event.getChecked());
+						fHoverTableViewer.setSelection(new StructuredSelection(descriptors[i]));
 					}
-				});
+					i++;
+				}
+				handleHoverListSelection();
+				updateStatus(hoverConfig);
+			}
+		});
 
 		// Text field for modifier string
 		label = new Label(hoverComposite, SWT.LEFT);
@@ -113,8 +103,7 @@
 			private boolean isModifierCandidate;
 
 			public void keyPressed(KeyEvent e) {
-				isModifierCandidate = e.keyCode > 0 && e.character == 0
-						&& e.stateMask == 0;
+				isModifierCandidate = e.keyCode > 0 && e.character == 0 && e.stateMask == 0;
 			}
 
 			public void keyReleased(KeyEvent e) {
@@ -130,36 +119,29 @@
 					while (i > -1 && Character.isWhitespace(text.charAt(i))) {
 						i--;
 					}
-					boolean needsPrefixDelimiter = i > -1
-							&& !String.valueOf(text.charAt(i))
-									.equals(DELIMITER);
+					boolean needsPrefixDelimiter = i > -1 && !String.valueOf(text.charAt(i)).equals(DELIMITER);
 
 					i = selection.y;
-					while (i < text.length()
-							&& Character.isWhitespace(text.charAt(i))) {
+					while (i < text.length() && Character.isWhitespace(text.charAt(i))) {
 						i++;
 					}
 					boolean needsPostfixDelimiter = i < text.length()
-							&& !String.valueOf(text.charAt(i))
-									.equals(DELIMITER);
+							&& !String.valueOf(text.charAt(i)).equals(DELIMITER);
 
 					String insertString;
 
 					if (needsPrefixDelimiter && needsPostfixDelimiter)
-						insertString = NLS
-								.bind(PHPUIMessages.PHPEditorHoverConfigurationBlock_insertDelimiterAndModifierAndDelimiter,
-										new String[] { Action
-												.findModifierString(e.stateMask) });
+						insertString = NLS.bind(
+								PHPUIMessages.PHPEditorHoverConfigurationBlock_insertDelimiterAndModifierAndDelimiter,
+								new String[] { Action.findModifierString(e.stateMask) });
 					else if (needsPrefixDelimiter)
-						insertString = NLS
-								.bind(PHPUIMessages.PHPEditorHoverConfigurationBlock_insertDelimiterAndModifier,
-										new String[] { Action
-												.findModifierString(e.stateMask) });
+						insertString = NLS.bind(
+								PHPUIMessages.PHPEditorHoverConfigurationBlock_insertDelimiterAndModifier,
+								new String[] { Action.findModifierString(e.stateMask) });
 					else if (needsPostfixDelimiter)
-						insertString = NLS
-								.bind(PHPUIMessages.PHPEditorHoverConfigurationBlock_insertModifierAndDelimiter,
-										new String[] { Action
-												.findModifierString(e.stateMask) });
+						insertString = NLS.bind(
+								PHPUIMessages.PHPEditorHoverConfigurationBlock_insertModifierAndDelimiter,
+								new String[] { Action.findModifierString(e.stateMask) });
 					else
 						insertString = Action.findModifierString(e.stateMask);
 
@@ -177,13 +159,11 @@
 
 		// Description
 		Label descriptionLabel = new Label(hoverComposite, SWT.LEFT);
-		descriptionLabel
-				.setText(PHPUIMessages.PHPEditorHoverConfigurationBlock_description);
+		descriptionLabel.setText(PHPUIMessages.PHPEditorHoverConfigurationBlock_description);
 		gd = new GridData(GridData.VERTICAL_ALIGN_BEGINNING);
 		gd.horizontalSpan = 2;
 		descriptionLabel.setLayoutData(gd);
-		fDescription = new Text(hoverComposite, SWT.LEFT | SWT.WRAP | SWT.MULTI
-				| SWT.READ_ONLY | SWT.BORDER);
+		fDescription = new Text(hoverComposite, SWT.LEFT | SWT.WRAP | SWT.MULTI | SWT.READ_ONLY | SWT.BORDER);
 		gd = new GridData(GridData.FILL_BOTH);
 		gd.horizontalSpan = 2;
 		fDescription.setLayoutData(gd);

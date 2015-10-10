@@ -1,5 +1,4 @@
-	public static void searchAndLaunch(Object[] search, String mode,
-			ILaunchConfigurationType configType) {
+	public static void searchAndLaunch(Object[] search, String mode, ILaunchConfigurationType configType) {
 		int entries = search == null ? 0 : search.length;
 		for (int i = 0; i < entries; i++) {
 			try {
@@ -27,8 +26,7 @@
 					res = file;
 					project = file.getProject();
 					IContentType contentType = Platform.getContentTypeManager()
-							.getContentType(
-									ContentTypeIdForPHP.ContentTypeID_PHP);
+							.getContentType(ContentTypeIdForPHP.ContentTypeID_PHP);
 					if (contentType.isAssociatedWith(file.getName())) {
 						if (new File(file.getFullPath().toOSString()).exists()) {
 							phpPathString = file.getFullPath().toOSString();
@@ -51,49 +49,40 @@
 
 				if (phpPathString == null) {
 					// Could not find target to launch
-					throw new CoreException(new Status(IStatus.ERROR,
-							PHPDebugUIPlugin.ID, IStatus.OK,
+					throw new CoreException(new Status(IStatus.ERROR, PHPDebugUIPlugin.ID, IStatus.OK,
 							PHPDebugUIMessages.launch_failure_no_target, null));
 				}
 
 				PHPexeItem defaultEXE = getDefaultPHPExe(project);
-				String phpExeName = (defaultEXE != null) ? defaultEXE
-						.getExecutable().getAbsolutePath().toString() : null;
+				String phpExeName = (defaultEXE != null) ? defaultEXE.getExecutable().getAbsolutePath().toString()
+						: null;
 
 				if (phpExeName == null) {
-					MessageDialog.openError(
-							PHPDebugUIPlugin.getActiveWorkbenchShell(),
-							PHPDebugUIMessages.launch_noexe_msg_title,
-							PHPDebugUIMessages.launch_noexe_msg_text);
-					PreferencesUtil
-							.createPreferenceDialogOn(
-									PHPDebugUIPlugin.getActiveWorkbenchShell(),
-									"org.eclipse.php.debug.ui.preferencesphps.PHPsPreferencePage", //$NON-NLS-1$
-									null, null).open();
+					MessageDialog.openError(PHPDebugUIPlugin.getActiveWorkbenchShell(),
+							PHPDebugUIMessages.launch_noexe_msg_title, PHPDebugUIMessages.launch_noexe_msg_text);
+					PreferencesUtil.createPreferenceDialogOn(PHPDebugUIPlugin.getActiveWorkbenchShell(),
+							"org.eclipse.php.debug.ui.preferencesphps.PHPsPreferencePage", //$NON-NLS-1$
+							null, null).open();
 					return;
 				}
 
 				// Launch the app
-				ILaunchConfiguration config = findLaunchConfiguration(project,
-						phpPathString, phpFileLocation, defaultEXE, mode,
-						configType, res);
+				ILaunchConfiguration config = findLaunchConfiguration(project, phpPathString, phpFileLocation,
+						defaultEXE, mode, configType, res);
 				if (config != null) {
 					DebugUITools.launch(config, mode);
 				} else {
 					// Could not find launch configuration
-					throw new CoreException(new Status(IStatus.ERROR,
-							PHPDebugUIPlugin.ID, IStatus.OK,
+					throw new CoreException(new Status(IStatus.ERROR, PHPDebugUIPlugin.ID, IStatus.OK,
 							PHPDebugUIMessages.launch_failure_no_config, null));
 				}
 			} catch (CoreException ce) {
 				final IStatus stat = ce.getStatus();
 				Display.getDefault().asyncExec(new Runnable() {
 					public void run() {
-						ErrorDialog.openError(
-								PHPDebugUIPlugin.getActiveWorkbenchShell(),
+						ErrorDialog.openError(PHPDebugUIPlugin.getActiveWorkbenchShell(),
 								PHPDebugUIMessages.launch_failure_msg_title,
-								PHPDebugUIMessages.launch_failure_exec_msg_text,
-								stat);
+								PHPDebugUIMessages.launch_failure_exec_msg_text, stat);
 					}
 				});
 			}

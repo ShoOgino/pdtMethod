@@ -1,13 +1,10 @@
 		@Override
 		public boolean visit(FunctionInvocation funcInv) {
 			if ((funcInv.getParent() instanceof StaticMethodInvocation)) {
-				StaticMethodInvocation methodInvocation = (StaticMethodInvocation) funcInv
-						.getParent();
-				ITypeBinding type = methodInvocation.getClassName()
-						.resolveTypeBinding();
+				StaticMethodInvocation methodInvocation = (StaticMethodInvocation) funcInv.getParent();
+				ITypeBinding type = methodInvocation.getClassName().resolveTypeBinding();
 
-				if (type != null
-						&& ModelUtils.isDeprecated(type.getPHPElement())) {
+				if (type != null && ModelUtils.isDeprecated(type.getPHPElement())) {
 					highlight(methodInvocation.getClassName());
 				}
 
@@ -17,17 +14,13 @@
 
 				}
 			} else if (!(funcInv.getParent() instanceof MethodInvocation)) {
-				IModelAccessCache cache = funcInv.getAST().getBindingResolver()
-						.getModelAccessCache();
+				IModelAccessCache cache = funcInv.getAST().getBindingResolver().getModelAccessCache();
 				if (cache != null) {
-					String functionName = ModelUtils
-							.getFunctionName(funcInv.getFunctionName());
+					String functionName = ModelUtils.getFunctionName(funcInv.getFunctionName());
 					// functionName will be null if the function call looks like
 					// ${func}(&$this),the ${func} is type of ReflectionVariable
 					if (functionName != null) {
-						Collection<IMethod> functions = cache
-								.getGlobalFunctions(getSourceModule(),
-										functionName, null);
+						Collection<IMethod> functions = cache.getGlobalFunctions(getSourceModule(), functionName, null);
 						if (functions != null) {
 							for (IMethod function : functions) {
 								if (ModelUtils.isDeprecated(function)) {

@@ -1,10 +1,8 @@
-	public ICompletionProposal[] computeCompletionProposals(ITextViewer viewer,
-			int offset) {
+	public ICompletionProposal[] computeCompletionProposals(ITextViewer viewer, int offset) {
 		document = viewer.getDocument();
 		try {
 			String type = TextUtilities.getContentType(document,
-					IStructuredPartitioning.DEFAULT_STRUCTURED_PARTITIONING,
-					offset, true);
+					IStructuredPartitioning.DEFAULT_STRUCTURED_PARTITIONING, offset, true);
 			if (!PHPPartitionTypes.PHP_DEFAULT.equals(type)) {
 				return EMPTY;
 			}
@@ -43,51 +41,38 @@
 			}
 
 			// find the most outer enclosing type if exists
-			while (enclosingElement != null
-					&& !(enclosingElement instanceof IType)) {
+			while (enclosingElement != null && !(enclosingElement instanceof IType)) {
 				enclosingElement = enclosingElement.getParent();
 			}
 			enclosingType = (IType) enclosingElement;
 
 			if (enclosingMethod == null && enclosingType == null) {
 
-				contextIds
-						.add(PhpTemplateContextType.PHP_STATEMENTS_CONTEXT_TYPE_ID);
-				contextIds
-						.add(PhpTemplateContextType.PHP_GLOBAL_MEMBERS_CONTEXT_TYPE_ID);
-			} else if (enclosingMethod == null && enclosingType != null
-					&& !isFieldAccess) {
+				contextIds.add(PhpTemplateContextType.PHP_STATEMENTS_CONTEXT_TYPE_ID);
+				contextIds.add(PhpTemplateContextType.PHP_GLOBAL_MEMBERS_CONTEXT_TYPE_ID);
+			} else if (enclosingMethod == null && enclosingType != null && !isFieldAccess) {
 				if (!PHPFlags.isNamespace(enclosingType.getFlags())) {
-					contextIds
-							.add(PhpTemplateContextType.PHP_TYPE_MEMBERS_CONTEXT_TYPE_ID);
+					contextIds.add(PhpTemplateContextType.PHP_TYPE_MEMBERS_CONTEXT_TYPE_ID);
 					if (PHPFlags.isClass(enclosingType.getFlags())) {
-						contextIds
-								.add(PhpTemplateContextType.PHP_CLASS_MEMBERS_CONTEXT_TYPE_ID);
+						contextIds.add(PhpTemplateContextType.PHP_CLASS_MEMBERS_CONTEXT_TYPE_ID);
 					}
 				} else {
-					contextIds
-							.add(PhpTemplateContextType.PHP_STATEMENTS_CONTEXT_TYPE_ID);
-					contextIds
-							.add(PhpTemplateContextType.PHP_GLOBAL_MEMBERS_CONTEXT_TYPE_ID);
+					contextIds.add(PhpTemplateContextType.PHP_STATEMENTS_CONTEXT_TYPE_ID);
+					contextIds.add(PhpTemplateContextType.PHP_GLOBAL_MEMBERS_CONTEXT_TYPE_ID);
 				}
-			} else if (enclosingMethod != null && enclosingType != null
-					&& !isFieldAccess) {
+			} else if (enclosingMethod != null && enclosingType != null && !isFieldAccess) {
 				if (!PHPFlags.isNamespace(enclosingType.getFlags())) {
-					contextIds
-							.add(PhpTemplateContextType.PHP_TYPE_METHOD_STATEMENTS_CONTEXT_TYPE_ID);
+					contextIds.add(PhpTemplateContextType.PHP_TYPE_METHOD_STATEMENTS_CONTEXT_TYPE_ID);
 				}
-				contextIds
-						.add(PhpTemplateContextType.PHP_STATEMENTS_CONTEXT_TYPE_ID);
+				contextIds.add(PhpTemplateContextType.PHP_STATEMENTS_CONTEXT_TYPE_ID);
 			} else if (enclosingMethod != null && enclosingType == null) {
-				contextIds
-						.add(PhpTemplateContextType.PHP_STATEMENTS_CONTEXT_TYPE_ID);
+				contextIds.add(PhpTemplateContextType.PHP_STATEMENTS_CONTEXT_TYPE_ID);
 			}
 		} catch (ModelException e) {
 			PHPCorePlugin.log(e);
 		}
 
-		ITextSelection selection = (ITextSelection) viewer
-				.getSelectionProvider().getSelection();
+		ITextSelection selection = (ITextSelection) viewer.getSelectionProvider().getSelection();
 
 		ICompletionProposal[] selectionProposal = EMPTY;
 		if (selection.getLength() != 0) {
@@ -120,16 +105,13 @@
 			for (int i = 0; i != templates.length; i++) {
 				Template template = templates[i];
 				if (context.canEvaluate(template)
-						&& (!multipleLinesSelected
-								&& template.getPattern().indexOf(
-										$_WORD_SELECTION) != -1 || (multipleLinesSelected && template
-								.getPattern().indexOf($_LINE_SELECTION) != -1))) {
-					matches.add((TemplateProposal) createProposal(templates[i],
-							context, region, getRelevance(template, prefix)));
+						&& (!multipleLinesSelected && template.getPattern().indexOf($_WORD_SELECTION) != -1
+								|| (multipleLinesSelected && template.getPattern().indexOf($_LINE_SELECTION) != -1))) {
+					matches.add((TemplateProposal) createProposal(templates[i], context, region,
+							getRelevance(template, prefix)));
 				}
 			}
-			selectionProposal = matches.toArray(new ICompletionProposal[matches
-					.size()]);
+			selectionProposal = matches.toArray(new ICompletionProposal[matches.size()]);
 		} else {
 			isSelection = false;
 		}
@@ -156,8 +138,8 @@
 				continue;
 			}
 			if (template.getName().startsWith(prefix))
-				matches.add((TemplateProposal) createProposal(template,
-						context, region, getRelevance(template, prefix)));
+				matches.add(
+						(TemplateProposal) createProposal(template, context, region, getRelevance(template, prefix)));
 		}
 
 		final IInformationControlCreator controlCreator = getInformationControlCreator();

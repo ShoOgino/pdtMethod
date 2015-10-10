@@ -1,5 +1,4 @@
-	private void addMoveSupport(final Shell popupShell,
-			final Control movedControl) {
+	private void addMoveSupport(final Shell popupShell, final Control movedControl) {
 		movedControl.addMouseListener(new MouseAdapter() {
 
 			public void mouseDown(final MouseEvent downEvent) {
@@ -8,8 +7,7 @@
 				}
 
 				final Point POPUP_SOURCE = popupShell.getLocation();
-				final StyledText textWidget = fEditor.getTextViewer()
-						.getTextWidget();
+				final StyledText textWidget = fEditor.getTextViewer().getTextWidget();
 				Point pSize = getExtent();
 				int originalSnapPosition = fSnapPosition;
 
@@ -25,29 +23,18 @@
 				 */
 				final Tracker tracker = new Tracker(textWidget, SWT.NONE);
 
-				final Point[] LOCATIONS = {
-						textWidget
-								.toControl(computePopupLocation(SNAP_POSITION_UNDER_RIGHT_FIELD)),
-						textWidget
-								.toControl(computePopupLocation(SNAP_POSITION_OVER_RIGHT_FIELD)),
-						textWidget
-								.toControl(computePopupLocation(SNAP_POSITION_UNDER_LEFT_FIELD)),
-						textWidget
-								.toControl(computePopupLocation(SNAP_POSITION_OVER_LEFT_FIELD)),
-						textWidget
-								.toControl(computePopupLocation(SNAP_POSITION_LOWER_RIGHT)) };
+				final Point[] LOCATIONS = { textWidget.toControl(computePopupLocation(SNAP_POSITION_UNDER_RIGHT_FIELD)),
+						textWidget.toControl(computePopupLocation(SNAP_POSITION_OVER_RIGHT_FIELD)),
+						textWidget.toControl(computePopupLocation(SNAP_POSITION_UNDER_LEFT_FIELD)),
+						textWidget.toControl(computePopupLocation(SNAP_POSITION_OVER_LEFT_FIELD)),
+						textWidget.toControl(computePopupLocation(SNAP_POSITION_LOWER_RIGHT)) };
 
-				final Rectangle[] DROP_TARGETS = {
-						Geometry.createRectangle(LOCATIONS[0], pSize),
+				final Rectangle[] DROP_TARGETS = { Geometry.createRectangle(LOCATIONS[0], pSize),
 						Geometry.createRectangle(LOCATIONS[1], pSize),
-						new Rectangle(LOCATIONS[2].x, LOCATIONS[2].y + HAH,
-								pSize.x, pSize.y),
-						Geometry.createRectangle(LOCATIONS[3], pSize),
-						Geometry.createRectangle(LOCATIONS[4], pSize) };
-				final Rectangle MOUSE_MOVE_SOURCE = new Rectangle(1000000, 0,
-						0, 0);
-				tracker.setRectangles(new Rectangle[] { MOUSE_MOVE_SOURCE,
-						DROP_TARGETS[fSnapPosition] });
+						new Rectangle(LOCATIONS[2].x, LOCATIONS[2].y + HAH, pSize.x, pSize.y),
+						Geometry.createRectangle(LOCATIONS[3], pSize), Geometry.createRectangle(LOCATIONS[4], pSize) };
+				final Rectangle MOUSE_MOVE_SOURCE = new Rectangle(1000000, 0, 0, 0);
+				tracker.setRectangles(new Rectangle[] { MOUSE_MOVE_SOURCE, DROP_TARGETS[fSnapPosition] });
 				tracker.setStippled(true);
 
 				ControlListener moveListener = new ControlAdapter() {
@@ -59,18 +46,15 @@
 					public void controlMoved(ControlEvent moveEvent) {
 						Rectangle[] currentRects = tracker.getRectangles();
 						final Rectangle mouseMoveCurrent = currentRects[0];
-						Point popupLoc = new Point(POPUP_SOURCE.x
-								+ mouseMoveCurrent.x - MOUSE_MOVE_SOURCE.x,
-								POPUP_SOURCE.y + mouseMoveCurrent.y
-										- MOUSE_MOVE_SOURCE.y);
+						Point popupLoc = new Point(POPUP_SOURCE.x + mouseMoveCurrent.x - MOUSE_MOVE_SOURCE.x,
+								POPUP_SOURCE.y + mouseMoveCurrent.y - MOUSE_MOVE_SOURCE.y);
 
 						popupShell.setLocation(popupLoc);
 
 						Point ePopupLoc = textWidget.toControl(popupLoc);
 						int minDist = Integer.MAX_VALUE;
 						for (int snapPos = 0; snapPos < DROP_TARGETS.length; snapPos++) {
-							int dist = Geometry.distanceSquared(ePopupLoc,
-									LOCATIONS[snapPos]);
+							int dist = Geometry.distanceSquared(ePopupLoc, LOCATIONS[snapPos]);
 							if (dist < minDist) {
 								minDist = dist;
 								fSnapPosition = snapPos;

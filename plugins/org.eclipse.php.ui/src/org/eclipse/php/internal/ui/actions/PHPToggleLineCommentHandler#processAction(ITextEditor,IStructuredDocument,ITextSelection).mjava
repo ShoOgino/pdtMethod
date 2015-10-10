@@ -3,8 +3,8 @@
 	 *      org.eclipse.wst.sse.core.internal.provisional.text.IStructuredDocument,
 	 *      org.eclipse.jface.text.ITextSelection)
 	 */
-	protected void processAction(final ITextEditor textEditor,
-			final IStructuredDocument document, ITextSelection textSelection) {
+	protected void processAction(final ITextEditor textEditor, final IStructuredDocument document,
+			ITextSelection textSelection) {
 
 		IStructuredModel model = null;
 		DocumentRewriteSession session = null;
@@ -22,48 +22,35 @@
 				isSingleLine = true;
 			}
 
-			int selectionEndLineOffset = document
-					.getLineOffset(selectionEndLine);
-			int selectionEndOffset = textSelection.getOffset()
-					+ textSelection.getLength();
+			int selectionEndLineOffset = document.getLineOffset(selectionEndLine);
+			int selectionEndOffset = textSelection.getOffset() + textSelection.getLength();
 
 			// adjust selection end line
-			if ((selectionEndLine > selectionStartLine)
-					&& (selectionEndLineOffset == selectionEndOffset)) {
+			if ((selectionEndLine > selectionStartLine) && (selectionEndLineOffset == selectionEndOffset)) {
 				selectionEndLine--;
-				selectionEndLineOffset = document.getLineInformation(
-						selectionEndLine).getOffset();
+				selectionEndLineOffset = document.getLineInformation(selectionEndLine).getOffset();
 			}
 
-			int selectionStartLineOffset = document
-					.getLineOffset(selectionStartLine);
+			int selectionStartLineOffset = document.getLineOffset(selectionStartLine);
 			if (selectionEndLineOffset == selectionStartLineOffset) {
-				selectionEndLineOffset = document.getLineInformation(
-						selectionEndLine).getOffset()
-						+ document.getLineInformation(selectionEndLine)
-								.getLength();
+				selectionEndLineOffset = document.getLineInformation(selectionEndLine).getOffset()
+						+ document.getLineInformation(selectionEndLine).getLength();
 			}
-			ITypedRegion[] lineTypedRegions = document.computePartitioning(
-					selectionStartLineOffset, selectionEndLineOffset
-							- selectionStartLineOffset);
-			if (lineTypedRegions != null
-					&& lineTypedRegions.length == 1
-					&& lineTypedRegions[0].getType().equals(
-							"org.eclipse.php.PHP_DEFAULT")) { //$NON-NLS-1$
+			ITypedRegion[] lineTypedRegions = document.computePartitioning(selectionStartLineOffset,
+					selectionEndLineOffset - selectionStartLineOffset);
+			if (lineTypedRegions != null && lineTypedRegions.length == 1
+					&& lineTypedRegions[0].getType().equals("org.eclipse.php.PHP_DEFAULT")) { //$NON-NLS-1$
 
 				// save the selection position since it will be changing
 				Position selectionPosition = null;
-				selectionPosition = new Position(textSelection.getOffset(),
-						textSelection.getLength());
+				selectionPosition = new Position(textSelection.getOffset(), textSelection.getLength());
 				document.addPosition(selectionPosition);
 
-				model = StructuredModelManager.getModelManager()
-						.getModelForEdit(document);
+				model = StructuredModelManager.getModelManager().getModelForEdit(document);
 				if (model != null) {
 					// makes it so one undo will undo all the edits to the
 					// document
-					model.beginRecording(this,
-							SSEUIMessages.ToggleComment_label,
+					model.beginRecording(this, SSEUIMessages.ToggleComment_label,
 							SSEUIMessages.ToggleComment_description);
 
 					// keeps listeners from doing anything until updates are all
@@ -78,8 +65,7 @@
 					// get the display for the editor if we can
 					Display display = null;
 					if (textEditor instanceof StructuredTextEditor) {
-						StructuredTextViewer viewer = ((StructuredTextEditor) textEditor)
-								.getTextViewer();
+						StructuredTextViewer viewer = ((StructuredTextEditor) textEditor).getTextViewer();
 						if (viewer != null) {
 							display = viewer.getControl().getDisplay();
 						}
@@ -87,8 +73,7 @@
 
 					// create the toggling operation
 					IRunnableWithProgress toggleCommentsRunnable = new ToggleLinesRunnable(
-							model.getContentTypeIdentifier(), document,
-							selectionStartLine, selectionEndLine, display,
+							model.getContentTypeIdentifier(), document, selectionStartLine, selectionEndLine, display,
 							isSingleLine);
 
 					// if toggling lots of lines then use progress monitor else
@@ -96,8 +81,7 @@
 					// run the operation
 					if ((selectionEndLine - selectionStartLine) > TOGGLE_LINES_MAX_NO_BUSY_INDICATOR
 							&& display != null) {
-						ProgressMonitorDialog dialog = new ProgressMonitorDialog(
-								display.getActiveShell());
+						ProgressMonitorDialog dialog = new ProgressMonitorDialog(display.getActiveShell());
 						dialog.run(false, true, toggleCommentsRunnable);
 					} else {
 						toggleCommentsRunnable.run(new NullProgressMonitor());
@@ -115,20 +99,16 @@
 					}
 				};
 				org.eclipse.core.commands.ExecutionEvent executionEvent = new org.eclipse.core.commands.ExecutionEvent(
-						null, Collections.EMPTY_MAP, new Event(),
-						evaluationContext);
+						null, Collections.EMPTY_MAP, new Event(), evaluationContext);
 				toggleLineCommentHandler.execute(executionEvent);
 			}
 
 		} catch (InvocationTargetException e) {
-			Logger.logException(
-					"Problem running toggle comment progess dialog.", e); //$NON-NLS-1$ 
+			Logger.logException("Problem running toggle comment progess dialog.", e); //$NON-NLS-1$
 		} catch (InterruptedException e) {
-			Logger.logException(
-					"Problem running toggle comment progess dialog.", e); //$NON-NLS-1$
+			Logger.logException("Problem running toggle comment progess dialog.", e); //$NON-NLS-1$
 		} catch (BadLocationException e) {
-			Logger.logException(
-					"The given selection " + textSelection + " must be invalid", e); //$NON-NLS-1$  //$NON-NLS-2$
+			Logger.logException("The given selection " + textSelection + " must be invalid", e); //$NON-NLS-1$ //$NON-NLS-2$
 		} catch (ExecutionException e) {
 		} finally {
 			// clean everything up

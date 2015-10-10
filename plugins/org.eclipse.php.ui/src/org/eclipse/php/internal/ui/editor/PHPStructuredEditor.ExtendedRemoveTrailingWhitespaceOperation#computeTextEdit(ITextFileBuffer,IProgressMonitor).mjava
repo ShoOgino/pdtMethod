@@ -3,15 +3,13 @@
 		 * lines - depending on the value of fIgnoreEmptyLines
 		 */
 		@Override
-		protected MultiTextEditWithProgress computeTextEdit(
-				ITextFileBuffer fileBuffer, IProgressMonitor progressMonitor)
-						throws CoreException {
+		protected MultiTextEditWithProgress computeTextEdit(ITextFileBuffer fileBuffer,
+				IProgressMonitor progressMonitor) throws CoreException {
 			IDocument document = fileBuffer.getDocument();
 			int lineCount = document.getNumberOfLines();
 
 			progressMonitor = Progress.getMonitor(progressMonitor);
-			progressMonitor.beginTask(
-					PHPUIMessages.RemoveTrailingWhitespaceOperation_task_generatingChanges,
+			progressMonitor.beginTask(PHPUIMessages.RemoveTrailingWhitespaceOperation_task_generatingChanges,
 					lineCount);
 			try {
 
@@ -29,8 +27,7 @@
 					int lineStart = region.getOffset();
 					int lineExclusiveEnd = lineStart + region.getLength();
 					int j = lineExclusiveEnd - 1;
-					while (j >= lineStart
-							&& Character.isWhitespace(document.getChar(j))) {
+					while (j >= lineStart && Character.isWhitespace(document.getChar(j))) {
 						--j;
 					}
 					++j;
@@ -39,8 +36,7 @@
 						continue;
 					}
 					if (j < lineExclusiveEnd) {
-						multiEdit.addChild(
-								new DeleteEdit(j, lineExclusiveEnd - j));
+						multiEdit.addChild(new DeleteEdit(j, lineExclusiveEnd - j));
 					}
 					progressMonitor.worked(1);
 				}
@@ -48,9 +44,8 @@
 				return multiEdit.getChildrenSize() <= 0 ? null : multiEdit;
 
 			} catch (BadLocationException x) {
-				throw new CoreException(new Status(IStatus.ERROR,
-						PHPUiPlugin.ID,
-						IFileBufferStatusCodes.CONTENT_CHANGE_FAILED, "", x)); //$NON-NLS-1$
+				throw new CoreException(
+						new Status(IStatus.ERROR, PHPUiPlugin.ID, IFileBufferStatusCodes.CONTENT_CHANGE_FAILED, "", x)); //$NON-NLS-1$
 			} finally {
 				progressMonitor.done();
 			}

@@ -1,14 +1,11 @@
-	public void replace(ASTRewrite rewrite, ASTNode replacement,
-			TextEditGroup textEditGroup) {
+	public void replace(ASTRewrite rewrite, ASTNode replacement, TextEditGroup textEditGroup) {
 		ASTNode groupNode = getGroupRoot();
 
 		List allOperands = findGroupMembersInOrderFor(getGroupRoot());
 		if (allOperands.size() == fOperands.size()) {
-			if (replacement instanceof Identifier
-					&& groupNode.getParent() instanceof ParenthesisExpression) {
+			if (replacement instanceof Identifier && groupNode.getParent() instanceof ParenthesisExpression) {
 				// replace including the parenthesized expression around it
-				rewrite.replace(groupNode.getParent(), replacement,
-						textEditGroup);
+				rewrite.replace(groupNode.getParent(), replacement, textEditGroup);
 			} else {
 				rewrite.replace(groupNode, replacement, textEditGroup);
 			}
@@ -23,15 +20,13 @@
 		ArrayList newOperands = new ArrayList();
 		for (int i = 0; i < allOperands.size(); i++) {
 			if (i < first || after <= i) {
-				newOperands.add(rewrite
-						.createCopyTarget((Expression) allOperands.get(i)));
-			} else /* i == first */{
+				newOperands.add(rewrite.createCopyTarget((Expression) allOperands.get(i)));
+			} else /* i == first */ {
 				newOperands.add(replacement);
 				i = after - 1;
 			}
 		}
-		Expression newExpression = rewrite.getAST().newInfixExpression(
-				(Expression) newOperands.get(0), getOperator(),
+		Expression newExpression = rewrite.getAST().newInfixExpression((Expression) newOperands.get(0), getOperator(),
 				(Expression) newOperands.get(1));
 		rewrite.replace(groupNode, newExpression, textEditGroup);
 	}

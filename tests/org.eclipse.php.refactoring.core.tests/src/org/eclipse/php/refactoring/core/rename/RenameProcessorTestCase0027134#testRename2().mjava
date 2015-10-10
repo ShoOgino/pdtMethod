@@ -1,6 +1,6 @@
 	@Test
-	public void testRename2() throws Exception{
-		
+	public void testRename2() throws Exception {
+
 		System.setProperty("disableStartupRunner", "true");
 		PHPCoreTests.waitForIndexer();
 		PHPCoreTests.waitForAutoBuild();
@@ -12,24 +12,20 @@
 		if (!folder.exists()) {
 			folder.create(true, true, new NullProgressMonitor());
 		}
-		
+
 		IFile file1 = folder.getFile("test100271341.php");
 
-		InputStream source = new ByteArrayInputStream(
-				"<?php class MyClass{} ?>"
-						.getBytes());
+		InputStream source = new ByteArrayInputStream("<?php class MyClass{} ?>".getBytes());
 
 		if (!file1.exists()) {
 			file1.create(source, true, new NullProgressMonitor());
 		} else {
 			file1.setContents(source, IFile.FORCE, new NullProgressMonitor());
 		}
-		
+
 		IFile file2 = folder.getFile("test00271342.php");
 
-		source = new ByteArrayInputStream(
-				"<?php class SecondClass extends MyClass{} ?>"
-						.getBytes());
+		source = new ByteArrayInputStream("<?php class SecondClass extends MyClass{} ?>".getBytes());
 
 		if (!file2.exists()) {
 			file2.create(source, true, new NullProgressMonitor());
@@ -37,7 +33,6 @@
 			file2.setContents(source, IFile.FORCE, new NullProgressMonitor());
 		}
 
-		
 		PHPCoreTests.waitForIndexer();
 		PHPCoreTests.waitForAutoBuild();
 		Program program = createProgram(file2);
@@ -48,8 +43,7 @@
 		ASTNode selectedNode = locateNode(program, start, 0);
 		assertNotNull(selectedNode);
 
-		RenameClassProcessor processor = new RenameClassProcessor(file2,
-				selectedNode);
+		RenameClassProcessor processor = new RenameClassProcessor(file2, selectedNode);
 
 		processor.setNewElementName("MyClass2");
 		processor.setUpdateTextualMatches(true);
@@ -60,17 +54,13 @@
 
 		try {
 			String content = FileUtils.getContents(file1);
-			assertEquals(
-					"<?php class MyClass2{} ?>",
-					content);
-			
+			assertEquals("<?php class MyClass2{} ?>", content);
+
 			content = FileUtils.getContents(file2);
-			assertEquals(
-					"<?php class SecondClass extends MyClass2{} ?>",
-					content);
+			assertEquals("<?php class SecondClass extends MyClass2{} ?>", content);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
+
 	}
 

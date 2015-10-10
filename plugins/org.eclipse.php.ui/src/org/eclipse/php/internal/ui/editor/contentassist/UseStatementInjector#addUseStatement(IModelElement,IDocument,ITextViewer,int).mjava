@@ -1,5 +1,4 @@
-	private int addUseStatement(IModelElement modelElement, IDocument document,
-			ITextViewer textViewer, int offset) {
+	private int addUseStatement(IModelElement modelElement, IDocument document, ITextViewer textViewer, int offset) {
 		// add use statement if needed:
 		IType namespace = PHPModelUtils.getCurrentNamespace(modelElement);
 		if (namespace == null) {
@@ -10,36 +9,26 @@
 		if (!(textViewer instanceof PHPStructuredTextViewer)) {
 			return offset;
 		}
-		ITextEditor textEditor = ((PHPStructuredTextViewer) textViewer)
-				.getTextEditor();
+		ITextEditor textEditor = ((PHPStructuredTextViewer) textViewer).getTextEditor();
 		if (!(textEditor instanceof PHPStructuredEditor)) {
 			return offset;
 
 		}
-		IModelElement editorElement = ((PHPStructuredEditor) textEditor)
-				.getModelElement();
+		IModelElement editorElement = ((PHPStructuredEditor) textEditor).getModelElement();
 		if (editorElement == null) {
 			return offset;
 		}
-		ISourceModule sourceModule = ((ModelElement) editorElement)
-				.getSourceModule();
+		ISourceModule sourceModule = ((ModelElement) editorElement).getSourceModule();
 
 		try {
 			String namespaceName = namespace.getElementName();
 			String usePartName = namespaceName;
-			boolean useAlias = !Platform
-					.getPreferencesService()
-					.getBoolean(
-							PHPCorePlugin.ID,
-							PHPCoreConstants.CODEASSIST_INSERT_FULL_QUALIFIED_NAME_FOR_NAMESPACE,
-							true, null);
+			boolean useAlias = !Platform.getPreferencesService().getBoolean(PHPCorePlugin.ID,
+					PHPCoreConstants.CODEASSIST_INSERT_FULL_QUALIFIED_NAME_FOR_NAMESPACE, true, null);
 			if (!useAlias) {
-				usePartName = usePartName
-						+ NamespaceReference.NAMESPACE_SEPARATOR
-						+ modelElement.getElementName();
+				usePartName = usePartName + NamespaceReference.NAMESPACE_SEPARATOR + modelElement.getElementName();
 			}
-			ModuleDeclaration moduleDeclaration = SourceParserUtil
-					.getModuleDeclaration(sourceModule);
+			ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule);
 
 			ASTParser parser = ASTParser.newParser(sourceModule);
 			parser.setSource(document.get().toCharArray());
@@ -47,67 +36,51 @@
 
 			// Don't insert USE statement for current namespace.
 			// "program != null" is a workaround for bug 465687.
-			if (program != null
-					&& isSameNamespace(namespaceName, program, sourceModule,
-							offset)) {
+			if (program != null && isSameNamespace(namespaceName, program, sourceModule, offset)) {
 				return offset;
 			}
 
 			// find existing use statement:
-			UsePart usePart = ASTUtils.findUseStatementByNamespace(
-					moduleDeclaration, usePartName, offset);
+			UsePart usePart = ASTUtils.findUseStatementByNamespace(moduleDeclaration, usePartName, offset);
 
-			List<String> importedTypeName = getImportedTypeName(
-					moduleDeclaration, offset);
+			List<String> importedTypeName = getImportedTypeName(moduleDeclaration, offset);
 			String typeName = ""; //$NON-NLS-1$
 			if (!useAlias) {
 				typeName = modelElement.getElementName().toLowerCase();
 			} else {
-				if (usePart != null && usePart.getAlias() != null
-						&& usePart.getAlias().getName() != null) {
+				if (usePart != null && usePart.getAlias() != null && usePart.getAlias().getName() != null) {
 					typeName = usePart.getAlias().getName();
 				} else {
-					typeName = PHPModelUtils.extractElementName(namespaceName)
-							.toLowerCase();
+					typeName = PHPModelUtils.extractElementName(namespaceName).toLowerCase();
 				}
 			}
 
 			PHPVersion phpVersion = ProjectOptions.getPhpVersion(modelElement);
 			// if the class/namespace has not been imported
 			// add use statement
-			if (program != null
-					&& !importedTypeName.contains(typeName)
-					&& canInsertUseStatement(getUseStatementType(modelElement),
-							phpVersion)) {
+			if (program != null && !importedTypeName.contains(typeName)
+					&& canInsertUseStatement(getUseStatementType(modelElement), phpVersion)) {
 				program.recordModifications();
 				AST ast = program.getAST();
-				NamespaceName newNamespaceName = ast.newNamespaceName(
-						createIdentifiers(ast, usePartName), false, false);
-				UseStatementPart newUseStatementPart = ast.newUseStatementPart(
-						newNamespaceName, null);
+				NamespaceName newNamespaceName = ast.newNamespaceName(createIdentifiers(ast, usePartName), false,
+						false);
+				UseStatementPart newUseStatementPart = ast.newUseStatementPart(newNamespaceName, null);
 				int type = getUseStatementType(modelElement);
 				UseStatement newUseStatement = ast
-						.newUseStatement(
-								Arrays.asList(new UseStatementPart[] { newUseStatementPart }),
-								type);
+						.newUseStatement(Arrays.asList(new UseStatementPart[] { newUseStatementPart }), type);
 
-				NamespaceDeclaration currentNamespace = getCurrentNamespace(
-						program, sourceModule, offset - 1);
+				NamespaceDeclaration currentNamespace = getCurrentNamespace(program, sourceModule, offset - 1);
 				if (currentNamespace != null) {
-					List<Statement> statements = currentNamespace.getBody()
-							.statements();
+					List<Statement> statements = currentNamespace.getBody().statements();
 					// insert in the beginning of the current
 					// namespace:
-					addUseStatement(offset, newUseStatement, statements,
-							document);
+					addUseStatement(offset, newUseStatement, statements, document);
 				} else {
-					addUseStatement(offset, newUseStatement,
-							program.statements(), document);
+					addUseStatement(offset, newUseStatement, program.statements(), document);
 				}
 
 				ast.setInsertUseStatement(true);
-				TextEdit edits = program.rewrite(document,
-						createOptions(modelElement));
+				TextEdit edits = program.rewrite(document, createOptions(modelElement));
 				// workaround for bug 400976:
 				// when current offset is in a php section that only contains
 				// AstErrors, the use statements will be added at the beginning
@@ -121,8 +94,7 @@
 				// should be enough to detect use statements that will be
 				// wrongly inserted outside any existing php section...
 				if (new Region(0, 0).equals(edits.getRegion())) {
-					String lineDelim = TextUtilities
-							.getDefaultLineDelimiter(document);
+					String lineDelim = TextUtilities.getDefaultLineDelimiter(document);
 					MultiTextEdit newEdits = new MultiTextEdit();
 					newEdits.addChild(new InsertEdit(0, "<?php"));
 					newEdits.addChild(new InsertEdit(0, lineDelim));
@@ -141,43 +113,35 @@
 
 					// update replacement string: add namespace
 					// alias prefix
-					String namespacePrefix = typeName
-							+ NamespaceReference.NAMESPACE_SEPARATOR;
+					String namespacePrefix = typeName + NamespaceReference.NAMESPACE_SEPARATOR;
 					String replacementString = proposal.getReplacementString();
 
-					String existingNamespacePrefix = readNamespacePrefix(
-							sourceModule, document, offset, phpVersion);
+					String existingNamespacePrefix = readNamespacePrefix(sourceModule, document, offset, phpVersion);
 
 					// Add alias to the replacement string:
 					if (existingNamespacePrefix == null
-							|| !usePartName.toLowerCase().equals(
-									existingNamespacePrefix.toLowerCase())) {
+							|| !usePartName.toLowerCase().equals(existingNamespacePrefix.toLowerCase())) {
 						replacementString = namespacePrefix + replacementString;
 					}
 					proposal.setReplacementString(replacementString);
 				}
 
-				int replacementOffset = proposal.getReplacementOffset()
-						+ edits.getLength();
+				int replacementOffset = proposal.getReplacementOffset() + edits.getLength();
 				offset += edits.getLength();
 				proposal.setReplacementOffset(replacementOffset);
 			} else if (!useAlias
-					&& (usePart == null || !usePartName.equals(usePart
-							.getNamespace().getFullyQualifiedName()))) {
-				String namespacePrefix = NamespaceReference.NAMESPACE_SEPARATOR
-						+ namespaceName
+					&& (usePart == null || !usePartName.equals(usePart.getNamespace().getFullyQualifiedName()))) {
+				String namespacePrefix = NamespaceReference.NAMESPACE_SEPARATOR + namespaceName
 						+ NamespaceReference.NAMESPACE_SEPARATOR;
 				String replacementString = proposal.getReplacementString();
 
-				String existingNamespacePrefix = readNamespacePrefix(
-						sourceModule, document, offset, phpVersion);
+				String existingNamespacePrefix = readNamespacePrefix(sourceModule, document, offset, phpVersion);
 
 				// https://bugs.eclipse.org/bugs/show_bug.cgi?id=459306
 				// if the type name already exists, use fully
 				// qualified name to replace:
 				if (existingNamespacePrefix == null
-						|| !namespaceName.toLowerCase().equals(
-								existingNamespacePrefix.toLowerCase())) {
+						|| !namespaceName.toLowerCase().equals(existingNamespacePrefix.toLowerCase())) {
 					replacementString = namespacePrefix + replacementString;
 				}
 				proposal.setReplacementString(replacementString);

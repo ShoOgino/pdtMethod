@@ -1,19 +1,16 @@
 	@Override
-	public IContentAssistProcessor[] getContentAssistProcessors(
-			ISourceViewer sourceViewer, String partitionType) {
+	public IContentAssistProcessor[] getContentAssistProcessors(ISourceViewer sourceViewer, String partitionType) {
 		IContentAssistProcessor[] processors = null;
 
 		if (sourceViewer instanceof PHPStructuredTextViewer) {
 
-			ITextEditor textEditor = ((PHPStructuredTextViewer) sourceViewer)
-					.getTextEditor();
+			ITextEditor textEditor = ((PHPStructuredTextViewer) sourceViewer).getTextEditor();
 			if (phpCompletionProcessor == null) {
 				ContentAssistant phpContentAssistant = (ContentAssistant) getPHPContentAssistant(sourceViewer);
 				// phpCompletionProcessor may be initialized in
 				// getPHPContentAssistant call
 				if (phpCompletionProcessor == null) {
-					phpCompletionProcessor = new PHPCompletionProcessor(
-							textEditor, phpContentAssistant,
+					phpCompletionProcessor = new PHPCompletionProcessor(textEditor, phpContentAssistant,
 							PHPPartitionTypes.PHP_DEFAULT);
 					addContentAssistProcessors(sourceViewer);
 				}
@@ -25,8 +22,7 @@
 				// PHPContentAssistant,so we can press "ctrl+space" to switch
 				// between different template categories
 				if (phpCompletionProcessor.getAssistant() != phpContentAssistant) {
-					phpCompletionProcessor = new PHPCompletionProcessor(
-							textEditor, phpContentAssistant,
+					phpCompletionProcessor = new PHPCompletionProcessor(textEditor, phpContentAssistant,
 							PHPPartitionTypes.PHP_DEFAULT);
 				}
 			}
@@ -35,22 +31,18 @@
 				processors = new IContentAssistProcessor[] { phpCompletionProcessor };
 			} else {
 				IContentAssistProcessor[] superProcessors;
-				if (partitionType.equals(ICSSPartitions.STYLE)
-						|| partitionType.equals(ICSSPartitions.COMMENT)) {
+				if (partitionType.equals(ICSSPartitions.STYLE) || partitionType.equals(ICSSPartitions.COMMENT)) {
 					IContentAssistProcessor processor = new CSSStructuredContentAssistProcessor(
-							this.getContentAssistant(), partitionType,
-							sourceViewer);
+							this.getContentAssistant(), partitionType, sourceViewer);
 					superProcessors = new IContentAssistProcessor[] { processor };
 
 				} else {
-					superProcessors = super.getContentAssistProcessors(
-							sourceViewer, partitionType);
+					superProcessors = super.getContentAssistProcessors(sourceViewer, partitionType);
 				}
 				processorMap.put(partitionType, superProcessors);
 				if (superProcessors != null) {
 					processors = new IContentAssistProcessor[superProcessors.length + 1];
-					System.arraycopy(superProcessors, 0, processors, 0,
-							superProcessors.length);
+					System.arraycopy(superProcessors, 0, processors, 0, superProcessors.length);
 					processors[superProcessors.length] = phpCompletionProcessor;
 				} else {
 					processors = new IContentAssistProcessor[] { phpCompletionProcessor };

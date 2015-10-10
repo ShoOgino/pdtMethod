@@ -2,7 +2,8 @@
 	 * Create the tunnel connection. If the tunnel is already connected, nothing
 	 * happens. This call will potentially change the password value of this
 	 * class in case the user is prompted to enter a valid one. There are
-	 * several return values possibilities to this call (as IStatus instances):<br>
+	 * several return values possibilities to this call (as IStatus instances):
+	 * <br>
 	 * <ul>
 	 * <li>Status OK - Signals that the connection was successful with no errors
 	 * or warnings</li>
@@ -27,8 +28,8 @@
 		String newPassword = null;
 		while (true) {
 			try {
-				session = SSHTunnelSession.getSession(userName, password,
-						remoteHost, SSH_DEFAULT_PORT, null).getSession();
+				session = SSHTunnelSession.getSession(userName, password, remoteHost, SSH_DEFAULT_PORT, null)
+						.getSession();
 				// This might throw exception because of binary compatibility
 				// issues.
 				// The JSCH API for the port forwarding was different in eclipse
@@ -40,26 +41,21 @@
 					newPassword = actualPassword;
 				}
 				Class sessionClass = session.getClass();
-				Class[] parameterTypes = new Class[] { int.class, String.class,
-						int.class };
+				Class[] parameterTypes = new Class[] { int.class, String.class, int.class };
 				try {
 					// session.setPortForwardingR(rport, host, lport)
-					Object[] values = new Object[] {
-							Integer.valueOf(remotePort), localHost,
+					Object[] values = new Object[] { Integer.valueOf(remotePort), localHost,
 							Integer.valueOf(localPort) };
-					java.lang.reflect.Method mSetPortForwarding = sessionClass
-							.getMethod("setPortForwardingR", //$NON-NLS-1$
-									parameterTypes);
+					java.lang.reflect.Method mSetPortForwarding = sessionClass.getMethod("setPortForwardingR", //$NON-NLS-1$
+							parameterTypes);
 					mSetPortForwarding.invoke(session, values);
 				} catch (NoSuchMethodException nsme) {
 					// it will not be thrown.
 				} catch (InvocationTargetException e) {
 					// this can be thrown if we already binded the remote port.
 					// if this is the case, ignore it. If not, log it.
-					if (e.getCause() != null
-							&& e.getCause().getMessage() != null
-							&& e.getCause().getMessage().toLowerCase()
-									.indexOf(Messages.SSHTunnel_2) == -1) {
+					if (e.getCause() != null && e.getCause().getMessage() != null
+							&& e.getCause().getMessage().toLowerCase().indexOf(Messages.SSHTunnel_2) == -1) {
 						ex = e;
 					}
 				} catch (Exception e) {
@@ -67,20 +63,18 @@
 				}
 				if (ex != null) {
 					if (isConnected()) {
-						status = new Status(IStatus.WARNING,
-								Activator.PLUGIN_ID, CONNECTION_WARNING_CODE,
+						status = new Status(IStatus.WARNING, Activator.PLUGIN_ID, CONNECTION_WARNING_CODE,
 								Messages.SSHTunnel_3, ex);
 					} else {
-						status = new Status(IStatus.ERROR, Activator.PLUGIN_ID,
-								CONNECTION_ERROR_CODE, Messages.SSHTunnel_4, ex);
+						status = new Status(IStatus.ERROR, Activator.PLUGIN_ID, CONNECTION_ERROR_CODE,
+								Messages.SSHTunnel_4, ex);
 					}
 				}
 			} catch (JSchException ee) {
 				retry--;
 				if (retry < 0) {
-					status = new Status(IStatus.ERROR, Activator.PLUGIN_ID,
-							CONNECTION_ERROR_CODE, Messages.SSHTunnel_5
-									+ remoteHost, ee);
+					status = new Status(IStatus.ERROR, Activator.PLUGIN_ID, CONNECTION_ERROR_CODE,
+							Messages.SSHTunnel_5 + remoteHost, ee);
 					break;
 				}
 				if (session != null && session.isConnected()) {
@@ -97,8 +91,7 @@
 		if (status.isOK() && newPassword != null) {
 			// Change the Status to INFO and deliver the accurate password to
 			// the caller.
-			status = new Status(IStatus.INFO, Activator.PLUGIN_ID,
-					CONNECTION_PASSWORD_CHANGED_CODE, newPassword, null);
+			status = new Status(IStatus.INFO, Activator.PLUGIN_ID, CONNECTION_PASSWORD_CHANGED_CODE, newPassword, null);
 		}
 
 		return status;

@@ -1,5 +1,4 @@
-	private void updateOccurencesAnnotationsRunJob(ITextSelection selection,
-			Program astRoot) {
+	private void updateOccurencesAnnotationsRunJob(ITextSelection selection, Program astRoot) {
 		if (astRoot == null || selection == null)
 			return;
 
@@ -13,33 +12,28 @@
 
 		// TODO: see the method comment, need to be removed once
 		// PHPStructuredEditor#aboutToBeChangedEvent is used
-		if (document.getLength() != astRoot.getEnd()
-				|| this.fReconcileSelection) {
+		if (document.getLength() != astRoot.getEnd() || this.fReconcileSelection) {
 			return;
 		}
 
 		boolean hasChanged = false;
 		if (document instanceof IDocumentExtension4) {
 			int offset = selection.getOffset();
-			long currentModificationStamp = ((IDocumentExtension4) document)
-					.getModificationStamp();
+			long currentModificationStamp = ((IDocumentExtension4) document).getModificationStamp();
 			IRegion markOccurrenceTargetRegion = fMarkOccurrenceTargetRegion;
 			hasChanged = currentModificationStamp != fMarkOccurrenceModificationStamp;
 			if (markOccurrenceTargetRegion != null && !hasChanged) {
 				if (markOccurrenceTargetRegion.getOffset() <= offset
-						&& offset <= markOccurrenceTargetRegion.getOffset()
-								+ markOccurrenceTargetRegion.getLength())
+						&& offset <= markOccurrenceTargetRegion.getOffset() + markOccurrenceTargetRegion.getLength())
 					return;
 			}
-			fMarkOccurrenceTargetRegion = ScriptWordFinder.findWord(document,
-					offset);
+			fMarkOccurrenceTargetRegion = ScriptWordFinder.findWord(document, offset);
 			fMarkOccurrenceModificationStamp = currentModificationStamp;
 		}
 
 		OccurrenceLocation[] locations = null;
 
-		ASTNode selectedNode = NodeFinder.perform(astRoot,
-				selection.getOffset(), selection.getLength());
+		ASTNode selectedNode = NodeFinder.perform(astRoot, selection.getOffset(), selection.getLength());
 
 		if (locations == null && fMarkExceptions) {
 			// TODO : Implement Me!
@@ -51,39 +45,34 @@
 		}
 
 		if (locations == null && fMarkMethodExitPoints) {
-			IOccurrencesFinder finder = OccurrencesFinderFactory
-					.createMethodExitsFinder();
+			IOccurrencesFinder finder = OccurrencesFinderFactory.createMethodExitsFinder();
 			if (finder.initialize(astRoot, selectedNode) == null) {
 				locations = finder.getOccurrences();
 			}
 		}
 
 		if (locations == null && fMarkImplementors) {
-			IOccurrencesFinder finder = OccurrencesFinderFactory
-					.createIncludeFinder();
+			IOccurrencesFinder finder = OccurrencesFinderFactory.createIncludeFinder();
 			if (finder.initialize(astRoot, selectedNode) == null) {
 				locations = finder.getOccurrences();
 			}
 		}
 
 		if (locations == null && fMarkBreakContinueTargets) {
-			IOccurrencesFinder finder = OccurrencesFinderFactory
-					.createBreakContinueTargetFinder();
+			IOccurrencesFinder finder = OccurrencesFinderFactory.createBreakContinueTargetFinder();
 			if (finder.initialize(astRoot, selectedNode) == null) {
 				locations = finder.getOccurrences();
 			}
 		}
 
 		if (locations == null && fMarkImplementors) {
-			IOccurrencesFinder finder = OccurrencesFinderFactory
-					.createImplementorsOccurrencesFinder();
+			IOccurrencesFinder finder = OccurrencesFinderFactory.createImplementorsOccurrencesFinder();
 			if (finder.initialize(astRoot, selectedNode) == null) {
 				locations = finder.getOccurrences();
 			}
 		}
 
-		if (selectedNode != null
-				&& selectedNode.getType() == ASTNode.VARIABLE) {
+		if (selectedNode != null && selectedNode.getType() == ASTNode.VARIABLE) {
 			final Expression name = ((Variable) selectedNode).getName();
 			if (name instanceof Identifier) {
 				selectedNode = name;
@@ -91,12 +80,10 @@
 		}
 
 		if (locations == null && selectedNode != null
-				&& (selectedNode instanceof Identifier
-						|| (isScalarButNotInString(selectedNode)))) {
+				&& (selectedNode instanceof Identifier || (isScalarButNotInString(selectedNode)))) {
 			int type = PhpElementConciliator.concile(selectedNode);
 			if (markOccurrencesOfType(type)) {
-				IOccurrencesFinder finder = OccurrencesFinderFactory
-						.getOccurrencesFinder(type);
+				IOccurrencesFinder finder = OccurrencesFinderFactory.getOccurrencesFinder(type);
 				if (finder != null) {
 					if (finder.initialize(astRoot, selectedNode) == null) {
 						locations = finder.getOccurrences();
@@ -113,8 +100,7 @@
 			return;
 		}
 
-		fOccurrencesFinderJob = new OccurrencesFinderJob(document, locations,
-				selection);
+		fOccurrencesFinderJob = new OccurrencesFinderJob(document, locations, selection);
 		// fOccurrencesFinderJob.setPriority(Job.DECORATE);
 		// fOccurrencesFinderJob.setSystem(true);
 		// fOccurrencesFinderJob.schedule();

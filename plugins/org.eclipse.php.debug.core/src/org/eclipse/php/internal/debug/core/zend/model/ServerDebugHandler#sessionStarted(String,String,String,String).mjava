@@ -1,27 +1,21 @@
-	public void sessionStarted(String remoteFile, String uri, String query,
-			String options) {
+	public void sessionStarted(String remoteFile, String uri, String query, String options) {
 		super.sessionStarted(remoteFile, uri, query, options);
 		if (isUsingPathMapper()) {
 			/*
 			 * Hack for the case when htdocs is symlinked to the workspace. Zend
 			 * Debugger resolves symbolic links later and it breaks path mapper.
 			 */
-			ILaunchConfiguration launchConfiguration = fDebugTarget.getLaunch()
-					.getLaunchConfiguration();
+			ILaunchConfiguration launchConfiguration = fDebugTarget.getLaunch().getLaunchConfiguration();
 			try {
-				String lcServerName = launchConfiguration
-						.getAttribute(Server.NAME, (String) null);
-				if ((lcServerName == null || lcServerName.isEmpty())
-						&& fDebugTarget.getURL() != null) {
+				String lcServerName = launchConfiguration.getAttribute(Server.NAME, (String) null);
+				if ((lcServerName == null || lcServerName.isEmpty()) && fDebugTarget.getURL() != null) {
 					// Bind server with this configuration, if we can find any.
 					String serverName = null;
-					Server serverLookup = ServersManager
-							.findByURL(fDebugTarget.getURL());
+					Server serverLookup = ServersManager.findByURL(fDebugTarget.getURL());
 					if (serverLookup != null)
 						serverName = serverLookup.getName();
 					if (serverName != null) {
-						ILaunchConfigurationWorkingCopy wc = launchConfiguration
-								.getWorkingCopy();
+						ILaunchConfigurationWorkingCopy wc = launchConfiguration.getWorkingCopy();
 						wc.setAttribute(Server.NAME, serverName);
 						synchronized (launchConfiguration) {
 							wc.doSave();
@@ -50,11 +44,9 @@
 			if (startLock.isRunStart()) {
 				startLock.setStarted(true);
 				fDebugTarget.started();
-				fStatus = getRemoteDebugger().start(
-						fDebugTarget.getStartResponseHandler());
+				fStatus = getRemoteDebugger().start(fDebugTarget.getStartResponseHandler());
 				if (!fStatus) {
-					Logger.log(Logger.ERROR,
-							"ServerDebugHandler: debugger.start return false"); //$NON-NLS-1$
+					Logger.log(Logger.ERROR, "ServerDebugHandler: debugger.start return false"); //$NON-NLS-1$
 					try {
 						fDebugTarget.disconnect();
 					} catch (DebugException e) {

@@ -10,8 +10,7 @@
 				if (monitor.isCanceled())
 					return Status.OK_STATUS;
 				try {
-					IDebugMessage incomingMessage = (IDebugMessage) inputMessageQueue
-							.queueOut();
+					IDebugMessage incomingMessage = (IDebugMessage) inputMessageQueue.queueOut();
 					Logger.debugMSG("NEW MESSAGE RECEIVED: " + incomingMessage); //$NON-NLS-1$
 					try {
 						boolean isDebugConnectionTest = false;
@@ -19,28 +18,19 @@
 						if (incomingMessage instanceof DebugSessionStartedNotification) {
 							DebugSessionStartedNotification sessionStartedMessage = (DebugSessionStartedNotification) incomingMessage;
 							setResponseTimeout(sessionStartedMessage);
-							isDebugConnectionTest = sessionStartedMessage
-									.getQuery()
+							isDebugConnectionTest = sessionStartedMessage.getQuery()
 									.indexOf("testConnection=true") != -1; //$NON-NLS-1$
 							// This is a connection test...
 							if (isDebugConnectionTest) {
-								String sourceHost = DebugConnection.this.socket
-										.getInetAddress().getHostAddress();
+								String sourceHost = DebugConnection.this.socket.getInetAddress().getHostAddress();
 								// Notify success
-								if (verifyProtocolID(sessionStartedMessage
-										.getServerProtocolID())) {
+								if (verifyProtocolID(sessionStartedMessage.getServerProtocolID())) {
 									sendRequest(new StartRequest());
-									DebugServerTestController.getInstance()
-											.notifyTestListener(
-													new DebugServerTestEvent(
-															sourceHost,
-															DebugServerTestEvent.TEST_SUCCEEDED));
+									DebugServerTestController.getInstance().notifyTestListener(
+											new DebugServerTestEvent(sourceHost, DebugServerTestEvent.TEST_SUCCEEDED));
 								} else {
-									DebugServerTestController.getInstance()
-											.notifyTestListener(
-													new DebugServerTestEvent(
-															sourceHost,
-															DebugServerTestEvent.TEST_FAILED_DEBUGER_VERSION));
+									DebugServerTestController.getInstance().notifyTestListener(new DebugServerTestEvent(
+											sourceHost, DebugServerTestEvent.TEST_FAILED_DEBUGER_VERSION));
 								}
 							}
 							// START DEBUG (create debug target)
@@ -51,15 +41,12 @@
 						// Creation of debug session has succeeded
 						if (debugTarget != null) {
 							// Try to find relevant handler for the message:
-							IDebugMessageHandler messageHandler = createMessageHandler(
-									incomingMessage);
+							IDebugMessageHandler messageHandler = createMessageHandler(incomingMessage);
 							if (messageHandler != null) {
 								Logger.debugMSG("CREATING MESSAGE HANDLER: " //$NON-NLS-1$
-										+ messageHandler.getClass().getName()
-												.replaceFirst(".*\\.", "")); //$NON-NLS-1$ //$NON-NLS-2$
+										+ messageHandler.getClass().getName().replaceFirst(".*\\.", "")); //$NON-NLS-1$ //$NON-NLS-2$
 								// Handle the request
-								messageHandler.handle(incomingMessage,
-										debugTarget);
+								messageHandler.handle(incomingMessage, debugTarget);
 								if (messageHandler instanceof IDebugRequestHandler) {
 									// Create response
 									IDebugResponseMessage response = ((IDebugRequestHandler) messageHandler)
@@ -68,8 +55,7 @@
 									synchronized (connectionOut) {
 										byteArray.reset();
 										response.serialize(outArray);
-										connectionOut
-												.writeInt(byteArray.size());
+										connectionOut.writeInt(byteArray.size());
 										byteArray.writeTo(connectionOut);
 										connectionOut.flush();
 									}
@@ -81,11 +67,9 @@
 								// Take the request ID from the response.
 								int requestId = r.getID();
 								// Find the request.
-								IDebugRequestMessage req = (IDebugRequestMessage) requestsTable
-										.remove(requestId);
+								IDebugRequestMessage req = (IDebugRequestMessage) requestsTable.remove(requestId);
 								// Find the handler.
-								ResponseHandler handler = responseHandlers
-										.remove(Integer.valueOf(requestId));
+								ResponseHandler handler = responseHandlers.remove(Integer.valueOf(requestId));
 								handler.handleResponse(req, r);
 							}
 							// Handle dummy connection close

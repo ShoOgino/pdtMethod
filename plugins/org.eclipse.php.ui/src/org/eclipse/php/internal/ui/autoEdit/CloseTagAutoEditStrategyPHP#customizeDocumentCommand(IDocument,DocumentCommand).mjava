@@ -1,48 +1,38 @@
 	@SuppressWarnings("restriction")
 	@Override
-	public void customizeDocumentCommand(IDocument document,
-			DocumentCommand command) {
-		if (!TypingPreferences.addPhpCloseTag
-				&& !TypingPreferences.addPhpForPhpStartTags) {
+	public void customizeDocumentCommand(IDocument document, DocumentCommand command) {
+		if (!TypingPreferences.addPhpCloseTag && !TypingPreferences.addPhpForPhpStartTags) {
 			return;
 		}
 		Object textEditor = getActiveTextEditor();
-		if (!(textEditor instanceof ITextEditorExtension3 && ((ITextEditorExtension3) textEditor)
-				.getInsertMode() == ITextEditorExtension3.SMART_INSERT))
+		if (!(textEditor instanceof ITextEditorExtension3
+				&& ((ITextEditorExtension3) textEditor).getInsertMode() == ITextEditorExtension3.SMART_INSERT))
 			return;
 
 		IStructuredModel model = null;
 		try {
-			model = StructuredModelManager.getModelManager()
-					.getExistingModelForRead(document);
+			model = StructuredModelManager.getModelManager().getExistingModelForRead(document);
 
 			if (model != null) {
 				if (command.text != null) {
 					if (command.text.equals("?")) { //$NON-NLS-1$
-						IDOMNode node = (IDOMNode) model
-								.getIndexedRegion(command.offset - 1);
-						if (node != null
-								&& prefixedWith(document, command.offset, "<")) { //$NON-NLS-1$
-							if (!TypingPreferences.addPhpCloseTag
-									&& TypingPreferences.addPhpForPhpStartTags) {
+						IDOMNode node = (IDOMNode) model.getIndexedRegion(command.offset - 1);
+						if (node != null && prefixedWith(document, command.offset, "<")) { //$NON-NLS-1$
+							if (!TypingPreferences.addPhpCloseTag && TypingPreferences.addPhpForPhpStartTags) {
 								command.text += "php "; //$NON-NLS-1$
 								command.shiftsCaret = false;
 								command.caretOffset = command.offset + 5;
 								command.doit = false;
-							} else if (TypingPreferences.addPhpCloseTag
-									&& !TypingPreferences.addPhpForPhpStartTags) {
-								if (!closeTagAppears(node.getSource(),
-										command.offset)) {
+							} else if (TypingPreferences.addPhpCloseTag && !TypingPreferences.addPhpForPhpStartTags) {
+								if (!closeTagAppears(node.getSource(), command.offset)) {
 									command.text += " ?>"; //$NON-NLS-1$
 									// https://bugs.eclipse.org/bugs/show_bug.cgi?id=384262
 									command.caretOffset = command.offset + 1;
 									command.shiftsCaret = false;
 									command.doit = false;
 								}
-							} else if (TypingPreferences.addPhpCloseTag
-									&& TypingPreferences.addPhpForPhpStartTags) {
-								if (!closeTagAppears(node.getSource(),
-										command.offset)) {
+							} else if (TypingPreferences.addPhpCloseTag && TypingPreferences.addPhpForPhpStartTags) {
+								if (!closeTagAppears(node.getSource(), command.offset)) {
 									command.text += "php ?>"; //$NON-NLS-1$
 									command.shiftsCaret = false;
 									command.caretOffset = command.offset + 5;

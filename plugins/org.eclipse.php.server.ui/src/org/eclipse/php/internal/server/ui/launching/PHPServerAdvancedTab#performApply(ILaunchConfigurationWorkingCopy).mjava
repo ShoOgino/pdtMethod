@@ -6,15 +6,11 @@
 	 * .debug.core.ILaunchConfigurationWorkingCopy)
 	 */
 	public void performApply(ILaunchConfigurationWorkingCopy configuration) {
-		configuration.setAttribute(PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID,
-				debuggerId);
-		configuration.setAttribute(IDebugParametersKeys.FIRST_LINE_BREAKPOINT,
-				breakOnFirstLine.getSelection());
-		configuration.setAttribute(IPHPDebugConstants.USE_SSH_TUNNEL,
-				debugThroughTunnel.getSelection());
+		configuration.setAttribute(PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID, debuggerId);
+		configuration.setAttribute(IDebugParametersKeys.FIRST_LINE_BREAKPOINT, breakOnFirstLine.getSelection());
+		configuration.setAttribute(IPHPDebugConstants.USE_SSH_TUNNEL, debugThroughTunnel.getSelection());
 		if (debugThroughTunnel.getSelection()) {
-			configuration.setAttribute(IPHPDebugConstants.SSH_TUNNEL_USER_NAME,
-					userName.getText().trim());
+			configuration.setAttribute(IPHPDebugConstants.SSH_TUNNEL_USER_NAME, userName.getText().trim());
 			// We save a hash of the password and not the real one. This is only
 			// used to allow an apply when a password change happens.
 			// The real password saving is done through the secured storage
@@ -22,11 +18,9 @@
 			String passwordDigest = MD5.digest(password.getText().trim());
 			if (passwordDigest == null) {
 				// as a default, use the string hash.
-				passwordDigest = String
-						.valueOf(password.getText().trim().hashCode());
+				passwordDigest = String.valueOf(password.getText().trim().hashCode());
 			}
-			configuration.setAttribute(IPHPDebugConstants.SSH_TUNNEL_PASSWORD,
-					passwordDigest);
+			configuration.setAttribute(IPHPDebugConstants.SSH_TUNNEL_PASSWORD, passwordDigest);
 
 			// Save to secured storage
 			try {
@@ -42,46 +36,33 @@
 					// This flag will be off when the apply button is actually
 					// clicked (or when other widgets are triggering the apply
 					// call).
-					PHPLaunchUtilities
-							.getSecurePreferences(PHPLaunchUtilities
-									.getDebugHost(getConfiguration()))
-							.put(userName.getText(), password.getText().trim(),
-									true /* encrypt */);
+					PHPLaunchUtilities.getSecurePreferences(PHPLaunchUtilities.getDebugHost(getConfiguration()))
+							.put(userName.getText(), password.getText().trim(), true /* encrypt */);
 				}
 			} catch (StorageException e) {
 				Logger.logException("Error saving to the secured storage", e); //$NON-NLS-1$
 			}
 		} else {
-			configuration.setAttribute(IPHPDebugConstants.SSH_TUNNEL_USER_NAME,
-					""); //$NON-NLS-1$
-			configuration.setAttribute(IPHPDebugConstants.SSH_TUNNEL_PASSWORD,
-					""); //$NON-NLS-1$
+			configuration.setAttribute(IPHPDebugConstants.SSH_TUNNEL_USER_NAME, ""); //$NON-NLS-1$
+			configuration.setAttribute(IPHPDebugConstants.SSH_TUNNEL_PASSWORD, ""); //$NON-NLS-1$
 		}
-		configuration.setAttribute(IPHPDebugConstants.OPEN_IN_BROWSER,
-				isOpenInBrowser);
+		configuration.setAttribute(IPHPDebugConstants.OPEN_IN_BROWSER, isOpenInBrowser);
 		// configuration.setAttribute(IPHPDebugConstants.USE_INTERNAL_BROWSER,
 		// internalBrowser.getSelection());
 		if (isOpenInBrowser) {
 			if (debugAllPagesBt.getSelection()) {
-				configuration.setAttribute(IPHPDebugConstants.DEBUGGING_PAGES,
-						IPHPDebugConstants.DEBUGGING_ALL_PAGES);
+				configuration.setAttribute(IPHPDebugConstants.DEBUGGING_PAGES, IPHPDebugConstants.DEBUGGING_ALL_PAGES);
 			} else if (debugFirstPageBt.getSelection()) {
-				configuration.setAttribute(IPHPDebugConstants.DEBUGGING_PAGES,
-						IPHPDebugConstants.DEBUGGING_FIRST_PAGE);
+				configuration.setAttribute(IPHPDebugConstants.DEBUGGING_PAGES, IPHPDebugConstants.DEBUGGING_FIRST_PAGE);
 			} else {
-				configuration.setAttribute(IPHPDebugConstants.DEBUGGING_PAGES,
-						IPHPDebugConstants.DEBUGGING_START_FROM);
-				configuration.setAttribute(
-						IPHPDebugConstants.DEBUGGING_START_FROM_URL,
-						debugFromTxt.getText());
-				configuration.setAttribute(
-						IPHPDebugConstants.DEBUGGING_SHOULD_CONTINUE,
+				configuration.setAttribute(IPHPDebugConstants.DEBUGGING_PAGES, IPHPDebugConstants.DEBUGGING_START_FROM);
+				configuration.setAttribute(IPHPDebugConstants.DEBUGGING_START_FROM_URL, debugFromTxt.getText());
+				configuration.setAttribute(IPHPDebugConstants.DEBUGGING_SHOULD_CONTINUE,
 						debugContinueBt.getSelection());
 			}
 		} else {
 			// Allow only debug-first-page
-			configuration.setAttribute(IPHPDebugConstants.DEBUGGING_PAGES,
-					IPHPDebugConstants.DEBUGGING_FIRST_PAGE);
+			configuration.setAttribute(IPHPDebugConstants.DEBUGGING_PAGES, IPHPDebugConstants.DEBUGGING_FIRST_PAGE);
 		}
 		applyExtension(configuration);
 		isTextModificationChange = false; // reset this flag here.

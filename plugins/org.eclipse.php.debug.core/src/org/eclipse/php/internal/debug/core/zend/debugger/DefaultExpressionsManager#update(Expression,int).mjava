@@ -2,26 +2,20 @@
 		if (expression.getValue().getType() == ExpressionValue.VIRTUAL_CLASS_TYPE)
 			return;
 		byte[] value = getExpressionValue(expression, depth);
-		ExpressionValue expressionValue = expressionValueDeserializer
-				.deserializer(expression, value);
+		ExpressionValue expressionValue = expressionValueDeserializer.deserializer(expression, value);
 		// Workaround for fetching static members for objects
 		if (expressionValue.getType() == ExpressionValue.OBJECT_TYPE) {
-			Expression[] expressionStaticNodes = ExpressionsUtil
-					.fetchStaticMembers((String) expressionValue.getValue(),
-							this);
+			Expression[] expressionStaticNodes = ExpressionsUtil.fetchStaticMembers((String) expressionValue.getValue(),
+					this);
 			List<Expression> allNodes = new ArrayList<Expression>();
 			allNodes.addAll(Arrays.asList(expressionStaticNodes));
 			allNodes.addAll(Arrays.asList(expressionValue.getChildren()));
-			expressionValue = new ExpressionValue(ExpressionValue.OBJECT_TYPE,
-					expressionValue.getValue(),
-					expressionValue.getValueAsString(),
-					allNodes.toArray(new Expression[allNodes.size()]),
-					expressionValue.getChildrenCount()
-							+ expressionStaticNodes.length);
+			expressionValue = new ExpressionValue(ExpressionValue.OBJECT_TYPE, expressionValue.getValue(),
+					expressionValue.getValueAsString(), allNodes.toArray(new Expression[allNodes.size()]),
+					expressionValue.getChildrenCount() + expressionStaticNodes.length);
 		}
 		// Sort object members by type & name
-		if (!PHPProjectPreferences.isSortByName()
-				&& expressionValue.getType() == ExpressionValue.OBJECT_TYPE)
+		if (!PHPProjectPreferences.isSortByName() && expressionValue.getType() == ExpressionValue.OBJECT_TYPE)
 			VariablesUtil.sortObjectMembers(expressionValue.getOriChildren());
 		expression.setValue(expressionValue);
 	}

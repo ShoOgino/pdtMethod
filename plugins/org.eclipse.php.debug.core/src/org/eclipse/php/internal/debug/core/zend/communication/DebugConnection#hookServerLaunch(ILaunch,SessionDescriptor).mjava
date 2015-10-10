@@ -6,34 +6,27 @@
 	 * @param startedNotification
 	 *            A DebugSessionStartedNotification
 	 */
-	protected void hookServerLaunch(final ILaunch launch,
-			SessionDescriptor sessionDescriptor) throws CoreException {
-		ILaunchConfiguration launchConfiguration = launch
-				.getLaunchConfiguration();
+	protected void hookServerLaunch(final ILaunch launch, SessionDescriptor sessionDescriptor) throws CoreException {
+		ILaunchConfiguration launchConfiguration = launch.getLaunchConfiguration();
 		IProject project = getProject(launchConfiguration);
-		messageReceiver.setTransferEncoding(launchConfiguration
-				.getAttribute(IDebugParametersKeys.TRANSFER_ENCODING, "")); //$NON-NLS-1$
-		messageReceiver.setOutputEncoding(launchConfiguration
-				.getAttribute(IDebugParametersKeys.OUTPUT_ENCODING, "")); //$NON-NLS-1$
+		messageReceiver
+				.setTransferEncoding(launchConfiguration.getAttribute(IDebugParametersKeys.TRANSFER_ENCODING, "")); //$NON-NLS-1$
+		messageReceiver.setOutputEncoding(launchConfiguration.getAttribute(IDebugParametersKeys.OUTPUT_ENCODING, "")); //$NON-NLS-1$
 		String URL = launchConfiguration.getAttribute(Server.BASE_URL, ""); //$NON-NLS-1$
-		boolean stopAtFirstLine = project == null ? true
-				: PHPProjectPreferences.getStopAtFirstLine(project);
-		int requestPort = PHPDebugPlugin
-				.getDebugPort(DebuggerCommunicationDaemon.ZEND_DEBUGGER_ID);
+		boolean stopAtFirstLine = project == null ? true : PHPProjectPreferences.getStopAtFirstLine(project);
+		int requestPort = PHPDebugPlugin.getDebugPort(DebuggerCommunicationDaemon.ZEND_DEBUGGER_ID);
 		try {
-			requestPort = Integer
-					.valueOf(launch.getAttribute(IDebugParametersKeys.PORT));
+			requestPort = Integer.valueOf(launch.getAttribute(IDebugParametersKeys.PORT));
 		} catch (Exception e) {
 			// should not happen
 		}
-		boolean runWithDebug = launchConfiguration
-				.getAttribute(IPHPDebugConstants.RUN_WITH_DEBUG_INFO, true);
+		boolean runWithDebug = launchConfiguration.getAttribute(IPHPDebugConstants.RUN_WITH_DEBUG_INFO, true);
 		if (launch.getLaunchMode().equals(ILaunchManager.DEBUG_MODE)) {
 			runWithDebug = false;
 		}
 		PHPProcess process = new PHPProcess(launch, URL);
-		debugTarget = (PHPDebugTarget) createDebugTarget(this, launch, URL,
-				requestPort, process, runWithDebug, stopAtFirstLine, project);
+		debugTarget = (PHPDebugTarget) createDebugTarget(this, launch, URL, requestPort, process, runWithDebug,
+				stopAtFirstLine, project);
 		// Bind debug target to the launch
 		bindTarget(launch);
 	}

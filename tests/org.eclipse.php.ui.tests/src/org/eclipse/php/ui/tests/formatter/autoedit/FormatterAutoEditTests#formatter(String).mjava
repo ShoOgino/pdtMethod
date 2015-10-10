@@ -1,11 +1,9 @@
 	@Test
 	public void formatter(String fileName) throws Exception {
 		final PdttFile pdttFile = new PdttFile(fileName);
-		final String cursor = getCursor(pdttFile) != null ? getCursor(pdttFile)
-				: DEFAULT_CURSOR;
+		final String cursor = getCursor(pdttFile) != null ? getCursor(pdttFile) : DEFAULT_CURSOR;
 		final IFile file = createFile(pdttFile.getFile().trim());
-		final ISourceModule modelElement = (ISourceModule) DLTKCore
-				.create(file);
+		final ISourceModule modelElement = (ISourceModule) DLTKCore.create(file);
 		if (ScriptModelUtil.isPrimary(modelElement))
 			modelElement.becomeWorkingCopy(new IProblemRequestor() {
 
@@ -26,8 +24,7 @@
 		final Exception[] err = new Exception[1];
 		final IEditorPart[] part = new IEditorPart[1];
 
-		IStructuredModel modelForEdit = StructuredModelManager
-				.getModelManager().getModelForEdit(file);
+		IStructuredModel modelForEdit = StructuredModelManager.getModelManager().getModelForEdit(file);
 		try {
 			final IDocument document = modelForEdit.getStructuredDocument();
 			String beforeFormat = document.get();
@@ -35,8 +32,7 @@
 			int firstOffset = data.indexOf(cursor);
 			int lastOffset = data.lastIndexOf(cursor);
 			if (lastOffset == -1) {
-				throw new IllegalArgumentException(
-						"Offset character is not set");
+				throw new IllegalArgumentException("Offset character is not set");
 			}
 
 			final DocumentCommand cmd = new DocumentCommand() {
@@ -44,14 +40,11 @@
 
 			// replace the offset character(s)
 			if (firstOffset == lastOffset) {
-				data = data.substring(0, lastOffset)
-						+ data.substring(lastOffset + cursor.length());
+				data = data.substring(0, lastOffset) + data.substring(lastOffset + cursor.length());
 				cmd.offset = lastOffset;
 				cmd.length = 0;
 			} else {
-				data = data.substring(0, firstOffset)
-						+ data.substring(firstOffset + cursor.length(),
-								lastOffset)
+				data = data.substring(0, firstOffset) + data.substring(firstOffset + cursor.length(), lastOffset)
 						+ data.substring(lastOffset + cursor.length());
 				cmd.offset = firstOffset;
 				cmd.length = lastOffset - (firstOffset + cursor.length());
@@ -63,11 +56,9 @@
 				@Override
 				public void run() {
 					try {
-						IWorkbenchWindow window = PlatformUI.getWorkbench()
-								.getActiveWorkbenchWindow();
+						IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
 						IWorkbenchPage page = window.getActivePage();
-						part[0] = page.openEditor(new FileEditorInput(file),
-								PHPUiConstants.PHP_EDITOR_ID);
+						part[0] = page.openEditor(new FileEditorInput(file), PHPUiConstants.PHP_EDITOR_ID);
 						part[0].setFocus();
 
 						document.set(newContent);
@@ -81,8 +72,7 @@
 				throw err[0];
 			}
 
-			SharedASTProvider.getAST(modelElement, SharedASTProvider.WAIT_YES,
-					null);
+			SharedASTProvider.getAST(modelElement, SharedASTProvider.WAIT_YES, null);
 
 			Display.getDefault().syncExec(new Runnable() {
 
@@ -93,8 +83,7 @@
 
 						if (pdttFile.getOther() != null) {
 							cmd.text = pdttFile.getOther();
-							if (cmd.text != null
-									&& cmd.text.trim().length() == 1) {
+							if (cmd.text != null && cmd.text.trim().length() == 1) {
 								// support single (non-blank) character
 								// insertion
 								cmd.text = cmd.text.trim();
@@ -107,8 +96,7 @@
 						cmd.shiftsCaret = true;
 						cmd.caretOffset = -1;
 
-						indentLineAutoEditStrategy.customizeDocumentCommand(
-								document, cmd);
+						indentLineAutoEditStrategy.customizeDocumentCommand(document, cmd);
 						document.replace(cmd.offset, cmd.length, cmd.text);
 					} catch (Exception e) {
 						err[0] = e;
@@ -135,8 +123,7 @@
 					@Override
 					public void run() {
 						try {
-							IWorkbenchWindow window = PlatformUI.getWorkbench()
-									.getActiveWorkbenchWindow();
+							IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
 							IWorkbenchPage page = window.getActivePage();
 							page.closeEditor(part[0], false);
 						} catch (Exception e) {

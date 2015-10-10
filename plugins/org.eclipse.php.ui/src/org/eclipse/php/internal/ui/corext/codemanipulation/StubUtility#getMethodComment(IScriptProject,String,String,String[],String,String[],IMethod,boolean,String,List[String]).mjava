@@ -4,19 +4,16 @@
 	 * @see org.eclipse.jdt.ui.CodeGeneration#getMethodComment(ICompilationUnit,
 	 * String, String, String[], String[], String, String[], IMethod, String)
 	 */
-	public static String getMethodComment(IScriptProject sp, String typeName,
-			String methodName, String[] paramNames, String retTypeSig,
-			String[] typeParameterNames, IMethod target, boolean delegate,
-			String lineDelimiter, List<String> newExceptions)
-			throws CoreException {
+	public static String getMethodComment(IScriptProject sp, String typeName, String methodName, String[] paramNames,
+			String retTypeSig, String[] typeParameterNames, IMethod target, boolean delegate, String lineDelimiter,
+			List<String> newExceptions) throws CoreException {
 		String templateName = CodeTemplateContextType.METHODCOMMENT_ID;
 		if (target != null) {
 			if (delegate)
 				templateName = CodeTemplateContextType.DELEGATECOMMENT_ID;
 			else
 				templateName = CodeTemplateContextType.OVERRIDECOMMENT_ID;
-		} else if (retTypeSig == null && typeName != null
-				&& (typeName.equals(methodName) || "constructor" //$NON-NLS-1$
+		} else if (retTypeSig == null && typeName != null && (typeName.equals(methodName) || "constructor" //$NON-NLS-1$
 				.equals(methodName))) {
 			templateName = CodeTemplateContextType.CONSTRUCTORCOMMENT_ID;
 		}
@@ -24,35 +21,27 @@
 		if (template == null) {
 			return null;
 		}
-		CodeTemplateContext context = new CodeTemplateContext(
-				template.getContextTypeId(), sp, lineDelimiter);
+		CodeTemplateContext context = new CodeTemplateContext(template.getContextTypeId(), sp, lineDelimiter);
 		// context.setCompilationUnitVariables(sp);
 		context.setVariable(CodeTemplateContextType.ENCLOSING_TYPE, typeName);
-		context.setVariable(CodeTemplateContextType.ENCLOSING_METHOD,
-				methodName);
+		context.setVariable(CodeTemplateContextType.ENCLOSING_METHOD, methodName);
 
 		if (retTypeSig != null) {
 			context.setVariable(CodeTemplateContextType.RETURN_TYPE, retTypeSig);
 		}
 		if (target != null) {
 			String targetTypeName = target.getDeclaringType()
-					.getTypeQualifiedName(
-							PHPModelUtils.ENCLOSING_TYPE_SEPARATOR);
+					.getTypeQualifiedName(PHPModelUtils.ENCLOSING_TYPE_SEPARATOR);
 			if (targetTypeName.indexOf(PHPModelUtils.ENCLOSING_TYPE_SEPARATOR) > 0) {
-				targetTypeName = PHPModelUtils.ENCLOSING_TYPE_SEPARATOR
-						+ targetTypeName;
+				targetTypeName = PHPModelUtils.ENCLOSING_TYPE_SEPARATOR + targetTypeName;
 			}
 			String[] targetParamTypeNames = getParameterTypeNamesForSeeTag(target);
 			if (delegate)
-				context.setVariable(
-						CodeTemplateContextType.SEE_TO_TARGET_TAG,
-						getSeeTag(targetTypeName, methodName,
-								targetParamTypeNames));
+				context.setVariable(CodeTemplateContextType.SEE_TO_TARGET_TAG,
+						getSeeTag(targetTypeName, methodName, targetParamTypeNames));
 			else
-				context.setVariable(
-						CodeTemplateContextType.SEE_TO_OVERRIDDEN_TAG,
-						getSeeTag(targetTypeName, methodName,
-								targetParamTypeNames));
+				context.setVariable(CodeTemplateContextType.SEE_TO_OVERRIDDEN_TAG,
+						getSeeTag(targetTypeName, methodName, targetParamTypeNames));
 		}
 		TemplateBuffer buffer;
 		try {
@@ -71,8 +60,12 @@
 			return null;
 		}
 
-		TemplateVariable position = findVariable(buffer,
-				CodeTemplateContextType.TAGS); // look if PHPDoc tags have to
+		TemplateVariable position = findVariable(buffer, CodeTemplateContextType.TAGS); // look
+																						// if
+																						// PHPDoc
+																						// tags
+																						// have
+																						// to
 		// be added
 		if (position == null) {
 			return str;
@@ -82,12 +75,10 @@
 		int[] tagOffsets = position.getOffsets();
 		for (int i = tagOffsets.length - 1; i >= 0; i--) { // from last to first
 			try {
-				insertTag(document, tagOffsets[i], position.getLength(),
-						paramNames, retTypeSig, typeParameterNames, false,
-						lineDelimiter, newExceptions);
+				insertTag(document, tagOffsets[i], position.getLength(), paramNames, retTypeSig, typeParameterNames,
+						false, lineDelimiter, newExceptions);
 			} catch (BadLocationException e) {
-				throw new CoreException(DLTKUIStatus.createError(IStatus.ERROR,
-						e));
+				throw new CoreException(DLTKUIStatus.createError(IStatus.ERROR, e));
 			}
 		}
 		return document.get();

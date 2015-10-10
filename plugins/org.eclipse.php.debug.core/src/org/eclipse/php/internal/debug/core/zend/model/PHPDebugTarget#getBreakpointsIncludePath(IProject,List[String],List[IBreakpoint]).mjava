@@ -1,32 +1,26 @@
-	private void getBreakpointsIncludePath(IProject container,
-			List<String> paths, List<IBreakpoint> breakpoints)
+	private void getBreakpointsIncludePath(IProject container, List<String> paths, List<IBreakpoint> breakpoints)
 			throws CoreException {
 		if (container == null) {
-			String localFile = ((RemoteDebugger) debugger)
-					.convertToLocalFilename(fLastFileName);
+			String localFile = ((RemoteDebugger) debugger).convertToLocalFilename(fLastFileName);
 			if (localFile != null) {
 				IPath localPath = new Path(localFile);
 				String projectName = localPath.segment(0);
-				container = ResourcesPlugin.getWorkspace().getRoot()
-						.getProject(projectName);
+				container = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
 				if (container == null || !container.exists()) {
 					return;
 				}
 			}
 		}
-		List<IPath> includePaths = ((RemoteDebugger) debugger)
-				.getIncludePaths(fProject);
+		List<IPath> includePaths = ((RemoteDebugger) debugger).getIncludePaths(fProject);
 		for (IBreakpoint bp : breakpoints) {
-			String secondaryId = (String) bp.getMarker().getAttribute(
-					StructuredResourceMarkerAnnotationModel.SECONDARY_ID_KEY);
+			String secondaryId = (String) bp.getMarker()
+					.getAttribute(StructuredResourceMarkerAnnotationModel.SECONDARY_ID_KEY);
 			if (secondaryId != null) {
 
 				IPath path = Path.fromPortableString(secondaryId);
-				if ((path.getDevice() == null)
-						&& (path.toString().startsWith("org.eclipse.dltk"))) { //$NON-NLS-1$
+				if ((path.getDevice() == null) && (path.toString().startsWith("org.eclipse.dltk"))) { //$NON-NLS-1$
 					String fullPathString = path.toString();
-					String absolutePath = fullPathString
-							.substring(fullPathString.indexOf(':') + 1);
+					String absolutePath = fullPathString.substring(fullPathString.indexOf(':') + 1);
 					path = Path.fromPortableString(absolutePath);
 				} else {
 					path = EnvironmentPathUtils.getLocalPath(path);
@@ -35,9 +29,7 @@
 					for (IPath includePath : includePaths) {
 						int size = includePath.segmentCount();
 						if (path.matchingFirstSegments(includePath) == size) {
-							String remotePath = RemoteDebugger
-									.convertToRemoteFilename(path.toString(),
-											this);
+							String remotePath = RemoteDebugger.convertToRemoteFilename(path.toString(), this);
 							if (remotePath != null && remotePath.length() > 0) {
 								paths.add(remotePath);
 							}

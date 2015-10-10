@@ -14,8 +14,7 @@
 		final List<PHPexeItem> found = new ArrayList<PHPexeItem>();
 		final IRunnableWithProgress r = new IRunnableWithProgress() {
 			public void run(IProgressMonitor monitor) {
-				monitor.beginTask(PHPDebugUIMessages.InstalledPHPsBlock_11,
-						IProgressMonitor.UNKNOWN);
+				monitor.beginTask(PHPDebugUIMessages.InstalledPHPsBlock_11, IProgressMonitor.UNKNOWN);
 				search(rootDir, locations, monitor);
 				if (!locations.isEmpty()) {
 					monitor.setTaskName(PHPDebugUIMessages.InstalledPHPsBlock_Processing_search_results);
@@ -24,24 +23,18 @@
 						if (monitor.isCanceled())
 							break;
 						File location = iter2.next();
-						PHPexeItem phpExe = new PHPexeItem(null, location,
-								null, null, true);
+						PHPexeItem phpExe = new PHPexeItem(null, location, null, null, true);
 						if (phpExe.getName() == null)
 							continue;
 						String nameCopy = new String(phpExe.getName());
 						monitor.subTask(MessageFormat
-								.format(PHPDebugUIMessages.InstalledPHPsBlock_Fetching_php_exe_info,
-										nameCopy));
-						List<PHPModuleInfo> modules = PHPExeUtil
-								.getModules(phpExe);
-						AbstractDebuggerConfiguration[] debuggers = PHPDebuggersRegistry
-								.getDebuggersConfigurations();
+								.format(PHPDebugUIMessages.InstalledPHPsBlock_Fetching_php_exe_info, nameCopy));
+						List<PHPModuleInfo> modules = PHPExeUtil.getModules(phpExe);
+						AbstractDebuggerConfiguration[] debuggers = PHPDebuggersRegistry.getDebuggersConfigurations();
 						for (AbstractDebuggerConfiguration debugger : debuggers) {
 							for (PHPModuleInfo m : modules)
-								if (m.getName().equalsIgnoreCase(
-										debugger.getModuleId())) {
-									phpExe.setDebuggerID(debugger
-											.getDebuggerId());
+								if (m.getName().equalsIgnoreCase(debugger.getModuleId())) {
+									phpExe.setDebuggerID(debugger.getDebuggerId());
 									break;
 								}
 						}
@@ -51,15 +44,12 @@
 						// Check for duplicated names
 						duplicates: while (true) {
 							if (isDuplicateName(nameCopy)) {
-								nameCopy = phpExe.getName() + ' ' + '[' + i++
-										+ ']';
+								nameCopy = phpExe.getName() + ' ' + '[' + i++ + ']';
 								continue duplicates;
 							} else {
 								for (PHPexeItem item : found)
-									if (nameCopy.equalsIgnoreCase(item
-											.getName())) {
-										nameCopy = phpExe.getName() + ' ' + '['
-												+ i++ + ']';
+									if (nameCopy.equalsIgnoreCase(item.getName())) {
+										nameCopy = phpExe.getName() + ' ' + '[' + i++ + ']';
 										continue duplicates;
 									}
 							}
@@ -99,28 +89,22 @@
 				}
 			};
 			Collections.sort(found, sorter);
-			PHPsSearchResultDialog searchDialog = new PHPsSearchResultDialog(
-					found,
-					MessageFormat
-							.format(PHPDebugUIMessages.InstalledPHPsBlock_Search_result_dialog_message,
-									path));
+			PHPsSearchResultDialog searchDialog = new PHPsSearchResultDialog(found,
+					MessageFormat.format(PHPDebugUIMessages.InstalledPHPsBlock_Search_result_dialog_message, path));
 			searchDialog.open();
 			List<PHPexeItem> itemsToAdd = searchDialog.getPHPExecutables();
 			for (PHPexeItem item : itemsToAdd) {
 				fPHPexes.add(item);
 				PHPexes.getInstance().addItem(item);
 				PHPexes.getInstance().save();
-				DBGpProxyHandlersManager.INSTANCE.registerHandler(item
-						.getUniqueId());
+				DBGpProxyHandlersManager.INSTANCE.registerHandler(item.getUniqueId());
 				PHPExeVerifier.verify(PHPexes.getInstance().getAllItems());
 			}
 			fPHPExeList.refresh();
 		} else {
-			MessageDialog.openInformation(PlatformUI.getWorkbench()
-					.getDisplay().getActiveShell(),
-					PHPDebugUIMessages.InstalledPHPsBlock_12, MessageFormat
-							.format(PHPDebugUIMessages.InstalledPHPsBlock_13,
-									new Object[] { path }));
+			MessageDialog.openInformation(PlatformUI.getWorkbench().getDisplay().getActiveShell(),
+					PHPDebugUIMessages.InstalledPHPsBlock_12,
+					MessageFormat.format(PHPDebugUIMessages.InstalledPHPsBlock_13, new Object[] { path }));
 		}
 
 	}

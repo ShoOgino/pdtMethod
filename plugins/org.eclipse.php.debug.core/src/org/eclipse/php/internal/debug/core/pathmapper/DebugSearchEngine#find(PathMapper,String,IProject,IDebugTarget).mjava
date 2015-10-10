@@ -11,8 +11,7 @@
 	 *            Current debug target
 	 * @return path entry or <code>null</code> in case it could not be found
 	 */
-	public static PathEntry find(final PathMapper pathMapper,
-			final String remoteFile, final IProject currentProject,
+	public static PathEntry find(final PathMapper pathMapper, final String remoteFile, final IProject currentProject,
 			final IDebugTarget debugTarget) {
 
 		final PathEntry[] localFile = new PathEntry[1];
@@ -58,8 +57,7 @@
 				if (currentProject != null && currentProject.isOpen()) {
 					projects = new IProject[] { currentProject };
 				} else {
-					projects = ResourcesPlugin.getWorkspace().getRoot()
-							.getProjects();
+					projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
 				}
 				for (IProject project : projects) {
 					if (project.isOpen() && project.isAccessible()) {
@@ -70,8 +68,7 @@
 						IScriptProject scriptProject = DLTKCore.create(project);
 						if (scriptProject != null && scriptProject.isOpen()) {
 							try {
-								IBuildpathEntry[] rawBuildpath = scriptProject
-										.getRawBuildpath();
+								IBuildpathEntry[] rawBuildpath = scriptProject.getRawBuildpath();
 								for (IBuildpathEntry pathEntry : rawBuildpath) {
 									b.add(pathEntry);
 								}
@@ -88,21 +85,15 @@
 				// Try to find this file in the Workspace:
 				try {
 					IPath path = Path.fromOSString(remoteFile);
-					IFile file = ResourcesPlugin.getWorkspace().getRoot()
-							.getFileForLocation(path);
+					IFile file = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(path);
 					if (file != null && file.exists()) {
 						for (IncludePath includePath : includePaths) {
 							if (includePath.getEntry() instanceof IContainer) {
-								IContainer container = (IContainer) includePath
-										.getEntry();
-								if (container.getFullPath()
-										.isPrefixOf(file.getFullPath())) {
-									localFile[0] = new PathEntry(
-											file.getFullPath().toString(),
-											Type.WORKSPACE, file.getParent());
-									pathMapper.addEntry(remoteFile,
-											localFile[0],
-											MappingSource.ENVIRONMENT);
+								IContainer container = (IContainer) includePath.getEntry();
+								if (container.getFullPath().isPrefixOf(file.getFullPath())) {
+									localFile[0] = new PathEntry(file.getFullPath().toString(), Type.WORKSPACE,
+											file.getParent());
+									pathMapper.addEntry(remoteFile, localFile[0], MappingSource.ENVIRONMENT);
 									PathMapperRegistry.storeToPreferences();
 									return Status.OK_STATUS;
 								}
@@ -118,37 +109,22 @@
 				File file = new File(remoteFile);
 				if (file.exists()) {
 					try {
-						IScriptProject scriptProject = DLTKCore
-								.create(currentProject);
+						IScriptProject scriptProject = DLTKCore.create(currentProject);
 						if (currentProject != null && scriptProject != null) {
-							IBuildpathEntry[] rawBuildpath = scriptProject
-									.getRawBuildpath();
+							IBuildpathEntry[] rawBuildpath = scriptProject.getRawBuildpath();
 
-							IEnvironment environment = EnvironmentManager
-									.getEnvironment(currentProject);
-							IPath remoteFilePath = EnvironmentPathUtils
-									.getFullPath(environment,
-											new Path(remoteFile));
+							IEnvironment environment = EnvironmentManager.getEnvironment(currentProject);
+							IPath remoteFilePath = EnvironmentPathUtils.getFullPath(environment, new Path(remoteFile));
 							for (IBuildpathEntry entry : rawBuildpath) {
 								IPath entryPath = entry.getPath();
-								if (entry
-										.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
-									entryPath = DLTKCore
-											.getResolvedVariablePath(entryPath);
+								if (entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
+									entryPath = DLTKCore.getResolvedVariablePath(entryPath);
 								}
-								if (entryPath != null
-										&& (entryPath
-												.isPrefixOf(Path.fromOSString(
-														remoteFile))
-										|| entryPath
-												.isPrefixOf(remoteFilePath))) {
-									Type type = (entry
-											.getEntryKind() == IBuildpathEntry.BPE_VARIABLE)
-													? Type.INCLUDE_VAR
-													: Type.INCLUDE_FOLDER;
-									localFile[0] = new PathEntry(
-											file.getAbsolutePath(), type,
-											entry);
+								if (entryPath != null && (entryPath.isPrefixOf(Path.fromOSString(remoteFile))
+										|| entryPath.isPrefixOf(remoteFilePath))) {
+									Type type = (entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE)
+											? Type.INCLUDE_VAR : Type.INCLUDE_FOLDER;
+									localFile[0] = new PathEntry(file.getAbsolutePath(), type, entry);
 									return Status.OK_STATUS;
 								}
 							}
@@ -159,24 +135,16 @@
 					}
 					for (IncludePath includePath : includePaths) {
 						if (includePath.getEntry() instanceof IBuildpathEntry) {
-							IBuildpathEntry entry = (IBuildpathEntry) includePath
-									.getEntry();
+							IBuildpathEntry entry = (IBuildpathEntry) includePath.getEntry();
 							IPath entryPath = entry.getPath();
-							if (entry
-									.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
-								entryPath = DLTKCore
-										.getResolvedVariablePath(entryPath);
+							if (entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
+								entryPath = DLTKCore.getResolvedVariablePath(entryPath);
 							}
-							if (entryPath != null && entryPath.isPrefixOf(
-									Path.fromOSString(remoteFile))) {
-								Type type = (entry
-										.getEntryKind() == IBuildpathEntry.BPE_VARIABLE)
-												? Type.INCLUDE_VAR
-												: Type.INCLUDE_FOLDER;
-								localFile[0] = new PathEntry(
-										file.getAbsolutePath(), type, entry);
-								pathMapper.addEntry(remoteFile, localFile[0],
-										MappingSource.ENVIRONMENT);
+							if (entryPath != null && entryPath.isPrefixOf(Path.fromOSString(remoteFile))) {
+								Type type = (entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) ? Type.INCLUDE_VAR
+										: Type.INCLUDE_FOLDER;
+								localFile[0] = new PathEntry(file.getAbsolutePath(), type, entry);
+								pathMapper.addEntry(remoteFile, localFile[0], MappingSource.ENVIRONMENT);
 								PathMapperRegistry.storeToPreferences();
 								return Status.OK_STATUS;
 							}
@@ -189,21 +157,17 @@
 					for (IBuildpathEntry entry : buildPaths) {
 
 						IPath entryPath = entry.getPath();
-						if (entry
-								.getEntryKind() == IBuildpathEntry.BPE_LIBRARY) {
+						if (entry.getEntryKind() == IBuildpathEntry.BPE_LIBRARY) {
 							// We don't support lookup in archive
 							File entryDir = entryPath.toFile();
 							find(entryDir, abstractPath, entry, results);
-						} else if (entry
-								.getEntryKind() == IBuildpathEntry.BPE_PROJECT
+						} else if (entry.getEntryKind() == IBuildpathEntry.BPE_PROJECT
 								|| entry.getEntryKind() == IBuildpathEntry.BPE_SOURCE) {
-							IResource res = ResourcesPlugin.getWorkspace()
-									.getRoot()
+							IResource res = ResourcesPlugin.getWorkspace().getRoot()
 									.findMember(entry.getPath().lastSegment());
 							if (res instanceof IProject) {
 								IProject project = (IProject) res;
-								if (project.isOpen()
-										&& project.isAccessible()) {
+								if (project.isOpen() && project.isAccessible()) {
 									try {
 										find(project, abstractPath, results);
 									} catch (InterruptedException e) {
@@ -211,37 +175,28 @@
 									}
 								}
 							}
-						} else if (entry
-								.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
-							entryPath = DLTKCore
-									.getResolvedVariablePath(entryPath);
+						} else if (entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
+							entryPath = DLTKCore.getResolvedVariablePath(entryPath);
 							if (entryPath != null) {
 								File entryDir = entryPath.toFile();
 								find(entryDir, abstractPath, entry, results);
 							}
-						} else if (entry
-								.getEntryKind() == IBuildpathEntry.BPE_CONTAINER) {
+						} else if (entry.getEntryKind() == IBuildpathEntry.BPE_CONTAINER) {
 
 							try {
 								if (projects.length == 0) {
 									continue;
 								}
 								final IProject currentProject = projects[0];
-								final IScriptProject scriptProject = DLTKCore
-										.create(currentProject);
+								final IScriptProject scriptProject = DLTKCore.create(currentProject);
 
-								IBuildpathContainer container = DLTKCore
-										.getBuildpathContainer(entry.getPath(),
-												scriptProject);
+								IBuildpathContainer container = DLTKCore.getBuildpathContainer(entry.getPath(),
+										scriptProject);
 								if (container != null) {
-									IBuildpathEntry[] buildpathEntries = container
-											.getBuildpathEntries();
-									entryPath = EnvironmentPathUtils
-											.getLocalPath(buildpathEntries[0]
-													.getPath());
+									IBuildpathEntry[] buildpathEntries = container.getBuildpathEntries();
+									entryPath = EnvironmentPathUtils.getLocalPath(buildpathEntries[0].getPath());
 									if (entryPath != null) {
-										find(entryPath.toFile(), abstractPath,
-												entry, results);
+										find(entryPath.toFile(), abstractPath, entry, results);
 									}
 
 								}
@@ -258,8 +213,7 @@
 				for (IncludePath includePath : includePaths) {
 					if (includePath.getEntry() instanceof IContainer) {
 						try {
-							find((IContainer) includePath.getEntry(),
-									abstractPath, results);
+							find((IContainer) includePath.getEntry(), abstractPath, results);
 						} catch (InterruptedException e) {
 							PHPDebugPlugin.log(e);
 						}
@@ -271,38 +225,31 @@
 				// search in opened editors
 				searchOpenedEditors(results, abstractPath);
 				// Remove duplicated entries
-				results = new LinkedList<PathEntry>(
-						new LinkedHashSet<PathEntry>(results));
+				results = new LinkedList<PathEntry>(new LinkedHashSet<PathEntry>(results));
 
-				if (!foundInWorkspace && results.size() == 1 && abstractPath
-						.equals(results.get(0).getAbstractPath())) {
+				if (!foundInWorkspace && results.size() == 1 && abstractPath.equals(results.get(0).getAbstractPath())) {
 					localFile[0] = results.get(0);
 				} else if (results.size() > 0) {
-					Collections.sort(results,
-							new BestMatchPathComparator(abstractPath));
+					Collections.sort(results, new BestMatchPathComparator(abstractPath));
 
-					results = preFilterItems(abstractPath, results,
-							debugTarget);
+					results = preFilterItems(abstractPath, results, debugTarget);
 					boolean isSingleMatch = results.size() == 1;
 
 					if (isSingleMatch) {
 						localFile[0] = results.get(0);
 					} else {
-						localFile[0] = filterItems(abstractPath,
-								results.toArray(new PathEntry[results.size()]),
+						localFile[0] = filterItems(abstractPath, results.toArray(new PathEntry[results.size()]),
 								debugTarget);
 					}
 					if (localFile[0] != null) {
 						if (localFile[0].getType() == Type.SERVER) {
 							pathMapper.addServerEntry(remoteFile, localFile[0],
-									isSingleMatch ? MappingSource.ENVIRONMENT
-											: MappingSource.USER);
+									isSingleMatch ? MappingSource.ENVIRONMENT : MappingSource.USER);
 							PathMapperRegistry.storeToPreferences();
 							localFile[0] = null;
 						} else {
 							pathMapper.addEntry(remoteFile, localFile[0],
-									isSingleMatch ? MappingSource.ENVIRONMENT
-											: MappingSource.USER);
+									isSingleMatch ? MappingSource.ENVIRONMENT : MappingSource.USER);
 							PathMapperRegistry.storeToPreferences();
 						}
 					}

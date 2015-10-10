@@ -9,12 +9,10 @@
 	 * @param document
 	 *            The IStructuredDocument that we are working on
 	 */
-	private void handleFileDocBlock(ISourceModule data,
-			IStructuredDocument document) {
+	private void handleFileDocBlock(ISourceModule data, IStructuredDocument document) {
 
 		// Find the first PHP script region:
-		IStructuredDocumentRegion sdRegion = document
-				.getFirstStructuredDocumentRegion();
+		IStructuredDocumentRegion sdRegion = document.getFirstStructuredDocumentRegion();
 		IPhpScriptRegion phpScriptRegion = null;
 		ITextRegion textRegion = null;
 		String docBlock = null;
@@ -22,16 +20,13 @@
 			ITextRegion region = sdRegion.getFirstRegion();
 			if (region.getType() == PHPRegionContext.PHP_OPEN) {
 				// File's content starts with '<?PHP' tag
-				region = sdRegion.getRegionAtCharacterOffset(region.getEnd()
-						+ sdRegion.getStart());
-				if (region != null
-						&& region.getType() == PHPRegionContext.PHP_CONTENT) {
+				region = sdRegion.getRegionAtCharacterOffset(region.getEnd() + sdRegion.getStart());
+				if (region != null && region.getType() == PHPRegionContext.PHP_CONTENT) {
 					phpScriptRegion = (IPhpScriptRegion) region;
 					try {
 						docBlock = CodeGeneration.getFileComment(data, null);
 					} catch (CoreException e) {
-						Logger.logException(
-								"Generating default phpdoc comment", e); //$NON-NLS-1$
+						Logger.logException("Generating default phpdoc comment", e); //$NON-NLS-1$
 					}
 					if (docBlock == null) {
 						// XXX : should we insert newlines?
@@ -41,13 +36,11 @@
 				}
 			} else if (region.getType() == DOMRegionContext.XML_DECLARATION_OPEN) {
 				// File's content starts with HTML code
-				region = sdRegion.getRegionAtCharacterOffset(region.getEnd()
-						+ sdRegion.getStart());
+				region = sdRegion.getRegionAtCharacterOffset(region.getEnd() + sdRegion.getStart());
 				if (region != null) {
 					phpScriptRegion = null;
 					textRegion = (ITextRegion) region;
-					docBlock = createPHPScopeFileDocBlock(data
-							.getScriptProject());
+					docBlock = createPHPScopeFileDocBlock(data.getScriptProject());
 					break;
 				}
 			}
@@ -64,16 +57,15 @@
 				} else if (phpScriptRegion != null) {
 					// File's content starts with '<?php' tag
 					textRegion = phpScriptRegion.getPhpToken(0);
-					String lineDelimiter = document.getLineDelimiter(document
-							.getLineOfOffset(textRegion.getStart()));
+					String lineDelimiter = document.getLineDelimiter(document.getLineOfOffset(textRegion.getStart()));
 					if (lineDelimiter == null) {
 						// XXX : should we add a newline before inserting
 						// docBlock?
 						lineDelimiter = ""; //$NON-NLS-1$
 					}
 					int lineDelimiterLength = lineDelimiter.length();
-					offset = textRegion.getStart() + sdRegion.getStartOffset()
-							+ phpScriptRegion.getStart() + lineDelimiterLength;
+					offset = textRegion.getStart() + sdRegion.getStartOffset() + phpScriptRegion.getStart()
+							+ lineDelimiterLength;
 				} else {
 					assert false;// we shouldn't get here ...
 				}

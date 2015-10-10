@@ -1,23 +1,21 @@
-	protected IScriptCompletionProposal createTypeProposal(
-			final CompletionProposal typeProposal) {
+	protected IScriptCompletionProposal createTypeProposal(final CompletionProposal typeProposal) {
 		String completion = new String(typeProposal.getCompletion());
 		int replaceStart = typeProposal.getReplaceStart();
 		int length = getLength(typeProposal);
-		Image image = getImage(((PHPCompletionProposalLabelProvider) getLabelProvider())
-				.createTypeImageDescriptor(typeProposal));
+		Image image = getImage(
+				((PHPCompletionProposalLabelProvider) getLabelProvider()).createTypeImageDescriptor(typeProposal));
 
 		String displayString = ((PHPCompletionProposalLabelProvider) getLabelProvider())
 				.createTypeProposalLabel(typeProposal);
 
-		ScriptCompletionProposal scriptProposal = new PHPCompletionProposal(
-				completion, replaceStart, length, image, displayString, 0) {
+		ScriptCompletionProposal scriptProposal = new PHPCompletionProposal(completion, replaceStart, length, image,
+				displayString, 0) {
 			private boolean fReplacementStringComputed = false;
 
 			public String getReplacementString() {
 				if (!fReplacementStringComputed) {
 					String replacementString = computeReplacementString();
-					if (ProposalExtraInfo.isAddQuote(typeProposal
-							.getExtraInfo())) {
+					if (ProposalExtraInfo.isAddQuote(typeProposal.getExtraInfo())) {
 						replacementString = "'" + replacementString + "'"; //$NON-NLS-1$ //$NON-NLS-2$
 					}
 					setReplacementString(replacementString);
@@ -29,8 +27,7 @@
 				fReplacementStringComputed = true;
 				IType type = (IType) typeProposal.getModelElement();
 
-				if (ProposalExtraInfo.isClassInNamespace(typeProposal
-						.getExtraInfo())) {
+				if (ProposalExtraInfo.isClassInNamespace(typeProposal.getExtraInfo())) {
 					return PHPModelUtils.getFullName(type);
 					// String result = PHPModelUtils.getFullName(type);
 					// if (ProposalExtraInfo.isAddQuote(typeProposal
@@ -43,21 +40,16 @@
 				String prefix = ""; //$NON-NLS-1$
 				try {
 					int flags = type.getFlags();
-					IType currentNamespace = PHPModelUtils
-							.getCurrentNamespaceIfAny(getSourceModule(),
-									getReplacementOffset());
+					IType currentNamespace = PHPModelUtils.getCurrentNamespaceIfAny(getSourceModule(),
+							getReplacementOffset());
 					IType namespace = PHPModelUtils.getCurrentNamespace(type);
-					if (!PHPFlags.isNamespace(flags)
-							&& namespace == null
-							&& currentNamespace != null
-							&& !ProjectOptions.getPhpVersion(
-									PHPCompletionProposalCollector.this
-											.getScriptProject().getProject())
+					if (!PHPFlags.isNamespace(flags) && namespace == null && currentNamespace != null
+							&& !ProjectOptions
+									.getPhpVersion(PHPCompletionProposalCollector.this.getScriptProject().getProject())
 									.isLessThan(PHPVersion.PHP5_3)
 							&& PHPCompletionProposalCollector.this.document
 									.getChar(getReplacementOffset() - 1) != NamespaceReference.NAMESPACE_SEPARATOR) {
-						prefix = prefix
-								+ NamespaceReference.NAMESPACE_SEPARATOR;
+						prefix = prefix + NamespaceReference.NAMESPACE_SEPARATOR;
 					}
 				} catch (ModelException e) {
 					PHPUiPlugin.log(e);
@@ -67,8 +59,7 @@
 				String suffix = getSuffix(type);
 				String replacementString = null;
 				if (typeProposal.getModelElement() instanceof AliasType) {
-					replacementString = ((AliasType) typeProposal
-							.getModelElement()).getAlias();
+					replacementString = ((AliasType) typeProposal.getModelElement()).getAlias();
 				} else {
 					replacementString = super.getReplacementString();
 				}
@@ -88,8 +79,7 @@
 					nextWord = document.get(getReplacementOffset(), 2);// "::".length()
 				} catch (BadLocationException e) {
 				}
-				return DOUBLE_COLON.equals(nextWord) ? defaultResult
-						: DOUBLE_COLON;
+				return DOUBLE_COLON.equals(nextWord) ? defaultResult : DOUBLE_COLON;
 			}
 
 			@Override
@@ -99,8 +89,7 @@
 		};
 
 		scriptProposal.setRelevance(computeRelevance(typeProposal));
-		scriptProposal.setProposalInfo(new TypeProposalInfo(getSourceModule()
-				.getScriptProject(), typeProposal));
+		scriptProposal.setProposalInfo(new TypeProposalInfo(getSourceModule().getScriptProject(), typeProposal));
 		return scriptProposal;
 
 	}

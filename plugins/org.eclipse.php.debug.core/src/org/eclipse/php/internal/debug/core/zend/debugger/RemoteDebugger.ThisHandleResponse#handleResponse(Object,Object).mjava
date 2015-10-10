@@ -1,6 +1,5 @@
 		public void handleResponse(Object request, Object response) {
-			boolean success = response != null
-					&& ((IDebugResponseMessage) response).getStatus() == 0;
+			boolean success = response != null && ((IDebugResponseMessage) response).getStatus() == 0;
 
 			if (request instanceof AddBreakpointRequest) {
 				AddBreakpointRequest addBreakpointRequest = (AddBreakpointRequest) request;
@@ -11,26 +10,21 @@
 				if (response != null) {
 					id = ((AddBreakpointResponse) response).getBreakpointID();
 				}
-				((BreakpointAddedResponseHandler) responseHandler)
-						.breakpointAdded(fileName, lineNumber, id, success);
+				((BreakpointAddedResponseHandler) responseHandler).breakpointAdded(fileName, lineNumber, id, success);
 
 			} else if (request instanceof CancelBreakpointRequest) {
 				((BreakpointRemovedResponseHandler) responseHandler)
-						.breakpointRemoved(((CancelBreakpointRequest) request)
-								.getBreakpointID(), success);
+						.breakpointRemoved(((CancelBreakpointRequest) request).getBreakpointID(), success);
 
 			} else if (request instanceof CancelAllBreakpointsRequest) {
-				((AllBreakpointRemovedResponseHandler) responseHandler)
-						.allBreakpointRemoved(success);
+				((AllBreakpointRemovedResponseHandler) responseHandler).allBreakpointRemoved(success);
 
 			} else if (request instanceof StartRequest) {
 				((StartResponseHandler) responseHandler).started(success);
 
 			} else if (request instanceof EvalRequest) {
-				((EvalResponseHandler) responseHandler).evaled(
-						((EvalRequest) request).getCommand(),
-						success ? ((EvalResponse) response).getResult() : null,
-						success);
+				((EvalResponseHandler) responseHandler).evaled(((EvalRequest) request).getCommand(),
+						success ? ((EvalResponse) response).getResult() : null, success);
 
 			} else if (request instanceof StepIntoRequest) {
 				((StepIntoResponseHandler) responseHandler).stepInto(success);
@@ -53,8 +47,7 @@
 				String value = assignValueRequest.getValue();
 				int depth = assignValueRequest.getDepth();
 				String[] path = assignValueRequest.getPath();
-				((AssignValueResponseHandler) responseHandler).valueAssigned(
-						var, value, depth, path, success);
+				((AssignValueResponseHandler) responseHandler).valueAssigned(var, value, depth, path, success);
 
 			} else if (request instanceof GetVariableValueRequest) {
 				GetVariableValueRequest getVariableValueRequest = (GetVariableValueRequest) request;
@@ -65,26 +58,20 @@
 				String result = null;
 				if (response != null) {
 					try {
-						result = new String(
-								((GetVariableValueResponse) response)
-										.getVarResult(),
-								((IDebugMessage) response)
-										.getTransferEncoding());
+						result = new String(((GetVariableValueResponse) response).getVarResult(),
+								((IDebugMessage) response).getTransferEncoding());
 					} catch (UnsupportedEncodingException e) {
 					}
 				}
-				((VariableValueResponseHandler) responseHandler).variableValue(
-						value, depth, path, result, success);
+				((VariableValueResponseHandler) responseHandler).variableValue(value, depth, path, result, success);
 
 			} else if (request instanceof GetCallStackRequest) {
 				PHPstack remoteStack = null;
 				if (response != null) {
-					remoteStack = ((GetCallStackResponse) response)
-							.getPHPstack();
+					remoteStack = ((GetCallStackResponse) response).getPHPstack();
 				}
 				convertToSystem(remoteStack);
-				((GetCallStackResponseHandler) responseHandler).callStack(
-						remoteStack, success);
+				((GetCallStackResponseHandler) responseHandler).callStack(remoteStack, success);
 
 			} else if (request instanceof GetStackVariableValueRequest) {
 				GetStackVariableValueRequest getStackVariableValueRequest = (GetStackVariableValueRequest) request;
@@ -97,17 +84,13 @@
 				String result = null;
 				if (response != null) {
 					try {
-						result = new String(
-								((GetStackVariableValueResponse) response)
-										.getVarResult(),
-								((IDebugMessage) response)
-										.getTransferEncoding());
+						result = new String(((GetStackVariableValueResponse) response).getVarResult(),
+								((IDebugMessage) response).getTransferEncoding());
 					} catch (UnsupportedEncodingException e) {
 					}
 				}
-				((GetStackVariableValueResponseHandler) responseHandler)
-						.stackVariableValue(stackDepth, value, depth, path,
-								result, success);
+				((GetStackVariableValueResponseHandler) responseHandler).stackVariableValue(stackDepth, value, depth,
+						path, result, success);
 			}
 		}
 

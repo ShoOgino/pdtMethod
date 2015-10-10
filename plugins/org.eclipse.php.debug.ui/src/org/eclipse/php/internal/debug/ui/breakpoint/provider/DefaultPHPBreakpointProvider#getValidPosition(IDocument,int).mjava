@@ -22,32 +22,28 @@
 				do {
 					line = idoc.getLineInformation(editorLineNumber - 1);
 					startOffset = line.getOffset();
-					endOffset = Math.max(line.getOffset(), line.getOffset()
-							+ line.getLength());
+					endOffset = Math.max(line.getOffset(), line.getOffset() + line.getLength());
 
 					ITypedRegion[] partitions = null;
 
-					partitions = idoc.computePartitioning(startOffset,
-							endOffset - startOffset);
+					partitions = idoc.computePartitioning(startOffset, endOffset - startOffset);
 
 					for (int i = 0; i < partitions.length; ++i) {
 						partitionType = partitions[i].getType();
 						if (partitionType.equals(PHPPartitionTypes.PHP_DEFAULT)) {
 							phpPartitionVisited = true;
 							startOffset = partitions[i].getOffset();
-							linePart = idoc.get(startOffset,
-									partitions[i].getLength()).trim();
+							linePart = idoc.get(startOffset, partitions[i].getLength()).trim();
 							if (Pattern.matches(".*[a-zA-Z0-0_]+.*", linePart) //$NON-NLS-1$
-									&& !linePart.trim().toLowerCase()
-											.equals("<?php")) { //$NON-NLS-1$
+									&& !linePart.trim().toLowerCase().equals("<?php")) { //$NON-NLS-1$
 								result = startOffset;
 								break;
 							}
 						}
 					}
 					++editorLineNumber;
-				} while ((!phpPartitionVisited || PHPStructuredTextPartitioner
-						.isPHPPartitionType(partitionType)) && result == -1);
+				} while ((!phpPartitionVisited || PHPStructuredTextPartitioner.isPHPPartitionType(partitionType))
+						&& result == -1);
 			} catch (BadLocationException e) {
 				result = -1;
 			}

@@ -8,11 +8,10 @@
 		 * org.eclipse.core.runtime.IProgressMonitor)
 		 */
 		@Override
-		public void launch(ILaunchConfiguration configuration, String mode,
-				ILaunch launch, IProgressMonitor monitor) throws CoreException {
+		public void launch(ILaunchConfiguration configuration, String mode, ILaunch launch, IProgressMonitor monitor)
+				throws CoreException {
 			// Notify all listeners of a pre-launch event.
-			int resultCode = notifyPreLaunch(configuration, mode, launch,
-					monitor);
+			int resultCode = notifyPreLaunch(configuration, mode, launch, monitor);
 			if (resultCode != 0) { // cancel launch
 				monitor.setCanceled(true);
 				monitor.done();
@@ -24,14 +23,12 @@
 				monitor.done();
 				return;
 			}
-			String fileName = configuration.getAttribute(Server.FILE_NAME,
-					(String) null);
+			String fileName = configuration.getAttribute(Server.FILE_NAME, (String) null);
 			// Get the project from the file name
 			IPath filePath = new Path(fileName);
 			IProject project = null;
 			try {
-				project = ResourcesPlugin.getWorkspace().getRoot()
-						.getProject(filePath.segment(0));
+				project = ResourcesPlugin.getWorkspace().getRoot().getProject(filePath.segment(0));
 			} catch (Throwable t) {
 				// ignore
 			}
@@ -39,20 +36,14 @@
 			String projectLocation = project.getFullPath().toString();
 			wc.setAttribute(IPHPDebugConstants.PHP_Project, projectLocation);
 			// Set transfer encoding:
-			wc.setAttribute(IDebugParametersKeys.TRANSFER_ENCODING,
-					PHPProjectPreferences.getTransferEncoding(project));
-			wc.setAttribute(IDebugParametersKeys.OUTPUT_ENCODING,
-					PHPProjectPreferences.getOutputEncoding(project));
-			wc.setAttribute(IDebugParametersKeys.PHP_DEBUG_TYPE,
-					IDebugParametersKeys.PHP_WEB_PAGE_DEBUG);
+			wc.setAttribute(IDebugParametersKeys.TRANSFER_ENCODING, PHPProjectPreferences.getTransferEncoding(project));
+			wc.setAttribute(IDebugParametersKeys.OUTPUT_ENCODING, PHPProjectPreferences.getOutputEncoding(project));
+			wc.setAttribute(IDebugParametersKeys.PHP_DEBUG_TYPE, IDebugParametersKeys.PHP_WEB_PAGE_DEBUG);
 			wc.doSave();
-			final String launchURL = new String(configuration.getAttribute(
-					Server.BASE_URL, "") //$NON-NLS-1$
-							.getBytes());
-			launch.setAttribute(IDebugParametersKeys.WEB_SERVER_DEBUGGER,
-					Boolean.toString(true));
+			final String launchURL = new String(configuration.getAttribute(Server.BASE_URL, "") //$NON-NLS-1$
+					.getBytes());
+			launch.setAttribute(IDebugParametersKeys.WEB_SERVER_DEBUGGER, Boolean.toString(true));
 			launch.setAttribute(IDebugParametersKeys.ORIGINAL_URL, launchURL);
-			DebugPlugin.newProcess(launch, new MockProcess(launchURL),
-					launchURL, new HashMap<String, String>());
+			DebugPlugin.newProcess(launch, new MockProcess(launchURL), launchURL, new HashMap<String, String>());
 		}
 

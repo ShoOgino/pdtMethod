@@ -4,20 +4,15 @@
 	 * @see org.eclipse.jdt.ui.CodeGeneration#getTypeComment(ICompilationUnit,
 	 * String, String[], String)
 	 */
-	public static String getTypeComment(IScriptProject sp,
-			String typeQualifiedName, String[] typeParameterNames,
+	public static String getTypeComment(IScriptProject sp, String typeQualifiedName, String[] typeParameterNames,
 			String lineDelim) throws CoreException {
-		Template template = getCodeTemplate(
-				CodeTemplateContextType.TYPECOMMENT_ID, sp);
+		Template template = getCodeTemplate(CodeTemplateContextType.TYPECOMMENT_ID, sp);
 		if (template == null) {
 			return null;
 		}
-		CodeTemplateContext context = new CodeTemplateContext(
-				template.getContextTypeId(), sp, lineDelim);
-		context.setVariable(CodeTemplateContextType.ENCLOSING_TYPE,
-				Signature.getQualifier(typeQualifiedName));
-		context.setVariable(CodeTemplateContextType.TYPENAME,
-				Signature.getSimpleName(typeQualifiedName));
+		CodeTemplateContext context = new CodeTemplateContext(template.getContextTypeId(), sp, lineDelim);
+		context.setVariable(CodeTemplateContextType.ENCLOSING_TYPE, Signature.getQualifier(typeQualifiedName));
+		context.setVariable(CodeTemplateContextType.TYPENAME, Signature.getSimpleName(typeQualifiedName));
 
 		TemplateBuffer buffer;
 		try {
@@ -36,8 +31,12 @@
 			return null;
 		}
 
-		TemplateVariable position = findVariable(buffer,
-				CodeTemplateContextType.TAGS); // look if PHPDoc tags have to
+		TemplateVariable position = findVariable(buffer, CodeTemplateContextType.TAGS); // look
+																						// if
+																						// PHPDoc
+																						// tags
+																						// have
+																						// to
 		// be added
 		if (position == null) {
 			return str;
@@ -47,11 +46,10 @@
 		int[] tagOffsets = position.getOffsets();
 		for (int i = tagOffsets.length - 1; i >= 0; i--) { // from last to first
 			try {
-				insertTag(document, tagOffsets[i], position.getLength(), EMPTY,
-						null, typeParameterNames, false, lineDelim, null);
+				insertTag(document, tagOffsets[i], position.getLength(), EMPTY, null, typeParameterNames, false,
+						lineDelim, null);
 			} catch (BadLocationException e) {
-				throw new CoreException(DLTKUIStatus.createError(IStatus.ERROR,
-						e));
+				throw new CoreException(DLTKUIStatus.createError(IStatus.ERROR, e));
 			}
 		}
 		return document.get();

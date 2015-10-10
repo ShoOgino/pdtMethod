@@ -8,32 +8,24 @@
 	@Override
 	public void performApply(ILaunchConfigurationWorkingCopy configuration) {
 		if (breakpointGroup != null) {
-			configuration.setAttribute(
-					IDebugParametersKeys.FIRST_LINE_BREAKPOINT,
-					breakOnFirstLine.getSelection());
+			configuration.setAttribute(IDebugParametersKeys.FIRST_LINE_BREAKPOINT, breakOnFirstLine.getSelection());
 		}
 		if (tunnelGroup != null) {
-			configuration.setAttribute(IPHPDebugConstants.USE_SSH_TUNNEL,
-					debugThroughTunnel.getSelection());
+			configuration.setAttribute(IPHPDebugConstants.USE_SSH_TUNNEL, debugThroughTunnel.getSelection());
 			if (debugThroughTunnel.getSelection()) {
-				configuration.setAttribute(
-						IPHPDebugConstants.SSH_TUNNEL_USER_NAME,
-						userName.getText().trim());
+				configuration.setAttribute(IPHPDebugConstants.SSH_TUNNEL_USER_NAME, userName.getText().trim());
 				/*
 				 * We save a hash of the password and not the real one. This is
 				 * only used to allow an apply when a password change happens.
 				 * The real password saving is done through the secured storage
 				 * right after that line.
 				 */
-				String passwordDigest = Digester
-						.digest(password.getText().trim());
+				String passwordDigest = Digester.digest(password.getText().trim());
 				if (passwordDigest == null) {
 					// As a default, use the string hash.
-					passwordDigest = String
-							.valueOf(password.getText().trim().hashCode());
+					passwordDigest = String.valueOf(password.getText().trim().hashCode());
 				}
-				configuration.setAttribute(
-						IPHPDebugConstants.SSH_TUNNEL_PASSWORD, passwordDigest);
+				configuration.setAttribute(IPHPDebugConstants.SSH_TUNNEL_PASSWORD, passwordDigest);
 				// Save to secured storage
 				try {
 					/*
@@ -51,22 +43,16 @@
 						 * actually clicked (or when other widgets are
 						 * triggering the apply call).
 						 */
-						PHPLaunchUtilities
-								.getSecurePreferences(PHPLaunchUtilities
-										.getDebugHost(getConfiguration()))
-								.put(userName.getText(),
-										password.getText().trim(),
-										true /* encrypt */);
+						PHPLaunchUtilities.getSecurePreferences(PHPLaunchUtilities.getDebugHost(getConfiguration()))
+								.put(userName.getText(), password.getText().trim(), true /* encrypt */);
 					}
 				} catch (StorageException e) {
 					Logger.logException("Error saving to the secured storage", //$NON-NLS-1$
 							e);
 				}
 			} else {
-				configuration.setAttribute(
-						IPHPDebugConstants.SSH_TUNNEL_USER_NAME, ""); //$NON-NLS-1$
-				configuration.setAttribute(
-						IPHPDebugConstants.SSH_TUNNEL_PASSWORD, ""); //$NON-NLS-1$
+				configuration.setAttribute(IPHPDebugConstants.SSH_TUNNEL_USER_NAME, ""); //$NON-NLS-1$
+				configuration.setAttribute(IPHPDebugConstants.SSH_TUNNEL_PASSWORD, ""); //$NON-NLS-1$
 			}
 		}
 		isSSHCredentialsChange = false; // Reset this flag here.

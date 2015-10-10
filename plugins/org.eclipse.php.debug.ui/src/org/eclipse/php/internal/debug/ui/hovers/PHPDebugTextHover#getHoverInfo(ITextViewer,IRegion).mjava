@@ -12,8 +12,8 @@
 		}
 
 		int offset = hoverRegion.getOffset();
-		IStructuredDocumentRegion flatNode = ((IStructuredDocument) textViewer
-				.getDocument()).getRegionAtCharacterOffset(offset);
+		IStructuredDocumentRegion flatNode = ((IStructuredDocument) textViewer.getDocument())
+				.getRegionAtCharacterOffset(offset);
 		ITextRegion region = null;
 		if (flatNode != null) {
 			region = flatNode.getRegionAtCharacterOffset(offset);
@@ -28,8 +28,7 @@
 		if (region.getType() == PHPRegionContext.PHP_CONTENT) {
 			phpScriptRegion = (IPhpScriptRegion) region;
 			try {
-				region = phpScriptRegion.getPhpToken(offset
-						- container.getStartOffset() - region.getStart());
+				region = phpScriptRegion.getPhpToken(offset - container.getStartOffset() - region.getStart());
 			} catch (BadLocationException e) {
 				region = null;
 			}
@@ -39,16 +38,13 @@
 				int varLength = 0;
 
 				String regionType = region.getType();
-				if (regionType == PHPRegionTypes.PHP_VARIABLE
-						|| regionType == PHPRegionTypes.PHP_THIS) {
+				if (regionType == PHPRegionTypes.PHP_VARIABLE || regionType == PHPRegionTypes.PHP_THIS) {
 					varOffset = hoverRegion.getOffset();
 					varLength = hoverRegion.getLength();
 					try {
-						ITextRegion prevPhpToken = phpScriptRegion
-								.getPhpToken(region.getStart() - 1);
+						ITextRegion prevPhpToken = phpScriptRegion.getPhpToken(region.getStart() - 1);
 						if (prevPhpToken.getType() == PHPRegionTypes.PHP_PAAMAYIM_NEKUDOTAYIM) {
-							prevPhpToken = phpScriptRegion
-									.getPhpToken(prevPhpToken.getStart() - 1);
+							prevPhpToken = phpScriptRegion.getPhpToken(prevPhpToken.getStart() - 1);
 							varLength += varOffset - prevPhpToken.getStart();
 							varOffset = prevPhpToken.getStart();
 						}
@@ -57,24 +53,16 @@
 					}
 				} else if (regionType == PHPRegionTypes.PHP_LABEL) {
 					try {
-						ITextRegion nextRegion = phpScriptRegion
-								.getPhpToken(region.getEnd());
-						ITextRegion prevRegion = phpScriptRegion
-								.getPhpToken(region.getStart() - 1);
+						ITextRegion nextRegion = phpScriptRegion.getPhpToken(region.getEnd());
+						ITextRegion prevRegion = phpScriptRegion.getPhpToken(region.getStart() - 1);
 						if (prevRegion.getType() == PHPRegionTypes.PHP_OBJECT_OPERATOR) {
-							prevRegion = phpScriptRegion.getPhpToken(prevRegion
-									.getStart() - 1);
+							prevRegion = phpScriptRegion.getPhpToken(prevRegion.getStart() - 1);
 							if (prevRegion.getType() == PHPRegionTypes.PHP_VARIABLE) {
-								String nextTokenString = textViewer
-										.getDocument()
-										.get(phpScriptRegion.getStart()
-												+ nextRegion.getStart(),
-												nextRegion.getLength());
+								String nextTokenString = textViewer.getDocument().get(
+										phpScriptRegion.getStart() + nextRegion.getStart(), nextRegion.getLength());
 								if (!"(".equals(nextTokenString)) { //$NON-NLS-1$
-									varOffset = phpScriptRegion.getStart()
-											+ prevRegion.getStart();
-									varLength = region.getEnd()
-											- prevRegion.getStart();
+									varOffset = phpScriptRegion.getStart() + prevRegion.getStart();
+									varLength = region.getEnd() - prevRegion.getStart();
 								}
 							}
 						}
@@ -86,10 +74,8 @@
 				if (varLength > 0) {
 					String variable = null;
 					try {
-						int[] variableRange = getVariableRange(textViewer,
-								varOffset, varLength);
-						variable = textViewer.getDocument().get(
-								variableRange[0], variableRange[1]);
+						int[] variableRange = getVariableRange(textViewer, varOffset, varLength);
+						variable = textViewer.getDocument().get(variableRange[0], variableRange[1]);
 						variable = "<B>" + variable + " = </B>" //$NON-NLS-1$ //$NON-NLS-2$
 								+ getValue(debugTarget, variable);
 					} catch (BadLocationException e) {

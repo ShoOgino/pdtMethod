@@ -25,16 +25,14 @@
 		// }
 
 		for (int i = 0; i < statements.length; i++) {
-			boolean isHtmlStatement = statements[i]
-					.getType() == ASTNode.IN_LINE_HTML;
+			boolean isHtmlStatement = statements[i].getType() == ASTNode.IN_LINE_HTML;
 			boolean isASTError = statements[i].getType() == ASTNode.AST_ERROR;
 			// fixed bug 0015682
 			// in case of previous statement is an error there is no need for
 			// new lines
 			// because the lastStatementEndOffset position move to the current
 			// statement start position
-			boolean isStatementAfterError = i > 0
-					? statements[i - 1].getType() == ASTNode.AST_ERROR : false;
+			boolean isStatementAfterError = i > 0 ? statements[i - 1].getType() == ASTNode.AST_ERROR : false;
 			if (isASTError && i + 1 < statements.length) {
 				// move the lastStatementEndOffset position to the start of the
 				// next statement start position
@@ -43,43 +41,35 @@
 				if (isPhpMode && !isHtmlStatement) {
 					// PHP -> PHP
 					if (lastStatementEndOffset > 0) {
-						if (!isStatementAfterError && getPhpStartTag(
-								lastStatementEndOffset) != -1) {
+						if (!isStatementAfterError && getPhpStartTag(lastStatementEndOffset) != -1) {
 							insertNewLine();
 						}
 						if (!isStatementAfterError) {
 							insertNewLines(statements[i]);
 							indent();
 						}
-						if (lastStatementEndOffset <= statements[i]
-								.getStart()) {
-							handleChars(lastStatementEndOffset,
-									statements[i].getStart());
+						if (lastStatementEndOffset <= statements[i].getStart()) {
+							handleChars(lastStatementEndOffset, statements[i].getStart());
 						}
 					}
 				} else if (isPhpMode && isHtmlStatement) {
 					// PHP -> HTML
 					if (lastStatementEndOffset > 0) {
-						if (lastStatementEndOffset <= statements[i]
-								.getStart()) {
-							handleChars(lastStatementEndOffset,
-									statements[i].getStart());
+						if (lastStatementEndOffset <= statements[i].getStart()) {
+							handleChars(lastStatementEndOffset, statements[i].getStart());
 						}
 					}
 					isPhpMode = false;
 				} else if (!isPhpMode && !isHtmlStatement) {
 					// HTML -> PHP
 					if (!isStatementAfterError) {
-						isPhpEqualTag = getPhpStartTag(
-								lastStatementEndOffset) == PHP_OPEN_SHORT_TAG_WITH_EQUAL;
-						indentationLevel = getPhpTagIndentationLevel(
-								lastStatementEndOffset);
+						isPhpEqualTag = getPhpStartTag(lastStatementEndOffset) == PHP_OPEN_SHORT_TAG_WITH_EQUAL;
+						indentationLevel = getPhpTagIndentationLevel(lastStatementEndOffset);
 						insertNewLines(statements[i]);
 						indent();
 					}
 					if (lastStatementEndOffset <= statements[i].getStart()) {
-						handleChars(lastStatementEndOffset,
-								statements[i].getStart());
+						handleChars(lastStatementEndOffset, statements[i].getStart());
 					}
 					isPhpMode = true;
 				} else {
@@ -90,12 +80,10 @@
 				lastStatementEndOffset = statements[i].getEnd();
 				// need check how many new lines will the next statement
 				// insert
-				if (i + 1 < statements.length
-						&& statements[i].getType() == ASTNode.NAMESPACE
+				if (i + 1 < statements.length && statements[i].getType() == ASTNode.NAMESPACE
 						&& statements[i + 1].getType() == ASTNode.NAMESPACE) {
 					int numberOfLines = getNumbreOfLines(statements[i + 1]) - 1;
-					numberOfLines = this.preferences.blank_lines_between_namespaces
-							- numberOfLines;
+					numberOfLines = this.preferences.blank_lines_between_namespaces - numberOfLines;
 					if (numberOfLines > 0) {
 						for (int j = 0; j < numberOfLines; j++) {
 							insertNewLine();

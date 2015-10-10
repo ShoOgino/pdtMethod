@@ -1,20 +1,17 @@
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * org.eclipse.php.internal.debug.ui.wizards.IDebuggerSettingsSection#validate
-	 * ()
+	 * @see org.eclipse.php.internal.debug.ui.wizards.IDebuggerSettingsSection#
+	 * validate ()
 	 */
 	@Override
 	public void validate() {
 		// Reset state
-		compositeFragment.setMessage(compositeFragment.getDescription(),
-				IMessageProvider.NONE);
+		compositeFragment.setMessage(compositeFragment.getDescription(), IMessageProvider.NONE);
 		if (debuggerStatus == null) {
 			debuggerStatus = Status.OK_STATUS;
 			PHPexeItem phpExe = (PHPexeItem) compositeFragment.getData();
-			AbstractDebuggerConfiguration[] debuggers = PHPDebuggersRegistry
-					.getDebuggersConfigurations();
+			AbstractDebuggerConfiguration[] debuggers = PHPDebuggersRegistry.getDebuggersConfigurations();
 			for (AbstractDebuggerConfiguration debugger : debuggers) {
 				if (phpExe.getDebuggerID().equals(debugger.getDebuggerId())) {
 					debuggerStatus = debugger.validate(phpExe);
@@ -23,35 +20,26 @@
 		}
 		// Check errors
 		if (debuggerStatus.getSeverity() == IStatus.ERROR) {
-			compositeFragment.setMessage(debuggerStatus.getMessage(),
-					IMessageProvider.ERROR);
+			compositeFragment.setMessage(debuggerStatus.getMessage(), IMessageProvider.ERROR);
 			return;
 		}
-		String clientPort = (String) settingsWorkingCopy
-				.getAttribute(PROP_CLIENT_PORT);
+		String clientPort = (String) settingsWorkingCopy.getAttribute(PROP_CLIENT_PORT);
 		if (clientPort == null || clientPort.isEmpty()) {
-			compositeFragment
-					.setMessage(
-							Messages.ZendDebuggerExeSettingsSection_Client_port_is_missing,
-							IMessageProvider.ERROR);
+			compositeFragment.setMessage(Messages.ZendDebuggerExeSettingsSection_Client_port_is_missing,
+					IMessageProvider.ERROR);
 			return;
 		}
 		// Check warnings
 		if (debuggerStatus.getSeverity() == IStatus.WARNING) {
-			compositeFragment.setMessage(debuggerStatus.getMessage(),
-					IMessageProvider.WARNING);
+			compositeFragment.setMessage(debuggerStatus.getMessage(), IMessageProvider.WARNING);
 			return;
 		}
 		int port = Integer.valueOf(clientPort);
 		if (!PHPLaunchUtilities.isPortAvailable(port)
-				&& !PHPLaunchUtilities.isDebugDaemonActive(port,
-						DebuggerCommunicationDaemon.ZEND_DEBUGGER_ID)) {
-			compositeFragment
-					.setMessage(
-							MessageFormat
-									.format(Messages.DebuggerCommonSettingsSection_Port_is_already_in_use,
-											clientPort),
-							IMessageProvider.WARNING);
+				&& !PHPLaunchUtilities.isDebugDaemonActive(port, DebuggerCommunicationDaemon.ZEND_DEBUGGER_ID)) {
+			compositeFragment.setMessage(
+					MessageFormat.format(Messages.DebuggerCommonSettingsSection_Port_is_already_in_use, clientPort),
+					IMessageProvider.WARNING);
 			return;
 		}
 	}

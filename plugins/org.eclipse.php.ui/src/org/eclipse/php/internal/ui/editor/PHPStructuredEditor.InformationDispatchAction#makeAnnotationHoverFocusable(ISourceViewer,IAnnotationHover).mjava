@@ -8,8 +8,7 @@
 		 * @return <code>true</code> if successful, <code>false</code> otherwise
 		 * @since 3.2
 		 */
-		private boolean makeAnnotationHoverFocusable(
-				final ISourceViewer sourceViewer,
+		private boolean makeAnnotationHoverFocusable(final ISourceViewer sourceViewer,
 				final IAnnotationHover annotationHover) {
 			final IVerticalRulerInfo info = getVerticalRuler();
 			final int line = info.getLineOfLastMouseButtonActivity();
@@ -22,8 +21,7 @@
 				Object hoverInfo;
 				if (annotationHover instanceof IAnnotationHoverExtension) {
 					final IAnnotationHoverExtension extension = (IAnnotationHoverExtension) annotationHover;
-					final ILineRange hoverLineRange = extension
-							.getHoverLineRange(sourceViewer, line);
+					final ILineRange hoverLineRange = extension.getHoverLineRange(sourceViewer, line);
 					if (hoverLineRange == null)
 						return false;
 					final int maxVisibleLines = Integer.MAX_VALUE; // allow any
@@ -33,18 +31,16 @@
 					// displayed,
 					// as we
 					// support scrolling
-					hoverInfo = extension.getHoverInfo(sourceViewer,
-							hoverLineRange, maxVisibleLines);
+					hoverInfo = extension.getHoverInfo(sourceViewer, hoverLineRange, maxVisibleLines);
 				} else
-					hoverInfo = annotationHover.getHoverInfo(sourceViewer,
-							line);
+					hoverInfo = annotationHover.getHoverInfo(sourceViewer, line);
 
 				// hover region: the beginning of the concerned line to place
 				// the control right over the line
 				final IDocument document = sourceViewer.getDocument();
 				final int offset = document.getLineOffset(line);
-				final String contentType = TextUtilities.getContentType(
-						document, PHPPartitionTypes.PHP_DOC, offset, true);
+				final String contentType = TextUtilities.getContentType(document, PHPPartitionTypes.PHP_DOC, offset,
+						true);
 
 				IInformationControlCreator controlCreator = null;
 
@@ -54,33 +50,27 @@
 				if ("org.eclipse.jface.text.source.projection.ProjectionAnnotationHover" //$NON-NLS-1$
 						.equals(annotationHover.getClass().getName()))
 					controlCreator = new IInformationControlCreator() {
-						public IInformationControl createInformationControl(
-								final Shell shell) {
-							final int shellStyle = SWT.RESIZE | SWT.TOOL
-									| getOrientation();
+						public IInformationControl createInformationControl(final Shell shell) {
+							final int shellStyle = SWT.RESIZE | SWT.TOOL | getOrientation();
 							final int style = SWT.V_SCROLL | SWT.H_SCROLL;
-							return new PHPSourceViewerInformationControl(shell,
-									shellStyle, style);
+							return new PHPSourceViewerInformationControl(shell, shellStyle, style);
 						}
 					};
 				else if (annotationHover instanceof IInformationProviderExtension2)
 					controlCreator = ((IInformationProviderExtension2) annotationHover)
 							.getInformationPresenterControlCreator();
 				else if (annotationHover instanceof IAnnotationHoverExtension)
-					controlCreator = ((IAnnotationHoverExtension) annotationHover)
-							.getHoverControlCreator();
+					controlCreator = ((IAnnotationHoverExtension) annotationHover).getHoverControlCreator();
 
-				final IInformationProvider informationProvider = new InformationProvider(
-						new Region(offset, 0), hoverInfo, controlCreator);
+				final IInformationProvider informationProvider = new InformationProvider(new Region(offset, 0),
+						hoverInfo, controlCreator);
 
 				fInformationPresenter.setOffset(offset);
-				fInformationPresenter.setAnchor(
-						AbstractInformationControlManager.ANCHOR_RIGHT);
+				fInformationPresenter.setAnchor(AbstractInformationControlManager.ANCHOR_RIGHT);
 				fInformationPresenter.setMargins(4, 0); // AnnotationBarHoverManager
 				// sets (5,0), minus
 				// SourceViewer.GAP_SIZE_1
-				fInformationPresenter.setInformationProvider(
-						informationProvider, contentType);
+				fInformationPresenter.setInformationProvider(informationProvider, contentType);
 				fInformationPresenter.showInformation();
 
 				return true;

@@ -1,33 +1,26 @@
 	private void mapFirstFile(String currentFileName) {
 		PathEntry pathEntry = null;
 		String debugFileName = null;
-		ILaunchConfiguration launchConfiguration = debugTarget.getLaunch()
-				.getLaunchConfiguration();
-		PathMapper pathMapper = PathMapperRegistry
-				.getByLaunchConfiguration(launchConfiguration);
+		ILaunchConfiguration launchConfiguration = debugTarget.getLaunch().getLaunchConfiguration();
+		PathMapper pathMapper = PathMapperRegistry.getByLaunchConfiguration(launchConfiguration);
 		if (pathMapper != null) {
 			try {
-				debugFileName = launchConfiguration.getAttribute(
-						IPHPDebugConstants.ATTR_FILE, (String) null);
+				debugFileName = launchConfiguration.getAttribute(IPHPDebugConstants.ATTR_FILE, (String) null);
 			} catch (CoreException e) {
 				Logger.logException(e);
 				return;
 			}
 			if (debugFileName != null) {
-				IResource resource = ResourcesPlugin.getWorkspace().getRoot()
-						.findMember(debugFileName);
+				IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(debugFileName);
 				if (resource instanceof IFile) {
-					pathEntry = new PathEntry(debugFileName, Type.WORKSPACE,
-							resource.getParent());
+					pathEntry = new PathEntry(debugFileName, Type.WORKSPACE, resource.getParent());
 				} else if (new File(debugFileName).exists()) {
-					pathEntry = new PathEntry(debugFileName, Type.EXTERNAL,
-							new File(debugFileName).getParentFile());
+					pathEntry = new PathEntry(debugFileName, Type.EXTERNAL, new File(debugFileName).getParentFile());
 				}
 			}
 			if (pathEntry != null) {
 				// Map remote file to the map point:
-				pathMapper.addEntry(currentFileName, pathEntry,
-						MappingSource.ENVIRONMENT);
+				pathMapper.addEntry(currentFileName, pathEntry, MappingSource.ENVIRONMENT);
 				PathMapperRegistry.storeToPreferences();
 			}
 		}

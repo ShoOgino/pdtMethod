@@ -1,31 +1,23 @@
-	private IRegion computeHeaderComment(FoldingStructureComputationContext ctx)
-			throws ModelException {
+	private IRegion computeHeaderComment(FoldingStructureComputationContext ctx) throws ModelException {
 		if (!(ctx.getDocument() instanceof IStructuredDocument)) {
 			return null;
 		}
-		final IStructuredDocument document = (IStructuredDocument) ctx
-				.getDocument();
-		IStructuredDocumentRegion sdRegion = document
-				.getFirstStructuredDocumentRegion();
+		final IStructuredDocument document = (IStructuredDocument) ctx.getDocument();
+		IStructuredDocumentRegion sdRegion = document.getFirstStructuredDocumentRegion();
 		int i = 0;
-		while (sdRegion != null
-				&& sdRegion.getType() != PHPRegionTypes.PHP_CONTENT && i++ < 40) {
+		while (sdRegion != null && sdRegion.getType() != PHPRegionTypes.PHP_CONTENT && i++ < 40) {
 			sdRegion = sdRegion.getNext();
 		}
 
-		if (sdRegion == null
-				|| sdRegion.getType() != PHPRegionTypes.PHP_CONTENT
-				|| sdRegion.getRegions().size() < 2) {
+		if (sdRegion == null || sdRegion.getType() != PHPRegionTypes.PHP_CONTENT || sdRegion.getRegions().size() < 2) {
 			return null;
 		}
 
-		final IPhpScriptRegion textRegion = (IPhpScriptRegion) sdRegion
-				.getRegions().get(1);
+		final IPhpScriptRegion textRegion = (IPhpScriptRegion) sdRegion.getRegions().get(1);
 		try {
 			ITextRegion phpToken = textRegion.getPhpToken(0);
 			i = 0;
-			while (phpToken.getType() != PHPRegionTypes.PHPDOC_COMMENT_START
-					&& i++ < 3) {
+			while (phpToken.getType() != PHPRegionTypes.PHPDOC_COMMENT_START && i++ < 3) {
 				phpToken = textRegion.getPhpToken(phpToken.getEnd());
 			}
 			if (phpToken.getType() != PHPRegionTypes.PHPDOC_COMMENT_START) {
@@ -33,15 +25,13 @@
 			}
 			int start = phpToken.getStart();
 			ITextRegion lastToken = null;
-			while (lastToken != phpToken
-					&& phpToken.getType() != PHPRegionTypes.PHPDOC_COMMENT_END) {
+			while (lastToken != phpToken && phpToken.getType() != PHPRegionTypes.PHPDOC_COMMENT_END) {
 				phpToken = textRegion.getPhpToken(phpToken.getEnd());
 			}
 
 			if (phpToken.getType() == PHPRegionTypes.PHPDOC_COMMENT_END) {
 				int end = phpToken.getEnd();
-				return new Region(sdRegion.getStartOffset()
-						+ textRegion.getStart() + start, end - start);
+				return new Region(sdRegion.getStartOffset() + textRegion.getStart() + start, end - start);
 			}
 			return null;
 

@@ -1,21 +1,16 @@
-	protected int isMatchingCharNeeded(IStructuredDocument document,
-			int offset, char bracketChar) {
+	protected int isMatchingCharNeeded(IStructuredDocument document, int offset, char bracketChar) {
 		try {
-			String postCharState = FormatterUtils.getPartitionType(document,
-					offset + 1);
-			if (!(postCharState == PHPPartitionTypes.PHP_DEFAULT
-					|| postCharState == PHPRegionTypes.PHP_OPENTAG || postCharState == PHPRegionTypes.PHP_CLOSETAG)) {
+			String postCharState = FormatterUtils.getPartitionType(document, offset + 1);
+			if (!(postCharState == PHPPartitionTypes.PHP_DEFAULT || postCharState == PHPRegionTypes.PHP_OPENTAG
+					|| postCharState == PHPRegionTypes.PHP_CLOSETAG)) {
 				if (isSpecialOpenCurlyInQuotes(document, offset)) {
-					postCharState = FormatterUtils.getPartitionType(document,
-							offset + 2);
+					postCharState = FormatterUtils.getPartitionType(document, offset + 2);
 				}
 			}
 			if (document.getLength() == offset + 1) { // if we are in the end of
 														// the document
-				postCharState = FormatterUtils.getPartitionType(document,
-						offset);
-				if (postCharState == PHPPartitionTypes.PHP_DEFAULT
-						|| postCharState == PHPRegionTypes.PHP_OPENTAG
+				postCharState = FormatterUtils.getPartitionType(document, offset);
+				if (postCharState == PHPPartitionTypes.PHP_DEFAULT || postCharState == PHPRegionTypes.PHP_OPENTAG
 						|| postCharState == PHPRegionTypes.PHP_CLOSETAG) {
 					if (document.getChar(offset) == getMatchingChar(bracketChar)) {
 						return MATCHING_BRACKET_NOT_NEEDED;
@@ -25,19 +20,16 @@
 				return MATCHING_BRACKET_NOT_NEEDED;
 			}
 
-			if (postCharState != PHPPartitionTypes.PHP_DEFAULT
-					&& postCharState != PHPRegionTypes.PHP_OPENTAG
+			if (postCharState != PHPPartitionTypes.PHP_DEFAULT && postCharState != PHPRegionTypes.PHP_OPENTAG
 					&& postCharState != PHPRegionTypes.PHP_CLOSETAG) {
 				return SEARCH_NOT_VALID;
 			}
 
 			int currOffset = offset + 1;
 			// Find the structured document region:
-			IStructuredDocumentRegion sdRegion = document
-					.getRegionAtCharacterOffset(currOffset);
+			IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(currOffset);
 
-			ITextRegion tRegion = sdRegion != null ? sdRegion
-					.getRegionAtCharacterOffset(currOffset) : null;
+			ITextRegion tRegion = sdRegion != null ? sdRegion.getRegionAtCharacterOffset(currOffset) : null;
 
 			while (currOffset >= 0 && tRegion != null) {
 				int regionStart = sdRegion.getStartOffset(tRegion);
@@ -52,18 +44,15 @@
 				// This text region must be of type PhpScriptRegion:
 				if (tRegion.getType() == PHPRegionTypes.PHP_CONTENT) {
 					IPhpScriptRegion scriptRegion = (IPhpScriptRegion) tRegion;
-					tRegion = scriptRegion
-							.getPhpToken(currOffset - regionStart);
+					tRegion = scriptRegion.getPhpToken(currOffset - regionStart);
 
 					while (true) {
 						String regionType = tRegion.getType();
 						if (regionType == PHPRegionTypes.PHP_TOKEN) {
-							char token = document.getChar(regionStart
-									+ tRegion.getStart());
+							char token = document.getChar(regionStart + tRegion.getStart());
 							if (token == ROUND_OPEN || token == SQUARE_OPEN) {
 								if (token == bracketChar) {
-									if (matcher.match(document, regionStart
-											+ tRegion.getStart() + 1) == null) {
+									if (matcher.match(document, regionStart + tRegion.getStart() + 1) == null) {
 										return MATCHING_BRACKET_NEEDED;
 									}
 								}
@@ -73,8 +62,7 @@
 							return MATCHING_BRACKET_NOT_NEEDED;
 						}
 						if (tRegion.getStart() > 0) {
-							tRegion = scriptRegion.getPhpToken(tRegion
-									.getStart() - 1);
+							tRegion = scriptRegion.getPhpToken(tRegion.getStart() - 1);
 						} else {
 							break;
 						}

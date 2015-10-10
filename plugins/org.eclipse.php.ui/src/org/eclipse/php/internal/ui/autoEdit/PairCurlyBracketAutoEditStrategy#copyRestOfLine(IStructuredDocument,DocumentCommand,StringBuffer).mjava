@@ -4,8 +4,7 @@
 	 * 
 	 * @return The number of characters the caret should be advanced at
 	 */
-	private int copyRestOfLine(IStructuredDocument document,
-			DocumentCommand command, StringBuffer buffer)
+	private int copyRestOfLine(IStructuredDocument document, DocumentCommand command, StringBuffer buffer)
 			throws BadLocationException {
 
 		int documentLength = document.getLength();
@@ -24,10 +23,9 @@
 		int whiteSpacesAdded = 0;
 		int lengthToCopyDown = endOffset - offset;
 
-		IStructuredDocumentRegion[] structuredDocumentRegions = document
-				.getStructuredDocumentRegions(offset, lengthToCopyDown);
-		if (structuredDocumentRegions != null
-				&& structuredDocumentRegions.length > 0) {
+		IStructuredDocumentRegion[] structuredDocumentRegions = document.getStructuredDocumentRegions(offset,
+				lengthToCopyDown);
+		if (structuredDocumentRegions != null && structuredDocumentRegions.length > 0) {
 			IStructuredDocumentRegion structuredDocumentRegion = structuredDocumentRegions[0];
 			ITextRegion firstRegion = structuredDocumentRegion.getFirstRegion();
 			ITextRegion lastRegion = structuredDocumentRegion.getLastRegion();
@@ -37,8 +35,7 @@
 			// deal with PHP block within HTML tags
 			if (!(firstRegion instanceof ContextRegion)) { // meaning
 															// "not-PHP-Resgion"
-				ITextRegion regionAtCharacterOffset = structuredDocumentRegion
-						.getRegionAtCharacterOffset(offset);
+				ITextRegion regionAtCharacterOffset = structuredDocumentRegion.getRegionAtCharacterOffset(offset);
 				if (regionAtCharacterOffset instanceof ContextRegionContainer) {
 					ContextRegionContainer phpContext = (ContextRegionContainer) regionAtCharacterOffset;
 					lastRegion = phpContext.getLastRegion();
@@ -47,9 +44,7 @@
 				}
 
 			}
-			int absolutOffset = lastRegion.getStart()
-					+ structuredDocumentRegion.getStartOffset()
-					+ xmlRelativeOffset;
+			int absolutOffset = lastRegion.getStart() + structuredDocumentRegion.getStartOffset() + xmlRelativeOffset;
 			if (absolutOffset <= endOffset && offset <= absolutOffset) {
 				lengthToCopyDown = absolutOffset - offset;
 				;
@@ -74,18 +69,15 @@
 			// if there is a } then there is a problem with
 			// curlyCloseInsertionStrategy calc
 			// and we need to add manually another indentation.
-			int indentationSize = FormatterUtils.getFormatterCommonPrferences()
-					.getIndentationSize(document);
-			char indentationChar = FormatterUtils
-					.getFormatterCommonPrferences()
-					.getIndentationChar(document);
+			int indentationSize = FormatterUtils.getFormatterCommonPrferences().getIndentationSize(document);
+			char indentationChar = FormatterUtils.getFormatterCommonPrferences().getIndentationChar(document);
 			for (int i = 0; i < indentationSize; i++) {
 				buffer.append(indentationChar);
 				whiteSpacesAdded++;
 			}
 			buffer.append(document.getLineDelimiter());
-			IndentationBaseDetector indentationDetector = new IndentationBaseDetector(
-					document, document.getLineOfOffset(offset), offset);
+			IndentationBaseDetector indentationDetector = new IndentationBaseDetector(document,
+					document.getLineOfOffset(offset), offset);
 			int baseline = indentationDetector.getIndentationBaseLine(true);
 			lineInfo = document.getLineInformation(baseline);
 			String blanks = FormatterUtils.getLineBlanks(document, lineInfo);

@@ -20,14 +20,12 @@
 
 			int lineOffset = line.getOffset();
 			int firstNonWS = findEndOfWhiteSpace(d, lineOffset, offset);
-			Assert.isTrue(firstNonWS >= lineOffset,
-					"indentation must not be negative"); //$NON-NLS-1$
+			Assert.isTrue(firstNonWS >= lineOffset, "indentation must not be negative"); //$NON-NLS-1$
 
 			StringBuffer buf = new StringBuffer(c.text);
 			IRegion prefix = findPrefixRange(d, line);
 			String indentation = d.get(prefix.getOffset(), prefix.getLength());
-			int lengthToAdd = Math.min(offset - prefix.getOffset(),
-					prefix.getLength());
+			int lengthToAdd = Math.min(offset - prefix.getOffset(), prefix.getLength());
 
 			buf.append(indentation.substring(0, lengthToAdd));
 
@@ -36,12 +34,10 @@
 					// phpdoc started on this line
 					buf.append(" * "); //$NON-NLS-1$
 
-					if (TypingPreferences.closePhpdoc
-							&& isNewComment(d, offset)) {
+					if (TypingPreferences.closePhpdoc && isNewComment(d, offset)) {
 						c.shiftsCaret = false;
 						c.caretOffset = c.offset + buf.length();
-						String lineDelimiter = TextUtilities
-								.getDefaultLineDelimiter(d);
+						String lineDelimiter = TextUtilities.getDefaultLineDelimiter(d);
 
 						int replacementLength = 0;
 						String restOfLine = d.get(p, replacementLength);
@@ -64,25 +60,18 @@
 									ScriptModelUtil.reconcile(unit);
 									// PHPUiPlugin.getDefault().getASTProvider().reconciled(null,
 									// unit, new NullProgressMonitor());
-									String partitionType = FormatterUtils
-											.getPartitionType(
-													(IStructuredDocument) d,
-													c.offset);
+									String partitionType = FormatterUtils.getPartitionType((IStructuredDocument) d,
+											c.offset);
 									String commentBlockBody;
-									if (partitionType
-											.equals(PHPPartitionTypes.PHP_DOC)) {
-										commentBlockBody = createScriptdocTags(
-												d, c, indentation,
-												lineDelimiter, unit);
+									if (partitionType.equals(PHPPartitionTypes.PHP_DOC)) {
+										commentBlockBody = createScriptdocTags(d, c, indentation, lineDelimiter, unit);
 									} else {// Multiline comment
 										commentBlockBody = PHP_COMMENT_BLOCK_MID;
 									}
 									buf.append(restOfLine);
 									// only add tags if they are non-empty - the
 									// empty line has already been added above.
-									if (commentBlockBody != null
-											&& !commentBlockBody.trim().equals(
-													"*")) //$NON-NLS-1$
+									if (commentBlockBody != null && !commentBlockBody.trim().equals("*")) //$NON-NLS-1$
 										buf.append(commentBlockBody);
 								} catch (CoreException e) {
 									Logger.logException(e);

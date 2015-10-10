@@ -17,32 +17,25 @@
 			List<String> includePath = new ArrayList<String>(path.length);
 			for (IncludePath pathObject : path) {
 				if (pathObject.isBuildpath()) {
-					IBuildpathEntry entry = (IBuildpathEntry) pathObject
-							.getEntry();
+					IBuildpathEntry entry = (IBuildpathEntry) pathObject.getEntry();
 					if (entry.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) {
-						IPath entryPath = DLTKCore
-								.getResolvedVariablePath(entry.getPath());
+						IPath entryPath = DLTKCore.getResolvedVariablePath(entry.getPath());
 						includePath.add(entryPath.toFile().getAbsolutePath());
 					} else if (entry.getEntryKind() == IBuildpathEntry.BPE_PROJECT
 							|| entry.getEntryKind() == IBuildpathEntry.BPE_SOURCE
 							|| entry.getEntryKind() == IBuildpathEntry.BPE_LIBRARY) {
 						if (entry.getEntryKind() == IBuildpathEntry.BPE_PROJECT) {
-							IWorkspaceRoot root = ResourcesPlugin
-									.getWorkspace().getRoot();
-							IResource resource = root.findMember(entry
-									.getPath());
-							IModelElement scriptProject = DLTKCore
-									.create(resource);
+							IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+							IResource resource = root.findMember(entry.getPath());
+							IModelElement scriptProject = DLTKCore.create(resource);
 							if (scriptProject instanceof IScriptProject) {
 								try {
 									IProjectFragment[] projectFragments = ((IScriptProject) scriptProject)
 											.getProjectFragments();
 									for (IProjectFragment projectFragment : projectFragments) {
 										if (projectFragment.getResource() instanceof IFolder
-												|| projectFragment
-														.getResource() instanceof IProject)
-											addIncludePath(includePath,
-													projectFragment.getPath());
+												|| projectFragment.getResource() instanceof IProject)
+											addIncludePath(includePath, projectFragment.getPath());
 									}
 
 								} catch (ModelException e) {
@@ -54,19 +47,15 @@
 					} else if (entry.getEntryKind() == IBuildpathEntry.BPE_CONTAINER) {
 						try {
 							// Retries the local paths from the container
-							final IScriptProject scriptProject = DLTKCore
-									.create(project);
+							final IScriptProject scriptProject = DLTKCore.create(project);
 							final IBuildpathContainer buildpathContainer = DLTKCore
-									.getBuildpathContainer(entry.getPath(),
-											scriptProject);
+									.getBuildpathContainer(entry.getPath(), scriptProject);
 							if (buildpathContainer != null) {
-								final IBuildpathEntry[] buildpathEntries = buildpathContainer
-										.getBuildpathEntries();
+								final IBuildpathEntry[] buildpathEntries = buildpathContainer.getBuildpathEntries();
 								if (buildpathEntries != null) {
 									for (IBuildpathEntry iBuildpathEntry : buildpathEntries) {
 										final IPath localPath = EnvironmentPathUtils
-												.getLocalPath(iBuildpathEntry
-														.getPath());
+												.getLocalPath(iBuildpathEntry.getPath());
 										includePath.add(localPath.toOSString());
 									}
 
@@ -85,8 +74,7 @@
 					}
 				}
 			}
-			modifyIncludePath(tempIniFile,
-					includePath.toArray(new String[includePath.size()]));
+			modifyIncludePath(tempIniFile, includePath.toArray(new String[includePath.size()]));
 		}
 		return tempIniFile;
 	}

@@ -10,31 +10,24 @@
 		try {
 			byte[] content = null;
 			if (!lastFileName.endsWith(EXCLUDED_EXTENSION)) {
-				if (isFirstFileToDebug
-						&& PHPDebugPlugin.isDummyFile(lastFileName)) {
+				if (isFirstFileToDebug && PHPDebugPlugin.isDummyFile(lastFileName)) {
 					content = getDummyContent();
 					// Blacklist dummy.php file, so it won't be requested for
 					// mapping:
-					debugTarget.getContextManager().addToResolveBlacklist(
-							new VirtualPath(lastFileName),
+					debugTarget.getContextManager().addToResolveBlacklist(new VirtualPath(lastFileName),
 							ResolveBlackList.Type.FILE);
 				} else {
-					RemoteDebugger remoteDebugger = (RemoteDebugger) debugTarget
-							.getRemoteDebugger();
-					String localPath = remoteDebugger
-							.convertToLocalFilename(lastFileName);
+					RemoteDebugger remoteDebugger = (RemoteDebugger) debugTarget.getRemoteDebugger();
+					String localPath = remoteDebugger.convertToLocalFilename(lastFileName);
 					if (localPath != null) {
-						IResource resource = ResourcesPlugin.getWorkspace()
-								.getRoot().findMember(localPath);
+						IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(localPath);
 						if (resource != null) {
 							IPath location = resource.getLocation();
 							if (location != null) {
-								content = getBytesFromURI(
-										location.toFile().toURI());
+								content = getBytesFromURI(location.toFile().toURI());
 							} else if (resource.exists()) {
 								// probably RSE
-								content = getBytesFromURI(
-										resource.getLocationURI());
+								content = getBytesFromURI(resource.getLocationURI());
 							}
 						} else {
 							File file = new File(localPath);

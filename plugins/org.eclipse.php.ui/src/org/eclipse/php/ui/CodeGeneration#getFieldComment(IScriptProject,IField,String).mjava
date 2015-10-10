@@ -18,16 +18,15 @@
 	 *             Thrown when the evaluation of the code template fails.
 	 * @since 3.0
 	 */
-	public static String getFieldComment(IScriptProject sp, IField field,
-			String lineDelimiter) throws CoreException {
+	public static String getFieldComment(IScriptProject sp, IField field, String lineDelimiter) throws CoreException {
 		Boolean isVar = false;
 		Program program = null;
 
 		try {
 			// XXX: WAIT_NO (instead of WAIT_YES) due bug 466694 and until
 			// bug 438661 will be fixed
-			program = SharedASTProvider.getAST(field.getSourceModule(),
-					SharedASTProvider.WAIT_NO, new NullProgressMonitor());
+			program = SharedASTProvider.getAST(field.getSourceModule(), SharedASTProvider.WAIT_NO,
+					new NullProgressMonitor());
 		} catch (IOException e1) {
 		}
 
@@ -38,8 +37,7 @@
 			}
 		}
 
-		ASTNode elementAt = program.getElementAt(field.getSourceRange()
-				.getOffset());
+		ASTNode elementAt = program.getElementAt(field.getSourceRange().getOffset());
 		// we need at least one entry (even if content is null)
 		Expression[] expressions = new Expression[1];
 		ITypeBinding[] varTypes = new ITypeBinding[1];
@@ -49,8 +47,7 @@
 			isVar = true;
 			Variable varDeclaration = (Variable) elementAt;
 			if (varDeclaration.getParent() instanceof Assignment) {
-				expressions[0] = ((Assignment) varDeclaration.getParent())
-						.getRightHandSide();
+				expressions[0] = ((Assignment) varDeclaration.getParent()).getRightHandSide();
 				varTypes[0] = expressions[0].resolveTypeBinding();
 			} else {
 				varTypes[0] = varDeclaration.resolveTypeBinding();
@@ -71,11 +68,9 @@
 			}
 		} else if (elementAt instanceof ConstantDeclaration) {
 			ConstantDeclaration constDeclaration = (ConstantDeclaration) elementAt;
-			Identifier[] varDeclarations = constDeclaration.names().toArray(
-					new Identifier[0]);
+			Identifier[] varDeclarations = constDeclaration.names().toArray(new Identifier[0]);
 			if (varDeclarations.length > 0) {
-				expressions = constDeclaration.initializers().toArray(
-						new Expression[0]);
+				expressions = constDeclaration.initializers().toArray(new Expression[0]);
 				assert varDeclarations.length == expressions.length;
 
 				varTypes = new ITypeBinding[varDeclarations.length];
@@ -90,10 +85,8 @@
 		String[] fieldTypes = getFieldTypes(varTypes, expressions);
 
 		if (isVar || fieldTypes.length > 1) {
-			return StubUtility.getMultipleFieldsComment(sp, fieldTypes,
-					fieldNames, lineDelimiter);
+			return StubUtility.getMultipleFieldsComment(sp, fieldTypes, fieldNames, lineDelimiter);
 		}
-		return StubUtility.getFieldComment(sp, fieldTypes[0], fieldNames[0],
-				lineDelimiter);
+		return StubUtility.getFieldComment(sp, fieldTypes[0], fieldNames[0], lineDelimiter);
 	}
 

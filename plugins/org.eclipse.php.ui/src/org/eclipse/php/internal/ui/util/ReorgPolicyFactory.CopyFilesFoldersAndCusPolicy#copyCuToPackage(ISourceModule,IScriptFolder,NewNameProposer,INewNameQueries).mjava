@@ -1,29 +1,23 @@
-		private static Change copyCuToPackage(ISourceModule cu,
-				IScriptFolder dest, NewNameProposer nameProposer,
+		private static Change copyCuToPackage(ISourceModule cu, IScriptFolder dest, NewNameProposer nameProposer,
 				INewNameQueries copyQueries) {
 			// XXX workaround for bug 31998 we will have to disable renaming of
 			// linked packages (and cus)
 			IResource res = ReorgUtils.getResource(cu);
 			if (res != null && res.isLinked()) {
 				if (ResourceUtil.getResource(dest) instanceof IContainer)
-					return copyFileToContainer(cu,
-							(IContainer) ResourceUtil.getResource(dest),
-							nameProposer, copyQueries);
+					return copyFileToContainer(cu, (IContainer) ResourceUtil.getResource(dest), nameProposer,
+							copyQueries);
 			}
 
 			String newName = nameProposer.createNewName(cu, dest);
-			Change simpleCopy = new CopySourceModuleChange(cu, dest,
-					copyQueries.createStaticQuery(newName));
+			Change simpleCopy = new CopySourceModuleChange(cu, dest, copyQueries.createStaticQuery(newName));
 			if (newName == null || newName.equals(cu.getElementName()))
 				return simpleCopy;
 
 			try {
-				IPath newPath = ResourceUtil.getResource(cu).getParent()
-						.getFullPath().append(newName);
-				INewNameQuery nameQuery = copyQueries
-						.createNewSourceModuleNameQuery(cu, newName);
-				return new CreateCopyOfSourceModuleChange(newPath,
-						cu.getSource(), cu, nameQuery);
+				IPath newPath = ResourceUtil.getResource(cu).getParent().getFullPath().append(newName);
+				INewNameQuery nameQuery = copyQueries.createNewSourceModuleNameQuery(cu, newName);
+				return new CreateCopyOfSourceModuleChange(newPath, cu.getSource(), cu, nameQuery);
 			} catch (CoreException e) {
 				return simpleCopy; // fallback - no ui here
 			}

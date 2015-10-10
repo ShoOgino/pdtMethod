@@ -1,22 +1,17 @@
 	private boolean shouldHaveGlobalNamespace() {
-		if (ProjectOptions.getPhpVersion(sProject.getProject()).isLessThan(
-				PHPVersion.PHP5_3)) {
+		if (ProjectOptions.getPhpVersion(sProject.getProject()).isLessThan(PHPVersion.PHP5_3)) {
 			return false;
 		}
 		IType type = method.getDeclaringType();
-		boolean isInNamespace = PHPModelUtils.getCurrentNamespaceIfAny(
-				fSourceModule, getReplacementOffset()) != null;
+		boolean isInNamespace = PHPModelUtils.getCurrentNamespaceIfAny(fSourceModule, getReplacementOffset()) != null;
 
 		boolean isNotAlias = !(type instanceof AliasType);
 		boolean isNamespacedType = PHPModelUtils.getCurrentNamespace(type) != null;
 
 		try {
 			boolean globalMethod = (type == null && method.getNamespace() == null);
-			boolean globalConstructor = type != null && !isNamespacedType
-					&& method.isConstructor();
-			if (((globalMethod && prefixGlobalFunctionCall()) || globalConstructor)
-					&& isInNamespace
-					&& isNotAlias
+			boolean globalConstructor = type != null && !isNamespacedType && method.isConstructor();
+			if (((globalMethod && prefixGlobalFunctionCall()) || globalConstructor) && isInNamespace && isNotAlias
 					&& document.getChar(getReplacementOffset() - 1) != NamespaceReference.NAMESPACE_SEPARATOR) {
 				return true;
 			}

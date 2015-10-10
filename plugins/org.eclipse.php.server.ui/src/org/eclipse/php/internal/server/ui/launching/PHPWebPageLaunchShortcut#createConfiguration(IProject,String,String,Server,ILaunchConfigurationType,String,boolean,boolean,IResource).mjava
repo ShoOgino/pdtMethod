@@ -1,8 +1,6 @@
-	static ILaunchConfiguration createConfiguration(IProject project,
-			String fileName, String selectedURL, Server server,
-			ILaunchConfigurationType configType, String mode,
-			boolean breakAtFirstLine, boolean showDebugDialog, IResource res)
-			throws CoreException {
+	static ILaunchConfiguration createConfiguration(IProject project, String fileName, String selectedURL,
+			Server server, ILaunchConfigurationType configType, String mode, boolean breakAtFirstLine,
+			boolean showDebugDialog, IResource res) throws CoreException {
 		ILaunchConfiguration config = null;
 		if (!FileUtils.resourceExists(fileName)) {
 			return null;
@@ -13,36 +11,29 @@
 			URL = selectedURL;
 		} else {
 			try {
-				URL resolvedUrl = constractURL(res.getProject(),
-						server.getBaseURL(), new Path(fileName));
+				URL resolvedUrl = constractURL(res.getProject(), server.getBaseURL(), new Path(fileName));
 				URL = resolvedUrl.toString();
 			} catch (MalformedURLException e) {
 				// safe as resolved URL is server.getBaseURL()
 			}
 		}
 
-		ILaunchConfigurationWorkingCopy wc = configType.newInstance(null,
-				getNewConfigurationName(fileName));
+		ILaunchConfigurationWorkingCopy wc = configType.newInstance(null, getNewConfigurationName(fileName));
 
 		// Set the debugger ID and the configuration delegate for this launch
 		// configuration
 		String debuggerID = PHPDebugPlugin.getDebuggerId(server.getName());
 		wc.setAttribute(PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID, debuggerID);
-		IDebuggerConfiguration debuggerConfiguration = PHPDebuggersRegistry
-				.getDebuggerConfiguration(debuggerID);
-		wc.setAttribute(
-				PHPDebugCorePreferenceNames.CONFIGURATION_DELEGATE_CLASS,
+		IDebuggerConfiguration debuggerConfiguration = PHPDebuggersRegistry.getDebuggerConfiguration(debuggerID);
+		wc.setAttribute(PHPDebugCorePreferenceNames.CONFIGURATION_DELEGATE_CLASS,
 				debuggerConfiguration.getWebLaunchDelegateClass());
 
 		wc.setAttribute(Server.NAME, server.getName());
 		wc.setAttribute(Server.FILE_NAME, fileName);
 		wc.setAttribute(Server.BASE_URL, URL);
-		wc.setAttribute(IPHPDebugConstants.RUN_WITH_DEBUG_INFO,
-				PHPDebugPlugin.getDebugInfoOption());
-		wc.setAttribute(IPHPDebugConstants.OPEN_IN_BROWSER,
-				PHPDebugPlugin.getOpenInBrowserOption());
-		wc.setAttribute(IDebugParametersKeys.FIRST_LINE_BREAKPOINT,
-				breakAtFirstLine);
+		wc.setAttribute(IPHPDebugConstants.RUN_WITH_DEBUG_INFO, PHPDebugPlugin.getDebugInfoOption());
+		wc.setAttribute(IPHPDebugConstants.OPEN_IN_BROWSER, PHPDebugPlugin.getOpenInBrowserOption());
+		wc.setAttribute(IDebugParametersKeys.FIRST_LINE_BREAKPOINT, breakAtFirstLine);
 		if (res != null) {
 			wc.setMappedResources(new IResource[] { res });
 		}
@@ -51,8 +42,7 @@
 			String title = (ILaunchManager.DEBUG_MODE.equals(mode) ? Messages.PHPWebPageLaunchShortcut_1
 					: (ILaunchManager.PROFILE_MODE.equals(mode) ? Messages.PHPWebPageLaunchShortcut_2
 							: Messages.PHPWebPageLaunchShortcut_3));
-			PHPWebPageURLLaunchDialog launchDialog = new PHPWebPageURLLaunchDialog(
-					wc, server, title);
+			PHPWebPageURLLaunchDialog launchDialog = new PHPWebPageURLLaunchDialog(wc, server, title);
 			launchDialog.setBlockOnOpen(true);
 			if (launchDialog.open() != PHPWebPageURLLaunchDialog.OK) {
 				return null;

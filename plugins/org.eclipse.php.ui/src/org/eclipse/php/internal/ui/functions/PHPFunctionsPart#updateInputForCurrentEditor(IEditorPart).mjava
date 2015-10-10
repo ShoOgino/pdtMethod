@@ -8,40 +8,29 @@
 				try {
 					// retrieves the project and the content
 					IScriptProject scriptProject = getCurrentScriptProject();
-					if (scriptProject == null
-							|| !(scriptProject instanceof ScriptProject)) {
+					if (scriptProject == null || !(scriptProject instanceof ScriptProject)) {
 						return Status.CANCEL_STATUS;
 					}
 
 					Object newInput;
 					try {
-						IBuildpathContainer languageContainer = DLTKCore
-								.getBuildpathContainer(
-										new Path(
-												LanguageModelInitializer.CONTAINER_PATH),
-										scriptProject);
+						IBuildpathContainer languageContainer = DLTKCore.getBuildpathContainer(
+								new Path(LanguageModelInitializer.CONTAINER_PATH), scriptProject);
 						if (languageContainer == null) {
-							Logger.log(
-									Logger.ERROR,
-									"project \""
-											+ scriptProject.getProject()
-													.getName()
-											+ "\" has php nature but has no language container"); //$NON-NLS-1$ //$NON-NLS-2$
+							Logger.log(Logger.ERROR, "project \"" + scriptProject.getProject().getName()
+									+ "\" has php nature but has no language container"); //$NON-NLS-1$ //$NON-NLS-2$
 							return Status.CANCEL_STATUS;
 						}
-						IBuildpathEntry[] buildpathEntries = languageContainer
-								.getBuildpathEntries();
+						IBuildpathEntry[] buildpathEntries = languageContainer.getBuildpathEntries();
 						List<IProjectFragment> fragments = new LinkedList<IProjectFragment>();
 						for (IBuildpathEntry buildpathEntry : buildpathEntries) {
 							IProjectFragment fragment = ((ScriptProject) scriptProject)
-									.getProjectFragment(buildpathEntry
-											.getPath());
+									.getProjectFragment(buildpathEntry.getPath());
 							if (fragment != null) {
 								fragments.add(fragment);
 							}
 						}
-						newInput = (IProjectFragment[]) fragments
-								.toArray(new IProjectFragment[fragments.size()]);
+						newInput = (IProjectFragment[]) fragments.toArray(new IProjectFragment[fragments.size()]);
 
 					} catch (ModelException e) {
 						return Status.CANCEL_STATUS;
@@ -51,8 +40,7 @@
 
 					// set the language settings as input to the content
 					// provider
-					if (!newInput.equals(currentInput)
-							&& fViewer.getContentProvider() != null) {
+					if (!newInput.equals(currentInput) && fViewer.getContentProvider() != null) {
 						fViewer.setInput(newInput);
 					}
 					return Status.OK_STATUS;
@@ -73,16 +61,13 @@
 			 * @return the selected project
 			 * @throws CoreException
 			 */
-			private final IScriptProject getCurrentScriptProject()
-					throws CoreException {
-				final PHPStructuredEditor phpEditor = EditorUtility
-						.getPHPStructuredEditor(editorPart);
+			private final IScriptProject getCurrentScriptProject() throws CoreException {
+				final PHPStructuredEditor phpEditor = EditorUtility.getPHPStructuredEditor(editorPart);
 				if (phpEditor != null) {
 					return phpEditor.getProject();
 				}
 
-				final IProject[] projects = ResourcesPlugin.getWorkspace()
-						.getRoot().getProjects();
+				final IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
 				for (IProject project : projects) {
 					if (PHPToolkitUtil.isPhpProject(project)) {
 						return DLTKCore.create(project);

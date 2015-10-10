@@ -8,11 +8,9 @@
 	 */
 	public void handle(IDebugMessage request, PHPDebugTarget debugTarget) {
 		this.debugTarget = debugTarget;
-		RemoteDebugger remoteDebugger = (RemoteDebugger) debugTarget
-				.getRemoteDebugger();
+		RemoteDebugger remoteDebugger = (RemoteDebugger) debugTarget.getRemoteDebugger();
 		boolean isWebServerDebugger = Boolean.toString(true)
-				.equals(debugTarget.getLaunch().getAttribute(
-						IDebugParametersKeys.WEB_SERVER_DEBUGGER));
+				.equals(debugTarget.getLaunch().getAttribute(IDebugParametersKeys.WEB_SERVER_DEBUGGER));
 		contentRequest = (FileContentRequest) request;
 		reqID = contentRequest.getID();
 		String currentFileName = contentRequest.getFileName();
@@ -25,11 +23,9 @@
 			Path testWSPath = new Path(lastFileName);
 			IFile testWSFile = null;
 			if (testWSPath.segmentCount() > 1) {
-				testWSFile = ResourcesPlugin.getWorkspace().getRoot()
-						.getFile(testWSPath);
+				testWSFile = ResourcesPlugin.getWorkspace().getRoot().getFile(testWSPath);
 			}
-			if (isFirstFileToDebug && testWSFile != null
-					&& testWSFile.exists()) {
+			if (isFirstFileToDebug && testWSFile != null && testWSFile.exists()) {
 				// this is an RSE file, do nothing
 			}
 			// not a Dummy file request
@@ -37,8 +33,7 @@
 				return;
 			}
 			// Exe script
-			else if (debugType
-					.equals(IDebugParametersKeys.PHP_EXE_SCRIPT_DEBUG)) {
+			else if (debugType.equals(IDebugParametersKeys.PHP_EXE_SCRIPT_DEBUG)) {
 				lastFileName = null;// this will inform the debugger to use its
 									// own copy when getResponseMessage() is
 									// called
@@ -50,28 +45,22 @@
 				if (isFirstFileToDebug) {// we already checked this it not the
 											// Dummy file
 					mapFirstFile(currentFileName);
-					if (debugType.equals(
-							IDebugParametersKeys.PHP_WEB_SCRIPT_DEBUG)) {
-						VirtualPath remotePath = new VirtualPath(
-								currentFileName);
+					if (debugType.equals(IDebugParametersKeys.PHP_WEB_SCRIPT_DEBUG)) {
+						VirtualPath remotePath = new VirtualPath(currentFileName);
 						remotePath.removeLastSegment();
-						remoteDebugger.setCurrentWorkingDirectory(
-								remotePath.toString());
+						remoteDebugger.setCurrentWorkingDirectory(remotePath.toString());
 					}
 				}
-				lastFileName = remoteDebugger
-						.convertToLocalFilename(currentFileName);
+				lastFileName = remoteDebugger.convertToLocalFilename(currentFileName);
 			}
 		}
 		// Other - Relative,RSE
 		else {
-			lastFileName = remoteDebugger
-					.convertToLocalFilename(currentFileName);
+			lastFileName = remoteDebugger.convertToLocalFilename(currentFileName);
 		}
 		// For each file request in Debug mode, send breakpoint request to the
 		// debugger
-		if (lastFileName != null && debugTarget.getLaunch().getLaunchMode()
-				.equals(ILaunchManager.DEBUG_MODE)) {
+		if (lastFileName != null && debugTarget.getLaunch().getLaunchMode().equals(ILaunchManager.DEBUG_MODE)) {
 			addBreakPoints(debugTarget, currentFileName);
 		}
 		isFirstFileToDebug = false;

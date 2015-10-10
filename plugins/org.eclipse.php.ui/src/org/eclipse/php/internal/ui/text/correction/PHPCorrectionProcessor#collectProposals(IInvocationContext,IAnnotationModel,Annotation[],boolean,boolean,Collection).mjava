@@ -1,7 +1,5 @@
-	public static IStatus collectProposals(IInvocationContext context,
-			IAnnotationModel model, Annotation[] annotations,
-			boolean addQuickFixes, boolean addQuickAssists,
-			Collection proposals) {
+	public static IStatus collectProposals(IInvocationContext context, IAnnotationModel model, Annotation[] annotations,
+			boolean addQuickFixes, boolean addQuickAssists, Collection proposals) {
 		ArrayList problems = new ArrayList();
 
 		// collect problem locations and corrections from marker annotations
@@ -9,16 +7,13 @@
 			Annotation curr = annotations[i];
 			ProblemLocation problemLocation = null;
 			if (curr instanceof IScriptAnnotation) {
-				problemLocation = getProblemLocation((IScriptAnnotation) curr,
-						model);
+				problemLocation = getProblemLocation((IScriptAnnotation) curr, model);
 				if (problemLocation != null) {
 					problems.add(problemLocation);
 				}
 			}
-			if (problemLocation == null && addQuickFixes
-					&& curr instanceof SimpleMarkerAnnotation) {
-				collectMarkerProposals((SimpleMarkerAnnotation) curr,
-						proposals);
+			if (problemLocation == null && addQuickFixes && curr instanceof SimpleMarkerAnnotation) {
+				collectMarkerProposals((SimpleMarkerAnnotation) curr, proposals);
 			}
 		}
 		MultiStatus resStatus = null;
@@ -26,23 +21,19 @@
 		IProblemLocation[] problemLocations = (IProblemLocation[]) problems
 				.toArray(new IProblemLocation[problems.size()]);
 		if (addQuickFixes) {
-			IStatus status = collectCorrections(context, problemLocations,
-					proposals);
+			IStatus status = collectCorrections(context, problemLocations, proposals);
 			if (!status.isOK()) {
 				resStatus = new MultiStatus(PHPUiPlugin.ID, IStatus.ERROR,
-						CorrectionMessages.JavaCorrectionProcessor_error_quickfix_message,
-						null);
+						CorrectionMessages.JavaCorrectionProcessor_error_quickfix_message, null);
 				resStatus.add(status);
 			}
 		}
 		if (addQuickAssists) {
-			IStatus status = collectAssists(context, problemLocations,
-					proposals);
+			IStatus status = collectAssists(context, problemLocations, proposals);
 			if (!status.isOK()) {
 				if (resStatus == null) {
 					resStatus = new MultiStatus(PHPUiPlugin.ID, IStatus.ERROR,
-							CorrectionMessages.JavaCorrectionProcessor_error_quickassist_message,
-							null);
+							CorrectionMessages.JavaCorrectionProcessor_error_quickassist_message, null);
 				}
 				resStatus.add(status);
 			}

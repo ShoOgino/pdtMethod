@@ -13,20 +13,18 @@
 	 *            Directory of current PHP file
 	 * @return path entry or <code>null</code> in case it could not be found
 	 */
-	public static PathEntry find(String remoteFile, IDebugTarget debugTarget,
-			String currentWorkingDir, String currentScriptDir) {
+	public static PathEntry find(String remoteFile, IDebugTarget debugTarget, String currentWorkingDir,
+			String currentScriptDir) {
 		if (remoteFile == null) {
 			throw new NullPointerException();
 		}
 
 		PathEntry pathEntry = null;
-		ILaunchConfiguration launchConfiguration = debugTarget.getLaunch()
-				.getLaunchConfiguration();
+		ILaunchConfiguration launchConfiguration = debugTarget.getLaunch().getLaunchConfiguration();
 
 		IProject project = null;
 		if (currentScriptDir != null) {
-			IResource resource = ResourcesPlugin.getWorkspace().getRoot()
-					.findMember(currentScriptDir);
+			IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(currentScriptDir);
 			if (resource != null) {
 				project = resource.getProject();
 			}
@@ -37,11 +35,9 @@
 		if (project == null) {
 			String projectName;
 			try {
-				projectName = launchConfiguration.getAttribute(
-						IPHPDebugConstants.PHP_Project, (String) null);
+				projectName = launchConfiguration.getAttribute(IPHPDebugConstants.PHP_Project, (String) null);
 				if (projectName != null) {
-					project = ResourcesPlugin.getWorkspace().getRoot()
-							.getProject(projectName);
+					project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
 				}
 			} catch (CoreException e) {
 				PHPDebugPlugin.log(e);
@@ -51,39 +47,31 @@
 		// If the given path is not absolute - use internal PHP search
 		// mechanism:
 		if (!VirtualPath.isAbsolute(remoteFile)) {
-			if (project != null && currentWorkingDir != null
-					&& currentScriptDir != null) {
+			if (project != null && currentWorkingDir != null && currentScriptDir != null) {
 				// This is not a full path, search using PHP Search Engine:
-				Result<?, ?> result = PHPSearchEngine.find(remoteFile,
-						currentWorkingDir, currentScriptDir, project);
+				Result<?, ?> result = PHPSearchEngine.find(remoteFile, currentWorkingDir, currentScriptDir, project);
 				if (result instanceof ExternalFileResult) {
 					ExternalFileResult extFileResult = (ExternalFileResult) result;
-					return new PathEntry(
-							extFileResult.getFile().getAbsolutePath(),
-							Type.EXTERNAL, extFileResult.getContainer());
+					return new PathEntry(extFileResult.getFile().getAbsolutePath(), Type.EXTERNAL,
+							extFileResult.getContainer());
 				}
 				if (result instanceof IncludedFileResult) {
 					IncludedFileResult incFileResult = (IncludedFileResult) result;
 					IBuildpathEntry container = incFileResult.getContainer();
-					Type type = (container
-							.getEntryKind() == IBuildpathEntry.BPE_VARIABLE)
-									? Type.INCLUDE_VAR : Type.INCLUDE_FOLDER;
-					return new PathEntry(
-							incFileResult.getFile().getAbsolutePath(), type,
-							container);
+					Type type = (container.getEntryKind() == IBuildpathEntry.BPE_VARIABLE) ? Type.INCLUDE_VAR
+							: Type.INCLUDE_FOLDER;
+					return new PathEntry(incFileResult.getFile().getAbsolutePath(), type, container);
 				}
 				if (result != null) {
 					// workspace file
 					ResourceResult resResult = (ResourceResult) result;
 					IResource resource = resResult.getFile();
-					return new PathEntry(resource.getFullPath().toString(),
-							Type.WORKSPACE, resource.getParent());
+					return new PathEntry(resource.getFullPath().toString(), Type.WORKSPACE, resource.getParent());
 				}
 			}
 			return null;
 		}
-		PathMapper pathMapper = PathMapperRegistry
-				.getByLaunchConfiguration(launchConfiguration);
+		PathMapper pathMapper = PathMapperRegistry.getByLaunchConfiguration(launchConfiguration);
 		if (pathMapper != null) {
 			pathEntry = find(pathMapper, remoteFile, project, debugTarget);
 		}

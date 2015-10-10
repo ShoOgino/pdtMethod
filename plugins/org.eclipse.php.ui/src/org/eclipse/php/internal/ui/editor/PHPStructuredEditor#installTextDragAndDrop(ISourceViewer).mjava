@@ -9,18 +9,15 @@
 		if (viewer == null || fIsTextDragAndDropInstalled)
 			return;
 
-		final IDragAndDropService dndService = (IDragAndDropService) getSite()
-				.getService(IDragAndDropService.class);
+		final IDragAndDropService dndService = (IDragAndDropService) getSite().getService(IDragAndDropService.class);
 		if (dndService == null)
 			return;
 
 		final StyledText st = viewer.getTextWidget();
 
 		// Install drag source
-		final ISelectionProvider selectionProvider = viewer
-				.getSelectionProvider();
-		final DragSource source = new DragSource(st,
-				DND.DROP_COPY | DND.DROP_MOVE);
+		final ISelectionProvider selectionProvider = viewer.getSelectionProvider();
+		final DragSource source = new DragSource(st, DND.DROP_COPY | DND.DROP_MOVE);
 		source.setTransfer(new Transfer[] { TextTransfer.getInstance() });
 		source.addDragListener(new DragSourceAdapter() {
 			String fSelectedText;
@@ -30,8 +27,7 @@
 				fTextDragAndDropToken = null;
 				try {
 					fSelection = st.getSelection();
-					event.doit = isLocationSelected(
-							new Point(event.x, event.y));
+					event.doit = isLocationSelected(new Point(event.x, event.y));
 
 					ISelection selection = selectionProvider.getSelection();
 					if (selection instanceof ITextSelection)
@@ -63,8 +59,7 @@
 
 			public void dragFinished(DragSourceEvent event) {
 				try {
-					if (event.detail == DND.DROP_MOVE
-							&& validateEditorInputState()) {
+					if (event.detail == DND.DROP_MOVE && validateEditorInputState()) {
 						Point newSelection = st.getSelection();
 						int length = fSelection.y - fSelection.x;
 						int delta = 0;
@@ -74,8 +69,7 @@
 
 						if (fTextDragAndDropToken == null) {
 							// Move in same editor - end compound change
-							IRewriteTarget target = (IRewriteTarget) getAdapter(
-									IRewriteTarget.class);
+							IRewriteTarget target = (IRewriteTarget) getAdapter(IRewriteTarget.class);
 							if (target != null)
 								target.endCompoundChange();
 						}
@@ -124,19 +118,16 @@
 
 			public void drop(DropTargetEvent event) {
 				try {
-					if (fTextDragAndDropToken != null
-							&& event.detail == DND.DROP_MOVE) {
+					if (fTextDragAndDropToken != null && event.detail == DND.DROP_MOVE) {
 						// Move in same editor
 						int caretOffset = st.getCaretOffset();
-						if (fSelection.x <= caretOffset
-								&& caretOffset <= fSelection.y) {
+						if (fSelection.x <= caretOffset && caretOffset <= fSelection.y) {
 							event.detail = DND.DROP_NONE;
 							return;
 						}
 
 						// Start compound change
-						IRewriteTarget target = (IRewriteTarget) getAdapter(
-								IRewriteTarget.class);
+						IRewriteTarget target = (IRewriteTarget) getAdapter(IRewriteTarget.class);
 						if (target != null)
 							target.beginCompoundChange();
 					}
@@ -182,8 +173,7 @@
 					} else {
 						Point newSelection = st.getSelection();
 						try {
-							int modelOffset = widgetOffset2ModelOffset(viewer,
-									newSelection.x);
+							int modelOffset = widgetOffset2ModelOffset(viewer, newSelection.x);
 							viewer.getDocument().replace(modelOffset, 0, text);
 						} catch (BadLocationException e) {
 							return;
@@ -195,8 +185,7 @@
 				}
 			}
 		};
-		dndService.addMergedDropTarget(st, DND.DROP_MOVE | DND.DROP_COPY,
-				new Transfer[] { TextTransfer.getInstance() },
+		dndService.addMergedDropTarget(st, DND.DROP_MOVE | DND.DROP_COPY, new Transfer[] { TextTransfer.getInstance() },
 				dropTargetListener);
 
 		fIsTextDragAndDropInstalled = true;

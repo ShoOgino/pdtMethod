@@ -9,8 +9,7 @@
 		setErrorMessage(null);
 		setWarningMessage(null);
 		try {
-			final String phpExe = launchConfig.getAttribute(
-					IPHPDebugConstants.ATTR_EXECUTABLE_LOCATION, ""); //$NON-NLS-1$
+			final String phpExe = launchConfig.getAttribute(IPHPDebugConstants.ATTR_EXECUTABLE_LOCATION, ""); //$NON-NLS-1$
 			boolean phpExeExists = true;
 			try {
 				final File file = new File(phpExe);
@@ -25,17 +24,13 @@
 			}
 
 			if (enableFileSelection) {
-				final String phpFile = launchConfig
-						.getAttribute(IPHPDebugConstants.ATTR_FILE, ""); //$NON-NLS-1$
+				final String phpFile = launchConfig.getAttribute(IPHPDebugConstants.ATTR_FILE, ""); //$NON-NLS-1$
 
 				if (FileUtils.resourceExists(phpFile)) {
-					IResource fileToData = ResourcesPlugin.getWorkspace()
-							.getRoot().findMember(phpFile);
+					IResource fileToData = ResourcesPlugin.getWorkspace().getRoot().findMember(phpFile);
 					// check if not a file (project, folder etc.)
-					if ((fileToData.getType() != IResource.FILE)
-							|| !PHPToolkitUtil.isPhpFile((IFile) fileToData)) {
-						setErrorMessage(phpFile
-								+ PHPDebugUIMessages.PHPExecutableLaunchTab_isNotPHPFile);
+					if ((fileToData.getType() != IResource.FILE) || !PHPToolkitUtil.isPhpFile((IFile) fileToData)) {
+						setErrorMessage(phpFile + PHPDebugUIMessages.PHPExecutableLaunchTab_isNotPHPFile);
 						return false;
 					}
 					// if valid PHP file, update text field data
@@ -44,15 +39,13 @@
 						if (fileToData.getLocation() == null) {
 							dataLocation = fileToData.getFullPath().toString();
 						} else {
-							dataLocation = fileToData.getLocation()
-									.toOSString();
+							dataLocation = fileToData.getLocation().toOSString();
 						}
 						fileTextField.setData(dataLocation);
 					}
 				} else if (new File(phpFile).exists()) {
 					if (!PHPToolkitUtil.hasPhpExtention(phpFile)) {
-						setErrorMessage(phpFile
-								+ PHPDebugUIMessages.PHPExecutableLaunchTab_isNotPHPFile);
+						setErrorMessage(phpFile + PHPDebugUIMessages.PHPExecutableLaunchTab_isNotPHPFile);
 						return false;
 					}
 				} else { // resource DOES NOT exist
@@ -60,35 +53,25 @@
 					return false;
 				}
 			}
-			PHPexeItem phpExeItem = phpsComboBlock != null
-					? phpsComboBlock.getPHPexe() : null;
+			PHPexeItem phpExeItem = phpsComboBlock != null ? phpsComboBlock.getPHPexe() : null;
 			if (phpExeItem == null) {
-				String storedPHPexePath = launchConfig
-						.getAttribute(PHPRuntime.PHP_CONTAINER, (String) null);
+				String storedPHPexePath = launchConfig.getAttribute(PHPRuntime.PHP_CONTAINER, (String) null);
 				phpExeItem = storedPHPexePath != null
-						? PHPRuntime.getPHPexeItem(
-								Path.fromPortableString(storedPHPexePath))
-						: null;
+						? PHPRuntime.getPHPexeItem(Path.fromPortableString(storedPHPexePath)) : null;
 			}
 			if (phpExeItem != null && isLaunchMode(ILaunchManager.DEBUG_MODE)
-					&& PHPDebuggersRegistry.NONE_DEBUGGER_ID
-							.equals(phpExeItem.getDebuggerID())) {
-				setErrorMessage(MessageFormat.format(
-						PHPDebugUIMessages.PHPExecutableLaunchTab_No_debugger_is_attached,
+					&& PHPDebuggersRegistry.NONE_DEBUGGER_ID.equals(phpExeItem.getDebuggerID())) {
+				setErrorMessage(MessageFormat.format(PHPDebugUIMessages.PHPExecutableLaunchTab_No_debugger_is_attached,
 						phpExeItem.getName()));
 				return false;
 			}
 			// Check if script arguments can be passed (CLI SAPI required)
-			String exeProgramArgs = prgmArgumentsText != null
-					? prgmArgumentsText.getText() : null;
+			String exeProgramArgs = prgmArgumentsText != null ? prgmArgumentsText.getText() : null;
 			if (exeProgramArgs == null)
-				exeProgramArgs = launchConfig.getAttribute(
-						IDebugParametersKeys.EXE_CONFIG_PROGRAM_ARGUMENTS, ""); //$NON-NLS-1$
+				exeProgramArgs = launchConfig.getAttribute(IDebugParametersKeys.EXE_CONFIG_PROGRAM_ARGUMENTS, ""); //$NON-NLS-1$
 			if (!exeProgramArgs.isEmpty()) {
-				if (phpExeItem != null && !(PHPexeItem.SAPI_CLI
-						.equals(phpExeItem.getSapiType())))
-					setWarningMessage(
-							PHPDebugUIMessages.PHPExecutableLaunchTab_argumentsWillNotBePassed);
+				if (phpExeItem != null && !(PHPexeItem.SAPI_CLI.equals(phpExeItem.getSapiType())))
+					setWarningMessage(PHPDebugUIMessages.PHPExecutableLaunchTab_argumentsWillNotBePassed);
 			}
 		} catch (final CoreException e) {
 		}

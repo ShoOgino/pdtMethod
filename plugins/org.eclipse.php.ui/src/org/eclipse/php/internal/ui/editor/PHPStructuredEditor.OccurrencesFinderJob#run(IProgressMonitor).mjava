@@ -17,36 +17,30 @@
 			if (documentProvider == null)
 				return Status.CANCEL_STATUS;
 
-			IAnnotationModel annotationModel = documentProvider
-					.getAnnotationModel(getEditorInput());
+			IAnnotationModel annotationModel = documentProvider.getAnnotationModel(getEditorInput());
 			if (annotationModel == null)
 				return Status.CANCEL_STATUS;
 
 			// Add occurrence annotations
 			int length = fLocations.length;
-			Map<Annotation, Position> annotationMap = new HashMap<Annotation, Position>(
-					length);
+			Map<Annotation, Position> annotationMap = new HashMap<Annotation, Position>(length);
 			for (int i = 0; i < length; i++) {
 
 				if (isCanceled(progressMonitor))
 					return Status.CANCEL_STATUS;
 
 				OccurrenceLocation location = fLocations[i];
-				Position position = new Position(location.getOffset(),
-						location.getLength());
+				Position position = new Position(location.getOffset(), location.getLength());
 
 				String description = location.getDescription();
-				String annotationType = (location
-						.getFlags() == IOccurrencesFinder.F_WRITE_OCCURRENCE)
-								? "org.eclipse.php.ui.occurrences.write" //$NON-NLS-1$
-								: "org.eclipse.php.ui.occurrences"; //$NON-NLS-1$
+				String annotationType = (location.getFlags() == IOccurrencesFinder.F_WRITE_OCCURRENCE)
+						? "org.eclipse.php.ui.occurrences.write" //$NON-NLS-1$
+						: "org.eclipse.php.ui.occurrences"; //$NON-NLS-1$
 
 				// create an annotation to mark the occurrence
-				ReconcileAnnotationKey reconcileAnnotationKey = new ReconcileAnnotationKey(
-						null, PHPPartitionTypes.PHP_DEFAULT,
-						ReconcileAnnotationKey.TOTAL);
-				TemporaryAnnotation annotation = new TemporaryAnnotation(
-						position, annotationType, description,
+				ReconcileAnnotationKey reconcileAnnotationKey = new ReconcileAnnotationKey(null,
+						PHPPartitionTypes.PHP_DEFAULT, ReconcileAnnotationKey.TOTAL);
+				TemporaryAnnotation annotation = new TemporaryAnnotation(position, annotationType, description,
 						reconcileAnnotationKey) {
 
 					// Supply an occurrence image to display in the vertical
@@ -54,9 +48,8 @@
 					@Override
 					public void paint(GC gc, Canvas canvas, Rectangle r) {
 						ImageUtilities.drawImage(
-								PHPUiPlugin.getImageDescriptorRegistry()
-										.get(PHPPluginImages.DESC_OBJS_OCCURRENCES),
-								gc, canvas, r, SWT.CENTER, SWT.TOP);
+								PHPUiPlugin.getImageDescriptorRegistry().get(PHPPluginImages.DESC_OBJS_OCCURRENCES), gc,
+								canvas, r, SWT.CENTER, SWT.TOP);
 					}
 
 				};
@@ -68,19 +61,15 @@
 
 			synchronized (getLockObject(annotationModel)) {
 				if (annotationModel instanceof IAnnotationModelExtension) {
-					((IAnnotationModelExtension) annotationModel)
-							.replaceAnnotations(fOccurrenceAnnotations,
-									annotationMap);
+					((IAnnotationModelExtension) annotationModel).replaceAnnotations(fOccurrenceAnnotations,
+							annotationMap);
 				} else {
 					removeOccurrenceAnnotations();
-					for (Map.Entry<Annotation, Position> entry : annotationMap
-							.entrySet()) {
-						annotationModel.addAnnotation(entry.getKey(),
-								entry.getValue());
+					for (Map.Entry<Annotation, Position> entry : annotationMap.entrySet()) {
+						annotationModel.addAnnotation(entry.getKey(), entry.getValue());
 					}
 				}
-				fOccurrenceAnnotations = annotationMap.keySet()
-						.toArray(new Annotation[annotationMap.keySet().size()]);
+				fOccurrenceAnnotations = annotationMap.keySet().toArray(new Annotation[annotationMap.keySet().size()]);
 			}
 
 			return Status.OK_STATUS;

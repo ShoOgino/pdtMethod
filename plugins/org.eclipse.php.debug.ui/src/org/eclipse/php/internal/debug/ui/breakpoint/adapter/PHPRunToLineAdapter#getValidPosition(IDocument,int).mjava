@@ -16,32 +16,29 @@
 			try {
 				IRegion line = idoc.getLineInformation(editorLineNumber - 1);
 				startOffset = line.getOffset();
-				endOffset = Math.max(line.getOffset(), line.getOffset()
-						+ line.getLength());
+				endOffset = Math.max(line.getOffset(), line.getOffset() + line.getLength());
 
-				String lineText = idoc
-						.get(startOffset, endOffset - startOffset).trim();
+				String lineText = idoc.get(startOffset, endOffset - startOffset).trim();
 
 				// blank lines or lines with only an open PHP
 				// tags cannot have a breakpoint
 
-				if (lineText.equals("") || lineText.equals("<%") || //$NON-NLS-1$ //$NON-NLS-2$ 
-						lineText.equals("%>") || lineText.equals("<?php") || lineText.equals("?>") || (lineText.trim()).startsWith("//")) { //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+				if (lineText.equals("") || lineText.equals("<%") || //$NON-NLS-1$ //$NON-NLS-2$
+						lineText.equals("%>") || lineText.equals("<?php") || lineText.equals("?>") //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+						|| (lineText.trim()).startsWith("//")) { //$NON-NLS-1$
 					result = -1;
 				} else {
 
 					// get all partitions for current line
 					ITypedRegion[] partitions = null;
 
-					partitions = idoc.computePartitioning(startOffset,
-							endOffset - startOffset);
+					partitions = idoc.computePartitioning(startOffset, endOffset - startOffset);
 
 					for (int i = 0; i < partitions.length; ++i) {
 						String type = partitions[i].getType();
 						// if found PHP
 						// return that position
-						if (PHPStructuredTextPartitioner
-								.isPHPPartitionType(type)) {
+						if (PHPStructuredTextPartitioner.isPHPPartitionType(type)) {
 							result = partitions[i].getOffset();
 						}
 					}

@@ -1,20 +1,15 @@
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		final String commandId = event.getCommand().getId();
-		final IEvaluationContext context = (IEvaluationContext) event
-				.getApplicationContext();
+		final IEvaluationContext context = (IEvaluationContext) event.getApplicationContext();
 
-		final PHPStructuredEditor editor = (PHPStructuredEditor) context
-				.getVariable(ISources.ACTIVE_PART_NAME);
-		final ITextSelection selection = (ITextSelection) editor
-				.getSelectionProvider().getSelection();
+		final PHPStructuredEditor editor = (PHPStructuredEditor) context.getVariable(ISources.ACTIVE_PART_NAME);
+		final ITextSelection selection = (ITextSelection) editor.getSelectionProvider().getSelection();
 
-		final StructuredTextInvocationContext assistInvocation = new StructuredTextInvocationContext(
-				editor.getViewer(), selection.getOffset(),
-				selection.getLength(), new HashMap<Object, Object>());
+		final StructuredTextInvocationContext assistInvocation = new StructuredTextInvocationContext(editor.getViewer(),
+				selection.getOffset(), selection.getLength(), new HashMap<Object, Object>());
 
-		final ICompletionProposal[] proposals = phpCorrectionProcessor
-				.computeQuickAssistProposals(assistInvocation);
+		final ICompletionProposal[] proposals = phpCorrectionProcessor.computeQuickAssistProposals(assistInvocation);
 
 		if (proposals == null || proposals.length == 0) {
 			return null;
@@ -23,8 +18,7 @@
 		for (ICompletionProposal proposal : proposals) {
 			if (proposal instanceof ICommandAccess) {
 				final ICommandAccess command = (ICommandAccess) proposal;
-				if (command.getCommandId() != null
-						&& command.getCommandId().equals(commandId)) {
+				if (command.getCommandId() != null && command.getCommandId().equals(commandId)) {
 					runProposal(editor, proposal, assistInvocation);
 					return null;
 				}

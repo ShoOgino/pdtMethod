@@ -30,8 +30,7 @@
 					if (parameterNames.size() > parameters.indexOf(tag))
 						parameterNames.set(parameters.indexOf(tag), null);
 				} else {
-					int paramIndex = parameterNames.indexOf(tag
-							.getVariableReference().getName());
+					int paramIndex = parameterNames.indexOf(tag.getVariableReference().getName());
 					if (paramIndex != -1) {
 						parameterNames.set(paramIndex, null);
 					}
@@ -75,76 +74,52 @@
 			fBuf.append(shortDescription);
 		if (longDescription != null && longDescription.length() > 0) {
 			fBuf.append("<p>"); //$NON-NLS-1$
-			longDescription = longDescription.replaceAll(
-					"(\r\n){2,}|\n{2,}|\r{2,}", "</p><p>"); //$NON-NLS-1$ //$NON-NLS-2$
+			longDescription = longDescription.replaceAll("(\r\n){2,}|\n{2,}|\r{2,}", "</p><p>"); //$NON-NLS-1$ //$NON-NLS-2$
 			fBuf.append(longDescription);
 			fBuf.append("</p>"); //$NON-NLS-1$
 		} else if (fMethod != null) {
-			CharSequence inherited = fJavadocLookup
-					.getInheritedMainDescription(fMethod);
+			CharSequence inherited = fJavadocLookup.getInheritedMainDescription(fMethod);
 			handleInherited(inherited);
 		}
 		handleInlineLinks();
 
-		CharSequence[] parameterDescriptions = new CharSequence[parameterNames
-				.size()];
+		CharSequence[] parameterDescriptions = new CharSequence[parameterNames.size()];
 		CharSequence[] parameterTypes = new CharSequence[parameterNames.size()];
-		boolean hasInheritedParameters = inheritParameterDescriptions(
-				parameterNames, parameterDescriptions, parameterTypes);
+		boolean hasInheritedParameters = inheritParameterDescriptions(parameterNames, parameterDescriptions,
+				parameterTypes);
 		boolean hasParameters = parameters.size() > 0 || hasInheritedParameters;
 
 		CharSequence returnDescription = null;
 		if (returnTag == null)
-			returnDescription = fJavadocLookup
-					.getInheritedReturnDescription(fMethod);
+			returnDescription = fJavadocLookup.getInheritedReturnDescription(fMethod);
 		boolean hasReturnTag = returnTag != null || returnDescription != null;
 
 		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=418890
 		// http://phpdoc.org/docs/latest/guides/inheritance.html
 		if (fMethod != null && exceptions.size() == 0) {
-			List<PHPDocTag> inheritedExceptions = fJavadocLookup
-					.getInheritedExceptions(fMethod);
+			List<PHPDocTag> inheritedExceptions = fJavadocLookup.getInheritedExceptions(fMethod);
 			if (inheritedExceptions != null) {
 				exceptions.addAll(inheritedExceptions);
 			}
 		}
-		CharSequence[] exceptionDescriptions = new CharSequence[exceptionNames
-				.size()];
-		boolean hasInheritedExceptions = inheritExceptionDescriptions(
-				exceptionNames, exceptionDescriptions);
+		CharSequence[] exceptionDescriptions = new CharSequence[exceptionNames.size()];
+		boolean hasInheritedExceptions = inheritExceptionDescriptions(exceptionNames, exceptionDescriptions);
 		boolean hasExceptions = exceptions.size() > 0 || hasInheritedExceptions;
 		boolean hasNamespace = namespaceTag != null;
 
-		if (hasParameters
-				|| hasReturnTag
-				|| hasExceptions
-				|| hasNamespace
-				|| versions.size() > 0
-				|| authors.size() > 0
-				|| since.size() > 0
-				|| sees.size() > 0
-				|| rest.size() > 0
+		if (hasParameters || hasReturnTag || hasExceptions || hasNamespace || versions.size() > 0 || authors.size() > 0
+				|| since.size() > 0 || sees.size() > 0 || rest.size() > 0
 				|| (fBuf.length() > 0 && (parameterDescriptions.length > 0 || exceptionDescriptions.length > 0))) {
 			handleSuperMethodReferences();
 			fBuf.append(BLOCK_TAG_START);
-			handleParameterTags(parameters, parameterNames, parameterTypes,
-					parameterDescriptions);
+			handleParameterTags(parameters, parameterNames, parameterTypes, parameterDescriptions);
 			handleReturnTag(returnTag, returnDescription);
 			handleNamespaceTag(namespaceTag);
-			handleExceptionTags(exceptions, exceptionNames,
-					exceptionDescriptions);
-			handleBlockTags(
-					PHPDocumentationMessages.JavaDoc2HTMLTextReader_since_section,
-					since);
-			handleBlockTags(
-					PHPDocumentationMessages.JavaDoc2HTMLTextReader_version_section,
-					versions);
-			handleBlockTags(
-					PHPDocumentationMessages.JavaDoc2HTMLTextReader_author_section,
-					authors);
-			handleBlockTags(
-					PHPDocumentationMessages.JavaDoc2HTMLTextReader_see_section,
-					sees);
+			handleExceptionTags(exceptions, exceptionNames, exceptionDescriptions);
+			handleBlockTags(PHPDocumentationMessages.JavaDoc2HTMLTextReader_since_section, since);
+			handleBlockTags(PHPDocumentationMessages.JavaDoc2HTMLTextReader_version_section, versions);
+			handleBlockTags(PHPDocumentationMessages.JavaDoc2HTMLTextReader_author_section, authors);
+			handleBlockTags(PHPDocumentationMessages.JavaDoc2HTMLTextReader_see_section, sees);
 			handleBlockTags(rest);
 			fBuf.append(BLOCK_TAG_END);
 
