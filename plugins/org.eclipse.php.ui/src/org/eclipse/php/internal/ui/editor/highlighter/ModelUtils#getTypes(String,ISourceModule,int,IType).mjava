@@ -1,36 +1,28 @@
-	static public IType[] getTypes(String typeName, ISourceModule sm,
-			int offset, IType currentNamespace) {
-		ModuleDeclaration moduleDeclaration = SourceParserUtil
-				.getModuleDeclaration(sm, null);
+	static public IType[] getTypes(String typeName, ISourceModule sm, int offset, IType currentNamespace) {
+		ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sm, null);
 		IContext context = ASTUtils.findContext(sm, moduleDeclaration, offset);
 		if (currentNamespace != null) {
 			if (typeName.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) > 0) {
 				// check if the first part is an alias,then get the full name
-				String prefix = typeName.substring(0, typeName
-						.indexOf(NamespaceReference.NAMESPACE_SEPARATOR));
-				final Map<String, UsePart> result = PHPModelUtils
-						.getAliasToNSMap(prefix, moduleDeclaration, offset,
-								currentNamespace, true);
+				String prefix = typeName.substring(0, typeName.indexOf(NamespaceReference.NAMESPACE_SEPARATOR));
+				final Map<String, UsePart> result = PHPModelUtils.getAliasToNSMap(prefix, moduleDeclaration, offset,
+						currentNamespace, true);
 				if (result.containsKey(prefix)) {
-					String fullName = result.get(prefix).getNamespace()
-							.getFullyQualifiedName();
+					String fullName = result.get(prefix).getNamespace().getFullyQualifiedName();
 					typeName = typeName.replace(prefix, fullName);
 				}
 			} else if (typeName.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) < 0) {
 
 				String prefix = typeName;
-				final Map<String, UsePart> result = PHPModelUtils
-						.getAliasToNSMap(prefix, moduleDeclaration, offset,
-								currentNamespace, true);
+				final Map<String, UsePart> result = PHPModelUtils.getAliasToNSMap(prefix, moduleDeclaration, offset,
+						currentNamespace, true);
 				if (result.containsKey(prefix)) {
-					String fullName = result.get(prefix).getNamespace()
-							.getFullyQualifiedName();
+					String fullName = result.get(prefix).getNamespace().getFullyQualifiedName();
 					typeName = fullName;
 				}
 			}
 		}
-		return PHPTypeInferenceUtils.getModelElements(
-				new PHPClassType(typeName), (ISourceModuleContext) context,
+		return PHPTypeInferenceUtils.getModelElements(new PHPClassType(typeName), (ISourceModuleContext) context,
 				offset);
 	}
 
