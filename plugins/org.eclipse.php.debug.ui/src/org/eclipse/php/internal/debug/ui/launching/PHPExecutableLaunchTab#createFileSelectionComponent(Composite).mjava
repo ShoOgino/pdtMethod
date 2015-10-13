@@ -22,6 +22,23 @@
 		fileTextField.setLayoutData(gd);
 		fileTextField.addModifyListener(fListener);
 		addControlAccessibleListener(fileTextField, group.getText());
+		fileTextField.addModifyListener(new ModifyListener() {
+			@Override
+			public void modifyText(ModifyEvent e) {
+				IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(fileTextField.getText());
+				String location = ""; //$NON-NLS-1$
+				if (resource == null) {
+					fileTextField.setData(location);
+					return;
+				}
+				if (resource.getLocation() == null) {
+					location = resource.getFullPath().toString();
+				} else {
+					location = resource.getLocation().toOSString();
+				}
+				fileTextField.setData(location);
+			}
+		});
 
 		argumentVariablesButton = createPushButton(group, PHPDebugUIMessages.Browse, null);
 		gd = (GridData) argumentVariablesButton.getLayoutData();
