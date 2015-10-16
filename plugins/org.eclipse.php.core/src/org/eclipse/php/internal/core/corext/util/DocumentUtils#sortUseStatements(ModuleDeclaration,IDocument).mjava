@@ -1,10 +1,8 @@
 	/**
 	 * Sort the blocks of use statements from a document
 	 */
-	public static void sortUseStatements(ModuleDeclaration moduleDeclaration,
-			IDocument doc) {
-		UseStatement[] statements = ASTUtils.getUseStatements(moduleDeclaration,
-				doc.getLength());
+	public static void sortUseStatements(ModuleDeclaration moduleDeclaration, IDocument doc) {
+		UseStatement[] statements = ASTUtils.getUseStatements(moduleDeclaration, doc.getLength());
 
 		int start = 0;
 		Vector<ReplaceAction> queue = new Vector<ReplaceAction>();
@@ -14,9 +12,8 @@
 
 			for (int i = start; i < statements.length - 1; i++) {
 				try {
-					if (doc.getLineOfOffset(statements[i + 1]
-							.sourceStart()) > doc.getLineOfOffset(
-									statements[i].sourceStart()) + 1) {
+					if (doc.getLineOfOffset(
+							statements[i + 1].sourceStart()) > doc.getLineOfOffset(statements[i].sourceStart()) + 1) {
 						last_item = i;
 						break;
 					}
@@ -28,23 +25,17 @@
 
 			String indent = "";
 			try {
-				int lineOffset = doc.getLineOffset(
-						doc.getLineOfOffset(statements[start].sourceStart()));
+				int lineOffset = doc.getLineOffset(doc.getLineOfOffset(statements[start].sourceStart()));
 
-				indent = doc.get(lineOffset,
-						statements[start].sourceStart() - lineOffset);
+				indent = doc.get(lineOffset, statements[start].sourceStart() - lineOffset);
 			} catch (BadLocationException e1) {
 				e1.printStackTrace();
 			}
 
-			queue.add(
-					new ReplaceAction(
-							DocumentUtils.filterAndSort(
-									Arrays.copyOfRange(statements, start,
-											last_item + 1),
-									doc, moduleDeclaration),
-					statements[start].sourceStart(),
-					statements[last_item].sourceEnd(), indent));
+			queue.add(new ReplaceAction(
+					DocumentUtils.filterAndSort(Arrays.copyOfRange(statements, start, last_item + 1), doc,
+							moduleDeclaration),
+					statements[start].sourceStart(), statements[last_item].sourceEnd(), indent));
 
 			start = last_item + 1; // start at the next one
 		}
@@ -54,8 +45,7 @@
 			List<UseStatement> sorted = item.statements;
 			int length = item.end - item.start;
 
-			String newNamespaces = DocumentUtils
-					.createStringFromUseStatement(sorted, item.indent);
+			String newNamespaces = DocumentUtils.createStringFromUseStatement(sorted, item.indent);
 			try {
 				doc.replace(item.start - offset, length, newNamespaces);
 			} catch (BadLocationException e) {
