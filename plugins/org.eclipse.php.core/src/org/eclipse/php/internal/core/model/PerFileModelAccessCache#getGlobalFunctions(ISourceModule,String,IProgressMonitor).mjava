@@ -10,8 +10,8 @@
 	 * @return a collection of functions according to a given name, or
 	 *         <code>null</code> if not found
 	 */
-	public Collection<IMethod> getGlobalFunctions(ISourceModule sourceModule,
-			String functionName, IProgressMonitor monitor) {
+	public Collection<IMethod> getGlobalFunctions(ISourceModule sourceModule, String functionName,
+			IProgressMonitor monitor) {
 
 		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=342465
 		if (functionName == null) {
@@ -23,31 +23,24 @@
 			// Invoke a new search, since we only cache for the original file in
 			// this class:
 			IScriptProject scriptProject = sourceModule.getScriptProject();
-			IDLTKSearchScope scope = SearchEngine
-					.createSearchScope(scriptProject);
-			functions = Arrays.asList(PhpModelAccess.getDefault().findMethods(
-					functionName, MatchRule.EXACT, Modifiers.AccGlobal, 0,
-					scope, monitor));
+			IDLTKSearchScope scope = SearchEngine.createSearchScope(scriptProject);
+			functions = Arrays.asList(PhpModelAccess.getDefault().findMethods(functionName, MatchRule.EXACT,
+					Modifiers.AccGlobal, 0, scope, monitor));
 
 		} else {
 			functionName = functionName.toLowerCase();
 
 			if (globalFunctionsCache == null) {
-				globalFunctionsCache = Collections
-						.synchronizedMap(new HashMap<String, Collection<IMethod>>());
+				globalFunctionsCache = Collections.synchronizedMap(new HashMap<String, Collection<IMethod>>());
 
 				functionName = functionName.toLowerCase();
 				if (!globalFunctionsCache.containsKey(functionName)) {
-					IScriptProject scriptProject = sourceModule
-							.getScriptProject();
-					IDLTKSearchScope scope = SearchEngine
-							.createSearchScope(scriptProject);
+					IScriptProject scriptProject = sourceModule.getScriptProject();
+					IDLTKSearchScope scope = SearchEngine.createSearchScope(scriptProject);
 
-					IMethod[] allFunctions = PhpModelAccess.getDefault()
-							.findMethods(functionName, MatchRule.EXACT,
-									Modifiers.AccGlobal, 0, scope, monitor);
-					Collection<IMethod> funcList = new ArrayList<IMethod>(
-							allFunctions.length);
+					IMethod[] allFunctions = PhpModelAccess.getDefault().findMethods(functionName, MatchRule.EXACT,
+							Modifiers.AccGlobal, 0, scope, monitor);
+					Collection<IMethod> funcList = new ArrayList<IMethod>(allFunctions.length);
 					for (IMethod function : allFunctions) {
 						funcList.add(function);
 					}

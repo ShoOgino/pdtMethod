@@ -1,26 +1,23 @@
 	/**
 	 * Getting an instance and finding its type.
 	 */
-	private static IType[] innerGetClassName(ISourceModule sourceModule,
-			TextSequence statementText, int propertyEndPosition,
-			boolean isClassTriger, int offset) {
+	private static IType[] innerGetClassName(ISourceModule sourceModule, TextSequence statementText,
+			int propertyEndPosition, boolean isClassTriger, int offset) {
 
-		PHPVersion phpVersion = ProjectOptions.getPhpVersion(sourceModule
-				.getScriptProject().getProject());
+		PHPVersion phpVersion = ProjectOptions.getPhpVersion(sourceModule.getScriptProject().getProject());
 
-		int classNameStart = PHPTextSequenceUtilities.readIdentifierStartIndex(
-				phpVersion, statementText, propertyEndPosition, true);
-		String className = statementText.subSequence(classNameStart,
-				propertyEndPosition).toString();
+		int classNameStart = PHPTextSequenceUtilities.readIdentifierStartIndex(phpVersion, statementText,
+				propertyEndPosition, true);
+		String className = statementText.subSequence(classNameStart, propertyEndPosition).toString();
 		if (isClassTriger && className != null && className.length() != 0) {
-			final String comparable = PHPVersion.PHP5_4.isLessThan(phpVersion) ? className
-					.toLowerCase() : className;
+			final String comparable = PHPVersion.PHP5_4.isLessThan(phpVersion) ? className.toLowerCase() : className;
 			if ("self".equals(comparable) //$NON-NLS-1$
 					|| "parent".equals(comparable) //$NON-NLS-1$
 					|| (phpVersion.isGreaterThan(PHPVersion.PHP5) && "static" //$NON-NLS-1$
-					.equals(comparable))) {
-				IType classData = PHPModelUtils.getCurrentType(sourceModule,
-						offset - className.length() - 2); // the offset before
+							.equals(comparable))) {
+				IType classData = PHPModelUtils.getCurrentType(sourceModule, offset - className.length() - 2); // the
+																												// offset
+																												// before
 				// "self::",
 				// "parent::" or
 				// "static::"
@@ -31,19 +28,13 @@
 			if (className.length() > 0) {
 				if (className.startsWith("$") //$NON-NLS-1$
 						&& phpVersion.isGreaterThan(PHPVersion.PHP5)) {
-					int statementStart = statementText
-							.getOriginalOffset(classNameStart);
-					return getVariableType(sourceModule, className,
-							statementStart);
+					int statementStart = statementText.getOriginalOffset(classNameStart);
+					return getVariableType(sourceModule, className, statementStart);
 				} else {
-					ModuleDeclaration moduleDeclaration = SourceParserUtil
-							.getModuleDeclaration(sourceModule, null);
-					FileContext context = new FileContext(sourceModule,
-							moduleDeclaration, offset);
-					IEvaluatedType type = PHPClassType.fromTypeName(className,
-							sourceModule, offset);
-					IType[] modelElements = PHPTypeInferenceUtils
-							.getModelElements(type, context, offset);
+					ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule, null);
+					FileContext context = new FileContext(sourceModule, moduleDeclaration, offset);
+					IEvaluatedType type = PHPClassType.fromTypeName(className, sourceModule, offset);
+					IType[] modelElements = PHPTypeInferenceUtils.getModelElements(type, context, offset);
 					if (modelElements != null) {
 						return modelElements;
 					}
@@ -53,38 +44,29 @@
 		}
 		if (className.length() == 0) {
 			// this can happen if the first char before the property is ']'
-			String testedVar = statementText
-					.subSequence(0, propertyEndPosition).toString().trim();
+			String testedVar = statementText.subSequence(0, propertyEndPosition).toString().trim();
 			if (testedVar != null && testedVar.length() != 0) {
 				// check for $GLOBALS['myVar'] scenario
 				Matcher m = globalPattern.matcher(testedVar);
 				if (m.matches()) {
 					// $GLOBALS['myVar'] => 'myVar'
-					String quotedVarName = testedVar.substring(
-							testedVar.indexOf('[') + 1, testedVar.indexOf(']'))
+					String quotedVarName = testedVar.substring(testedVar.indexOf('[') + 1, testedVar.indexOf(']'))
 							.trim();
 					// 'myVar' => $myVar
-					className = DOLLAR
-							+ quotedVarName.substring(1,
-									quotedVarName.length() - 1); //$NON-NLS-1$
+					className = DOLLAR + quotedVarName.substring(1, quotedVarName.length() - 1); // $NON-NLS-1$
 					// check for $array[0] scenario
 				} else if (testedVar.endsWith("}")) { //$NON-NLS-1$
 					className = testedVar;
 				} else if (testedVar.endsWith("]")) { //$NON-NLS-1$
 					if (statementText.toString().lastIndexOf('[') > 0) {
 						int end = statementText.toString().lastIndexOf('[');
-						int classNameStart1 = PHPTextSequenceUtilities
-								.readIdentifierStartIndex(phpVersion,
-										statementText, end, true);
-						className = statementText.subSequence(classNameStart1,
-								end).toString();
+						int classNameStart1 = PHPTextSequenceUtilities.readIdentifierStartIndex(phpVersion,
+								statementText, end, true);
+						className = statementText.subSequence(classNameStart1, end).toString();
 						// if its object call calc the object type.
-						if (className.length() > 0
-								&& className.charAt(0) == '$') {
-							int statementStart = statementText
-									.getOriginalOffset(classNameStart);
-							return getArrayVariableType(sourceModule,
-									className, statementStart);
+						if (className.length() > 0 && className.charAt(0) == '$') {
+							int statementStart = statementText.getOriginalOffset(classNameStart);
+							return getArrayVariableType(sourceModule, className, statementStart);
 						}
 					}
 					className = testedVar;
@@ -93,13 +75,11 @@
 		}
 		// if its object call calc the object type.
 		if (className.length() > 0 && className.charAt(0) == '$') {
-			int statementStart = statementText
-					.getOriginalOffset(classNameStart);
+			int statementStart = statementText.getOriginalOffset(classNameStart);
 			return getVariableType(sourceModule, className, statementStart);
 		}
 		boolean arrayReference = false;
-		if (statementText.charAt(propertyEndPosition - 1) == ']'
-				&& phpVersion.isGreaterThan(PHPVersion.PHP5_3)) {
+		if (statementText.charAt(propertyEndPosition - 1) == ']' && phpVersion.isGreaterThan(PHPVersion.PHP5_3)) {
 			int closeBracketIndex = statementText.toString().lastIndexOf(')');
 			if (closeBracketIndex >= 0) {
 				if (statementText.toString().indexOf('[', closeBracketIndex) > closeBracketIndex) {
@@ -109,32 +89,21 @@
 			}
 		}
 		// if its function call calc the return type.
-		if (propertyEndPosition > 0
-				&& statementText.charAt(propertyEndPosition - 1) == ')') {
-			int functionNameEnd = PHPModelUtils.getFunctionNameEndOffset(
-					statementText, propertyEndPosition - 1);
-			int functionNameStart = PHPTextSequenceUtilities
-					.readIdentifierStartIndex(phpVersion, statementText,
-							functionNameEnd, false);
+		if (propertyEndPosition > 0 && statementText.charAt(propertyEndPosition - 1) == ')') {
+			int functionNameEnd = PHPModelUtils.getFunctionNameEndOffset(statementText, propertyEndPosition - 1);
+			int functionNameStart = PHPTextSequenceUtilities.readIdentifierStartIndex(phpVersion, statementText,
+					functionNameEnd, false);
 
-			String functionName = statementText
-					.subSequence(functionNameStart, functionNameEnd).toString()
-					.trim();
+			String functionName = statementText.subSequence(functionNameStart, functionNameEnd).toString().trim();
 			// if its a non class function
 			Set<IType> returnTypes = new LinkedHashSet<IType>();
-			if (functionNameStart == functionNameEnd
-					&& statementText.charAt(functionNameStart) == '('
-					&& propertyEndPosition - 1 > functionNameStart + 1
-					&& phpVersion.isGreaterThan(PHPVersion.PHP5_3)) {
-				TextSequence newClassStatementText = statementText
-						.subTextSequence(functionNameStart + 1,
-								propertyEndPosition - 1);
-				String newClassName = PHPModelUtils
-						.getClassNameForNewStatement(newClassStatementText,
-								phpVersion);
+			if (functionNameStart == functionNameEnd && statementText.charAt(functionNameStart) == '('
+					&& propertyEndPosition - 1 > functionNameStart + 1 && phpVersion.isGreaterThan(PHPVersion.PHP5_3)) {
+				TextSequence newClassStatementText = statementText.subTextSequence(functionNameStart + 1,
+						propertyEndPosition - 1);
+				String newClassName = PHPModelUtils.getClassNameForNewStatement(newClassStatementText, phpVersion);
 				try {
-					return PHPModelUtils.getTypes(newClassName, sourceModule,
-							offset, null, null);
+					return PHPModelUtils.getTypes(newClassName, sourceModule, offset, null, null);
 				} catch (ModelException e) {
 					if (DLTKCore.DEBUG) {
 						e.printStackTrace();
@@ -161,38 +130,29 @@
 				// }
 
 			} else {
-				String[] argNames = PHPTextSequenceUtilities.getArgNames(
-						phpVersion, statementText.subSequence(functionNameEnd,
-								propertyEndPosition - 1));
+				String[] argNames = PHPTextSequenceUtilities.getArgNames(phpVersion,
+						statementText.subSequence(functionNameEnd, propertyEndPosition - 1));
 				if (arrayReference) {
 
-					IType[] types = getFunctionArrayReturnType(null,
-							functionName, USE_PHPDOC, sourceModule, offset,
+					IType[] types = getFunctionArrayReturnType(null, functionName, USE_PHPDOC, sourceModule, offset,
 							argNames);
 					if (types != null) {
 						returnTypes.addAll(Arrays.asList(types));
 					}
 				} else {
-					IType[] types = getFunctionReturnType(null, functionName,
-							USE_PHPDOC, sourceModule, offset, argNames);
+					IType[] types = getFunctionReturnType(null, functionName, USE_PHPDOC, sourceModule, offset,
+							argNames);
 					if (types != null && types.length > 0) {
 						returnTypes.addAll(Arrays.asList(types));
 					} else {
-						IType namespace = PHPModelUtils.getCurrentNamespace(
-								sourceModule, offset);
-						ModuleDeclaration moduleDeclaration = SourceParserUtil
-								.getModuleDeclaration(sourceModule);
-						Map<String, UsePart> useParts = PHPModelUtils
-								.getAliasToNSMap(functionName,
-										moduleDeclaration, offset, namespace,
-										true);
+						IType namespace = PHPModelUtils.getCurrentNamespace(sourceModule, offset);
+						ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule);
+						Map<String, UsePart> useParts = PHPModelUtils.getAliasToNSMap(functionName, moduleDeclaration,
+								offset, namespace, true);
 						if (useParts.containsKey(functionName)) {
-							String name = useParts.get(functionName)
-									.getNamespace().getFullyQualifiedName();
-							name = NamespaceReference.NAMESPACE_SEPARATOR
-									+ name;
-							types = getFunctionReturnType(null, name,
-									USE_PHPDOC, sourceModule, offset, argNames);
+							String name = useParts.get(functionName).getNamespace().getFullyQualifiedName();
+							name = NamespaceReference.NAMESPACE_SEPARATOR + name;
+							types = getFunctionReturnType(null, name, USE_PHPDOC, sourceModule, offset, argNames);
 							if (types != null) {
 								returnTypes.addAll(Arrays.asList(types));
 							}

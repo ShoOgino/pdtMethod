@@ -1,70 +1,44 @@
-	public SearchMatch newMethodReferenceMatch(IModelElement enclosingElement,
-			int accuracy, int offset, int length, boolean isConstructor,
-			boolean isSynthetic, ASTNode reference, SearchPattern pattern) {
-		if (pattern instanceof MethodPattern
-				&& (reference instanceof PHPCallExpression)) {
+	public SearchMatch newMethodReferenceMatch(IModelElement enclosingElement, int accuracy, int offset, int length,
+			boolean isConstructor, boolean isSynthetic, ASTNode reference, SearchPattern pattern) {
+		if (pattern instanceof MethodPattern && (reference instanceof PHPCallExpression)) {
 			PHPCallExpression pce = (PHPCallExpression) reference;
-			ISourceModule module = (ISourceModule) enclosingElement
-					.getAncestor(IModelElement.SOURCE_MODULE);
+			ISourceModule module = (ISourceModule) enclosingElement.getAncestor(IModelElement.SOURCE_MODULE);
 			if (module != null) {
 				try {
 					MethodPattern methodPattern = (MethodPattern) pattern;
-					IModelElement[] elements = module.codeSelect(pce
-							.getCallName().sourceStart(), 0);
+					IModelElement[] elements = module.codeSelect(pce.getCallName().sourceStart(), 0);
 					if (elements == null || elements.length == 0) {
-						return super.newMethodReferenceMatch(enclosingElement,
-								accuracy, offset, length, isConstructor,
+						return super.newMethodReferenceMatch(enclosingElement, accuracy, offset, length, isConstructor,
 								isSynthetic, reference);
 					} else {
 						for (int i = 0; i < elements.length; i++) {
 							if (pattern.focus != null) {
 								if (pattern.focus.equals(elements[i])) {
-									return super.newMethodReferenceMatch(
-											enclosingElement, accuracy, offset,
-											length, isConstructor, isSynthetic,
-											reference);
+									return super.newMethodReferenceMatch(enclosingElement, accuracy, offset, length,
+											isConstructor, isSynthetic, reference);
 								}
 							} else {
 								if (methodPattern.declaringSimpleName != null
-										&& elements[i]
-												.getAncestor(IModelElement.TYPE) != null
-										&& PHPFlags
-												.isClass(((IType) elements[i]
-														.getAncestor(IModelElement.TYPE))
-														.getFlags())
-										&& new String(
-												methodPattern.declaringSimpleName)
-												.equalsIgnoreCase(((IType) elements[i]
-														.getParent())
-														.getElementName())) {
+										&& elements[i].getAncestor(IModelElement.TYPE) != null
+										&& PHPFlags.isClass(
+												((IType) elements[i].getAncestor(IModelElement.TYPE)).getFlags())
+										&& new String(methodPattern.declaringSimpleName)
+												.equalsIgnoreCase(((IType) elements[i].getParent()).getElementName())) {
 
-									return super.newMethodReferenceMatch(
-											enclosingElement, accuracy, offset,
-											length, isConstructor, isSynthetic,
-											reference);
-								} else if (methodPattern.declaringSimpleName == null
-										&& (elements[i]
-												.getAncestor(IModelElement.TYPE) == null || elements[i]
-												.getAncestor(IModelElement.TYPE) != null
-												&& !PHPFlags
-														.isClass(((IType) elements[i]
-																.getAncestor(IModelElement.TYPE))
-																.getFlags()))) {
+									return super.newMethodReferenceMatch(enclosingElement, accuracy, offset, length,
+											isConstructor, isSynthetic, reference);
+								} else if (methodPattern.declaringSimpleName == null && (elements[i]
+										.getAncestor(IModelElement.TYPE) == null
+										|| elements[i].getAncestor(IModelElement.TYPE) != null && !PHPFlags.isClass(
+												((IType) elements[i].getAncestor(IModelElement.TYPE)).getFlags()))) {
 
-									return super.newMethodReferenceMatch(
-											enclosingElement, accuracy, offset,
-											length, isConstructor, isSynthetic,
-											reference);
-								} else if (methodPattern.declaringSimpleName == null
-										&& methodPattern.selector != null
-										&& new String(methodPattern.selector)
-												.equals(elements[i]
-														.getElementName())) {
+									return super.newMethodReferenceMatch(enclosingElement, accuracy, offset, length,
+											isConstructor, isSynthetic, reference);
+								} else if (methodPattern.declaringSimpleName == null && methodPattern.selector != null
+										&& new String(methodPattern.selector).equals(elements[i].getElementName())) {
 
-									return super.newMethodReferenceMatch(
-											enclosingElement, accuracy, offset,
-											length, isConstructor, isSynthetic,
-											reference);
+									return super.newMethodReferenceMatch(enclosingElement, accuracy, offset, length,
+											isConstructor, isSynthetic, reference);
 								}
 
 								// if (new String(methodPattern.selector)
@@ -84,12 +58,10 @@
 				}
 			}
 		} else if (pattern instanceof OrPattern) {
-			for (SearchPattern searchPattern : ((OrPattern) pattern)
-					.getPatterns()) {
+			for (SearchPattern searchPattern : ((OrPattern) pattern).getPatterns()) {
 				if (searchPattern instanceof MethodPattern) {
-					return newMethodReferenceMatch(enclosingElement, accuracy,
-							offset, length, isConstructor, isSynthetic,
-							reference, searchPattern);
+					return newMethodReferenceMatch(enclosingElement, accuracy, offset, length, isConstructor,
+							isSynthetic, reference, searchPattern);
 				}
 
 			}

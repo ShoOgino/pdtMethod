@@ -7,16 +7,14 @@
 	 */
 	@SuppressWarnings("restriction")
 	public static void cleanup(IProgressMonitor monitor) throws CoreException {
-		final IProject[] projects = ResourcesPlugin.getWorkspace().getRoot()
-				.getProjects();
+		final IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
 		Set<IPath> inUse = new HashSet<IPath>();
 		Set<IPath> toDrop = new HashSet<IPath>();
 		for (IProject project : projects) {
 			if (!PHPToolkitUtil.isPhpProject(project)) {
 				continue;
 			}
-			IBuildpathContainer container = DLTKCore.getBuildpathContainer(
-					Path.fromPortableString(CONTAINER_PATH),
+			IBuildpathContainer container = DLTKCore.getBuildpathContainer(Path.fromPortableString(CONTAINER_PATH),
 					DLTKCore.create(project));
 			if (container == null) {
 				continue;
@@ -27,14 +25,12 @@
 		}
 
 		for (ILanguageModelProvider provider : getContributedProviders()) {
-			File dir = provider.getPlugin().getStateLocation()
-					.append(LANGUAGE_PREFIX).toFile();
+			File dir = provider.getPlugin().getStateLocation().append(LANGUAGE_PREFIX).toFile();
 			if (!dir.exists() || !dir.isDirectory()) {
 				continue;
 			}
 			for (File lib : dir.listFiles()) {
-				IPath compare = EnvironmentPathUtils.getFullPath(
-						LocalEnvironment.ENVIRONMENT_ID,
+				IPath compare = EnvironmentPathUtils.getFullPath(LocalEnvironment.ENVIRONMENT_ID,
 						Path.fromOSString(lib.getPath()));
 				if (inUse.contains(compare)) {
 					continue;
@@ -48,8 +44,7 @@
 
 		for (IPath path : toDrop) {
 			ProjectIndexerManager.removeProject(path);
-			efs.getStore(EnvironmentPathUtils.getLocalPath(path)).delete(
-					EFS.NONE, monitor);
+			efs.getStore(EnvironmentPathUtils.getLocalPath(path)).delete(EFS.NONE, monitor);
 		}
 	}
 

@@ -1,42 +1,32 @@
-	private static boolean indentMultiLineCase(IStructuredDocument document,
-			int lineNumber, int offset, boolean enterKeyPressed,
-			StringBuffer result, String blanks, String commandText,
+	private static boolean indentMultiLineCase(IStructuredDocument document, int lineNumber, int offset,
+			boolean enterKeyPressed, StringBuffer result, String blanks, String commandText,
 			IndentationObject indentationObject) {
 		// LineState lineState = new LineState();
 		// StringBuffer sb = new StringBuffer();
 		try {
 			IRegion region = document.getLineInformationOfOffset(offset);
-			String content = document.get(offset,
-					region.getOffset() + region.getLength() - offset);
-			PHPHeuristicScanner scanner = PHPHeuristicScanner
-					.createHeuristicScanner(document, offset, true);
+			String content = document.get(offset, region.getOffset() + region.getLength() - offset);
+			PHPHeuristicScanner scanner = PHPHeuristicScanner.createHeuristicScanner(document, offset, true);
 			if (enterKeyPressed && content.trim().startsWith("//")) { //$NON-NLS-1$
 				// https://bugs.eclipse.org/bugs/show_bug.cgi?id=457701
 				return true;
-			} else if (IndentationUtils.inBracelessBlock(scanner, document,
-					offset)) {
+			} else if (IndentationUtils.inBracelessBlock(scanner, document, offset)) {
 				// lineState.inBracelessBlock = true;
 				if (!"{".equals(commandText)) { //$NON-NLS-1$
-					indent(document, result,
-							indentationObject.getIndentationChar(),
+					indent(document, result, indentationObject.getIndentationChar(),
 							indentationObject.getIndentationSize());
 				}
 				return true;
-			} else if (content.trim().startsWith(
-					BLANK + PHPHeuristicScanner.LBRACE)) {
+			} else if (content.trim().startsWith(BLANK + PHPHeuristicScanner.LBRACE)) {
 				// lineState.inBracelessBlock = true;
-				int token = scanner.previousToken(offset - 1,
-						PHPHeuristicScanner.UNBOUND);
+				int token = scanner.previousToken(offset - 1, PHPHeuristicScanner.UNBOUND);
 				if (token == PHPHeuristicScanner.TokenRPAREN) {
 
-					int peer = scanner.findOpeningPeer(scanner.getPosition(),
-							PHPHeuristicScanner.UNBOUND,
-							PHPHeuristicScanner.LPAREN,
-							PHPHeuristicScanner.RPAREN);
+					int peer = scanner.findOpeningPeer(scanner.getPosition(), PHPHeuristicScanner.UNBOUND,
+							PHPHeuristicScanner.LPAREN, PHPHeuristicScanner.RPAREN);
 					if (peer != PHPHeuristicScanner.NOT_FOUND) {
 
-						String newblanks = FormatterUtils.getLineBlanks(
-								document,
+						String newblanks = FormatterUtils.getLineBlanks(document,
 								document.getLineInformationOfOffset(peer));
 						StringBuffer newBuffer = new StringBuffer(newblanks);
 						// IRegion region = document
@@ -50,14 +40,11 @@
 
 			} else if (inMultiLine(scanner, document, lineNumber, offset)) {
 				// lineState.inBracelessBlock = true;
-				int parenPeer = scanner.findOpeningPeer(offset - 1,
-						PHPHeuristicScanner.UNBOUND,
+				int parenPeer = scanner.findOpeningPeer(offset - 1, PHPHeuristicScanner.UNBOUND,
 						PHPHeuristicScanner.LPAREN, PHPHeuristicScanner.RPAREN);
-				int bound = parenPeer != -1 ? parenPeer
-						: PHPHeuristicScanner.UNBOUND;
+				int bound = parenPeer != -1 ? parenPeer : PHPHeuristicScanner.UNBOUND;
 
-				int bracketPeer = scanner.findOpeningPeer(offset - 1, bound,
-						PHPHeuristicScanner.LBRACKET,
+				int bracketPeer = scanner.findOpeningPeer(offset - 1, bound, PHPHeuristicScanner.LBRACKET,
 						PHPHeuristicScanner.RBRACKET);
 
 				int peer = Math.max(parenPeer, bracketPeer);
@@ -66,14 +53,11 @@
 
 					// search for assignment (i.e. "=>")
 					int position = peer - 1;
-					int token = scanner.previousToken(position,
-							PHPHeuristicScanner.UNBOUND);
+					int token = scanner.previousToken(position, PHPHeuristicScanner.UNBOUND);
 					// scan tokens backwards until reaching a PHP token
-					while (token > 100
-							|| token == PHPHeuristicScanner.TokenOTHER) {
+					while (token > 100 || token == PHPHeuristicScanner.TokenOTHER) {
 						position--;
-						token = scanner.previousToken(position,
-								PHPHeuristicScanner.UNBOUND);
+						token = scanner.previousToken(position, PHPHeuristicScanner.UNBOUND);
 					}
 
 					position--;
@@ -82,11 +66,9 @@
 							&& scanner.previousToken(position - 1,
 									PHPHeuristicScanner.UNBOUND) == PHPHeuristicScanner.TokenEQUAL;
 
-					token = scanner.previousToken(peer - 1,
-							PHPHeuristicScanner.UNBOUND);
+					token = scanner.previousToken(peer - 1, PHPHeuristicScanner.UNBOUND);
 
-					boolean isArray = token == Symbols.TokenARRAY
-							|| peer == bracketPeer;
+					boolean isArray = token == Symbols.TokenARRAY || peer == bracketPeer;
 
 					String newblanks = FormatterUtils.getLineBlanks(document,
 							document.getLineInformationOfOffset(peer));
@@ -94,49 +76,32 @@
 					pairArrayParen = false;
 
 					if (isArray) {
-						String trimed = document.get(
-								offset,
-								region.getOffset() + region.getLength()
-										- offset).trim();
-						if (enterKeyPressed
-								|| !(trimed.startsWith(BLANK
-										+ PHPHeuristicScanner.RPAREN) || trimed
-											.startsWith(BLANK
-													+ PHPHeuristicScanner.RBRACKET))) {
-							int arrayBracket = scanner.nextToken(offset,
-									region.getOffset() + region.getLength());
-							if (enterKeyPressed
-									&& (arrayBracket == PHPHeuristicScanner.TokenRPAREN || arrayBracket == PHPHeuristicScanner.TokenRBRACKET)) {
-								int prev = scanner.previousToken(offset - 1,
-										PHPHeuristicScanner.UNBOUND);
-								if (isAssignment
-										&& ((arrayBracket == PHPHeuristicScanner.TokenRPAREN && prev != PHPHeuristicScanner.TokenLPAREN) || (arrayBracket == PHPHeuristicScanner.TokenRBRACKET && prev != PHPHeuristicScanner.TokenLBRACKET))) {
+						String trimed = document.get(offset, region.getOffset() + region.getLength() - offset).trim();
+						if (enterKeyPressed || !(trimed.startsWith(BLANK + PHPHeuristicScanner.RPAREN)
+								|| trimed.startsWith(BLANK + PHPHeuristicScanner.RBRACKET))) {
+							int arrayBracket = scanner.nextToken(offset, region.getOffset() + region.getLength());
+							if (enterKeyPressed && (arrayBracket == PHPHeuristicScanner.TokenRPAREN
+									|| arrayBracket == PHPHeuristicScanner.TokenRBRACKET)) {
+								int prev = scanner.previousToken(offset - 1, PHPHeuristicScanner.UNBOUND);
+								if (isAssignment && ((arrayBracket == PHPHeuristicScanner.TokenRPAREN
+										&& prev != PHPHeuristicScanner.TokenLPAREN)
+										|| (arrayBracket == PHPHeuristicScanner.TokenRBRACKET
+												&& prev != PHPHeuristicScanner.TokenLBRACKET))) {
 									// no additional indentation
 								} else {
-									indent(document,
-											newBuffer,
-											indentationObject
-													.getIndentationArrayInitSize(),
-											indentationObject
-													.getIndentationChar(),
-											indentationObject
-													.getIndentationSize());
+									indent(document, newBuffer, indentationObject.getIndentationArrayInitSize(),
+											indentationObject.getIndentationChar(),
+											indentationObject.getIndentationSize());
 									pairArrayParen = true;
 								}
 							} else {
-								indent(document, newBuffer,
-										indentationObject
-												.getIndentationArrayInitSize(),
-										indentationObject.getIndentationChar(),
-										indentationObject.getIndentationSize());
+								indent(document, newBuffer, indentationObject.getIndentationArrayInitSize(),
+										indentationObject.getIndentationChar(), indentationObject.getIndentationSize());
 							}
 						}
 					} else {
-						indent(document, newBuffer,
-								indentationObject
-										.getIndentationWrappedLineSize(),
-								indentationObject.getIndentationChar(),
-								indentationObject.getIndentationSize());
+						indent(document, newBuffer, indentationObject.getIndentationWrappedLineSize(),
+								indentationObject.getIndentationChar(), indentationObject.getIndentationSize());
 					}
 
 					result.setLength(result.length() - blanks.length());
@@ -149,16 +114,12 @@
 					return true;
 				}
 			} else {
-				int baseLine = inMultiLineString(document, offset, lineNumber,
-						enterKeyPressed);
+				int baseLine = inMultiLineString(document, offset, lineNumber, enterKeyPressed);
 				if (baseLine >= 0) {
-					String newblanks = FormatterUtils.getLineBlanks(document,
-							document.getLineInformation(baseLine));
+					String newblanks = FormatterUtils.getLineBlanks(document, document.getLineInformation(baseLine));
 					StringBuffer newBuffer = new StringBuffer(newblanks);
-					indent(document, newBuffer,
-							indentationObject.getIndentationWrappedLineSize(),
-							indentationObject.getIndentationChar(),
-							indentationObject.getIndentationSize());
+					indent(document, newBuffer, indentationObject.getIndentationWrappedLineSize(),
+							indentationObject.getIndentationChar(), indentationObject.getIndentationSize());
 					result.setLength(result.length() - blanks.length());
 					result.append(newBuffer.toString());
 					return true;

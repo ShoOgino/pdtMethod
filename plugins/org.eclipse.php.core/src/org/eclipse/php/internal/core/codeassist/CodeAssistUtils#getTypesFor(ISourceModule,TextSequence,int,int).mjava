@@ -7,10 +7,10 @@
 	 * @param offset
 	 * @return
 	 */
-	public static IType[] getTypesFor(ISourceModule sourceModule,
-			TextSequence statementText, int endPosition, int offset) {
-		endPosition = PHPTextSequenceUtilities.readBackwardSpaces(
-				statementText, endPosition); // read whitespace
+	public static IType[] getTypesFor(ISourceModule sourceModule, TextSequence statementText, int endPosition,
+			int offset) {
+		endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statementText, endPosition); // read
+																								// whitespace
 
 		boolean isClassTriger = false;
 
@@ -18,8 +18,7 @@
 			return EMPTY_TYPES;
 		}
 
-		String triggerText = statementText.subSequence(endPosition - 2,
-				endPosition).toString();
+		String triggerText = statementText.subSequence(endPosition - 2, endPosition).toString();
 		if (triggerText.equals(OBJECT_FUNCTIONS_TRIGGER)) {
 		} else if (triggerText.equals(PAAMAYIM_NEKUDOTAIM)) {
 			isClassTriger = true;
@@ -27,28 +26,22 @@
 			return EMPTY_TYPES;
 		}
 
-		int propertyEndPosition = PHPTextSequenceUtilities.readBackwardSpaces(
-				statementText, endPosition - triggerText.length());
+		int propertyEndPosition = PHPTextSequenceUtilities.readBackwardSpaces(statementText,
+				endPosition - triggerText.length());
 
-		int lastObjectOperator = PHPTextSequenceUtilities
-				.getPrivousTriggerIndex(statementText, propertyEndPosition);
-		String text = statementText.subSequence(0, propertyEndPosition)
-				.toString();
+		int lastObjectOperator = PHPTextSequenceUtilities.getPrivousTriggerIndex(statementText, propertyEndPosition);
+		String text = statementText.subSequence(0, propertyEndPosition).toString();
 		if (lastObjectOperator == -1
-				|| (text.indexOf('>') >= 0
-						&& text.indexOf("=>") != text.indexOf('>') - 1 && text.indexOf("->") < 0)) { //$NON-NLS-1$ //$NON-NLS-2$
+				|| (text.indexOf('>') >= 0 && text.indexOf("=>") != text.indexOf('>') - 1 && text.indexOf("->") < 0)) { //$NON-NLS-1$ //$NON-NLS-2$
 			// if there is no "->" or "::" in the left sequence then we need to
 			// calc the object type
-			return innerGetClassName(sourceModule, statementText,
-					propertyEndPosition, isClassTriger, offset);
+			return innerGetClassName(sourceModule, statementText, propertyEndPosition, isClassTriger, offset);
 		}
 
-		int propertyStartPosition = PHPTextSequenceUtilities.readForwardSpaces(
-				statementText, lastObjectOperator + triggerText.length());
-		String propertyName = statementText.subSequence(propertyStartPosition,
-				propertyEndPosition).toString();
-		IType[] types = getTypesFor(sourceModule, statementText,
-				propertyStartPosition, offset);
+		int propertyStartPosition = PHPTextSequenceUtilities.readForwardSpaces(statementText,
+				lastObjectOperator + triggerText.length());
+		String propertyName = statementText.subSequence(propertyStartPosition, propertyEndPosition).toString();
+		IType[] types = getTypesFor(sourceModule, statementText, propertyStartPosition, offset);
 
 		int bracketIndex = propertyName.indexOf('(');
 
@@ -58,8 +51,7 @@
 		}
 
 		boolean arrayReference = false;
-		PHPVersion version = ProjectOptions.getPhpVersion(sourceModule
-				.getScriptProject().getProject());
+		PHPVersion version = ProjectOptions.getPhpVersion(sourceModule.getScriptProject().getProject());
 		if (propertyName.endsWith("]") //$NON-NLS-1$
 				&& version.isGreaterThan(PHPVersion.PHP5_3)) {
 			int closeBracketIndex = propertyName.lastIndexOf(')');
@@ -71,16 +63,13 @@
 		}
 		String functionName = propertyName.substring(0, bracketIndex).trim();
 
-		String[] argNames = PHPTextSequenceUtilities.getArgNames(version,
-				propertyName.substring(bracketIndex));
+		String[] argNames = PHPTextSequenceUtilities.getArgNames(version, propertyName.substring(bracketIndex));
 		Set<IType> result = new LinkedHashSet<IType>();
 		IType[] returnTypes = null;
 		if (arrayReference) {
-			returnTypes = getFunctionArrayReturnType(types, functionName,
-					USE_PHPDOC, sourceModule, offset, argNames);
+			returnTypes = getFunctionArrayReturnType(types, functionName, USE_PHPDOC, sourceModule, offset, argNames);
 		} else {
-			returnTypes = getFunctionReturnType(types, functionName,
-					USE_PHPDOC, sourceModule, offset, argNames);
+			returnTypes = getFunctionReturnType(types, functionName, USE_PHPDOC, sourceModule, offset, argNames);
 		}
 		if (returnTypes != null) {
 			result.addAll(Arrays.asList(returnTypes));

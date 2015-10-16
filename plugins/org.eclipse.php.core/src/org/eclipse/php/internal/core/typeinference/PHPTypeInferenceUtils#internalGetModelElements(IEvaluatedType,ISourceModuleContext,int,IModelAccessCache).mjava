@@ -1,13 +1,11 @@
-	private static IType[] internalGetModelElements(
-			IEvaluatedType evaluatedType, ISourceModuleContext context,
+	private static IType[] internalGetModelElements(IEvaluatedType evaluatedType, ISourceModuleContext context,
 			int offset, IModelAccessCache cache) {
 		ISourceModule sourceModule = context.getSourceModule();
 		if (isSimple(evaluatedType)) {
 			return null;
 		}
 		if (evaluatedType instanceof ModelClassType) {
-			return new IType[] {
-					((ModelClassType) evaluatedType).getTypeDeclaration() };
+			return new IType[] { ((ModelClassType) evaluatedType).getTypeDeclaration() };
 		}
 		if (evaluatedType instanceof PHPClassType) {
 			IScriptProject scriptProject = sourceModule.getScriptProject();
@@ -16,13 +14,10 @@
 				try {
 					IType[] types = sourceModule.getTypes();
 					for (IType t : types) {
-						if (t.getElementName().equalsIgnoreCase(
-								evaluatedType.getTypeName())) {
+						if (t.getElementName().equalsIgnoreCase(evaluatedType.getTypeName())) {
 							Class<?> expressionClass = evaluatedType.getClass();
-							if ((expressionClass == PHPTraitType.class)
-									&& PHPFlags.isTrait(t.getFlags())
-									|| (expressionClass == PHPClassType.class)
-											&& PHPFlags.isClass(t.getFlags())) {
+							if ((expressionClass == PHPTraitType.class) && PHPFlags.isTrait(t.getFlags())
+									|| (expressionClass == PHPClassType.class) && PHPFlags.isClass(t.getFlags())) {
 								result.add(t);
 							}
 
@@ -40,16 +35,12 @@
 					Class<?> expressionClass = evaluatedType.getClass();
 					if (expressionClass == PHPTraitType.class) {
 						PHPTraitType phpTraitType = (PHPTraitType) evaluatedType;
-						return PHPModelUtils.getTypes(
-								evaluatedType.getTypeName(), sourceModule,
-								offset, cache, null, false,
-								phpTraitType.isGlobal());
+						return PHPModelUtils.getTypes(evaluatedType.getTypeName(), sourceModule, offset, cache, null,
+								false, phpTraitType.isGlobal());
 					} else {
 						PHPClassType phpClassType = (PHPClassType) evaluatedType;
-						return PHPModelUtils.getTypes(
-								evaluatedType.getTypeName(), sourceModule,
-								offset, cache, null, true,
-								phpClassType.isGlobal());
+						return PHPModelUtils.getTypes(evaluatedType.getTypeName(), sourceModule, offset, cache, null,
+								true, phpClassType.isGlobal());
 					}
 				} catch (ModelException e) {
 					if (DLTKCore.DEBUG) {
@@ -59,11 +50,9 @@
 			}
 		} else if (evaluatedType instanceof AmbiguousType) {
 			List<IType> tmpList = new LinkedList<IType>();
-			IEvaluatedType[] possibleTypes = ((AmbiguousType) evaluatedType)
-					.getPossibleTypes();
+			IEvaluatedType[] possibleTypes = ((AmbiguousType) evaluatedType).getPossibleTypes();
 			for (IEvaluatedType possibleType : possibleTypes) {
-				IType[] tmpArray = internalGetModelElements(possibleType,
-						context, offset, cache);
+				IType[] tmpArray = internalGetModelElements(possibleType, context, offset, cache);
 				if (tmpArray != null) {
 					tmpList.addAll(Arrays.asList(tmpArray));
 				}
@@ -74,8 +63,7 @@
 			MultiTypeType multiTypeType = (MultiTypeType) evaluatedType;
 			List<IType> result = new ArrayList<IType>();
 			for (IEvaluatedType tmpType : multiTypeType.getTypes()) {
-				IType[] tmpTypes = internalGetModelElements(tmpType, context,
-						offset, cache);
+				IType[] tmpTypes = internalGetModelElements(tmpType, context, offset, cache);
 				if (tmpTypes != null) {
 					result.addAll(Arrays.asList(tmpTypes));
 				}

@@ -5,22 +5,20 @@
 	 * @param reporter
 	 * @throws BadLocationException
 	 */
-	protected void addSelf(AbstractCompletionContext context,
-			ICompletionReporter reporter) throws BadLocationException {
+	protected void addSelf(AbstractCompletionContext context, ICompletionReporter reporter)
+			throws BadLocationException {
 
 		String prefix = context.getPrefix();
 		ISourceRange replaceRange = getReplacementRange(context);
 
 		if (CodeAssistUtils.startsWithIgnoreCase("self", prefix)) { //$NON-NLS-1$
-			if (!context.getCompletionRequestor().isContextInformationMode()
-					|| prefix.length() == 4) { // "self".length()
+			if (!context.getCompletionRequestor().isContextInformationMode() || prefix.length() == 4) { // "self".length()
 
 				String suffix = getSuffix(context);
 
 				// get the class data for "self". In case of null, the self
 				// function will not be added
-				IType selfClassData = CodeAssistUtils.getSelfClassData(
-						context.getSourceModule(), context.getOffset());
+				IType selfClassData = CodeAssistUtils.getSelfClassData(context.getSourceModule(), context.getOffset());
 				if (selfClassData != null) {
 					try {
 						IMethod ctor = null;
@@ -31,33 +29,22 @@
 							}
 						}
 						if (ctor != null) {
-							ISourceRange sourceRange = selfClassData
-									.getSourceRange();
-							FakeMethod ctorMethod = new FakeMethod(
-									(ModelElement) selfClassData,
-									"self", //$NON-NLS-1$
-									sourceRange.getOffset(),
-									sourceRange.getLength(),
-									sourceRange.getOffset(),
+							ISourceRange sourceRange = selfClassData.getSourceRange();
+							FakeMethod ctorMethod = new FakeMethod((ModelElement) selfClassData, "self", //$NON-NLS-1$
+									sourceRange.getOffset(), sourceRange.getLength(), sourceRange.getOffset(),
 									sourceRange.getLength()) {
-								public boolean isConstructor()
-										throws ModelException {
+								public boolean isConstructor() throws ModelException {
 									return true;
 								}
 							};
 							ctorMethod.setParameters(ctor.getParameters());
-							reporter.reportMethod(ctorMethod, suffix,
-									replaceRange);
+							reporter.reportMethod(ctorMethod, suffix, replaceRange);
 						} else {
-							ISourceRange sourceRange = selfClassData
-									.getSourceRange();
+							ISourceRange sourceRange = selfClassData.getSourceRange();
 							reporter.reportMethod(
-									new FakeMethod(
-											(ModelElement) selfClassData,
-											"self", sourceRange.getOffset(), //$NON-NLS-1$
-											sourceRange.getLength(),
-											sourceRange.getOffset(),
-											sourceRange.getLength()), "()", //$NON-NLS-1$
+									new FakeMethod((ModelElement) selfClassData, "self", sourceRange.getOffset(), //$NON-NLS-1$
+											sourceRange.getLength(), sourceRange.getOffset(), sourceRange.getLength()),
+									"()", //$NON-NLS-1$
 									replaceRange);
 						}
 					} catch (ModelException e) {

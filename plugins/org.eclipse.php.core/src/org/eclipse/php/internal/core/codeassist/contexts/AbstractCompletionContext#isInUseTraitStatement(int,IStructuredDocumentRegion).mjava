@@ -1,7 +1,5 @@
-	public boolean isInUseTraitStatement(int offset,
-			IStructuredDocumentRegion sdRegion) {
-		PHPVersion phpVersion = ProjectOptions.getPhpVersion(sourceModule
-				.getScriptProject().getProject());
+	public boolean isInUseTraitStatement(int offset, IStructuredDocumentRegion sdRegion) {
+		PHPVersion phpVersion = ProjectOptions.getPhpVersion(sourceModule.getScriptProject().getProject());
 		if (phpVersion.isLessThan(PHPVersion.PHP5_4)) {
 			return false;
 		}
@@ -15,8 +13,7 @@
 		if (documentOffset == sdRegion.getEndOffset()) {
 			documentOffset -= 1;
 		}
-		ITextRegion tRegion = sdRegion
-				.getRegionAtCharacterOffset(documentOffset);
+		ITextRegion tRegion = sdRegion.getRegionAtCharacterOffset(documentOffset);
 
 		ITextRegionCollection container = sdRegion;
 
@@ -25,20 +22,17 @@
 			tRegion = container.getRegionAtCharacterOffset(offset);
 		}
 		if (tRegion != null && tRegion.getType() == PHPRegionContext.PHP_CLOSE) {
-			tRegion = container.getRegionAtCharacterOffset(container
-					.getStartOffset() + tRegion.getStart() - 1);
+			tRegion = container.getRegionAtCharacterOffset(container.getStartOffset() + tRegion.getStart() - 1);
 		}
 
 		// This text region must be of type PhpScriptRegion:
-		if (tRegion != null
-				&& tRegion.getType() == PHPRegionContext.PHP_CONTENT) {
+		if (tRegion != null && tRegion.getType() == PHPRegionContext.PHP_CONTENT) {
 			IPhpScriptRegion phpScriptRegion = (IPhpScriptRegion) tRegion;
 
 			try {
 				// Set default starting position to the beginning of the
 				// PhpScriptRegion:
-				int startOffset = container.getStartOffset()
-						+ phpScriptRegion.getStart();
+				int startOffset = container.getStartOffset() + phpScriptRegion.getStart();
 
 				// Now, search backwards for the statement start (in this
 				// PhpScriptRegion):
@@ -46,8 +40,7 @@
 				if (documentOffset == startOffset) {
 					startTokenRegion = phpScriptRegion.getPhpToken(0);
 				} else {
-					startTokenRegion = phpScriptRegion.getPhpToken(offset
-							- startOffset - 1);
+					startTokenRegion = phpScriptRegion.getPhpToken(offset - startOffset - 1);
 				}
 				// If statement start is at the beginning of the PHP script
 				// region:
@@ -59,14 +52,11 @@
 						// Calculate starting position of the statement (it
 						// should go right after this startTokenRegion):
 						// startOffset += startTokenRegion.getEnd();
-						TextSequence statementText1 = getStatementText(startOffset
-								+ startTokenRegion.getStart() - 1);
+						TextSequence statementText1 = getStatementText(startOffset + startTokenRegion.getStart() - 1);
 						startTokenRegion = phpScriptRegion
-								.getPhpToken(startTokenRegion.getStart()
-										- statementText1.length());
+								.getPhpToken(startTokenRegion.getStart() - statementText1.length());
 						if (startTokenRegion.getType() == PHPRegionTypes.PHP_USE) {
-							String[] types = statementText1.toString().trim()
-									.substring(3).trim().split(","); //$NON-NLS-1$
+							String[] types = statementText1.toString().trim().substring(3).trim().split(","); //$NON-NLS-1$
 							useTypes = new ArrayList<String>();
 							for (String type : types) {
 								useTypes.add(type.trim());
@@ -79,8 +69,7 @@
 						return false;
 					}
 
-					startTokenRegion = phpScriptRegion
-							.getPhpToken(startTokenRegion.getStart() - 1);
+					startTokenRegion = phpScriptRegion.getPhpToken(startTokenRegion.getStart() - 1);
 				}
 
 			} catch (BadLocationException e) {

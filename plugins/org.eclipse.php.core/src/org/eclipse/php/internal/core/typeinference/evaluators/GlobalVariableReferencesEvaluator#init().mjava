@@ -6,8 +6,7 @@
 		IScriptProject scriptProject = null;
 		if (context instanceof ISourceModuleContext) {
 			sourceModuleContext = (ISourceModuleContext) context;
-			scriptProject = sourceModuleContext.getSourceModule()
-					.getScriptProject();
+			scriptProject = sourceModuleContext.getSourceModule().getScriptProject();
 		}
 
 		String variableName = typedGoal.getVariableName();
@@ -18,8 +17,7 @@
 
 		IDLTKSearchScope scope = SearchEngine.createSearchScope(scriptProject);
 
-		IField[] elements = PhpModelAccess.getDefault().findFields(
-				variableName, MatchRule.EXACT, Modifiers.AccGlobal,
+		IField[] elements = PhpModelAccess.getDefault().findFields(variableName, MatchRule.EXACT, Modifiers.AccGlobal,
 				Modifiers.AccConstant, scope, null);
 
 		// if no element found, return empty array.
@@ -40,8 +38,7 @@
 				SourceField sourceField = (SourceField) element;
 				ISourceModule sourceModule = sourceField.getSourceModule();
 				if (!offsets.containsKey(sourceModule)) {
-					offsets.put(sourceModule, new TreeSet<ISourceRange>(
-							sourceRangeComparator));
+					offsets.put(sourceModule, new TreeSet<ISourceRange>(sourceRangeComparator));
 				}
 				try {
 					offsets.get(sourceModule).add(sourceField.getSourceRange());
@@ -54,37 +51,31 @@
 		}
 
 		List<IGoal> subGoals = new LinkedList<IGoal>();
-		for (Entry<ISourceModule, SortedSet<ISourceRange>> entry : offsets
-				.entrySet()) {
+		for (Entry<ISourceModule, SortedSet<ISourceRange>> entry : offsets.entrySet()) {
 			ISourceModule sourceModule = entry.getKey();
 			if (exploreOtherFiles
-					|| (sourceModuleContext != null && sourceModuleContext
-							.getSourceModule().equals(sourceModule))) {
+					|| (sourceModuleContext != null && sourceModuleContext.getSourceModule().equals(sourceModule))) {
 
-				ModuleDeclaration moduleDeclaration = SourceParserUtil
-						.getModuleDeclaration(sourceModule);
+				ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule);
 				SortedSet<ISourceRange> fileOffsets = entry.getValue();
 
 				if (!fileOffsets.isEmpty()) {
-					GlobalReferenceDeclSearcher varSearcher = new GlobalReferenceDeclSearcher(
-							sourceModule, fileOffsets, variableName);
+					GlobalReferenceDeclSearcher varSearcher = new GlobalReferenceDeclSearcher(sourceModule, fileOffsets,
+							variableName);
 					try {
 						moduleDeclaration.traverse(varSearcher);
 
 						DeclarationScope[] scopes = varSearcher.getScopes();
 						for (DeclarationScope s : scopes) {
-							for (Declaration decl : s
-									.getDeclarations(variableName)) {
+							for (Declaration decl : s.getDeclarations(variableName)) {
 
 								IContext context2 = s.getContext();
 								if (context2 instanceof IModelCacheContext
 										&& this.goal.getContext() instanceof IModelCacheContext) {
 									((IModelCacheContext) context2)
-											.setCache(((IModelCacheContext) this.goal
-													.getContext()).getCache());
+											.setCache(((IModelCacheContext) this.goal.getContext()).getCache());
 								}
-								subGoals.add(new ExpressionTypeGoal(context2,
-										decl.getNode()));
+								subGoals.add(new ExpressionTypeGoal(context2, decl.getNode()));
 							}
 						}
 					} catch (Exception e) {

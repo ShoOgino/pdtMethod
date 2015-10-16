@@ -1,47 +1,37 @@
 	public IGoal[] subGoalDone(IGoal subgoal, Object result, GoalState state) {
 		IModelAccessCache cache = null;
 		if (goal.getContext() instanceof IModelCacheContext) {
-			cache = (IModelAccessCache) ((IModelCacheContext) goal.getContext())
-					.getCache();
+			cache = (IModelAccessCache) ((IModelCacheContext) goal.getContext()).getCache();
 		}
 		String variableName = null;
 		IteratorTypeGoal iteratorTypeGoal = (IteratorTypeGoal) goal;
 		if (iteratorTypeGoal.getExpression() instanceof VariableReference) {
-			variableName = ((VariableReference) iteratorTypeGoal
-					.getExpression()).getName();
+			variableName = ((VariableReference) iteratorTypeGoal.getExpression()).getName();
 		}
 		if (state != GoalState.RECURSIVE) {
 			if (result instanceof GeneratorClassType) {
 				MultiTypeType type = new MultiTypeType();
-				type.getTypes()
-						.addAll(((GeneratorClassType) result).getTypes());
+				type.getTypes().addAll(((GeneratorClassType) result).getTypes());
 				this.result = type;
 				return IGoal.NO_GOALS;
 			} else if (result instanceof PHPClassType) {
 				if (subgoal instanceof ExpressionTypeGoal) {
-					ISourceModule sourceModule = ((ISourceModuleContext) subgoal
-							.getContext()).getSourceModule();
+					ISourceModule sourceModule = ((ISourceModuleContext) subgoal.getContext()).getSourceModule();
 					PHPClassType classType = (PHPClassType) result;
 					List<IGoal> subGoals = new LinkedList<IGoal>();
 					try {
 						// XXX: offset is 0 here but it should still work,
 						// because classType already contains the namespace part
-						IType[] types = PHPModelUtils.getTypes(
-								classType.getTypeName(), sourceModule, 0,
-								cache, null);
+						IType[] types = PHPModelUtils.getTypes(classType.getTypeName(), sourceModule, 0, cache, null);
 						for (IType type : types) {
-							IType[] superTypes = PHPModelUtils.getSuperClasses(
-									type,
-									cache == null ? null : cache
-											.getSuperTypeHierarchy(type, null));
+							IType[] superTypes = PHPModelUtils.getSuperClasses(type,
+									cache == null ? null : cache.getSuperTypeHierarchy(type, null));
 
 							if (subgoal.getContext() instanceof MethodContext) {
 
-								MethodContext methodContext = (MethodContext) subgoal
-										.getContext();
+								MethodContext methodContext = (MethodContext) subgoal.getContext();
 
-								if (isArrayType(methodContext, variableName,
-										type)) {
+								if (isArrayType(methodContext, variableName, type)) {
 									MultiTypeType mType = new MultiTypeType();
 									mType.addType((IEvaluatedType) result);
 									this.result = mType;
@@ -50,13 +40,9 @@
 							}
 
 							if (isImplementedIterator(superTypes)) {
-								subGoals.add(new MethodElementReturnTypeGoal(
-										subgoal.getContext(),
-										new IType[] { type },
+								subGoals.add(new MethodElementReturnTypeGoal(subgoal.getContext(), new IType[] { type },
 										"current", new String[0], type.getSourceRange().getOffset())); //$NON-NLS-1$
-								subGoals.add(new PHPDocMethodReturnTypeGoal(
-										subgoal.getContext(),
-										new IType[] { type },
+								subGoals.add(new PHPDocMethodReturnTypeGoal(subgoal.getContext(), new IType[] { type },
 										"current", new String[0], type.getSourceRange().getOffset())); //$NON-NLS-1$
 							}
 						}

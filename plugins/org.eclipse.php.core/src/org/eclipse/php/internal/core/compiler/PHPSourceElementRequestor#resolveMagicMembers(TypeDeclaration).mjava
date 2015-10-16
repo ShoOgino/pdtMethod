@@ -13,23 +13,19 @@
 				final PHPDocTag[] tags = doc.getTags();
 				for (PHPDocTag docTag : tags) {
 					final int tagKind = docTag.getTagKind();
-					if (tagKind == PHPDocTag.PROPERTY
-							|| tagKind == PHPDocTag.PROPERTY_READ
+					if (tagKind == PHPDocTag.PROPERTY || tagKind == PHPDocTag.PROPERTY_READ
 							|| tagKind == PHPDocTag.PROPERTY_WRITE) {
 						// http://manual.phpdoc.org/HTMLSmartyConverter/HandS/phpDocumentor/tutorial_tags.property.pkg.html
-						final String[] split = WHITESPACE_SEPERATOR
-								.split(docTag.getValue().trim());
+						final String[] split = WHITESPACE_SEPERATOR.split(docTag.getValue().trim());
 						if (split.length < 2) {
 							continue;
 						}
 						ISourceElementRequestor.FieldInfo info = new ISourceElementRequestor.FieldInfo();
-						info.modifiers = Modifiers.AccPublic
-								| IPHPModifiers.AccMagicProperty;
+						info.modifiers = Modifiers.AccPublic | IPHPModifiers.AccMagicProperty;
 						info.name = split[1];
 						info.type = split[0];
 
-						SimpleReference var = new SimpleReference(
-								docTag.sourceStart(), docTag.sourceStart() + 9,
+						SimpleReference var = new SimpleReference(docTag.sourceStart(), docTag.sourceStart() + 9,
 								removeParenthesis(split));
 						info.nameSourceStart = var.sourceStart();
 						info.nameSourceEnd = var.sourceEnd();
@@ -46,25 +42,18 @@
 						String docTagValue = docTag.getValue().trim();
 						int index = docTagValue.indexOf('(');
 						if (index != -1) {
-							String[] split = WHITESPACE_SEPERATOR.split(
-									docTagValue.substring(0, index).trim());
+							String[] split = WHITESPACE_SEPERATOR.split(docTagValue.substring(0, index).trim());
 							if (split.length == 1) {
-								docTagValue = new StringBuilder(
-										VOID_RETURN_TYPE)
-												.append(Constants.SPACE)
-												.append(docTagValue).toString();
-							} else if (split.length == 2
-									&& Constants.STATIC.equals(split[0])) {
-								StringBuilder sb = new StringBuilder(
-										Constants.STATIC);
-								sb.append(Constants.SPACE)
-										.append(VOID_RETURN_TYPE);
+								docTagValue = new StringBuilder(VOID_RETURN_TYPE).append(Constants.SPACE)
+										.append(docTagValue).toString();
+							} else if (split.length == 2 && Constants.STATIC.equals(split[0])) {
+								StringBuilder sb = new StringBuilder(Constants.STATIC);
+								sb.append(Constants.SPACE).append(VOID_RETURN_TYPE);
 								sb.append(docTagValue.substring(6));
 								docTagValue = sb.toString();
 							}
 						}
-						String[] split = WHITESPACE_SEPERATOR
-								.split(docTagValue);
+						String[] split = WHITESPACE_SEPERATOR.split(docTagValue);
 						if (split.length < 2) {
 							continue;
 						}
@@ -80,8 +69,7 @@
 						ISourceElementRequestor.MethodInfo mi = new ISourceElementRequestor.MethodInfo();
 						mi.parameterNames = null;
 						mi.name = removeParenthesis(split);
-						SimpleReference var = new SimpleReference(
-								docTag.sourceStart(), docTag.sourceStart() + 6,
+						SimpleReference var = new SimpleReference(docTag.sourceStart(), docTag.sourceStart() + 6,
 								removeParenthesis(split));
 						mi.modifiers = methodModifiers;
 						mi.nameSourceStart = var.sourceStart();
@@ -92,12 +80,10 @@
 
 						MagicMethod magicMethod;
 						if (mi.name != null && mi.name.indexOf('(') > 0) {
-							magicMethod = MagicMemberUtil
-									.getMagicMethod2(docTagValue);
+							magicMethod = MagicMemberUtil.getMagicMethod2(docTagValue);
 							mi.name = magicMethod.name;
 						} else {
-							magicMethod = MagicMemberUtil
-									.getMagicMethod(docTagValue);
+							magicMethod = MagicMemberUtil.getMagicMethod(docTagValue);
 						}
 						if (magicMethod != null) {
 							mi.parameterNames = magicMethod.parameterNames;

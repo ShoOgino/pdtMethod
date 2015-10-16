@@ -8,14 +8,11 @@
 	 * @param offset
 	 * @return
 	 */
-	private static IType[] getFunctionArrayReturnType(IType[] types,
-			String method, int mask, ISourceModule sourceModule, int offset,
-			String[] argNames) {
+	private static IType[] getFunctionArrayReturnType(IType[] types, String method, int mask,
+			ISourceModule sourceModule, int offset, String[] argNames) {
 		PHPTypeInferencer typeInferencer = new PHPTypeInferencer();
-		ModuleDeclaration moduleDeclaration = SourceParserUtil
-				.getModuleDeclaration(sourceModule, null);
-		IContext context = ASTUtils.findContext(sourceModule,
-				moduleDeclaration, offset);
+		ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule, null);
+		IContext context = ASTUtils.findContext(sourceModule, moduleDeclaration, offset);
 		// XXX context cannot be null
 		if (context == null) {
 			context = new BasicContext(sourceModule, moduleDeclaration);
@@ -25,8 +22,8 @@
 		IEvaluatedType evaluatedType;
 		boolean usePhpDoc = (mask & USE_PHPDOC) != 0;
 		if (usePhpDoc) {
-			PHPDocMethodReturnTypeGoal phpDocGoal = new PHPDocMethodReturnTypeGoal(
-					context, types, method, argNames, offset);
+			PHPDocMethodReturnTypeGoal phpDocGoal = new PHPDocMethodReturnTypeGoal(context, types, method, argNames,
+					offset);
 			evaluatedType = typeInferencer.evaluateTypePHPDoc(phpDocGoal);
 			List<IEvaluatedType> possibleTypes = null;
 			if (!PHPTypeInferenceUtils.isSimple(evaluatedType)) {
@@ -34,21 +31,17 @@
 					possibleTypes = ((MultiTypeType) evaluatedType).getTypes();
 				} else if (evaluatedType instanceof AmbiguousType) {
 					possibleTypes = new ArrayList<IEvaluatedType>();
-					for (IEvaluatedType pType : ((AmbiguousType) evaluatedType)
-							.getPossibleTypes()) {
+					for (IEvaluatedType pType : ((AmbiguousType) evaluatedType).getPossibleTypes()) {
 						if (pType instanceof MultiTypeType) {
-							possibleTypes.addAll(((MultiTypeType) pType)
-									.getTypes());
+							possibleTypes.addAll(((MultiTypeType) pType).getTypes());
 						}
 					}
 				}
 				if (possibleTypes != null && possibleTypes.size() > 0) {
 					List<IType> tmpList = new LinkedList<IType>();
 					for (IEvaluatedType possibleType : possibleTypes) {
-						IType[] tmpArray = PHPTypeInferenceUtils
-								.getModelElements(possibleType,
-										(ISourceModuleContext) context, offset,
-										(IModelAccessCache) null);
+						IType[] tmpArray = PHPTypeInferenceUtils.getModelElements(possibleType,
+								(ISourceModuleContext) context, offset, (IModelAccessCache) null);
 						if (tmpArray != null && tmpArray.length > 0) {
 							tmpList.addAll(Arrays.asList(tmpArray));
 						}
@@ -65,18 +58,16 @@
 			// }
 		}
 
-		MethodElementReturnTypeGoal methodGoal = new MethodElementReturnTypeGoal(
-				context, types, method, argNames, offset);
+		MethodElementReturnTypeGoal methodGoal = new MethodElementReturnTypeGoal(context, types, method, argNames,
+				offset);
 		evaluatedType = typeInferencer.evaluateType(methodGoal);
 
 		if (evaluatedType instanceof MultiTypeType) {
 			List<IType> tmpList = new LinkedList<IType>();
-			List<IEvaluatedType> possibleTypes = ((MultiTypeType) evaluatedType)
-					.getTypes();
+			List<IEvaluatedType> possibleTypes = ((MultiTypeType) evaluatedType).getTypes();
 			for (IEvaluatedType possibleType : possibleTypes) {
-				IType[] tmpArray = PHPTypeInferenceUtils.getModelElements(
-						possibleType, (ISourceModuleContext) context, offset,
-						(IModelAccessCache) null);
+				IType[] tmpArray = PHPTypeInferenceUtils.getModelElements(possibleType, (ISourceModuleContext) context,
+						offset, (IModelAccessCache) null);
 				if (tmpArray != null) {
 					tmpList.addAll(Arrays.asList(tmpArray));
 				}

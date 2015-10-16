@@ -14,39 +14,31 @@
 	 * @param type
 	 * @return boolean
 	 */
-	private boolean isArrayType(MethodContext methodContext,
-			String variableName, IType type) {
+	private boolean isArrayType(MethodContext methodContext, String variableName, IType type) {
 
-		PHPMethodDeclaration methodDeclaration = (PHPMethodDeclaration) methodContext
-				.getMethodNode();
+		PHPMethodDeclaration methodDeclaration = (PHPMethodDeclaration) methodContext.getMethodNode();
 
 		PHPDocBlock[] docBlocks = new PHPDocBlock[0];
 		for (Object object : methodDeclaration.getArguments()) {
 			if (object instanceof FormalParameter) {
 				FormalParameter formalParameter = (FormalParameter) object;
-				if (formalParameter.getName().equals(variableName)
-						&& formalParameter.isVariadic()) {
+				if (formalParameter.getName().equals(variableName) && formalParameter.isVariadic()) {
 					return true;
 				}
 			}
 		}
 		try {
-			IModelElement element = methodContext.getSourceModule()
-					.getElementAt(methodDeclaration.getNameStart());
+			IModelElement element = methodContext.getSourceModule().getElementAt(methodDeclaration.getNameStart());
 			if (element instanceof IMethod) {
 				IMethod method = (IMethod) element;
 				if (method.getDeclaringType() != null) {
 					docBlocks = PHPModelUtils
-							.getTypeHierarchyMethodDoc(
-									method.getDeclaringType(),
-									methodContext.getCache() != null ? methodContext
-											.getCache().getSuperTypeHierarchy(
-													method.getDeclaringType(),
-													null) : null, method
-											.getElementName(), true, null);
+							.getTypeHierarchyMethodDoc(method.getDeclaringType(),
+									methodContext.getCache() != null ? methodContext.getCache()
+											.getSuperTypeHierarchy(method.getDeclaringType(), null) : null,
+							method.getElementName(), true, null);
 				} else {
-					docBlocks = new PHPDocBlock[] { methodDeclaration
-							.getPHPDoc() };
+					docBlocks = new PHPDocBlock[] { methodDeclaration.getPHPDoc() };
 				}
 			} else {
 				docBlocks = new PHPDocBlock[] { methodDeclaration.getPHPDoc() };
@@ -64,12 +56,9 @@
 				PHPDocTag[] tags = docBlocks[i].getTags(PHPDocTag.PARAM);
 				for (int j = 0; j < tags.length; j++) {
 					PHPDocTag tag = tags[j];
-					if (tag.isValidParamTag()
-							&& tag.getVariableReference().getName()
-									.equals(variableName)) {
+					if (tag.isValidParamTag() && tag.getVariableReference().getName().equals(variableName)) {
 						for (TypeReference reference : tag.getTypeReferences()) {
-							if (PHPEvaluationUtils.isArrayType(reference
-									.getName())) {
+							if (PHPEvaluationUtils.isArrayType(reference.getName())) {
 								return true;
 							}
 						}

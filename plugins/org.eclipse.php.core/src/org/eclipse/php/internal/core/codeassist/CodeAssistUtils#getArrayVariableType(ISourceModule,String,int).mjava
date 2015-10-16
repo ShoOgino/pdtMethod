@@ -6,26 +6,20 @@
 	 * @param position
 	 * @return
 	 */
-	public static IType[] getArrayVariableType(ISourceModule sourceModule,
-			String variableName, int position) {
-		ModuleDeclaration moduleDeclaration = SourceParserUtil
-				.getModuleDeclaration(sourceModule, null);
-		IContext context = ASTUtils.findContext(sourceModule,
-				moduleDeclaration, position);
+	public static IType[] getArrayVariableType(ISourceModule sourceModule, String variableName, int position) {
+		ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule, null);
+		IContext context = ASTUtils.findContext(sourceModule, moduleDeclaration, position);
 		if (context != null) {
-			VariableReference varReference = getVariableReference(variableName,
-					position);
-			ExpressionTypeGoal goal = new ExpressionTypeGoal(context,
-					varReference);
+			VariableReference varReference = getVariableReference(variableName, position);
+			ExpressionTypeGoal goal = new ExpressionTypeGoal(context, varReference);
 			PHPTypeInferencer typeInferencer = new PHPTypeInferencer();
 			IEvaluatedType evaluatedType = typeInferencer.evaluateType(goal);
-			if (evaluatedType instanceof MultiTypeType
-					|| evaluatedType instanceof AmbiguousType) {
+			if (evaluatedType instanceof MultiTypeType || evaluatedType instanceof AmbiguousType) {
 				return getTypes(position, context, evaluatedType);
 			}
 
-			IType[] modelElements = PHPTypeInferenceUtils.getModelElements(
-					evaluatedType, (ISourceModuleContext) context, position);
+			IType[] modelElements = PHPTypeInferenceUtils.getModelElements(evaluatedType,
+					(ISourceModuleContext) context, position);
 			if (modelElements != null) {
 				return modelElements;
 			}

@@ -6,21 +6,17 @@
 
 		ISourceRange replaceRange = getReplacementRange(context);
 		ArrayKeyContext arrayContext = (ArrayKeyContext) context;
-		boolean endsWithQuota = arrayContext.getNextChar() == '\''
-				|| arrayContext.getNextChar() == '\"';
+		boolean endsWithQuota = arrayContext.getNextChar() == '\'' || arrayContext.getNextChar() == '\"';
 		if (arrayContext.hasQuotes() && !(endsWithQuota)) {
 			// https://bugs.eclipse.org/bugs/show_bug.cgi?id=401766
-			replaceRange = new SourceRange(replaceRange.getOffset(),
-					replaceRange.getLength() + 1);
+			replaceRange = new SourceRange(replaceRange.getOffset(), replaceRange.getLength() + 1);
 		}
 		CompletionRequestor requestor = arrayContext.getCompletionRequestor();
 
 		String prefix = arrayContext.getPrefix();
-		ModuleDeclaration moduleDeclaration = SourceParserUtil
-				.getModuleDeclaration(arrayContext.getSourceModule());
+		ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(arrayContext.getSourceModule());
 		try {
-			ArrayKeyFinder finder = new ArrayKeyFinder(prefix,
-					arrayContext.getOffset());
+			ArrayKeyFinder finder = new ArrayKeyFinder(prefix, arrayContext.getOffset());
 			moduleDeclaration.traverse(finder);
 			Set<String> names = finder.getNames();
 			int extraObject = ProposalExtraInfo.DEFAULT;
@@ -30,10 +26,8 @@
 			for (String name : names) {
 
 				if (!requestor.isContextInformationMode()) {
-					reporter.reportField(new FakeField(
-							(ModelElement) arrayContext.getSourceModule(),
-							name, 0, 0), "", replaceRange, false, 0, //$NON-NLS-1$
-							extraObject); // NON-NLS-1
+					reporter.reportField(new FakeField((ModelElement) arrayContext.getSourceModule(), name, 0, 0), "", //$NON-NLS-1$
+							replaceRange, false, 0, extraObject); // NON-NLS-1
 				}
 
 			}

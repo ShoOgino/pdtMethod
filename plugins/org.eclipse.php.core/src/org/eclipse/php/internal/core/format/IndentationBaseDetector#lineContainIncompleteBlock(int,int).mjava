@@ -1,62 +1,44 @@
-	private boolean lineContainIncompleteBlock(int checkedOffset,
-			int lineStartOffset) throws BadLocationException {
+	private boolean lineContainIncompleteBlock(int checkedOffset, int lineStartOffset) throws BadLocationException {
 		if (checkedOffset == document.getLength() && checkedOffset > 0) {
 			checkedOffset--;
 		}
-		if (textSequenceRegion.getLength() != 0
-				&& IndentationUtils
-						.isRegionTypeAllowedMultiline(FormatterUtils
-								.getRegionType(document,
-										textSequenceRegion.getOffset()))) {
-			PHPHeuristicScanner scanner = PHPHeuristicScanner
-					.createHeuristicScanner(document, lineStartOffset, true);
+		if (textSequenceRegion.getLength() != 0 && IndentationUtils
+				.isRegionTypeAllowedMultiline(FormatterUtils.getRegionType(document, textSequenceRegion.getOffset()))) {
+			PHPHeuristicScanner scanner = PHPHeuristicScanner.createHeuristicScanner(document, lineStartOffset, true);
 			// search for opening pear only in this line
-			int statementStart = document.getLineInformationOfOffset(
-					checkedOffset).getOffset();
+			int statementStart = document.getLineInformationOfOffset(checkedOffset).getOffset();
 
-			int openParenPeer = scanner.findOpeningPeer(checkedOffset - 1,
-					statementStart, PHPHeuristicScanner.LPAREN,
+			int openParenPeer = scanner.findOpeningPeer(checkedOffset - 1, statementStart, PHPHeuristicScanner.LPAREN,
 					PHPHeuristicScanner.RPAREN);
 
-			int bound = openParenPeer != -1 ? Math.max(statementStart,
-					openParenPeer) : statementStart;
-			int openBracePeer = scanner.findOpeningPeer(checkedOffset - 1,
-					bound, PHPHeuristicScanner.LBRACE,
+			int bound = openParenPeer != -1 ? Math.max(statementStart, openParenPeer) : statementStart;
+			int openBracePeer = scanner.findOpeningPeer(checkedOffset - 1, bound, PHPHeuristicScanner.LBRACE,
 					PHPHeuristicScanner.RBRACE);
 
-			bound = openBracePeer != -1 || openParenPeer != -1 ? Math.max(
-					statementStart, Math.max(openParenPeer, openBracePeer))
-					: statementStart;
-			int openBracketPeer = scanner.findOpeningPeer(checkedOffset - 1,
-					bound, PHPHeuristicScanner.LBRACKET,
+			bound = openBracePeer != -1 || openParenPeer != -1
+					? Math.max(statementStart, Math.max(openParenPeer, openBracePeer)) : statementStart;
+			int openBracketPeer = scanner.findOpeningPeer(checkedOffset - 1, bound, PHPHeuristicScanner.LBRACKET,
 					PHPHeuristicScanner.RBRACKET);
 
 			int biggest = Math.max(openParenPeer, openBracePeer);
 			biggest = Math.max(biggest, openBracketPeer);
-			if (biggest != PHPHeuristicScanner.NOT_FOUND
-					&& biggest >= lineStartOffset) {
+			if (biggest != PHPHeuristicScanner.NOT_FOUND && biggest >= lineStartOffset) {
 				// the whole document
-				final IStructuredDocumentRegion sdRegion = document
-						.getRegionAtCharacterOffset(lineStartOffset);
+				final IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(lineStartOffset);
 				// the whole PHP script
-				ITextRegion phpScriptRegion = sdRegion
-						.getRegionAtCharacterOffset(lineStartOffset);
+				ITextRegion phpScriptRegion = sdRegion.getRegionAtCharacterOffset(lineStartOffset);
 
 				if (phpScriptRegion instanceof ITextRegionContainer) {
 					ITextRegionContainer container = (ITextRegionContainer) phpScriptRegion;
-					phpScriptRegion = container
-							.getRegionAtCharacterOffset(lineStartOffset);
+					phpScriptRegion = container.getRegionAtCharacterOffset(lineStartOffset);
 				}
 
-				if (phpScriptRegion instanceof IPhpScriptRegion
-						&& lineStartOffset <= phpScriptRegion.getEnd()) {
+				if (phpScriptRegion instanceof IPhpScriptRegion && lineStartOffset <= phpScriptRegion.getEnd()) {
 					IPhpScriptRegion scriptRegion = (IPhpScriptRegion) phpScriptRegion;
 					ITextRegion[] tokens = null;
 					try {
-						tokens = scriptRegion.getPhpTokens(
-								Math.min(lineStartOffset - 1,
-										scriptRegion.getEnd()), biggest
-										- lineStartOffset + 1);
+						tokens = scriptRegion.getPhpTokens(Math.min(lineStartOffset - 1, scriptRegion.getEnd()),
+								biggest - lineStartOffset + 1);
 					} catch (BadLocationException e) {
 						// ignore it, scriptRegion.getEnd() is greater than last
 						// phpToken
@@ -69,21 +51,17 @@
 						}
 						if (biggest == openParenPeer) {
 							if (tokenTypeSet.contains(PHPRegionTypes.PHP_NEW)
-									|| tokenTypeSet
-											.contains(PHPRegionTypes.PHP_FUNCTION)
-									|| tokenTypeSet
-											.contains(PHPRegionTypes.PHP_ARRAY)) {
+									|| tokenTypeSet.contains(PHPRegionTypes.PHP_FUNCTION)
+									|| tokenTypeSet.contains(PHPRegionTypes.PHP_ARRAY)) {
 								return true;
 							}
 						} else if (biggest == openBracePeer) {
 							if (tokenTypeSet.contains(PHPRegionTypes.PHP_NEW)
-									|| tokenTypeSet
-											.contains(PHPRegionTypes.PHP_FUNCTION)) {
+									|| tokenTypeSet.contains(PHPRegionTypes.PHP_FUNCTION)) {
 								return true;
 							}
-						} else if (biggest == openBracketPeer
-								&& scanner.previousToken(biggest - 1,
-										PHPHeuristicScanner.UNBOUND) < PHPHeuristicScanner.TokenIDENT) {
+						} else if (biggest == openBracketPeer && scanner.previousToken(biggest - 1,
+								PHPHeuristicScanner.UNBOUND) < PHPHeuristicScanner.TokenIDENT) {
 							return true;
 						} else {
 							if (tokenTypeSet.contains(PHPRegionTypes.PHP_ARRAY)) {

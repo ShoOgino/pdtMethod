@@ -1,35 +1,29 @@
-	private int adjustLine(int currLineIndex, int offset)
-			throws BadLocationException {
+	private int adjustLine(int currLineIndex, int offset) throws BadLocationException {
 		// TODO ignore the comment
 		final IRegion lineInfo = document.getLineInformation(currLineIndex);
 
 		int lineEnd = lineInfo.getOffset() + lineInfo.getLength();
 		lineEnd = Math.min(lineEnd, offset);
 		if (lineEnd == lineInfo.getOffset()) {
-			lineEnd = IndentationUtils.moveLineStartToNonBlankChar(document,
-					lineEnd, currLineIndex, false);
+			lineEnd = IndentationUtils.moveLineStartToNonBlankChar(document, lineEnd, currLineIndex, false);
 		}
 		if (lineEnd == document.getLength() && lineEnd > 0) {
 			lineEnd--;
 		}
-		PHPHeuristicScanner scanner = PHPHeuristicScanner
-				.createHeuristicScanner(document, lineEnd, true);
+		PHPHeuristicScanner scanner = PHPHeuristicScanner.createHeuristicScanner(document, lineEnd, true);
 		int token = scanner.previousToken(lineEnd, PHPHeuristicScanner.UNBOUND);
 		if (token == PHPHeuristicScanner.TokenSEMICOLON) {
-			token = scanner.previousToken(scanner.getPosition(),
-					PHPHeuristicScanner.UNBOUND);
+			token = scanner.previousToken(scanner.getPosition(), PHPHeuristicScanner.UNBOUND);
 		}
 		if (token == PHPHeuristicScanner.TokenRPAREN) {
-			int peer = scanner.findOpeningPeer(scanner.getPosition(),
-					PHPHeuristicScanner.UNBOUND, PHPHeuristicScanner.LPAREN,
-					PHPHeuristicScanner.RPAREN);
+			int peer = scanner.findOpeningPeer(scanner.getPosition(), PHPHeuristicScanner.UNBOUND,
+					PHPHeuristicScanner.LPAREN, PHPHeuristicScanner.RPAREN);
 			if (peer != PHPHeuristicScanner.NOT_FOUND) {
 				return document.getLineOfOffset(scanner.getPosition());
 			}
 		} else if (token == PHPHeuristicScanner.TokenRBRACKET) {
-			int peer = scanner.findOpeningPeer(scanner.getPosition(),
-					PHPHeuristicScanner.UNBOUND, PHPHeuristicScanner.LBRACKET,
-					PHPHeuristicScanner.RBRACKET);
+			int peer = scanner.findOpeningPeer(scanner.getPosition(), PHPHeuristicScanner.UNBOUND,
+					PHPHeuristicScanner.LBRACKET, PHPHeuristicScanner.RBRACKET);
 			if (peer != PHPHeuristicScanner.NOT_FOUND) {
 				return document.getLineOfOffset(scanner.getPosition());
 			}

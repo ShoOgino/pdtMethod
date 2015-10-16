@@ -1,38 +1,30 @@
-	protected void addGoalFromStaticDeclaration(String variableName,
-			final List<IGoal> subGoals, final IType declaringType,
-			IType realType) throws ModelException {
+	protected void addGoalFromStaticDeclaration(String variableName, final List<IGoal> subGoals,
+			final IType declaringType, IType realType) throws ModelException {
 		ISourceModule sourceModule = declaringType.getSourceModule();
-		ModuleDeclaration moduleDeclaration = SourceParserUtil
-				.getModuleDeclaration(sourceModule);
-		TypeDeclaration typeDeclaration = PHPModelUtils.getNodeByClass(
-				moduleDeclaration, declaringType);
+		ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule);
+		TypeDeclaration typeDeclaration = PHPModelUtils.getNodeByClass(moduleDeclaration, declaringType);
 
 		// try to search declarations of type "self::$var =" or
 		// "$this->var ="
 		ClassDeclarationSearcher searcher;
 		if (realType != null) {
-			searcher = new ClassDeclarationSearcher(sourceModule,
-					typeDeclaration, 0, 0, variableName, realType,
+			searcher = new ClassDeclarationSearcher(sourceModule, typeDeclaration, 0, 0, variableName, realType,
 					declaringType);
 		} else {
-			searcher = new ClassDeclarationSearcher(sourceModule,
-					typeDeclaration, 0, 0, variableName);
+			searcher = new ClassDeclarationSearcher(sourceModule, typeDeclaration, 0, 0, variableName);
 		}
 		try {
 			moduleDeclaration.traverse(searcher);
-			for (Entry<ASTNode, IContext> entry : searcher
-					.getStaticDeclarations().entrySet()) {
+			for (Entry<ASTNode, IContext> entry : searcher.getStaticDeclarations().entrySet()) {
 				final IContext context = entry.getValue();
 				if (context instanceof MethodContext) {
 					MethodContext methodContext = (MethodContext) context;
 					methodContext.setCurrentType(realType);
 				}
 				if (context instanceof IModelCacheContext
-						&& ClassVariableDeclarationEvaluator.this.goal
-								.getContext() instanceof IModelCacheContext) {
-					((IModelCacheContext) context)
-							.setCache(((IModelCacheContext) ClassVariableDeclarationEvaluator.this.goal
-									.getContext()).getCache());
+						&& ClassVariableDeclarationEvaluator.this.goal.getContext() instanceof IModelCacheContext) {
+					((IModelCacheContext) context).setCache(
+							((IModelCacheContext) ClassVariableDeclarationEvaluator.this.goal.getContext()).getCache());
 				}
 				subGoals.add(new ExpressionTypeGoal(context, entry.getKey()));
 			}

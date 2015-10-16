@@ -12,8 +12,7 @@
 		if (abstractContext.getPrefixWithoutProcessing().trim().length() == 0) {
 			return;
 		}
-		boolean isUseContext = context instanceof UseNameContext
-				&& !((UseNameContext) context).isUseTrait();
+		boolean isUseContext = context instanceof UseNameContext && !((UseNameContext) context).isUseTrait();
 		ISourceRange replacementRange = getReplacementRange(abstractContext);
 
 		IType[] types = getTypes(abstractContext);
@@ -21,15 +20,10 @@
 		String suffix = "";//$NON-NLS-1$
 		String nsSuffix = getNSSuffix(abstractContext);
 		int extraInfo = getExtraInfo();
-		if ((abstractContext.getOffset() - abstractContext.getPrefix().length()
-				- 1 >= 0)
-				&& (abstractContext.getDocument().getChar(
-						abstractContext.getOffset()
-								- abstractContext.getPrefix().length() - 1) == '\'' || abstractContext
-						.getDocument().getChar(
-								abstractContext.getOffset()
-										- abstractContext.getPrefix().length()
-										- 1) == '\"')) {
+		if ((abstractContext.getOffset() - abstractContext.getPrefix().length() - 1 >= 0) && (abstractContext
+				.getDocument().getChar(abstractContext.getOffset() - abstractContext.getPrefix().length() - 1) == '\''
+				|| abstractContext.getDocument()
+						.getChar(abstractContext.getOffset() - abstractContext.getPrefix().length() - 1) == '\"')) {
 			extraInfo = extraInfo | ProposalExtraInfo.NO_INSERT_USE;
 		}
 		if ("namespace".equals(abstractContext.getPreviousWord(1)) //$NON-NLS-1$
@@ -42,21 +36,17 @@
 				int flags = type.getFlags();
 				boolean isNamespace = PHPFlags.isNamespace(flags);
 				if (!isNamespace && isUseContext) {
-					reporter.reportType(type, isNamespace ? nsSuffix : suffix,
-							replacementRange, extraInfo
-									| ProposalExtraInfo.CLASS_IN_NAMESPACE);
+					reporter.reportType(type, isNamespace ? nsSuffix : suffix, replacementRange,
+							extraInfo | ProposalExtraInfo.CLASS_IN_NAMESPACE);
 				} else {
-					reporter.reportType(type, isNamespace ? nsSuffix : suffix,
-							replacementRange, extraInfo);
+					reporter.reportType(type, isNamespace ? nsSuffix : suffix, replacementRange, extraInfo);
 				}
 				if (addClassInNamespace && isNamespace) {
 					IType[] subTypes = type.getTypes();
 					for (IType subType : subTypes) {
 						int subFlags = type.getFlags();
-						reporter.reportType(subType, PHPFlags
-								.isNamespace(subFlags) ? nsSuffix : suffix,
-								replacementRange, extraInfo
-										| ProposalExtraInfo.CLASS_IN_NAMESPACE);
+						reporter.reportType(subType, PHPFlags.isNamespace(subFlags) ? nsSuffix : suffix,
+								replacementRange, extraInfo | ProposalExtraInfo.CLASS_IN_NAMESPACE);
 					}
 				}
 			} catch (ModelException e) {

@@ -8,37 +8,30 @@
 		while (matcher.find()) {
 			// verify char before 'function' word.
 			int functionStart = matcher.start();
-			if (functionStart != 0 && Character.isJavaIdentifierStart(
-					textSequence.charAt(functionStart - 1))) {
+			if (functionStart != 0 && Character.isJavaIdentifierStart(textSequence.charAt(functionStart - 1))) {
 				continue;
 			}
 
 			// verfy state
-			String type = TextSequenceUtilities.getType(textSequence,
-					functionStart + 1);
+			String type = TextSequenceUtilities.getType(textSequence, functionStart + 1);
 			if (PHPPartitionTypes.isPHPRegularState(type)) {
 				// verify the function is not closed.
 				int offset;
 				boolean possibleReturnType = false;
 				boolean returnType = false;
-				for (offset = matcher.end(); offset < textSequence
-						.length(); offset++) {
+				for (offset = matcher.end(); offset < textSequence.length(); offset++) {
 					if (textSequence.charAt(offset) == ')') {
 						// verify state
-						type = TextSequenceUtilities.getType(textSequence,
-								offset);
+						type = TextSequenceUtilities.getType(textSequence, offset);
 						if (PHPPartitionTypes.isPHPRegularState(type)) {
 							possibleReturnType = true;
 						}
-					} else if ((possibleReturnType || returnType)
-							&& textSequence.charAt(offset) == '{') {
+					} else if ((possibleReturnType || returnType) && textSequence.charAt(offset) == '{') {
 						break;
-					} else if (possibleReturnType
-							&& textSequence.charAt(offset) == ':') {
+					} else if (possibleReturnType && textSequence.charAt(offset) == ':') {
 						possibleReturnType = false;
 						returnType = true;
-					} else if (possibleReturnType && !Character
-							.isWhitespace(textSequence.charAt(offset))) {
+					} else if (possibleReturnType && !Character.isWhitespace(textSequence.charAt(offset))) {
 						break;
 					}
 				}

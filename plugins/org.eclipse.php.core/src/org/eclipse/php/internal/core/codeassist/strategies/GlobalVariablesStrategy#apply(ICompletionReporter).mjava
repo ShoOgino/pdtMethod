@@ -1,5 +1,4 @@
-	public void apply(ICompletionReporter reporter)
-			throws BadLocationException {
+	public void apply(ICompletionReporter reporter) throws BadLocationException {
 
 		ICompletionContext context = getContext();
 		AbstractCompletionContext abstractContext = (AbstractCompletionContext) context;
@@ -8,8 +7,7 @@
 		if (prefix.length() > 0 && !prefix.startsWith("$")) { //$NON-NLS-1$
 			return;
 		}
-		CompletionRequestor requestor = abstractContext
-				.getCompletionRequestor();
+		CompletionRequestor requestor = abstractContext.getCompletionRequestor();
 
 		MatchRule matchRule = MatchRule.PREFIX;
 		if (requestor.isContextInformationMode()) {
@@ -17,19 +15,16 @@
 		}
 
 		IField[] fields = null;
-		if (showVarsFromOtherFiles(
-				PHPCoreConstants.CODEASSIST_SHOW_VARIABLES_FROM_OTHER_FILES)) {
+		if (showVarsFromOtherFiles(PHPCoreConstants.CODEASSIST_SHOW_VARIABLES_FROM_OTHER_FILES)) {
 			IDLTKSearchScope scope = createSearchScope();
-			fields = PhpModelAccess.getDefault().findFields(prefix, matchRule,
-					Modifiers.AccGlobal, Modifiers.AccConstant, scope, null);
-		} else if (showVarsFromOtherFiles(
-				PHPCoreConstants.CODEASSIST_SHOW_VARIABLES_FROM_REFERENCED_FILES)) {
+			fields = PhpModelAccess.getDefault().findFields(prefix, matchRule, Modifiers.AccGlobal,
+					Modifiers.AccConstant, scope, null);
+		} else if (showVarsFromOtherFiles(PHPCoreConstants.CODEASSIST_SHOW_VARIABLES_FROM_REFERENCED_FILES)) {
 			// FIXME why we can't get $myGlobalVar from php
 			// code:list($myGlobalVar) = 0;
-			IDLTKSearchScope scope = createSearchScopeWithReferencedFiles(
-					abstractContext.getSourceModule());
-			fields = PhpModelAccess.getDefault().findFields(prefix, matchRule,
-					Modifiers.AccGlobal, Modifiers.AccConstant, scope, null);
+			IDLTKSearchScope scope = createSearchScopeWithReferencedFiles(abstractContext.getSourceModule());
+			fields = PhpModelAccess.getDefault().findFields(prefix, matchRule, Modifiers.AccGlobal,
+					Modifiers.AccConstant, scope, null);
 		}
 
 		List<IField> result = new LinkedList<IField>();
@@ -37,8 +32,7 @@
 			result.addAll(Arrays.asList(fields));
 		}
 
-		fields = PHPModelUtils.getFileFields(abstractContext.getSourceModule(),
-				prefix, false, null);
+		fields = PHPModelUtils.getFileFields(abstractContext.getSourceModule(), prefix, false, null);
 		if (fields != null) {
 			result.addAll(Arrays.asList(fields));
 		}
@@ -53,14 +47,10 @@
 			PHPVersion phpVersion = abstractContext.getPhpVersion();
 			for (String variable : PHPVariables.getVariables(phpVersion)) {
 				if (variable.startsWith(prefix)) {
-					if (!requestor.isContextInformationMode()
-							|| variable.length() == prefix.length()) {
+					if (!requestor.isContextInformationMode() || variable.length() == prefix.length()) {
 						reporter.reportField(
-								new FakeField(
-										(ModelElement) abstractContext
-												.getSourceModule(),
-										variable, 0, 0),
-								"", replaceRange, false); // NON-NLS-1 //$NON-NLS-1$
+								new FakeField((ModelElement) abstractContext.getSourceModule(), variable, 0, 0), "", //$NON-NLS-1$
+								replaceRange, false); // NON-NLS-1
 					}
 				}
 			}

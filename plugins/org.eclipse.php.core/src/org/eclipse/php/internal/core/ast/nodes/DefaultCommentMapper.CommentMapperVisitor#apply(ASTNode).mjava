@@ -5,14 +5,12 @@
 			int previousEnd = parent.getStart();
 
 			// Look for sibling node
-			ASTNode sibling = parent == this.topSiblingParent ? (ASTNode) this.siblings[this.siblingPtr]
-					: null;
+			ASTNode sibling = parent == this.topSiblingParent ? (ASTNode) this.siblings[this.siblingPtr] : null;
 			if (sibling != null) {
 				// Found one previous sibling, so compute its trailing comments
 				// using current node start position
 				try {
-					previousEnd = storeTrailingComments(sibling,
-							node.getStart(), false,
+					previousEnd = storeTrailingComments(sibling, node.getStart(), false,
 							this.parentLineRange[this.siblingPtr]);
 				} catch (Exception ex) {
 					// Give up extended ranges at this level if unexpected
@@ -28,10 +26,7 @@
 
 			// Compute leading comments for current node
 			int[] previousLineRange = this.siblingPtr > -1 ? this.parentLineRange[this.siblingPtr]
-					: new int[] {
-							1,
-							DefaultCommentMapper.this.document
-									.getNumberOfLines() };
+					: new int[] { 1, DefaultCommentMapper.this.document.getNumberOfLines() };
 			try {
 				storeLeadingComments(node, previousEnd, previousLineRange);
 			} catch (Exception ex) {
@@ -42,28 +37,20 @@
 			// Store current node as waiting sibling for its parent
 			if (this.topSiblingParent != parent) {
 				if (this.siblings.length == ++this.siblingPtr) {
-					System.arraycopy(this.siblings, 0,
-							this.siblings = new ASTNode[this.siblingPtr * 2],
-							0, this.siblingPtr);
-					System.arraycopy(
-							this.parentLineRange,
-							0,
-							this.parentLineRange = new int[this.siblingPtr * 2][],
-							0, this.siblingPtr);
+					System.arraycopy(this.siblings, 0, this.siblings = new ASTNode[this.siblingPtr * 2], 0,
+							this.siblingPtr);
+					System.arraycopy(this.parentLineRange, 0, this.parentLineRange = new int[this.siblingPtr * 2][], 0,
+							this.siblingPtr);
 				}
 				if (this.topSiblingParent == null) {
 					// node is a CompilationUnit
 					this.parentLineRange[this.siblingPtr] = previousLineRange;
 				} else {
 					int parentStart = parent.getStart();
-					int firstLine = getLineNumber(parentStart,
-							previousLineRange);
-					int lastLine = getLineNumber(
-							parentStart + parent.getLength() - 1,
-							previousLineRange);
+					int firstLine = getLineNumber(parentStart, previousLineRange);
+					int lastLine = getLineNumber(parentStart + parent.getLength() - 1, previousLineRange);
 					if (this.parentLineRange[this.siblingPtr] == null) {
-						this.parentLineRange[this.siblingPtr] = new int[] {
-								firstLine, lastLine };
+						this.parentLineRange[this.siblingPtr] = new int[] { firstLine, lastLine };
 					} else {
 						int[] lineRange = this.parentLineRange[this.siblingPtr];
 						lineRange[0] = firstLine;

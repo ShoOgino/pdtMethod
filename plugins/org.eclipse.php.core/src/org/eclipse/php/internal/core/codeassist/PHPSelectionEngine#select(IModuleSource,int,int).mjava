@@ -8,31 +8,25 @@
 			end = offset + 1;
 		}
 
-		ISourceModule sourceModule = (ISourceModule) sourceUnit
-				.getModelElement();
-		phpVersion = ProjectOptions.getPhpVersion(sourceModule
-				.getScriptProject().getProject());
+		ISourceModule sourceModule = (ISourceModule) sourceUnit.getModelElement();
+		phpVersion = ProjectOptions.getPhpVersion(sourceModule.getScriptProject().getProject());
 
 		// First, try to resolve using AST (if we have parsed it well):
 		IModelAccessCache cache = new PerFileModelAccessCache(sourceModule) {
 			@Override
-			protected <T extends IModelElement> Collection<T> filterElements(
-					ISourceModule sourceModule, Collection<T> elements,
-					IProgressMonitor monitor) {
+			protected <T extends IModelElement> Collection<T> filterElements(ISourceModule sourceModule,
+					Collection<T> elements, IProgressMonitor monitor) {
 				// override/removes filtering because
 				// https://bugs.eclipse.org/bugs/show_bug.cgi?id=442964
 				return elements;
 			}
 		};
 		try {
-			IModelElement[] elements = internalASTResolve(sourceModule, cache,
-					offset, end);
+			IModelElement[] elements = internalASTResolve(sourceModule, cache, offset, end);
 			if (elements != null) {
-				Collection<IModelElement> filtered = PHPModelUtils
-						.filterElements(sourceModule, Arrays.asList(elements),
-								null, null);
-				return (IModelElement[]) filtered
-						.toArray(new IModelElement[filtered.size()]);
+				Collection<IModelElement> filtered = PHPModelUtils.filterElements(sourceModule, Arrays.asList(elements),
+						null, null);
+				return (IModelElement[]) filtered.toArray(new IModelElement[filtered.size()]);
 			}
 		} catch (Exception e) {
 			PHPCorePlugin.log(e);
@@ -45,17 +39,14 @@
 			IFile file = (IFile) sourceUnit.getModelElement().getResource();
 			if (file != null) {
 				if (file.exists()) {
-					structuredModel = StructuredModelManager.getModelManager()
-							.getExistingModelForRead(file);
+					structuredModel = StructuredModelManager.getModelManager().getExistingModelForRead(file);
 					if (structuredModel != null) {
 						document = structuredModel.getStructuredDocument();
 					} else {
-						document = StructuredModelManager.getModelManager()
-								.createStructuredDocumentFor(file);
+						document = StructuredModelManager.getModelManager().createStructuredDocumentFor(file);
 					}
 				} else {
-					document = StructuredModelManager.getModelManager()
-							.createNewStructuredDocumentFor(file);
+					document = StructuredModelManager.getModelManager().createNewStructuredDocumentFor(file);
 					document.set(sourceUnit.getSourceContents());
 				}
 			}
@@ -70,20 +61,18 @@
 		if (document == null) {
 			return EMPTY;
 		}
-		IModelElement[] elements = internalResolve(document, sourceModule,
-				cache, offset, end);
+		IModelElement[] elements = internalResolve(document, sourceModule, cache, offset, end);
 		if (elements == null) {
 			return EMPTY;
 		}
 
-		Collection<IModelElement> filtered = PHPModelUtils.filterElements(
-				sourceModule, Arrays.asList(elements), cache, null);
+		Collection<IModelElement> filtered = PHPModelUtils.filterElements(sourceModule, Arrays.asList(elements), cache,
+				null);
 		if (filtered.size() == 0) {
 			return EMPTY;
 		}
 
-		IStructuredDocumentRegion sRegion = document
-				.getRegionAtCharacterOffset(offset);
+		IStructuredDocumentRegion sRegion = document.getRegionAtCharacterOffset(offset);
 		if (sRegion != null) {
 			ITextRegion tRegion = sRegion.getRegionAtCharacterOffset(offset);
 
@@ -92,37 +81,27 @@
 				container = (ITextRegionContainer) tRegion;
 				tRegion = container.getRegionAtCharacterOffset(offset);
 			}
-			if (tRegion != null
-					&& tRegion.getType() == PHPRegionContext.PHP_CONTENT) {
+			if (tRegion != null && tRegion.getType() == PHPRegionContext.PHP_CONTENT) {
 				IPhpScriptRegion phpScriptRegion = (IPhpScriptRegion) tRegion;
 				try {
-					tRegion = phpScriptRegion.getPhpToken(offset
-							- container.getStartOffset()
-							- phpScriptRegion.getStart());
+					tRegion = phpScriptRegion
+							.getPhpToken(offset - container.getStartOffset() - phpScriptRegion.getStart());
 				} catch (BadLocationException e) {
 					tRegion = null;
 				}
 				if (tRegion != null) {
 					// Determine element name:
-					int elementStart = container.getStartOffset()
-							+ phpScriptRegion.getStart() + tRegion.getStart();
-					TextSequence statement = PHPTextSequenceUtilities
-							.getStatement(elementStart + tRegion.getLength(),
-									sRegion, true);
+					int elementStart = container.getStartOffset() + phpScriptRegion.getStart() + tRegion.getStart();
+					TextSequence statement = PHPTextSequenceUtilities.getStatement(elementStart + tRegion.getLength(),
+							sRegion, true);
 					if (statement.length() != 0) {
-						int endPosition = PHPTextSequenceUtilities
-								.readBackwardSpaces(statement,
-										statement.length());
-						int startPosition = PHPTextSequenceUtilities
-								.readIdentifierStartIndex(phpVersion,
-										statement, endPosition, true);
-						String elementName = statement.subSequence(
-								startPosition, endPosition).toString();
+						int endPosition = PHPTextSequenceUtilities.readBackwardSpaces(statement, statement.length());
+						int startPosition = PHPTextSequenceUtilities.readIdentifierStartIndex(phpVersion, statement,
+								endPosition, true);
+						String elementName = statement.subSequence(startPosition, endPosition).toString();
 						List<IModelElement> result = new LinkedList<IModelElement>();
-						for (Iterator<IModelElement> iterator = filtered
-								.iterator(); iterator.hasNext();) {
-							IModelElement modelElement = (IModelElement) iterator
-									.next();
+						for (Iterator<IModelElement> iterator = filtered.iterator(); iterator.hasNext();) {
+							IModelElement modelElement = (IModelElement) iterator.next();
 							if (modelElement instanceof AliasField) {
 								AliasField aliasField = (AliasField) modelElement;
 								if (aliasField.getAlias().equals(elementName)) {
@@ -133,19 +112,15 @@
 								if (!fieldName.startsWith("$")) { //$NON-NLS-1$
 									fieldName = "$" + fieldName; //$NON-NLS-1$
 								}
-								if (modelElement.getElementName().equals(
-										fieldName)
-										|| modelElement.getElementName()
-												.equals(elementName)) {
+								if (modelElement.getElementName().equals(fieldName)
+										|| modelElement.getElementName().equals(elementName)) {
 									result.add(modelElement);
 								}
-							} else if (modelElement.getElementName().equals(
-									elementName)) {
+							} else if (modelElement.getElementName().equals(elementName)) {
 								result.add(modelElement);
 							}
 						}
-						return (IModelElement[]) result
-								.toArray(new IModelElement[result.size()]);
+						return (IModelElement[]) result.toArray(new IModelElement[result.size()]);
 					}
 				}
 			}

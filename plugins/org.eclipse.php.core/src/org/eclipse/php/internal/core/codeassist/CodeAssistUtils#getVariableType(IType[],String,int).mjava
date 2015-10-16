@@ -6,40 +6,32 @@
 	 * @param offset
 	 * @return
 	 */
-	public static IType[] getVariableType(IType[] types, String propertyName,
-			int offset) {
+	public static IType[] getVariableType(IType[] types, String propertyName, int offset) {
 		if (types != null) {
 			for (IType type : types) {
 				PHPClassType classType = PHPClassType.fromIType(type);
 
-				ModuleDeclaration moduleDeclaration = SourceParserUtil
-						.getModuleDeclaration(type.getSourceModule(), null);
-				FileContext fileContext = new FileContext(
-						type.getSourceModule(), moduleDeclaration, offset);
-				TypeContext typeContext = new TypeContext(fileContext,
-						classType);
+				ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(type.getSourceModule(),
+						null);
+				FileContext fileContext = new FileContext(type.getSourceModule(), moduleDeclaration, offset);
+				TypeContext typeContext = new TypeContext(fileContext, classType);
 				PHPTypeInferencer typeInferencer = new PHPTypeInferencer();
 
 				if (!propertyName.startsWith(DOLLAR)) {
 					propertyName = DOLLAR + propertyName;
 				}
-				PHPDocClassVariableGoal phpDocGoal = new PHPDocClassVariableGoal(
-						typeContext, propertyName, offset);
-				IEvaluatedType evaluatedType = typeInferencer
-						.evaluateTypePHPDoc(phpDocGoal, 3000);
+				PHPDocClassVariableGoal phpDocGoal = new PHPDocClassVariableGoal(typeContext, propertyName, offset);
+				IEvaluatedType evaluatedType = typeInferencer.evaluateTypePHPDoc(phpDocGoal, 3000);
 
-				IType[] modelElements = PHPTypeInferenceUtils.getModelElements(
-						evaluatedType, fileContext, offset);
+				IType[] modelElements = PHPTypeInferenceUtils.getModelElements(evaluatedType, fileContext, offset);
 				if (modelElements != null) {
 					return modelElements;
 				}
 
-				ClassVariableDeclarationGoal goal = new ClassVariableDeclarationGoal(
-						typeContext, types, propertyName);
+				ClassVariableDeclarationGoal goal = new ClassVariableDeclarationGoal(typeContext, types, propertyName);
 				evaluatedType = typeInferencer.evaluateType(goal);
 
-				modelElements = PHPTypeInferenceUtils.getModelElements(
-						evaluatedType, fileContext, offset);
+				modelElements = PHPTypeInferenceUtils.getModelElements(evaluatedType, fileContext, offset);
 				if (modelElements != null) {
 					return modelElements;
 				}

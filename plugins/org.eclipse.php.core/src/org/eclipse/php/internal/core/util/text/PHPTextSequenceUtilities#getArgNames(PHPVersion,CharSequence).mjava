@@ -7,24 +7,20 @@
 	 * @param textSequence
 	 * @return
 	 */
-	public static String[] getArgNames(PHPVersion phpVersion,
-			CharSequence textSequence) {
+	public static String[] getArgNames(PHPVersion phpVersion, CharSequence textSequence) {
 		List<String> args = new ArrayList<String>();
 		if (textSequence != null && textSequence.length() > 2) {
 			if (textSequence.charAt(textSequence.length() - 1) == ')') {
-				textSequence = textSequence.subSequence(0,
-						textSequence.length() - 1);
+				textSequence = textSequence.subSequence(0, textSequence.length() - 1);
 			}
 			if (textSequence.charAt(0) == '(') {
-				textSequence = textSequence.subSequence(1,
-						textSequence.length());
+				textSequence = textSequence.subSequence(1, textSequence.length());
 			}
 			if (phpVersion == null) {
 				phpVersion = PHPVersion.getLatestVersion();
 			}
 
-			AbstractPhpLexer lexer = PhpLexerFactory.createLexer(
-					new StringReader(textSequence.toString()), phpVersion);
+			AbstractPhpLexer lexer = PhpLexerFactory.createLexer(new StringReader(textSequence.toString()), phpVersion);
 			lexer.initialize(lexer.getScriptingState());
 			String symbol = null;
 			int level = 0;
@@ -33,27 +29,21 @@
 				try {
 					symbol = lexer.getNextToken();
 					if (symbol != null) {
-						CharSequence text = textSequence.subSequence(
-								lexer.getTokenStart(),
+						CharSequence text = textSequence.subSequence(lexer.getTokenStart(),
 								lexer.getTokenStart() + lexer.getLength());
 						if (symbol.equals(PHPRegionTypes.PHP_TOKEN)) {
-							if (text.equals(LPAREN) || text.equals(LBRACE)
-									|| text.equals(LBRACKET)) {
+							if (text.equals(LPAREN) || text.equals(LBRACE) || text.equals(LBRACKET)) {
 								level++;
-							} else
-								if (text.equals(RPAREN) || text.equals(RBRACE)
-										|| text.equals(RBRACKET)) {
+							} else if (text.equals(RPAREN) || text.equals(RBRACE) || text.equals(RBRACKET)) {
 								level--;
 							} else if (level == 0 && text.equals(COMMA)) {
 								argIndex++;
 							}
-						} else if (level == 0 && symbol.equals(
-								PHPRegionTypes.PHP_CONSTANT_ENCAPSED_STRING)) {
+						} else if (level == 0 && symbol.equals(PHPRegionTypes.PHP_CONSTANT_ENCAPSED_STRING)) {
 							if (args.size() < argIndex + 1) {
 								args.add(text.toString());
 							}
-						} else if (level == 0
-								&& !symbol.equals(PHPRegionTypes.WHITESPACE)) {
+						} else if (level == 0 && !symbol.equals(PHPRegionTypes.WHITESPACE)) {
 							if (args.size() < argIndex + 1) {
 								args.add(null);
 							} else {

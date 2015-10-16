@@ -1,13 +1,12 @@
-	private boolean isIndentationBase(int offset, int currLineIndex,
-			boolean checkMultiLine) throws BadLocationException {
+	private boolean isIndentationBase(int offset, int currLineIndex, boolean checkMultiLine)
+			throws BadLocationException {
 		final IRegion lineInfo = document.getLineInformation(currLineIndex);
 
 		if (lineInfo.getLength() == 0) {
 			return false;
 		}
 
-		final int checkedOffset = Math.min(
-				lineInfo.getOffset() + lineInfo.getLength(), offset);
+		final int checkedOffset = Math.min(lineInfo.getOffset() + lineInfo.getLength(), offset);
 
 		int lineStartOffset = lineInfo.getOffset();
 
@@ -15,8 +14,7 @@
 			return false;
 		}
 
-		PHPHeuristicScanner scanner = PHPHeuristicScanner
-				.createHeuristicScanner(document, checkedOffset, true);
+		PHPHeuristicScanner scanner = PHPHeuristicScanner.createHeuristicScanner(document, checkedOffset, true);
 		if (IndentationUtils.inBracelessBlock(scanner, document, checkedOffset)) {
 			return true;
 		}
@@ -30,48 +28,41 @@
 		// tRegion in the previos line
 
 		// checked line beginning offset (after incrementing spaces in beginning
-		final String checkedLineBeginState = FormatterUtils.getPartitionType(
-				document, lineStartOffset, true);
+		final String checkedLineBeginState = FormatterUtils.getPartitionType(document, lineStartOffset, true);
 
 		// checked line end
-		final String checkedLineEndState = FormatterUtils.getPartitionType(
-				document, checkedOffset, true);
+		final String checkedLineEndState = FormatterUtils.getPartitionType(document, checkedOffset, true);
 
 		// the current potential line for formatting begin offset
-		final String forLineEndState = FormatterUtils.getPartitionType(
-				document, offset);
+		final String forLineEndState = FormatterUtils.getPartitionType(document, offset);
 		if (isMultilineAfterBraceless(checkedOffset)) {
 			// braceless block end go up
 			return false;
 		}
 
-		boolean shouldNotConsiderAsIndentationBase = shouldNotConsiderAsIndentationBase(
-				checkedLineBeginState, forLineEndState);
+		boolean shouldNotConsiderAsIndentationBase = shouldNotConsiderAsIndentationBase(checkedLineBeginState,
+				forLineEndState);
 
-		if ((shouldNotConsiderAsIndentationBase || (checkMultiLine
-				&& isInMultiLineStatement(checkedLineBeginState,
-						checkedLineEndState, checkedOffset, lineStartOffset,
-						currLineIndex) && !isMultilineContentInsideBraceless(checkedOffset)))
+		if ((shouldNotConsiderAsIndentationBase
+				|| (checkMultiLine && isInMultiLineStatement(checkedLineBeginState, checkedLineEndState, checkedOffset,
+						lineStartOffset, currLineIndex) && !isMultilineContentInsideBraceless(checkedOffset)))
 				&& !lineContainIncompleteBlock(checkedOffset, lineStartOffset)) {
 			return false;
 		}
 
 		// Fix bug #201688
-		if (((checkedLineBeginState == PHPPartitionTypes.PHP_MULTI_LINE_COMMENT) || (checkedLineBeginState == PHPPartitionTypes.PHP_DOC))
+		if (((checkedLineBeginState == PHPPartitionTypes.PHP_MULTI_LINE_COMMENT)
+				|| (checkedLineBeginState == PHPPartitionTypes.PHP_DOC))
 				&& (checkedLineBeginState == forLineEndState)) {
 			// the whole document
-			final IStructuredDocumentRegion sdRegion = document
-					.getRegionAtCharacterOffset(lineStartOffset);
+			final IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(lineStartOffset);
 			// the whole PHP script
-			ITextRegion phpScriptRegion = sdRegion
-					.getRegionAtCharacterOffset(lineStartOffset);
-			int phpContentStartOffset = sdRegion
-					.getStartOffset(phpScriptRegion);
+			ITextRegion phpScriptRegion = sdRegion.getRegionAtCharacterOffset(lineStartOffset);
+			int phpContentStartOffset = sdRegion.getStartOffset(phpScriptRegion);
 
 			if (phpScriptRegion instanceof ITextRegionContainer) {
 				ITextRegionContainer container = (ITextRegionContainer) phpScriptRegion;
-				phpScriptRegion = container
-						.getRegionAtCharacterOffset(lineStartOffset);
+				phpScriptRegion = container.getRegionAtCharacterOffset(lineStartOffset);
 				phpContentStartOffset += phpScriptRegion.getStart();
 			}
 
@@ -82,8 +73,7 @@
 				ContextRegion checkedRegion = (ContextRegion) scriptRegion
 						.getPhpToken(lineStartOffset - phpContentStartOffset);
 				// the current region we need to format
-				ContextRegion currentRegion = (ContextRegion) scriptRegion
-						.getPhpToken(offset - phpContentStartOffset);
+				ContextRegion currentRegion = (ContextRegion) scriptRegion.getPhpToken(offset - phpContentStartOffset);
 				String checkedType = checkedRegion.getType();
 				String currentType = currentRegion.getType();
 				// if we are in the beginning of a comment (DOC or Multi
@@ -92,14 +82,11 @@
 				// beginning of the previous multi comment
 				if (currentType.equals(PHPRegionTypes.PHPDOC_COMMENT_START)
 						|| currentType.equals(PHPRegionTypes.PHP_COMMENT_START)) {
-					return checkedType
-							.equals(PHPRegionTypes.PHPDOC_COMMENT_START)
-							|| checkedType
-									.equals(PHPRegionTypes.PHP_COMMENT_START);
+					return checkedType.equals(PHPRegionTypes.PHPDOC_COMMENT_START)
+							|| checkedType.equals(PHPRegionTypes.PHP_COMMENT_START);
 				}
 			}
 		}
-		return lineShouldIndent(checkedLineBeginState, checkedLineEndState)
-				|| forLineEndState == checkedLineBeginState;
+		return lineShouldIndent(checkedLineBeginState, checkedLineEndState) || forLineEndState == checkedLineBeginState;
 	}
 

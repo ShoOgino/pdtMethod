@@ -1,21 +1,15 @@
-	private IModelElement[] processPHPCallExpression(
-			PHPCallExpression callExpression, ISourceModule sourceModule,
-			ModuleDeclaration parsedUnit, int offset, IContext context,
-			IModelAccessCache cache) throws ModelException {
-		IDLTKSearchScope scope = SearchEngine.createSearchScope(sourceModule
-				.getScriptProject());
+	private IModelElement[] processPHPCallExpression(PHPCallExpression callExpression, ISourceModule sourceModule,
+			ModuleDeclaration parsedUnit, int offset, IContext context, IModelAccessCache cache) throws ModelException {
+		IDLTKSearchScope scope = SearchEngine.createSearchScope(sourceModule.getScriptProject());
 		if (callExpression.getReceiver() != null) {
-			IEvaluatedType receiverType = PHPTypeInferenceUtils
-					.resolveExpression(sourceModule, parsedUnit, context,
-							callExpression.getReceiver());
+			IEvaluatedType receiverType = PHPTypeInferenceUtils.resolveExpression(sourceModule, parsedUnit, context,
+					callExpression.getReceiver());
 			// (new class1())->avc2()[1][1]->avc1()
 
 			if (receiverType != null) {
 				IModelElement[] elements = null;
-				if ((receiverType instanceof PHPClassType)
-						&& ((PHPClassType) receiverType).isGlobal()) {
-					elements = PhpModelAccess.getDefault().findTypes(
-							receiverType.getTypeName(), MatchRule.EXACT, 0, 0,
+				if ((receiverType instanceof PHPClassType) && ((PHPClassType) receiverType).isGlobal()) {
+					elements = PhpModelAccess.getDefault().findTypes(receiverType.getTypeName(), MatchRule.EXACT, 0, 0,
 							scope, null);
 					LinkedList<IModelElement> result = new LinkedList<IModelElement>();
 					for (IModelElement element : elements) {
@@ -23,9 +17,7 @@
 						while (parent.getParent() instanceof IType) {
 							parent = parent.getParent();
 						}
-						if ((parent instanceof IType)
-								&& PHPFlags.isNamespace(((IType) parent)
-										.getFlags())) {
+						if ((parent instanceof IType) && PHPFlags.isNamespace(((IType) parent).getFlags())) {
 							// Do nothing
 						} else {
 							result.add(element);
@@ -33,8 +25,7 @@
 					}
 					elements = result.toArray(new IType[result.size()]);
 				} else {
-					elements = PHPTypeInferenceUtils.getModelElements(
-							receiverType, (ISourceModuleContext) context,
+					elements = PHPTypeInferenceUtils.getModelElements(receiverType, (ISourceModuleContext) context,
 							offset);
 				}
 				if (elements == null) {
@@ -46,13 +37,9 @@
 					if (element instanceof IType) {
 						IType type = (IType) element;
 						try {
-							ITypeHierarchy hierarchy = cache
-									.getSuperTypeHierarchy(type, null);
-							IMethod[] method = PHPModelUtils
-									.getFirstTypeHierarchyMethod(type,
-											hierarchy,
-											callExpression.getName(), true,
-											null);
+							ITypeHierarchy hierarchy = cache.getSuperTypeHierarchy(type, null);
+							IMethod[] method = PHPModelUtils.getFirstTypeHierarchyMethod(type, hierarchy,
+									callExpression.getName(), true, null);
 							methods.addAll(Arrays.asList(method));
 						} catch (CoreException e) {
 							PHPCorePlugin.log(e);
@@ -63,24 +50,19 @@
 			}
 		} else {
 			SimpleReference callName = callExpression.getCallName();
-			String methodName = callName instanceof FullyQualifiedReference ? ((FullyQualifiedReference) callName)
-					.getFullyQualifiedName() : callName.getName();
-			IMember[] members = PHPModelUtils.getFunctions(methodName,
-					sourceModule, offset, cache, null);
+			String methodName = callName instanceof FullyQualifiedReference
+					? ((FullyQualifiedReference) callName).getFullyQualifiedName() : callName.getName();
+			IMember[] members = PHPModelUtils.getFunctions(methodName, sourceModule, offset, cache, null);
 			if (members == null || members.length == 0) {
-				final IType currentNamespace = PHPModelUtils
-						.getCurrentNamespace(sourceModule,
-								callExpression.sourceStart());
+				final IType currentNamespace = PHPModelUtils.getCurrentNamespace(sourceModule,
+						callExpression.sourceStart());
 
-				Map<String, UsePart> useParts = PHPModelUtils.getAliasToNSMap(
-						methodName, parsedUnit, offset, currentNamespace, true);
+				Map<String, UsePart> useParts = PHPModelUtils.getAliasToNSMap(methodName, parsedUnit, offset,
+						currentNamespace, true);
 				if (useParts.containsKey(methodName)) {
-					String fullName = useParts.get(methodName).getNamespace()
-							.getFullyQualifiedName();
-					fullName = NamespaceReference.NAMESPACE_SEPARATOR
-							+ fullName;
-					members = PHPModelUtils.getFunctions(fullName,
-							sourceModule, offset, null, null);
+					String fullName = useParts.get(methodName).getNamespace().getFullyQualifiedName();
+					fullName = NamespaceReference.NAMESPACE_SEPARATOR + fullName;
+					members = PHPModelUtils.getFunctions(fullName, sourceModule, offset, null, null);
 				}
 			}
 

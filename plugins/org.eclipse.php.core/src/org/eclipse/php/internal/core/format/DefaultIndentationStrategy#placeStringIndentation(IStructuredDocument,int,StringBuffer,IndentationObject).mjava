@@ -1,12 +1,10 @@
-	private static void placeStringIndentation(
-			final IStructuredDocument document, int lineNumber,
-			StringBuffer result, IndentationObject indentationObject) {
+	private static void placeStringIndentation(final IStructuredDocument document, int lineNumber, StringBuffer result,
+			IndentationObject indentationObject) {
 		try {
 
 			IRegion lineInfo = document.getLineInformation(lineNumber);
 			int offset = lineInfo.getOffset() + lineInfo.getLength();
-			final IStructuredDocumentRegion sdRegion = document
-					.getRegionAtCharacterOffset(offset);
+			final IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(offset);
 			ITextRegion token = getLastTokenRegion(document, lineInfo, offset);
 			if (token == null)
 				return;
@@ -15,8 +13,7 @@
 			if (tokenType == PHPRegionTypes.PHP_CURLY_OPEN)
 				return;
 
-			ITextRegion scriptRegion = sdRegion
-					.getRegionAtCharacterOffset(offset);
+			ITextRegion scriptRegion = sdRegion.getRegionAtCharacterOffset(offset);
 			if (scriptRegion == null && offset == document.getLength()) {
 				offset -= 1;
 				scriptRegion = sdRegion.getRegionAtCharacterOffset(offset);
@@ -29,34 +26,25 @@
 				regionStart += scriptRegion.getStart();
 			}
 			if (scriptRegion instanceof IPhpScriptRegion) {
-				if (tokenType == PHPRegionTypes.PHP_TOKEN
-						&& document.getChar(regionStart + token.getStart()) == '.') {
-					token = ((IPhpScriptRegion) scriptRegion).getPhpToken(token
-							.getStart() - 1);
+				if (tokenType == PHPRegionTypes.PHP_TOKEN && document.getChar(regionStart + token.getStart()) == '.') {
+					token = ((IPhpScriptRegion) scriptRegion).getPhpToken(token.getStart() - 1);
 					if (token.getType() == PHPRegionTypes.PHP_CONSTANT_ENCAPSED_STRING) {
 						boolean isToken = true;
 						int currentOffset = regionStart + token.getStart() - 1;
 						while (currentOffset >= lineInfo.getOffset()) {
-							token = ((IPhpScriptRegion) scriptRegion)
-									.getPhpToken(token.getStart() - 1);
+							token = ((IPhpScriptRegion) scriptRegion).getPhpToken(token.getStart() - 1);
 							tokenType = token.getType();
 							if (isToken
-									&& (tokenType == PHPRegionTypes.PHP_TOKEN && document
-											.getChar(regionStart
-													+ token.getStart()) == '.')
-									|| !isToken
-									&& tokenType == PHPRegionTypes.PHP_CONSTANT_ENCAPSED_STRING) {
-								currentOffset = regionStart + token.getStart()
-										- 1;
+									&& (tokenType == PHPRegionTypes.PHP_TOKEN
+											&& document.getChar(regionStart + token.getStart()) == '.')
+									|| !isToken && tokenType == PHPRegionTypes.PHP_CONSTANT_ENCAPSED_STRING) {
+								currentOffset = regionStart + token.getStart() - 1;
 							} else {
 								break;
 							}
 						}
-						indent(document, result,
-								indentationObject
-										.getIndentationWrappedLineSize(),
-								indentationObject.getIndentationChar(),
-								indentationObject.getIndentationSize());
+						indent(document, result, indentationObject.getIndentationWrappedLineSize(),
+								indentationObject.getIndentationChar(), indentationObject.getIndentationSize());
 					}
 				}
 			}

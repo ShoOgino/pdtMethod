@@ -4,8 +4,7 @@
 
 		if (types == null) {
 			TypeContext context = (TypeContext) typedGoal.getContext();
-			types = PHPTypeInferenceUtils.getModelElements(
-					context.getInstanceType(), context);
+			types = PHPTypeInferenceUtils.getModelElements(context.getInstanceType(), context);
 		}
 		if (types == null) {
 			return null;
@@ -17,8 +16,7 @@
 			cache = ((IModelCacheContext) context).getCache();
 		}
 
-		String variableName = PHPEvaluationUtils.removeArrayBrackets(typedGoal
-				.getVariableName());
+		String variableName = PHPEvaluationUtils.removeArrayBrackets(typedGoal.getVariableName());
 
 		final List<IGoal> subGoals = new LinkedList<IGoal>();
 		for (final IType type : types) {
@@ -27,38 +25,28 @@
 				if (cache != null) {
 					hierarchy = cache.getSuperTypeHierarchy(type, null);
 				}
-				IField[] fields = PHPModelUtils.getTypeHierarchyField(type,
-						hierarchy, variableName, true, null);
+				IField[] fields = PHPModelUtils.getTypeHierarchyField(type, hierarchy, variableName, true, null);
 				Map<IType, IType> fieldDeclaringTypeSet = new HashMap<IType, IType>();
 				for (IField field : fields) {
 					IType declaringType = field.getDeclaringType();
 					if (declaringType != null) {
 						fieldDeclaringTypeSet.put(declaringType, type);
-						ISourceModule sourceModule = declaringType
-								.getSourceModule();
-						ModuleDeclaration moduleDeclaration = SourceParserUtil
-								.getModuleDeclaration(sourceModule);
-						TypeDeclaration typeDeclaration = PHPModelUtils
-								.getNodeByClass(moduleDeclaration,
-										declaringType);
+						ISourceModule sourceModule = declaringType.getSourceModule();
+						ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule);
+						TypeDeclaration typeDeclaration = PHPModelUtils.getNodeByClass(moduleDeclaration,
+								declaringType);
 
-						if (typeDeclaration != null
-								&& field instanceof SourceRefElement) {
+						if (typeDeclaration != null && field instanceof SourceRefElement) {
 							ISourceReference sourceRefElement = (ISourceReference) field;
-							ISourceRange sourceRange = sourceRefElement
-									.getSourceRange();
+							ISourceRange sourceRange = sourceRefElement.getSourceRange();
 
-							ClassDeclarationSearcher searcher = new ClassDeclarationSearcher(
-									sourceModule, typeDeclaration,
-									sourceRange.getOffset(),
-									sourceRange.getLength(), null, type,
+							ClassDeclarationSearcher searcher = new ClassDeclarationSearcher(sourceModule,
+									typeDeclaration, sourceRange.getOffset(), sourceRange.getLength(), null, type,
 									declaringType);
 							try {
 								moduleDeclaration.traverse(searcher);
 								if (searcher.getResult() != null) {
-									subGoals.add(new ExpressionTypeGoal(
-											searcher.getContext(), searcher
-													.getResult()));
+									subGoals.add(new ExpressionTypeGoal(searcher.getContext(), searcher.getResult()));
 								}
 							} catch (Exception e) {
 								if (DLTKCore.DEBUG) {
@@ -72,10 +60,8 @@
 				addGoalFromStaticDeclaration(variableName, subGoals, type, null);
 
 				fieldDeclaringTypeSet.remove(type);
-				for (Entry<IType, IType> entry : fieldDeclaringTypeSet
-						.entrySet()) {
-					addGoalFromStaticDeclaration(variableName, subGoals,
-							entry.getKey(), entry.getValue());
+				for (Entry<IType, IType> entry : fieldDeclaringTypeSet.entrySet()) {
+					addGoalFromStaticDeclaration(variableName, subGoals, entry.getKey(), entry.getValue());
 				}
 			} catch (CoreException e) {
 				if (DLTKCore.DEBUG) {

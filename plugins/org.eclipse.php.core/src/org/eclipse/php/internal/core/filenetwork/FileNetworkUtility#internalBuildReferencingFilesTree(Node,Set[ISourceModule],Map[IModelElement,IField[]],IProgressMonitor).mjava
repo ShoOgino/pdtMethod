@@ -1,5 +1,4 @@
-	private static void internalBuildReferencingFilesTree(Node root,
-			Set<ISourceModule> processedFiles,
+	private static void internalBuildReferencingFilesTree(Node root, Set<ISourceModule> processedFiles,
 			Map<IModelElement, IField[]> includesCache, IProgressMonitor monitor) {
 
 		if (monitor != null && monitor.isCanceled()) {
@@ -12,21 +11,19 @@
 			return;
 		}
 
-		IModelElement parentElement = (file instanceof ExternalSourceModule) ? ((ExternalSourceModule) file)
-				.getProjectFragment() : file.getScriptProject();
+		IModelElement parentElement = (file instanceof ExternalSourceModule)
+				? ((ExternalSourceModule) file).getProjectFragment() : file.getScriptProject();
 
 		IField[] includes = includesCache.get(parentElement);
 		if (includes == null) {
-			includes = PhpModelAccess.getDefault().findIncludes(null,
-					MatchRule.PREFIX, scope, monitor);
+			includes = PhpModelAccess.getDefault().findIncludes(null, MatchRule.PREFIX, scope, monitor);
 			includesCache.put(parentElement, includes);
 		}
 
 		for (IField include : includes) {
 			String filePath = ((IncludeField) include).getFilePath();
 			String lastSegment = filePath;
-			int i = Math.max(filePath.lastIndexOf('/'),
-					filePath.lastIndexOf('\\'));
+			int i = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));
 			if (i > 0) {
 				lastSegment = lastSegment.substring(i + 1);
 			}
@@ -42,8 +39,7 @@
 
 			// If this is the correct include (that means that included file is
 			// the original file):
-			if (file.equals(testFile)
-					&& !processedFiles.contains(referencingFile)) {
+			if (file.equals(testFile) && !processedFiles.contains(referencingFile)) {
 				processedFiles.add(referencingFile);
 				Node node = new Node(referencingFile);
 				root.addChild(node);
@@ -53,8 +49,7 @@
 		Collection<Node> children = root.getChildren();
 		if (children != null) {
 			for (Node child : children) {
-				internalBuildReferencingFilesTree(child, processedFiles,
-						includesCache, monitor);
+				internalBuildReferencingFilesTree(child, processedFiles, includesCache, monitor);
 			}
 		}
 	}
