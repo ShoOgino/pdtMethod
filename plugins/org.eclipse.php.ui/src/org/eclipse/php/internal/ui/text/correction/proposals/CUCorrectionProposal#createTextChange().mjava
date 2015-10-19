@@ -13,16 +13,32 @@
 		String name = getName();
 		TextChange change;
 		if (!cu.getResource().exists()) {
-			String source;
-			try {
-				source = cu.getSource();
-			} catch (ModelException e) {
-				PHPUiPlugin.log(e);
-				source = new String(); // empty
+			IDocument doc = null;
+			Enumeration openBuffers = BufferManager.getDefaultBufferManager().getOpenBuffers();
+			while (openBuffers.hasMoreElements()) {
+				Object nextElement = openBuffers.nextElement();
+				if (nextElement instanceof DocumentAdapter) {
+					DocumentAdapter adapt = (DocumentAdapter) nextElement;
+					if (adapt.getOwner().equals(cu)) {
+						doc = adapt.getDocument();
+						break;
+					}
+				}
 			}
-			Document document = new Document(source);
-			document.setInitialLineDelimiter(StubUtility.getLineDelimiterUsed(cu.getScriptProject()));
-			change = new DocumentChange(name, document);
+
+			if (doc == null) {
+				String source;
+				try {
+					source = cu.getSource();
+				} catch (ModelException e) {
+					PHPUiPlugin.log(e);
+					source = new String(); // empty
+				}
+				doc = new Document(source);
+				((Document) doc).setInitialLineDelimiter(StubUtility.getLineDelimiterUsed(cu.getScriptProject()));
+			}
+
+			change = new DocumentChange(name, doc);
 		} else {
 			SourceModuleChange cuChange = new SourceModuleChange(name, cu);
 			cuChange.setSaveMode(TextFileChange.LEAVE_DIRTY);
