@@ -1,0 +1,42 @@
+	private void updateWorkingSets(IWorkingSet[] newWorkingSets, IWorkingSet[] grayedWorkingSets,
+			IAdaptable[] elements) {
+		HashSet<IWorkingSet> selectedSets = new HashSet<IWorkingSet>(Arrays.asList(newWorkingSets));
+		HashSet<IWorkingSet> grayedSets = new HashSet<IWorkingSet>(Arrays.asList(grayedWorkingSets));
+		IWorkingSet[] workingSets = getAllWorkingSets();
+
+		for (int i = 0; i < workingSets.length; i++) {
+			IWorkingSet workingSet = workingSets[i];
+			if (isValidWorkingSet(workingSet) && !selectedSets.contains(workingSet)
+					&& !grayedSets.contains(workingSet)) {
+				for (int j = 0; j < elements.length; j++) {
+					IAdaptable adapted = adapt(workingSet, elements[j]);
+					if (adapted != null && contains(workingSet, adapted)) {
+						remove(workingSet, adapted);
+					}
+				}
+			}
+		}
+
+		for (int i = 0; i < newWorkingSets.length; i++) {
+			IWorkingSet set = newWorkingSets[i];
+			if (isValidWorkingSet(set) && !grayedSets.contains(set)) {
+				boolean checkForYetHiddenWorkingSet = false;
+				for (int j = 0; j < elements.length; j++) {
+					IAdaptable adapted = adapt(set, elements[j]);
+					if (adapted != null && !contains(set, adapted)) {
+						add(set, adapted);
+						checkForYetHiddenWorkingSet = true;
+					}
+				}
+				if (checkForYetHiddenWorkingSet) {
+					IWorkingSet[] activeSets = getActiveWorkingSets();
+					if (activeSets != null) {
+						List<IWorkingSet> activeWorkingSets = new ArrayList<IWorkingSet>(Arrays.asList(activeSets));
+						if (!activeWorkingSets.contains(set))
+							activateWorkingSet(set);
+					}
+				}
+			}
+		}
+	}
+

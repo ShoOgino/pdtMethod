@@ -1,0 +1,67 @@
+		protected void createRightButtonBar(Composite parent) {
+			Composite composite = new Composite(parent, SWT.NONE);
+			composite.setLayoutData(new GridData(GridData.FILL_VERTICAL));
+			GridLayout layout = new GridLayout();
+			layout.marginHeight = 0;
+			layout.marginWidth = 0;
+			composite.setLayout(layout);
+
+			Button selectAll = new Button(composite, SWT.PUSH);
+			selectAll.setText(WorkingSetMessages.ConfigureWorkingSetAssignementAction_SelectAll_button);
+			setButtonLayoutData(selectAll);
+			selectAll.addSelectionListener(new SelectionAdapter() {
+				@Override
+				public void widgetSelected(SelectionEvent e) {
+					fTableViewer.setAllChecked(true);
+
+					fModel.selectAll();
+					fTableViewer.setGrayedElements(new Object[0]);
+					fTableViewer.refresh();
+				}
+			});
+
+			Button deselectAll = new Button(composite, SWT.PUSH);
+			deselectAll.setText(WorkingSetMessages.ConfigureWorkingSetAssignementAction_DeselectAll_button);
+			setButtonLayoutData(deselectAll);
+			deselectAll.addSelectionListener(new SelectionAdapter() {
+				@Override
+				public void widgetSelected(SelectionEvent e) {
+					fTableViewer.setAllChecked(false);
+
+					fModel.deselectAll();
+					fTableViewer.setGrayedElements(new Object[0]);
+					fTableViewer.refresh();
+				}
+			});
+
+			@SuppressWarnings("unused")
+			Label spacer = new Label(composite, SWT.NONE);
+
+			Button newWorkingSet = new Button(composite, SWT.PUSH);
+			newWorkingSet.setText(WorkingSetMessages.ConfigureWorkingSetAssignementAction_New_button);
+			setButtonLayoutData(newWorkingSet);
+			newWorkingSet.addSelectionListener(new SelectionAdapter() {
+				@Override
+				public void widgetSelected(SelectionEvent e) {
+					IWorkingSetManager manager = PlatformUI.getWorkbench().getWorkingSetManager();
+
+					// can only allow to create java working sets at the moment,
+					// see bug 186762
+					IWorkingSetNewWizard wizard = manager.createWorkingSetNewWizard(VALID_WORKING_SET_IDS);
+					if (wizard == null)
+						return;
+
+					WizardDialog dialog = new WizardDialog(getShell(), wizard);
+					dialog.create();
+					if (dialog.open() == Window.OK) {
+						IWorkingSet workingSet = wizard.getSelection();
+						if (isValidWorkingSet(workingSet)) {
+							manager.addWorkingSet(workingSet);
+							addNewWorkingSet(workingSet);
+							fCreatedWorkingSets.add(workingSet);
+						}
+					}
+				}
+			});
+		}
+

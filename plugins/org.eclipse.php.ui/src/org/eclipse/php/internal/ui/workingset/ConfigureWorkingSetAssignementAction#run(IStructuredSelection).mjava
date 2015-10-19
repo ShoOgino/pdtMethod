@@ -1,0 +1,29 @@
+	@Override
+	public void run(IStructuredSelection selection) {
+		IAdaptable[] elements = getSelectedElements(selection);
+		GrayedCheckedModel model = createGrayedCheckedModel(elements, getAllWorkingSets(), null);
+		WorkingSetModelAwareSelectionDialog dialog = new WorkingSetModelAwareSelectionDialog(fSite.getShell(), model,
+				elements);
+
+		if (elements.length == 1) {
+			IAdaptable element = elements[0];
+			String elementName;
+			if (element instanceof IResource) {
+				elementName = BasicElementLabels.getResourceName((IResource) element);
+			} else {
+				elementName = ScriptElementLabels.getDefault().getElementLabel((IModelElement) element,
+						ScriptElementLabels.ALL_DEFAULT);
+			}
+			dialog.setMessage(Messages.format(
+					WorkingSetMessages.ConfigureWorkingSetAssignementAction_DialogMessage_specific, elementName));
+		} else {
+			dialog.setMessage(
+					Messages.format(WorkingSetMessages.ConfigureWorkingSetAssignementAction_DialogMessage_multi,
+							new Integer(elements.length)));
+		}
+		if (dialog.open() == Window.OK) {
+			updateWorkingSets(dialog.getSelection(), dialog.getGrayed(), elements);
+			selectAndReveal(elements);
+		}
+	}
+
