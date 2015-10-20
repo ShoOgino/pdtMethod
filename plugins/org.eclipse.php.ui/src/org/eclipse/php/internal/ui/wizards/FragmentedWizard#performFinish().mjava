@@ -19,6 +19,7 @@
 								FragmentedWizardPage page = getFragmentData(fragment);
 								if (page.getControl() == null && pageContainerHook != null) {
 									page.createControl(pageContainerHook);
+									page.getControl().setVisible(false);
 								}
 								fragment.enter();
 								fragment.exit();
@@ -63,8 +64,10 @@
 						try {
 							WizardFragment fragment = (WizardFragment) iterator.next();
 							if (!executeTask(fragment, FINISH, monitor)) {
-								status = new Status(IStatus.ERROR, PHPUiPlugin.ID,
-										"Error during wizard page execution."); //$NON-NLS-1$
+								FragmentedWizardPage page = getFragmentData(fragment);
+								String message = MessageFormat.format(PHPUIMessages.FragmentedWizard_2,
+										page.getTitle());
+								status = new Status(IStatus.ERROR, PHPUiPlugin.ID, message);
 							}
 						} catch (CoreException e) {
 							PHPUiPlugin.log(e);
@@ -80,6 +83,7 @@
 			else
 				runnable.run(new NullProgressMonitor());
 			if (status.getSeverity() != IStatus.OK) {
+				((WizardDialog) getContainer()).setErrorMessage(status.getMessage());
 				return false;
 			}
 			return true;
