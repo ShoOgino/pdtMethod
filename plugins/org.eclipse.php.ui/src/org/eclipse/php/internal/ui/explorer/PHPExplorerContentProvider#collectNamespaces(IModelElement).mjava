@@ -1,22 +1,23 @@
 	protected List<IType> collectNamespaces(IModelElement create) throws ModelException {
 
 		IDLTKSearchScope scope = SearchEngine.createSearchScope(create, IDLTKSearchScope.SOURCES);
-		IType[] namespaces = PhpModelAccess.getDefault().findNamespaces(null, null, MatchRule.PREFIX, 0, 0, scope,
-				null);
-		Map<String, List<IType>> aggregated = new HashMap<String, List<IType>>();
-		for (IType ns : namespaces) {
-			String elementName = ns.getElementName();
-			List<IType> l = aggregated.get(elementName);
-			if (l == null) {
-				l = new LinkedList<IType>();
-				aggregated.put(elementName, l);
-			}
-			l.add(ns);
-		}
+
+		final Set<String> names = new HashSet<String>();
+		ISearchEngine searchEngine = ModelAccess.getSearchEngine(PHPLanguageToolkit.getDefault());
+		searchEngine.search(IModelElement.PACKAGE_DECLARATION, null, null, 0, 0, 0, SearchFor.DECLARATIONS,
+				MatchRule.PREFIX, scope, new ISearchRequestor() {
+
+					@Override
+					public void match(int elementType, int flags, int offset, int length, int nameOffset,
+							int nameLength, String elementName, String metadata, String doc, String qualifier,
+							String parent, ISourceModule sourceModule, boolean isReference) {
+						names.add(elementName);
+					}
+				}, null);
+
 		List<IType> result = new LinkedList<IType>();
-		for (Entry<String, List<IType>> entry : aggregated.entrySet()) {
-			result.add(new NamespaceNode(create, entry.getKey(),
-					entry.getValue().toArray(new IType[entry.getValue().size()])));
+		for (String entry : names) {
+			result.add(new NamespaceNode(create, entry));
 		}
 
 		return result;

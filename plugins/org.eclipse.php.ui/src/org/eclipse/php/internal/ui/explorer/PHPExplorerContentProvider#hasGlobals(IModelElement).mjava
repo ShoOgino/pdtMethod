@@ -1,0 +1,24 @@
+	private boolean hasGlobals(IModelElement parent) {
+		final boolean[] result = new boolean[1];
+		IDLTKSearchScope scope = SearchEngine.createSearchScope(parent, IDLTKSearchScope.SOURCES);
+		ISearchEngine searchEngine = ModelAccess.getSearchEngine(PHPLanguageToolkit.getDefault());
+		ISearchRequestor requestor = new ISearchRequestor() {
+
+			@Override
+			public void match(int elementType, int flags, int offset, int length, int nameOffset, int nameLength,
+					String elementName, String metadata, String doc, String qualifier, String parent,
+					ISourceModule sourceModule, boolean isReference) {
+				result[0] = true;
+			}
+		};
+		for (int type : SEARCH_IN) {
+			searchEngine.search(type, PHPCoreConstants.GLOBAL_NAMESPACE, null, 0, 0, 1, SearchFor.DECLARATIONS,
+					MatchRule.PREFIX, scope, requestor, null);
+			if (result[0]) {
+				return true;
+			}
+		}
+
+		return result[0];
+	}
+
