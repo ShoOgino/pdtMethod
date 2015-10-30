@@ -95,18 +95,35 @@
 					functionNameEnd, false);
 
 			String functionName = statementText.subSequence(functionNameStart, functionNameEnd).toString().trim();
+			if (isKeyword(functionName)) {
+				functionName = null;
+				functionNameStart = functionNameEnd = PHPTextSequenceUtilities.readForwardSpaces(statementText,
+						functionNameEnd);
+			}
 			// if its a non class function
 			Set<IType> returnTypes = new LinkedHashSet<IType>();
 			if (functionNameStart == functionNameEnd && statementText.charAt(functionNameStart) == '('
 					&& propertyEndPosition - 1 > functionNameStart + 1 && phpVersion.isGreaterThan(PHPVersion.PHP5_3)) {
 				TextSequence newClassStatementText = statementText.subTextSequence(functionNameStart + 1,
 						propertyEndPosition - 1);
+				if (newClassStatementText.length() < 4
+						|| !newClassStatementText.subSequence(0, 3).toString().equals(NEW)) {
+					int innerStart = PHPTextSequenceUtilities.readForwardSpaces(newClassStatementText, 0);
+					if (newClassStatementText.charAt(innerStart) == '('
+							|| phpVersion.isGreaterThan(PHPVersion.PHP5_6)) {
+						return getTypesFor(sourceModule, newClassStatementText, newClassStatementText.length(),
+								newClassStatementText.length(),
+								isClassTriger ? PAAMAYIM_NEKUDOTAIM : OBJECT_FUNCTIONS_TRIGGER);
+					}
+					return EMPTY_TYPES;
+
+				}
 				String newClassName = PHPModelUtils.getClassNameForNewStatement(newClassStatementText, phpVersion);
 				try {
 					return PHPModelUtils.getTypes(newClassName, sourceModule, offset, null, null);
 				} catch (ModelException e) {
 					if (DLTKCore.DEBUG) {
-						e.printStackTrace();
+						Logger.logException(e);
 					}
 				}
 				// String newClassName = statementText
