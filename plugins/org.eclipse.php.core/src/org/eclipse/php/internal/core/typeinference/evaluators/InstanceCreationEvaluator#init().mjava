@@ -1,6 +1,12 @@
 	public IGoal[] init() {
 		ExpressionTypeGoal typedGoal = (ExpressionTypeGoal) goal;
 		ClassInstanceCreation expression = (ClassInstanceCreation) typedGoal.getExpression();
+		if (expression.getAnonymousClassDeclaration() != null
+				&& typedGoal.getContext() instanceof ISourceModuleContext) {
+			result = new AnonymousClassInstanceType(((ISourceModuleContext) typedGoal.getContext()).getSourceModule(),
+					expression.getAnonymousClassDeclaration());
+			return IGoal.NO_GOALS;
+		}
 		Expression className = expression.getClassName();
 		if ((className instanceof TypeReference)) {
 			if (isSelf((TypeReference) className) && (goal.getContext() instanceof MethodContext)) {
