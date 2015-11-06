@@ -1,0 +1,69 @@
+		/**
+		 * script has suspended
+		 * 
+		 * @param parsedResponse
+		 */
+		private void handleBreak() {
+			// Handle the break status response information.
+			// this occurs when:
+			// 1. a break point is hit
+			// 2. a step command ends and we are suspended
+			// 3. a command has failed, you get the status = break, reason=ok,
+			// then you get the error information
+			if (response.getStatus().equals(DBGpResponse.STATUS_BREAK)) {
+				/*
+				 * We have suspended, so now we can go off and handle
+				 * outstanding breakpoint requests
+				 * debugTarget.processDBGpQueuedCmds();
+				 */
+				if (response.getReason().equals(DBGpResponse.REASON_OK)) {
+					// we have hit a breakpoint, or completed a step
+					String cmd = response.getCommand();
+					if (cmd.equals(DBGpCommand.run)) {
+						/*
+						 * OK we hit a break point somewhere, we need to get the
+						 * stack information to find out which breakpoint we hit
+						 * as no info is provided in the response. We cannot use
+						 * the DBGpTarget version here as we do an async call.
+						 * Plus we need to handle the possibility of
+						 * STATUS_STOPPED being returned.
+						 */
+						response = sendSyncCmd(DBGpCommand.stackGet, null);
+						if (response != null) {
+							/*
+							 * We could have received a stop here so we need to
+							 * check for this.
+							 */
+							if (response.getStatus().equals(DBGpResponse.STATUS_STOPPED)) {
+								handleStop();
+							} else {
+								Node stackData = response.getParentNode().getFirstChild();
+								String line = DBGpResponse.getAttribute(stackData, "lineno"); //$NON-NLS-1$
+								int lineno = 0;
+								try {
+									lineno = Integer.parseInt(line);
+									String filename = DBGpUtils
+											.getFilenameFromURIString(DBGpResponse.getAttribute(stackData, "filename")); //$NON-NLS-1$
+									filename = debugTarget.mapToWorkspaceFileIfRequired(filename);
+									debugTarget.breakpointHit(filename, lineno);
+								} catch (NumberFormatException nfe) {
+									DBGpLogger.logException("Unexpected number format exception", //$NON-NLS-1$
+											this, nfe);
+								}
+							}
+						}
+					} else if (cmd.equals(DBGpCommand.stepInto) || cmd.equals(DBGpCommand.StepOut)
+							|| cmd.equals(DBGpCommand.stepOver)) {
+						// Step hit
+						// No need to setup any information ?
+						debugTarget.suspended(DebugEvent.STEP_END);
+					} else {
+						/*
+						 * we got another status response, probably due to
+						 * cannot get property error.
+						 */
+					}
+				}
+			}
+		}
+

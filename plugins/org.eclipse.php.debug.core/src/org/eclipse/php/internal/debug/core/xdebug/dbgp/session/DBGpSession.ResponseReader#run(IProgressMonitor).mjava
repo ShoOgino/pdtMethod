@@ -1,74 +1,69 @@
+		@Override
 		protected IStatus run(IProgressMonitor monitor) {
 			byte[] response = null;
 			while (sessionActive) {
-				// here we need to block waiting for a response
-				// then process that response
-
+				/*
+				 * Here we need to block waiting for a response then process
+				 * that response by related handler.
+				 */
 				try {
 					response = readResponse();
 					if (response != null) {
 						DBGpResponse parsedResponse = new DBGpResponse();
 						parsedResponse.parseResponse(response);
 						int respErrorCode = parsedResponse.getErrorCode();
-
-						// we have a received something back from the debuggee
-						// so first
-						// we try to process a stop or break async response,
-						// even if the
-						// response was invalid.
+						/*
+						 * We have received something back from the debugger so
+						 * first we try to process a stop or break async
+						 * response, even if the response was invalid.
+						 */
 						if (respErrorCode == DBGpResponse.ERROR_OK
 								|| respErrorCode == DBGpResponse.ERROR_INVALID_RESPONSE) {
 							int respType = parsedResponse.getType();
-
 							if (respType == DBGpResponse.RESPONSE) {
 								if (parsedResponse.getStatus().equals(DBGpResponse.STATUS_STOPPED)) {
-									handleStopStatus(parsedResponse);
+									(new ResponseHandler()).perform(ResponseHandlerAction.HANDLE_STOP, parsedResponse);
 								} else if (parsedResponse.getStatus().equals(DBGpResponse.STATUS_BREAK)) {
-									handleBreakStatus(parsedResponse);
+									(new ResponseHandler()).perform(ResponseHandlerAction.HANDLE_BREAK, parsedResponse);
 								} else if (parsedResponse.getStatus().equals(DBGpResponse.STATUS_STOPPING)) {
-									handleStoppingStatus(parsedResponse);
+									(new ResponseHandler()).perform(ResponseHandlerAction.HANDLE_STOPPING,
+											parsedResponse);
 								}
 							} else if (respType == DBGpResponse.STREAM
 									&& respErrorCode != DBGpResponse.ERROR_INVALID_RESPONSE) {
-								handleStreamData(parsedResponse);
+								(new ResponseHandler()).perform(ResponseHandlerAction.HANDLE_STREAM, parsedResponse);
 							} else {
 								DBGpLogger.logWarning("Unknown type of XML: " //$NON-NLS-1$
 										+ response, DBGpSession.this, null);
 							}
 						}
-
-						// unblock any Sync caller who might be waiting
-						// regardless of what we got back
+						/*
+						 * Unblock any Sync caller who might be waiting
+						 * regardless of what we got back.
+						 */
 						unblockSyncCaller(parsedResponse);
 					}
 				} catch (Throwable t) {
 					DBGpLogger.logException("Unexpected exception. Terminating the debug session", //$NON-NLS-1$
 							this, t);
-
-					// send a dummy response back to unblock the target. It will
-					// know that the session has
-					// ended, but the dummy response will allow it to exit its
-					// current method.
-					// TODO: cleanup commented out code: may not be needed
-					// anymore
-					// unblockAllCallers(null);
-					// endSession(); // end the session to exit the response
-					// loop.
 				}
 			}
-
-			// if the socket is closed or the session terminated then we inform
-			// the debug target
+			/*
+			 * If the socket is closed or the session terminated then we inform
+			 * the debug target.
+			 */
 			try {
-				// wait a very brief period to ensure console
-				// displays everything before stating the debug
-				// session has ended.
+				/*
+				 * Wait a very brief period to ensure console displays
+				 * everything before stating the debug session has ended.
+				 */
 				Thread.sleep(50);
 			} catch (InterruptedException e) {
 			}
-			// end the session here as we most likely terminated cleanly. It
-			// doesn't matter if
-			// endSession is called multiple times.
+			/*
+			 * End the session here as we most likely terminated cleanly. It
+			 * doesn't matter if endSession is called multiple times.
+			 */
 			endSession();
 			return Status.OK_STATUS;
 		}
