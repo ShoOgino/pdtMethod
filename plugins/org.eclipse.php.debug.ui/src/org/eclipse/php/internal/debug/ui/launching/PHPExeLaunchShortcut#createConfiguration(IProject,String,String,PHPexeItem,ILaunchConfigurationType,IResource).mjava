@@ -4,22 +4,25 @@
 	 * @param res
 	 */
 	protected static ILaunchConfiguration createConfiguration(IProject phpProject, String phpPathString,
-			String phpFileFullLocation, PHPexeItem defaultEXE, ILaunchConfigurationType configType, IResource res)
+			String phpFileFullLocation, PHPexeItem bestMatchExe, ILaunchConfigurationType configType, IResource res)
 					throws CoreException {
 		ILaunchConfiguration config = null;
 		ILaunchConfigurationWorkingCopy wc = configType.newInstance(null, getNewConfigurationName(phpPathString));
 
 		// Set the delegate class according to selected executable.
-		wc.setAttribute(PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID, defaultEXE.getDebuggerID());
+		wc.setAttribute(PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID, bestMatchExe.getDebuggerID());
 		IDebuggerConfiguration debuggerConfiguration = PHPDebuggersRegistry
-				.getDebuggerConfiguration(defaultEXE.getDebuggerID());
+				.getDebuggerConfiguration(bestMatchExe.getDebuggerID());
 		wc.setAttribute(PHPDebugCorePreferenceNames.CONFIGURATION_DELEGATE_CLASS,
 				debuggerConfiguration.getScriptLaunchDelegateClass());
 		wc.setAttribute(IPHPDebugConstants.ATTR_FILE, phpPathString);
 		wc.setAttribute(IPHPDebugConstants.ATTR_FILE_FULL_PATH, phpFileFullLocation);
 		wc.setAttribute(IPHPDebugConstants.ATTR_EXECUTABLE_LOCATION,
-				defaultEXE.getExecutable().getAbsolutePath().toString());
-		String iniPath = defaultEXE.getINILocation() != null ? defaultEXE.getINILocation().toString() : null;
+				bestMatchExe.getExecutable().getAbsolutePath().toString());
+		if (!bestMatchExe.isDefault()) {
+			wc.setAttribute(PHPRuntime.PHP_CONTAINER, PHPRuntime.newPHPContainerPath(bestMatchExe).toPortableString());
+		}
+		String iniPath = bestMatchExe.getINILocation() != null ? bestMatchExe.getINILocation().toString() : null;
 		wc.setAttribute(IPHPDebugConstants.ATTR_INI_LOCATION, iniPath);
 		wc.setAttribute(IPHPDebugConstants.RUN_WITH_DEBUG_INFO, PHPDebugPlugin.getDebugInfoOption());
 		wc.setAttribute(IDebugParametersKeys.FIRST_LINE_BREAKPOINT,
