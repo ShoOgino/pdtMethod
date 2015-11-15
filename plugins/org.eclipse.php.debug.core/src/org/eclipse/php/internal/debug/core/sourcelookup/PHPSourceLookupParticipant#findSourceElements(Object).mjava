@@ -1,53 +1,60 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.eclipse.debug.core.sourcelookup.AbstractSourceLookupParticipant#
+	 * findSourceElements(java.lang.Object)
+	 */
 	public Object[] findSourceElements(Object object) throws CoreException {
 		Object[] sourceElements = EMPTY;
 		try {
 			sourceElements = super.findSourceElements(object);
-		} catch (Throwable e) {
+		} catch (CoreException e) {
 			// Check if the lookup failed because the source is outside the
 			// workspace.
 		}
-
 		if (sourceElements == EMPTY) {
 			// If the lookup returned an empty elements array, check if the
 			// source is outside the workspace.
-			String fileName = null;
+			String sourceFilePath = null;
 			if (object instanceof PHPStackFrame) {
-				fileName = ((PHPStackFrame) object).getSourceName();
+				sourceFilePath = ((PHPStackFrame) object).getSourceName();
 			} else if (object instanceof DBGpStackFrame) {
-				fileName = ((DBGpStackFrame) object).getQualifiedFile();
+				sourceFilePath = ((DBGpStackFrame) object).getQualifiedFile();
 			}
-
-			if (fileName != null) {
-				HandleFactory fac = new HandleFactory();
+			if (sourceFilePath != null) {
+				// Check if we have it in DLTK model
+				HandleFactory handleFactory = new HandleFactory();
 				IDLTKSearchScope scope = SearchEngine.createWorkspaceScope(PHPLanguageToolkit.getDefault());
-				IPath localPath = EnvironmentPathUtils.getFile(LocalEnvironment.getInstance(), new Path(fileName))
+				IPath localPath = EnvironmentPathUtils.getFile(LocalEnvironment.getInstance(), new Path(sourceFilePath))
 						.getFullPath();
-				Openable openable = fac.createOpenable(localPath.toString(), scope);
+				Openable openable = handleFactory.createOpenable(localPath.toString(), scope);
 				if (openable instanceof IStorage) {
 					return new Object[] { openable };
 				}
-
-				File file = new File(fileName);
+				// Check if we have corresponding "linked chain subject" file
+				Object linkedFile = LinkSubjectFileFinder.find(sourceFilePath);
+				if (linkedFile != null) {
+					return new Object[] { linkedFile };
+				}
+				// Check if it is local non-workspace file
+				File file = new File(sourceFilePath);
 				if (file.exists()) {
 					return new Object[] { new LocalFile(file) };
 				}
-
-				// try a phar
-				final PharPath pharPath = PharPath.getPharPath(new Path(fileName));
-				if (pharPath != null && !pharPath.getFile().isEmpty()) {
-
+				// Check if it is not a file from PHAR
+				final PharPath pharPath = PharPath.getPharPath(new Path(sourceFilePath));
+				if (pharPath != null) {
 					try {
 						final PharArchiveFile archiveFile = new PharArchiveFile(pharPath.getPharName());
 						final IArchiveEntry entry = archiveFile.getArchiveEntry((pharPath.getFolder().length() == 0 ? "" //$NON-NLS-1$
 								: pharPath.getFolder() + "/") //$NON-NLS-1$
 								+ pharPath.getFile());
-						return new Object[] { new ExternalEntryFile(fileName, archiveFile, entry) };
+						return new Object[] { new ExternalEntryFile(sourceFilePath, archiveFile, entry) };
 					} catch (Exception e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+						PHPDebugPlugin.log(e);
 					}
 				}
-
+				// Nothing from above
 				return EMPTY;
 			}
 		}

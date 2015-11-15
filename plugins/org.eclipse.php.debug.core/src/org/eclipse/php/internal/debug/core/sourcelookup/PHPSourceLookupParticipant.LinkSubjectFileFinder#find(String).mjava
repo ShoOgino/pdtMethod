@@ -1,0 +1,48 @@
+		public static Object find(final String sourceLocation) {
+			final LinkedList<IResource> matches = new LinkedList<IResource>();
+			final java.nio.file.Path sourceLocationPath = FileSystems.getDefault().getPath(sourceLocation);
+			final String sourceFileName = (new Path(sourceLocation)).lastSegment();
+			try {
+				ResourcesPlugin.getWorkspace().getRoot().accept(new IResourceVisitor() {
+					@Override
+					public boolean visit(IResource resource) throws CoreException {
+						try {
+							// Retreat if we already have a match
+							if (!matches.isEmpty()) {
+								return false;
+							}
+							// We are looking for files only
+							if (resource.getType() != IResource.FILE) {
+								return true;
+							}
+							/*
+							 * The goal of this pre-check condition is to reduce
+							 * the amount of files to be checked by NIO
+							 * (comparing with NIO can be time consuming).
+							 */
+							if (resource.getName().equals(sourceFileName) || resource.isLinked()
+									|| (resource.getResourceAttributes() != null
+											&& resource.getResourceAttributes().isSymbolicLink())) {
+								/*
+								 * Use NIO libraries to handle comparison of
+								 * files that might contains symbolic links in
+								 * their paths.
+								 */
+								String fileLocation = resource.getLocation().toOSString();
+								java.nio.file.Path currentFilePath = FileSystems.getDefault().getPath(fileLocation); // $NON-NLS-1$
+								if (Files.isSameFile(sourceLocationPath, currentFilePath)) {
+									matches.add(resource);
+								}
+							}
+						} catch (IOException e) {
+							PHPDebugPlugin.log(e);
+						}
+						return true;
+					}
+				});
+			} catch (CoreException e) {
+				PHPDebugPlugin.log(e);
+			}
+			return !matches.isEmpty() ? matches.getFirst() : null;
+		}
+
