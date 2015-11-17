@@ -1,0 +1,38 @@
+	/**
+	 * Since Eclipse Neon org.eclipse.ui.internal.util.Util.getAdapter is
+	 * removed. This is exact copy of this method.
+	 * 
+	 * @param sourceObject
+	 * @param adapterType
+	 * @return
+	 */
+	public <T> T getAdapter(Object sourceObject, Class<T> adapterType) {
+		Assert.isNotNull(adapterType);
+		if (sourceObject == null) {
+			return null;
+		}
+		if (adapterType.isInstance(sourceObject)) {
+			return adapterType.cast(sourceObject);
+		}
+
+		if (sourceObject instanceof IAdaptable) {
+			IAdaptable adaptable = (IAdaptable) sourceObject;
+
+			T result = adaptable.getAdapter(adapterType);
+			if (result != null) {
+				// Sanity-check
+				Assert.isTrue(adapterType.isInstance(result));
+				return result;
+			}
+		}
+
+		if (!(sourceObject instanceof PlatformObject)) {
+			T result = Platform.getAdapterManager().getAdapter(sourceObject, adapterType);
+			if (result != null) {
+				return result;
+			}
+		}
+
+		return null;
+	}
+
