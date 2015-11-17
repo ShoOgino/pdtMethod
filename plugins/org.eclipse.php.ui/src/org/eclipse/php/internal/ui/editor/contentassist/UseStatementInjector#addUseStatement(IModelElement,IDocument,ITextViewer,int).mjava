@@ -70,16 +70,16 @@
 						.newUseStatement(Arrays.asList(new UseStatementPart[] { newUseStatementPart }), type);
 
 				NamespaceDeclaration currentNamespace = getCurrentNamespace(program, sourceModule, offset - 1);
+				List<Statement> statements = program.statements();
 				if (currentNamespace != null) {
-					List<Statement> statements = currentNamespace.getBody().statements();
-					// insert in the beginning of the current
-					// namespace:
-					addUseStatement(offset, newUseStatement, statements, document);
-				} else {
-					addUseStatement(offset, newUseStatement, program.statements(), document);
+					// insert in the beginning of the current namespace:
+					statements = currentNamespace.getBody().statements();
 				}
 
+				int index = getLastUsestatementIndex(statements, offset);
+				addUseStatement(index, newUseStatement, statements, document);
 				ast.setInsertUseStatement(true);
+
 				TextEdit edits = program.rewrite(document, createOptions(modelElement));
 				// workaround for bug 400976:
 				// when current offset is in a php section that only contains
@@ -93,8 +93,11 @@
 				// edits having all their offset = 0 (and their length = 0)
 				// should be enough to detect use statements that will be
 				// wrongly inserted outside any existing php section...
+
 				if (new Region(0, 0).equals(edits.getRegion())) {
 					String lineDelim = TextUtilities.getDefaultLineDelimiter(document);
+					// String lineDelim =
+					// TextUtilities.getDefaultLineDelimiter(document);
 					MultiTextEdit newEdits = new MultiTextEdit();
 					newEdits.addChild(new InsertEdit(0, "<?php"));
 					newEdits.addChild(new InsertEdit(0, lineDelim));
@@ -105,6 +108,9 @@
 					newEdits.addChild(new InsertEdit(0, "?>"));
 					newEdits.addChild(new InsertEdit(0, lineDelim));
 					edits = newEdits;
+				} else if (index == 0 && edits.getChildrenSize() == 2) {
+					// workaround for bug 435134
+					addBlankLineEdit(edits, document);
 				}
 				edits.apply(document);
 				ast.setInsertUseStatement(false);
