@@ -1,0 +1,33 @@
+	private void fetchExceptionTypes() {
+		if (fExceptionTypesCache == null) {
+			fExceptionTypesCache = new TreeSet<IType>(new Comparator<IType>() {
+				public int compare(IType o1, IType o2) {
+					if (o1 instanceof ErrorType && !(o2 instanceof ErrorType))
+						return -1;
+					return o1.getElementName().toLowerCase().compareTo(o2.getElementName().toLowerCase());
+				}
+			});
+			final PhpModelAccess modelAccess = PhpModelAccess.getDefault();
+			final IDLTKSearchScope scope = SearchEngine.createWorkspaceScope(PHPLanguageToolkit.getDefault());
+			// Make sure that scope is up-to-date
+			scope.enclosingProjectsAndZips();
+			IType[] exceptionBaseTypes = modelAccess.findTypes(EXCEPTION_BASE_CLASS_NAME, MatchRule.EXACT, 0, 0, scope,
+					null);
+			for (IType exceptionBaseType : exceptionBaseTypes) {
+				try {
+					fExceptionTypesCache.add(exceptionBaseType);
+					ITypeHierarchy hierarchy = exceptionBaseType.newTypeHierarchy(new NullProgressMonitor());
+					IType[] subtypes = hierarchy.getAllSubtypes(exceptionBaseType);
+					for (IType subType : subtypes) {
+						fExceptionTypesCache.add(subType);
+					}
+				} catch (ModelException e) {
+					Logger.logException(e);
+				}
+			}
+			for (IType mockType : ERROR_TYPES) {
+				fExceptionTypesCache.add(mockType);
+			}
+		}
+	}
+

@@ -1,0 +1,58 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.eclipse.jface.dialogs.Dialog#createDialogArea(org.eclipse.swt.widgets
+	 * .Composite)
+	 */
+	@Override
+	protected Control createDialogArea(Composite parent) {
+		readSettings();
+		Composite area = (Composite) super.createDialogArea(parent);
+		Label filterLabel = new Label(area, SWT.NONE);
+		filterLabel.setText(Messages.AddPHPExceptionBreakpointDialog_Choose_an_exception_filter_message);
+		fExceptionFilter = new Text(area, SWT.BORDER);
+		GridData gridData = new GridData(GridData.FILL_HORIZONTAL);
+		fExceptionFilter.setLayoutData(gridData);
+		fExceptionFilter.addModifyListener(new ModifyListener() {
+			@Override
+			public void modifyText(ModifyEvent e) {
+				filterExceptionTypes(fExceptionFilter.getText());
+			}
+		});
+		fExceptionFilter.addKeyListener(new KeyAdapter() {
+			public void keyPressed(KeyEvent e) {
+				if (e.keyCode == SWT.ARROW_DOWN) {
+					fExceptionViewer.getTable().setFocus();
+				}
+			}
+		});
+		Label itemsLabel = new Label(area, SWT.NONE);
+		itemsLabel.setText(Messages.AddPHPExceptionBreakpointDialog_Matching_items);
+		fExceptionViewer = new TableViewer(area, SWT.BORDER | SWT.MULTI);
+		gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
+		PixelConverter converter = new PixelConverter(fExceptionViewer.getTable());
+		gridData.widthHint = converter.convertWidthInCharsToPixels(60);
+		gridData.heightHint = SWTUtil.getTableHeightHint(fExceptionViewer.getTable(), 10);
+		fExceptionViewer.getTable().setLayoutData(gridData);
+		fExceptionViewer.getTable().setFont(parent.getFont());
+		fExceptionViewer.getTable().addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseDoubleClick(MouseEvent e) {
+				okPressed();
+			}
+		});
+		fExceptionViewer.setContentProvider(new ArrayContentProvider());
+		fExceptionViewer.setLabelProvider(new LabelProvider());
+		Collection<IType> input = fExceptionTypesCache;
+		fExceptionViewer.setInput(fExceptionTypesCache);
+		if (!input.isEmpty()) {
+			fExceptionViewer.setSelection(new StructuredSelection(input.iterator().next()));
+		}
+		CLabel noteIcon = new CLabel(area, SWT.NONE);
+		noteIcon.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1));
+		noteIcon.setImage(Dialog.getImage(Dialog.DLG_IMG_MESSAGE_INFO));
+		noteIcon.setText(Messages.AddPHPExceptionBreakpointDialog_Note);
+		return area;
+	}
+

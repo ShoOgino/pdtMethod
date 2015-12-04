@@ -5,11 +5,15 @@
 	 * @param event
 	 *            debug event
 	 */
-	public void breakpointHit(String filename, int lineno) {
+	public void breakpointHit(String filename, int lineno, String exception) {
 		// useful method to be called by the response listener when a
 		// break point has occurred
-		IBreakpoint breakpoint = findBreakpointHit(filename, lineno);
+		IBreakpoint breakpoint = findBreakpointHit(filename, lineno, exception);
 		if (breakpoint != null) {
+			if (breakpoint instanceof IPHPExceptionBreakpoint) {
+				IPHPExceptionBreakpoint exceptionBreakpoint = (IPHPExceptionBreakpoint) breakpoint;
+				exceptionBreakpoint.setLine(this, lineno);
+			}
 			langThread.setBreakpoints(new IBreakpoint[] { breakpoint });
 		} else {
 			// set it to an empty set as specified by the API.

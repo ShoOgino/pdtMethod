@@ -1,0 +1,26 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.eclipse.debug.ui.IDebugEditorPresentation#addAnnotations(org.eclipse.
+	 * ui.IEditorPart, org.eclipse.debug.core.model.IStackFrame)
+	 */
+	@Override
+	public boolean addAnnotations(IEditorPart editorPart, IStackFrame frame) {
+		IBreakpoint[] breakpoints = frame.getThread().getBreakpoints();
+		for (IBreakpoint breakpoint : breakpoints) {
+			if (breakpoint instanceof IPHPExceptionBreakpoint) {
+				IPHPExceptionBreakpoint exceptionBreakpoint = (IPHPExceptionBreakpoint) breakpoint;
+				try {
+					if (frame.getLineNumber() == exceptionBreakpoint.getLine(frame.getDebugTarget())) {
+						addExceptionAnnotation(editorPart, frame, exceptionBreakpoint);
+						return true;
+					}
+				} catch (DebugException e) {
+					Logger.logException(e);
+				}
+			}
+		}
+		return false;
+	}
+

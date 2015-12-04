@@ -1,0 +1,21 @@
+	protected void addBreakpoints(Object[] exceptions) {
+		for (Object exception : exceptions) {
+			IType type = (IType) exception;
+			String exceptionName = type.getElementName();
+			if (hasBreakpoint(exceptionName)) {
+				continue;
+			}
+			Breakpoint exceptionBreakpoint;
+			if (type instanceof ErrorType) {
+				exceptionBreakpoint = new PHPExceptionBreakpoint(exceptionName, Type.ERROR);
+			} else {
+				exceptionBreakpoint = new PHPExceptionBreakpoint(exceptionName, Type.EXCEPTION);
+			}
+			try {
+				DebugPlugin.getDefault().getBreakpointManager().addBreakpoint(exceptionBreakpoint);
+			} catch (CoreException e) {
+				Logger.logException(e);
+			}
+		}
+	}
+

@@ -1,0 +1,50 @@
+	private void addExceptionAnnotation(IEditorPart editorPart, IStackFrame frame, IPHPExceptionBreakpoint breakpoint) {
+		ITextEditor textEditor = editorPart.getAdapter(ITextEditor.class);
+		IDocumentProvider docProvider = textEditor.getDocumentProvider();
+		IEditorInput editorInput = textEditor.getEditorInput();
+		// If there is no annotation model, there's nothing more to do
+		IAnnotationModel annModel = docProvider.getAnnotationModel(editorInput);
+		if (annModel == null) {
+			return;
+		}
+		Position position = null;
+		int charStart = -1;
+		int length = -1;
+		try {
+			charStart = frame.getCharStart();
+			length = frame.getCharEnd() - charStart;
+		} catch (DebugException de) {
+		}
+		if (charStart < 0) {
+			IDocument doc = docProvider.getDocument(editorInput);
+			if (doc == null) {
+				return;
+			}
+			try {
+				int lineNumber = frame.getLineNumber() - 1;
+				IRegion region = doc.getLineInformation(lineNumber);
+				charStart = region.getOffset();
+				length = region.getLength();
+			} catch (BadLocationException ble) {
+				return;
+			} catch (DebugException de) {
+				return;
+			}
+		}
+		if (charStart < 0) {
+			return;
+		}
+		position = new Position(charStart, length);
+		if (frame.isTerminated()) {
+			return;
+		}
+		Annotation annotation = fExceptionAnnotations.remove(frame.getThread());
+		if (annotation != null) {
+			annModel.removeAnnotation(annotation);
+		}
+		// Add/replace exception breakpoint annotation
+		annotation = new PHPExceptionBreakpointAnnotation(breakpoint);
+		fExceptionAnnotations.put(frame.getThread(), annotation);
+		annModel.addAnnotation(annotation, position);
+	}
+
