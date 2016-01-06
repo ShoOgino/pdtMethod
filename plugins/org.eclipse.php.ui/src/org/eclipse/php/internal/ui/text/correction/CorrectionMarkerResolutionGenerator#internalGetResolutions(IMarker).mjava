@@ -1,0 +1,32 @@
+	@SuppressWarnings("unchecked")
+	private static IMarkerResolution[] internalGetResolutions(IMarker marker) {
+		if (!internalHasResolutions(marker)) {
+			return NO_RESOLUTIONS;
+		}
+
+		ISourceModule cu = getSourceModule(marker);
+		if (cu != null) {
+			IEditorInput input = EditorUtility.getEditorInput(cu);
+			if (input != null) {
+				IProblemLocation location = findProblemLocation(input, marker);
+				if (location != null) {
+
+					IInvocationContext context = new AssistContext(cu, location.getOffset(), location.getLength());
+
+					ArrayList<IScriptCompletionProposal> proposals = new ArrayList<IScriptCompletionProposal>();
+					PHPCorrectionProcessor.collectCorrections(context, new IProblemLocation[] { location }, proposals);
+					Collections.sort(proposals, new CompletionProposalComparator());
+
+					int nProposals = proposals.size();
+					IMarkerResolution[] resolutions = new IMarkerResolution[nProposals];
+					for (int i = 0; i < nProposals; i++) {
+						resolutions[i] = new CorrectionMarkerResolution(context.getCompilationUnit(),
+								location.getOffset(), location.getLength(), proposals.get(i), marker);
+					}
+					return resolutions;
+				}
+			}
+		}
+		return NO_RESOLUTIONS;
+	}
+

@@ -1,0 +1,24 @@
+	private static IProblemLocation findProblemLocation(IEditorInput input, IMarker marker) {
+		IAnnotationModel model = DLTKUIPlugin.getDocumentProvider().getAnnotationModel(input);
+		if (model != null) { // open in editor
+			@SuppressWarnings("unchecked")
+			Iterator<Annotation> iter = model.getAnnotationIterator();
+			while (iter.hasNext()) {
+				Annotation curr = iter.next();
+				if (curr instanceof ScriptMarkerAnnotation) {
+					ScriptMarkerAnnotation annot = (ScriptMarkerAnnotation) curr;
+					if (marker.equals(annot.getMarker())) {
+						Position pos = model.getPosition(annot);
+						if (pos != null) {
+							return new ProblemLocation(pos.getOffset(), pos.getLength(), annot);
+						}
+					}
+				}
+			}
+		} else { // not open in editor
+			ISourceModule cu = getSourceModule(marker);
+			return createFromMarker(marker, cu);
+		}
+		return null;
+	}
+
