@@ -1,5 +1,14 @@
 	public Object[] findSourceElements(String name) throws CoreException {
+		// Might be a workspace relative location
 		IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(name);
+		// Might be an absolute location in file system
+		if (resource == null && Path.EMPTY.isValidPath(name)) {
+			IResource[] matches = ResourcesPlugin.getWorkspace().getRoot()
+					.findFilesForLocationURI(URIUtil.toURI((new Path(name)).makeAbsolute()));
+			if (matches.length > 0) {
+				resource = matches[0];
+			}
+		}
 		if (resource != null) {
 			return new Object[] { resource };
 		}
