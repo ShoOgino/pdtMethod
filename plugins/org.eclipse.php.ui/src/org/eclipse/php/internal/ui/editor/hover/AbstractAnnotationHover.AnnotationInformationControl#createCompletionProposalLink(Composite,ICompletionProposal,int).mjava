@@ -1,0 +1,56 @@
+		private Link createCompletionProposalLink(Composite parent, final ICompletionProposal proposal, int count) {
+			final boolean isMultiFix = count > 1;
+			if (isMultiFix) {
+				new Label(parent, SWT.NONE); // spacer to fill image cell
+				parent = new Composite(parent, SWT.NONE); // indented composite
+															// for multi-fix
+				GridLayout layout = new GridLayout(2, false);
+				layout.marginWidth = 0;
+				layout.marginHeight = 0;
+				parent.setLayout(layout);
+			}
+
+			Label proposalImage = new Label(parent, SWT.NONE);
+			proposalImage.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
+			Image image = isMultiFix ? DLTKPluginImages.get(PHPPluginImages.IMG_CORRECTION_MULTI_FIX)
+					: proposal.getImage();
+			if (image != null) {
+				proposalImage.setImage(image);
+
+				proposalImage.addMouseListener(new MouseListener() {
+
+					public void mouseDoubleClick(MouseEvent e) {
+					}
+
+					public void mouseDown(MouseEvent e) {
+					}
+
+					public void mouseUp(MouseEvent e) {
+						if (e.button == 1) {
+							apply(proposal, fInput.viewer, fInput.position.offset, isMultiFix);
+						}
+					}
+
+				});
+			}
+
+			Link proposalLink = new Link(parent, SWT.NONE);
+			GridData layoutData = new GridData(SWT.FILL, SWT.CENTER, true, false);
+			String linkText;
+			if (isMultiFix) {
+				linkText = MessageFormat.format(PHPHoverMessages.AbstractAnnotationHover_multifix_variable_description,
+						new Integer(count));
+			} else {
+				linkText = proposal.getDisplayString();
+			}
+			proposalLink.setText("<a>" + linkText + "</a>"); //$NON-NLS-1$ //$NON-NLS-2$
+			proposalLink.setLayoutData(layoutData);
+			proposalLink.addSelectionListener(new SelectionAdapter() {
+				@Override
+				public void widgetSelected(SelectionEvent e) {
+					apply(proposal, fInput.viewer, fInput.position.offset, isMultiFix);
+				}
+			});
+			return proposalLink;
+		}
+

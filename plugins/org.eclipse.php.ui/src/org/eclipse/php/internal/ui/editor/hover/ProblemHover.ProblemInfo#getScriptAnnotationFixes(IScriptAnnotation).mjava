@@ -1,0 +1,22 @@
+		@SuppressWarnings("unchecked")
+		private ICompletionProposal[] getScriptAnnotationFixes(IScriptAnnotation scriptAnnotation) {
+			ProblemLocation location = new ProblemLocation(position.getOffset(), position.getLength(),
+					scriptAnnotation);
+			ISourceModule cu = scriptAnnotation.getSourceModule();
+			if (cu == null)
+				return NO_PROPOSALS;
+
+			ISourceViewer sourceViewer = null;
+			if (viewer instanceof ISourceViewer)
+				sourceViewer = (ISourceViewer) viewer;
+
+			IInvocationContext context = new AssistContext(cu, sourceViewer, location.getOffset(), location.getLength(),
+					SharedASTProvider.WAIT_ACTIVE_ONLY);
+
+			ArrayList<IScriptCompletionProposal> proposals = new ArrayList<IScriptCompletionProposal>();
+			PHPCorrectionProcessor.collectCorrections(context, new IProblemLocation[] { location }, proposals);
+			Collections.sort(proposals, new CompletionProposalComparator());
+
+			return proposals.toArray(new ICompletionProposal[proposals.size()]);
+		}
+

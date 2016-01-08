@@ -1,0 +1,90 @@
+		private void createCompletionProposalsList(Composite parent, ICompletionProposal[] proposals) {
+			final ScrolledComposite scrolledComposite = new ScrolledComposite(parent, SWT.V_SCROLL | SWT.H_SCROLL);
+			GridData gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
+			scrolledComposite.setLayoutData(gridData);
+			scrolledComposite.setExpandVertical(false);
+			scrolledComposite.setExpandHorizontal(false);
+
+			Composite composite = new Composite(scrolledComposite, SWT.NONE);
+			composite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+			GridLayout layout = new GridLayout(2, false);
+			layout.marginLeft = 5;
+			layout.verticalSpacing = 2;
+			composite.setLayout(layout);
+
+			List<Link> list = new ArrayList<Link>();
+			for (int i = 0; i < proposals.length; i++) {
+				// Original link for single fix, hence pass 1 for count
+				list.add(createCompletionProposalLink(composite, proposals[i], 1));
+			}
+			final Link[] links = list.toArray(new Link[list.size()]);
+
+			scrolledComposite.setContent(composite);
+			setColorAndFont(scrolledComposite, parent.getForeground(), parent.getBackground(),
+					JFaceResources.getDialogFont());
+
+			Point contentSize = composite.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+			composite.setSize(contentSize);
+
+			Point constraints = getSizeConstraints();
+			if (constraints != null && contentSize.x < constraints.x) {
+				ScrollBar horizontalBar = scrolledComposite.getHorizontalBar();
+
+				int scrollBarHeight;
+				if (horizontalBar == null) {
+					Point scrollSize = scrolledComposite.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+					scrollBarHeight = scrollSize.y - contentSize.y;
+				} else {
+					scrollBarHeight = horizontalBar.getSize().y;
+				}
+				gridData.heightHint = contentSize.y - scrollBarHeight;
+			}
+
+			fFocusControl = links[0];
+			for (int i = 0; i < links.length; i++) {
+				final int index = i;
+				final Link link = links[index];
+				link.addKeyListener(new KeyListener() {
+					public void keyPressed(KeyEvent e) {
+						switch (e.keyCode) {
+						case SWT.ARROW_DOWN:
+							if (index + 1 < links.length) {
+								links[index + 1].setFocus();
+							}
+							break;
+						case SWT.ARROW_UP:
+							if (index > 0) {
+								links[index - 1].setFocus();
+							}
+							break;
+						default:
+							break;
+						}
+					}
+
+					public void keyReleased(KeyEvent e) {
+					}
+				});
+
+				link.addFocusListener(new FocusListener() {
+					public void focusGained(FocusEvent e) {
+						int currentPosition = scrolledComposite.getOrigin().y;
+						int hight = scrolledComposite.getSize().y;
+						int linkPosition = link.getLocation().y;
+
+						if (linkPosition < currentPosition) {
+							if (linkPosition < 10)
+								linkPosition = 0;
+
+							scrolledComposite.setOrigin(0, linkPosition);
+						} else if (linkPosition + 20 > currentPosition + hight) {
+							scrolledComposite.setOrigin(0, linkPosition - hight + link.getSize().y);
+						}
+					}
+
+					public void focusLost(FocusEvent e) {
+					}
+				});
+			}
+		}
+

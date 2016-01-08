@@ -1,0 +1,31 @@
+		private ICompletionProposal[] getMarkerAnnotationFixes(MarkerAnnotation markerAnnotation) {
+			if (markerAnnotation.isQuickFixableStateSet() && !markerAnnotation.isQuickFixable())
+				return NO_PROPOSALS;
+
+			IMarker marker = markerAnnotation.getMarker();
+
+			ISourceModule cu = getSourceModule(marker);
+			if (cu == null)
+				return NO_PROPOSALS;
+
+			IEditorInput input = EditorUtility.getEditorInput(cu);
+			if (input == null)
+				return NO_PROPOSALS;
+
+			IAnnotationModel model = DLTKUIPlugin.getDocumentProvider().getAnnotationModel(input);
+			if (model == null)
+				return NO_PROPOSALS;
+
+			ISourceViewer sourceViewer = null;
+			if (viewer instanceof ISourceViewer)
+				sourceViewer = (ISourceViewer) viewer;
+
+			AssistContext context = new AssistContext(cu, sourceViewer, position.getOffset(), position.getLength());
+
+			ArrayList<IScriptCompletionProposal> proposals = new ArrayList<IScriptCompletionProposal>();
+			PHPCorrectionProcessor.collectProposals(context, model, new Annotation[] { markerAnnotation }, true, false,
+					proposals);
+
+			return proposals.toArray(new ICompletionProposal[proposals.size()]);
+		}
+

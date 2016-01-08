@@ -1,0 +1,27 @@
+	protected IAnnotationModel getAnnotationModel(IPath path) {
+		if (path == null)
+			return null;
+
+		ITextFileBufferManager manager = FileBuffers.getTextFileBufferManager();
+		try {
+			manager.connect(path, LocationKind.NORMALIZE, null);
+		} catch (CoreException ex) {
+			DLTKUIPlugin.log(ex.getStatus());
+			return null;
+		}
+
+		IAnnotationModel model = null;
+		try {
+			model = manager.getTextFileBuffer(path, LocationKind.NORMALIZE).getAnnotationModel();
+			return model;
+		} finally {
+			if (model == null) {
+				try {
+					manager.disconnect(path, LocationKind.NORMALIZE, null);
+				} catch (CoreException ex) {
+					DLTKUIPlugin.log(ex.getStatus());
+				}
+			}
+		}
+	}
+

@@ -1,0 +1,38 @@
+		private void apply(ICompletionProposal p, ITextViewer viewer, int offset, boolean isMultiFix) {
+			// Focus needs to be in the text viewer, otherwise linked mode does
+			// not work
+			dispose();
+
+			IRewriteTarget target = null;
+			try {
+				IDocument document = viewer.getDocument();
+
+				if (viewer instanceof ITextViewerExtension) {
+					ITextViewerExtension extension = (ITextViewerExtension) viewer;
+					target = extension.getRewriteTarget();
+				}
+
+				if (target != null)
+					target.beginCompoundChange();
+
+				if (p instanceof ICompletionProposalExtension2) {
+					ICompletionProposalExtension2 e = (ICompletionProposalExtension2) p;
+					e.apply(viewer, (char) 0, isMultiFix ? SWT.CONTROL : SWT.NONE, offset);
+				} else if (p instanceof ICompletionProposalExtension) {
+					ICompletionProposalExtension e = (ICompletionProposalExtension) p;
+					e.apply(document, (char) 0, offset);
+				} else {
+					p.apply(document);
+				}
+
+				Point selection = p.getSelection(document);
+				if (selection != null) {
+					viewer.setSelectedRange(selection.x, selection.y);
+					viewer.revealRange(selection.x, selection.y);
+				}
+			} finally {
+				if (target != null)
+					target.endCompoundChange();
+			}
+		}
+

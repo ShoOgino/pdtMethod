@@ -1,0 +1,67 @@
+	@Override
+	public Object getHoverInfo2(ITextViewer textViewer, IRegion hoverRegion) {
+		IPath path;
+		IAnnotationModel model;
+
+		if (textViewer instanceof ISourceViewer) {
+			path = null;
+			model = ((ISourceViewer) textViewer).getAnnotationModel();
+		} else {
+			// Get annotation model from file buffer manager
+			path = getEditorInputPath();
+			model = getAnnotationModel(path);
+		}
+
+		if (model == null) {
+			return null;
+		}
+
+		try {
+			final IPreferenceStore store = getCombinedPreferenceStore();
+			Iterator<Annotation> e = new ScriptAnnotationIterator(model, fAllAnnotations);
+			int layer = -1;
+			Annotation annotation = null;
+			Position position = null;
+			while (e.hasNext()) {
+				Annotation a = e.next();
+
+				AnnotationPreference preference = getAnnotationPreference(a);
+				if (preference == null) {
+					continue;
+				}
+				if (!isActive(store, preference.getTextPreferenceKey())
+						&& !isActive(store, preference.getHighlightPreferenceKey())) {
+					continue;
+				}
+
+				Position p = model.getPosition(a);
+
+				int l = fAnnotationAccess.getLayer(a);
+
+				if (l > layer && p != null && p.overlapsWith(hoverRegion.getOffset(), hoverRegion.getLength())) {
+					String msg = getMessageFromAnnotation(a);
+					if (msg != null && msg.trim().length() > 0) {
+						layer = l;
+						annotation = a;
+						position = p;
+					}
+				}
+			}
+			if (layer > -1) {
+				return createAnnotationInfo(annotation, position, textViewer);
+			}
+
+		} finally {
+			try {
+				if (path != null) {
+					ITextFileBufferManager manager = FileBuffers.getTextFileBufferManager();
+					manager.disconnect(path, LocationKind.NORMALIZE, null);
+				}
+			} catch (CoreException ex) {
+				DLTKUIPlugin.log(ex.getStatus());
+			}
+		}
+
+		return null;
+	}
+
