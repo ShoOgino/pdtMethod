@@ -1,27 +1,23 @@
 		@Override
 		public void apply(IDocument document) {
+			try {
+				SelectionDialog dialog = createTypeDialog(document);
+				int result = dialog.open();
+				if (result != IDialogConstants.OK_ID) {
+					return;
+				}
 
-			SelectionDialog dialog = createTypeDialog();
-			int result = dialog.open();
-			if (result != IDialogConstants.OK_ID) {
-				return;
-			}
-
-			TextEdit textEdit = null;
-			Object[] types = dialog.getResult();
-			if (types != null && types.length == 1 && types[0] instanceof IModelElement) {
-				try {
+				TextEdit textEdit = null;
+				Object[] types = dialog.getResult();
+				if (types != null && types.length == 1 && types[0] instanceof IModelElement) {
 					textEdit = createTextEditForType(document, (IModelElement) types[0]);
-				} catch (BadLocationException e) {
 				}
-			}
 
-			if (null != textEdit) {
-				try {
+				if (null != textEdit) {
 					textEdit.apply(document);
-				} catch (MalformedTreeException e) {
-				} catch (BadLocationException e) {
 				}
+			} catch (BadLocationException | ModelException | MalformedTreeException e) {
+				PHPUiPlugin.log(e);
 			}
 		}
 
