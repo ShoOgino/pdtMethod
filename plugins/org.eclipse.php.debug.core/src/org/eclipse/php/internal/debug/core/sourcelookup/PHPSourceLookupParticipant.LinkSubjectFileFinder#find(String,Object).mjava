@@ -1,4 +1,4 @@
-		public static Object find(final String sourceLocation, Object element) {
+		public Object find(final String sourceLocation, Object element) {
 			final LinkedList<IResource> matches = new LinkedList<IResource>();
 			final String sourceFileName = (new Path(sourceLocation)).lastSegment();
 			IProject project = null;
@@ -6,9 +6,9 @@
 				IDebugTarget target = ((IStackFrame) element).getDebugTarget();
 				project = PHPLaunchUtilities.getProject(target);
 			}
-			final IProject debugProject = project;
+			final IResource scope = project != null ? project : ResourcesPlugin.getWorkspace().getRoot();
 			try {
-				ResourcesPlugin.getWorkspace().getRoot().accept(new IResourceVisitor() {
+				scope.accept(new IResourceVisitor() {
 					@Override
 					public boolean visit(IResource resource) throws CoreException {
 						try {
@@ -20,19 +20,13 @@
 							if (resource.getType() != IResource.FILE) {
 								return true;
 							}
-							// If we have a related project, check if it is its
-							// resource
-							if (debugProject != null && !resource.getProject().equals(debugProject)) {
-								return true;
-							}
 							/*
 							 * The goal of this pre-check condition is to reduce
 							 * the amount of files to be checked by NIO
-							 * (comparing with NIO can be time consuming).
+							 * (comparing with NIO can be time consuming ).
 							 */
 							if (resource.getName().equals(sourceFileName) || resource.isLinked()
-									|| (resource.getResourceAttributes() != null
-											&& resource.getResourceAttributes().isSymbolicLink())) {
+									|| PHPSymbolicLinksCache.INSTANCE.isSymbolicLink(resource)) {
 								String fileLocation = resource.getLocation().toOSString();
 								if (FileUtils.isSameFile(sourceLocation, fileLocation)) {
 									matches.add(resource);
