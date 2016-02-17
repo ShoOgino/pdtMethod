@@ -1,8 +1,8 @@
 	/**
 	 * set a variable to a particular value
 	 * 
-	 * @param fullName
-	 * @param stackLevel
+	 * @param fFullName
+	 * @param fStackLevel
 	 * @param data
 	 * @return
 	 */
@@ -21,16 +21,12 @@
 			encoded = Base64.encode(data.getBytes());
 		}
 		String fullName = var.getFullName();
-		String stackLevel = var.getStackLevel();
+		String stackLevel = String.valueOf(var.getStackLevel());
 		String args = "-n " + fullName + " -d " + stackLevel + " -l " + encoded.length() + " -- " + encoded; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
-		try {
-			if (var.getReferenceTypeName().equals(DBGpVariable.PHP_STRING)) {
-				// this ensures XDebug doesn't use eval
-				args = "-t string " + args; //$NON-NLS-1$
-			}
-		} catch (DebugException e) {
+		if (var.getDataType() == DataType.PHP_STRING) {
+			// this ensures XDebug doesn't use eval
+			args = "-t string " + args; //$NON-NLS-1$
 		}
-
 		DBGpResponse resp = session.sendSyncCmd(DBGpCommand.propSet, args);
 		boolean success = false;
 		if (DBGpUtils.isGoodDBGpResponse(this, resp)) {

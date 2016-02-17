@@ -1,0 +1,31 @@
+		@Override
+		public synchronized IVariable[] getVariables() throws DebugException {
+			// Should be synchronized and lazy
+			if (fPartitionVariables == null) {
+				DBGpTarget target = (DBGpTarget) getDebugTarget();
+				Node property = target.getProperty(getOwner().getFullName(), String.valueOf(getOwner().getStackLevel()),
+						fPage);
+				NodeList childProperties = property.getChildNodes();
+				int childrenReceived = childProperties.getLength();
+				fPartitionVariables = new IVariable[childrenReceived];
+				if (childrenReceived > 0) {
+					for (int i = 0; i < childrenReceived; i++) {
+						Node childProperty = childProperties.item(i);
+						IVariable child;
+						if (isUninit(childProperty)) {
+							child = new DBGpUninitVariable(getDebugTarget());
+						} else {
+							child = createVariable(childProperty);
+						}
+						fPartitionVariables[i] = merge(child);
+					}
+				}
+				// Add partition variables to current variables storage
+				IVariable[] concat = Arrays.copyOf(fCurrentVariables,
+						fCurrentVariables.length + fPartitionVariables.length);
+				System.arraycopy(fPartitionVariables, 0, concat, fCurrentVariables.length, fPartitionVariables.length);
+				fCurrentVariables = concat;
+			}
+			return fPartitionVariables;
+		}
+

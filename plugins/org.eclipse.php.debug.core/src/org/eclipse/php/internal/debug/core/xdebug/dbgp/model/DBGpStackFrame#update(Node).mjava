@@ -1,0 +1,27 @@
+	protected void update(Node stackData) {
+		// Reset state
+		this.previousVariables = currentVariables;
+		this.currentVariables = null;
+		// Set up new descriptor
+		descriptor = stackData;
+		String line = DBGpResponse.getAttribute(descriptor, "lineno"); //$NON-NLS-1$
+		stackLevel = DBGpResponse.getAttribute(descriptor, "level"); //$NON-NLS-1$
+		lineNo = Integer.parseInt(line);
+		qualifiedFile = DBGpUtils.getFilenameFromURIString(DBGpResponse.getAttribute(descriptor, "filename")); //$NON-NLS-1$
+		qualifiedFile = ((DBGpTarget) getDebugTarget()).mapToWorkspaceFileIfRequired(qualifiedFile);
+		String function = DBGpResponse.getAttribute(descriptor, "where"); //$NON-NLS-1$
+		// check to see if the file exists in the workspace
+		IResource fileFound = ResourcesPlugin.getWorkspace().getRoot().findMember(qualifiedFile);
+		if (fileFound != null) {
+			IFile file = (IFile) fileFound;
+			// get the file found in workspace and show project/file
+			String projectName = file.getProject().getName();
+			String projectRelPath = file.getProjectRelativePath().toString();
+			fileName = projectName + "/" + projectRelPath; //$NON-NLS-1$
+		} else {
+			// fileName = null;
+			fileName = qualifiedFile;
+		}
+		name = fileName + "." + function + "()"; //$NON-NLS-1$ //$NON-NLS-2$
+	}
+

@@ -1,0 +1,30 @@
+	/**
+	 * Merges incoming variable. Merge is done by means of checking if related
+	 * child variable existed in "one step back" state of a container. If
+	 * related variable existed, it is updated with the use of the most recent
+	 * descriptor and returned instead of the incoming one.
+	 * 
+	 * @param variable
+	 * @param descriptor
+	 * @return merged variable
+	 */
+	protected IVariable merge(IVariable variable) {
+		if (fPreviousVariables == null)
+			return variable;
+		if (!(variable instanceof DBGpVariable))
+			return variable;
+		DBGpVariable incoming = (DBGpVariable) variable;
+		if (incoming.getFullName().isEmpty())
+			return incoming;
+		for (IVariable stored : fPreviousVariables) {
+			if (stored instanceof DBGpVariable) {
+				DBGpVariable previous = (DBGpVariable) stored;
+				if (previous.getFullName().equals(incoming.getFullName())) {
+					((DBGpVariable) stored).update(incoming.getDescriptor());
+					return stored;
+				}
+			}
+		}
+		return variable;
+	}
+

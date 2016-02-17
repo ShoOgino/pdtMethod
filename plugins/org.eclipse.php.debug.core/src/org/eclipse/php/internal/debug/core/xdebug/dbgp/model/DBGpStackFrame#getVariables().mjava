@@ -3,13 +3,17 @@
 	 * 
 	 * @see org.eclipse.debug.core.model.IStackFrame#getVariables()
 	 */
-	public IVariable[] getVariables() throws DebugException {
-		// see equals() as to where variables cannot be cached in the stack
-		// frame
+	public synchronized IVariable[] getVariables() throws DebugException {
 		DBGpLogger.debug("getting variables for stackframe on line: " + lineNo); //$NON-NLS-1$
-		if (variables == null) {
-			variables = ((DBGpTarget) getDebugTarget()).getVariables(stackLevel);
+		if (currentVariables == null) {
+			// fetch new set of variables
+			IVariable[] incoming = ((DBGpTarget) getDebugTarget()).getVariables(stackLevel);
+			currentVariables = new IVariable[incoming.length];
+			for (int i = 0; i < incoming.length; i++) {
+				DBGpVariable variable = ((DBGpVariable) incoming[i]);
+				currentVariables[i] = merge(variable);
+			}
 		}
-		return variables;
+		return currentVariables;
 	}
 

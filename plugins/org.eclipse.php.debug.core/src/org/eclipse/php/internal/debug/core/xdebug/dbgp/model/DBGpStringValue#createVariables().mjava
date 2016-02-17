@@ -1,0 +1,53 @@
+	/**
+	 * Creates string info variables (length and virtual array of bytes).
+	 */
+	protected void createVariables() {
+		int byteCount = fValueBytes.length;
+		fStringInfo = new IVariable[1];
+		// Add length element
+		fStringInfo[0] = new InfoVariable(PHPDebugCoreMessages.XDebug_DBGpStringValue_0,
+				new InfoLengthValue(byteCount, getRequiredBytes(), getDebugTarget()), getDebugTarget(),
+				Facet.VIRTUAL_LENGTH);
+		// Add pseudo-bytes directly or as a partitions
+		final int childLimit = 100;
+		IVariable[] byteVariables = null;
+		// determine the number of variables to return
+		if (byteCount > childLimit) {
+			// Split to partitions
+			int subCount = (int) Math.ceil((double) byteCount / (double) childLimit);
+			byteVariables = new IVariable[subCount];
+			for (int i = 0; i < subCount; i++) {
+				int startIndex = i * childLimit;
+				int endIndex = (i + 1) * childLimit - 1;
+				if (endIndex > byteCount) {
+					endIndex = byteCount - 1;
+				}
+				final int partitionSize = (endIndex - startIndex) + 1;
+				final IVariable[] partitionVariables = new IVariable[partitionSize];
+				for (int j = startIndex; j <= endIndex; j++) {
+					IValue byteValue = new InfoByteValue(fValueBytes[j], getDebugTarget());
+					partitionVariables[j - startIndex] = new InfoVariable('[' + Integer.toString(j) + ']', byteValue,
+							getDebugTarget(), VIRTUAL_ARRAY_MEMBER);
+				}
+				IVariable partition = new VirtualPartition(this, new IVariableProvider() {
+					@Override
+					public IVariable[] getVariables() throws DebugException {
+						return partitionVariables;
+					}
+				}, startIndex, endIndex);
+				byteVariables[i] = partition;
+			}
+		} else {
+			byteVariables = new InfoVariable[byteCount];
+			for (int i = 0; i < byteCount; i++) {
+				IValue byteValue = new InfoByteValue(fValueBytes[i], getDebugTarget());
+				byteVariables[i] = new InfoVariable('[' + Integer.toString(i) + ']', byteValue, getDebugTarget(),
+						VIRTUAL_ARRAY_MEMBER);
+			}
+		}
+		// Add byte variables to info
+		IVariable[] concat = Arrays.copyOf(fStringInfo, fStringInfo.length + byteVariables.length);
+		System.arraycopy(byteVariables, 0, concat, fStringInfo.length, byteVariables.length);
+		fStringInfo = concat;
+	}
+
