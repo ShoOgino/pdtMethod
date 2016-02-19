@@ -1,0 +1,32 @@
+	protected DocumentCommand createFile(String data, String cursor) throws Exception {
+		int firstOffset = data.indexOf(cursor);
+		int lastOffset = data.lastIndexOf(cursor);
+		if (lastOffset == -1) {
+			throw new IllegalArgumentException("Offset character is not set");
+		}
+
+		final DocumentCommand cmd = new DocumentCommand() {
+		};
+
+		// replace the offset character(s)
+		if (firstOffset == lastOffset) {
+			data = data.substring(0, lastOffset) + data.substring(lastOffset + cursor.length());
+			cmd.offset = lastOffset;
+			cmd.length = 0;
+		} else {
+			data = data.substring(0, firstOffset) + data.substring(firstOffset + cursor.length(), lastOffset)
+					+ data.substring(lastOffset + cursor.length());
+			cmd.offset = firstOffset;
+			cmd.length = lastOffset - (firstOffset + cursor.length());
+		}
+
+		testFile = project.getFile("test" + (++count) + ".php");
+		testFile.create(new ByteArrayInputStream(data.getBytes()), true, null);
+		project.refreshLocal(IResource.DEPTH_INFINITE, null);
+		testFile.touch(new NullProgressMonitor());
+		project.build(IncrementalProjectBuilder.FULL_BUILD, null);
+		PHPCoreTests.waitForIndexer();
+
+		return cmd;
+	}
+

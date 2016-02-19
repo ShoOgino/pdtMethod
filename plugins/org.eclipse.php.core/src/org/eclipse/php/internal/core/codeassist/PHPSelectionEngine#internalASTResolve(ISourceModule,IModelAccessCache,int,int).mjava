@@ -1,5 +1,9 @@
 	private IModelElement[] internalASTResolve(ISourceModule sourceModule, IModelAccessCache cache, int offset, int end)
 			throws ModelException {
+		if (PHPBuildUtils.isIndexing()) {
+			return null;
+		}
+
 		String source;
 
 		try {
@@ -51,8 +55,6 @@
 		if (context instanceof IModelCacheContext) {
 			((IModelCacheContext) context).setCache(cache);
 		}
-
-		IDLTKSearchScope scope = SearchEngine.createSearchScope(sourceModule.getScriptProject());
 
 		// Function call:
 		if (node instanceof PHPCallExpression) {
@@ -146,7 +148,7 @@
 				if (name.length() > 0 && name.charAt(0) == NamespaceReference.NAMESPACE_SEPARATOR) {
 					name = name.substring(1);
 				}
-
+				IDLTKSearchScope scope = SearchEngine.createSearchScope(sourceModule.getScriptProject());
 				types = PhpModelAccess.getDefault().findNamespaces(null, name, MatchRule.EXACT, 0, 0, scope, null);
 
 				if (types == null || types.length == 0) {
