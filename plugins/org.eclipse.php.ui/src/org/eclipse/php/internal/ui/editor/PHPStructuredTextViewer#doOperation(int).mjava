@@ -12,15 +12,18 @@
 		int topLine = getTextWidget().getTopIndex();
 
 		switch (operation) {
+		case FORMAT_DOCUMENT_ON_SAVE:
 		case FORMAT_DOCUMENT:
 			try {
 				setRedraw(false);
 				// begin recording
 				beginRecording(FORMAT_DOCUMENT_TEXT, FORMAT_DOCUMENT_TEXT, cursorPosition, selectionLength);
 
-				// format the whole document !
 				IRegion region;
-				if (selectionLength != 0) {
+				// https://bugs.eclipse.org/bugs/show_bug.cgi?id=486540
+				// format the whole document on save, not the active text
+				// selection
+				if (operation != FORMAT_DOCUMENT_ON_SAVE && selectionLength != 0) {
 					region = new Region(cursorPosition, selectionLength);
 				} else {
 					region = new Region(0, getDocument().getLength());

@@ -20,7 +20,16 @@
 			updateSaveActionsState(project.getProject());
 		}
 
-		if (saveActionsEnabled) {
+		if (formatOnSaveEnabled) {
+			if (getTextViewer() instanceof PHPStructuredTextViewer) {
+				PHPStructuredTextViewer viewer = (PHPStructuredTextViewer) getTextViewer();
+				if (viewer.canDoOperation(PHPStructuredTextViewer.FORMAT_DOCUMENT_ON_SAVE)) {
+					viewer.doOperation(PHPStructuredTextViewer.FORMAT_DOCUMENT_ON_SAVE);
+				}
+			}
+		}
+
+		if (saveActionsEnabled && getTextViewer() != null && getTextViewer().isEditable()) {
 			RemoveTrailingWhitespaceOperation op = new ExtendedRemoveTrailingWhitespaceOperation(
 					saveActionsIgnoreEmptyLines);
 			try {
@@ -30,10 +39,6 @@
 			} catch (CoreException e) {
 				Logger.logException(e);
 			}
-		}
-
-		if (formatOnSaveEnabled) {
-			getTextViewer().doOperation(PHPStructuredTextViewer.FORMAT_DOCUMENT);
 		}
 
 		super.doSave(progressMonitor);
