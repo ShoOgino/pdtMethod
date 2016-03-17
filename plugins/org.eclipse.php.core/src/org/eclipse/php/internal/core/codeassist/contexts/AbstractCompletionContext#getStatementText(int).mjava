@@ -1,4 +1,21 @@
 	public TextSequence getStatementText(int offset) {
-		return PHPTextSequenceUtilities.getStatement(offset, structuredDocumentRegion, true);
+		int startOffset = offset - 1;
+		try {
+			while (true) {
+				char ch = getChar(startOffset);
+				if (ch == '\n' || ch == '{' || ch == '}' || ch == ';') {
+					startOffset = PHPTextSequenceUtilities.readForwardSpaces(getDocument(), startOffset + 1, offset);
+					return TextSequenceUtilities.createTextSequence(structuredDocumentRegion, startOffset,
+							offset - startOffset);
+				}
+				if (startOffset == 0) {
+					return TextSequenceUtilities.createTextSequence(structuredDocumentRegion, 0, offset);
+				}
+				startOffset--;
+			}
+		} catch (BadLocationException e) {
+			PHPCorePlugin.log(e);
+		}
+		return TextSequenceUtilities.createTextSequence(structuredDocumentRegion, 0, 0);
 	}
 
