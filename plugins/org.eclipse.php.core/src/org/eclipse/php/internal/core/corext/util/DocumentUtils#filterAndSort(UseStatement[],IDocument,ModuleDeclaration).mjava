@@ -12,18 +12,25 @@
 		}
 
 		for (UseStatement statement : statements) {
+			List<Position> excludePositions;
+			if (moduleDeclaration instanceof PHPModuleDeclaration) {
+				excludePositions = getExcludeSortedPositions(
+						((PHPModuleDeclaration) moduleDeclaration).getCommentList().toArray(new ASTNode[0]));
+			} else {
+				excludePositions = new ArrayList<Position>();
+			}
 			String contents;
 			NamespaceDeclaration currentNamespace = visitor.getNamespaceDeclarationFor(statement);
 			if (currentNamespace != null && currentNamespace.isBracketed()) {
 				contents = DocumentUtils.stripUseStatements(statements, doc, currentNamespace.sourceStart(),
-						currentNamespace.sourceEnd());
+						currentNamespace.sourceEnd(), excludePositions);
 			} else {
-				contents = stripUseStatements(statements, doc);
+				contents = stripUseStatements(statements, doc, excludePositions);
 			}
 
 			Vector<UsePart> parts = new Vector<UsePart>();
 			for (UsePart part : statement.getParts()) {
-				if (containsUseStatement(part, contents)) {
+				if (containsUseStatement(part, contents, excludePositions)) {
 					parts.add(part);
 				}
 			}

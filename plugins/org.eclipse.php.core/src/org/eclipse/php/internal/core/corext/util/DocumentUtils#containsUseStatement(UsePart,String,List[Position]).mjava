@@ -1,0 +1,48 @@
+	/**
+	 * Check if a classname is used in a string. The "excludePositions" list
+	 * contains positions where we should NOT look if the classname is used
+	 * (typically in comment sections). It is important that the
+	 * "excludePositions" list is sorted by increasing position, or this method
+	 * won't work correctly.
+	 */
+	public static boolean containsUseStatement(UsePart part, String contents, List<Position> excludePositions) {
+		String className = null != part.getAlias() ? part.getAlias().toString()
+				: (part.getNamespace() != null ? part.getNamespace().toString() : "");
+
+		Pattern p = Pattern.compile("(?i)\\b(" + Pattern.quote(className) + ")\\b");
+		Matcher m = p.matcher(contents);
+		int restartPos = 0;
+		while (m.find()) {
+			// No exclusion list, so we're good
+			if (excludePositions.isEmpty()) {
+				return true;
+			}
+			for (int i = restartPos; i < excludePositions.size(); i++) {
+				Position position = excludePositions.get(i);
+				// If current exclusion is before current match,
+				// we have to continue our checks
+				if (position.getOffset() + position.getLength() <= m.start()) {
+					// No further exclusions, we are good, current match is
+					// pertinent
+					if (i == excludePositions.size() - 1) {
+						return true;
+					}
+					restartPos++;
+					continue;
+				}
+				// Current exclusion is after current match, so we're also good
+				if (position.getOffset() >= m.end()) {
+					return true;
+				}
+				// Here we know that current exclusion overlaps current match,
+				// so current match is non-pertinent, we have to continue with
+				// next match.
+				// Assert that current exclusion FULLY overlaps current match.
+				assert position.getOffset() <= m.start() && m.end() <= position.getOffset() + position.getLength();
+				break;
+			}
+		}
+		// No pertinent match was found
+		return false;
+	}
+

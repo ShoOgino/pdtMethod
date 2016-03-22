@@ -9,12 +9,22 @@
 					.get(IBuildContext.ATTR_MODULE_DECLARATION);
 
 			if (moduleDeclaration != null) {
+				ASTNode[] excludeNodes;
+				if (moduleDeclaration instanceof PHPModuleDeclaration) {
+					// https://bugs.eclipse.org/bugs/show_bug.cgi?id=477908
+					// TODO: we could also exclude PHP single-quoted strings and
+					// parts of double-quoted strings and heredocs.
+					excludeNodes = ((PHPModuleDeclaration) moduleDeclaration).getCommentList().toArray(new ASTNode[0]);
+				} else {
+					excludeNodes = new ASTNode[0];
+				}
+
 				// Run the validation visitor:
 				try {
 					UseStatement[] statements = ASTUtils.getUseStatements(moduleDeclaration,
 							context.getContents().length);
 
-					moduleDeclaration.traverse(new ImportValidationVisitor(context, statements));
+					moduleDeclaration.traverse(new ImportValidationVisitor(context, statements, excludeNodes));
 				} catch (Exception e) {
 				}
 			}

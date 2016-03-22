@@ -3,16 +3,18 @@
 				return super.visit(s);
 			}
 
+			List<Position> excludePositions = DocumentUtils.getExcludeSortedPositions(excludeNodes);
+
 			String total;
 			if (this.currentNamespace != null && this.currentNamespace.isBracketed()) {
 				total = DocumentUtils.stripUseStatements(statements, doc, this.currentNamespace.sourceStart(),
-						this.currentNamespace.sourceEnd());
+						this.currentNamespace.sourceEnd(), excludePositions);
 			} else {
-				total = DocumentUtils.stripUseStatements(statements, doc);
+				total = DocumentUtils.stripUseStatements(statements, doc, excludePositions);
 			}
 			boolean multiPart = s.getParts().size() > 1;
 			for (UsePart part : s.getParts()) {
-				if (DocumentUtils.containsUseStatement(part, total)) {
+				if (DocumentUtils.containsUseStatement(part, total, excludePositions)) {
 					continue;
 				}
 				int sourceStart = multiPart ? part.getNamespace().sourceStart() : s.sourceStart();
