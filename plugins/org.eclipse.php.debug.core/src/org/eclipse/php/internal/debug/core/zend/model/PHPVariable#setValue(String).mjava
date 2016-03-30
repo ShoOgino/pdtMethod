@@ -8,14 +8,8 @@
 	public void setValue(String expression) throws DebugException {
 		PHPDebugTarget debugTarget = (PHPDebugTarget) getDebugTarget();
 		ExpressionsManager expressionManager = debugTarget.getExpressionManager();
-		Expression changeVar = variable;
-		if (global) {
-			String exp = "$GLOBALS[\"" + variable.getFullName().substring(1) //$NON-NLS-1$
-					+ "\"]"; //$NON-NLS-1$
-			changeVar = new DefaultExpression(exp);
-		}
-		int valueType = value.getVariable().getValue().getType();
-		if (valueType == ExpressionValue.STRING_TYPE) {
+		Expression changeVar = fExpression;
+		if (fValue.getExpression().getValue().getDataType() == PHP_STRING) {
 			expression = MessageFormat.format("\"{0}\"", expression); //$NON-NLS-1$
 		}
 		boolean status = expressionManager.assignValue(changeVar, expression, 1);
@@ -24,7 +18,7 @@
 					+ "] PHPValue: Problem changing variable value"); //$NON-NLS-1$
 		}
 		expressionManager.update(changeVar, 1);
-		value.updateValue(changeVar.getValue());
+		fValue.updateValue(changeVar.getValue());
 		fireChangeEvent(DebugEvent.CONTENT);
 	}
 

@@ -3,17 +3,21 @@
 	 * 
 	 * @see org.eclipse.debug.core.model.IValue#getVariables()
 	 */
-	public IVariable[] getVariables() throws DebugException {
-		if (fChildren == null) {
+	public synchronized IVariable[] getVariables() throws DebugException {
+		if (fCurrentVariables == null) {
 			requestVariables();
-			if (fChildren == null) {
-				fChildren = new IVariable[0];
+			if (fCurrentVariables == null) {
+				fCurrentVariables = new IVariable[0];
 			}
 			// Check if we should divide it into partitions
-			if (fValue.getType() == ExpressionValue.ARRAY_TYPE && fChildren.length >= ARRAY_PARTITION_BOUNDARY) {
+			if (fExpressionValue.getDataType() == DataType.PHP_ARRAY
+					&& fCurrentVariables.length >= ARRAY_PARTITION_BOUNDARY) {
 				createPartitions();
 			}
 		}
-		return fChildren;
+		if (!hasPartitions()) {
+			return fCurrentVariables;
+		}
+		return fPartitions;
 	}
 
