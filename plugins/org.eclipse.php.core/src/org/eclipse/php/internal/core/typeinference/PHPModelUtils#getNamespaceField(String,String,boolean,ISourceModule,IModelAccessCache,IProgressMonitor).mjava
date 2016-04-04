@@ -1,5 +1,5 @@
 	/**
-	 * This method returns field declared unders specified namespace
+	 * This method returns field declared under specified namespace
 	 * 
 	 * @param namespace
 	 *            Namespace name
@@ -13,7 +13,7 @@
 	 *            Model access cache if available
 	 * @param monitor
 	 *            Progress monitor
-	 * @return field declarated in the specified namespace, or null if there is
+	 * @return field declared in the specified namespace, or null if there is
 	 *         none
 	 * @throws ModelException
 	 */
@@ -21,10 +21,13 @@
 			ISourceModule sourceModule, IModelAccessCache cache, IProgressMonitor monitor) throws ModelException {
 
 		IType[] namespaces = getNamespaces(sourceModule, namespace, cache, monitor);
-		List<IField> result = new LinkedList<IField>();
+		Collection<IField> result = new LinkedList<IField>();
 		for (IType ns : namespaces) {
 			result.addAll(Arrays.asList(PHPModelUtils.getTypeField(ns, prefix, exactName)));
 		}
-		return (IField[]) result.toArray(new IField[result.size()]);
+		if (cache != null) {
+			result = cache.filterModelElements(sourceModule, result, monitor);
+		}
+		return result.toArray(new IField[result.size()]);
 	}
 

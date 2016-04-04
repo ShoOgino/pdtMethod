@@ -19,7 +19,13 @@
 			IModelAccessCache cache, IProgressMonitor monitor) throws ModelException {
 		String namespace = extractNamespaceName(elementName, sourceModule, offset);
 		if (namespace != null && namespace.length() > 0) {
-			return getNamespaces(sourceModule, namespace, cache, monitor);
+			IType[] namespaces = getNamespaces(sourceModule, namespace, cache, monitor);
+			if (cache != null) {
+				Collection<IType> result = Arrays.asList(namespaces);
+				result = cache.filterModelElements(sourceModule, result, monitor);
+				return result.toArray(new IType[result.size()]);
+			}
+			return namespaces;
 		}
 		return PhpModelAccess.NULL_TYPES;
 	}

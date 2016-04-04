@@ -1,5 +1,5 @@
 	/**
-	 * This method returns type declared unders specified namespace
+	 * This method returns type declared under specified namespace
 	 * 
 	 * @param namespace
 	 *            Namespace name
@@ -14,19 +14,22 @@
 	 * @param monitor
 	 *            Progress monitor
 	 * @param isType
-	 * @return type declarated in the specified namespace, or null if there is
+	 * @return type declared in the specified namespace, or null if there is
 	 *         none
 	 * @throws ModelException
 	 */
 	public static IType[] getNamespaceType(String namespace, String prefix, boolean exactName,
 			ISourceModule sourceModule, IModelAccessCache cache, IProgressMonitor monitor, boolean isType)
-					throws ModelException {
+			throws ModelException {
 
 		IType[] namespaces = getNamespaces(sourceModule, namespace, cache, monitor);
-		List<IType> result = new LinkedList<IType>();
+		Collection<IType> result = new LinkedList<IType>();
 		for (IType ns : namespaces) {
 			result.addAll(Arrays.asList(PHPModelUtils.getTypeType(ns, prefix, exactName, isType)));
 		}
-		return (IType[]) result.toArray(new IType[result.size()]);
+		if (cache != null) {
+			result = cache.filterModelElements(sourceModule, result, monitor);
+		}
+		return result.toArray(new IType[result.size()]);
 	}
 
