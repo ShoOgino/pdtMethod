@@ -7,18 +7,12 @@
 	 * @throws CoreException
 	 * @throws BadLocationException
 	 */
-	private void insertVariableDeclaration(ASTNode target, ASTNode expr,
-			boolean shouldWrapStatement, SourceRange range)
+	private void insertVariableDeclaration(ASTNode target, ASTNode expr, boolean shouldWrapStatement, SourceRange range)
 			throws CoreException, BadLocationException {
-
-		ASTNode parentStatement = getParentStatement(target);
-		int statementOffset = parentStatement.getStart();
-		String indentationBuffer = getLineIndentation(statementOffset);
 
 		Block block = fAst.newBlock();
 		block.setIsCurly(true);
-		ListRewrite replacementRewrite = fRewriter.getListRewrite(block,
-				Block.STATEMENTS_PROPERTY);
+		ListRewrite replacementRewrite = fRewriter.getListRewrite(block, Block.STATEMENTS_PROPERTY);
 
 		// replacementRewrite.insertFirst(expr, null);
 
@@ -60,27 +54,26 @@
 		// // ifState.setParent(parent, location)
 		// }
 
-		String expressionBuffer = getASTNodeValue(range.getOffset(),
-				range.getLength());
+		String expressionBuffer = getASTNodeValue(range.getOffset(), range.getLength());
 		String insertionString = getFullVariableName() + " = " //$NON-NLS-1$
 				+ expressionBuffer + ";"; //$NON-NLS-1$
-		//+ System.getProperty("line.separator") + indentationBuffer; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-		ASTNode declaration = fRewriter.createStringPlaceholder(
-				insertionString, ASTNode.EXPRESSION_STATEMENT);
+		// + System.getProperty("line.separator") + indentationBuffer;
+		// //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+		ASTNode declaration = fRewriter.createStringPlaceholder(insertionString, ASTNode.EXPRESSION_STATEMENT);
 
 		replacementRewrite.insertFirst(declaration, null);
 
 		replacementRewrite.insertLast(move, null);
 
 		TextEditGroup insertDesc = new TextEditGroup(
-				PhpRefactoringCoreMessages
-						.getString("ExtractFunctionRefactoring.4")); //$NON-NLS-1$
+				PhpRefactoringCoreMessages.getString("ExtractFunctionRefactoring.4")); //$NON-NLS-1$
 		textFileChange.addTextEditGroup(insertDesc);
 
 		fRewriter.replace(target.getParent(), block, insertDesc);
 
 		// if (shouldWrapStatement) {
-		//			insertionString = "{" + System.getProperty("line.separator") + insertionString; //$NON-NLS-1$ //$NON-NLS-2$
+		// insertionString = "{" + System.getProperty("line.separator") +
+		// insertionString; //$NON-NLS-1$ //$NON-NLS-2$
 		// }
 
 		// insert the new statement
@@ -89,14 +82,14 @@
 		// addTextEditChange(insertEdit);
 
 		// replace the existing statement
-		String replacementStr = getFullVariableName();
+		// String replacementStr = getFullVariableName();
 		// replaceSelectedExpressionWithVariableDeclaration(replacementStr,
 		// range,
 		// expr);
 
 		// if needed, close the wrapping block
 		// if (shouldWrapStatement) {
-		//			String closeCurlyStr = "}"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+		// String closeCurlyStr = "}"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 		// insertEdit = new InsertEdit(parentStatement.getEnd(), closeCurlyStr);
 		// addTextEditChange(insertEdit);
 		// }

@@ -1,33 +1,22 @@
-	private void createAndInsertVariableDeclaration(
-			Expression selectedExpression, ISourceRange range)
+	private void createAndInsertVariableDeclaration(Expression selectedExpression, ISourceRange range)
 			throws CoreException, BadLocationException {
 
-		if ((!fReplaceAllOccurrences)
-				|| (retainOnlyReplacableMatches(true).length <= 1)) {
-			boolean shouldWrapStatement = shouldWrapWithBlock(getParentStatement(selectedExpression)) ? true
-					: false;
+		if ((!fReplaceAllOccurrences) || (retainOnlyReplacableMatches(true).length <= 1)) {
 			// insertVariableDeclaration(selectedExpression, selectedExpression,
 			// shouldWrapStatement, range);
 			insertAt(selectedExpression);
 			return;
 		}
 
-		ASTNode[] firstReplaceNodeParents = getParents(getFirstReplacedExpression()
-				.getAssociatedNode());
+		ASTNode[] firstReplaceNodeParents = getParents(getFirstReplacedExpression().getAssociatedNode());
 		ASTNode[] commonPath = findDeepestCommonSuperNodePathForReplacedNodes();
 		Assert.isTrue(commonPath.length <= firstReplaceNodeParents.length);
 
 		ASTNode deepestCommonParent = firstReplaceNodeParents[commonPath.length - 1];
 
-		if (deepestCommonParent instanceof Block
-				|| deepestCommonParent instanceof Program) {
+		if (deepestCommonParent instanceof Block || deepestCommonParent instanceof Program) {
 			insertAt(firstReplaceNodeParents[commonPath.length]);
 		} else {
-			boolean shouldWrapStatement = false;
-			if (deepestCommonParent.getType() != ASTNode.PROGRAM) {
-				shouldWrapStatement = shouldWrapWithBlock(getParentStatement(deepestCommonParent)) ? true
-						: false;
-			}
 			insertAt(deepestCommonParent);
 		}
 	}

@@ -3,37 +3,28 @@
 		TextEditGroup groupDescription = new TextEditGroup("dec Variable"); //$NON-NLS-1$
 
 		ASTNode parent = target.getParent();
-		StructuralPropertyDescriptor locationInParent = target
-				.getLocationInParent();
+		StructuralPropertyDescriptor locationInParent = target.getLocationInParent();
 
-		ASTNode parentStatement = getParentStatement(getSelectedExpression()
-				.getAssociatedNode());
 		// the new text that will replace the selected expression
-		String insertionString = getFullVariableName()
-				+ " = " //$NON-NLS-1$
-				+ getASTNodeValue(getSelectedExpression().getAssociatedNode())
-				+ ";"; //$NON-NLS-1$
+		String insertionString = getFullVariableName() + " = " //$NON-NLS-1$
+				+ getASTNodeValue(getSelectedExpression().getAssociatedNode()) + ";"; //$NON-NLS-1$
 
-		//+ System.getProperty("line.separator") + indentationBuffer; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-		ASTNode declaration = fRewriter.createStringPlaceholder(
-				insertionString, ASTNode.EXPRESSION_STATEMENT);
+		// + System.getProperty("line.separator") + indentationBuffer;
+		// //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+		ASTNode declaration = fRewriter.createStringPlaceholder(insertionString, ASTNode.EXPRESSION_STATEMENT);
 
-		while (locationInParent != Block.STATEMENTS_PROPERTY
-				&& locationInParent != SwitchStatement.BODY_PROPERTY) {
+		while (locationInParent != Block.STATEMENTS_PROPERTY && locationInParent != SwitchStatement.BODY_PROPERTY) {
 			if (locationInParent == IfStatement.TRUE_STATEMENT_PROPERTY
 					|| locationInParent == IfStatement.FALSE_STATEMENT_PROPERTY
-					|| locationInParent == ForStatement.BODY_PROPERTY
-					|| locationInParent == DoStatement.BODY_PROPERTY
+					|| locationInParent == ForStatement.BODY_PROPERTY || locationInParent == DoStatement.BODY_PROPERTY
 					|| locationInParent == WhileStatement.BODY_PROPERTY) {
 				// create intermediate block if target was the body property of
 				// a control statement:
 				Block replacement = rewrite.getAST().newBlock();
-				ListRewrite replacementRewrite = rewrite.getListRewrite(
-						replacement, Block.STATEMENTS_PROPERTY);
+				ListRewrite replacementRewrite = rewrite.getListRewrite(replacement, Block.STATEMENTS_PROPERTY);
 
 				replacementRewrite.insertFirst(declaration, null);
-				replacementRewrite.insertLast(rewrite.createMoveTarget(target),
-						null);
+				replacementRewrite.insertLast(rewrite.createMoveTarget(target), null);
 				rewrite.replace(target, replacement, groupDescription);
 				return;
 			}
@@ -44,8 +35,7 @@
 			parent = parent.getParent();
 			locationInParent = target.getLocationInParent();
 		}
-		ListRewrite listRewrite = rewrite.getListRewrite(parent,
-				(ChildListPropertyDescriptor) locationInParent);
+		ListRewrite listRewrite = rewrite.getListRewrite(parent, (ChildListPropertyDescriptor) locationInParent);
 		listRewrite.insertBefore(declaration, target, groupDescription);
 	}
 
