@@ -27,22 +27,24 @@
 		boolean isActiveElement;
 		synchronized (this) {
 			isActiveElement = input.equals(fActiveJavaElement);
-			if (isActiveElement) {
+			if (isActiveElement && waitFlag == SharedASTProvider.WAIT_NO) {
 				if (fAST != null) {
+					// XXX: also return fAST directly when isActiveElement is
+					// true, waitFlag != SharedASTProvider.WAIT_NO and fAST is
+					// up-to-date with the corresponding ISourceModule (i.e.
+					// there were no changes in the corresponding ISourceModule
+					// since fAST was created).
 					if (DEBUG) {
 						System.out.println(getThreadName() + " - " + DEBUG_PREFIX + "returning cached AST:" //$NON-NLS-1$ //$NON-NLS-2$
 								+ toString(fAST) + " for: " + input.getElementName()); //$NON-NLS-1$
 					}
 					return fAST;
 				}
-				if (waitFlag == SharedASTProvider.WAIT_NO) {
-					if (DEBUG) {
-						System.out.println(getThreadName() + " - " + DEBUG_PREFIX + "returning null (WAIT_NO) for: " //$NON-NLS-1$ //$NON-NLS-2$
-								+ input.getElementName());
-					}
-					return null;
-
+				if (DEBUG) {
+					System.out.println(getThreadName() + " - " + DEBUG_PREFIX + "returning null (WAIT_NO) for: " //$NON-NLS-1$ //$NON-NLS-2$
+							+ input.getElementName());
 				}
+				return null;
 			}
 		}
 
@@ -84,6 +86,7 @@
 						return fAST;
 					}
 				}
+
 				return getAST(input, waitFlag, progressMonitor);
 			} catch (InterruptedException e) {
 				return null; // thread has been interrupted don't compute AST
