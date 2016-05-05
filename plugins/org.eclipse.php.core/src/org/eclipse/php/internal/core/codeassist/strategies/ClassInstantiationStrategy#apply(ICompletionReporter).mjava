@@ -1,16 +1,23 @@
 	@Override
 	public void apply(ICompletionReporter reporter) throws BadLocationException {
-		// let NamespaceClassInstantiationStrategy to deal with namespace prefix
 		AbstractCompletionContext completionContext = (AbstractCompletionContext) getContext();
+		String prefix = completionContext.getPrefix();
+
 		String suffix = getSuffix(completionContext);
 		addAlias(reporter, suffix);
-		if (completionContext.getPrefix() != null
-				&& completionContext.getPrefix().indexOf(NamespaceReference.NAMESPACE_SEPARATOR) >= 0) {
+		// let NamespaceClassInstantiationStrategy to deal with namespace prefix
+		if (prefix != null && prefix.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) >= 0) {
 			return;
 		}
 		super.apply(reporter);
-		ICompletionContext context = getContext();
-		AbstractCompletionContext concreteContext = (AbstractCompletionContext) context;
-		addSelf(concreteContext, reporter);
+		addSelf(completionContext, reporter);
+
+		// for anonymous class (PHP 7)
+		prefix = completionContext.getPrefixWithoutProcessing();
+		if (completionContext.getPhpVersion().isGreaterThan(PHPVersion.PHP5_6)) {
+			if (CLASS_KEYWORD.startsWith(prefix) && prefix.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) == -1) {
+				reporter.reportKeyword(CLASS_KEYWORD, "", getReplacementRange(completionContext)); // $NON-NLS-1$
+			}
+		}
 	}
 
