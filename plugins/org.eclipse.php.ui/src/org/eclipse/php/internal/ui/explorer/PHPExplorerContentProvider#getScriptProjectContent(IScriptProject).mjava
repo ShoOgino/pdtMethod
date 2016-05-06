@@ -1,0 +1,34 @@
+	protected List<Object> getScriptProjectContent(IScriptProject scriptProject) {
+		List<Object> returnChildren = new ArrayList<Object>();
+		IProject project = scriptProject.getProject();
+
+		// Add include path node
+		IncludePath[] includePaths = IncludePathManager.getInstance().getIncludePaths(project);
+		IncludePathContainer incPathContainer = new IncludePathContainer(scriptProject, includePaths);
+		returnChildren.add(incPathContainer);
+
+		// Add the language library
+		try {
+			Object[] projectChildren = getProjectFragments(scriptProject);
+			for (Object modelElement : projectChildren) {
+				if (modelElement instanceof BuildPathContainer && ((BuildPathContainer) modelElement)
+						.getBuildpathEntry().getPath().equals(LanguageModelInitializer.LANGUAGE_CONTAINER_PATH)) {
+					returnChildren.add(modelElement);
+				}
+			}
+		} catch (ModelException e) {
+			Logger.logException(e);
+		}
+
+		// let extensions contribute explorer root elements
+		for (ITreeContentProvider provider : TreeContentProviderRegistry.getInstance().getTreeProviders()) {
+
+			Object[] providerChildren = provider.getChildren(scriptProject);
+			if (providerChildren != null) {
+				returnChildren.addAll(new ArrayList<Object>(Arrays.asList(providerChildren)));
+			}
+		}
+
+		return returnChildren;
+	}
+
