@@ -1,9 +1,8 @@
-	protected void findEvaluatedType(String fileName, String code,
-			String criteriaFunction, final String pruner) throws Exception {
+	protected void findEvaluatedType(String fileName, String code, String criteriaFunction, final String pruner)
+			throws Exception {
 		IFile file = project.getFile("pdttest/test.php");
 		if (file.exists()) {
-			file.setContents(new ByteArrayInputStream(code.getBytes()), true,
-					false, null);
+			file.setContents(new ByteArrayInputStream(code.getBytes()), true, false, null);
 		} else {
 			file.create(new ByteArrayInputStream(code.getBytes()), true, null);
 		}
@@ -14,29 +13,22 @@
 			PHPCoreTests.waitForAutoBuild();
 
 			ISourceModule sourceModule = DLTKCore.createSourceModuleFrom(file);
-			ModuleDeclaration moduleDecl = SourceParserUtil
-					.getModuleDeclaration(sourceModule);
+			ModuleDeclaration moduleDecl = SourceParserUtil.getModuleDeclaration(sourceModule);
 
-			ASTNodeSearcher searcher = new ASTNodeSearcher(sourceModule,
-					criteriaFunction);
+			ASTNodeSearcher searcher = new ASTNodeSearcher(sourceModule, criteriaFunction);
 			moduleDecl.traverse(searcher);
 
-			Assert.assertNotNull("Method call " + criteriaFunction
-					+ "() in code: " + code, searcher.getResult());
-			Assert.assertNotNull("Can't find context for " + criteriaFunction
-					+ "() in code: " + code, searcher.getContext());
+			Assert.assertNotNull("Method call " + criteriaFunction + "() in code: " + code, searcher.getResult());
+			Assert.assertNotNull("Can't find context for " + criteriaFunction + "() in code: " + code,
+					searcher.getContext());
 
-			final ExpressionTypeGoal goal = new ExpressionTypeGoal(searcher
-					.getContext(), searcher.getResult());
-			perfMonitor.execute("PerformanceTests.testCodeAssist" + "_"
-					+ fileName, new Operation() {
+			final ExpressionTypeGoal goal = new ExpressionTypeGoal(searcher.getContext(), searcher.getResult());
+			perfMonitor.execute("PerformanceTests.testCodeAssist" + "_" + fileName, new Operation() {
 				public void run() throws Exception {
 					if ("phpdocGoals".equals(pruner)) {
-						typeInferenceEngine.evaluateTypeHeavy(goal,
-								ENGINE_TIMEOUT);
+						typeInferenceEngine.evaluateTypeHeavy(goal, ENGINE_TIMEOUT);
 					} else if ("heavyGoals".equals(pruner)) {
-						typeInferenceEngine.evaluateTypePHPDoc(goal,
-								ENGINE_TIMEOUT);
+						typeInferenceEngine.evaluateTypePHPDoc(goal, ENGINE_TIMEOUT);
 					} else {
 						typeInferenceEngine.evaluateType(goal, ENGINE_TIMEOUT);
 					}

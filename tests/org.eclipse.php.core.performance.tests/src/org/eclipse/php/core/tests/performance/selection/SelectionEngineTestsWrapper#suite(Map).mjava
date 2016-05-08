@@ -1,22 +1,17 @@
 	public Test suite(final Map map) {
-		project = ResourcesPlugin.getWorkspace().getRoot().getProject(
-				map.get(ProjectSuite.PROJECT).toString());
+		project = ResourcesPlugin.getWorkspace().getRoot().getProject(map.get(ProjectSuite.PROJECT).toString());
 		perfMonitor = PHPCorePerformanceTests.getPerformanceMonitor();
 		TestSuite suite = new TestSuite("Auto Selection Engine Tests");
 
-		final PHPVersion phpVersion = (PHPVersion) map
-				.get(ProjectSuite.PHP_VERSION);
+		final PHPVersion phpVersion = (PHPVersion) map.get(ProjectSuite.PHP_VERSION);
 		for (String testsDirectory : TESTS.get(phpVersion)) {
-			testsDirectory = testsDirectory.replaceAll("project", map.get(
-					ProjectSuite.PROJECT).toString());
+			testsDirectory = testsDirectory.replaceAll("project", map.get(ProjectSuite.PROJECT).toString());
 			for (final String fileName : getPDTTFiles(testsDirectory,
 					PHPCorePerformanceTests.getDefault().getBundle())) {
 				try {
 					final CodeAssistPdttFile pdttFile = new CodeAssistPdttFile(
-							PHPCorePerformanceTests.getDefault().getBundle(),
-							fileName);
-					SelectionEngineTests test = new SelectionEngineTests(
-							fileName) {
+							PHPCorePerformanceTests.getDefault().getBundle(), fileName);
+					SelectionEngineTests test = new SelectionEngineTests(fileName) {
 
 						protected void setUp() throws Exception {
 						}
@@ -29,12 +24,10 @@
 						}
 
 						protected void runTest() throws Throwable {
-							perfMonitor.execute(
-									"PerformanceTests.testSelectionEngine"
-											+ "_" + fileName, new Operation() {
+							perfMonitor.execute("PerformanceTests.testSelectionEngine" + "_" + fileName,
+									new Operation() {
 										public void run() throws Exception {
-											IModelElement[] elements = getSelection(pdttFile
-													.getFile());
+											IModelElement[] elements = getSelection(pdttFile.getFile());
 										}
 									}, 1, 10);
 						}
@@ -44,16 +37,16 @@
 					suite.addTest(test);
 				} catch (final Exception e) {
 					suite.addTest(new TestCase(fileName) { // dummy
-								// test
-								// indicating
-								// PDTT
-								// file
-								// parsing
-								// failure
-								protected void runTest() throws Throwable {
-									throw e;
-								}
-							});
+						// test
+						// indicating
+						// PDTT
+						// file
+						// parsing
+						// failure
+						protected void runTest() throws Throwable {
+							throw e;
+						}
+					});
 				}
 			}
 		}
