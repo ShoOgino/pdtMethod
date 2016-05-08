@@ -1,15 +1,24 @@
 	private int searchForOpeningPeer(int offset, char openingPeer, char closingPeer, IDocument document)
 			throws BadLocationException {
 		boolean useGenericsHeuristic = openingPeer == '<';
-		if (useGenericsHeuristic && !fHighlightAngularBrackets)
+		if (useGenericsHeuristic && !fHighlightAngularBrackets) {
 			return -1;
+		}
 
 		PHPHeuristicScanner scanner = PHPHeuristicScanner.createHeuristicScanner(document, offset, false);
 		int peer = scanner.findOpeningPeer(offset - 1, PHPHeuristicScanner.UNBOUND, openingPeer, closingPeer);
-		if (peer == PHPHeuristicScanner.NOT_FOUND)
+		if (peer == PHPHeuristicScanner.NOT_FOUND) {
 			return -1;
-		if (useGenericsHeuristic && !isTypeParameterBracket(peer, document, scanner))
+		}
+		if (useGenericsHeuristic && !isTypeParameterBracket(peer, document, scanner)) {
 			return -1;
+		}
+
+		// bug 493134 , detect mismatch, like call(function() {call(|)});
+		if (searchForClosingPeer(peer, openingPeer, closingPeer, document) != offset) {
+			return -1;
+		}
+
 		return peer;
 	}
 
