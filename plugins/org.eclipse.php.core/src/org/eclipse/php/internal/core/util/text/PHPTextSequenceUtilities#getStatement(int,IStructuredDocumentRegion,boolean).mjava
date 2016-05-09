@@ -47,15 +47,23 @@
 				} else {
 					startTokenRegion = phpScriptRegion.getPhpToken(offset - startOffset - 1);
 				}
+
+				List<IRegion> comments = new ArrayList<IRegion>();
 				while (true) {
 					// If statement start is at the beginning of the PHP script
 					// region:
 					if (startTokenRegion.getStart() == 0) {
 						break;
 					}
-					if (startTokenRegion.getType() == PHPRegionTypes.PHP_CURLY_CLOSE
-							|| startTokenRegion.getType() == PHPRegionTypes.PHP_CURLY_OPEN
-							|| startTokenRegion.getType() == PHPRegionTypes.PHP_SEMICOLON
+
+					String type = startTokenRegion.getType();
+					if (removeComments && PHPPartitionTypes.isPHPCommentState(type)) {
+						comments.add(new Region(phpScriptRegion.getStart() + startTokenRegion.getStart(),
+								startTokenRegion.getLength()));
+					}
+
+					if (type == PHPRegionTypes.PHP_CURLY_CLOSE || type == PHPRegionTypes.PHP_CURLY_OPEN
+							|| type == PHPRegionTypes.PHP_SEMICOLON
 					/* || startTokenRegion.getType() == PHPRegionTypes.PHP_IF */) {
 						// Calculate starting position of the statement (it
 						// should go right after this startTokenRegion):
@@ -64,13 +72,12 @@
 					}
 					startTokenRegion = phpScriptRegion.getPhpToken(startTokenRegion.getStart() - 1);
 				}
-
 				TextSequence textSequence = TextSequenceUtilities.createTextSequence(sdRegion, startOffset,
 						offset - startOffset);
 
 				// remove comments
 				if (removeComments) {
-					textSequence = removeComments(textSequence);
+					textSequence = removeComments(textSequence, comments);
 				}
 
 				// remove spaces from start.
