@@ -1,10 +1,11 @@
 	/**
 	 * Returns the partition at <code>position</code>. Classify the partition as
-	 * - PHPPartitionTypes.PHP_COMMENT, PHPPartitionTypes.PHP_QUOTED_STRING or
-	 * PHPPartitionTypes.PHP_DEFAULT. Matching open/close symbol will only be
-	 * looked for in the same partition type, so that for example a closing
-	 * bracket in a commented line will not match an opening bracket in the
-	 * code.
+	 * PHPPartitionTypes.PHP_SINGLE_LINE_COMMENT,
+	 * PHPPartitionTypes.PHP_MULTI_LINE_COMMENT, PHPPartitionTypes.PHP_DOC,
+	 * PHPPartitionTypes.PHP_QUOTED_STRING or PHPPartitionTypes.PHP_DEFAULT.
+	 * Matching open/close symbol will only be looked for in the same partition
+	 * type, so that for example a closing bracket in a commented line will not
+	 * match an opening bracket in the code.
 	 * 
 	 * @param position
 	 *            the position to get the partition for
@@ -26,18 +27,9 @@
 					IPhpScriptRegion phpScriptRegion = (IPhpScriptRegion) textRegion;
 					textRegion = phpScriptRegion
 							.getPhpToken(position - sdRegion.getStartOffset() - phpScriptRegion.getStart());
-					// handle comments
-					if (PHPPartitionTypes.isPHPCommentState(textRegion.getType())) {
-						return new TypedRegion(position, 0, PHPPartitionTypes.PHP_COMMENT);
-					}
-					// handle strings
-					else if (PHPPartitionTypes.isPHPQuotesState(textRegion.getType())) {
-						return new TypedRegion(position, 0, PHPPartitionTypes.PHP_QUOTED_STRING);
-					}
-					// handle the rest
-					else if (PHPPartitionTypes.isPHPRegularState(textRegion.getType())) {
-						return new TypedRegion(position, 0, PHPPartitionTypes.PHP_DEFAULT);
-					}
+
+					String partitionType = PHPPartitionTypes.getPartitionType(textRegion.getType());
+					return new TypedRegion(position, 0, partitionType);
 				}
 			}
 

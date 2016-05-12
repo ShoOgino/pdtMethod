@@ -18,32 +18,33 @@
 				return null;
 			}
 
-			synchronized (tokensContaier) {
+			synchronized (tokensContainer) {
 				// get the region to re-parse
-				ITextRegion tokenStart = tokensContaier.getToken(offset == 0 ? 0 : offset - 1);
-				ITextRegion tokenEnd = tokensContaier.getToken(offset + lengthToReplace);
+				ITextRegion tokenStart = tokensContainer.getToken(offset == 0 ? 0 : offset - 1);
+				ITextRegion tokenEnd = tokensContainer.getToken(offset + lengthToReplace);
 
 				// make sure, region to re-parse doesn't start with unknown
 				// token
 				while (PHPRegionTypes.UNKNOWN_TOKEN.equals(tokenStart.getType()) && (tokenStart.getStart() > 0)) {
-					tokenStart = tokensContaier.getToken(tokenStart.getStart() - 1);
+					tokenStart = tokensContainer.getToken(tokenStart.getStart() - 1);
 				}
 
 				// move sure, region to re-parse doesn't end with unknown token
 				while (PHPRegionTypes.UNKNOWN_TOKEN.equals(tokenEnd.getType())
-						&& (tokensContaier.getLastToken() != tokenEnd)) {
-					tokenEnd = tokensContaier.getToken(tokenEnd.getEnd());
+						&& (tokensContainer.getLastToken() != tokenEnd)) {
+					tokenEnd = tokensContainer.getToken(tokenEnd.getEnd());
 				}
 
 				boolean shouldDeprecatedKeyword = false;
-				int previousIndex = tokensContaier.phpTokens.indexOf(tokenStart) - 1;
+				int previousIndex = tokensContainer.phpTokens.indexOf(tokenStart) - 1;
 				if (previousIndex >= 0) {
-					ITextRegion previousRegion = tokensContaier.phpTokens.get(previousIndex);
+					ITextRegion previousRegion = tokensContainer.phpTokens.get(previousIndex);
 					if (PhpTokenContainer.deprecatedKeywordAfter(previousRegion.getType())) {
 						shouldDeprecatedKeyword = true;
 					}
-					if (tokenStart.getType().equals(PHPRegionTypes.PHP_COMMENT) && tokenStart.getLength() == 1
-							&& previousRegion.getType().equals(PHPRegionTypes.PHP_COMMENT_START)) {
+					if (PHPPartitionTypes.isPHPMultiLineCommentRegion(tokenStart.getType())
+							&& tokenStart.getLength() == 1
+							&& PHPPartitionTypes.isPHPMultiLineCommentStartRegion(previousRegion.getType())) {
 						requestStart = previousRegion.getStart();
 					}
 
@@ -56,8 +57,8 @@
 				}
 
 				// get start and end states
-				final LexerState startState = tokensContaier.getState(newTokenOffset);
-				final LexerState endState = tokensContaier.getState(tokenEnd.getEnd());
+				final LexerState startState = tokensContainer.getState(newTokenOffset);
+				final LexerState endState = tokensContainer.getState(tokenEnd.getEnd());
 
 				final PhpTokenContainer newContainer = new PhpTokenContainer();
 				final AbstractPhpLexer phpLexer = getPhpLexer(
@@ -104,7 +105,7 @@
 				}
 
 				// 1. replace the regions
-				final ListIterator oldIterator = tokensContaier.removeTokensSubList(tokenStart, tokenEnd);
+				final ListIterator oldIterator = tokensContainer.removeTokensSubList(tokenStart, tokenEnd);
 
 				ITextRegion[] newTokens = newContainer.getPhpTokens(); // now,
 																		// add
@@ -121,7 +122,7 @@
 				}
 
 				// 3. update state changes
-				tokensContaier.updateStateChanges(newContainer, tokenStart.getStart(), end);
+				tokensContainer.updateStateChanges(newContainer, tokenStart.getStart(), end);
 				updatedTokensStart = tokenStart.getStart();
 				updatedTokensEnd = end;
 				isFullReparsed = false;
