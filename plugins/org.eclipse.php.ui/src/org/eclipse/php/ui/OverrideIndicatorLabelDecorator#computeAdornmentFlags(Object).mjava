@@ -14,9 +14,18 @@
 		if (element instanceof IMethod) {
 			try {
 				IMethod method = (IMethod) element;
+				if (method.getParent().getElementType() != IModelElement.TYPE) {
+					return 0;
+				}
 				if (!method.getScriptProject().isOnBuildpath(method)) {
 					return 0;
 				}
+
+				IType parent = (IType) method.getParent();
+				if (parent.getSuperClasses() == null || parent.getSuperClasses().length == 0) {
+					return 0;
+				}
+
 				int flags = method.getFlags();
 				if (!method.isConstructor() && !Flags.isPrivate(flags) && !Flags.isStatic(flags)) {
 					int res = getOverrideIndicators(method);
