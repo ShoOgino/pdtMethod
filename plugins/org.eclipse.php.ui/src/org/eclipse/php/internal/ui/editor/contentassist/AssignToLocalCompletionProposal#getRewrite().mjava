@@ -1,0 +1,26 @@
+	@Override
+	protected ASTRewrite getRewrite() throws CoreException {
+		LinkedProposalModel linkedModel = getLinkedProposalModel();
+		TextEditGroup editGroup = new TextEditGroup(COMMAND_ID);
+
+		ExpressionStatement statement = getStatement(context);
+		Expression expression = statement.getExpression();
+
+		AST ast = statement.getAST();
+		ASTRewrite astRewrite = ASTRewrite.create(ast);
+		String[] names = possibleNames(expression);
+		for (int i = 0; i < names.length; i++) {
+			linkedModel.getPositionGroup(KEY_NAME, true).addProposal(names[0], null, 10);
+		}
+		Variable variable = ast.newVariable(names[0]);
+
+		Assignment assign = ast.newAssignment(variable, Assignment.OP_EQUAL,
+				(Expression) astRewrite.createCopyTarget(expression));
+		astRewrite.replace(expression, assign, editGroup);
+
+		linkedModel.getPositionGroup(KEY_NAME, true).addPosition(astRewrite.track(variable.getName()), true);
+		linkedModel.setEndPosition(astRewrite.track(statement));
+
+		return astRewrite;
+	}
+

@@ -1,0 +1,22 @@
+	protected String[] possibleNames(ASTNode node) {
+		String basic = getBasicName(node);
+		if (basic == null || basic.length() < 1) {
+			basic = DEFAULT_NAME;
+		}
+		if (basic.charAt(0) == NamespaceReference.NAMESPACE_SEPARATOR) {
+			basic = basic.substring(1);
+		}
+		basic = Character.toLowerCase(basic.charAt(0)) + basic.substring(1);
+
+		ASTNode scope = searchScope(node);
+		FindVariableVisitor find;
+		int num = -1;
+		do {
+			num++;
+			find = new FindVariableVisitor(num == 0 ? basic : basic + num);
+			scope.childrenAccept(find);
+		} while (find.found);
+
+		return new String[] { find.search };
+	}
+

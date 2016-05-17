@@ -1,0 +1,34 @@
+	private String getBasicName(ASTNode node) {
+		if (node != null) {
+			switch (node.getType()) {
+			case ASTNode.METHOD_INVOCATION:
+				MethodInvocation inv = (MethodInvocation) node;
+				return getBasicName(inv.getMethod());
+			case ASTNode.FUNCTION_INVOCATION:
+				FunctionInvocation func = (FunctionInvocation) node;
+				if (func.getFunctionName() == null || func.getFunctionName().getName() == null) {
+					return DEFAULT_NAME;
+				}
+
+				return getBasicName(func.getFunctionName().getName());
+			case ASTNode.STATIC_METHOD_INVOCATION:
+				StaticMethodInvocation st = (StaticMethodInvocation) node;
+				return getBasicName(st.getMethod());
+			case ASTNode.CLASS_INSTANCE_CREATION:
+				ClassInstanceCreation ci = (ClassInstanceCreation) node;
+				if (ci.getClassName() != null) {
+					return getBasicName(ci.getClassName().getName());
+				}
+			case ASTNode.VARIABLE:
+				return getBasicName(((Variable) node).getName());
+			case ASTNode.ARRAY_ACCESS:
+				return getBasicName(((ArrayAccess) node).getName());
+			case ASTNode.IDENTIFIER:
+			case ASTNode.NAMESPACE_NAME:
+				return ((Identifier) node).getName();
+			}
+		}
+
+		return DEFAULT_NAME;
+	}
+
