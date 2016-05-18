@@ -20,18 +20,17 @@
 		data = data.substring(0, offset) + data.substring(offset + 1);
 		testFile = project.getFile("test.php");
 		testFile.create(new ByteArrayInputStream(data.getBytes()), true, null);
+		PHPCoreTests.index(testFile);
 		this.otherFiles = new ArrayList<IFile>(otherFiles.length);
 		int i = 0;
 		for (String otherFileContent : otherFiles) {
 			IFile tmp = project.getFile(String.format("test%s.php", i));
 			tmp.create(new ByteArrayInputStream(otherFileContent.getBytes()), true, null);
 			this.otherFiles.add(i, tmp);
+			PHPCoreTests.index(tmp);
 			i++;
 		}
-		project.refreshLocal(IResource.DEPTH_INFINITE, null);
 
-		testFile.touch(new NullProgressMonitor());
-		project.build(IncrementalProjectBuilder.INCREMENTAL_BUILD, null);
 		PHPCoreTests.waitForIndexer();
 		// PHPCoreTests.waitForAutoBuild();
 
