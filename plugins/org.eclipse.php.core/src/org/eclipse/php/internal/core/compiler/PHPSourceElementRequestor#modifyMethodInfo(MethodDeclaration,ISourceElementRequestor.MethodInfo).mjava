@@ -25,5 +25,19 @@
 		for (PHPSourceElementRequestorExtension extension : extensions) {
 			extension.modifyMethodInfo(methodDeclaration, mi);
 		}
+		if (mi.returnType != null) {
+			mi.modifiers |= IPHPModifiers.AccReturn;
+		} else if (methodDeclaration.getBody() != null) {
+			// check
+			ReturnDetector detector = new ReturnDetector();
+			try {
+				methodDeclaration.getBody().traverse(detector);
+				if (detector.hasReturn()) {
+					mi.modifiers |= IPHPModifiers.AccReturn;
+				}
+			} catch (Exception e) {
+				Logger.logException(e);
+			}
+		}
 	}
 
