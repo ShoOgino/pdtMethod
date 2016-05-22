@@ -1,0 +1,22 @@
+	@Override
+	protected void postRefresh(List<?> toRefreshOld, boolean updateLabels, Collection<Runnable> runnables) {
+		List<Object> toRefresh = new ArrayList<>(toRefreshOld);
+		int size = toRefresh.size();
+		for (int i = 0; i < size; i++) {
+			Object element = toRefresh.get(i);
+			if (element instanceof IScriptProject) {
+				toRefresh.set(i, ((IScriptProject) element).getProject());
+			}
+		}
+		for (Iterator<Object> iter = toRefresh.iterator(); iter.hasNext();) {
+			Object element = iter.next();
+			if (element instanceof IModelElement) {
+				iter.remove();
+				toRefresh.add(((IModelElement) element).getModel().getWorkspace().getRoot());
+				super.postRefresh(toRefresh, updateLabels, runnables);
+				return;
+			}
+		}
+		super.postRefresh(toRefresh, updateLabels, runnables);
+	}
+
