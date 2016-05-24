@@ -1,5 +1,5 @@
 	@Override
-	public void configure(IProject project, Set<IPath> arg1, IProgressMonitor arg2) {
+	public void configure(IProject project, Set<IPath> ignoredPaths, IProgressMonitor monitor) {
 		try {
 			if (PHPToolkitUtil.isPhpProject(project)) {
 				return;
@@ -10,7 +10,15 @@
 				desc.setNatureIds(natureIds);
 				project.setDescription(desc, null);
 			}
-		} catch (CoreException e) {
+
+			if (project.getFile(COMPOSER_JSON).exists()) {
+				IFolder vendorFolder = project.getFolder(VENDOR_DIRECTORY);
+				if (vendorFolder.exists()) {
+					LibraryFolderManager.getInstance().useAsLibraryFolder(new IFolder[] { vendorFolder },
+							SubMonitor.convert(monitor, 1));
+				}
+			}
+		} catch (OperationCanceledException | InterruptedException | CoreException e) {
 			Logger.logException(e);
 		}
 	}
