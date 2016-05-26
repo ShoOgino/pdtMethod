@@ -26,13 +26,16 @@
 		// .toString();
 		int classNameStart = PHPTextSequenceUtilities.readIdentifierStartIndex(phpVersion, statementText,
 				propertyEndPosition, true);
-		String className = statementText.subSequence(classNameStart, propertyEndPosition).toString();
-		ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule, null);
-		FileContext context = new FileContext(sourceModule, moduleDeclaration, offset);
-		IEvaluatedType type = PHPClassType.fromTraitName(className, sourceModule, offset);
-		IType[] modelElements = PHPTypeInferenceUtils.getModelElements(type, context, offset);
-		if (modelElements != null) {
-			return modelElements;
+		String className = classNameStart < 0 ? "" //$NON-NLS-1$
+				: statementText.subSequence(classNameStart, propertyEndPosition).toString();
+		if (className.length() > 0) {
+			ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule, null);
+			FileContext context = new FileContext(sourceModule, moduleDeclaration, offset);
+			IEvaluatedType type = PHPClassType.fromTraitName(className, sourceModule, offset);
+			IType[] modelElements = PHPTypeInferenceUtils.getModelElements(type, context, offset);
+			if (modelElements != null) {
+				return modelElements;
+			}
 		}
 		return EMPTY_TYPES;
 
