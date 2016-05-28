@@ -1,0 +1,30 @@
+	@Override
+	public StyledString createStyledFieldProposalLabel(CompletionProposal proposal) {
+		StyledString buffer = new StyledString();
+		if (proposal.getModelElement() instanceof AliasField) {
+			AliasField aliasField = (AliasField) proposal.getModelElement();
+			buffer.append(aliasField.getAlias());
+			return buffer;
+		}
+		IModelElement element = proposal.getModelElement();
+		if (element != null && element.getElementType() == IModelElement.FIELD) {
+			final IField field = (IField) element;
+			try {
+				String type = field.getType();
+				if (type != null) {
+					buffer.append(proposal.getName());
+
+					buffer.append(getReturnTypeSeparator(), StyledString.DECORATIONS_STYLER);
+					buffer.append(type, StyledString.DECORATIONS_STYLER);
+
+					return buffer;
+				}
+			} catch (ModelException e) {
+				// ignore
+			}
+		}
+		buffer.append(proposal.getName());
+
+		return buffer;
+	}
+

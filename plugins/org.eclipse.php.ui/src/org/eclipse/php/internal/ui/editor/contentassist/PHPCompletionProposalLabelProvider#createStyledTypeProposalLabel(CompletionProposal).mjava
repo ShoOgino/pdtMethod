@@ -1,0 +1,27 @@
+	@Override
+	public StyledString createStyledTypeProposalLabel(CompletionProposal typeProposal) {
+		StyledString nameBuffer = new StyledString();
+
+		IType type = (IType) typeProposal.getModelElement();
+		if (type instanceof AliasType) {
+			AliasType aliasType = (AliasType) type;
+			nameBuffer.append(aliasType.getAlias());
+			return nameBuffer;
+		}
+		nameBuffer.append(typeProposal.getName());
+
+		boolean isNamespace = false;
+		try {
+			isNamespace = PHPFlags.isNamespace(type.getFlags());
+		} catch (ModelException e) {
+			Logger.logException(e);
+		}
+		if (type.getParent() != null && !isNamespace) {
+			nameBuffer.append(" - ", StyledString.DECORATIONS_STYLER); //$NON-NLS-1$
+			IModelElement parent = type.getParent();
+			nameBuffer.append(parent.getElementName(), StyledString.QUALIFIER_STYLER);
+		}
+
+		return nameBuffer;
+	}
+

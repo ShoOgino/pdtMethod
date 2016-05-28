@@ -1,0 +1,32 @@
+	protected void appendMethodType(StyledString nameBuffer, CompletionProposal methodProposal) {
+		if (showMethodReturnType()) {
+			IMethod method = (IMethod) methodProposal.getModelElement();
+			if (method instanceof AliasMethod) {
+				method = (IMethod) ((AliasMethod) method).getMethod();
+			}
+			if (method == null) {
+				return;
+			}
+			try {
+				if (method.isConstructor()) {
+					return;
+				}
+				nameBuffer.append(getReturnTypeSeparator(), StyledString.DECORATIONS_STYLER);
+				String type;
+				type = method.getType();
+
+				if (type == null) {
+					if ((method.getFlags() & IPHPModifiers.AccReturn) != 0) {
+						type = "mixed"; //$NON-NLS-1$
+					} else {
+						type = "void"; //$NON-NLS-1$
+					}
+				}
+				nameBuffer.append(type, StyledString.DECORATIONS_STYLER);
+			} catch (ModelException e) {
+				Logger.logException(e);
+			}
+		}
+
+	}
+

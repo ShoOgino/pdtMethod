@@ -1,0 +1,45 @@
+	protected StyledString createStyledOverrideMethodProposalLabel(CompletionProposal methodProposal) {
+		StyledString nameBuffer = new StyledString();
+		IMethod method = (IMethod) methodProposal.getModelElement();
+
+		if (method instanceof FakeConstructor) {
+			IType type = (IType) method.getParent();
+			if (type instanceof AliasType) {
+				AliasType aliasType = (AliasType) type;
+				nameBuffer.append(aliasType.getAlias());
+				nameBuffer.append("()"); //$NON-NLS-1$
+				return nameBuffer;
+			}
+		}
+		boolean isAlias = method instanceof AliasMethod;
+		// method name
+		if (isAlias) {
+			AliasMethod aliasMethod = (AliasMethod) method;
+			nameBuffer.append(aliasMethod.getAlias());
+		} else {
+			nameBuffer.append(method.getElementName());
+		}
+
+		// parameters
+		nameBuffer.append('(');
+		appendStyledParameterList(nameBuffer, methodProposal);
+		nameBuffer.append(')'); // $NON-NLS-1$
+
+		appendMethodType(nameBuffer, methodProposal);
+		if (isAlias) {
+			return nameBuffer;
+		}
+
+		nameBuffer.append(" - ", StyledString.DECORATIONS_STYLER); //$NON-NLS-1$
+
+		IModelElement parent = method.getParent();
+		if (parent instanceof IType) {
+			IType type = (IType) parent;
+			nameBuffer.append(type.getTypeQualifiedName(ENCLOSING_TYPE_SEPARATOR), StyledString.QUALIFIER_STYLER); // $NON-NLS-1$
+		} else {
+			nameBuffer.append(parent.getElementName(), StyledString.QUALIFIER_STYLER);
+		}
+
+		return nameBuffer;
+	}
+

@@ -1,0 +1,36 @@
+	protected StyledString createStyledMethodProposalLabel(CompletionProposal methodProposal) {
+		StyledString nameBuffer = new StyledString();
+		boolean isAlias = methodProposal.getModelElement() instanceof AliasMethod;
+
+		// method name
+		if (isAlias) {
+			AliasMethod aliasMethod = (AliasMethod) methodProposal.getModelElement();
+			nameBuffer.append(aliasMethod.getAlias());
+		} else {
+			nameBuffer.append(methodProposal.getName());
+		}
+
+		// parameters
+		nameBuffer.append('(');
+		appendStyledParameterList(nameBuffer, methodProposal);
+		nameBuffer.append(')');
+
+		appendMethodType(nameBuffer, methodProposal);
+		if (isAlias) {
+			return nameBuffer;
+		}
+
+		IMethod method = (IMethod) methodProposal.getModelElement();
+		nameBuffer.append(" - ", StyledString.DECORATIONS_STYLER); //$NON-NLS-1$
+
+		IModelElement parent = method.getParent();
+		if (parent instanceof IType) {
+			IType type = (IType) parent;
+			nameBuffer.append(type.getTypeQualifiedName(ENCLOSING_TYPE_SEPARATOR), StyledString.QUALIFIER_STYLER); // $NON-NLS-1$
+		} else {
+			nameBuffer.append(parent.getElementName(), StyledString.QUALIFIER_STYLER);
+		}
+
+		return nameBuffer;
+	}
+
