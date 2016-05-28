@@ -4,6 +4,8 @@
 
 		String[] parameter = new String[args.size()];
 		String[] initializers = new String[args.size()];
+		ISourceElementRequestor.MethodInfo mi = new ISourceElementRequestor.MethodInfo();
+		mi.modifiers = method.getModifiers();
 		for (int a = 0; a < args.size(); a++) {
 			Argument arg = (Argument) args.get(a);
 			parameter[a] = arg.getName();
@@ -15,12 +17,13 @@
 					initializers[a] = DEFAULT_VALUE;
 				}
 			}
+			if (arg instanceof FormalParameter && ((FormalParameter) arg).isVariadic()) {
+				mi.modifiers |= IPHPModifiers.AccVariadic;
+			}
 		}
 
-		ISourceElementRequestor.MethodInfo mi = new ISourceElementRequestor.MethodInfo();
 		mi.parameterNames = parameter;
 		mi.name = method.getName();
-		mi.modifiers = method.getModifiers();
 		mi.nameSourceStart = method.getNameStart();
 		mi.nameSourceEnd = method.getNameEnd() - 1;
 		mi.declarationStart = method.sourceStart();

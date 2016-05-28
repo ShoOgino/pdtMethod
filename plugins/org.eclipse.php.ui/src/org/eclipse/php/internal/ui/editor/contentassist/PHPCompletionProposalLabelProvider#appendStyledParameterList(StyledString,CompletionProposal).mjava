@@ -1,5 +1,18 @@
 	protected StyledString appendStyledParameterList(StyledString buffer, CompletionProposal methodProposal) {
 		String[] parameterNames = methodProposal.findParameterNames(null);
+		IMethod method = (IMethod) methodProposal.getModelElement();
+		if (method instanceof AliasMethod) {
+			method = (IMethod) ((AliasMethod) method).getMethod();
+		}
+		boolean isVariadic = false;
+		try {
+			if (method != null && PHPFlags.isVariadic(method.getFlags())) {
+				isVariadic = true;
+			}
+		} catch (ModelException e) {
+			Logger.logException(e);
+		}
+
 		String[] parameterTypes = null;
 		if (parameterNames != null) {
 			final Integer paramLimit = (Integer) methodProposal
@@ -13,11 +26,14 @@
 						buffer.append(',');
 						buffer.append(' ');
 					}
+					if (isVariadic && i + 1 == parameterNames.length) {
+						buffer.append(ScriptElementLabels.ELLIPSIS_STRING); // $NON-NLS-1$
+					}
 					buffer.append(parameterNames[i]);
 				}
 				return buffer;
 			}
 		}
-		return appendStyledParameterSignature(buffer, parameterTypes, parameterNames);
+		return appendStyledParameterSignature(buffer, parameterTypes, parameterNames, isVariadic);
 	}
 

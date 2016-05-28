@@ -16,14 +16,19 @@
 		Collection<FormalParameter> arguments = lambdaMethod.getArguments();
 		StringBuilder metadata = new StringBuilder();
 		String[] parameters;
+		ISourceElementRequestor.MethodInfo mi = new ISourceElementRequestor.MethodInfo();
+		mi.modifiers = Modifiers.AccPublic;
 		if (arguments != null) {
 			parameters = new String[arguments.size()];
 			Iterator<FormalParameter> i = arguments.iterator();
 			int indx = 0;
 			while (i.hasNext()) {
-				Argument arg = (Argument) i.next();
+				FormalParameter arg = i.next();
 				metadata.append(arg.getName());
 				parameters[indx] = arg.getName();
+				if (arg.isVariadic()) {
+					mi.modifiers |= IPHPModifiers.AccVariadic;
+				}
 				indx++;
 				if (i.hasNext()) {
 					metadata.append(","); //$NON-NLS-1$
@@ -38,10 +43,9 @@
 			visitor.visit(lambdaMethod);
 		}
 
-		ISourceElementRequestor.MethodInfo mi = new ISourceElementRequestor.MethodInfo();
 		mi.parameterNames = parameters;
 		mi.name = PHPCoreConstants.ANONYMOUS;
-		mi.modifiers = Modifiers.AccPublic;
+
 		if (lambdaMethod.isStatic()) {
 			mi.modifiers |= Modifiers.AccStatic;
 		}
