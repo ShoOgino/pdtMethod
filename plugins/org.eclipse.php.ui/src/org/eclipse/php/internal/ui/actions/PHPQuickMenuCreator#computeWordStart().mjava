@@ -1,0 +1,23 @@
+	private Point computeWordStart() {
+		ITextSelection selection = (ITextSelection) editor.getSelectionProvider().getSelection();
+		IRegion textRegion = PHPWordFinder.findWord(editor.getViewer().getDocument(), selection.getOffset());
+		if (textRegion == null)
+			return null;
+
+		IRegion widgetRegion = modelRange2WidgetRange(textRegion);
+		if (widgetRegion == null)
+			return null;
+
+		int start = widgetRegion.getOffset();
+
+		StyledText styledText = editor.getViewer().getTextWidget();
+		Point result = styledText.getLocationAtOffset(start);
+		result.y += styledText.getLineHeight(start);
+
+		if (!styledText.getClientArea().contains(result)) {
+			return null;
+		}
+
+		return result;
+	}
+
