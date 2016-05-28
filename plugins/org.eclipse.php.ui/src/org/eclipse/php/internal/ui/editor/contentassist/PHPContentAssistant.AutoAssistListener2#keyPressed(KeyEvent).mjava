@@ -1,0 +1,89 @@
+		public void keyPressed(KeyEvent e) {
+			// Only act on typed characters and ignore modifier-only events
+			if (e.character == 0 && (e.keyCode & SWT.KEYCODE_BIT) == 0) {
+				return;
+			}
+			// https://bugs.eclipse.org/bugs/show_bug.cgi?id=465917,
+			// ignore if with CMD/CTRL
+			if ((e.stateMask & SWT.MOD1) != 0) {
+				return;
+			}
+			if (!(e.character >= 0x20 && e.character != 0x7F && e.character != 0xFF)) {
+				return;
+			}
+			try {
+				int pos = ((Point) evaluatePrivateMemberMethod("fContentAssistSubjectControlAdapter", //$NON-NLS-1$
+						"getSelectedRange", new Class[0], new Object[0])).x; //$NON-NLS-1$
+				IDocument document = fViewer.getDocument();
+				String type = TextUtilities.getContentType(document, getDocumentPartitioning(), pos, true);
+				boolean activated = true;
+				if (type != PHPPartitionTypes.PHP_DEFAULT) {
+					if (fViewer instanceof PHPStructuredTextViewer) {
+						PHPStructuredTextViewer phpViewer = (PHPStructuredTextViewer) fViewer;
+						if (phpViewer.getViewerConfiguration() instanceof PHPStructuredTextViewerConfiguration) {
+							PHPStructuredTextViewerConfiguration viewerConfiguration = (PHPStructuredTextViewerConfiguration) phpViewer
+									.getViewerConfiguration();
+							IContentAssistProcessor[] processors = viewerConfiguration.getProcessorMap().get(type);
+							if (processors != null) {
+								StringBuffer sb = new StringBuffer();
+								for (int i = 0; i < processors.length; i++) {
+									sb.append(computeAllAutoActivationTriggers(processors[i]));
+								}
+								if (sb.toString().indexOf(e.character) < 0) {
+									stop();
+									return;
+								}
+							} else {
+								IContentAssistProcessor processor = getContentAssistProcessor(type);
+								if (computeAllAutoActivationTriggers(processor).indexOf(e.character) < 0) {
+									stop();
+									return;
+								}
+							}
+						}
+					}
+					char[] activation;
+					activation = (char[]) evaluatePrivateMemberMethod("fContentAssistSubjectControlAdapter", //$NON-NLS-1$
+							"getCompletionProposalAutoActivationCharacters", //$NON-NLS-1$
+							new Class[] { ContentAssistant.class, int.class }, new Object[] {
+									PHPContentAssistant.class.getSuperclass().cast(PHPContentAssistant.this), pos });
+					activated = contains(activation, e.character);
+				} else
+				// just '>' or just '-' will not trigger proposal pop-up
+				if ((pos > 0 && e.character == '>' && document.getChar(pos - 1) != '-') || (e.character == '-')) {
+					stop();
+					return;
+
+				} else
+				// Bug 458285 - do not run auto assist with empty identifier
+				if (Character.isWhitespace(e.character)
+						|| (pos > 0 && e.character == '\\' && Character.isWhitespace(document.getChar(pos - 1)))
+						|| e.character == ',' || e.character == '(' || e.character == ')' || e.character == '{'
+						|| e.character == '}' || e.character == '[' || e.character == ']' || e.character == '\''
+						|| e.character == '"' || e.character == '*') {
+					stop();
+					return;
+				}
+				int showStyle;
+				if (activated && !isProposalPopupActive()) {
+					showStyle = SHOW_PROPOSALS;
+				} else {
+					if (isContextInfoPopupActive()) {
+						showStyle = SHOW_CONTEXT_INFO;
+					} else {
+						stop();
+						return;
+					}
+				}
+
+				if (fThread != null && fThread.isAlive()) {
+					reset(showStyle);
+				} else {
+					start(showStyle);
+				}
+
+			} catch (Exception e1) {
+				PHPUiPlugin.log(e1);
+			}
+		}
+
