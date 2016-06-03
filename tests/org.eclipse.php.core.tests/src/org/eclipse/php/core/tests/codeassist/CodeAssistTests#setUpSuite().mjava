@@ -1,26 +1,22 @@
 	@BeforeList
 	public void setUpSuite() throws Exception {
+		if (ResourcesPlugin.getWorkspace().isAutoBuilding()) {
+			IWorkspaceDescription workspaceDescription = ResourcesPlugin.getWorkspace().getDescription();
+			workspaceDescription.setAutoBuilding(false);
+			ResourcesPlugin.getWorkspace().setDescription(workspaceDescription);
+		}
 		project = ResourcesPlugin.getWorkspace().getRoot().getProject("CodeAssistTests_" + version.toString());
 		if (project.exists()) {
 			return;
 		}
-
-		if (ResourcesPlugin.getWorkspace().isAutoBuilding()) {
-			ResourcesPlugin.getWorkspace().getDescription().setAutoBuilding(false);
-		}
-
 		project.create(null);
 		project.open(null);
-
 		// configure nature
 		IProjectDescription desc = project.getDescription();
 		desc.setNatureIds(new String[] { PHPNature.ID });
 		project.setDescription(desc, null);
-
 		// WTP validator can be disabled during code assist tests
 		ValidationFramework.getDefault().suspendValidation(project, true);
 		PHPCoreTests.setProjectPhpVersion(project, version);
-
-		PHPCoreTests.index(project);
 	}
 

@@ -1,24 +1,25 @@
 	@BeforeList
 	public void setUpSuite() throws Exception {
+		if (ResourcesPlugin.getWorkspace().isAutoBuilding()) {
+			IWorkspaceDescription workspaceDescription = ResourcesPlugin.getWorkspace().getDescription();
+			workspaceDescription.setAutoBuilding(false);
+			ResourcesPlugin.getWorkspace().setDescription(workspaceDescription);
+		}
 		project = ResourcesPlugin.getWorkspace().getRoot().getProject("Content Assist_" + this.phpVersion);
 		if (project.exists()) {
 			return;
 		}
-
 		project.create(null);
 		project.open(null);
-
 		// configure nature
 		IProjectDescription desc = project.getDescription();
 		desc.setNatureIds(new String[] { PHPNature.ID });
 		project.setDescription(desc, null);
-
 		// set auto insert to true,if there are only one proposal in the CA,it
 		// will insert the proposal,so we can test CA without UI interaction
-
 		DefaultScope.INSTANCE.getNode(PHPUiPlugin.ID).putBoolean(PHPCoreConstants.CODEASSIST_AUTOINSERT, true);
+		// WTP validator can be disabled during code assist tests
+		ValidationFramework.getDefault().suspendValidation(project, true);
 		PHPCoreTests.setProjectPhpVersion(project, phpVersion);
-		PHPCoreTests.index(project);
-		PHPCoreTests.waitForIndexer();
 	}
 
