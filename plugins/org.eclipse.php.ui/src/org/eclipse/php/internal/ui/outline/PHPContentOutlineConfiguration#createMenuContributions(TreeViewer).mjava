@@ -22,21 +22,24 @@
 
 		final IContributionItem showHTMLItem = new ActionContributionItem(changeOutlineModeActionHTML);
 
-		// Custom filter group
-		fCustomFiltersActionGroup = new CustomFiltersActionGroup(OUTLINE_PAGE, viewer);
-
-		final IContributionItem filtersItem = new FilterActionGroupContributionItem(fCustomFiltersActionGroup);
-
 		items = super.createMenuContributions(viewer);
 
-		if (items == null)
-			items = new IContributionItem[] { showPHPItem, showHTMLItem, filtersItem };
-		else {
+		if (items == null) {
+			items = new IContributionItem[] { showPHPItem, showHTMLItem };
+		} else {
 			final IContributionItem[] combinedItems = new IContributionItem[items.length + 3];
-			System.arraycopy(items, 0, combinedItems, 0, items.length);
-			combinedItems[items.length] = showPHPItem;
-			combinedItems[items.length + 1] = showHTMLItem;
-			combinedItems[items.length + 2] = filtersItem;
+			combinedItems[0] = showPHPItem;
+			combinedItems[1] = showHTMLItem;
+			combinedItems[2] = new Separator(OUTLINE_MODE);
+
+			for (int i = 0; i < items.length; i++) {
+				if (OUTLINE_SHOW_ATTRIBUTE_ID.equals(items[i].getId())) {
+					items[i] = new ModeBasedContributionItem(MODE_HTML, items[i]);
+					break;
+				}
+			}
+
+			System.arraycopy(items, 0, combinedItems, 3, items.length);
 			items = combinedItems;
 		}
 		if (changeOutlineModeActionHTML.isChecked() && sortAction != null) {
