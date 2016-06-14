@@ -1,0 +1,32 @@
+	private void evaluateReturnType(List<String> returnTypeList, IMethod method) throws ModelException {
+		if (!PHPFlags.isInheritdoc(method.getFlags())) {
+			return;
+		}
+
+		IType type = method.getDeclaringType();
+		if (type == null) {
+			return;
+		}
+
+		IContext context = goal.getContext();
+		IModelAccessCache cache = null;
+		if (context instanceof IModelCacheContext) {
+			cache = ((IModelCacheContext) context).getCache();
+		}
+		IType[] superClasses = PHPModelUtils.getSuperClasses(type,
+				cache == null ? null : cache.getSuperTypeHierarchy(type, null));
+
+		for (IType superClass : superClasses) {
+			IMethod superClassMethod = superClass.getMethod(method.getElementName());
+
+			if (superClassMethod != null && superClassMethod.exists()) {
+				String returnType = superClassMethod.getType();
+				if (returnType != null) {
+					Collections.addAll(returnTypeList, StringUtils.split(returnType, Constants.TYPE_SEPERATOR_CHAR));
+				}
+
+				evaluateReturnType(returnTypeList, superClassMethod);
+			}
+		}
+	}
+

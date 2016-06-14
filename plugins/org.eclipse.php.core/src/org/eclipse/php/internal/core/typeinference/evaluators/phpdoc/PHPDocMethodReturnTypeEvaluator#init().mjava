@@ -1,26 +1,35 @@
 	public IGoal[] init() {
 		for (IMethod method : getMethods()) {
-			IType currentNamespace = PHPModelUtils.getCurrentNamespace(method);
+			if (!method.exists()) {
+				continue;
+			}
+
 			String[] typeNames = null;
 			if (method instanceof IPHPDocAwareElement) {
 				typeNames = ((IPHPDocAwareElement) method).getReturnTypes();
 			} else {
-				List<String> returnTypeList = new LinkedList<String>();
-				PHPDocBlock docBlock = PHPModelUtils.getDocBlock(method);
-				if (docBlock == null) {
-					return IGoal.NO_GOALS;
+				try {
+					String returnType = method.getType();
+					if (returnType != null) {
+						typeNames = StringUtils.split(returnType, Constants.TYPE_SEPERATOR_CHAR);
+					} else {
+						List<String> returnTypeList = new LinkedList<String>();
+						evaluateReturnType(returnTypeList, method);
+						typeNames = returnTypeList.toArray(new String[returnTypeList.size()]);
+					}
+				} catch (ModelException e) {
+					Logger.logException(e);
 				}
-
-				evaluateReturnType(returnTypeList, docBlock, method);
-				typeNames = returnTypeList.toArray(new String[returnTypeList.size()]);
 			}
 			if (typeNames != null) {
-				PHPDocBlock docBlock = PHPModelUtils.getDocBlock(method);
-				if (docBlock != null) {
-					AbstractMethodReturnTypeGoal goal = (AbstractMethodReturnTypeGoal) getGoal();
-					IModelElement space = currentNamespace != null ? currentNamespace : method.getSourceModule();
+				AbstractMethodReturnTypeGoal goal = (AbstractMethodReturnTypeGoal) getGoal();
+				IType currentNamespace = PHPModelUtils.getCurrentNamespace(method);
+				IModelElement space = currentNamespace != null ? currentNamespace : method.getSourceModule();
+				try {
 					evaluated.addAll(Arrays.asList(PHPEvaluationUtils.evaluatePHPDocType(typeNames, space,
-							docBlock.sourceStart(), goal.getTypes())));
+							method.getSourceRange().getOffset(), goal.getTypes())));
+				} catch (ModelException e) {
+					Logger.logException(e);
 				}
 			}
 		}
