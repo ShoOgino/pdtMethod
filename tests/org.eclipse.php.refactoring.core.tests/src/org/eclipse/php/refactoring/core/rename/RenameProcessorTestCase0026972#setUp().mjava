@@ -1,25 +1,13 @@
 	@Before
 	public void setUp() throws Exception {
-		System.setProperty("disableStartupRunner", "true");
 
-		project1 = FileUtils.createProject("project1", PHPVersion.PHP5_3);
+		project1 = TestUtils.createProject("project1");
+		TestUtils.setProjectPhpVersion(project1, PHPVersion.PHP5_3);
 
-		IFolder folder = project1.getFolder("src");
+		IFolder folder = TestUtils.createFolder(project1, "src");
+		file = TestUtils.createFile(folder, "test.php",
+				"<?php class test {} $a = new test(); $b = new test();$c = new test(); ?>");
 
-		if (!folder.exists()) {
-			folder.create(true, true, new NullProgressMonitor());
-		}
-		file = folder.getFile("test11.php");
-
-		InputStream source = new ByteArrayInputStream(
-				"<?php class test {} $a = new test(); $b = new test();$c = new test(); ?>".getBytes());
-
-		if (!file.exists()) {
-			file.create(source, true, new NullProgressMonitor());
-		} else {
-			file.setContents(source, IFile.FORCE, new NullProgressMonitor());
-		}
-
-		PHPCoreTests.waitForIndexer();
+		TestUtils.waitForIndexer();
 	}
 

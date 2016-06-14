@@ -1,39 +1,14 @@
 	@Test
 	public void testRename1() throws Exception {
 
-		System.setProperty("disableStartupRunner", "true");
+		IFolder folder = TestUtils.createFolder(project1, "src");
+		IFile file1 = TestUtils.createFile(folder, "testzstd_1006_1.php",
+				"<?php class MyClass{} $a=new MyClass();?>");
 
-		project1 = FileUtils.createProject("project1", PHPVersion.PHP5_3);
+		IFile file2 = TestUtils.createFile(folder, "testzstd_1006_2.php",
+				"<?php include 'testzstd_1006_1.php'; class NewClass{protected function foo(){$a = new MyClass();}}?>");
 
-		IFolder folder = project1.getFolder("src");
-
-		if (!folder.exists()) {
-			folder.create(true, true, new NullProgressMonitor());
-		}
-
-		IFile file1 = folder.getFile("testzstd_1006_1.php");
-
-		InputStream source = new ByteArrayInputStream("<?php class MyClass{} $a=new MyClass();?>".getBytes());
-
-		if (!file1.exists()) {
-			file1.create(source, true, new NullProgressMonitor());
-		} else {
-			file1.setContents(source, IFile.FORCE, new NullProgressMonitor());
-		}
-
-		IFile file2 = folder.getFile("testzstd_1006_2.php");
-
-		source = new ByteArrayInputStream(
-				"<?php include 'testzstd_1006_1.php'; class NewClass{protected function foo(){$a = new MyClass();}}?>"
-						.getBytes());
-
-		if (!file2.exists()) {
-			file2.create(source, true, new NullProgressMonitor());
-		} else {
-			file2.setContents(source, IFile.FORCE, new NullProgressMonitor());
-		}
-
-		PHPCoreTests.waitForIndexer();
+		TestUtils.waitForIndexer();
 
 		Program program = createProgram(file2);
 

@@ -1,24 +1,10 @@
 	@BeforeClass
 	public static void setUp() throws Exception {
-		project = ResourcesPlugin.getWorkspace().getRoot().getProject("PHPLanguageModelTests");
-		if (project.exists()) {
-			return;
-		}
-
-		project.create(null);
-		project.open(null);
-		// Disable WTP validation to skip unnecessary clashes
-		ValidationFramework.getDefault().suspendValidation(project, true);
-		// configure nature
-		IProjectDescription desc = project.getDescription();
-		desc.setNatureIds(new String[] { PHPNature.ID });
-		project.setDescription(desc, null);
-
-		ProjectOptions.setPhpVersion(PHPVersion.PHP5_3, project);
-
-		project.refreshLocal(IResource.DEPTH_INFINITE, null);
+		TestUtils.disableColliders(ColliderType.ALL);
+		project = TestUtils.createProject("PHPLanguageModelTests");
+		ResourcesPlugin.getWorkspace().getRoot().getProject();
+		TestUtils.setProjectPhpVersion(project, PHPVersion.PHP5_3);
 		project.build(IncrementalProjectBuilder.FULL_BUILD, null);
-
-		PHPCoreTests.waitForIndexer();
+		TestUtils.waitForIndexer();
 	}
 

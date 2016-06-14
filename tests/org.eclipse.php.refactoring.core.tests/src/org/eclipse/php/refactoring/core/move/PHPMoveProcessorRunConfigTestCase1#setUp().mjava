@@ -1,39 +1,14 @@
 	@Before
 	public void setUp() throws Exception {
-		System.setProperty("disableStartupRunner", "true");
 
-		project1 = FileUtils.createProject("TestProject1");
+		project1 = TestUtils.createProject("TestProject1");
+		IFolder folder = TestUtils.createFolder(project1, "src");
+		TestUtils.createFile(folder, "RunConfigTest1.php", "<?php class TestRenameClass{}?>");
 
-		IFolder folder = project1.getFolder("src");
+		configFile = TestUtils.createFile(project1, "TestConfig1.launch", configFileCont);
 
-		if (!folder.exists()) {
-			folder.create(true, true, new NullProgressMonitor());
-		}
-		IFile file = folder.getFile("RunConfigTest1.php");
+		folder = TestUtils.createFolder(project1, "src1");
 
-		InputStream source = new ByteArrayInputStream("<?php class TestRenameClass{}?>".getBytes());
-
-		if (!file.exists()) {
-			file.create(source, true, new NullProgressMonitor());
-		} else {
-			file.setContents(source, IFile.FORCE, new NullProgressMonitor());
-		}
-
-		source = new ByteArrayInputStream(configFileCont.getBytes());
-
-		configFile = project1.getFile("TestConfig1.launch");
-		if (!configFile.exists()) {
-			configFile.create(source, IFile.FORCE, new NullProgressMonitor());
-		} else {
-			configFile.setContents(source, IFile.FORCE, new NullProgressMonitor());
-		}
-
-		folder = project1.getFolder("src1");
-
-		if (!folder.exists()) {
-			folder.create(true, true, new NullProgressMonitor());
-		}
-
-		PHPCoreTests.waitForIndexer();
+		TestUtils.waitForIndexer();
 	}
 

@@ -1,16 +1,7 @@
 	@BeforeList
 	public void setUpSuite() throws Exception {
-		project = ResourcesPlugin.getWorkspace().getRoot().getProject("FormatterTests_" + suiteCounter++);
-
-		project.create(null);
-		project.open(null);
-		
-		// Disable WTP validation to skip unnecessary clashes
-		ValidationFramework.getDefault().suspendValidation(project, true);
-		// configure nature
-		IProjectDescription desc = project.getDescription();
-		desc.setNatureIds(new String[] { PHPNature.ID });
-		project.setDescription(desc, null);
+		TestUtils.disableColliders(ColliderType.ALL);
+		project = TestUtils.createProject("FormatterTests_" + suiteCounter++);
 
 		for (String fileName : fileNames) {
 			PdttFile pdttFile = new PdttFile(getContext(), fileName);
@@ -19,12 +10,8 @@
 			pdttFiles.put(fileName, pdttFile);
 		}
 
-		project.refreshLocal(IResource.DEPTH_INFINITE, null);
-		project.build(IncrementalProjectBuilder.FULL_BUILD, null);
-
-		PHPCoreTests.setProjectPhpVersion(project, phpVersion);
-
-		PHPCoreTests.waitForIndexer();
+		TestUtils.setProjectPhpVersion(project, phpVersion);
+		TestUtils.waitForIndexer();
 
 		profileManager.clearAllSettings(scopeContext);
 		profileManager.commitChanges(scopeContext);

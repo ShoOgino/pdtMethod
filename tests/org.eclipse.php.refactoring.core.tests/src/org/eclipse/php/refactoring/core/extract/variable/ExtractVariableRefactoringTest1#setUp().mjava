@@ -1,24 +1,12 @@
 	@Before
 	public void setUp() throws Exception {
 
-		System.setProperty("disableStartupRunner", "true");
+		project1 = TestUtils.createProject("TestProject1");
 
-		project1 = FileUtils.createProject("TestProject1");
+		IFolder folder = TestUtils.createFolder(project1, "src");
+		file = TestUtils.createFile(folder, "ExtractVariableRefactoringTest1.php",
+				"<?php try{checkNum(2);}catch(Exception $e){$e->getMessage();} $var = NULL;?>");
 
-		IFolder folder = project1.getFolder("src");
-
-		if (!folder.exists()) {
-			folder.create(true, true, new NullProgressMonitor());
-		}
-		file = folder.getFile("ExtractVariableRefactoringTest1.php");
-
-		InputStream source = new ByteArrayInputStream(
-				"<?php try{checkNum(2);}catch(Exception $e){$e->getMessage();} $var = NULL;?>".getBytes());
-
-		if (!file.exists()) {
-			file.create(source, true, new NullProgressMonitor());
-		} else {
-			file.setContents(source, IFile.FORCE, new NullProgressMonitor());
-		}
+		TestUtils.waitForIndexer();
 	}
 

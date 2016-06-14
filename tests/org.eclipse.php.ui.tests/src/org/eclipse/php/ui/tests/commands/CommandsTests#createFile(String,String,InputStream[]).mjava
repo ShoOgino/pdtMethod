@@ -1,6 +1,4 @@
 	protected ISourceRange createFile(String data, String fileName, InputStream[] other) throws Exception {
-		testFile = project.getFile(new Path(fileName).removeFileExtension().addFileExtension("php").lastSegment());
-
 		int left = data.indexOf(SELECTION_CHAR);
 		if (left == -1) {
 			throw new IllegalArgumentException("Selection characters are not set");
@@ -14,16 +12,16 @@
 		}
 		data = data.substring(0, right) + data.substring(right + 1);
 
-		testFile.create(new ByteArrayInputStream(data.getBytes()), true, null);
+		testFile = TestUtils.createFile(project,
+				new Path(fileName).removeFileExtension().addFileExtension("php").lastSegment(), data);
+
 		otherFiles = new IFile[other.length];
 		for (int i = 0; i < other.length; i++) {
 			otherFiles[i] = project.getFile(new Path(i + fileName).addFileExtension("php").lastSegment());
 			otherFiles[i].create(other[i], true, null);
 		}
-		project.refreshLocal(IResource.DEPTH_INFINITE, null);
-
-		project.build(IncrementalProjectBuilder.FULL_BUILD, null);
-		PHPCoreTests.waitForIndexer();
+		// Wait for indexer...
+		TestUtils.waitForIndexer();
 		IWorkbenchWindow workbenchWindow = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
 		IWorkbenchPage page = workbenchWindow.getActivePage();
 		IEditorInput input = new FileEditorInput(testFile);

@@ -1,16 +1,9 @@
 	protected Program createAndParse(String code) throws Exception {
-		testFile = project.getFile("test.php");
-		ByteArrayInputStream source = new ByteArrayInputStream(code.getBytes());
-		if (testFile.exists()) {
-			testFile.setContents(source, true, false, null);
-		} else {
-			testFile.create(source, true, null);
+		if (testFile == null) {
+			testFile = TestUtils.createFile(project, "test.php", code);
+			// Wait for indexer...
+			TestUtils.waitForIndexer();
 		}
-		project.refreshLocal(IResource.DEPTH_INFINITE, null);
-		project.build(IncrementalProjectBuilder.FULL_BUILD, null);
-
-		PHPCoreTests.waitForIndexer();
-
 		PHPVersion version = ProjectOptions.getDefaultPhpVersion();
 		ISourceModule sourceModule = null;
 		sourceModule = DLTKCore.createSourceModuleFrom(testFile);
