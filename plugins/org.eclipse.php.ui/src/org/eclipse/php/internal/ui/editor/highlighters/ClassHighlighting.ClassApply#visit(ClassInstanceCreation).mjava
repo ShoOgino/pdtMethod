@@ -1,10 +1,14 @@
 		@Override
 		public boolean visit(ClassInstanceCreation clazz) {
 			Expression name = clazz.getClassName().getName();
-			if (name instanceof Identifier) {
+			if (name instanceof NamespaceName) {
+				highlightNamespaceType((NamespaceName) name, true);
+			} else if (name instanceof Identifier) {
+				// https://bugs.eclipse.org/bugs/show_bug.cgi?id=496045
+				if ("self".equalsIgnoreCase(((Identifier) name).getName())) { //$NON-NLS-1$
+					return true;
+				}
 				highlight(name);
-			} else if (name instanceof NamespaceName) {
-				highlightNamespaceType((NamespaceName) name);
 			}
 			return true;
 		}
