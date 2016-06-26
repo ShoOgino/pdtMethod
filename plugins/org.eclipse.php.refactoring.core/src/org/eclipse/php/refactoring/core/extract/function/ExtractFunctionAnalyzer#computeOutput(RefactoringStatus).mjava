@@ -3,15 +3,13 @@
 		FlowContext flowContext = new FlowContext(0, fMaxVariableId + 1);
 		flowContext.setConsiderAccessMode(true);
 		flowContext.setComputeMode(FlowContext.RETURN_VALUES);
-		FlowInfo returnInfo = new InOutFlowAnalyzer(flowContext)
-				.perform(getSelectedNodes());
+		FlowInfo returnInfo = new InOutFlowAnalyzer(flowContext).perform(getSelectedNodes());
 		IVariableBinding[] returnValues = returnInfo.get(flowContext,
 				FlowInfo.WRITE | FlowInfo.WRITE_POTENTIAL | FlowInfo.UNKNOWN);
 
 		// Compute a selection that exactly covers the selected nodes
 		IRegion region = getSelectedNodeRange();
-		Selection selection = Selection.createFromStartLength(
-				region.getOffset(), region.getLength());
+		Selection selection = Selection.createFromStartLength(region.getOffset(), region.getLength());
 
 		int counter = 0;
 		flowContext.setComputeMode(FlowContext.ARGUMENTS);
@@ -19,18 +17,14 @@
 		FlowInfo argInfo = null;
 		if (fEnclosingBodyDeclaration instanceof MethodDeclaration) {
 			argInfo = new InputFlowAnalyzer(flowContext, selection, true)
-					.perform(((MethodDeclaration) fEnclosingBodyDeclaration)
-							.getFunction());
+					.perform(((MethodDeclaration) fEnclosingBodyDeclaration).getFunction());
 		} else if (fEnclosingBodyDeclaration instanceof FunctionDeclaration) {
-			argInfo = new InputFlowAnalyzer(flowContext, selection, true)
-					.perform(fEnclosingBodyDeclaration);
+			argInfo = new InputFlowAnalyzer(flowContext, selection, true).perform(fEnclosingBodyDeclaration);
 		} else {
-			argInfo = new InputFlowAnalyzer(flowContext, selection, true)
-					.perform(fEnclosingBodyDeclaration);
+			argInfo = new InputFlowAnalyzer(flowContext, selection, true).perform(fEnclosingBodyDeclaration);
 		}
 
-		IVariableBinding[] reads = argInfo.get(flowContext, FlowInfo.READ
-				| FlowInfo.READ_POTENTIAL | FlowInfo.UNKNOWN);
+		IVariableBinding[] reads = argInfo.get(flowContext, FlowInfo.READ | FlowInfo.READ_POTENTIAL | FlowInfo.UNKNOWN);
 		outer: for (int i = 0; i < returnValues.length && counter <= 1; i++) {
 			IVariableBinding binding = returnValues[i];
 			for (int x = 0; x < reads.length; x++) {
@@ -49,8 +43,7 @@
 			break;
 		default:
 			fReturnValue = null;
-			status.addFatalError(PhpRefactoringCoreMessages
-					.getString("ExtractFunctionAnalyzer.1")); //$NON-NLS-1$
+			status.addFatalError(PhpRefactoringCoreMessages.getString("ExtractFunctionAnalyzer.1")); //$NON-NLS-1$
 			return;
 		}
 		// List callerLocals= new ArrayList(5);
