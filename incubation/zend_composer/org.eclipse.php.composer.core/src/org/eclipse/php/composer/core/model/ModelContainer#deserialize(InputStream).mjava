@@ -1,0 +1,29 @@
+	public void deserialize(InputStream inputStream) throws JsonParseException, IOException {
+		try {
+			loaded = false;
+			BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+			ComposerRoot updatedModel = null;
+			try {
+				updatedModel = ComposerJacksonMapper.getMapper().readValue(reader, ComposerRoot.class);
+			} catch (JsonParseException e) {
+				ComposerCorePlugin.logError(e);
+			}
+			if (updatedModel == null) {
+				return;
+			}
+			model.setName(updatedModel.getNameProperty());
+			model.setVersion(updatedModel.getVersionProperty());
+			model.setRepositories(updatedModel.getRepositoriesProperty());
+			model.setRequire(updatedModel.getRequireProperty());
+			model.setConflict(updatedModel.getConflictProperty());
+			model.setProvide(updatedModel.getProvideProperty());
+			model.setReplace(updatedModel.getReplaceProperty());
+			model.setRequireDev(updatedModel.getRequireDevProperty());
+			model.setDescription(updatedModel.getDescriptionProperty());
+			model.setAdditionalAttributes(updatedModel.any());
+			loaded = true;
+		} finally {
+			modelReloaded();
+		}
+	}
+

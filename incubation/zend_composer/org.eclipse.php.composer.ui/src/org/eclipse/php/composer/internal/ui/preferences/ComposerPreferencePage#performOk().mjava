@@ -1,0 +1,38 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.eclipse.jface.preference.PreferencePage#performOk()
+	 */
+	public boolean performOk() {
+		boolean isDirty = false;
+		String phpExec = phpCombo.getText();
+		if (!phpExec.equals(prefs.get(ComposerPreferences.PHP_EXEC_NODE, null))) {
+			prefs.put(ComposerPreferences.PHP_EXEC_NODE, phpExec);
+			isDirty = true;
+		}
+		if (useCustomButton.getSelection()) {
+			String composerPhar = composerPharText.getText().trim();
+			if (!composerPhar.isEmpty()
+					&& !composerPhar.equals(ComposerPreferences.get(ComposerPreferences.COMPOSER_PHAR_NODE))) {
+				prefs.put(ComposerPreferences.COMPOSER_PHAR_NODE, composerPhar);
+				isDirty = true;
+			}
+		}
+		if (updateButton.getSelection() != prefs.getBoolean(ComposerPreferences.UPDATE_COMPOSER_PHAR_NODE, true)) {
+			prefs.putBoolean(ComposerPreferences.UPDATE_COMPOSER_PHAR_NODE, updateButton.getSelection());
+			isDirty = true;
+		}
+		if (input.isDirty()) {
+			prefs.put(ComposerPreferences.REPOSITORIES_NODE, input.serialize());
+			isDirty = true;
+		}
+		if (isDirty) {
+			try {
+				prefs.flush();
+			} catch (BackingStoreException e) {
+				ComposerUIPlugin.logError(e);
+			}
+		}
+		return super.performOk();
+	}
+

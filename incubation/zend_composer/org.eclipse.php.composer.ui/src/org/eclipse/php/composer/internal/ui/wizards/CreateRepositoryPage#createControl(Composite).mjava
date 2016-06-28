@@ -1,0 +1,71 @@
+	/**
+	 * Create contents of the wizard.
+	 * 
+	 * @param parent
+	 */
+	public void createControl(Composite parent) {
+		final Composite container = new Composite(parent, SWT.NULL);
+		setControl(container);
+		container.setLayout(new GridLayout(2, false));
+
+		Label typeLabel = new Label(container, SWT.NONE);
+		typeLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false,
+				1, 1));
+		typeLabel.setText(Messages.CreateRepositoryPage_Type);
+
+		typeCombo = new Combo(container, SWT.READ_ONLY);
+		typeCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false,
+				1, 1));
+		typeCombo.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				RepositoryType type = RepositoryType.byName(typeCombo.getText());
+				if (type != null) {
+					switch (type) {
+					case PACKAGE:
+						setControlVisibility(defaultTypeGroup, false);
+						setControlVisibility(packageGroup, true);
+						attributesGroup.layout(true);
+						break;
+					default:
+						setControlVisibility(defaultTypeGroup, true);
+						setControlVisibility(packageGroup, false);
+						attributesGroup.layout(true);
+						break;
+					}
+				}
+				setPageComplete(validatePage());
+			}
+		});
+		RepositoryType[] types = RepositoryType.values();
+		for (RepositoryType type : types) {
+			typeCombo.add(type.getName());
+		}
+		typeCombo.select(0);
+
+		attributesGroup = new Group(container, SWT.BORDER);
+		attributesGroup.setText(Messages.CreateRepositoryPage_Attributes);
+		attributesGroup.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true,
+				true, 2, 1));
+		attributesGroup.setLayout(new GridLayout(1, false));
+
+		defaultTypeGroup = createDefaultGroup(attributesGroup);
+		packageGroup = createPackageGroup(attributesGroup);
+
+		Label label = new Label(attributesGroup, SWT.WRAP);
+		label.setText(Messages.CreateRepositoryPage_ExtraAttributesDesc);
+		label.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 2, 1));
+		extraParamsText = new Text(attributesGroup, SWT.MULTI | SWT.BORDER);
+		extraParamsText.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true,
+				true, 2, 1));
+		extraParamsText.addModifyListener(new ModifyListener() {
+			@Override
+			public void modifyText(ModifyEvent event) {
+				setPageComplete(validatePage());
+			}
+		});
+		initalizeFields();
+		attributesGroup.layout(true);
+		setPageComplete(false);
+	}
+

@@ -1,0 +1,34 @@
+	private void handleAddPackage(final TableViewer packagesViewer) {
+		IProject project = getProjectFromEditor();
+		if (project != null && ProjectUtils.checkProject((IContainer) project)) {
+			AddDependencyWizard wizard = new AddDependencyWizard(getSearchService(), getAllPackages());
+			WizardDialog dialog = new AddDependencyWizardDialog(getSite().getShell(), wizard);
+			dialog.create();
+			if (dialog.open() == Window.OK) {
+				IPackage toAdd = wizard.getPackage();
+				IPackages modelElement = null;
+				switch (toAdd.getType()) {
+				case REQUIRE:
+					modelElement = model.getRequireProperty();
+					break;
+				case REQUIRE_DEV:
+					modelElement = model.getRequireDevProperty();
+					break;
+				case CONFLICT:
+					modelElement = model.getConflictProperty();
+					break;
+				case PROVIDE:
+					modelElement = model.getProvideProperty();
+					break;
+				case REPLACE:
+					modelElement = model.getReplaceProperty();
+					break;
+				default:
+					return;
+				}
+				modelElement.addPackage(toAdd, true);
+				packagesViewer.setInput(getAllPackages());
+			}
+		}
+	}
+

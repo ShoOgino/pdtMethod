@@ -1,0 +1,57 @@
+	private static PackageVersion parse(final String name) {
+		// TODO consider "self.version" value
+		Suffix suffix = Suffix.NONE;
+		int suffixVersion = -1;
+		String toParse = name.trim();
+		if (name == null || name.equals("*")) { //$NON-NLS-1$
+			return UNKNOWN;
+		}
+
+		// e.g. v2.0.0
+		if (toParse.startsWith("v") || toParse.startsWith("V")) { //$NON-NLS-1$ //$NON-NLS-2$
+			toParse = toParse.substring(1);
+		}
+
+		// e.g. 2.0.0-dev or 2.0.0_dev,
+		int index = -1;
+		if (toParse.indexOf("-") != -1) { //$NON-NLS-1$
+			index = toParse.indexOf("-"); //$NON-NLS-1$
+		}
+		if (toParse.indexOf("_") != -1) { //$NON-NLS-1$
+			int i = toParse.indexOf("_"); //$NON-NLS-1$
+			if (index == -1 || index > i) {
+				index = i;
+			}
+		}
+		if (index != -1) {
+			String suffixString = toParse.substring(index + 1);
+			suffix = Suffix.byName(suffixString);
+			if (suffix != Suffix.UNKNOWN) {
+				suffixVersion = parseSuffixVersion(suffixString);
+			}
+			toParse = toParse.substring(0, index);
+		}
+
+		String[] segments = toParse.split("\\."); //$NON-NLS-1$
+		int[] result = new int[4];
+		for (int i = 0; i < result.length; i++) {
+			if (segments.length > i) {
+				if (segments[i].equalsIgnoreCase("x")) { //$NON-NLS-1$
+					result[i] = 9999999;
+				} else if (segments[i].equalsIgnoreCase("*")) { //$NON-NLS-1$
+					result[i] = -1;
+				} else {
+					try {
+						result[i] = Integer.valueOf(segments[i]);
+					} catch (NumberFormatException e) {
+						result[i] = -1;
+					}
+				}
+			} else {
+				result[i] = 0;
+			}
+		}
+		return new PackageVersion(result[0], result[1], result[2], result[3],
+				suffix, suffixVersion, name);
+	}
+

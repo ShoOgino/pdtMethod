@@ -1,0 +1,21 @@
+	public void addComposer(IProgressMonitor monitor) {
+		ComposerRoot model = new ComposerRoot();
+		model.getNameProperty().setValue(root.getName(), false);
+		IRepository packagistRepo = new Repository();
+		packagistRepo.setType(RepositoryType.COMPOSER);
+		packagistRepo.setUrl("https://packagist.org/"); //$NON-NLS-1$
+		model.getRepositoriesProperty().addRepository(packagistRepo, false);
+		try {
+			String composerJson = ComposerJacksonMapper.getMapper().writeValueAsString(model);
+			IFile composerFile = root.getFile(new Path(COMPOSER_JSON));
+			if (!composerFile.exists()) {
+				ByteArrayInputStream is = new ByteArrayInputStream(composerJson.getBytes());
+				composerFile.create(is, true, monitor);
+			}
+		} catch (CoreException e) {
+			ComposerCorePlugin.logError(e);
+		} catch (JsonProcessingException e) {
+			ComposerCorePlugin.logError(e);
+		}
+	}
+

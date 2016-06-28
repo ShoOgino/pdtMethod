@@ -1,0 +1,76 @@
+	private void updateDetails() {
+		try {
+			IRunnableWithProgress updateTask = new IRunnableWithProgress() {
+
+				@Override
+				public void run(IProgressMonitor monitor)
+						throws InvocationTargetException, InterruptedException {
+					try {
+						monitor.beginTask(
+								Messages.AddDependencyPage_DetailsJob,
+								IProgressMonitor.UNKNOWN);
+						String versionConstraint = selectedPackage
+								.getVersionConstraint();
+						selectedPackage = searchService.getPackageDetails(
+								selectedPackage.getName(), monitor);
+						if (selectedPackage != null) {
+							selectedPackage
+									.setVersionConstraint(versionConstraint);
+						}
+					} catch (IOException e) {
+						throw new InvocationTargetException(e);
+					} finally {
+						monitor.done();
+					}
+				}
+			};
+			run(updateTask);
+			final java.util.List<String> versions = selectedPackage
+					.getVersions();
+
+			selectedPackage.setType(PackageType.byName(typeCombo.getText()));
+
+			equalsCombo.removeAll();
+			minCombo.removeAll();
+			maxCombo.removeAll();
+			int toSelect = -1;
+			for (int i = 0; i < versions.size(); i++) {
+				String version = versions.get(i);
+				PackageVersion v = PackageVersion.byName(version);
+				if (toSelect == -1 && v.getSuffix() == Suffix.NONE
+						&& v.getMajor() >= 0 && v.getMinor() >= 0
+						&& v.getBuild() >= 0) {
+					toSelect = i;
+				}
+				// e.g. * 1.0.0 - remove "* " prefix
+				if (version.startsWith("* ")) { //$NON-NLS-1$
+					version = version.substring(2);
+				}
+				equalsCombo.add(version);
+				minCombo.add(version);
+				maxCombo.add(version);
+
+				setProposedConstraint(version);
+			}
+			if (versions.size() > 0) {
+				if (toSelect == -1) {
+					toSelect = 0;
+				}
+				equalsCombo.select(toSelect);
+				minCombo.select(toSelect);
+				maxCombo.select(toSelect);
+			}
+
+			updateVersionGroup(selectedPackage.getVersionConstraint());
+
+			setErrorMessage(null);
+		} catch (InvocationTargetException e) {
+			ComposerUIPlugin.logError(e.getCause());
+			setErrorMessage(Messages.AddDependencyPage_DetaislError);
+			setPageComplete(false);
+			updateDetailsEnablement(false);
+		} catch (InterruptedException e) {
+			ComposerUIPlugin.logError(e);
+		}
+	}
+

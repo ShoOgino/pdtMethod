@@ -1,0 +1,26 @@
+	@Override
+	public IStatus runInWorkspace(IProgressMonitor monitor) {
+		monitor.beginTask(Messages.DumpAutoloadJob_JobTitle, IProgressMonitor.UNKNOWN);
+		composer.dumpAutoload(monitor);
+		if (composer.getError() != null) {
+			return new Status(IStatus.ERROR, ComposerUIPlugin.PLUGIN_ID, Messages.InstallDependenciesJob_ErrorTitle,
+					composer.getError());
+		}
+		try {
+			IContainer root = composer.getRoot();
+			root.refreshLocal(IResource.DEPTH_ONE, monitor);
+			IContainer composerFolder = ComposerService.getVendor(root).getFolder(new Path(COMPOSER_FOLDER));
+			if (composerFolder.exists()) {
+				composerFolder.refreshLocal(IResource.DEPTH_ONE, monitor);
+			}
+			IFile autoloadFile = ComposerService.getVendor(root).getFile(new Path(AUTOLOAD_PHP));
+			if (autoloadFile.exists()) {
+				autoloadFile.refreshLocal(IResource.DEPTH_ZERO, monitor);
+			}
+		} catch (CoreException e) {
+			return new Status(IStatus.ERROR, ComposerUIPlugin.PLUGIN_ID, Messages.DumpAutoloadJob_Error, e);
+		}
+		monitor.done();
+		return Status.OK_STATUS;
+	}
+

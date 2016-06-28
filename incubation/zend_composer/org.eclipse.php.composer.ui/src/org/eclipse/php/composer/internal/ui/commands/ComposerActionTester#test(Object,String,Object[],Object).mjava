@@ -1,0 +1,43 @@
+	public boolean test(Object receiver, String property, Object[] args,
+			Object expectedValue) {
+		IProject project = null;
+		if (receiver instanceof IScriptProject) {
+			project = ((IScriptProject) receiver).getProject();
+		} else if (receiver instanceof IFile) {
+			if (ComposerService.isComposerJson((IFile) receiver)) {
+				project = ((IFile) receiver).getProject();
+			}
+		}
+		if (receiver instanceof ElementImplForPhp) {
+			IModelElement element = ((ElementImplForPhp) receiver)
+					.getModelElement();
+			if (element != null) {
+				IResource res = element.getResource();
+				if (res != null) {
+					project = res.getProject();
+				}
+			}
+		}
+
+		if (project != null) {
+			boolean result = ComposerService.isComposerProject(project);
+			if (HAS_SUPPORT.equals(property)) {
+				// do nothing, just skip other conditions
+			} else if (HAS_AUTOLOAD.equals(property)) {
+				IContainer vendor = ComposerService.getVendor(project);
+				if (vendor.exists()) {
+					IFile autoload = vendor.getFile(new Path(
+							InjectAutoloadHandler.AUTOLOAD_PHP));
+					result = result && autoload.exists();
+				} else {
+					result = result && false;
+				}
+
+			} else if (IS_INSTALLED.equals(property)) {
+				result = result && ComposerService.isInstalled(project);
+			}
+			return result == (Boolean) expectedValue;
+		}
+		return false;
+	}
+

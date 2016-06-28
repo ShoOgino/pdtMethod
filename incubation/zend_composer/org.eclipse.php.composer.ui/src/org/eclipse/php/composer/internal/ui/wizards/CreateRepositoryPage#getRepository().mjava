@@ -1,0 +1,36 @@
+	public IRepository getRepository() {
+		RepositoryType type = RepositoryType.byName(typeCombo.getText());
+		IRepository repo = ModelFactory.createRepository(type);
+		switch (repo.getType()) {
+		case PACKAGE:
+			IRepositoryPackage rp = ModelFactory.createRepositoryPackage();
+			rp.setName(packageNameText.getText());
+			rp.setVersion(packageVersionText.getText());
+			if (packageSourceCombo.getSelectionIndex() == 0) {
+				rp.setDist(ModelFactory.createDist(packageUrlText.getText(),
+						packageTypeCombo.getText()));
+			} else {
+				rp.setSource(ModelFactory.createSource(
+						packageUrlText.getText(), packageTypeCombo.getText(),
+						packageReferenceText.getText()));
+			}
+			repo.setRepositoryPackage(rp);
+			break;
+		default:
+			repo.setUrl(urlText.getText());
+			break;
+		}
+		String extra = extraParamsText.getText();
+		try {
+			ExtraAttributes extraObj = ExtraAttributes.toModel(extra);
+			Map<String, Object> all = extraObj.any();
+			Set<String> keys = all.keySet();
+			for (String key : keys) {
+				repo.setParameter(key, all.get(key));
+			}
+		} catch (IOException e) {
+			ComposerUIPlugin.logError(e);
+		}
+		return repo;
+	}
+

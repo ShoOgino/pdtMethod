@@ -1,0 +1,64 @@
+	public static void downloadComposerPhar(File dest, String phpExec) throws CoreException {
+		try {
+			if (dest.exists()) {
+				boolean update = ComposerPreferences.getBoolean(ComposerPreferences.COMPOSER_PHAR_NODE, true);
+				if (!update)
+					return;
+
+				long expDate = parseExpDate(dest) * 1000;
+				if (System.currentTimeMillis() < expDate)
+					return;
+			}
+			if (dest.exists()) {
+				dest.delete();
+			}
+
+			File composerPhar = new File(dest, ComposerPreferences.COMPOSER_PHAR);
+			String script = HttpHelper.executeGetRequest(GETCOMPOSER_ORG, null, null, 200);
+			if (script != null) {
+				File scriptFile = new File(getTemp(), "composertemp.php"); //$NON-NLS-1$
+				if (!scriptFile.exists()) {
+					scriptFile.createNewFile();
+				}
+				FileOutputStream outStream = new FileOutputStream(scriptFile);
+				outStream.write(script.getBytes());
+				outStream.close();
+
+				String phpIni = PHPINIUtil.findPHPIni(phpExec).getAbsolutePath();
+				List<String> command = new ArrayList<String>();
+				command.add(phpExec);
+				if (phpIni != null) {
+					command.add("-c"); //$NON-NLS-1$
+					command.add(phpIni);
+				}
+				command.add(scriptFile.getCanonicalPath());
+				command.add("--"); //$NON-NLS-1$
+				command.add(INSTALL_DIR + dest.getParentFile().getAbsolutePath());
+
+				ProcessBuilder processBuilder = new ProcessBuilder(command);
+				processBuilder.redirectErrorStream(true);
+				PHPLaunchUtilities.appendLibrarySearchPathEnv(processBuilder.environment(),
+						new File(phpExec).getParentFile());
+
+				Process p = processBuilder.start();
+				String output = IOUtils.toString(p.getInputStream());
+
+				try {
+					int result = p.waitFor();
+					if (result != 0) {
+						composerPhar.delete();
+						throw new CoreException(new org.eclipse.core.runtime.Status(IStatus.ERROR,
+								ComposerCorePlugin.PLUGIN_ID,
+								NLS.bind(Messages.ComposerService_Error_Downloading_Composer_Phar, result, output)));
+					}
+				} catch (InterruptedException e) {
+					ComposerCorePlugin.logError(e);
+				} finally {
+					scriptFile.delete();
+				}
+			}
+		} catch (IOException e) {
+			ComposerCorePlugin.logError(e);
+		}
+	}
+

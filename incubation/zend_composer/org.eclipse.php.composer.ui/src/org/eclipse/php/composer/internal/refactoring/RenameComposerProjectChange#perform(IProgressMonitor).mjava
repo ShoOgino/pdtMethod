@@ -1,0 +1,27 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.eclipse.ltk.core.refactoring.Change#perform(org.eclipse.core.runtime
+	 * .IProgressMonitor)
+	 */
+	@Override
+	public Change perform(IProgressMonitor monitor) throws CoreException {
+		IFile composerFile = newProject.getFile(ComposerService.COMPOSER_JSON);
+		if (composerFile.exists()) {
+			ModelContainer modelContainer = new ModelContainer();
+			modelContainer.setOutput(new FileDocumentStore(composerFile));
+			try {
+				modelContainer.deserialize(composerFile.getContents());
+				modelContainer.getModel().getName()
+						.setValue(newProject.getName(), true);
+			} catch (JsonParseException e) {
+				ComposerUIPlugin.logError(e);
+			} catch (IOException e) {
+				ComposerUIPlugin.logError(e);
+			}
+		}
+
+		return new RenameComposerProjectChange(newProject, oldProject);
+	}
+

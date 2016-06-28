@@ -1,0 +1,37 @@
+	public void resourceChanged(IResourceChangeEvent event) {
+		if (event.getDelta() == null) {
+			return;
+		}
+		IResourceDelta[] projects = event.getDelta().getAffectedChildren();
+		for (IResourceDelta projectDelta : projects) {
+			if (projectDelta != null && composer.getRoot().equals(projectDelta.getResource())) {
+				IResourceDelta[] deltas = projectDelta.getAffectedChildren();
+				for (final IResourceDelta d : deltas) {
+					final IResource r = d.getResource();
+					if (r != null && ComposerService.COMPOSER_LOCK.equals(r.getName())) {
+						if (d.getKind() == IResourceDelta.ADDED) {
+							updateAction(Messages.GeneralPage_DependenciesUpdate, ComposerUIPlugin.IMAGE_UPDATE);
+						} else if (d.getKind() == IResourceDelta.REMOVED) {
+							updateAction(Messages.GeneralPage_DependenciesInstall, ComposerUIPlugin.IMAGE_INSTALL);
+						}
+						continue;
+					}
+					if (ComposerService.isComposerJson(r)) {
+
+						Display.getDefault().asyncExec(new Runnable() {
+
+							@Override
+							public void run() {
+								markerManager.updateMessages(d.getMarkerDeltas());
+
+								if (d.getKind() == IResourceDelta.CHANGED && !isDirty()) {
+									refreshModel();
+								}
+							}
+						});
+					}
+				}
+			}
+		}
+	}
+

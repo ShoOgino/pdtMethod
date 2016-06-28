@@ -1,0 +1,20 @@
+	@Override
+	public void nextPage(IProgressMonitor monitor) throws IOException {
+		if (!hasNextPage || monitor.isCanceled()) {
+			return;
+		}
+
+		List<IPackage> newPackages = composerService.search(pattern, page,
+				monitor);
+
+		if (composerService.getError() != null) {
+			throw new IOException(composerService.getError());
+		}
+
+		hasNextPage = shouldLookForNextPage(newPackages);
+		if (hasNextPage) {
+			packages.addAll(newPackages);
+			page++;
+		}
+	}
+

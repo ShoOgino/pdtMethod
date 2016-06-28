@@ -1,0 +1,45 @@
+	private void doSearch() {
+		if (searchText == null || searchText.isDisposed()) {
+			return;
+		}
+
+		final String patterValue = searchText.getText();
+		resultViewer.getTable().deselectAll();
+
+		IRunnableWithProgress searchTask = new IRunnableWithProgress() {
+
+			@Override
+			public void run(IProgressMonitor monitor)
+					throws InvocationTargetException, InterruptedException {
+				try {
+					monitor.beginTask(Messages.AddDependencyPage_SearchingJob,
+							IProgressMonitor.UNKNOWN);
+
+					contentProvider.search(patterValue, monitor);
+				} catch (IOException e) {
+					throw new InvocationTargetException(e);
+				} finally {
+					monitor.done();
+				}
+			}
+		};
+		try {
+			run(searchTask);
+			refreshSearchViewer();
+
+			setErrorMessage(null);
+
+			updateDetailsEnablement(false);
+			if (resultViewer.getTable().getItemCount() == 0) {
+				setErrorMessage(Messages.AddDependencyPage_NotFoundError);
+				setPageComplete(false);
+			}
+		} catch (InvocationTargetException e) {
+			ComposerUIPlugin.logError(e.getCause());
+			setErrorMessage(Messages.AddDependencyPage_SearchError);
+			setPageComplete(false);
+		} catch (InterruptedException e) {
+			ComposerUIPlugin.logError(e);
+		}
+	}
+

@@ -1,0 +1,47 @@
+	private String validateConstraint(String constraint) {
+		String[] match = null;
+
+		if (constraint.equalsIgnoreCase("self.version")) { //$NON-NLS-1$
+			return null;
+		}
+
+		if (preg_match("^@(" + STABILITIES + ")$", constraint) != null) { //$NON-NLS-1$ //$NON-NLS-2$
+			return null;
+		}
+
+		if ((match = preg_match("^([^,\\s]+?)@(" + STABILITIES + ")$", //$NON-NLS-1$ //$NON-NLS-2$
+				constraint)) != null) {
+			constraint = match[1];
+		}
+
+		if (preg_match("^[x*](\\.[x*])*$", constraint) != null) { //$NON-NLS-1$
+			return null;
+		}
+
+		if (preg_match("^~>?(\\d+)(?:\\.(\\d+))?(?:\\.(\\d+))?(?:\\.(\\d+))?" //$NON-NLS-1$
+				+ MODIFIER_REGEX + "?$", constraint) != null) { //$NON-NLS-1$
+			if (constraint.substring(0, 2).equals("~>")) { //$NON-NLS-1$
+				return "Invalid operator \"~>\", you probably meant to use the \"~\" operator"; //$NON-NLS-1$
+			}
+
+			return null;
+		}
+
+		// match wildcard constraints
+		if (preg_match("^(\\d+)(?:\\.(\\d+))?(?:\\.(\\d+))?\\.[x*]$", //$NON-NLS-1$
+				constraint) != null) {
+			return null;
+		}
+
+		// match operators constraints
+		if ((match = preg_match("^(<>|!=|>=?|<=?|==?)?\\s*(.*)", constraint)) != null) { //$NON-NLS-1$
+			String result = normalize(match[2]);
+			if (result != null) {
+				return result;
+			}
+
+			return null;
+		}
+		return "Invalid version constraint: " + constraint; //$NON-NLS-1$
+	}
+

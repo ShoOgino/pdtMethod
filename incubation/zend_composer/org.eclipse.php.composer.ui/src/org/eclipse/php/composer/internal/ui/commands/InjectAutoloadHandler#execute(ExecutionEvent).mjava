@@ -1,0 +1,28 @@
+	@Override
+	public Object execute(ExecutionEvent event) throws ExecutionException {
+		IEditorInput input = HandlerUtil.getActiveEditorInput(event);
+		if (!(input instanceof IFileEditorInput)) {
+			return null;
+		}
+		IFileEditorInput fileEditor = (IFileEditorInput) input;
+		IFile file = fileEditor.getFile();
+		if (file == null) {
+			return null;
+		}
+		IPath filePath = file.getFullPath();
+		IProject project = file.getProject();
+		IContainer vendor = ComposerService.getVendor(project);
+		IFile autoload = vendor.getFile(new Path(AUTOLOAD_PHP));
+		if (autoload == null || autoload.exists() == false) {
+			return null;
+		}
+		IPath autoloadPath = autoload.getFullPath();
+		IPath relativeTo = autoloadPath.makeRelativeTo(filePath);
+		if (relativeTo == null || relativeTo.segmentCount() <= 1) {
+			return null;
+		}
+		relativeTo = relativeTo.removeFirstSegments(1);
+		insertText("require_once __DIR__ . '/" + relativeTo.toString() + "';"); //$NON-NLS-1$ //$NON-NLS-2$
+		return null;
+	}
+

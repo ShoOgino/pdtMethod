@@ -1,0 +1,60 @@
+	/**
+	 * Create contents of the dialog.
+	 * 
+	 * @param parent
+	 */
+	@Override
+	protected Control createDialogArea(Composite parent) {
+		setMessage(Messages.AddRepositoryDialog_Desc);
+		setTitle(Messages.AddRepositoryDialog_Title);
+		Composite area = (Composite) super.createDialogArea(parent);
+		Composite container = new Composite(area, SWT.NONE);
+		container.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+		container.setLayout(new GridLayout(2, false));
+
+		repoViewer = new TableViewer(container, SWT.BORDER | SWT.FULL_SELECTION
+				| SWT.MULTI);
+		repoViewer.setContentProvider(new RepositoriesContentProvider());
+		repoViewer.setLabelProvider(new LabelProvider() {
+			public String getText(Object element) {
+				if (element instanceof IRepository) {
+					IRepository repo = (IRepository) element;
+					switch (repo.getType()) {
+					case PACKAGE:
+						IRepositoryPackage rPackage = repo
+								.getRepositoryPackage();
+						return rPackage.getName();
+					default:
+						return repo.getUrl();
+					}
+				}
+				return super.getText(element);
+			}
+		});
+		repoViewer.setInput(getInput());
+
+		Table repoTable = repoViewer.getTable();
+		repoTable.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1,
+				1));
+
+		Button manageButton = new Button(container, SWT.NONE);
+		manageButton.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false,
+				false, 1, 1));
+		manageButton.setText(Messages.AddRepositoryDialog_ManageButton);
+		manageButton.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				PreferenceDialog dialog = PreferencesUtil
+						.createPreferenceDialogOn(getShell(),
+								ComposerPreferencePage.ID,
+								new String[] { ComposerPreferencePage.ID },
+								null);
+				if (dialog.open() == Window.OK) {
+					repoViewer.setInput(getInput());
+				}
+			}
+		});
+		return area;
+	}
+

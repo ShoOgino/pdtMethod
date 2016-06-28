@@ -1,0 +1,30 @@
+	public static String executeGetRequest(String url,
+			Map<String, String> parameters, Map<String, String> cookies,
+			int expectedCode) {
+		try {
+			HttpClient client = createHttpClient(url,
+					ComposerCorePlugin.getProxyService());
+			HttpMethodBase method = createGetRequest(url, parameters);
+			setCookies(method, cookies);
+			if (method != null) {
+				int statusCode = -1;
+				try {
+					statusCode = client.executeMethod(method);
+					if (statusCode == expectedCode) {
+						String responseContent = new String(
+								method.getResponseBody());
+						return responseContent;
+					}
+				} finally {
+					method.releaseConnection();
+				}
+			}
+		} catch (IOException e) {
+			ComposerCorePlugin.logError(e);
+		} catch (URISyntaxException e) {
+			ComposerCorePlugin.logError(e);
+		}
+
+		return null;
+	}
+

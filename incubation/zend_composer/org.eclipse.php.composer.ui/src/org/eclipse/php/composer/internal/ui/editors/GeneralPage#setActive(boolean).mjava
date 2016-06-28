@@ -1,0 +1,27 @@
+	@Override
+	public void setActive(boolean active) {
+		if (active) {
+			ScrolledForm form = getManagedForm().getForm();
+			try {
+				modelContainer.deserialize(document);
+			} catch (JsonParseException e) {
+				setError(e);
+			} catch (IOException e) {
+				Throwable cause = e.getCause();
+				if (cause instanceof JsonParseException) {
+					setError((JsonParseException) cause);
+				} else {
+					form.setMessage(Messages.GeneralPage_ComposerJsonParseError, IMessageProvider.ERROR);
+				}
+			}
+
+			if (modelContainer.isLoaded()) {
+				if (canEdit) {
+					model = modelContainer.getModel();
+				} else {
+					form.setMessage(Messages.GeneralPage_CannotModifyWarning, IMessageProvider.WARNING);
+				}
+			}
+		}
+	}
+

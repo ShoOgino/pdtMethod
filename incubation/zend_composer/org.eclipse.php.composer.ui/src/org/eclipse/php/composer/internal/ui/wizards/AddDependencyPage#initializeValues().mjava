@@ -1,0 +1,45 @@
+	private void initializeValues() {
+		if (selectedPackage != null) {
+			String versionConstraint = selectedPackage.getVersionConstraint();
+			searchText.setEnabled(false);
+			contentProvider.getPackages().add(selectedPackage);
+			refreshSearchViewer();
+			resultViewer.getTable().select(0);
+
+			// System.out.println(versionConstraint);
+			String[] typeValues = typeCombo.getItems();
+			String type = selectedPackage.getType().getName();
+			for (int i = 0; i < typeValues.length; i++) {
+				if (typeValues[i].equals(type)) {
+					typeCombo.select(i);
+					break;
+				}
+			}
+
+			equalsCombo.removeAll();
+			minCombo.removeAll();
+			maxCombo.removeAll();
+
+			java.util.List<String> versions = selectedPackage.getVersions();
+			if (versions != null) {
+				for (String version : versions) {
+					// e.g. * 1.0.0 - remove "* " prefix
+					if (version.startsWith("* ")) { //$NON-NLS-1$
+						version = version.substring(2);
+					}
+					equalsCombo.add(version);
+					minCombo.add(version);
+					maxCombo.add(version);
+				}
+				if (versions.size() > 0) {
+					equalsCombo.select(0);
+					minCombo.select(0);
+					maxCombo.select(0);
+				}
+			}
+
+			updateVersionGroup(versionConstraint);
+			updateDetailsEnablement(true);
+		}
+	}
+

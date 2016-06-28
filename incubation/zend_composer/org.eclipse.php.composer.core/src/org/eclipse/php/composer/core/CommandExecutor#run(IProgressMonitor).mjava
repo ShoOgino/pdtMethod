@@ -1,0 +1,19 @@
+	public int run(IProgressMonitor monitor) throws IOException {
+		process = runCommandHelper();
+		MonitorCanceledJob cancelJob = new MonitorCanceledJob(this, monitor);
+		cancelJob.setSystem(true);
+		cancelJob.schedule();
+		startOutputAndErrorReadThreads(process.getInputStream(), process.getErrorStream());
+		updateLogDeviceOutputStream(process.getOutputStream());
+		int exitStatus = -1;
+		try {
+			exitStatus = process.waitFor();
+		} catch (InterruptedException e) {
+			ComposerCorePlugin.logError(e);
+		} finally {
+			process = null;
+			notifyOutputAndErrorReadThreadsToStopReading();
+		}
+		return exitStatus;
+	}
+

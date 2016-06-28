@@ -1,0 +1,40 @@
+	/**
+	 * Excludes test paths from project build path. This step removes test
+	 * sources from parsing and indexing and will save memory and CPU time.
+	 * 
+	 * @param project
+	 *            the project
+	 */
+	public static void excludeTestPaths(IProject project) {
+		try {
+			IScriptProject scriptProject = DLTKCore.create(project);
+			IBuildpathEntry[] rawBuildpath = scriptProject.getRawBuildpath();
+
+			ComposerRoot root = null;
+			try {
+				root = ComposerRoot.parse(project);
+			} catch (IOException e) {
+				ComposerCorePlugin.logError(e);
+			}
+			ComposerProperties properties = new ComposerProperties(root);
+			String vendorDir = properties.getVendorDir();
+			List<IPath> excludedPaths = new ArrayList<IPath>(TESTS_EXCLUDE_PATHS.length);
+			for (String path : TESTS_EXCLUDE_PATHS) {
+				excludedPaths.add(new Path(String.format(path, vendorDir)));
+			}
+
+			for (int i = 0; i < rawBuildpath.length; i++) {
+				IBuildpathEntry entry = rawBuildpath[i];
+				if (entry.getEntryKind() == IBuildpathEntry.BPE_SOURCE) {
+					if (entry.getPath().equals(project.getProject().getFullPath())) {
+						rawBuildpath[i] = DLTKCore.newSourceEntry(entry.getPath(), excludedPaths.toArray(new IPath[0]));
+					}
+				}
+			}
+
+			scriptProject.setRawBuildpath(rawBuildpath, null);
+		} catch (ModelException e) {
+			ComposerCorePlugin.logError(e);
+		}
+	}
+

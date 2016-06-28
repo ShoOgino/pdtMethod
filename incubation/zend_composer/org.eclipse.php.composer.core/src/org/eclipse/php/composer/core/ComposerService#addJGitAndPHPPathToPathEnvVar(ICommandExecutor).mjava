@@ -1,0 +1,29 @@
+	private void addJGitAndPHPPathToPathEnvVar(ICommandExecutor cmd) throws IOException {
+		boolean isPathSet = false;
+
+		String phpPath = getPhpPath();
+		if (!phpPath.isEmpty()) {
+			phpPath += File.pathSeparatorChar;
+		}
+
+		for (String envKey : System.getenv().keySet()) {
+			String envValue = System.getenv(envKey);
+			if ("PATH".equalsIgnoreCase(envKey)) { //$NON-NLS-1$
+				if (envValue == null) {
+					envValue = ""; //$NON-NLS-1$
+				}
+				if (!envValue.isEmpty()) {
+					envValue += File.pathSeparatorChar;
+				}
+				envValue += getJGitExecutablePath();
+				envValue = phpPath + envValue;
+				isPathSet = true;
+			}
+			cmd.setEnvironmentVar(envKey, envValue);
+		}
+		if (!isPathSet) {
+			// PATH was not available in the environment of the parent process
+			cmd.setEnvironmentVar("PATH", phpPath + getJGitExecutablePath()); //$NON-NLS-1$
+		}
+	}
+
