@@ -22,7 +22,6 @@
 			}, null);
 
 		final Exception[] err = new Exception[1];
-		final IEditorPart[] part = new IEditorPart[1];
 
 		IStructuredModel modelForEdit = StructuredModelManager.getModelManager().getModelForEdit(testFile);
 		try {
@@ -32,10 +31,7 @@
 				@Override
 				public void run() {
 					try {
-						IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
-						IWorkbenchPage page = window.getActivePage();
-						part[0] = page.openEditor(new FileEditorInput(testFile), PHPUiConstants.PHP_EDITOR_ID);
-						part[0].setFocus();
+						openEditor();
 					} catch (Exception e) {
 						err[0] = e;
 					}
@@ -87,25 +83,21 @@
 			if (modelForEdit != null) {
 				modelForEdit.releaseFromEdit();
 			}
-			if (part[0] != null) {
-				Display.getDefault().syncExec(new Runnable() {
+			Display.getDefault().syncExec(new Runnable() {
 
-					@Override
-					public void run() {
-						try {
-							IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
-							IWorkbenchPage page = window.getActivePage();
-							page.closeEditor(part[0], false);
-						} catch (Exception e) {
-							err[0] = e;
-						}
+				@Override
+				public void run() {
+					try {
+						closeEditor();
+					} catch (Exception e) {
+						err[0] = e;
 					}
-				});
-				if (err[0] != null) {
-					throw err[0];
 				}
-
+			});
+			if (err[0] != null) {
+				throw err[0];
 			}
+
 		}
 	}
 
