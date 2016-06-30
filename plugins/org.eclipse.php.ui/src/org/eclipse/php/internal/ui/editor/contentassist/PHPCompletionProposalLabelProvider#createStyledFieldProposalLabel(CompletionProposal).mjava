@@ -4,26 +4,16 @@
 		if (proposal.getModelElement() instanceof AliasField) {
 			AliasField aliasField = (AliasField) proposal.getModelElement();
 			buffer.append(aliasField.getAlias());
-			return buffer;
+		} else {
+			buffer.append(proposal.getName());
 		}
 		IModelElement element = proposal.getModelElement();
 		if (element != null && element.getElementType() == IModelElement.FIELD) {
-			final IField field = (IField) element;
-			try {
-				String type = field.getType();
-				if (type != null) {
-					buffer.append(proposal.getName());
-
-					buffer.append(getReturnTypeSeparator(), StyledString.DECORATIONS_STYLER);
-					buffer.append(type, StyledString.DECORATIONS_STYLER);
-
-					return buffer;
-				}
-			} catch (ModelException e) {
-				// ignore
+			appendFieldType(buffer, proposal);
+			if (!proposal.getName().startsWith("$")) { //$NON-NLS-1$
+				appendQualifier(buffer, element.getParent());
 			}
 		}
-		buffer.append(proposal.getName());
 
 		return buffer;
 	}
