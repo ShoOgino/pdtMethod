@@ -1,0 +1,20 @@
+	protected void format(final PdttFile pdttFile, final DocumentCommand cmd, final IDocument document)
+			throws BadLocationException {
+		IAutoEditStrategy indentLineAutoEditStrategy = new MainAutoEditStrategy();
+		if (pdttFile.getOther() != null && !pdttFile.getOther().isEmpty()) {
+			cmd.text = pdttFile.getOther().substring(0, pdttFile.getOther().length() - 1);
+			if (cmd.text != null && cmd.text.trim().length() == 1) {
+				// support single (non-blank) character
+				// insertion
+				cmd.text = cmd.text.trim();
+			}
+		} else {
+			cmd.text = "\n";
+		}
+		cmd.doit = true;
+		cmd.shiftsCaret = true;
+		cmd.caretOffset = -1;
+		indentLineAutoEditStrategy.customizeDocumentCommand(document, cmd);
+		document.replace(cmd.offset, cmd.length, cmd.text);
+	}
+

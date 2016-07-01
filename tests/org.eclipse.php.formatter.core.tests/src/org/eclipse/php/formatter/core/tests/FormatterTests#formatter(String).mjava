@@ -1,27 +1,10 @@
 	@Test
 	public void formatter(String fileName) throws Exception {
 		IFile file = files.get(fileName);
-
-		IStructuredModel modelForEdit = StructuredModelManager.getModelManager().getModelForEdit(file);
-		try {
-			IDocument document = modelForEdit.getStructuredDocument();
-			String beforeFormat = document.get();
-
-			PHPFormatProcessorProxy formatter = new PHPFormatProcessorProxy();
-			formatter.formatDocument(document, 0, document.getLength());
-
-			PDTTUtils.assertContents(pdttFiles.get(fileName).getExpected(), document.get());
-
-			// change the document text as
-			// was
-			// before
-			// the formatting
-			document.set(beforeFormat);
-			modelForEdit.save();
-		} finally {
-			if (modelForEdit != null) {
-				modelForEdit.releaseFromEdit();
-			}
-		}
+		IDocument document = StructuredModelManager.getModelManager().getModelForRead(file).getStructuredDocument();
+		PHPFormatProcessorProxy formatter = new PHPFormatProcessorProxy();
+		formatter.formatDocument(document, 0, document.getLength());
+		// Compare contents
+		PDTTUtils.assertContents(pdttFiles.get(fileName).getExpected(), document.get());
 	}
 
