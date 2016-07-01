@@ -1,0 +1,33 @@
+	@Test
+	public void testMove() {
+		PHPMoveProcessor processor = new PHPMoveProcessor(project1.getProject().getFolder("src"));
+
+		RefactoringStatus status = processor.checkInitialConditions(new NullProgressMonitor());
+
+		assertEquals(IStatus.OK, status.getSeverity());
+
+		processor.setDestination(project2);
+		processor.setUpdateReferences(true);
+
+		try {
+			Change change = processor.createChange(new NullProgressMonitor());
+			change.perform(new NullProgressMonitor());
+
+			TestUtils.waitForIndexer();
+
+			assertTrue(project2.getFolder("src").exists());
+
+			IMarker[] marks = project2.findMarkers(IMarker.PROBLEM, true, IResource.DEPTH_INFINITE);
+
+			assertEquals(0, marks.length);
+
+		} catch (OperationCanceledException e) {
+			fail(e.getMessage());
+		} catch (CoreException e) {
+			fail(e.getMessage());
+		} catch (Exception e) {
+			fail(e.getMessage());
+		}
+
+	}
+
