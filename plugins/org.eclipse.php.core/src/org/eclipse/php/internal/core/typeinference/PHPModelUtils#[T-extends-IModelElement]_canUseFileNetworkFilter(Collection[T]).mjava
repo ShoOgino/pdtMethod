@@ -1,7 +1,7 @@
 	/**
-	 * Determine whether given elements represent the same type and name, but
-	 * declared in different files (determine whether file network filtering can
-	 * be used)
+	 * Determine whether given elements represent the same type, name and
+	 * namespace, but declared in different files (determine whether file
+	 * network filtering can be used)
 	 * 
 	 * @param elements
 	 *            Model elements list
@@ -10,16 +10,21 @@
 	private static <T extends IModelElement> boolean canUseFileNetworkFilter(Collection<T> elements) {
 		int elementType = 0;
 		String elementName = null;
+		String namespaceName = null;
 		for (T element : elements) {
 			if (element == null) {
 				continue;
 			}
+			IType namespaceElement = getCurrentNamespace(element);
+			String namespaceNameElement = namespaceElement != null ? namespaceElement.getElementName() : null;
 			if (elementName == null) {
 				elementType = element.getElementType();
 				elementName = element.getElementName();
+				namespaceName = namespaceNameElement;
 				continue;
 			}
-			if (!elementName.equalsIgnoreCase(element.getElementName()) || elementType != element.getElementType()) {
+			if (!elementName.equalsIgnoreCase(element.getElementName()) || elementType != element.getElementType()
+					|| !StringUtils.equalsIgnoreCase(namespaceName, namespaceNameElement)) {
 				return false;
 			}
 		}

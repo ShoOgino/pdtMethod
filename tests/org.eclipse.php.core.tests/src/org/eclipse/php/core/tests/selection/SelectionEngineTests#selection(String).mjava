@@ -2,16 +2,18 @@
 	public void selection(String fileName) throws Exception {
 		final CodeAssistPdttFile pdttFile = new CodeAssistPdttFile(fileName);
 
-		IModelElement[] elements = getSelection(pdttFile.getFile());
+		IModelElement[] elements = getSelection(pdttFile);
 		ExpectedProposal[] expectedProposals = pdttFile.getExpectedProposals();
 
+		boolean addFileAndNamespace = pdttFile.getOtherFiles().length > 0;
 		boolean proposalsEqual = true;
 		if (elements.length == expectedProposals.length) {
 			for (ExpectedProposal expectedProposal : pdttFile.getExpectedProposals()) {
 				boolean found = false;
 				for (IModelElement modelElement : elements) {
 					if (modelElement.getElementType() == expectedProposal.type
-							&& modelElement.getElementName().equalsIgnoreCase(expectedProposal.name)) {
+							&& getProposalName(modelElement, addFileAndNamespace)
+									.equalsIgnoreCase(expectedProposal.name)) {
 						found = true;
 						break;
 					}
@@ -42,7 +44,7 @@
 					errorBuf.append("type");
 					break;
 				}
-				errorBuf.append('(').append(modelElement.getElementName()).append(")\n");
+				errorBuf.append('(').append(getProposalName(modelElement, addFileAndNamespace)).append(")\n");
 			}
 			fail(errorBuf.toString());
 		}
