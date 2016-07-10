@@ -1,0 +1,43 @@
+	@Test
+	public void testAsyncAbort() {
+		try {
+			AsyncPackageSearch downloader = new AsyncPackagistSearch();
+			downloader.addPackageSearchListener(new PackageSearchListenerInterface() {
+				public void packagesFound(List<MinimalPackage> packages, String query, SearchResult result) {
+					asyncResult = packages;
+					asyncQuery = query;
+					asyncCounter++;
+
+					if (asyncAborts == 1 && asyncCounter == 1) {
+						counter.countDown();
+					}
+				}
+
+				public void aborted(String url) {
+					asyncAborts++;
+
+					if (asyncAborts == 1 && asyncCounter == 1) {
+						counter.countDown();
+					}
+				}
+
+				public void errorOccured(Exception e) {
+				}
+			});
+			downloader.setPageLimit(1);
+			synchronized (downloader) {
+				downloader.search("test");
+				downloader.abort();
+			}
+			downloader.search("symfony");
+
+			counter.await(TIMEOUT, TimeUnit.SECONDS);
+			assertEquals("Aborts: ", 1, asyncAborts);
+			assertEquals("Searches:", 1, asyncCounter);
+			assertEquals("symfony", asyncQuery);
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail();
+		}
+	}
+

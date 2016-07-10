@@ -1,0 +1,24 @@
+	public void launch(String argument, String[] params) throws ExecuteException, IOException, InterruptedException {
+		CommandLine cmd = environment.getCommand();
+		cmd.addArgument(argument);
+		cmd.addArguments(params);
+
+		executor = new ScriptExecutor();
+
+		if (timeout != null) {
+			executor.setTimeout(timeout);
+		}
+
+		Logger.debug("Setting executor working directory to " + project.getLocation().toOSString());
+		executor.setWorkingDirectory(project.getLocation().toFile());
+
+		for (ExecutionResponseListener listener : listeners) {
+			executor.addResponseListener(listener);
+		}
+
+		Map<String, String> env = new HashMap<String, String>(System.getenv());
+		PHPLaunchUtilities.appendLibrarySearchPathEnv(env, new File(cmd.getExecutable()).getParentFile());
+
+		executor.execute(cmd, env);
+	}
+

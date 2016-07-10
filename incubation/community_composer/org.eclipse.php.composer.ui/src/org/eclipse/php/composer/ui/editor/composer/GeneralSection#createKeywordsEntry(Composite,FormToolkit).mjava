@@ -1,0 +1,25 @@
+	private void createKeywordsEntry(Composite client, FormToolkit toolkit) {
+		keywordsEntry = new FormEntry(client, toolkit, "Keywords", null, false);
+		
+		final Keywords2StringConverter converter = new Keywords2StringConverter();
+		keywordsEntry.setValue(converter.convert(composerPackage.getKeywords()), true);
+		
+		keywordsEntry.addFormEntryListener(new FormEntryAdapter() {
+			String2KeywordsConverter converter;
+			public void focusGained(FormEntry entry) {
+				converter = new String2KeywordsConverter(composerPackage);
+			}
+			
+			public void focusLost(FormEntry entry) {
+				converter.convert(entry.getValue());
+			}
+		});
+		composerPackage.addPropertyChangeListener(new PropertyChangeListener() {
+			public void propertyChange(PropertyChangeEvent e) {
+				if (e.getPropertyName().startsWith("keywords")) {
+					keywordsEntry.setValue(converter.convert(composerPackage.getKeywords()), true);
+				}
+			}
+		});
+	}
+

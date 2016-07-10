@@ -1,0 +1,37 @@
+	/**
+	 * Sets a new value for the given property.
+	 * 
+	 * @param property
+	 *            the property
+	 * @param value
+	 *            the new value
+	 * @param notify
+	 *            whether listeners should be notified about the change
+	 */
+	@SuppressWarnings("unchecked")
+	protected void set(String property, Object value, boolean notify) {
+
+		// remove listener on the current value if there is one yet
+		uninstallListener(property);
+
+		JsonEntity entity = null;
+		// install listener to be aware of changes
+		if (value instanceof JsonValue) {
+			entity = getEntity((JsonValue) value);
+		} else if (value instanceof JsonEntity) {
+			entity = (JsonEntity) value;
+		}
+
+		if (entity != null && !listeners.containsKey(property)) {
+			installListener(property, entity);
+		}
+
+		V oldValue = properties.get(property);
+		properties.put(property, (V) value);
+		appendSortOrder(property);
+
+		if (notify) {
+			firePropertyChange(property, oldValue, (V) value);
+		}
+	}
+

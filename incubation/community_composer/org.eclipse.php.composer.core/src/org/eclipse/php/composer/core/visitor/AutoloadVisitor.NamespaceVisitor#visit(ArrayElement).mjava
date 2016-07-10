@@ -1,0 +1,29 @@
+        @Override
+        public boolean visit(ArrayElement element) throws Exception
+        {
+            if (!(element.getKey() instanceof Scalar)) {
+                return false;
+            }
+            
+            if (element.getValue() instanceof InfixExpression) {
+                Scalar namespace = (Scalar) element.getKey();
+                Scalar path = (Scalar) ((InfixExpression) element.getValue()).getRight();
+                VariableReference reference = (VariableReference) ((InfixExpression) element.getValue()).getLeft();
+                extractPsr0(namespace, path, reference);
+                return false;
+            } else if(element.getValue() instanceof ArrayCreation) {
+                Scalar namespace = (Scalar) element.getKey();
+                ArrayCreation paths = (ArrayCreation) element.getValue();
+                for (ArrayElement elem  : paths.getElements()) {
+                	if (elem.getValue() instanceof InfixExpression) {
+                		Scalar path = (Scalar) ((InfixExpression) elem.getValue()).getRight();
+                        VariableReference reference = (VariableReference) ((InfixExpression) elem.getValue()).getLeft();
+                        extractPsr0(namespace, path, reference);
+                	}
+                	return false;
+                }
+            }
+            
+            return true;
+        }
+

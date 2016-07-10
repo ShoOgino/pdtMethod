@@ -1,0 +1,33 @@
+	@Override
+	public Environment getEnvironment(IProject project) {
+
+		IPreferencesService service = Platform.getPreferencesService();
+		IScopeContext[] contexts = new IScopeContext[] { new ProjectScope(project), InstanceScope.INSTANCE,
+				DefaultScope.INSTANCE };
+		String executable = service.getString(getPluginId(), getExecutableKey(), null, contexts);
+		String useProjectPhar = service.getString(getPluginId(), getUseProjectKey(), null, contexts);
+		String systemPhar = service.getString(getPluginId(), getScriptKey(), null, contexts);
+
+		if (executable == null || executable.isEmpty()) {
+			// the user has not set any preference for PHP executable yet,
+			// so try finding any PHP executable, e.g. contributed via the
+			// phpExe extension point
+			try {
+				executable = LaunchUtil.getPHPExecutable();
+			} catch (ExecutableNotFoundException e) {
+				// no php exe found - executable will remain null
+			}
+		}
+
+		if (executable != null && !executable.isEmpty()) {
+			if (useProjectPhar != null && "true".equals(useProjectPhar)
+					|| (systemPhar == null || systemPhar.length() == 0)) {
+				return getProjectEnvironment(executable);
+			}
+
+			return new SysPhpSysPhar(executable, systemPhar);
+		}
+
+		return null;
+	}
+

@@ -1,0 +1,40 @@
+	@Override
+	public Object execute(ExecutionEvent event) throws ExecutionException {
+
+		IEditorInput input = HandlerUtil.getActiveEditorInput(event);
+
+		if (!(input instanceof IFileEditorInput)) {
+			return null;
+		}
+
+		IFileEditorInput fileEditor = (IFileEditorInput) input;
+		IFile file = fileEditor.getFile();
+
+		if (file == null) {
+			return null;
+		}
+
+		IPath filePath = file.getFullPath();
+		IProject project = file.getProject();
+		IComposerProject composerProject = getComposerProject(project);
+		String vendorDir = composerProject.getVendorDir();
+		String vendor = vendorDir != null ? vendorDir : ComposerConstants.VENDOR_DIR_DEFAULT;
+		
+		IFile autoload = project.getFile(vendor + "/autoload.php");
+		if (autoload == null || autoload.exists() == false) {
+			return null;
+		}
+
+		IPath autoloadPath = autoload.getFullPath();
+		IPath relativeTo = autoloadPath.makeRelativeTo(filePath);
+		
+		if (relativeTo == null || relativeTo.segmentCount() <= 1) {
+			return null;
+		}
+		
+		relativeTo = relativeTo.removeFirstSegments(1);
+		insertText("require_once __DIR__ . '/" + relativeTo.toString() + "';");
+
+		return null;
+	}
+

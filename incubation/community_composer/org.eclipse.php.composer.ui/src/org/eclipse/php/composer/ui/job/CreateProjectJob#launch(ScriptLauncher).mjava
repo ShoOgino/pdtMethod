@@ -1,0 +1,52 @@
+	@Override
+	protected void launch(ScriptLauncher launcher) throws ExecuteException, IOException, InterruptedException {
+
+		// cloning large projects can take a long time...
+		// TODO: make this configurable via preferences
+		launcher.setTimeout(5 * 60000);
+		launcher.addResponseListener(new ExecutionResponseListener() {
+
+			@Override
+			public void executionStarted() {
+
+			}
+
+			@Override
+			public void executionMessage(String message) {
+				try {
+					if (composerExists() /*
+											 * message != null && message.
+											 * equals("Loading composer repositories with package information"
+											 * )
+											 */) {
+						notifyOnStart();
+					}
+				} catch (Exception e) {
+					Logger.logException(e);
+				}
+			}
+
+			@Override
+			public void executionFinished(String response, int exitValue) {
+				notifyOnFinish();
+			}
+
+			@Override
+			public void executionFailed(String response, Exception exception) {
+				notifyOnFail();
+			}
+
+			@Override
+			public void executionError(String message) {
+				notifyOnFail();
+			}
+
+			@Override
+			public void executionAboutToStart() {
+			}
+		});
+
+		launcher.launch("create-project",
+				new String[] { "--no-interaction", packageName, projectName, packageVersion });
+	}
+

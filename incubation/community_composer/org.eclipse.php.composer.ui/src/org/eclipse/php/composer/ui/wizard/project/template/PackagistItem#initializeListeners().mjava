@@ -1,0 +1,36 @@
+	protected void initializeListeners() {
+
+		downloadButton.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				boolean selected = downloadButton.getSelection();
+				filterItem.setChecked(selected);
+
+				for (PackageFilterChangedListener listener : listeners) {
+					listener.filterChanged(filterItem);
+				}
+			}
+		});
+
+		favorButton.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				try {
+					final IWebBrowser browser = PlatformUI.getWorkbench().getBrowserSupport().createBrowser(null);
+					browser.openURL(new URL(item.getAsString("url")));
+				} catch (Exception e1) {
+					Logger.logException(e1);
+				}
+			}
+		});
+
+		versionCombo.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				filterItem.setSelectedVersion(versionCombo.getText());
+				for (PackageFilterChangedListener listener : listeners) {
+					listener.filterChanged(filterItem);
+				}
+			}
+		});
+	}
+

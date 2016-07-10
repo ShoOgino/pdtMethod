@@ -1,0 +1,41 @@
+	private void parseVersion(String version) {
+		this.version = version;
+		String parts[];
+
+		// constraint
+		String constraintPattern = "^(<>|!=|>=?|<=?|==?)?(.+)";
+		if (version.matches(constraintPattern)) {
+			constraint = version.replaceAll(constraintPattern, "$1");
+			version = version.replaceAll(constraintPattern, "$2");
+		}
+
+		// stability modifier
+		if (version.matches(".+@.+")) {
+			parts = version.split("@");
+			version = parts[0];
+			stabilityModifier = normalizeStability(parts[1]);
+		}
+
+		// dev version?
+		if (version.startsWith("dev-")) {
+			stability = ComposerConstants.DEV;
+			version = version.substring(4);
+			devPosition = BEGIN;
+		}
+
+		parts = version.split("-");
+		int len = parts.length;
+
+		if (len > 0) {
+			parseMain(parts[0]);
+		}
+
+		if (len > 1) {
+			parseTail(parts[1]);
+		}
+
+		if (stability.isEmpty()) {
+			stability = ComposerConstants.STABLE;
+		}
+	}
+

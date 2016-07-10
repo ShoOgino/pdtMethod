@@ -1,0 +1,24 @@
+	@Override
+	public void packagesFound(final List<MinimalPackage> packages, String query, SearchResult result) {
+		foundQuery = query;
+		Logger.debug("Found Packages for: " + query + " => " + packages.size());
+
+		Display.getDefault().asyncExec(new Runnable() {
+			public void run() {
+				if (currentQuery.isEmpty()) {
+					return;
+				}
+
+				if (shownQuery == null || (!shownQuery.equals(foundQuery) && currentQuery.equals(foundQuery))) {
+					searchResults.setInput(packages);
+					shownQuery = foundQuery;
+				}
+
+				else if (shownQuery.equals(foundQuery)) {
+					searchController.addPackages(packages);
+					searchResults.refresh();
+				}
+			}
+		});
+	}
+

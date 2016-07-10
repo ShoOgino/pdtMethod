@@ -1,0 +1,32 @@
+	@Test
+	public void testAsyncSearch() {
+		try {
+			AsyncPackageSearch downloader = new AsyncPackagistSearch();
+			downloader.addPackageSearchListener(new PackageSearchListenerInterface() {
+				public void packagesFound(List<MinimalPackage> packages, String query, SearchResult result) {
+					asyncResult = packages;
+					asyncQuery = query;
+					asyncCounter++;
+
+					counter.countDown();
+				}
+
+				public void aborted(String url) {
+				}
+
+				public void errorOccured(Exception e) {
+				}
+			});
+			String query = "gossi/ldap";
+			downloader.search(query);
+
+			counter.await(TIMEOUT, TimeUnit.SECONDS);
+
+			assertNotNull(asyncResult);
+			assertEquals(query, asyncQuery);
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail();
+		}
+	}
+

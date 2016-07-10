@@ -1,0 +1,35 @@
+	public static String getPHPExecutable(String debugger) throws ExecutableNotFoundException {
+		// find the default PHP executable
+		PHPexeItem defaultPhpExe = getDefaultPHPExeItem(debugger);
+
+		// check if the SAPI type is CLI
+		if (PHPexeItem.SAPI_CLI.equals(defaultPhpExe.getSapiType())) {
+			// if yes - return it
+			return defaultPhpExe.getExecutable().toString();
+		}
+
+		// otherwise try to find a PHP CLI executable
+		PHPexeItem[] cliItems = PHPexes.getInstance().getCLIItems();
+		if (cliItems.length == 0) {
+			// if no PHP CLI executable then return the default one
+			return defaultPhpExe.getExecutable().toString();
+		}
+
+		// sort the PHP CLI executable by version
+		SortedMap<String, PHPexeItem> map = new TreeMap<String, PHPexeItem>();
+		for (PHPexeItem item : cliItems) {
+			map.put(item.getVersion(), item);
+		}
+
+		// check if there is a PHP CLI executable with the same version as the
+		// default PHP executable
+		PHPexeItem phpExe = map.get(defaultPhpExe.getVersion());
+		if (phpExe != null) {
+			return phpExe.getExecutable().toString();
+		}
+
+		// otherwise return the PHP CLI executable with the greatest version
+		phpExe = map.get(map.lastKey());
+		return phpExe.getExecutable().toString();
+	}
+

@@ -1,0 +1,27 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.osgi.framework.BundleActivator#start(org.osgi.framework.BundleContext
+	 * )
+	 */
+	public void start(BundleContext bundleContext) throws Exception {
+		super.start(bundleContext);
+
+		plugin = this;
+
+		IWorkspace workspace = ResourcesPlugin.getWorkspace();
+		IResourceChangeListener listener = new IResourceChangeListener() {
+			public void resourceChanged(IResourceChangeEvent event) {
+				if (event.getType() == IResourceChangeEvent.PRE_DELETE
+						&& event.getResource() instanceof IProject) {
+					ModelAccess.getInstance().getPackageManager()
+							.removeProject((IProject) event.getResource());
+				}
+			}
+		};
+		workspace.addResourceChangeListener(listener);
+		
+
+	}
+

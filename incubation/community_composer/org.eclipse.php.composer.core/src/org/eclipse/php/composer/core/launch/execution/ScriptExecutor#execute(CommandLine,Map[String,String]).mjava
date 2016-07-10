@@ -1,0 +1,22 @@
+	public void execute(CommandLine cmd, Map<String, String> env) {
+		try {
+			for (ExecutionResponseListener handler : listeners) {
+				handler.executionAboutToStart();
+			}
+
+			Logger.debug("executing command using executable: " + cmd.getExecutable());
+			executor.setExitValue(0);
+			executor.execute(cmd, env, handler);
+
+			for (ExecutionResponseListener handler : listeners) {
+				handler.executionStarted();
+			}
+
+			handler.waitFor();
+		} catch (Exception e) {
+			for (ExecutionResponseListener handler : listeners) {
+				handler.executionFailed("", e);
+			}
+		}
+	}
+

@@ -1,0 +1,53 @@
+	private void init() {
+		downloader.addDownloadListener(new DownloadListenerAdapater() {
+			private String getQuery(String url) {
+				try {
+					return URLDecoder.decode(url.replaceFirst(".+q=([^?&]+).*", "$1"), "UTF-8");
+				} catch (UnsupportedEncodingException e) {
+					log.error(e);
+				}
+				
+				return null;
+			}
+			
+			public void dataReceived(InputStream content, String url) {
+				try {
+					// parse query from url
+					String query = getQuery(url);
+
+					if (isAborted(query)) {
+						return;
+					}
+					
+					SearchResult result = PackageHelper.getSearchResult(content);
+				
+					int counter = getCounter(query);
+				
+					if (result != null && result.results != null) {
+						for (PackageSearchListenerInterface listener : listeners) {
+							listener.packagesFound(result.results, query, result);
+						}
+					}
+					
+					if (result != null && result.next != null 
+							&& result.next.length() > 0 && counter < pageLimit) {
+						downloader.setUrl(result.next);
+						downloader.download();
+						counters.put(query, counter + 1);
+					}
+				} catch (Exception e) {
+					for (PackageSearchListenerInterface listener : listeners) {
+						listener.errorOccured(e);
+					}
+				}
+			}
+			
+			public void aborted(String url) {
+				aborts.put(getQuery(url), true);
+				for (PackageSearchListenerInterface listener : listeners) {
+					listener.aborted(url);
+				}
+			}
+		});
+	}
+

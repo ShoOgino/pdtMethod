@@ -1,0 +1,58 @@
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	protected void updateProject(IProgressMonitor monitor) throws CoreException, InterruptedException {
+
+		IProject projectHandle = firstPage.getProjectHandle();
+		IScriptProject create = DLTKCore.create(projectHandle);
+		super.init(create, null, false);
+		currentProjectLocation = getProjectLocationURI();
+
+		if (monitor == null) {
+			monitor = new NullProgressMonitor();
+		}
+		try {
+			monitor.beginTask("Initializing project", 70);
+			if (monitor.isCanceled()) {
+				throw new OperationCanceledException();
+			}
+
+			createProject(getProject(), currentProjectLocation, new SubProgressMonitor(monitor, 20));
+
+			IBuildpathEntry[] buildpathEntries = null;
+
+			// TODO: see
+			// https://github.com/pulse00/Composer-Eclipse-Plugin/issues/37
+			IPath srcPath = new Path(ComposerPluginConstants.DEFAULT_SRC_FOLDER);
+
+			if (srcPath.segmentCount() > 0) {
+				IFolder folder = getProject().getFolder(srcPath);
+				CoreUtility.createFolder(folder, true, true, new SubProgressMonitor(monitor, 10));
+			} else {
+				monitor.worked(10);
+			}
+
+			final IPath projectPath = getProject().getFullPath();
+
+			// configure the buildpath entries, including the default
+			// InterpreterEnvironment library.
+			List cpEntries = new ArrayList();
+			cpEntries.add(DLTKCore.newSourceEntry(projectPath.append(srcPath)));
+			cpEntries.add(DLTKCore.newContainerEntry(LanguageModelInitializer.LANGUAGE_CONTAINER_PATH));
+			cpEntries.add(DLTKCore.newSourceEntry(projectPath.append("vendor").append("composer")));
+
+			buildpathEntries = (IBuildpathEntry[]) cpEntries.toArray(new IBuildpathEntry[cpEntries.size()]);
+			if (monitor.isCanceled()) {
+				throw new OperationCanceledException();
+			}
+
+			init(DLTKCore.create(getProject()), buildpathEntries, false);
+			setPhpLangOptions();
+			configureScriptProject(new SubProgressMonitor(monitor, 30));
+
+			// adding build paths, and language-Container:
+			getScriptProject().setRawBuildpath(buildpathEntries, new NullProgressMonitor());
+			LanguageModelInitializer.enableLanguageModelFor(getScriptProject());
+		} finally {
+			monitor.done();
+		}
+	}
+

@@ -1,0 +1,36 @@
+	@Test
+	public void testNamespaceResolver() throws CoreException, IOException {
+
+		IScriptProject scriptProject = ensureScriptProject("testproject2");
+
+		assertNotNull(scriptProject);
+
+		IProjectDescription desc = scriptProject.getProject().getDescription();
+		desc.setNatureIds(new String[] { PHPNature.ID });
+		scriptProject.getProject().setDescription(desc, null);
+
+		ProjectOptions.setPhpVersion(PHPVersion.PHP5_3, scriptProject.getProject());
+
+		PHPFacets.setFacetedVersion(scriptProject.getProject(), PHPVersion.PHP5_3);
+		FacetManager.installFacets(scriptProject.getProject(), PHPVersion.PHP5_3, new NullProgressMonitor());
+
+		scriptProject.getProject().refreshLocal(IResource.DEPTH_INFINITE, null);
+		scriptProject.getProject().build(IncrementalProjectBuilder.FULL_BUILD, null);
+
+		ComposerCoreTestPlugin.waitForIndexer();
+		ComposerCoreTestPlugin.waitForAutoBuild();
+
+		IFile file = scriptProject.getProject().getFile("composer.json");
+		assertNotNull(file);
+
+		assertTrue(scriptProject.getProject().hasNature(PHPNature.ID));
+		assertTrue(scriptProject.getProject().hasNature(ComposerNature.NATURE_ID));
+
+		String namespace = "Foobar\\Sub";
+
+		IPath resolvedPath = ModelAccess.getInstance().reverseResolve(scriptProject.getProject(), namespace);
+		assertNotNull(resolvedPath);
+		assertTrue(scriptProject.getProject().getFolder(resolvedPath).exists());
+
+	}
+

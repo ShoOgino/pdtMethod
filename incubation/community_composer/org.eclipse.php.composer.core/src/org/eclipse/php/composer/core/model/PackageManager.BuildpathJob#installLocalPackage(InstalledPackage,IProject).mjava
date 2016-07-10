@@ -1,0 +1,48 @@
+		private void installLocalPackage(InstalledPackage installedPackage, IProject project) {
+			IPath path = new Path("vendor").append(installedPackage.name);
+
+			Logger.debug("Installing local version of " + installedPackage.getFullName());
+			IResource resource = project.findMember(path);
+
+			if (resource instanceof IFolder) {
+				IFolder folder = (IFolder) resource;
+				File file = folder.getRawLocation().makeAbsolute().toFile();
+
+				if (file != null && file.exists() && installedPackage.getLocalFile() != null) {
+					try {
+						Logger.debug("Installing local package " + installedPackage.name + " to "
+								+ installedPackage.getLocalFile().getAbsolutePath());
+						installedPackage.getLocalFile().mkdirs();
+						final java.nio.file.Path sourcePath = file.toPath();
+						final java.nio.file.Path packagePath = installedPackage.getLocalFile().toPath();
+						SimpleFileVisitor<java.nio.file.Path> n = new SimpleFileVisitor<java.nio.file.Path>() {
+							@Override
+							public FileVisitResult preVisitDirectory(java.nio.file.Path dirPath,
+									BasicFileAttributes attrs) throws IOException {
+								java.nio.file.Path targetPath = packagePath.resolve(sourcePath.relativize(dirPath));
+								if (!Files.exists(targetPath)) {
+									Files.createDirectory(targetPath);
+								}
+
+								return FileVisitResult.CONTINUE;
+							}
+
+							@Override
+							public FileVisitResult visitFile(java.nio.file.Path filePath, BasicFileAttributes attrs)
+									throws IOException {
+								Files.copy(filePath, packagePath.resolve(sourcePath.relativize(filePath)),
+										StandardCopyOption.REPLACE_EXISTING);
+
+								return FileVisitResult.CONTINUE;
+							}
+						};
+						Files.walkFileTree(file.toPath(), n);
+					} catch (IOException e) {
+						Logger.logException(e);
+					}
+				}
+			} else {
+				Logger.debug("Unable to find folder in project for path " + path.toString());
+			}
+		}
+

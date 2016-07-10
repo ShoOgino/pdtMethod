@@ -1,0 +1,26 @@
+	@Test
+	public void testAsyncDownloader() {
+		try {
+			AsyncDownloader downloader = new AsyncDownloader(ComposerConstants.PHAR_URL);
+			downloader.addDownloadListener(new DownloadListenerAdapater() {
+				public void dataReceived(InputStream content, String url) {
+					asyncResult = content;
+					counter.countDown();
+				}
+
+				public void errorOccured(Exception e) {
+					e.printStackTrace();
+				}
+			});
+
+			downloader.download();
+
+			counter.await(TIMEOUT, TimeUnit.SECONDS);
+
+			assertNotNull(asyncResult);
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail();
+		}
+	}
+

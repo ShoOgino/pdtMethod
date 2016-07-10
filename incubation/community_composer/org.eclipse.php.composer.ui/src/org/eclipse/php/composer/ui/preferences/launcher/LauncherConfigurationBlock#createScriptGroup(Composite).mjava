@@ -1,0 +1,53 @@
+	protected void createScriptGroup(Composite result) {
+
+		GridData gd = new GridData(GridData.FILL_HORIZONTAL);
+		gd.minimumHeight = 60;
+		gd.heightHint = 60;
+
+		scriptGroup = new Group(result, SWT.NONE);
+		scriptGroup.setLayout(new GridLayout(3, false));
+		scriptGroup.setLayoutData(gd);
+		scriptGroup.setText(getScriptLabel());
+
+		buttonGroup = new SelectionButtonDialogFieldGroup(SWT.RADIO,
+				new String[] { getProjectChoiceLabel(), getGlobalChoiceLabel() }, 2);
+		buttonGroup.setLabelText(getButtonGroupLabel());
+		buttonGroup.doFillIntoGrid(scriptGroup, 3);
+		buttonGroup
+				.setDialogFieldListener(new org.eclipse.dltk.internal.ui.wizards.dialogfields.IDialogFieldListener() {
+					@Override
+					public void dialogFieldChanged(
+							org.eclipse.dltk.internal.ui.wizards.dialogfields.DialogField field) {
+						scriptField.setEnabled(buttonGroup.isSelected(1));
+					}
+				});
+
+		scriptField = new StringButtonDialogField(new IStringButtonAdapter() {
+			@Override
+			public void changeControlPressed(DialogField field) {
+				FileDialog dialog = new FileDialog(getShell());
+				String path = dialog.open();
+				if (path != null) {
+					scriptField.setText(path);
+				}
+			}
+		});
+
+		scriptField.setButtonLabel("Browse");
+
+		boolean useProjectPhar = getBooleanValue(useScriptInsideProject);
+
+		if (useProjectPhar) {
+			scriptField.setEnabled(false);
+			buttonGroup.setSelection(0, true);
+			buttonGroup.setSelection(1, false);
+		} else {
+			buttonGroup.setSelection(0, false);
+			buttonGroup.setSelection(1, true);
+		}
+
+		scriptField.setDialogFieldListener(this);
+		scriptField.setLabelText(getScriptFieldLabel());
+		scriptField.doFillIntoGrid(scriptGroup, 3);
+	}
+

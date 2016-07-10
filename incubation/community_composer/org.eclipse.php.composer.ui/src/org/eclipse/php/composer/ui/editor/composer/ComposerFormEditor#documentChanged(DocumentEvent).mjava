@@ -1,0 +1,22 @@
+	private void documentChanged(DocumentEvent event) {
+		String contents = event.getDocument().get();
+
+		// changes happen outside eclipse
+		if (!pageChanging && !saving) {
+			if (isJsonEditor()) {
+				IDocument document = documentProvider.getDocument(getEditorInput());
+				if (document.get() != null && !document.get().equals(contents)) {
+					document.set(contents);
+				}
+			} else {
+				parse(contents);
+			}
+			setDirty(false);
+		}
+
+		// changes in eclipse
+		if (!saving && jsonDump != null && !jsonDump.equals(contents)) {
+			setDirty(true);
+		}
+	}
+

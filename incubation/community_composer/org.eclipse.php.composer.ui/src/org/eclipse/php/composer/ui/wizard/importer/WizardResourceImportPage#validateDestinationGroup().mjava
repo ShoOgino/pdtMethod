@@ -1,0 +1,46 @@
+	@Override
+	protected boolean validateDestinationGroup() {
+
+		if (projectName == null || projectName.length() == 0) {
+			setErrorMessage("Please enter a project name");
+			return false;
+		}
+
+		try {
+			validateProjectName(projectName);
+		} catch (ValidationException e) {
+			setErrorMessage(e.getMessage());
+			return false;
+		}
+
+		if (useWorkspaceLocation.getSelection() == true) {
+			return true;
+		}
+
+		if (target == null) {
+			setMessage("Please select a target path");
+			return false;
+		}
+
+		IPath targetPath = new Path(target);
+		File file = targetPath.toFile();
+
+		if (file == null || !file.exists() || !file.isDirectory()) {
+			setErrorMessage("The selected target location is invalid");
+			return false;
+		}
+
+		IPath targetProjectPath = targetPath.append(projectName);
+
+		File targetProject = targetProjectPath.toFile();
+
+		if (targetProject == null || targetProject.exists()) {
+			setErrorMessage("The target folder already contains a file/folder with the specified project name");
+			return false;
+		}
+
+		setMessage(defaultMessage);
+
+		return true;
+	}
+

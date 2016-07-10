@@ -1,0 +1,93 @@
+		@Override
+		public void run() {
+
+			if (Thread.currentThread().isInterrupted()) {
+				closed();
+				return;
+			}
+
+			try {
+				URI uri = URI.create(url);
+				final HttpGet httpGet = new HttpGet(uri);
+				httpGet.addHeader("Accept", "*/*"); //$NON-NLS-1$
+				httpGet.addHeader("User-Agent", getClass().getName()); //$NON-NLS-1$
+				httpGet.addHeader("Host", uri.getHost()); //$NON-NLS-1$
+				HttpHost host = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
+				SystemDefaultRoutePlanner planner = new SystemDefaultRoutePlanner(ProxySelector.getDefault());
+				HttpClientContext context = HttpClientContext.create();
+				HttpRoute route = planner.determineRoute(host, httpGet, context);
+
+				ConnectionRequest connRequest = connectionManager.requestConnection(route, null);
+				HttpClientConnection conn = connRequest.get(TIMEOUT, TimeUnit.SECONDS);
+				try {
+					if (Thread.currentThread().isInterrupted()) {
+						closed();
+						return;
+					}
+
+					connectionManager.connect(conn, route, 1000, context);
+					if (Thread.currentThread().isInterrupted()) {
+						closed();
+						return;
+					}
+					connectionManager.routeComplete(conn, route, context);
+					if (Thread.currentThread().isInterrupted()) {
+						closed();
+						return;
+					}
+
+					HttpRequestExecutor exeRequest = new HttpRequestExecutor();
+					context.setTargetHost(host);
+					HttpResponse response = exeRequest.execute(httpGet, conn, context);
+
+					if (response.getStatusLine().getStatusCode() >= 300) {
+						throw new HttpResponseException(response.getStatusLine().getStatusCode(),
+								response.getStatusLine().getReasonPhrase());
+
+					}
+
+					HttpEntity entity = response.getEntity();
+
+					if (Thread.currentThread().isInterrupted()) {
+						closed();
+						return;
+					}
+					if (entity == null) {
+						throw new ClientProtocolException("Response contains no content");
+
+					}
+					try {
+						synchronized (AsyncDownloader.this) {
+							for (DownloadListenerInterface listener : listeners) {
+								try {
+									if (Thread.currentThread().isInterrupted()) {
+										closed();
+										return;
+									}
+
+									listener.dataReceived(response.getEntity().getContent(),
+											httpGet.getURI().toString());
+								} catch (Exception e) {
+									listener.errorOccured(e);
+								}
+							}
+						}
+					} finally {
+						EntityUtils.consume(entity);
+					}
+				} finally {
+					if (conn != null) {
+						connectionManager.releaseConnection(conn, null, 1, TimeUnit.SECONDS);
+					}
+				}
+
+			} catch (Exception ex) {
+				synchronized (AsyncDownloader.this) {
+					for (DownloadListenerInterface listener : listeners) {
+						listener.errorOccured(ex);
+					}
+				}
+			}
+
+		}
+

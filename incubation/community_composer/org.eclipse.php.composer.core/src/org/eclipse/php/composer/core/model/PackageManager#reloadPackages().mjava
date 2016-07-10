@@ -1,0 +1,38 @@
+	private void reloadPackages() {
+
+		IEclipsePreferences instancePreferences = ConfigurationScope.INSTANCE.getNode(ComposerPlugin.ID);
+
+		String[] propertyNames;
+		try {
+			propertyNames = instancePreferences.keys();
+		} catch (BackingStoreException e) {
+			Util.log(e, "Exception while initializing user libraries"); //$NON-NLS-1$
+			return;
+		}
+
+		for (int i = 0, length = propertyNames.length; i < length; i++) {
+			String propertyName = propertyNames[i];
+			if (propertyName.startsWith(BP_PROJECT_BUILDPATH_PREFIX)) {
+				String propertyValue = instancePreferences.get(propertyName, null);
+				if (propertyValue != null) {
+					try {
+						List<InstalledPackage> packages = InstalledPackage.deserialize(propertyValue);
+						installedPackages.put(unpackProjectName(propertyName), packages);
+					} catch (IOException e) {
+						Logger.logException(e);
+					}
+				}
+			} else if (propertyName.startsWith(BP_PROJECT_BUILDPATH_DEV_PREFIX)) {
+				String propertyValue = instancePreferences.get(propertyName, null);
+				if (propertyValue != null) {
+					try {
+						List<InstalledPackage> packages = InstalledPackage.deserialize(propertyValue);
+						installedDevPackages.put(unpackProjectName(propertyName), packages);
+					} catch (IOException e) {
+						Logger.logException(e);
+					}
+				}
+			}
+		}
+	}
+

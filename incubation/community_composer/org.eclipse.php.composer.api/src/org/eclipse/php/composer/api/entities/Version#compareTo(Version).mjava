@@ -1,0 +1,43 @@
+	public int compareTo(Version anotherVersion) {
+		if (toString() == "dev-master") {
+			return -1;
+		}
+
+		if (anotherVersion.toString() == "dev-master") {
+			return 1;
+		}
+
+		// major
+		int major = cmp(getMajor(), anotherVersion.getMajor());
+		if (major == 0) {
+			int minor = cmp(getMinor(), anotherVersion.getMinor());
+
+			if (minor == 0) {
+				int fix = cmp(getFix(), anotherVersion.getFix());
+
+				if (fix == 0) {
+					int build = cmp(getBuild(), anotherVersion.getBuild());
+
+					if (build == 0) {
+						int s1 = Arrays.binarySearch(ComposerConstants.STABILITIES, getStability());
+						int s2 = Arrays.binarySearch(ComposerConstants.STABILITIES, anotherVersion.getStability());
+
+						if (s1 == s2) {
+							return cmp(getSuffix(), anotherVersion.getSuffix());
+						} else {
+							return s1 > s2 ? -1 : 1;
+						}
+					} else {
+						return build;
+					}
+				} else {
+					return fix;
+				}
+			} else {
+				return minor;
+			}
+		} else {
+			return major;
+		}
+	}
+

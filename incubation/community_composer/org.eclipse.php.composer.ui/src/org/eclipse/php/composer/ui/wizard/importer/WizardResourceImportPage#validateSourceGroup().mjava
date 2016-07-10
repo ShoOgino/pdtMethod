@@ -1,0 +1,45 @@
+	@Override
+	protected boolean validateSourceGroup() {
+
+		projectNameField.getTextControl(null).setEnabled(true);
+
+		if (json == null || json.toFile().exists() == false) {
+			setErrorMessage("The selected folder does not contain a composer.json file.");
+			return false;
+		}
+
+		IPath sourceProject = new Path(source).append(".project");
+
+		if (sourceProject.toFile().exists()) {
+			try {
+				ProjectDescriptionReader reader = new ProjectDescriptionReader();
+				ProjectDescription projectDescription = reader.read(sourceProject);
+
+				if (projectDescription == null) {
+					setErrorMessage("Cannot read the source project.");
+					return false;
+				}
+
+				projectName = projectDescription.getName();
+				projectNameField.setTextWithoutUpdate(projectName);
+				projectNameField.getTextControl(null).setEnabled(false);
+				lastNameFromProjectFile = projectName;
+
+				setMessage(
+						"The target location contains already an eclipse project. The wizard will use the existing information to import the project");
+				return true;
+
+			} catch (IOException e) {
+				Logger.logException(e);
+				setErrorMessage("Error reading source project");
+				return false;
+			}
+		}
+
+		projectNameField.getTextControl(null).setEnabled(true);
+
+		setMessage(defaultMessage);
+
+		return true;
+	}
+

@@ -1,0 +1,45 @@
+	protected void addComposerJson(IProgressMonitor monitor) throws CoreException {
+
+		IFile file = getProject().getFile(org.eclipse.php.composer.api.ComposerConstants.COMPOSER_JSON);
+		Namespace ns = firstPage.getPackage().getAutoload().getPsr4().getFirst();
+
+		if (ns != null) {
+			// if (ns.getNamespace().contains("\\")) {
+			// String[] split = ns.getNamespace().split("\\\\");
+			// IPath path = new
+			// Path(org.eclipse.php.composer.core.ComposerPluginConstants.DEFAULT_SRC_FOLDER);
+			// for (String segment : split) {
+			// path = path.append(segment);
+			// IFolder folder = getProject().getFolder(path);
+			// if (!folder.exists()) {
+			// folder.create(false, true, monitor);
+			// }
+			// }
+			// } else {
+			// IPath path = new
+			// Path(org.eclipse.php.composer.core.ComposerPluginConstants.DEFAULT_SRC_FOLDER).append(ns
+			// .getNamespace());
+			IPath path = new Path(org.eclipse.php.composer.core.ComposerPluginConstants.DEFAULT_SRC_FOLDER);
+			IFolder folder = getProject().getFolder(path);
+			if (!folder.exists()) {
+				folder.create(false, true, monitor);
+			}
+			// }
+		}
+
+		if (file.exists()) {
+			Logger.debug("composer.json already exists in the location");
+			return;
+		}
+
+		ComposerPackage composerPackage = firstPage.getPackage();
+		VersionedPackage phpVersion = new VersionedPackage();
+		phpVersion.setName("php");
+		phpVersion.setVersion(">=" + firstPage.getPHPVersionValue().getAlias().replace("php", ""));
+		composerPackage.getRequire().add(phpVersion);
+
+		ByteArrayInputStream bis = new ByteArrayInputStream(composerPackage.toJson().getBytes());
+		file.create(bis, true, monitor);
+		getProject().refreshLocal(0, monitor);
+	}
+

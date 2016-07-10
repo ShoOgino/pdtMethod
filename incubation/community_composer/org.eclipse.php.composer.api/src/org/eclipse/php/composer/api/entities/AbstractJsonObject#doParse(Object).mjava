@@ -1,0 +1,28 @@
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	protected void doParse(Object obj) {
+		clear();
+		if (obj instanceof LinkedHashMap) {
+			List<String> fields = getFieldNames(this.getClass());
+			LinkedHashMap json = (LinkedHashMap) obj;
+			for (Entry<String, Object> entry : ((Map<String, Object>) obj).entrySet()) {
+				String property = entry.getKey();
+
+				if (fields.contains(property)) {
+					parseField(json, property);
+				} else {
+					Object value = null;
+					if (json.containsKey(property)) {
+						value = json.get(property);
+
+						if (value instanceof LinkedList) {
+							value = new JsonArray(value);
+						} else if (value instanceof LinkedHashMap) {
+							value = new JsonObject(value);
+						}
+					}
+					set(property, value);
+				}
+			}
+		}
+	}
+

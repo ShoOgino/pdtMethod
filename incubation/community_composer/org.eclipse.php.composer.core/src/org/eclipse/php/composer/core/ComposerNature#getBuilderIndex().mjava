@@ -1,0 +1,31 @@
+	private int getBuilderIndex() {
+		try {
+			int i = 0;
+			for (ICommand cmd : project.getDescription().getBuildSpec()) {
+				// activated builder
+				if (ComposerBuildPathManagementBuilder.ID.equals(cmd
+						.getBuilderName())) {
+					return i;
+				}
+
+				// deactivated builder
+				if ("org.eclipse.ui.externaltools.ExternalToolBuilder"
+						.equals(cmd.getBuilderName())) {
+					Map<String, String> args = cmd.getArguments();
+					if (args.containsKey("LaunchConfigHandle")) {
+						String launch = args.get("LaunchConfigHandle");
+						if (launch
+								.contains(ComposerBuildPathManagementBuilder.ID)) {
+							return i;
+						}
+					}
+				}
+				i++;
+			}
+		} catch (CoreException e) {
+			e.printStackTrace();
+		}
+
+		return -1;
+	}
+

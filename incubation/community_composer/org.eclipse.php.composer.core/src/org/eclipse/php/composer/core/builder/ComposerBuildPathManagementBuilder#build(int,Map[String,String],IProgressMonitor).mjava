@@ -1,0 +1,53 @@
+	@Override
+	protected IProject[] build(int kind, Map<String, String> args,
+			IProgressMonitor monitor) throws CoreException {
+
+		IProject project = getProject();
+
+		if (project.hasNature(ComposerNature.NATURE_ID) == false) {
+			return null;
+		}
+
+		try {
+			// return when no composer.json present
+			IComposerProject composerProject = ComposerPlugin.getDefault().getComposerProject(project);
+			IFile composerJson = composerProject.getComposerJson();
+			if (composerJson == null || composerJson.exists() == false) {
+				return null;
+			}
+
+			boolean changed = false;
+			IResourceDelta delta = getDelta(project);
+			BuildPathManager buildPathManager = new BuildPathManager(composerProject);
+
+			if (delta == null) {
+				if (project.hasNature(ComposerNature.NATURE_ID)) {
+					buildPathManager.update(monitor);
+				}
+				
+				return null;
+			}
+
+			String vendor = composerProject.getVendorDir();
+
+			for (IResourceDelta affected : delta.getAffectedChildren()) {
+				String path = affected.getProjectRelativePath().toOSString();
+				
+				if (path.equals("composer.lock") || path.equals(vendor)) {
+					changed = true;
+				}
+			}
+
+			// nothing to do
+			if (!changed) {
+				return null;
+			}
+			
+			buildPathManager.update(monitor);
+		} catch (Exception e) {
+			Logger.logException(e);
+		}
+
+		return null;
+	}
+

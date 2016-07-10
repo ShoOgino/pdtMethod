@@ -1,0 +1,42 @@
+	protected void listen() {
+		try {
+			for (Field field : getFields(this.getClass())) {
+				if (JsonCollection.class.isAssignableFrom(field.getType())) {
+					final String prop = getFieldName(field);
+					final JsonEntity sender = this;
+					
+					if (listening.contains(prop)) {
+						continue;
+					}
+					
+					field.setAccessible(true);
+					JsonEntity obj = (JsonEntity)field.get(this);
+
+					if (obj != null) {
+						obj.addPropertyChangeListener(new PropertyChangeListener() {
+							public void propertyChange(PropertyChangeEvent e) {
+								firePropertyChange(prop + "." + e.getPropertyName(), 
+										e.getOldValue(), e.getNewValue());
+								
+								// append to sort order - use reflection
+								if (sender instanceof AbstractJsonObject) {
+									try {
+										Method mtd = JsonEntity.class.getDeclaredMethod("appendSortOrder", String.class);
+										mtd.setAccessible(true);
+										mtd.invoke(sender, prop);
+									} catch (Exception e1) {
+										e1.printStackTrace();
+									}	
+								}
+							}
+						});
+						
+						listening.add(prop);
+					}
+				}
+			}
+		} catch (Exception e) {
+			log.error(e);
+		}
+	}
+

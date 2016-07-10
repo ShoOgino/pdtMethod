@@ -1,0 +1,46 @@
+	@Override
+	public void update(Observable observable, Object object) {
+
+		workspace = DLTKUIPlugin.getWorkspace();
+		name = firstPage.nameGroup.getName();
+		
+		if (name != null && name.length() > 0) {
+			handle = firstPage.getProjectHandle();
+		}
+		
+		if (firstPage.PHPLocationGroup != null) {
+			location = firstPage.PHPLocationGroup.getLocation().toOSString();
+		}
+		
+		environment = firstPage.getEnvironment();
+
+		try {
+			validateName();
+			beginValidation();
+			validateProjectNotExists();
+			validateLocation();
+			finishValidation();
+		} catch (ValidationException e) {
+
+			switch (e.getSeverity()) {
+			case WARNING:
+				firstPage.setErrorMessage(null);
+				firstPage.setMessage(e.getMessage());
+				break;
+			case ERROR:
+				firstPage.setErrorMessage(e.getMessage());
+				firstPage.setMessage(null);
+				break;
+			default:
+				return;
+			}
+			
+			firstPage.setPageComplete(false);
+			return;
+		}
+
+		firstPage.setPageComplete(true);
+		firstPage.setErrorMessage(null);
+		firstPage.setMessage(null);
+	}
+

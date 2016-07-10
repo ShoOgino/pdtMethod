@@ -1,0 +1,36 @@
+	private void createLicenseEntry(Composite client, FormToolkit toolkit) {
+		licenseEntry = new FormEntry(client, toolkit, "License", null, false);
+		
+		ControlDecoration decoration = new ControlDecoration(licenseEntry.getText(), SWT.TOP | SWT.LEFT);
+		
+        FieldDecoration indicator = FieldDecorationRegistry.getDefault().
+                getFieldDecoration(FieldDecorationRegistry.DEC_CONTENT_PROPOSAL);
+
+        decoration.setImage(indicator.getImage());
+        decoration.setDescriptionText(indicator.getDescription() + "(Ctrl+Space)");
+        decoration.setShowOnlyOnFocus(true);
+		
+		new AutoCompleteField(licenseEntry.getText(), new LicenseContentAdapter(), ComposerConstants.LICENSES);
+		
+		final License2StringConverter converter = new License2StringConverter();
+		licenseEntry.setValue(converter.convert(composerPackage.getLicense()), true);
+		
+		licenseEntry.addFormEntryListener(new FormEntryAdapter() {
+			String2LicenseConverter converter;
+			public void focusGained(FormEntry entry) {
+				converter = new String2LicenseConverter(composerPackage);
+			}
+			
+			public void focusLost(FormEntry entry) {
+				converter.convert(entry.getValue());			
+			}
+		});
+		composerPackage.addPropertyChangeListener(new PropertyChangeListener() {
+			public void propertyChange(PropertyChangeEvent e) {
+				if (e.getPropertyName().startsWith("license")) {
+					licenseEntry.setValue(converter.convert(composerPackage.getLicense()), true);
+				}
+			}
+		});
+	}
+

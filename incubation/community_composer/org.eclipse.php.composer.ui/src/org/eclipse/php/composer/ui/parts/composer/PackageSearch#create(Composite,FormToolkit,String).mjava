@@ -1,0 +1,71 @@
+	protected void create(Composite parent, FormToolkit toolkit, String buttonText) {
+		this.toolkit = toolkit;
+		factory = new WidgetFactory(toolkit);
+
+		body = factory.createComposite(parent);
+		body.setLayout(new GridLayout());
+
+		searchField = factory.createText(body,
+				SWT.SINGLE | SWT.BORDER | SWT.SEARCH | SWT.ICON_CANCEL | SWT.ICON_SEARCH);
+		searchField.setEnabled(enabled);
+		searchField.setEditable(enabled);
+		searchField.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+		searchField.addModifyListener(new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+				searchTextChanged();
+			}
+		});
+
+		// clicking the cancel icon sets content to null and invokes
+		// modifyText()
+		// ... no need to to it manually
+		//
+		// searchField.addSelectionListener(new SelectionAdapter() {
+		// public void widgetDefaultSelected(SelectionEvent e) {
+		// if (e.detail == SWT.ICON_CANCEL) {
+		// clearSearchText();
+		// }
+		// }
+		// });
+
+		// create search results viewer
+		int style = SWT.H_SCROLL | SWT.V_SCROLL;
+		if (toolkit == null)
+			style |= SWT.BORDER;
+		else
+			style |= toolkit.getBorderStyle();
+
+		searchController = getSearchResultsController();
+		searchController.addPackageCheckStateChangedListener(this);
+		searchResults = CheckboxTableViewer.newCheckList(body, style);
+		searchResults.getTable().setEnabled(enabled);
+		searchResults.getTable().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+		searchResults.setCheckStateProvider(searchController);
+		searchResults.addCheckStateListener(searchController);
+		searchResults.setContentProvider(searchController);
+		searchResults.setLabelProvider(searchController);
+		searchResults.setInput(new ArrayList<ComposerPackage>());
+
+		pickedResults = factory.createComposite(body);
+		pickedResults.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+		GridLayout layout = new GridLayout();
+		layout.marginTop = 0;
+		layout.marginRight = -5;
+		layout.marginBottom = 0;
+		layout.marginLeft = -5;
+		layout.verticalSpacing = FormLayoutFactory.SECTION_CLIENT_MARGIN_TOP;
+		layout.horizontalSpacing = 0;
+		pickedResults.setLayout(layout);
+
+		if (buttonText != null) {
+			addButton = factory.createButton(body);
+			addButton.setText(buttonText);
+			addButton.setEnabled(false);
+			addButton.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
+			addButton.addSelectionListener(addButtonListener);
+		}
+
+		// create downloader
+		downloader.addPackageSearchListener(this);
+	}
+

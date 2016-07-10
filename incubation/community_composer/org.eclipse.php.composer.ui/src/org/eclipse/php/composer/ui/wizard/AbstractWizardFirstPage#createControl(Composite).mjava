@@ -1,0 +1,49 @@
+	@Override
+	public void createControl(Composite parent) {
+
+		composite = new Composite(parent, SWT.NULL);
+		composite.setFont(parent.getFont());
+		composite.setLayout(initGridLayout(new GridLayout(1, false), false));
+		composite.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL));
+
+		initialName = "";
+		// create UI elements
+		nameGroup = new NameGroup(composite, initialName, getShell());
+		nameGroup.addObserver(this);
+		validator = getValidator();
+
+		beforeLocationGroup();
+
+		PHPLocationGroup = new LocationGroup(composite, nameGroup, getShell());
+
+		CompositeData data = new CompositeData();
+		data.setParetnt(composite);
+		data.setSettings(getDialogSettings());
+		data.setObserver(PHPLocationGroup);
+
+		versionGroup = new VersionGroup(this, composite);
+		detectGroup = new DetectGroup(composite, PHPLocationGroup, nameGroup);
+
+		nameGroup.addObserver(PHPLocationGroup);
+
+		PHPLocationGroup.addObserver(detectGroup);
+		// initialize all elements
+		nameGroup.notifyObservers();
+		// create and connect validator
+
+		nameGroup.addObserver(validator);
+		PHPLocationGroup.addObserver(validator);
+
+		Dialog.applyDialogFont(composite);
+
+		afterLocationGroup();
+		setControl(composite);
+
+		composerPackage = new ComposerPackage();
+		keywordConverter = new String2KeywordsConverter(composerPackage);
+
+		finishControlSetup();
+
+		setHelpContext(composite);
+	}
+

@@ -1,0 +1,28 @@
+	public CreateProjectJob(IPath path, String projectName, String packageName, String packageVersion) {
+		super("Creating composer project");
+		this.projectName = projectName;
+		this.packageName = packageName;
+		this.packageVersion = packageVersion;
+		this.path = path;
+
+		Logger.debug("Creating new project " + projectName + " from package " + packageName + " / " + packageVersion);
+		ResourcesPlugin.getWorkspace();
+		DummyProject project = new DummyProject(path);
+		setProject(project);
+
+		try {
+			// TODO: cache the phar file locally
+			composerPath = path.append("composer.phar");
+			composerFile = composerPath.toFile();
+			existed = true;
+			if (!composerFile.exists()) {
+				existed = false;
+				PharDownloader downloader = new PharDownloader();
+				InputStream resource = downloader.download();
+				FileUtils.copyInputStreamToFile(resource, composerFile);
+			}
+		} catch (Exception e) {
+			Logger.logException(e);
+		}
+	}
+

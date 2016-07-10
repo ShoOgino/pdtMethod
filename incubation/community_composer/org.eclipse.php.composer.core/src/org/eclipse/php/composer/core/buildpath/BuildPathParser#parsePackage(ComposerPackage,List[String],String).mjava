@@ -1,0 +1,34 @@
+	private void parsePackage(ComposerPackage pkg, List<String> paths, String prefix) {
+		if (prefix != null && !prefix.equals("") && !prefix.endsWith("/")) {
+			prefix += "/";
+		}
+
+		Autoload a = pkg.getAutoload();
+
+		// psr-0
+		for (Namespace namespace : a.getPsr0()) {
+			for (Object path : namespace.getPaths()) {
+				addPath(prefix + path, paths);
+			}
+		}
+
+		// psr-4
+		for (Namespace namespace : a.getPsr4()) {
+			for (Object path : namespace.getPaths()) {
+				addPath(prefix + path, paths);
+			}
+		}
+
+		// classmap
+		for (Object path : a.getClassMap()) {
+			String cleanedPath = getDirectory(prefix + (String) path);
+			addPath(cleanedPath, paths);
+		}
+
+		// files
+		for (Object path : a.getFiles()) {
+			String cleanedPath = getDirectory(prefix + (String) path);
+			addPath(cleanedPath, paths);
+		}
+	}
+

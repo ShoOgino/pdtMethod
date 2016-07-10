@@ -1,0 +1,43 @@
+	@Test
+	public void testAsyncSearchAbortNDownload() {
+		try {
+			final int pages = 1;
+			AsyncPackageSearch downloader = new AsyncPackagistSearch();
+			downloader.addPackageSearchListener(new PackageSearchListenerInterface() {
+				public void packagesFound(List<MinimalPackage> packages, String query, SearchResult result) {
+					asyncResult = packages;
+					asyncQuery = query;
+					asyncCounter++;
+
+					if (asyncCounter == pages) {
+						counter.countDown();
+					}
+				}
+
+				public void aborted(String url) {
+					// System.out.println("testAsyncSearchAbortNDownload aborted
+					// on: " + url);
+				}
+
+				public void errorOccured(Exception e) {
+					e.printStackTrace();
+				}
+			});
+			String query = "symfony";
+			downloader.setPageLimit(pages);
+			downloader.search(query);
+			downloader.abort();
+			query = "zend";
+			downloader.search(query);
+
+			counter.await(TIMEOUT, TimeUnit.SECONDS);
+
+			assertNotNull(asyncResult);
+			assertEquals(query, asyncQuery);
+			assertEquals(pages, asyncCounter);
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail();
+		}
+	}
+

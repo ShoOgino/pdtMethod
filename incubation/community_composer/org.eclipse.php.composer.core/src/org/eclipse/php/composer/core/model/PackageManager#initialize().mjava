@@ -1,0 +1,49 @@
+	private void initialize() {
+
+		packages = new HashMap<String, BuildpathPackage>();
+		installedPackages = new HashMap<String, List<InstalledPackage>>();
+		installedDevPackages = new HashMap<String, List<InstalledPackage>>();
+		IEclipsePreferences instancePreferences = ConfigurationScope.INSTANCE.getNode(ComposerPlugin.ID);
+
+		String[] propertyNames;
+		try {
+			propertyNames = instancePreferences.keys();
+		} catch (BackingStoreException e) {
+			Util.log(e, "Exception while initializing user libraries"); //$NON-NLS-1$
+			return;
+		}
+
+		boolean preferencesNeedFlush = false;
+		for (int i = 0, length = propertyNames.length; i < length; i++) {
+			String propertyName = propertyNames[i];
+			if (propertyName.startsWith(BP_COMPOSERPACKAGE_PREFERENCES_PREFIX)) {
+				String propertyValue = instancePreferences.get(propertyName, null);
+				if (propertyValue != null) {
+					String libName = propertyName.substring(BP_COMPOSERPACKAGE_PREFERENCES_PREFIX.length());
+					StringReader reader = new StringReader(propertyValue);
+					BuildpathPackage library;
+					try {
+						library = BuildpathPackage.createFromString(reader);
+					} catch (Exception e) {
+						Util.log(e, "Exception while initializing user library " + libName); //$NON-NLS-1$
+						instancePreferences.remove(propertyName);
+						preferencesNeedFlush = true;
+						continue;
+					}
+					packages.put(libName, library);
+				}
+			}
+		}
+		if (preferencesNeedFlush) {
+			try {
+				instancePreferences.flush();
+			} catch (BackingStoreException e) {
+				Util.log(e, "Exception while flusing instance preferences"); //$NON-NLS-1$
+			}
+		}
+
+		buildpathJob = new BuildpathJob();
+
+		reloadPackages();
+	}
+

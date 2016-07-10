@@ -1,0 +1,28 @@
+		protected void updateProject(IProject project) {
+			try {
+				if (!running) {
+					Logger.debug("Job cancelled");
+					throw new InterruptedException();
+				}
+
+				if (!project.hasNature(ComposerNature.NATURE_ID)) {
+					Logger.debug("Buildpath not running on project without composer nature " + project.getName());
+					return;
+				}
+
+				IFile installed = (IFile) project.findMember(installedPath);
+
+				if (installed == null) {
+					Logger.debug("Unabled to find installed.json in project " + project.getName());
+					return;
+				}
+
+				handleProdPackages(project);
+				handleDevPackages(project);
+				DLTKCore.refreshBuildpathContainers(DLTKCore.create(project));
+
+			} catch (Exception e) {
+				Logger.logException(e);
+			}
+		}
+

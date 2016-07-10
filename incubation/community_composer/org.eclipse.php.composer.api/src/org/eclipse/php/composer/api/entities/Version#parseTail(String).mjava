@@ -1,0 +1,25 @@
+	private void parseTail(String tail) {
+		Pattern pattern = Pattern.compile("[._-]?(?:(stable|beta|b|RC|alpha|a|patch|pl|p)(?:[.-]?(\\d+))?)?([.-]?dev)?",
+				Pattern.CASE_INSENSITIVE);
+		Matcher matcher = pattern.matcher(tail);
+
+		matcher.find();
+
+		if (matcher.group(2) != null && !matcher.group(2).isEmpty()) {
+			suffix = matcher.group(2);
+		}
+
+		// stability
+		if (stability.isEmpty()) {
+			// -dev present?
+			if (matcher.group(3) != null && !matcher.group(3).isEmpty()) {
+				stability = ComposerConstants.DEV;
+			}
+
+			// stability
+			else if (matcher.group(1) != null && !matcher.group(1).isEmpty()) {
+				stability = normalizeStability(matcher.group(1));
+			}
+		}
+	}
+

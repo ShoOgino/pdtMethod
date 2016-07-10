@@ -1,0 +1,31 @@
+	protected void searchTextChanged() {
+		currentQuery = searchField.getText();
+
+		if (currentQuery.trim().isEmpty()) {
+			clearSearchText();
+			return;
+		}
+
+		// kill previous downloader
+		downloader.abort();
+
+		// run a new one
+		if (queryThread == null || !queryThread.isAlive() || queryThread.isInterrupted()) {
+			startQuery();
+			queryThread = new Thread(new Runnable() {
+				public void run() {
+					try {
+						Thread.sleep(QUERY_DELAY_MS);
+
+						synchronized (PackageSearch.this) {
+							startQuery();
+							queryThread.interrupt();
+						}
+					} catch (InterruptedException e) {
+					}
+				}
+			});
+			queryThread.start();
+		}
+	}
+

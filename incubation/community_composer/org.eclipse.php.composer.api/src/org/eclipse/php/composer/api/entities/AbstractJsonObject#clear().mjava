@@ -1,0 +1,40 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.eclipse.php.composer.api.entities.JsonCollection#clear()
+	 */
+	public void clear() {
+		// clear properties
+		List<String> ownProps = getOwnProperties();
+
+		for (String key : properties.keySet().toArray(new String[] {})) {
+			if (ownProps.contains(key)) {
+				Object value = properties.get(key);
+				if (value instanceof JsonCollection) {
+					JsonCollection entity = (JsonCollection) value;
+					entity.clear();
+				} else {
+					remove(key);
+				}
+			} else {
+				remove(key);
+			}
+		}
+
+		// clear fields
+		for (Field field : getFields(this.getClass())) {
+			if (field != null && JsonCollection.class.isAssignableFrom(field.getType())) {
+				try {
+					field.setAccessible(true);
+					JsonCollection entity = (JsonCollection) field.get(this);
+					entity.clear();
+				} catch (Exception e) {
+					log.error(e);
+				}
+			}
+		}
+
+		// clear sort order
+		sortOrder.clear();
+	}
+

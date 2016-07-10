@@ -1,0 +1,66 @@
+    public static BuildpathPackage createFromString(Reader reader)
+            throws IOException {
+        Element cpElement;
+        try {
+            DocumentBuilder parser = DocumentBuilderFactory.newInstance()
+                    .newDocumentBuilder();
+            cpElement = parser.parse(new InputSource(reader))
+                    .getDocumentElement();
+        } catch (SAXException e) {
+            throw new IOException(Messages.file_badFormat);
+        } catch (ParserConfigurationException e) {
+            throw new IOException(Messages.file_badFormat);
+        } finally {
+            reader.close();
+        }
+
+        if (!cpElement.getNodeName().equalsIgnoreCase(TAG_USERLIBRARY)) {
+            throw new IOException(Messages.file_badFormat);
+        }
+        // String version= cpElement.getAttribute(TAG_VERSION);
+        // in case we update the format: add code to read older versions
+
+        boolean isSystem = Boolean.valueOf(
+                cpElement.getAttribute(TAG_SYSTEMLIBRARY)).booleanValue();
+
+        NodeList list = cpElement.getChildNodes();
+        int length = list.getLength();
+
+        List<IBuildpathEntry> res = new ArrayList<IBuildpathEntry>(length);
+        for (int i = 0; i < length; ++i) {
+            Node node = list.item(i);
+
+            if (node.getNodeType() == Node.ELEMENT_NODE) {
+                Element element = (Element) node;
+                if (element.getNodeName().equals(TAG_ARCHIVE)) {
+                    String path = element.getAttribute(TAG_PATH);
+                    NodeList children = element.getElementsByTagName("*"); //$NON-NLS-1$
+                    boolean[] foundChildren = new boolean[children.getLength()];
+                    NodeList attributeList = BuildpathEntry.getChildAttributes(
+                            BuildpathEntry.TAG_ATTRIBUTES, children,
+                            foundChildren);
+                    
+                    /*
+                    IBuildpathAttribute[] extraAttributes = BuildpathEntry
+                            .decodeExtraAttributes(attributeList);
+                    attributeList = BuildpathEntry.getChildAttributes(
+                            BuildpathEntry.TAG_ACCESS_RULES, children,
+                            foundChildren);
+                    IAccessRule[] accessRules = BuildpathEntry
+                            .decodeAccessRules(attributeList);
+                    */
+                    
+                    IBuildpathEntry entry = DLTKCore.newLibraryEntry(Path
+                            .fromPortableString(path), new IAccessRule[0],
+                            new IBuildpathAttribute[0], false, true);
+                    res.add(entry);
+                }
+            }
+        }
+
+        IBuildpathEntry[] entries = (IBuildpathEntry[]) res
+                .toArray(new IBuildpathEntry[res.size()]);
+
+        return new BuildpathPackage(entries, isSystem);
+    }    
+

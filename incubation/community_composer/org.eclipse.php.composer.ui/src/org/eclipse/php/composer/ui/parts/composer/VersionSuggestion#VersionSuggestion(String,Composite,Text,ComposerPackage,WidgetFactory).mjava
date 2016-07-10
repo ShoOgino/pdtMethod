@@ -1,0 +1,36 @@
+	public VersionSuggestion(String name, Composite parent, Text target, ComposerPackage composerPackage,
+			WidgetFactory factory) {
+		this.factory = factory;
+		this.target = target;
+		this.composerPackage = composerPackage;
+
+		// load package with versions
+		AsyncPackageDownloader downloader = new AsyncPackagistDownloader();
+		downloader.addPackageListener(new PackageListenerInterface() {
+			public void packageLoaded(final RepositoryPackage repositoryPackage) {
+				dataArrived = true;
+				pkg = repositoryPackage;
+
+				// get major and minor
+				Versions versions = pkg.getVersions();
+
+				majorVersion = versions.getRecentMajor();
+				minorVersion = versions.getRecentMinor(majorVersion);
+
+				if (!updatingTarget) {
+					updateUI();
+				}
+			}
+
+			public void errorOccured(Exception e) {
+				e.printStackTrace();
+			}
+
+			public void aborted(String url) {
+			}
+		});
+		downloader.loadPackage(name);
+
+		create(parent, factory);
+	}
+

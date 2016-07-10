@@ -1,0 +1,33 @@
+	@Override
+	@SuppressWarnings("unchecked")
+	protected void applyChanges() {
+
+		List<BPListElement> elements = wizard.getModifiedElements();
+		BPListElement element = (BPListElement) elements.get(0);
+		IBuildpathEntry buildpathEntry = element.getBuildpathEntry();
+
+		if (buildpathEntry instanceof BuildpathEntry) {
+			BuildpathEntry entry = (BuildpathEntry) buildpathEntry;
+			String encodeBuildpathEntry = scriptProject.encodeBuildpathEntry(entry);
+			IEclipsePreferences projectPreferences = ComposerPlugin.getDefault()
+					.getProjectPreferences(scriptProject.getProject());
+			projectPreferences.put(ComposerPreferenceConstants.BUILDPATH_INCLUDES_EXCLUDES, encodeBuildpathEntry);
+
+			// update buildpath
+			try {
+				// store preferences - is this needed here?
+				projectPreferences.flush();
+
+				// update buildpath
+				ComposerProject composerProject = new ComposerProject(scriptProject.getProject());
+				BuildPathManager bpm = new BuildPathManager(composerProject);
+				bpm.update();
+			} catch (CoreException e) {
+				e.printStackTrace();
+			} catch (BackingStoreException e) {
+				e.printStackTrace();
+			}
+
+		}
+	}
+

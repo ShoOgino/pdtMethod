@@ -1,0 +1,51 @@
+	/**
+	 * Based on org.eclipse.m2e.editor.pom.MavenPomEditor
+	 */
+	private void resourceChanged(IResourceChangeEvent event) {
+
+		if (jsonFile == null) {
+			return;
+		}
+
+		// handle project delete
+		if (event.getType() == IResourceChangeEvent.PRE_CLOSE || event.getType() == IResourceChangeEvent.PRE_DELETE) {
+			if (jsonFile.getProject().equals(event.getResource())) {
+				Display.getDefault().asyncExec(new Runnable() {
+					public void run() {
+						close(false);
+					}
+				});
+			}
+			return;
+		}
+
+		// handle json delete
+		class RemovedResourceDeltaVisitor implements IResourceDeltaVisitor {
+			boolean removed = false;
+
+			public boolean visit(IResourceDelta delta) throws CoreException {
+				if (delta.getResource() != null && delta.getResource().equals(jsonFile)
+						&& (delta.getKind() & (IResourceDelta.REMOVED)) != 0) {
+					removed = true;
+					return false;
+				}
+				return true;
+			}
+		}
+		;
+
+		try {
+			RemovedResourceDeltaVisitor visitor = new RemovedResourceDeltaVisitor();
+			event.getDelta().accept(visitor);
+			if (visitor.removed) {
+				Display.getDefault().asyncExec(new Runnable() {
+					public void run() {
+						close(true);
+					}
+				});
+			}
+		} catch (CoreException ex) {
+			Logger.logException(ex);
+		}
+	}
+

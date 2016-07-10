@@ -1,0 +1,69 @@
+	protected Composite createInnerContent(Composite folder) {
+
+		Composite result = new Composite(folder, SWT.NONE);
+
+		GridLayout layout = new GridLayout();
+		layout.marginWidth = 0;
+		result.setLayout(layout);
+
+		GridData gd = new GridData(GridData.FILL_HORIZONTAL);
+		gd.widthHint = 440;
+		result.setLayoutData(gd);
+
+		// php
+		gd = new GridData(GridData.FILL_HORIZONTAL);
+		gd.minimumHeight = 75;
+		gd.heightHint = 75;
+		Group sourceFolderGroup = new Group(result, SWT.NONE);
+		sourceFolderGroup.setLayout(new GridLayout(3, false));
+		sourceFolderGroup.setLayoutData(gd);
+		sourceFolderGroup.setText("PHP executable");
+
+		GridData gridData = new GridData(GridData.HORIZONTAL_ALIGN_FILL);
+		gridData.horizontalSpan = 3;
+		Link prefLink = new Link(sourceFolderGroup, SWT.WRAP);
+		prefLink.setText("You can add PHP binaries in the <a>PHP Executables</a> preference page.");
+		prefLink.setLayoutData(gridData);
+
+		prefLink.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				IWorkbenchPreferenceContainer container = (IWorkbenchPreferenceContainer) getPreferenceContainer();
+				container.openPage(PHPsPreferencePage.ID, null);
+			};
+		});
+
+		Link helpLink = new Link(sourceFolderGroup, SWT.WRAP);
+		helpLink.setLayoutData(gridData);
+		helpLink.setText("See <a>phptherightway.com</a> if you need help installing the PHP cli.");
+		helpLink.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				try {
+					PlatformUI.getWorkbench().getBrowserSupport().getExternalBrowser()
+							.openURL(new URL("http://www.phptherightway.com/#getting_started"));
+				} catch (Exception e1) {
+					Logger.logException(e1);
+				}
+			};
+		});
+
+		exes = new ComboDialogField(SWT.READ_ONLY);
+		exes.setLabelText("PHP executable");
+		exes.doFillIntoGrid(sourceFolderGroup, 2);
+		exes.setDialogFieldListener(this);
+
+		createTestButton(sourceFolderGroup);
+
+		loadExecutables();
+
+		createScriptGroup(result);
+		loadPhar();
+
+		if (phpExes.getAllItems().length == 0) {
+			testButton.setEnabled(false);
+		}
+
+		createExtraContent(result);
+
+		return result;
+	}
+

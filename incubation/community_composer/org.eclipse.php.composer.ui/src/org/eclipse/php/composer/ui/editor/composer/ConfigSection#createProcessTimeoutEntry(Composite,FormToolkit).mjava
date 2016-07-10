@@ -1,0 +1,28 @@
+	private void createProcessTimeoutEntry(Composite client, FormToolkit toolkit) {
+		processTimeoutEntry = new FormEntry(client, toolkit, "process-timeout", null, false);
+		Integer processTimeout = composerPackage.getConfig().getProcessTimeout();
+		if (processTimeout != null) {
+			processTimeoutEntry.setValue("" + processTimeout, true);
+		}
+		
+		processTimeoutEntry.addFormEntryListener(new FormEntryAdapter() {
+			public void textValueChanged(FormEntry entry) {
+				if (entry.getValue().isEmpty()) {
+					composerPackage.getConfig().remove("process-timeout");	
+				} else {
+					composerPackage.getConfig().set("process-timeout", Integer.valueOf(entry.getValue()));	
+				}
+			}
+		});
+		composerPackage.getConfig().addPropertyChangeListener("process-timeout", new PropertyChangeListener() {
+			public void propertyChange(PropertyChangeEvent e) {
+				Integer processTimeout = composerPackage.getConfig().getProcessTimeout();
+				if (processTimeout == null) {
+					processTimeoutEntry.setValue("", true);
+				} else {
+					processTimeoutEntry.setValue("" + processTimeout, true);
+				}
+			}
+		});
+	}
+

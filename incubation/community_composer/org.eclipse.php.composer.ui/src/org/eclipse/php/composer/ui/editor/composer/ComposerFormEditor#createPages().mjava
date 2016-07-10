@@ -1,0 +1,38 @@
+	@Override
+	protected void createPages() {
+		// create pages
+		overviewPage = new OverviewPage(this, OverviewPage.ID, "Overview");
+		dependenciesPage = new DependenciesPage(this, DependenciesPage.ID, "Dependencies");
+		configurationPage = new ConfigurationPage(this, ConfigurationPage.ID, "Configuration");
+		autoloadPage = new AutoloadPage(this, AutoloadPage.ID, "Autoload");
+		graphPage = new DependencyGraphPage(this, DependencyGraphPage.ID, "Dependency Graph");
+
+		// add them
+		super.createPages();
+
+		// contribute toolbar items
+		for (Object pageObj : pages) {
+			if (pageObj instanceof ComposerFormPage && pageObj != jsonEditor) {
+				ComposerFormPage page = (ComposerFormPage) pageObj;
+				page.contributeToToolbar(toolbarManager, getHeaderForm());
+			}
+		}
+		contributeToToolbar(toolbarManager);
+
+		// parse json
+		jsonDump = documentProvider.getDocument(getEditorInput()).get();
+		parse(jsonDump);
+		setDirty(false);
+		newDepSinceLastSave = false;
+		newDevDepSinceLastSave = false;
+
+		if (!validJson) {
+			setActivePage(jsonEditorIndex);
+
+			IManagedForm headerForm = getHeaderForm();
+			if (headerForm != null) {
+				headerForm.getMessageManager().update();
+			}
+		}
+	}
+

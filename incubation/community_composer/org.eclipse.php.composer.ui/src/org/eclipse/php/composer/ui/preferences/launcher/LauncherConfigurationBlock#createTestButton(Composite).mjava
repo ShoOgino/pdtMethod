@@ -1,0 +1,69 @@
+	protected void createTestButton(Composite parent) {
+
+		GridData gd = new GridData();
+		gd.horizontalSpan = 1;
+		testButton = new Button(parent, SWT.PUSH);
+		testButton.setLayoutData(gd);
+
+		testButton.setText("Test selected PHP executable");
+		testButton.addSelectionListener(new SelectionAdapter() {
+
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				try {
+					String current = exes.getText();
+					PHPexeItem phPexeItem = null;
+
+					for (PHPexeItem i : phpExes.getAllItems()) {
+						if (current.equals(i.getName())) {
+							phPexeItem = i;
+							break;
+						}
+					}
+
+					if (phPexeItem == null) {
+						Logger.log(Logger.WARNING, "No executable selected");
+						return;
+					}
+
+					ExecutionResponseAdapter adapter = new ExecutionResponseAdapter() {
+						public void executionFailed(final String response, Exception exception) {
+							getShell().getDisplay().asyncExec(new Runnable() {
+								@Override
+								public void run() {
+									String message = "PHP binary execution failed.";
+									if (response != null && response.length() > 0) {
+										message += " Reason: " + response;
+									} else {
+									}
+									MessageDialog.openInformation(getShell(), "Execution test", message);
+								}
+							});
+						};
+
+						public void executionFinished(final String response, int exitValue) {
+							getShell().getDisplay().asyncExec(new Runnable() {
+								@Override
+								public void run() {
+									String message = "PHP binary executed successfully.";
+									if (response != null && response.length() > 0) {
+										message += " Detected PHP version: " + response;
+									} else {
+										message += " Unable to determine PHP version.";
+									}
+									MessageDialog.openInformation(getShell(), "Execution test", message);
+								}
+							});
+						};
+					};
+
+					// TODO: refactor
+					new Thread(new ExecutableTester(phPexeItem, adapter)).run();
+
+				} catch (Exception ex) {
+					Logger.logException(ex);
+				}
+			}
+		});
+	}
+

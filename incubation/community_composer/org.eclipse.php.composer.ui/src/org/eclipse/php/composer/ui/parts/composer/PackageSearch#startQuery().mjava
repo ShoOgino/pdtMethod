@@ -1,0 +1,27 @@
+	protected synchronized void startQuery() {
+		if (lastQuery == currentQuery) {
+			return;
+		}
+		downloader.search(currentQuery);
+
+		if (resetThread != null) {
+			resetThread.interrupt();
+		}
+		resetThread = new Thread(new Runnable() {
+			public void run() {
+				try {
+					Thread.sleep(RESET_QUERY_DELAY_MS);
+
+					synchronized (PackageSearch.this) {
+						if (currentQuery.equals(shownQuery)) {
+							shownQuery = null;
+						}
+					}
+				} catch (InterruptedException e) {
+				}
+			}
+		});
+		resetThread.start();
+		lastQuery = currentQuery;
+	}
+

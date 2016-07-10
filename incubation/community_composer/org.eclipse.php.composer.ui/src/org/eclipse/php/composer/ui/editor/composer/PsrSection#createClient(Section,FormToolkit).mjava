@@ -1,0 +1,34 @@
+	@Override
+	protected void createClient(Section section, FormToolkit toolkit) {
+		String name = getPsrName();
+		section.setText(name);
+		section.setDescription("Manage the " + name + " settings for your package.");
+		section.setLayout(FormLayoutFactory.createClearGridLayout(false, 1));
+		GridData gd = new GridData(GridData.FILL_BOTH);
+		gd.grabExcessVerticalSpace = true;
+		section.setLayoutData(gd);
+
+		Composite container = createClientContainer(section, 2, toolkit);
+		createViewerPartControl(container, SWT.SINGLE, 2, toolkit);
+		TreePart treePart = getTreePart();
+		PsrController controller = new PsrController(treePart.getTreeViewer());
+		psrViewer = treePart.getTreeViewer();
+		psrViewer.setContentProvider(controller);
+		psrViewer.setLabelProvider(controller);
+
+		Transfer[] transferTypes = new Transfer[] { ResourceTransfer.getInstance() };
+		int types = DND.DROP_MOVE | DND.DROP_COPY | DND.DROP_LINK | DND.DROP_DEFAULT;
+		psrViewer.addDropSupport(types, transferTypes, new PathDropAdapter(psrViewer));
+
+		toolkit.paintBordersFor(container);
+		section.setClient(container);
+		section.setLayout(FormLayoutFactory.createClearGridLayout(false, 1));
+
+		psrViewer.setInput(psr);
+		composerPackage.getAutoload().addPropertyChangeListener(this);
+
+		updateButtons();
+		makeActions();
+		updateMenu();
+	}
+

@@ -1,0 +1,26 @@
+	@Override
+	protected IWizard createWizard() {
+
+		BPListElement elem = new BPListElement(scriptProject, IBuildpathEntry.BPE_SOURCE, false);
+
+		ComposerProject composerProject = new ComposerProject(scriptProject.getProject());
+		IPath path = scriptProject.getPath().append(composerProject.getVendorDir());
+		elem.setPath(path);
+
+		IEclipsePreferences projectPreferences = ComposerPlugin.getDefault()
+				.getProjectPreferences(scriptProject.getProject());
+		String stored = projectPreferences.get(ComposerPreferenceConstants.BUILDPATH_INCLUDES_EXCLUDES, null);
+
+		if (stored != null) {
+			IBuildpathEntry buildpathEntry = scriptProject.decodeBuildpathEntry(stored);
+			for (IPath includePath : buildpathEntry.getInclusionPatterns()) {
+				elem.addToInclusion(path.append(includePath));
+			}
+			for (IPath excludePath : buildpathEntry.getExclusionPatterns()) {
+				elem.addToExclusions(path.append(excludePath));
+			}
+		}
+
+		return wizard = new BuildPathExclusionWizard(new BPListElement[] {}, elem);
+	}
+

@@ -1,0 +1,41 @@
+	@Override
+	public void init(IEditorSite site, IEditorInput input) throws PartInitException {
+		jsonEditor.init(site, input);
+		super.init(site, input);
+
+		if (input instanceof IFileEditorInput) {
+			jsonFile = ((IFileEditorInput) input).getFile();
+			if (jsonFile != null) {
+				project = jsonFile.getProject();
+				composerProject = new ComposerProject(project);
+				buildPathManager = new BuildPathManager(composerProject);
+
+				setPartName(project.getName());
+				ResourcesPlugin.getWorkspace().addResourceChangeListener(new IResourceChangeListener() {
+					@Override
+					public void resourceChanged(IResourceChangeEvent event) {
+						ComposerFormEditor.this.resourceChanged(event);
+					}
+				});
+			}
+		}
+
+		composerPackage = new ComposerPackage();
+		composerPackage.addPropertyChangeListener(new PropertyChangeListener() {
+			public void propertyChange(PropertyChangeEvent e) {
+				Logger.debug("Property change: " + e.getPropertyName() + ", oldValue: " + e.getOldValue()
+						+ ", newValue: " + e.getNewValue());
+
+				if (e.getPropertyName().startsWith("require")) {
+					newDepSinceLastSave = true;
+				}
+
+				if (e.getPropertyName().startsWith("require-dev")) {
+					newDevDepSinceLastSave = true;
+				}
+
+				setDirty(true);
+			}
+		});
+	}
+

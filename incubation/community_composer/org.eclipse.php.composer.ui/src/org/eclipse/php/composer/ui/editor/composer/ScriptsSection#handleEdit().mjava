@@ -1,0 +1,36 @@
+	private void handleEdit() {
+		Object element = ((StructuredSelection)scriptsViewer.getSelection()).getFirstElement();
+		ScriptsController controller = (ScriptsController)scriptsViewer.getLabelProvider();
+		String text = controller.getText(element);
+		ScriptDialog diag = new ScriptDialog(scriptsViewer.getTree().getShell());
+		
+		// edit event
+		if (Arrays.asList(Scripts.getEvents()).contains(text)) {
+			diag.setEvent(text);
+			diag.setHandlerEnabled(false);
+			if (diag.open() == Dialog.OK) {
+				String event = diag.getEvent();
+				if (!event.equalsIgnoreCase(text)) {
+					composerPackage.getScripts().set(event, 
+							composerPackage.getScripts().getAsArray(text));
+					composerPackage.getScripts().remove(text);
+				}
+			}
+		} 
+		
+		// edit handler
+		else {
+			String event = controller.getText(controller.getParent(element));
+			diag.setEvent(event);
+			diag.setHandler(text);
+			diag.setEventEnabled(false);
+			if (diag.open() == Dialog.OK) {
+				String handler = diag.getHandler();
+				if (!handler.equalsIgnoreCase(text)) {
+					JsonArray events = composerPackage.getScripts().getAsArray(event);
+					events.replace(text, handler);
+				}
+			}
+		}
+	}
+

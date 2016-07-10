@@ -1,0 +1,50 @@
+	@Override
+	protected void doFind(String text) {
+		try {
+
+			contentProvider.clear();
+			viewer.setInput(contentProvider.packages);
+			viewer.refresh();
+
+			AsyncPackagistSearch search = new AsyncPackagistSearch();
+			search.addPackageSearchListener(new PackageSearchListenerInterface() {
+				@Override
+				public void errorOccured(Exception e) {
+
+				}
+
+				@Override
+				public void aborted(String url) {
+
+				}
+
+				@Override
+				public void packagesFound(List<MinimalPackage> packages, String query, final SearchResult result) {
+					if (packages != null) {
+						final List<PackageFilterItem> items = new ArrayList<PackageFilterItem>();
+						for (MinimalPackage pkg : packages) {
+							items.add(new PackageFilterItem(pkg));
+						}
+
+						getControl().getDisplay().asyncExec(new Runnable() {
+							@Override
+							public void run() {
+								contentProvider.add(items);
+								viewer.refresh();
+								searchResultCount.setText("Found " + result.total + " packages.");
+							}
+						});
+					}
+				}
+			});
+
+			if (showProjectsCheckbox.getSelection()) {
+				search.setFilter("project");
+			}
+			search.search(text);
+
+		} catch (Exception e) {
+			Logger.logException(e);
+		}
+	}
+

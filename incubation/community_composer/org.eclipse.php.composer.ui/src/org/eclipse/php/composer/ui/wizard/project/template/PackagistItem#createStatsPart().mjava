@@ -1,0 +1,35 @@
+	protected void createStatsPart() {
+
+		favorButton = new Button(this, SWT.PUSH);
+		favorButton.setToolTipText("Favorites on packagist.org");
+		favorButton.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
+		favorButton.setImage(ComposerUIPluginImages.STAR.createImage());
+
+		GridDataFactory.swtDefaults().align(SWT.CENTER, SWT.CENTER).span(1, 2).applyTo(favorButton);
+
+		downloadButton = new Button(this, SWT.TOGGLE);
+		downloadButton.setToolTipText("Select this package for your new project.");
+
+		if (filterItem.isChecked()) {
+			downloadButton.setSelection(true);
+		}
+
+		GridDataFactory.swtDefaults().align(SWT.BEGINNING, SWT.CENTER).span(1, 2).applyTo(downloadButton);
+		JsonValue downloads = item.get("downloads");
+		JsonValue favorites = item.get("favers");
+		if (downloads != null && favorites != null) {
+			Number number = downloads.getAsNumber();
+			DecimalFormat formatter = (DecimalFormat) NumberFormat.getInstance(new Locale("en_US"));
+			DecimalFormatSymbols symbols = formatter.getDecimalFormatSymbols();
+			symbols.setGroupingSeparator(' ');
+			downloadButton.setText(formatter.format(number));
+			downloadButton.setImage(ComposerUIPluginImages.DOWNLOAD.createImage());
+			favorButton.setText("" + favorites.getAsNumber());
+		}
+
+		versionCombo = new Combo(this, SWT.READ_ONLY);
+
+		GridDataFactory.fillDefaults().align(SWT.END, SWT.CENTER).span(1, 2).hint(200, SWT.DEFAULT)
+				.applyTo(versionCombo);
+	}
+

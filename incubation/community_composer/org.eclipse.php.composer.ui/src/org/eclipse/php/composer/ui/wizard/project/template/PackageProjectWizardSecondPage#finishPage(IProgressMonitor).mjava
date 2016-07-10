@@ -1,0 +1,20 @@
+	@Override
+	protected void finishPage(IProgressMonitor monitor) throws Exception {
+		try {
+			PackageProjectWizardFirstPage page = (PackageProjectWizardFirstPage) firstPage;
+			if (page.doesOverrideComposer()) {
+				monitor.beginTask("Updating composer.json with new values", 1);
+				ComposerPackage package1 = firstPage.getPackage();
+				IFile file = getProject().getFile(new Path("composer.json"));
+				if (file != null && file.exists()) {
+					ByteArrayInputStream is = new ByteArrayInputStream(package1.toJson().getBytes());
+					file.setContents(is, IResource.FORCE, monitor);
+				}
+			}
+		} catch (Exception e) {
+			Logger.logException(e);
+		} finally {
+			monitor.worked(1);
+		}
+	}
+

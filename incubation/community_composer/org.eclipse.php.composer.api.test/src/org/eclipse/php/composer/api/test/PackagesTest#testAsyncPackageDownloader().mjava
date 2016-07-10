@@ -1,0 +1,31 @@
+	@Test
+	public void testAsyncPackageDownloader() {
+		try {
+			AsyncPackagistDownloader downloader = new AsyncPackagistDownloader();
+			downloader.addPackageListener(new PackageListenerInterface() {
+				public void packageLoaded(RepositoryPackage repositoryPackage) {
+					asyncResult = repositoryPackage;
+					counter.countDown();
+				}
+
+				public void aborted(String url) {
+				}
+
+				public void errorOccured(Exception e) {
+					e.printStackTrace();
+					fail();
+				}
+			});
+			String pkg = "symfony/symfony";
+			downloader.loadPackage(pkg);
+
+			counter.await(TIMEOUT, TimeUnit.SECONDS);
+
+			assertNotNull(asyncResult);
+			assertEquals(pkg, ((RepositoryPackage) asyncResult).getName());
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail();
+		}
+	}
+

@@ -1,0 +1,36 @@
+	public ScriptExecutor() {
+
+		outBuilder = new StringBuilder();
+		errBuilder = new StringBuilder();
+
+		errStream = new LogOutputStream() {
+			@Override
+			protected void processLine(String line, int level) {
+				if (!line.isEmpty()) {
+					errBuilder.append(line + "\n");
+					for (ExecutionResponseListener listener : listeners) {
+						listener.executionMessage(line);
+					}
+				}
+			}
+		};
+
+		outStream = new LogOutputStream() {
+			@Override
+			protected void processLine(String line, int level) {
+				if (!line.isEmpty()) {
+					outBuilder.append(line + "\n");
+					for (ExecutionResponseListener listener : listeners) {
+						listener.executionMessage(line);
+					}
+				}
+			}
+		};
+
+		streamHandler = new PumpStreamHandler(outStream, errStream);
+
+		executor = new DefaultExecutor();
+		executor.setStreamHandler(streamHandler);
+
+	}
+

@@ -1,0 +1,55 @@
+	public InputStream download() {
+		HttpClientBuilder clientBuilder = HttpClientBuilder.create().useSystemProperties();
+		try {
+			SSLContextBuilder builder = new SSLContextBuilder();
+			builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
+			SSLConnectionSocketFactory ssf = new SSLConnectionSocketFactory(builder.build());
+			Registry<ConnectionSocketFactory> r = RegistryBuilder.<ConnectionSocketFactory> create()
+					.register("http", PlainConnectionSocketFactory.getSocketFactory()).register("https", ssf).build();
+			clientBuilder.setConnectionManager(new BasicHttpClientConnectionManager(r));
+		} catch (Exception e) {
+			for (DownloadListenerInterface listener : listeners) {
+				listener.errorOccured(e);
+			}
+		}
+
+		HttpClient client = clientBuilder.build();
+		InputStream content = null;
+
+		try {
+
+			httpGet = new HttpGet(url);
+			HttpResponse response = null;
+
+			if (httpGet.isAborted()) {
+				httpGet.abort();
+
+				if (httpGet.isAborted()) {
+					return null;
+				}
+			}
+
+			response = client.execute(httpGet);
+
+			if (httpGet.isAborted()) {
+				for (DownloadListenerInterface listener : listeners) {
+					listener.aborted(url);
+				}
+				return null;
+			}
+
+			HttpEntity entity = response.getEntity();
+			content = entity.getContent();
+
+			for (DownloadListenerInterface listener : listeners) {
+				listener.dataReceived(content, url);
+			}
+
+		} catch (Exception e) {
+			for (DownloadListenerInterface listener : listeners) {
+				listener.errorOccured(e);
+			}
+		}
+		return content;
+	}
+

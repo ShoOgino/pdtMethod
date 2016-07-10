@@ -1,0 +1,24 @@
+	public int loadPackage(String packageName) {
+		downloader.setUrl(createUrl(packageName));
+		if (downloadListener == null) {
+			downloadListener = new DownloadListenerAdapater() {
+				@Override
+				public void dataReceived(InputStream content, String url) {
+					try {
+						notifyPackageListener(PackageHelper.getPackage(content));
+					} catch (Exception e) {
+						notifyPackageListener(e);
+					}
+				}
+				
+				@Override
+				public void errorOccured(Exception e) {
+					notifyPackageListener(e);
+				}
+			};
+			downloader.addDownloadListener(downloadListener);
+		}
+		
+		return downloader.download();
+	}
+

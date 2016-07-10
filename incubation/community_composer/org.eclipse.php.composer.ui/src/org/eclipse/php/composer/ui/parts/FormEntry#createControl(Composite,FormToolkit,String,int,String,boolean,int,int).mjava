@@ -1,0 +1,38 @@
+	/**
+	 * Create all the controls in the provided parent.
+	 * 
+	 * @param parent
+	 * @param toolkit
+	 * @param labelText
+	 * @param span
+	 * @param browseText
+	 * @param linkLabel
+	 */
+	private void createControl(Composite parent, FormToolkit toolkit, String labelText, int style, String browseText, boolean linkLabel, int indent, int tcolspan) {
+		if (linkLabel) {
+			Hyperlink link = toolkit.createHyperlink(parent, labelText, SWT.NULL);
+			label = link;
+		} else {
+			if (labelText != null) {
+				label = toolkit.createLabel(parent, labelText);
+				label.setForeground(toolkit.getColors().getColor(IFormColors.TITLE));
+			}
+		}
+		text = toolkit.createText(parent, "", style); //$NON-NLS-1$
+		addListeners();
+		if (browseText != null) {
+			browse = toolkit.createButton(parent, browseText, SWT.PUSH);
+			browse.addSelectionListener(new SelectionAdapter() {
+				public void widgetSelected(SelectionEvent e) {
+					for (IFormEntryListener listener : listeners) {
+						listener.browseButtonSelected(FormEntry.this);
+					}
+				}
+			});
+		}
+		fillIntoGrid(parent, indent, tcolspan);
+		// Set the default text width hint and let clients modify accordingly
+		// after the fact
+		setTextWidthHint(DEFAULT_TEXT_WIDTH_HINT);
+	}
+

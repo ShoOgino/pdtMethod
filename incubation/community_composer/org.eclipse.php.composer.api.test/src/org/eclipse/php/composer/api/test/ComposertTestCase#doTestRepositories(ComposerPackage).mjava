@@ -1,0 +1,57 @@
+	protected void doTestRepositories(ComposerPackage phpPackage) {
+		Repositories repos = phpPackage.getRepositories();
+
+		assertNotNull(repos);
+		assertTrue(repos.get(0) instanceof ComposerRepository);
+		assertTrue(repos.get(1) instanceof SubversionRepository);
+		assertTrue(repos.get(2) instanceof PearRepository);
+		assertTrue(repos.get(3) instanceof PackageRepository);
+		assertTrue(repos.get(4) instanceof VcsRepository);
+
+		// composer repository
+		ComposerRepository composer = (ComposerRepository) repos.get(0);
+		assertEquals(COMPOSER_URL, composer.getUrl());
+		assertTrue(composer.getOptions() instanceof JsonObject);
+
+		JsonObject options = composer.getOptions();
+		assertTrue(options.has("ssl"));
+		assertTrue(options.isObject("ssl"));
+
+		JsonObject ssl = options.getAsObject("ssl");
+		assertTrue(ssl.has("verify_peer"));
+		assertTrue(ssl.getAsBoolean("verify_peer"));
+
+		// subversion repository
+		SubversionRepository subversion = (SubversionRepository) repos.get(1);
+		assertEquals(SVN_URL, subversion.getUrl());
+		assertEquals(TRUNK, subversion.getTrunkPath());
+		assertEquals(BRANCHES, subversion.getBranchesPath());
+		assertEquals(TAGS, subversion.getTagsPath());
+
+		// pear repository
+		PearRepository pear = (PearRepository) repos.get(2);
+		assertEquals(PEAR_URL, pear.getUrl());
+		assertEquals(PEAR_ALIAS, pear.getVendorAlias());
+
+		// package repository
+		PackageRepository pkgRepo = (PackageRepository) repos.get(3);
+		assertNotNull(pkgRepo);
+
+		RepositoryPackage pkg = pkgRepo.getPackage();
+		assertNotNull(pkg);
+
+		assertEquals(SMARTY, pkg.getName());
+		assertEquals(SMARTY_VERSION, pkg.getVersion());
+
+		assertNotNull(pkg.getDist());
+		assertTrue(pkg.getDist() instanceof Distribution);
+		assertEquals(SMARTY_ZIP, pkg.getDist().getUrl());
+		assertEquals(SMARTY_DIST, pkg.getDist().getType());
+
+		assertNotNull(pkg.getSource());
+		assertTrue(pkg.getSource() instanceof Source);
+		assertEquals(SMARTY_SVN, pkg.getSource().getUrl());
+		assertEquals(SMARTY_SOURCE, pkg.getSource().getType());
+		assertEquals(SMARTY_REFERENCE, pkg.getSource().getReference());
+	}
+

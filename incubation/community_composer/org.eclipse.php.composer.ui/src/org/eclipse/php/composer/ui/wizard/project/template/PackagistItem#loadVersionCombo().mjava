@@ -1,0 +1,41 @@
+	protected void loadVersionCombo() {
+
+		versionCombo.setItems(new String[] { "Loading versions..." });
+		versionCombo.select(0);
+
+		AsyncPackagistDownloader dl = new AsyncPackagistDownloader();
+		dl.addPackageListener(new PackageListenerInterface() {
+
+			@Override
+			public void errorOccured(Exception e) {
+				isLoadingVersions = false;
+			}
+
+			@Override
+			public void aborted(String url) {
+				isLoadingVersions = false;
+			}
+
+			@Override
+			public void packageLoaded(RepositoryPackage repositoryPackage) {
+				Versions versions = repositoryPackage.getVersions();
+				final List<String> versionNames = new ArrayList<String>();
+				for (Entry<String, ComposerPackage> version : versions) {
+					versionNames.add(version.getValue().getVersion());
+				}
+
+				getDisplay().asyncExec(new Runnable() {
+					@Override
+					public void run() {
+						filterItem.setVersions(versionNames.toArray(new String[versionNames.size()]));
+						loadVersionsFromCache();
+					}
+				});
+				isLoadingVersions = false;
+			}
+		});
+
+		dl.loadPackage(item.getName());
+		isLoadingVersions = true;
+	}
+
