@@ -1,0 +1,25 @@
+	private IModelElement[] getUseStatements(ISourceModule sourceModule) {
+		// when rename a php file,we should return a empty array for the old
+		// sourceModule,or execute SourceParserUtil.getModuleDeclaration()
+		// will cache wrong ModuleDeclaration for the non-exist
+		// sourceModule,so when we rename the php file back to its original
+		// name will get the wrong ModuleDeclaration
+		if (null == sourceModule || !sourceModule.exists()) {
+			return new IModelElement[0];
+		}
+
+		final List<IModelElement> elements = new LinkedList<IModelElement>();
+		try {
+			sourceModule.accept(new ImportDeclarationVisitor() {
+
+				@Override
+				public void visitImport(IImportDeclaration importDeclaration) {
+					elements.add(importDeclaration);
+				}
+			});
+		} catch (ModelException e) {
+			Logger.logException(e);
+		}
+		return elements.toArray(new IModelElement[elements.size()]);
+	}
+
