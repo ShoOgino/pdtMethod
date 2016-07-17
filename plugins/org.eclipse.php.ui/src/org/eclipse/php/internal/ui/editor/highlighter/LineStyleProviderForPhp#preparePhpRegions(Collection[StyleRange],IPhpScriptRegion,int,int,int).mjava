@@ -49,7 +49,7 @@
 					continue;
 				}
 				if ((styleRange != null) && (previousAttr != null) && (previousAttr.equals(attr)) && prevElement != null
-						&& prevElement.getLength() == prevElement.getLength()) {
+						&& prevElement.getStart() + prevElement.getLength() == element.getStart()) {
 					// extends the prev styleRange with the current element
 					// length
 					styleRange.length += element.getLength();
@@ -61,7 +61,10 @@
 					// create new styleRange
 					int styleStart = regionStart + element.getStart();
 					int styleLength = element.getLength();
-					if (styleStart + styleLength < partitionStartOffset) { // if
+					int blankStart = regionStart + element.getTextEnd();
+					int blankLength = element.getEnd() - element.getTextEnd();
+					assert styleStart + styleLength == blankStart + blankLength;
+					if (styleStart + styleLength <= partitionStartOffset) { // if
 						// the
 						// range
 						// ends
@@ -74,8 +77,8 @@
 						// ignoring
 						// it
 						continue;
-					}
-					if (styleStart < partitionStartOffset) { // if the region
+					} else if (styleStart < partitionStartOffset) { // if the
+																	// region
 						// starts before
 						// the requested
 						// starting
@@ -85,11 +88,30 @@
 						// position
 						styleLength -= (partitionStartOffset - styleStart);
 						styleStart = partitionStartOffset;
-					}
-					if (styleStart > partitionStartOffset + partitionLength) {
+						if (blankStart < partitionStartOffset) {
+							blankLength -= partitionStartOffset - blankStart;
+						}
+					} else if (styleStart >= partitionStartOffset + partitionLength) { // if
+						// the
+						// range
+						// starts
+						// after
+						// the
+						// requested
+						// partition
+						// -
+						// ignoring
+						// it
+						continue;
+					} else if (styleStart + styleLength > partitionStartOffset + partitionLength) {
 						// if the region ends after the requested end position -
 						// making it shorter
-						styleLength -= styleStart - (partitionStartOffset + partitionLength);
+						styleLength -= styleStart + styleLength - (partitionStartOffset + partitionLength);
+						if (blankStart < partitionStartOffset + partitionLength) {
+							blankLength = partitionStartOffset + partitionLength - blankStart;
+						} else {
+							blankLength = 0;
+						}
 					}
 					if (attr.getBackground() != null && element.getTextEnd() != element.getEnd()) {// in
 						// case
@@ -106,8 +128,8 @@
 						// the
 						// whitespaces
 						// applying style to the region w/o the whitespace
-						styleRange = new StyleRange(styleStart, styleLength - (element.getEnd() - element.getTextEnd()),
-								attr.getForeground(), attr.getBackground(), attr.getStyle());
+						styleRange = new StyleRange(styleStart, styleLength - blankLength, attr.getForeground(),
+								attr.getBackground(), attr.getStyle());
 						if ((attr.getStyle() & TextAttribute.UNDERLINE) != 0) {
 							styleRange.underline = true;
 							styleRange.fontStyle &= ~TextAttribute.UNDERLINE;
@@ -117,12 +139,15 @@
 							styleRange.fontStyle &= ~TextAttribute.STRIKETHROUGH;
 						}
 						holdResults.add(styleRange);
-						// applying style to the whitespace (important for the
-						// refresh of the specific range
-						styleRange = new StyleRange(regionStart + element.getTextEnd(),
-								element.getEnd() - element.getTextEnd(), attr.getForeground(), null, attr.getStyle());
-						holdResults.add(styleRange);
-						previousAttr = null;
+						previousAttr = attr;
+						if (blankLength > 0) {
+							// applying style to the whitespace (important for
+							// the refresh of the specific range
+							styleRange = new StyleRange(styleStart + styleLength - blankLength, blankLength,
+									attr.getForeground(), null, attr.getStyle());
+							holdResults.add(styleRange);
+							previousAttr = null;
+						}
 					} else {
 						styleRange = new StyleRange(styleStart, styleLength, attr.getForeground(), attr.getBackground(),
 								attr.getStyle());
@@ -136,9 +161,8 @@
 						}
 						holdResults.add(styleRange);
 						// technically speaking, we don't need to update
-						// previousAttr
-						// in the other case, because the other case is when
-						// it hasn't changed
+						// previousAttr in the other case, because the other
+						// case is when it hasn't changed
 						previousAttr = attr;
 					}
 				}
