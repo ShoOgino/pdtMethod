@@ -1,7 +1,8 @@
 	private void createPartitions() {
 		int numChild = fCurrentVariables.length;
 		int partitions = (int) Math.ceil(numChild / (double) 100);
-		fPartitions = new IVariable[partitions];
+		fPreviousPartitions = fCurrentPartitions;
+		fCurrentPartitions = new LinkedHashMap<>();
 		for (int i = 0; i < partitions; i++) {
 			int startIndex = i * ARRAY_PARTITION_BOUNDARY;
 			int endIndex = (i + 1) * ARRAY_PARTITION_BOUNDARY - 1;
@@ -9,13 +10,20 @@
 				endIndex = numChild - 1;
 			}
 			final IVariable[] vars = Arrays.copyOfRange(fCurrentVariables, startIndex, endIndex + 1);
-			IVariable var = new VirtualPartition(this, new IVariableProvider() {
+			IVariableProvider variableProvider = new IVariableProvider() {
 				@Override
 				public IVariable[] getVariables() throws DebugException {
 					return vars;
 				}
-			}, startIndex, endIndex);
-			fPartitions[i] = var;
+			};
+			String partitionId = String.valueOf(startIndex) + '-' + String.valueOf(endIndex);
+			IVirtualPartition partition = fPreviousPartitions.get(partitionId);
+			if (partition != null) {
+				partition.setProvider(variableProvider);
+				fCurrentPartitions.put(partitionId, partition);
+			} else {
+				fCurrentPartitions.put(partitionId, new VirtualPartition(this, variableProvider, startIndex, endIndex));
+			}
 		}
 	}
 

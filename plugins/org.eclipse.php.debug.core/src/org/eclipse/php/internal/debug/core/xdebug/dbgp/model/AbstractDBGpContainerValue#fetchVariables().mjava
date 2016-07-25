@@ -4,7 +4,8 @@
 	 */
 	protected void fetchVariables() {
 		fCurrentVariables = new IVariable[] {};
-		fPartitions = new IVariable[] {};
+		fPreviousPartitions = fCurrentPartitions;
+		fCurrentPartitions = new LinkedHashMap<>();
 		String childCountString = DBGpResponse.getAttribute(fDescriptor, "numchildren"); //$NON-NLS-1$
 		int childCount = 0;
 		if (childCountString != null && childCountString.trim().length() != 0) {
@@ -56,15 +57,21 @@
 		} else {
 			// Create multiple pages
 			int subCount = (int) Math.ceil((double) childCount / (double) pageSize);
-			fPartitions = new IVariable[subCount];
 			for (int i = 0; i < subCount; i++) {
 				int startIndex = i * pageSize;
 				int endIndex = (i + 1) * pageSize - 1;
 				if (endIndex > childCount) {
 					endIndex = childCount - 1;
 				}
-				IVariable page = new VirtualPartition(this, new DBGpPage(i), startIndex, endIndex);
-				fPartitions[i] = page;
+				String partitionId = String.valueOf(startIndex) + '-' + String.valueOf(endIndex);
+				IVirtualPartition partition = fPreviousPartitions.get(partitionId);
+				if (partition != null) {
+					partition.setProvider(new DBGpPage(i));
+					fCurrentPartitions.put(partitionId, partition);
+				} else {
+					fCurrentPartitions.put(partitionId,
+							new VirtualPartition(this, new DBGpPage(i), startIndex, endIndex));
+				}
 			}
 		}
 	}
