@@ -1,21 +1,18 @@
-	/**
-	 * Returns the variable value.
-	 * 
-	 * @param expression
-	 *            The variable name
-	 * @return
-	 */
-	protected String getValueByEval(DBGpTarget debugTarget, String expression) {
+	protected String getByProperty(DBGpStackFrame context, String variable) {
 		String value = null;
-		Node resp = debugTarget.eval(expression); // note this is a synchronous
-													// call
+		DBGpTarget debugTarget = (DBGpTarget) context.getDebugTarget();
+		String stackLevel = context.getStackLevel();
+		Node resp = debugTarget.getProperty(variable, stackLevel, 0);
+		if (resp == null || DBGpResponse.REASON_ERROR.equals(resp.getNodeName())) {
+			// Check if it is not super global property
+			stackLevel = "-1"; //$NON-NLS-1$
+			resp = debugTarget.getProperty(variable, stackLevel, 0);
+		}
 		if (resp == null) {
 			return ""; //$NON-NLS-1$
 		}
-		IVariable tempVar = new DBGpEvalVariable(debugTarget, expression, resp, -1);
-
+		IVariable tempVar = new DBGpStackVariable(debugTarget, resp, Integer.valueOf(stackLevel));
 		IValue val = null;
-
 		try {
 			val = tempVar.getValue();
 			if (val != null) {
@@ -23,18 +20,14 @@
 			}
 		} catch (DebugException e) {
 		}
-
 		if (value != null && value.length() == 0) {
 			value = PHPDebugUIMessages.XDebugHover_empty;
 			return value;
 		}
-
 		if (value != null) {
 			value = value.replaceAll("\t", "    ").replaceAll("&", "&amp;") //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
 					.replaceAll("<", "&lt;").replaceAll(">", "&gt;"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
-			// value = value.replaceAll("\n", "<br>");
 		}
-
 		return value;
 	}
 

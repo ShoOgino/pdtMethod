@@ -1,14 +1,18 @@
-	protected String getPropertyValue(DBGpStackFrame context, String variable) {
+	/**
+	 * Returns the variable value.
+	 * 
+	 * @param expression
+	 *            The variable name
+	 * @return
+	 */
+	protected String getByEval(DBGpTarget debugTarget, String expression) {
 		String value = null;
-		DBGpTarget debugTarget = (DBGpTarget) context.getDebugTarget();
-		Node resp = debugTarget.getProperty(variable, context.getStackLevel(), 0);
+		Node resp = debugTarget.eval(expression);
 		if (resp == null) {
 			return ""; //$NON-NLS-1$
 		}
-		IVariable tempVar = new DBGpStackVariable(debugTarget, resp, -1);
-
+		IVariable tempVar = new DBGpEvalVariable(debugTarget, expression, resp, -1);
 		IValue val = null;
-
 		try {
 			val = tempVar.getValue();
 			if (val != null) {
@@ -16,16 +20,13 @@
 			}
 		} catch (DebugException e) {
 		}
-
 		if (value != null && value.length() == 0) {
 			value = PHPDebugUIMessages.XDebugHover_empty;
 			return value;
 		}
-
 		if (value != null) {
 			value = value.replaceAll("\t", "    ").replaceAll("&", "&amp;") //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
 					.replaceAll("<", "&lt;").replaceAll(">", "&gt;"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
-			// value = value.replaceAll("\n", "<br>");
 		}
 		return value;
 	}
