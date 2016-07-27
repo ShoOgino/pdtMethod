@@ -1,25 +1,22 @@
 	protected StyledString appendStyledParameterList(StyledString buffer, CompletionProposal methodProposal) {
 		String[] parameterNames = methodProposal.findParameterNames(null);
 		IMethod method = (IMethod) methodProposal.getModelElement();
-		IParameter[] parameters = null;
-		try {
-			parameters = method.getParameters();
-		} catch (ModelException e) {
-			Logger.logException(e);
-		}
 		if (method instanceof AliasMethod) {
 			method = (IMethod) ((AliasMethod) method).getMethod();
 		}
+		IParameter[] parameters = null;
 		boolean isVariadic = false;
 		try {
-			if (method != null && PHPFlags.isVariadic(method.getFlags())) {
-				isVariadic = true;
+			if (method != null) {
+				parameters = method.getParameters();
+				if (PHPFlags.isVariadic(method.getFlags())) {
+					isVariadic = true;
+				}
 			}
 		} catch (ModelException e) {
 			Logger.logException(e);
 		}
 
-		String[] parameterTypes = null;
 		if (parameterNames != null) {
 			final Integer paramLimit = (Integer) methodProposal
 					.getAttribute(ScriptCompletionProposalCollector.ATTR_PARAM_LIMIT);
@@ -43,6 +40,6 @@
 				return buffer;
 			}
 		}
-		return appendStyledParameterSignature(buffer, parameterTypes, parameterNames, isVariadic);
+		return appendStyledParameterSignature(buffer, parameterNames, parameters, isVariadic);
 	}
 
