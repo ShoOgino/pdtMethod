@@ -7,14 +7,19 @@
 	 * @param textSequence
 	 * @return
 	 */
-	public static String[] getArgNames(PHPVersion phpVersion, CharSequence textSequence) {
+	public static @NonNull String[] getArgNames(@Nullable PHPVersion phpVersion, @Nullable CharSequence textSequence) {
 		List<String> args = new ArrayList<String>();
 		if (textSequence != null && textSequence.length() > 2) {
 			if (textSequence.charAt(textSequence.length() - 1) == ')') {
 				textSequence = textSequence.subSequence(0, textSequence.length() - 1);
 			}
-			if (textSequence.charAt(0) == '(') {
+			if (textSequence != null && textSequence.charAt(0) == '(') {
 				textSequence = textSequence.subSequence(1, textSequence.length());
+			}
+			if (textSequence == null) {
+				// should never happen (but makes @Nullable control for
+				// parameter textSequence happy)
+				return args.toArray(new String[args.size()]);
 			}
 			if (phpVersion == null) {
 				phpVersion = PHPVersion.getLatestVersion();
