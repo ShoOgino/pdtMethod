@@ -11,7 +11,6 @@
 		if (phpInfo != null && !reload)
 			return phpInfo;
 		String version = null, sapiType = null, name = null;
-		File configFile = null;
 		String exePath = executableFile == null ? "<null>" //$NON-NLS-1$
 				: executableFile.getAbsolutePath();
 		// Simple pre-check
@@ -20,21 +19,14 @@
 				|| executableFile.isDirectory()) {
 			return null;
 		}
-		// Create empty configuration file:
-		File tempPHPIni = PHPINIUtil.createTemporaryPHPINIFile();
 		try {
 			PHPexes.changePermissions(executableFile);
 			Matcher m;
-			String output = fetchVersion(executableFile, tempPHPIni, true);
+			String output = fetchVersion(executableFile);
 			m = PATTERN_PHP_VERSION.matcher(output);
 			if (!m.find()) {
-				output = fetchVersion(executableFile, tempPHPIni, false);
-				m = PATTERN_PHP_VERSION.matcher(output);
-				if (!m.find()) {
-					throw new PHPExeException(
-							MessageFormat.format("Cannot determine version of the PHP executable ({0}).", //$NON-NLS-1$
-									exePath));
-				}
+				throw new PHPExeException(MessageFormat.format("Cannot determine version of the PHP executable ({0}).", //$NON-NLS-1$
+						exePath));
 			}
 			// Fetch version
 			version = m.group(1);
@@ -51,28 +43,10 @@
 			}
 			// Fetch default name
 			name = "PHP " + version + " (" + sapiType + ")"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-			// Detect default PHP.ini location:
-			output = fetchInfo(executableFile, tempPHPIni, true);
-			m = getConfigMatcher(sapiType, m, output);
-			// Fetch INI file
-			if (!m.find()) {
-				output = fetchInfo(executableFile, tempPHPIni, false);
-				m = getConfigMatcher(sapiType, m, output);
-				if (!m.find()) {
-					throw new PHPExeException(
-							MessageFormat.format("Cannot determine php.ini location of the PHP executable ({0}).", //$NON-NLS-1$
-									exePath));
-				}
-			}
-			String configDir = m.group(1);
-			configFile = new File(configDir.trim(), "php.ini"); //$NON-NLS-1$
-			if (!configFile.exists()) {
-				configFile = null;
-			}
 		} catch (IOException e) {
 			throw new PHPExeException(MessageFormat.format("Invalid PHP executable: {0}.", exePath), e); //$NON-NLS-1$
 		}
-		phpInfo = new PHPExeInfo(name, version, sapiType, executableFile, configFile);
+		phpInfo = new PHPExeInfo(name, version, sapiType, executableFile);
 		phpInfos.put(executableFile, phpInfo);
 		return phpInfo;
 	}

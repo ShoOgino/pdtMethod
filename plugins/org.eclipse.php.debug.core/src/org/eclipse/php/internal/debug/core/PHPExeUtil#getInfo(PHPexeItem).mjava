@@ -1,0 +1,26 @@
+	/**
+	 * Returns info description by calling 'php -i' command in pair with the
+	 * appropriate php configuration file location.
+	 * 
+	 * @param exec
+	 * @param tmpIni
+	 * @param skipSystemIni
+	 * @return PHP executable info
+	 * @throws IOException
+	 */
+	public static String getInfo(PHPexeItem phpExeItem) {
+		PHPVersion phpVersion = new PHPVersion(phpExeItem);
+		File exec = phpExeItem.getExecutable();
+		try {
+			if (phpVersion.getMajor() >= 5)
+				return PHPExeUtil.exec(exec.getAbsolutePath(), phpExeItem.isLoadDefaultINI() ? null : "-n", "-c", //$NON-NLS-1$ //$NON-NLS-2$
+						getINIFile(exec).getAbsolutePath(), "-i"); //$NON-NLS-1$
+			else
+				return PHPExeUtil.exec(phpExeItem.getExecutable().getAbsolutePath(), "-c", //$NON-NLS-1$
+						getINIFile(exec).getAbsolutePath(), "-i"); //$NON-NLS-1$
+		} catch (IOException e) {
+			Logger.logException(e);
+			return "";
+		}
+	}
+
