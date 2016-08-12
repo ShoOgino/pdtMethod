@@ -1,18 +1,24 @@
 	// If necessary, initialize the needed listeners on the given project and
 	// update its patterns.
-	private void registerProject(IProject project) {
-		if (projectToListener.get(project) == null) {
-			// Add to the project patterns
-			TaskTag[] tags = provider.getProjectTaskTags(project);
-			boolean caseSensitive = provider.getProjectTagsCaseSensitive(project);
-			if (tags != null) {
-				Pattern[] patterns = createPatterns(tags, caseSensitive);
-				projectsPatterns.put(project, patterns);
+	public static void registerProject(IProject project) {
+		synchronized (instance) {
+			if (project == null) {
+				return;
 			}
-			// Add a listener for this project
-			ITaskTagsListener tagsListener = new TaskTagsListener();
-			provider.addTaskTagsListener(tagsListener, project);
-			projectToListener.put(project, tagsListener);
+			instance.initPatternsDB();
+			if (!instance.projectToListener.containsKey(project)) {
+				// Add to the project patterns
+				TaskTag[] tags = instance.provider.getProjectTaskTags(project);
+				boolean caseSensitive = instance.provider.getProjectTagsCaseSensitive(project);
+				if (tags != null) {
+					Pattern[] patterns = createPatterns(tags, caseSensitive);
+					instance.projectsPatterns.put(project, patterns);
+				}
+				// Add a listener for this project
+				ITaskTagsListener tagsListener = new TaskTagsListener();
+				instance.projectToListener.put(project, tagsListener);
+				instance.provider.addTaskTagsListener(tagsListener, project);
+			}
 		}
 	}
 

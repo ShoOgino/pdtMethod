@@ -1,0 +1,92 @@
+	protected Button addCheckBoxWithLink(Composite parent, final String label, Key key, String[] values, int indent,
+			int widthHint, final SelectionListener listener) {
+		LinkControlData data = new LinkControlData(key, values);
+
+		GridData gd = new GridData(GridData.FILL, GridData.FILL, true, false);
+		gd.horizontalSpan = 3;
+		gd.horizontalIndent = indent;
+
+		Composite composite = new Composite(parent, SWT.NONE);
+		GridLayout layout = new GridLayout();
+		layout.marginHeight = 0;
+		layout.marginWidth = 0;
+		layout.horizontalSpacing = 0;
+		layout.numColumns = 2;
+		composite.setLayout(layout);
+		composite.setLayoutData(gd);
+
+		final Button checkBox = new Button(composite, SWT.CHECK);
+		checkBox.setFont(JFaceResources.getDialogFont());
+		gd = new GridData(GridData.FILL, GridData.CENTER, false, false);
+		int offset = Util.isMac() ? -4
+				: Util.isLinux() ? -2 : /* Windows et al. */ 3;
+		gd.widthHint = checkBox.computeSize(SWT.DEFAULT, SWT.DEFAULT).x + offset;
+		checkBox.setLayoutData(gd);
+		checkBox.setData(data);
+		checkBox.addSelectionListener(getSelectionListener());
+		checkBox.getAccessible().addAccessibleListener(new AccessibleAdapter() {
+			@Override
+			public void getName(AccessibleEvent e) {
+				e.result = LegacyActionTools.removeMnemonics(label.replaceAll("</?[aA][^>]*>", "")); //$NON-NLS-1$ //$NON-NLS-2$
+			}
+		});
+
+		gd = new GridData(GridData.FILL, GridData.CENTER, true, false);
+		gd.widthHint = widthHint;
+
+		Link link = new Link(composite, SWT.NONE);
+		link.setText(label);
+		link.setLayoutData(gd);
+		link.setData(key);
+		data.setLink(link);
+
+		// toggle checkbox when user clicks unlinked text in link:
+		final boolean[] linkSelected = { false };
+		link.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				linkSelected[0] = true;
+				if (listener != null) {
+					listener.widgetSelected(e);
+				}
+			}
+		});
+		link.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseDown(MouseEvent e) {
+				linkSelected[0] = false;
+			}
+
+			@Override
+			public void mouseUp(MouseEvent e) {
+				if (!linkSelected[0]) {
+					checkBox.setSelection(!checkBox.getSelection());
+					checkBox.setFocus();
+					linkSelected[0] = false;
+					controlChanged(checkBox);
+				}
+			}
+		});
+		link.addTraverseListener(new TraverseListener() {
+			public void keyTraversed(TraverseEvent e) {
+				if (e.detail == SWT.TRAVERSE_MNEMONIC && e.doit == true) {
+					e.detail = SWT.TRAVERSE_NONE;
+					checkBox.setSelection(!checkBox.getSelection());
+					checkBox.setFocus();
+					linkSelected[0] = false;
+					controlChanged(checkBox);
+				}
+			}
+		});
+
+		makeScrollableCompositeAware(link);
+		makeScrollableCompositeAware(checkBox);
+
+		updateCheckBox(checkBox);
+
+		fCheckBoxes.add(checkBox);
+		fLinks.add(link);
+
+		return checkBox;
+	}
+

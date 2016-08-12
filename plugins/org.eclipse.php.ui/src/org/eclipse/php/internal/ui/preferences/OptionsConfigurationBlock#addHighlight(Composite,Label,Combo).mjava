@@ -1,0 +1,76 @@
+	private void addHighlight(final Composite parent, final Label labelControl, final Combo comboBox) {
+		comboBox.addFocusListener(new FocusListener() {
+			public void focusLost(FocusEvent e) {
+				highlight(parent, labelControl, comboBox, HIGHLIGHT_NONE);
+			}
+
+			public void focusGained(FocusEvent e) {
+				highlight(parent, labelControl, comboBox, HIGHLIGHT_FOCUS);
+			}
+		});
+
+		MouseTrackAdapter labelComboListener = new MouseTrackAdapter() {
+			@Override
+			public void mouseEnter(MouseEvent e) {
+				highlight(parent, labelControl, comboBox, comboBox.isEnabled()
+						? comboBox.isFocusControl() ? HIGHLIGHT_FOCUS : HIGHLIGHT_MOUSE : HIGHLIGHT_NONE);
+			}
+
+			@Override
+			public void mouseExit(MouseEvent e) {
+				if (!comboBox.isFocusControl())
+					highlight(parent, labelControl, comboBox, HIGHLIGHT_NONE);
+			}
+		};
+		comboBox.addMouseTrackListener(labelComboListener);
+		labelControl.addMouseTrackListener(labelComboListener);
+
+		class MouseMoveTrackListener extends MouseTrackAdapter implements MouseMoveListener, MouseListener {
+			@Override
+			public void mouseExit(MouseEvent e) {
+				if (!comboBox.isFocusControl())
+					highlight(parent, labelControl, comboBox, HIGHLIGHT_NONE);
+			}
+
+			public void mouseMove(MouseEvent e) {
+				int color = comboBox.isEnabled() ? comboBox.isFocusControl() ? HIGHLIGHT_FOCUS
+						: isAroundLabel(e) ? HIGHLIGHT_MOUSE : HIGHLIGHT_NONE : HIGHLIGHT_NONE;
+				highlight(parent, labelControl, comboBox, color);
+			}
+
+			public void mouseDown(MouseEvent e) {
+				if (isAroundLabel(e))
+					comboBox.setFocus();
+			}
+
+			public void mouseDoubleClick(MouseEvent e) {
+				// not used
+			}
+
+			public void mouseUp(MouseEvent e) {
+				// not used
+			}
+
+			private boolean isAroundLabel(MouseEvent e) {
+				int lx = labelControl.getLocation().x;
+				Rectangle c = comboBox.getBounds();
+				int x = e.x;
+				int y = e.y;
+				boolean isAroundLabel = lx - 5 < x && x < c.x && c.y - 2 < y && y < c.y + c.height + 2;
+				return isAroundLabel;
+			}
+		}
+		MouseMoveTrackListener parentListener = new MouseMoveTrackListener();
+		parent.addMouseMoveListener(parentListener);
+		parent.addMouseTrackListener(parentListener);
+		parent.addMouseListener(parentListener);
+
+		MouseAdapter labelClickListener = new MouseAdapter() {
+			@Override
+			public void mouseDown(MouseEvent e) {
+				comboBox.setFocus();
+			}
+		};
+		labelControl.addMouseListener(labelClickListener);
+	}
+

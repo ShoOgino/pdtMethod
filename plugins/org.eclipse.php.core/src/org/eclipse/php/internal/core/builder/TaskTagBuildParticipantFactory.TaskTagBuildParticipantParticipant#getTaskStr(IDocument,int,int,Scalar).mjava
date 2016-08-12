@@ -1,0 +1,32 @@
+		/**
+		 * Gets the Task message from the document
+		 * 
+		 * @param document
+		 * @param lineNumber
+		 * @param offset
+		 * @param nextTaskTag
+		 * @return
+		 * @throws BadLocationException
+		 */
+		private String getTaskStr(IDocument document, int lineNumber, int offset, Scalar nextTaskTag)
+				throws BadLocationException {
+			// get line info to identify the end of the task
+			IRegion lineInformation = document.getLineInformation(lineNumber);
+			int lineStart = lineInformation.getOffset();
+			int lineEnd = lineStart + lineInformation.getLength();
+
+			// identify the actual end of the task: either end of line or begin
+			// of the next token
+			int taskEnd;
+			if (nextTaskTag != null) {
+				taskEnd = Math.min(nextTaskTag.start(), lineEnd);
+			} else {
+				taskEnd = lineEnd;
+			}
+
+			String taskStr = document.get(offset, taskEnd - offset);
+			taskStr = taskStr.trim();
+
+			return taskStr;
+		}
+

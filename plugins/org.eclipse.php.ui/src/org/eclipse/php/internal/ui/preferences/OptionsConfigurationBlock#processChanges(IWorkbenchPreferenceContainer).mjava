@@ -1,14 +1,10 @@
 	protected boolean processChanges(IWorkbenchPreferenceContainer container) {
-
 		IScopeContext currContext = fLookupOrder[0];
 
 		List<Key> changedOptions = new ArrayList<Key>();
 		boolean needsBuild = getChanges(currContext, changedOptions);
 		if (changedOptions.isEmpty()) {
-			hasChanges = false;
 			return true;
-		} else {
-			hasChanges = true;
 		}
 
 		if (!this.checkChanges(currContext)) {
@@ -16,29 +12,39 @@
 			return false;
 		}
 
+		if (needsBuild) {
+			int count = getRebuildCount();
+			if (count > fRebuildCount) {
+				needsBuild = false; // build already requested
+				fRebuildCount = count;
+			}
+		}
+
 		boolean doBuild = false;
 		if (needsBuild) {
 			String[] strings = getFullBuildDialogStrings(fProject == null);
 			if (strings != null) {
-				MessageDialog dialog = new MessageDialog(
-						getShell(), strings[0], null, strings[1], MessageDialog.QUESTION, new String[] {
-								IDialogConstants.YES_LABEL, IDialogConstants.NO_LABEL, IDialogConstants.CANCEL_LABEL },
-						2);
-				int res = dialog.open();
-				if (res == 0) {
-					doBuild = true;
-				} else if (res != 1) {
-					return false; // cancel pressed
+				if (ResourcesPlugin.getWorkspace().getRoot().getProjects().length == 0) {
+					doBuild = true; // don't bother the user
+				} else {
+					MessageDialog dialog = new MessageDialog(getShell(), strings[0], null, strings[1],
+							MessageDialog.QUESTION, new String[] { IDialogConstants.YES_LABEL,
+									IDialogConstants.NO_LABEL, IDialogConstants.CANCEL_LABEL },
+							2);
+					int res = dialog.open();
+					if (res == 0) {
+						doBuild = true;
+					} else if (res != 1) {
+						return false; // cancel pressed
+					}
 				}
 			}
-		}
-		if (doBuild) {
-			prepareForBuild();
 		}
 		if (container != null) {
 			// no need to apply the changes to the original store: will be done
 			// by the page container
 			if (doBuild) { // post build
+				incrementRebuildCount();
 				container.registerUpdateJob(CoreUtility.getBuildJob(fProject));
 			}
 		} else {

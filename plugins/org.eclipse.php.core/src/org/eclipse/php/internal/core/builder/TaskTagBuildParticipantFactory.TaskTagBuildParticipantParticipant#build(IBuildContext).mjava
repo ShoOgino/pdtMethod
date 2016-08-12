@@ -1,0 +1,66 @@
+		@Override
+		public void build(IBuildContext context) throws CoreException {
+			if (Boolean.TRUE.equals(context.get(ParserBuildParticipantFactory.IN_LIBRARY_FOLDER))) {
+				// skip syntax check for code inside library folders
+				return;
+			}
+
+			if (context.getFile() == null) {
+				// skip when building external module
+				return;
+			}
+
+			if (context.getFile().getType() != IResource.FILE || !(PHPToolkitUtil.isPhpFile(context.getFile()))) {
+				// process only PHP files
+				return;
+			}
+
+			// remove the markers currently existing for this file
+			try {
+				context.getFile().deleteMarkers(PHPCoreConstants.PHP_MARKER_TYPE, false, IResource.DEPTH_INFINITE);
+			} catch (CoreException e) {
+			}
+
+			final ModuleDeclaration moduleDeclaration = (ModuleDeclaration) context
+					.get(IBuildContext.ATTR_MODULE_DECLARATION);
+
+			if (moduleDeclaration instanceof PHPModuleDeclaration) {
+				try {
+					Pattern[] todos;
+					TaskTag[] taskTags;
+					if (project != null && project.getProject() != null) {
+						todos = TaskPatternsProvider.getInstance().getPatternsForProject(project.getProject());
+						taskTags = TaskTagsProvider.getInstance().getProjectTaskTags(project.getProject());
+					} else {
+						todos = TaskPatternsProvider.getInstance().getPatternsForWorkspace();
+						taskTags = TaskTagsProvider.getInstance().getWorkspaceTaskTags();
+					}
+					if (taskTags == null) {
+						taskTags = TaskTagsProvider.getInstance().getWorkspaceTaskTags();
+					}
+
+					IDocument document = new Document(new String(context.getContents()));
+					for (Comment comment : ((PHPModuleDeclaration) moduleDeclaration).getCommentList()) {
+						List<Scalar> foundTaskTags = new ArrayList<Scalar>();
+						checkForTodo(todos, foundTaskTags, comment.start(),
+								document.get(comment.start(), comment.end() - comment.start()));
+						if (foundTaskTags.isEmpty()) {
+							comment.setTaskTags(null);
+						} else {
+							comment.setTaskTags(foundTaskTags);
+							for (int i = 0; i < foundTaskTags.size(); i++) {
+								Scalar foundTaskTag = foundTaskTags.get(i);
+								String taskKeyword = document.get(foundTaskTag.start(),
+										foundTaskTag.end() - foundTaskTag.start());
+								int priority = getTaskPriority(taskTags, taskKeyword);
+								reportTask(document, context.getFile(), context.getTaskReporter(), foundTaskTag.start(),
+										i + 1 < foundTaskTags.size() ? foundTaskTags.get(i + 1) : null, priority);
+							}
+						}
+					}
+				} catch (Exception e) {
+					Logger.logException(e);
+				}
+			}
+		}
+

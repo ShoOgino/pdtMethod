@@ -1,17 +1,7 @@
 	/**
 	 * @see IPhpScriptRegion#completeReparse(IDocument, int, int)
 	 */
-	public void completeReparse(IDocument doc, int start, int length) {
-		// bug fix for 225118 we need to refresh the constants since this
-		// function is being called
-		// after the project's PHP version was changed.
-		AbstractPhpLexer phpLexer = getPhpLexer(new BlockDocumentReader(doc, start, length), null);
-		try {
-			ST_PHP_LINE_COMMENT = phpLexer.getClass().getField("ST_PHP_LINE_COMMENT").getInt(phpLexer); //$NON-NLS-1$
-			ST_PHP_IN_SCRIPTING = phpLexer.getClass().getField("ST_PHP_IN_SCRIPTING").getInt(phpLexer); //$NON-NLS-1$
-		} catch (Exception e) {
-			Logger.logException(e);
-		}
-		completeReparse(phpLexer);
+	public synchronized void completeReparse(IDocument doc, int start, int length) {
+		completeReparse(doc, start, length, project);
 	}
 

@@ -4,28 +4,20 @@
 		}
 
 		fPhpVersionListener = new IPreferencesPropagatorListener() {
+			@Override
 			public void preferencesEventOccured(PreferencesPropagatorEvent event) {
-				try {
-					// get the structured document and go over its regions
-					// in case of PhpScriptRegion reparse the region text
+				// get the structured document and go over its regions
+				// in case of PhpScriptRegion reparse the region text
+				if (getTextViewer() instanceof PHPStructuredTextViewer) {
+					DocumentModelUtils.reparseAndReconcileDocument((PHPStructuredTextViewer) getTextViewer());
+				} else {
 					IDocumentProvider documentProvider = getDocumentProvider();
 					IDocument doc = documentProvider != null ? documentProvider.getDocument(getEditorInput()) : null;
-					if (doc instanceof IStructuredDocument) {
-						IStructuredDocumentRegion[] sdRegions = ((IStructuredDocument) doc)
-								.getStructuredDocumentRegions();
-						for (IStructuredDocumentRegion element : sdRegions) {
-							Iterator regionsIt = element.getRegions().iterator();
-							reparseRegion(doc, regionsIt, element.getStartOffset());
-						}
-						PHPStructuredTextViewer textViewer = (PHPStructuredTextViewer) getTextViewer();
-						if (textViewer != null) {
-							textViewer.reconcile();
-						}
-					}
-				} catch (BadLocationException e) {
+					DocumentModelUtils.reparseDocument(doc);
 				}
 			}
 
+			@Override
 			public IProject getProject() {
 				IScriptProject scriptProject = PHPStructuredEditor.this.getProject();
 				if (scriptProject != null) {
@@ -39,6 +31,7 @@
 
 		fPreferencesListener = new IPreferenceChangeListener() {
 
+			@Override
 			public void preferenceChange(PreferenceChangeEvent event) {
 				String property = event.getKey();
 				if (PHPCoreConstants.CODEASSIST_AUTOACTIVATION.equals(property)

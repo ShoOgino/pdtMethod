@@ -1,26 +1,23 @@
 		public void preferencesEventOccured(PreferencesPropagatorEvent event) {
 			String tags = preferencesSupport.getProjectSpecificPreferencesValue(PHPCoreConstants.TASK_TAGS, null,
 					getProject());
-			String priorities = null;
-			if (tags == null) {
+			String priorities = preferencesSupport.getProjectSpecificPreferencesValue(PHPCoreConstants.TASK_PRIORITIES,
+					null, getProject());
+			String caseSensitive = preferencesSupport
+					.getProjectSpecificPreferencesValue(PHPCoreConstants.TASK_CASE_SENSITIVE, null, getProject());
+			String newValue = (String) event.getNewValue();
+			// if project settings are not fully updated (i.e. user newly
+			// enabled project task tags settings), use workspace settings
+			if (tags == null || priorities == null || caseSensitive == null || newValue == null) {
 				tags = preferencesSupport.getWorkspacePreferencesValue(PHPCoreConstants.TASK_TAGS);
 				priorities = preferencesSupport.getWorkspacePreferencesValue(PHPCoreConstants.TASK_PRIORITIES);
-			} else {
-				priorities = preferencesSupport.getProjectSpecificPreferencesValue(PHPCoreConstants.TASK_PRIORITIES, "", //$NON-NLS-1$
-						getProject());
+				caseSensitive = preferencesSupport.getWorkspacePreferencesValue(PHPCoreConstants.TASK_CASE_SENSITIVE);
+				newValue = caseSensitive;
 			}
-			if (StringUtils.occurrencesOf(priorities, ',') == StringUtils.occurrencesOf(tags, ',')) {
+			if (StringUtils.occurrencesOf(tags, ',') == StringUtils.occurrencesOf(priorities, ',')) {
 				TaskTag[] taskTags = getTagsAndPropertiesFrom(tags, priorities);
-				TaskTagsEvent taskEvent = null;
-				String newValue = (String) event.getNewValue();
-				if (newValue == null) {
-					newValue = preferencesSupport.getWorkspacePreferencesValue(PHPCoreConstants.TASK_CASE_SENSITIVE);
-				}
-				if (PHPCoreConstants.ENABLED.equals(newValue)) {
-					taskEvent = new TaskTagsEvent(TaskTagsProvider.this, getProject(), taskTags, true);
-				} else {
-					taskEvent = new TaskTagsEvent(TaskTagsProvider.this, getProject(), taskTags, false);
-				}
+				TaskTagsEvent taskEvent = new TaskTagsEvent(TaskTagsProvider.this, getProject(), taskTags,
+						PHPCoreConstants.ENABLED.equals(newValue));
 				notifyTaskCaseChange(taskEvent);
 			}
 		}

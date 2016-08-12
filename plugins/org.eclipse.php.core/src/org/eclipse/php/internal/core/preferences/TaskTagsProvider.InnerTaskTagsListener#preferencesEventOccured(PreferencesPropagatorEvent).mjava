@@ -1,21 +1,23 @@
 		public void preferencesEventOccured(PreferencesPropagatorEvent event) {
-			String newValue = (String) event.getNewValue();
-			if (newValue == null) {
-				newValue = preferencesSupport.getWorkspacePreferencesValue(PHPCoreConstants.TASK_TAGS);
-			}
-			// Check that the other value are synchronized at this stage and
-			// send an event only if they are.
+			String tags = preferencesSupport.getProjectSpecificPreferencesValue(PHPCoreConstants.TASK_TAGS, null,
+					getProject());
 			String priorities = preferencesSupport.getProjectSpecificPreferencesValue(PHPCoreConstants.TASK_PRIORITIES,
 					null, getProject());
-			if (priorities == null) {
+			String caseSensitive = preferencesSupport
+					.getProjectSpecificPreferencesValue(PHPCoreConstants.TASK_CASE_SENSITIVE, null, getProject());
+			String newValue = (String) event.getNewValue();
+			// if project settings are not fully updated (i.e. user newly
+			// enabled project task tags settings), use workspace settings
+			if (tags == null || priorities == null || caseSensitive == null || newValue == null) {
+				tags = preferencesSupport.getWorkspacePreferencesValue(PHPCoreConstants.TASK_TAGS);
 				priorities = preferencesSupport.getWorkspacePreferencesValue(PHPCoreConstants.TASK_PRIORITIES);
+				caseSensitive = preferencesSupport.getWorkspacePreferencesValue(PHPCoreConstants.TASK_CASE_SENSITIVE);
+				newValue = tags;
 			}
-			if (StringUtils.occurrencesOf(priorities, ',') == StringUtils.occurrencesOf(newValue, ',')) {
+			if (StringUtils.occurrencesOf(newValue, ',') == StringUtils.occurrencesOf(priorities, ',')) {
 				TaskTag[] taskTags = getTagsAndPropertiesFrom(newValue, priorities);
-				IProject eventProject = (event.getSource() != null && event.getSource() instanceof IProject)
-						? (IProject) event.getSource() : null;
-				TaskTagsEvent taskEvent = new TaskTagsEvent(TaskTagsProvider.this, eventProject, taskTags,
-						getProjectTagsCaseSensitive(getProject()));
+				TaskTagsEvent taskEvent = new TaskTagsEvent(TaskTagsProvider.this, getProject(), taskTags,
+						PHPCoreConstants.ENABLED.equals(caseSensitive));
 				notifyTaskTagChange(taskEvent);
 			}
 		}

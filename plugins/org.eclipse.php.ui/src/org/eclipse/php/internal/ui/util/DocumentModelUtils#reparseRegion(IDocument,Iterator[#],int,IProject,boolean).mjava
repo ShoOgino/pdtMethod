@@ -1,0 +1,41 @@
+	/**
+	 * iterate over regions in case of PhpScriptRegion. In case of region
+	 * container iterate over the container regions.
+	 * 
+	 * @param document
+	 *            document
+	 * @param regionsIt
+	 *            regions iterator
+	 * @param offset
+	 *            the container region start offset
+	 * @param project
+	 *            the new project to use (only if setNewProject is set to true)
+	 * @param setNewProject
+	 *            use the new project value (even if null) when setNewProject is
+	 *            set to true
+	 */
+	private static void reparseRegion(@NonNull IDocument document, @NonNull Iterator<?> regionsIt, int offset,
+			@Nullable IProject project, boolean setNewProject) {
+		while (regionsIt.hasNext()) {
+			ITextRegion region = (ITextRegion) regionsIt.next();
+			if (region instanceof ITextRegionContainer) {
+				reparseRegion(document, ((ITextRegionContainer) region).getRegions().iterator(),
+						offset + region.getStart(), project, setNewProject);
+			}
+			if (region instanceof IPhpScriptRegion) {
+				final IPhpScriptRegion phpRegion = (IPhpScriptRegion) region;
+				try {
+					if (setNewProject) {
+						phpRegion.completeReparse(document, offset + region.getStart(), region.getLength(), project);
+					} else {
+						phpRegion.completeReparse(document, offset + region.getStart(), region.getLength());
+					}
+				} catch (Error e) {
+					// catch Error from PhpLexer.zzScanError
+					// without doing this, the editor will behavior unnormal
+					PHPUiPlugin.log(e);
+				}
+			}
+		}
+	}
+
