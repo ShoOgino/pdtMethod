@@ -1,6 +1,11 @@
 	@Test
 	public void highlighter(String fileName) throws Exception {
 		final PdttFile pdttFile = new PdttFile(PHPUiTests.getDefault().getBundle(), fileName);
+		// reset all task tag preferences before applying any specific ones
+		// (to avoid using task tag preferences defined by other PdttFiles)
+		setDefaultTaskTagPreferences();
+		pdttFile.applyPreferences();
+
 		String result = "";
 		createFile(pdttFile);
 		ISourceModule module = getSourceModule();
@@ -13,6 +18,9 @@
 		}
 		AbstractSemanticHighlighting highlighter = highlighters.get(index);
 		assertNotNull(highlighter);
+
+		build(module);
+
 		Program program = getProgram(module);
 		Position[] positions = highlighter.consumes(program);
 		assertNoDuplicates(highlighter.getDisplayName(), positions);

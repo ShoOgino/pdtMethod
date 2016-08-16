@@ -1,0 +1,42 @@
+	private void build(ISourceModule module) throws CoreException {
+		TaskTagBuildParticipantFactory factory = new TaskTagBuildParticipantFactory() {
+			@Override
+			public void setInitializationData(IConfigurationElement config, String propertyName, Object data)
+					throws CoreException {
+				natureId = PHPNature.ID;
+			}
+		};
+		factory.setInitializationData(null, null, null);
+		IBuildParticipant buildParticipant = factory.createBuildParticipant(module.getScriptProject());
+		IProblemFactory problemFactory = new DefaultProblemFactory();
+		IBuildState buildState = new IBuildState() {
+			@Override
+			public void recordStructuralChange(IPath path) {
+			}
+
+			@Override
+			public void recordImportProblem(IPath path) {
+			}
+
+			@Override
+			public void recordDependency(IPath path, IPath dependency, int flags) {
+			}
+
+			@Override
+			public void recordDependency(IPath path, IPath dependency) {
+			}
+
+			@Override
+			public Set<IPath> getStructuralChanges() {
+				return null;
+			}
+		};
+		ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(module, null);
+		if (moduleDeclaration instanceof PHPModuleDeclaration) {
+			SourceModuleBuildContext context = new SourceModuleBuildContext(problemFactory, module,
+					IBuildContext.FULL_BUILD, buildState);
+			context.set(IBuildContext.ATTR_MODULE_DECLARATION, moduleDeclaration);
+			buildParticipant.build(context);
+		}
+	}
+
