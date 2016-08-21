@@ -1,0 +1,32 @@
+	private static void initPHPVersionNames() {
+		if (phpVersionNames == null) {
+			IConfigurationElement[] configurationElementsFor = Platform.getExtensionRegistry()
+					.getConfigurationElementsFor(PHPUiConstants.PHP_VERSION_INFO_EXTPOINT_ID);
+			phpVersionNames = new HashMap<String, String>();
+			for (IConfigurationElement verInfo : configurationElementsFor) {
+				StringBuilder sb = new StringBuilder(verInfo.getAttribute(PHPUiConstants.PHP_VERSION_INFO_ATTR_NAME));
+				IConfigurationElement[] list = verInfo.getChildren(PHPUiConstants.PHP_VERSION_INFO_FEATURE_NAME);
+				if (list.length > 0) {
+					sb.append(" ("); //$NON-NLS-1$
+					int length = 0;
+					for (int f = 0; list.length > f; f++) {
+						if (length > 30) {
+							break;
+						}
+						if (f > 0) {
+							sb.append(", ");
+							length += 2;
+						}
+						String feature = list[f].getAttribute(PHPUiConstants.PHP_VERSION_INFO_ATTR_NAME);
+						sb.append(feature);
+						length += feature.length();
+					}
+
+					sb.append(",...)"); //$NON-NLS-1$
+				}
+
+				phpVersionNames.put(verInfo.getAttribute(PHPUiConstants.PHP_VERSION_INFO_ATTR_VERSION), sb.toString());
+			}
+		}
+	}
+
