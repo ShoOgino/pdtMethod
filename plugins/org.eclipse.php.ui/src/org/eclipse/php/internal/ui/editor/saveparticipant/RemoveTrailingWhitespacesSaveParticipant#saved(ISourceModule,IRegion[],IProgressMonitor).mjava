@@ -1,0 +1,24 @@
+	public void saved(ISourceModule compilationUnit, IRegion[] changedRegions, IProgressMonitor monitor)
+			throws CoreException {
+		IScriptProject project = compilationUnit.getScriptProject();
+		updateSaveActionsState(project != null ? project.getProject() : null);
+
+		if (!removeTrailingWhitespacesEnabled) {
+			return;
+		}
+
+		try {
+			IDocument document = new Document(compilationUnit.getSource());
+			MultiTextEdit edits = computeTextEdit(document);
+			if (edits.hasChildren()) {
+				final SourceModuleChange change = new SourceModuleChange(
+						"Remove trailing whitespaces from " + compilationUnit.getElementName(), compilationUnit); //$NON-NLS-1$
+				change.setSaveMode(TextFileChange.LEAVE_DIRTY);
+				change.setEdit(edits);
+				change.perform(monitor);
+			}
+		} catch (Exception e) {
+			throw new CoreException(new Status(IStatus.ERROR, PHPUiPlugin.ID, e.toString(), e));
+		}
+	}
+

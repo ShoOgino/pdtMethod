@@ -1,0 +1,29 @@
+	protected @NonNull MultiTextEdit computeTextEdit(@NonNull IDocument document) throws BadLocationException {
+		int lineCount = document.getNumberOfLines();
+
+		MultiTextEdit multiEdit = new MultiTextEdit();
+
+		for (int i = 0; i < lineCount; i++) {
+			IRegion region = document.getLineInformation(i);
+			if (region.getLength() == 0) {
+				continue;
+			}
+			int lineStart = region.getOffset();
+			int lineExclusiveEnd = lineStart + region.getLength();
+			int j = lineExclusiveEnd - 1;
+			while (j >= lineStart && Character.isWhitespace(document.getChar(j))) {
+				--j;
+			}
+			++j;
+			// A flag for skipping empty lines, if required
+			if (ignoreEmptyLines && j == lineStart) {
+				continue;
+			}
+			if (j < lineExclusiveEnd) {
+				multiEdit.addChild(new DeleteEdit(j, lineExclusiveEnd - j));
+			}
+		}
+
+		return multiEdit;
+	}
+

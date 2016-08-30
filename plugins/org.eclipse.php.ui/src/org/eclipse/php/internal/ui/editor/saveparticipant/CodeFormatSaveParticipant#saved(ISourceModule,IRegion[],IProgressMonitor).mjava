@@ -1,0 +1,31 @@
+	public void saved(ISourceModule compilationUnit, IRegion[] changedRegions, IProgressMonitor monitor)
+			throws CoreException {
+		IScriptProject project = compilationUnit.getScriptProject();
+		updateSaveActionsState(project != null ? project.getProject() : null);
+
+		if (!formatOnSaveEnabled) {
+			return;
+		}
+
+		IContentFormatter formatter = PHPUiPlugin.getDefault().getActiveFormatter();
+
+		if (formatter instanceof IFormatterProcessorFactory) {
+			try {
+				IDocument document = new Document(compilationUnit.getSource());
+				ICodeFormattingProcessor processor = ((IFormatterProcessorFactory) formatter)
+						.getCodeFormattingProcessor(document, ProjectOptions.getPhpVersion(project),
+								ProjectOptions.useShortTags(project), new Region(0, document.getLength()));
+				MultiTextEdit edits = processor.getTextEdits();
+				if (edits.hasChildren()) {
+					final SourceModuleChange change = new SourceModuleChange(
+							"Format " + compilationUnit.getElementName(), compilationUnit); //$NON-NLS-1$
+					change.setSaveMode(TextFileChange.LEAVE_DIRTY);
+					change.setEdit(edits);
+					change.perform(monitor);
+				}
+			} catch (Exception e) {
+				throw new CoreException(new Status(IStatus.ERROR, PHPUiPlugin.ID, e.toString(), e));
+			}
+		}
+	}
+
