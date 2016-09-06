@@ -11,7 +11,7 @@
 		nameGroup = new NameGroup(composite, initialName, getShell());
 		nameGroup.addObserver(this);
 		PHPLocationGroup = new LocationGroup(composite, nameGroup, getShell());
-		
+
 		overrideComposer = new Button(composite, SWT.CHECK);
 		overrideComposer.setText("Override composer.json from target package");
 		overrideComposer.addSelectionListener(new SelectionAdapter() {
@@ -21,12 +21,12 @@
 				settingsGroup.setEnabled(overrideComposer.getSelection());
 			}
 		});
-		
+
 		final Group group = new Group(composite, SWT.None);
 		group.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		group.setLayout(new GridLayout(3, false));
 		group.setText("");
-		
+
 		settingsGroup = new BasicSettingsGroup(group, getShell());
 		settingsGroup.setEnabled(false);
 		settingsGroup.addObserver(this);
@@ -36,7 +36,13 @@
 		data.setSettings(getDialogSettings());
 		data.setObserver(PHPLocationGroup);
 
-		versionGroup = new VersionGroup(this, composite);
+		versionGroup = new VersionGroup(this, composite, PHPVersion.PHP5_3) {
+			@Override
+			public IEnvironment getEnvironment() {
+				return PackageProjectWizardFirstPage.this.getEnvironment();
+			}
+
+		};
 		nameGroup.addObserver(PHPLocationGroup);
 
 		// initialize all elements
@@ -47,7 +53,7 @@
 		PHPLocationGroup.addObserver(projectTemplateValidator);
 
 		Dialog.applyDialogFont(composite);
-		
+
 		setControl(composite);
 		composerPackage = new ComposerPackage();
 		keywordConverter = new String2KeywordsConverter(composerPackage);
