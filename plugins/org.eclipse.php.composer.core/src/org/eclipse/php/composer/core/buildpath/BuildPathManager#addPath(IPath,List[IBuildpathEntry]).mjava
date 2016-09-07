@@ -5,18 +5,17 @@
 		IPath entryPath;
 		for (IBuildpathEntry entry : entries) {
 			entryPath = entry.getPath();
-			if (entryPath.isPrefixOf(path) 
-					&& (parent == null || (entryPath.toString().length() > parentLength))) {
+			if (entryPath.isPrefixOf(path) && (parent == null || (entryPath.toString().length() > parentLength))) {
 				parent = entry;
 				parentLength = parent.getPath().toString().length();
 			}
 		}
-		
+
 		// add path as exclusion to found parent
 		if (parent != null) {
-			List<IPath> exclusions = new ArrayList<IPath>(); 
+			List<IPath> exclusions = new ArrayList<IPath>();
 			exclusions.addAll(Arrays.asList(parent.getExclusionPatterns()));
-			
+
 			IPath diff = path.removeFirstSegments(path.matchingFirstSegments(parent.getPath()));
 			if (parent.getPath().equals(composerPath)) {
 				diff = diff.uptoSegment(1);
@@ -25,46 +24,47 @@
 			if (!exclusions.contains(diff)) {
 				exclusions.add(diff);
 			}
-			
+
 			entries.remove(parent);
-			
-			parent = DLTKCore.newSourceEntry(parent.getPath(), exclusions.toArray(new IPath[]{}));
+
+			parent = DLTKCore.newSourceEntry(parent.getPath(), exclusions.toArray(new IPath[] {}));
 			entries.add(parent);
 		}
-		
+
 		// add own entry
 		// leave vendor/composer untouched with exclusions
 		if (vendorPath.equals(path) || composerPath.equals(path)) {
 			entries.add(DLTKCore.newSourceEntry(path));
-			
-		// add exclusions
+
+			// add exclusions
 		} else {
 			List<IPath> ex = new ArrayList<IPath>();
-			
+
 			// find the applying exclusion patterns for the new entry
 			for (IPath exclusion : exclusions) {
-				
+
 				if (!exclusion.toString().startsWith("*")) {
 					exclusion = composerProject.getProject().getFullPath().append(exclusion);
 				}
-				
+
 				// remove buildpath entries with exact exclusion matches
 				if (path.equals(exclusion)) {
 					return;
 				}
-				
-				// if exclusion matches path, add the trailing path segments as exclusion
+
+				// if exclusion matches path, add the trailing path segments as
+				// exclusion
 				if (path.removeTrailingSeparator().isPrefixOf(exclusion)) {
 					ex.add(exclusion.removeFirstSegments(path.matchingFirstSegments(exclusion)));
 				}
-				
+
 				// if exclusion starts with wildcard, add also
 				else if (exclusion.toString().startsWith("*")) {
 					ex.add(exclusion);
 				}
 			}
 
-			entries.add(DLTKCore.newSourceEntry(path, ex.toArray(new IPath[]{})));			
+			entries.add(DLTKCore.newSourceEntry(path, ex.toArray(new IPath[] {})));
 		}
 	}
 

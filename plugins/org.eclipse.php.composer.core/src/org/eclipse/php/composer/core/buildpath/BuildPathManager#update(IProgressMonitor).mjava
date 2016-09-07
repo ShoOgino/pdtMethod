@@ -4,7 +4,7 @@
 			Logger.log(Logger.INFO, "Stop BuildPathManager, composer.json invalid");
 			return;
 		}
-		
+
 		vendorPath = composerProject.getProject().getFullPath().append(composerProject.getVendorDir());
 		composerPath = vendorPath.append("composer");
 
@@ -12,7 +12,7 @@
 		IScriptProject scriptProject = composerProject.getScriptProject();
 		BuildPathParser parser = new BuildPathParser(composerProject);
 		List<String> paths = parser.getPaths();
-		
+
 		// project prefs
 		IEclipsePreferences prefs = ComposerPlugin.getDefault().getProjectPreferences(project);
 		IPath[] inclusions;
@@ -22,28 +22,28 @@
 			exclusions = scriptProject.decodeBuildpathEntry(encoded).getExclusionPatterns();
 			inclusions = scriptProject.decodeBuildpathEntry(encoded).getInclusionPatterns();
 		} catch (Exception e) {
-			exclusions = new IPath[]{};
-			inclusions = new IPath[]{};
+			exclusions = new IPath[] {};
+			inclusions = new IPath[] {};
 		}
-		
+
 		// add includes
 		for (IPath inclusion : inclusions) {
 			paths.add(inclusion.toString());
 		}
-		
+
 		// clean up exclusion patterns: remove exact matches
 		List<IPath> exs = new ArrayList<IPath>();
 		for (IPath exclusion : exclusions) {
 			String exc = exclusion.removeTrailingSeparator().toString();
-			
+
 			if (paths.contains(exc)) {
 				paths.remove(exc);
 			} else {
 				exs.add(exclusion);
 			}
 		}
-		exclusions = exs.toArray(new IPath[]{});
-		
+		exclusions = exs.toArray(new IPath[] {});
+
 		// clean build path
 		IBuildpathEntry[] rawBuildpath = scriptProject.getRawBuildpath();
 		for (IBuildpathEntry entry : rawBuildpath) {
@@ -51,10 +51,10 @@
 				BuildPathUtils.removeEntryFromBuildPath(scriptProject, entry);
 			}
 		}
-		
+
 		// sort paths for nesting detection
 		Collections.sort(paths);
-		
+
 		// add new entries to buildpath
 		List<IBuildpathEntry> newEntries = new ArrayList<IBuildpathEntry>();
 		for (String path : paths) {
@@ -70,7 +70,7 @@
 		}
 
 		IFolder folder = project.getFolder(new Path(composerProject.getVendorDir()));
-		
+
 		if (folder != null && folder.exists()) {
 			if (!folder.isDerived()) {
 				folder.setDerived(true, monitor);

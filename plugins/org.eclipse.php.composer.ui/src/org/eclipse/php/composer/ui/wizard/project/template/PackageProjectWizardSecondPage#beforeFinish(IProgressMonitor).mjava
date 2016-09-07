@@ -3,19 +3,20 @@
 
 		PackageFilterItem filterItem = filter.getSelectedPackage();
 		final CountDownLatch latch = new CountDownLatch(1);
-		
+
 		monitor.beginTask("Initializing composer project", 2);
 		monitor.worked(1);
-		
+
 		File file = new File(firstPage.getLocationURI());
 		IPath location = new Path(file.toString());
-		
+
 		// let the create-project command handle folder creation
 		if (firstPage.isInLocalServer()) {
 			location = location.removeLastSegments(1);
 		}
-		
-		CreateProjectJob projectJob = new CreateProjectJob(location, firstPage.nameGroup.getName(), filterItem.getPackage().getName(), filterItem.getSelectedVersion());
+
+		CreateProjectJob projectJob = new CreateProjectJob(location, firstPage.nameGroup.getName(),
+				filterItem.getPackage().getName(), filterItem.getSelectedVersion());
 		projectJob.setJobListener(new JobListener() {
 			@Override
 			public void jobStarted() {
@@ -33,10 +34,10 @@
 				latch.countDown();
 			}
 		});
-		
+
 		projectJob.schedule();
-		
-		// we need to wait until the first page has started the 
+
+		// we need to wait until the first page has started the
 		// create-project composer command and the command actually
 		// wrote something to disk, otherwise the command will fail
 		//
@@ -46,9 +47,9 @@
 		try {
 			latch.await();
 		} catch (InterruptedException e) {
-			
+
 		}
-		
+
 		monitor.worked(1);
 	}
 
