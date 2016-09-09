@@ -6,11 +6,10 @@
 
 		// Collect launch configurations:
 		fConfigurationChanges = new HashMap<ILaunchConfiguration, Map<String, String>>();
-		ILaunchConfiguration[] launchConfigurations = DebugPlugin.getDefault()
-				.getLaunchManager().getLaunchConfigurations();
+		ILaunchConfiguration[] launchConfigurations = DebugPlugin.getDefault().getLaunchManager()
+				.getLaunchConfigurations();
 		for (ILaunchConfiguration launchConfiguration : launchConfigurations) {
-			Map<String, Object> attributes = launchConfiguration
-					.getAttributes();
+			Map<String, Object> attributes = launchConfiguration.getAttributes();
 			Map<String, String> changes = new HashMap<String, String>();
 			for (Entry<String, Object> attribute : attributes.entrySet()) {
 				Object attributeValue = attribute.getValue();
@@ -26,9 +25,8 @@
 					String newValue;
 					if (fResource instanceof IContainer) {
 						newValue = dest
-								.append(attributeValuePath.removeFirstSegments(attributeValuePath
-										.matchingFirstSegments(fResource
-												.getFullPath())))
+								.append(attributeValuePath.removeFirstSegments(
+										attributeValuePath.matchingFirstSegments(fResource.getFullPath())))
 								.makeAbsolute().toString();
 					} else {
 						newValue = dest.makeAbsolute().toString();
@@ -36,22 +34,18 @@
 
 					changes.put(attributeName, newValue);
 				}
-				if (fResource.getLocation().isPrefixOf(attributeValuePath)) {
+				if (fResource.getLocation() != null && fResource.getLocation().isPrefixOf(attributeValuePath)) {
 					String newValue = null;
 					if (fResource instanceof IContainer) {
 						IPath projectPath = fResource.getFullPath();
-						IPath fileSystemPath = fResource.getLocation()
-								.removeLastSegments(projectPath.segmentCount());
+						IPath fileSystemPath = fResource.getLocation().removeLastSegments(projectPath.segmentCount());
 
-						newValue = fileSystemPath
-								.append(dest)
-								.append(attributeValuePath.removeFirstSegments(attributeValuePath
-										.matchingFirstSegments(fResource
-												.getLocation()))).toString();
+						newValue = fileSystemPath.append(dest).append(attributeValuePath
+								.removeFirstSegments(attributeValuePath.matchingFirstSegments(fResource.getLocation())))
+								.toString();
 					} else {
 						IPath projectPath = fResource.getFullPath();
-						IPath fileSystemPath = fResource.getLocation()
-								.removeLastSegments(projectPath.segmentCount());
+						IPath fileSystemPath = fResource.getLocation().removeLastSegments(projectPath.segmentCount());
 						newValue = fileSystemPath.append(dest).toString();
 					}
 					changes.put(attributeName, newValue);
@@ -61,8 +55,7 @@
 				fConfigurationChanges.put(launchConfiguration, changes);
 			}
 		}
-		for (Entry<ILaunchConfiguration, Map<String, String>> configurationChange : fConfigurationChanges
-				.entrySet()) {
+		for (Entry<ILaunchConfiguration, Map<String, String>> configurationChange : fConfigurationChanges.entrySet()) {
 			ILaunchConfiguration configuration = configurationChange.getKey();
 			ILaunchConfigurationWorkingCopy configurationCopy;
 			if (configuration instanceof ILaunchConfigurationWorkingCopy) {
@@ -70,10 +63,8 @@
 			} else {
 				configurationCopy = configuration.getWorkingCopy();
 			}
-			for (Entry<String, String> change : configurationChange.getValue()
-					.entrySet()) {
-				configurationCopy.setAttribute(change.getKey(),
-						change.getValue());
+			for (Entry<String, String> change : configurationChange.getValue().entrySet()) {
+				configurationCopy.setAttribute(change.getKey(), change.getValue());
 			}
 			configurationCopy.doSave();
 		}
