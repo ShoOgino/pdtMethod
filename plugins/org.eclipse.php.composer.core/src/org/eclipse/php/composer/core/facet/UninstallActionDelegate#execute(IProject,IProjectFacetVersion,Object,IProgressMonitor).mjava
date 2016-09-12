@@ -5,36 +5,18 @@
 			return;
 		}
 
-		progress.subTask("Uninstalling composer nature");
 		// remove the composer nature
-		IProjectDescription desc = project.getDescription();
-		ArrayList<String> natures = new ArrayList<String>(Arrays.asList(desc.getNatureIds()));
-		int index = natures.indexOf(ComposerNature.NATURE_ID);
+		int index = getBuilderIndex(project);
 		if (index != -1) {
-			natures.remove(index);
+			progress.subTask("Uninstalling composer builder");
+			final IProjectDescription description = project.getDescription();
+			final List<ICommand> commands = new ArrayList<ICommand>();
+			commands.addAll(Arrays.asList(description.getBuildSpec()));
+			commands.remove(index);
+
+			description.setBuildSpec(commands.toArray(new ICommand[commands.size()]));
+			project.setDescription(description, null);
 		}
-		desc.setNatureIds(natures.toArray(new String[] {}));
-		project.setDescription(desc, progress);
 
-		// progress.subTask("Uninstalling composer buildpath");
-
-		// maybe comment out this one:
-		// remove composer buildpath entry
-
-		/*
-		 * if (ComposerPlugin.getDefault().isBuildpathContainerEnabled()) {
-		 * IBuildpathContainer composerContainer = new
-		 * ComposerBuildpathContainer( new
-		 * Path(ComposerBuildpathContainerInitializer.CONTAINER),
-		 * scriptProject); List<IBuildpathEntry> entries = new
-		 * ArrayList<IBuildpathEntry>();
-		 * entries.remove(DLTKCore.newContainerEntry(composerContainer.getPath()
-		 * ));
-		 * 
-		 * // remove the composer buildpathentry to the project
-		 * BuildPathUtils.addEntriesToBuildPath(scriptProject, entries);
-		 * 
-		 * BuildpathUtil.setupVendorBuildpath(scriptProject, progress); }
-		 */
 	}
 

@@ -5,30 +5,17 @@
 			return;
 		}
 
-		progress.subTask("Installing composer nature");
-
-		// add the composer nature
-		ResourceUtil.addNature(project, progress, ComposerNature.NATURE_ID);
-
 		progress.subTask("Installing composer buildpath");
 
-		// maybe comment out this one:
-		// create composer buildpath entry
+		IProjectDescription description = project.getDescription();
+		final ICommand buildCommand = description.newCommand();
+		buildCommand.setBuilderName(ComposerBuildPathManagementBuilder.ID);
 
-		// if (ComposerPlugin.getDefault().isBuildpathContainerEnabled()) {
-		// IScriptProject scriptProject = DLTKCore.create(project);
-		// IBuildpathContainer composerContainer = new
-		// ComposerBuildpathContainer(
-		// new Path(ComposerBuildpathContainerInitializer.CONTAINER),
-		// scriptProject);
-		// List<IBuildpathEntry> entries = new ArrayList<IBuildpathEntry>();
-		// entries.add(DLTKCore.newContainerEntry(composerContainer.getPath()));
-		//
-		// // add the composer buildpathentry to the project
-		// BuildPathUtils.addEntriesToBuildPath(scriptProject, entries);
-		//
-		// BuildpathUtil.setupVendorBuildpath(scriptProject, progress);
-		//
-		// }
+		final List<ICommand> commands = new ArrayList<ICommand>();
+		commands.add(buildCommand);
+		commands.addAll(Arrays.asList(description.getBuildSpec()));
+
+		description.setBuildSpec(commands.toArray(new ICommand[commands.size()]));
+		project.setDescription(description, null);
 	}
 
