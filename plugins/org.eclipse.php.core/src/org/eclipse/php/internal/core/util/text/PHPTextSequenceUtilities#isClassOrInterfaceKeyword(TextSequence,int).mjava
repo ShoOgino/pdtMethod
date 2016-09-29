@@ -1,0 +1,29 @@
+	private static boolean isClassOrInterfaceKeyword(@NonNull TextSequence textSequence, int classStartOffset) {
+		if (classStartOffset == 0) {
+			return true;
+		}
+		int offset = readBackwardSpaces(textSequence, classStartOffset);
+		if (offset == 0) {
+			return true;
+		}
+		if (offset == classStartOffset && Character.isJavaIdentifierStart(textSequence.charAt(offset - 1))) {
+			return false;
+		}
+		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=501974
+		// Since PHP 5.5, keyword "class" can be used as a class constant name
+		// (for class name resolution). Let's keep it simple, exclude current
+		// match when there is an object/class operator before keyword "class"
+		// or "interface".
+		// XXX: handle comments between object/class operators and keyword
+		// "class" or "interface".
+		assert OBJECT_OPERATOR.length() == 2 && PAAMAYIM_NEKUDOTAYIM.length() == 2;
+		if (offset < 2) {
+			return true;
+		}
+		String s = textSequence.subSequence(offset - 2, offset).toString();
+		if (OBJECT_OPERATOR.equals(s) || PAAMAYIM_NEKUDOTAYIM.equals(s)) {
+			return false;
+		}
+		return true;
+	}
+
