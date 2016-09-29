@@ -2,12 +2,12 @@
 	 * Remove all the given use statements from a document. Be warned that the
 	 * "excludePositions" list will be updated to match the content of the
 	 * returned string. It is important that this list is sorted by increasing
-	 * position, or this method won't work correctly.
+	 * position and that the statement positions don't intersect with any of the
+	 * exclude positions, or this method won't work correctly.
 	 */
 	public static String stripUseStatements(UseStatement[] statements, IDocument old_doc, int start, int end,
 			List<Position> excludePositions) {
-		int offset = 0;
-		int lowestStatementStart = Integer.MAX_VALUE;
+		int removedLength = 0;
 		IDocument doc = new Document(old_doc.get());
 
 		for (UseStatement statement : statements) {
@@ -15,29 +15,32 @@
 				continue;
 			}
 			int length = statement.sourceEnd() - statement.sourceStart();
-			lowestStatementStart = Math.min(lowestStatementStart, statement.sourceStart());
 
 			try {
-				doc.replace(statement.sourceStart() - offset, length, "");
+				doc.replace(statement.sourceStart() - removedLength, length, "");
 			} catch (BadLocationException e) {
 			}
 
-			offset += length;
-		}
-
-		if (offset > 0) {
 			for (int i = excludePositions.size() - 1; i >= 0; i--) {
 				Position position = excludePositions.get(i);
-				if (position.getOffset() >= lowestStatementStart) {
-					position.setOffset(position.getOffset() - offset);
+				int offset = position.getOffset() + removedLength;
+				if (offset >= statement.sourceEnd()) {
+					position.setOffset(position.getOffset() - length);
+				} else if (offset + position.getLength() > statement.sourceStart()) {
+					// statement positions should never intersect with exclude
+					// positions, so (for safety) remove them from the exclusion
+					// list
+					excludePositions.remove(i);
 				} else {
 					break;
 				}
 			}
+
+			removedLength += length;
 		}
 
 		try {
-			return doc.get(start, end - offset - start);
+			return doc.get(start, end - start - removedLength);
 		} catch (BadLocationException e) {
 			return doc.get();
 		}
