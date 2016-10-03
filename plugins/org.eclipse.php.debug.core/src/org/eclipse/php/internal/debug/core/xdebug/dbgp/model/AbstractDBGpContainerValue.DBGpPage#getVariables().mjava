@@ -3,9 +3,8 @@
 			// Should be synchronized and lazy
 			if (fPartitionVariables == null) {
 				Node node = getOwner().getNode(fPage);
-				// Might be null in case of resolving some 'eval' expressions
-				if (node == null) {
-					return new IVariable[] { new DBGpUninitVariable(getDebugTarget()) };
+				if (canProcess(node)) {
+					return new IVariable[] { new DBGpUnreachableVariable(getDebugTarget()) };
 				}
 				NodeList childProperties = node.getChildNodes();
 				int childrenReceived = childProperties.getLength();
@@ -13,12 +12,7 @@
 				if (childrenReceived > 0) {
 					for (int i = 0; i < childrenReceived; i++) {
 						Node childProperty = childProperties.item(i);
-						IVariable child;
-						if (isUninit(childProperty)) {
-							child = new DBGpUninitVariable(getDebugTarget());
-						} else {
-							child = createVariable(childProperty);
-						}
+						IVariable child = createVariable(childProperty);
 						fPartitionVariables[i] = merge(child);
 					}
 				}

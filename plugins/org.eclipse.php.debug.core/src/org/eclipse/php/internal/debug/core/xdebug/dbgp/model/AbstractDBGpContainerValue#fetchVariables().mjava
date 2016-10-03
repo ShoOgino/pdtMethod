@@ -41,9 +41,8 @@
 					break;
 				}
 				}
-				// Might be null for watch expression variables
-				if (fDescriptor == null) {
-					fCurrentVariables = new IVariable[] {};
+				if (canProcess(fDescriptor)) {
+					fCurrentVariables = new IVariable[] { new DBGpUnreachableVariable(getDebugTarget()) };
 					return;
 				}
 				childProperties = fDescriptor.getChildNodes();
@@ -54,12 +53,7 @@
 			if (childrenReceived > 0) {
 				for (int i = 0; i < childrenReceived; i++) {
 					Node childProperty = childProperties.item(i);
-					IVariable child;
-					if (isUninit(childProperty)) {
-						child = new DBGpUninitVariable(getDebugTarget());
-					} else {
-						child = createVariable(childProperty);
-					}
+					IVariable child = createVariable(childProperty);
 					fCurrentVariables[i] = merge(child);
 				}
 			}
