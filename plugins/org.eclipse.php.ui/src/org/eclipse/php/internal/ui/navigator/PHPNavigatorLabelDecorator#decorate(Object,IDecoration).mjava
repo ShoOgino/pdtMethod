@@ -1,0 +1,23 @@
+	@Override
+	public void decorate(Object element, IDecoration decoration) {
+		if (element instanceof IFolder) {
+			IDecorationContext context = decoration.getDecorationContext();
+			if (context instanceof DecorationContext) {
+				((DecorationContext) context).putProperty(IDecoration.ENABLE_REPLACE, Boolean.TRUE);
+			}
+			IFolder folder = (IFolder) element;
+			IScriptProject project = DLTKCore.create(folder.getProject());
+			try {
+				if (PHPToolkitUtil.isPhpProject(folder.getProject()) && project.isOnBuildpath(folder)) {
+					if (lfm.isInLibraryFolder(folder)) {
+						decoration.addOverlay(PHPPluginImages.DESC_OBJS_PHP_LIBFOLDER, IDecoration.REPLACE);
+					} else {
+						decoration.addOverlay(DLTKPluginImages.DESC_OBJS_PACKFRAG_ROOT, IDecoration.REPLACE);
+					}
+				}
+			} catch (CoreException e) {
+				Logger.logException(e);
+			}
+		}
+	}
+
