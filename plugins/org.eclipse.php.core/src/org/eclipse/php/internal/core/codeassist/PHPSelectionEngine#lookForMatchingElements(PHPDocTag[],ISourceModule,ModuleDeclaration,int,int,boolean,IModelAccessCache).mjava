@@ -1,0 +1,108 @@
+	private IModelElement[] lookForMatchingElements(PHPDocTag[] tags, ISourceModule sourceModule,
+			ModuleDeclaration parsedUnit, int offset, int end, boolean isMethodOrFunction, IModelAccessCache cache)
+					throws ModelException {
+		if (tags == null) {
+			return null;
+		}
+		for (PHPDocTag phpDocTag : tags) {
+			if (phpDocTag.sourceStart() <= offset && phpDocTag.sourceEnd() >= end) {
+				if (phpDocTag.getTagKind() == TagKind.INHERITDOC) {
+					Declaration declaration = ASTUtils.findDeclarationAfterPHPdoc(parsedUnit, offset);
+					if (declaration != null) {
+						IModelElement element = sourceModule.getElementAt(declaration.sourceStart());
+						if (element != null) {
+							try {
+								if (element.getElementType() == IModelElement.METHOD) {
+									IType type = (IType) element.getParent();
+									return PHPModelUtils.getSuperTypeHierarchyMethod(type, null,
+											element.getElementName(), true, null);
+								} else if (element.getElementType() == IModelElement.FIELD) {
+									IType type = (IType) element.getParent();
+									return PHPModelUtils.getSuperTypeHierarchyField(type, null,
+											element.getElementName(), true, null);
+								} else if (element.getElementType() == IModelElement.TYPE) {
+									return PHPModelUtils.getSuperClasses((IType) element, null);
+								}
+							} catch (CoreException e) {
+								Logger.logException(e);
+							}
+						}
+					}
+				} else {
+					for (TypeReference typeReference : phpDocTag.getTypeReferences()) {
+						if (typeReference.sourceStart() <= offset && typeReference.sourceEnd() >= end) {
+							boolean isNamespacePart = false;
+							String name = typeReference.getName();
+							// remove additional end elements like '[]' or '()'
+							if (typeReference.sourceEnd() > end) {
+								isNamespacePart = name.charAt(
+										end - typeReference.sourceStart()) == NamespaceReference.NAMESPACE_SEPARATOR;
+								name = name.substring(0, end - typeReference.sourceStart());
+							}
+							String[] parts = name.split(Pattern.quote(PAAMAYIM_NEKUDOTAIM), 3);
+							if (parts.length > 1) {
+								if (parts.length == 2 && parts[0].length() > 0 && parts[1].length() > 0) {
+									boolean isVariable = parts[1].charAt(0) == '$';
+									// to determine if it was the part before
+									// "::" that was selected
+									boolean isClassOrNamespacePartSelected = offset <= typeReference.sourceStart()
+											+ parts[0].length();
+									IType[] types = filterNS(
+											PHPModelUtils.getTypes(parts[0], sourceModule, offset, cache, null));
+									if (isClassOrNamespacePartSelected) {
+										// NB : no need to check for namespaces,
+										// we cannot end here with variable
+										// "isNamespacePart" set to true
+										// and variable "name" containing "::"
+										return types;
+									} else {
+										if (isMethodOrFunction && !isVariable) {
+											// class method
+											List<IMethod> methods = new LinkedList<IMethod>();
+											for (IType type : types) {
+												methods.addAll(Arrays
+														.asList(PHPModelUtils.getTypeMethod(type, parts[1], true)));
+											}
+											return methods.toArray(new IMethod[methods.size()]);
+										} else {
+											// class field or class constant
+											List<IField> fields = new LinkedList<IField>();
+											for (IType type : types) {
+												fields.addAll(Arrays
+														.asList(PHPModelUtils.getTypeField(type, parts[1], true)));
+											}
+											return fields.toArray(new IField[fields.size()]);
+										}
+									}
+								}
+							} else if (name.length() > 0) {
+								boolean isVariable = name.charAt(0) == '$';
+								if (isVariable) {
+									return PHPModelUtils.getFields(name, sourceModule, offset, cache, null);
+								} else if (isMethodOrFunction) {
+									return PHPModelUtils.getFunctions(name, sourceModule, offset, cache, null);
+								} else {
+									// it's either a
+									// class/interface/namespace...
+									if (isNamespacePart) {
+										return PHPModelUtils.getNamespaceOf(
+												name + NamespaceReference.NAMESPACE_SEPARATOR, sourceModule, offset,
+												cache, null);
+									}
+									IType[] types = filterNS(
+											PHPModelUtils.getTypes(name, sourceModule, offset, cache, null));
+									if (types.length == 0) {
+										// ... or a global constant
+										return PHPModelUtils.getFields(name, sourceModule, offset, cache, null);
+									}
+									return types;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return null;
+	}
+

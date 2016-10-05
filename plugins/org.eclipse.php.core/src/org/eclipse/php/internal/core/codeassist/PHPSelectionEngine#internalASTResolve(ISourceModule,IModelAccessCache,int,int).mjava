@@ -21,11 +21,6 @@
 
 		end = PHPTextSequenceUtilities.readIdentifierEndIndex(source, end, true);
 
-		int methodEnd = PHPTextSequenceUtilities.getMethodEndIndex(source, end);
-		if (methodEnd != -1) {
-			end = methodEnd;
-		}
-
 		ModuleDeclaration parsedUnit = SourceParserUtil.getModuleDeclaration(sourceModule, null);
 
 		// boolean inDocBlock=false;
@@ -38,9 +33,15 @@
 				if (realStart <= offset && realEnd >= end) {
 					// inDocBlock=true;
 					PHPDocTag[] tags = phpDocBlock.getTags();
-					return lookForMatchingElements(tags, sourceModule, parsedUnit, offset, end, cache);
+					boolean isMethodOrFunction = PHPTextSequenceUtilities.getMethodEndIndex(source, end, false) != -1;
+					return lookForMatchingElements(tags, sourceModule, parsedUnit, offset, end, isMethodOrFunction,
+							cache);
 				}
 			}
+		}
+		int methodEnd = PHPTextSequenceUtilities.getMethodEndIndex(source, end, true);
+		if (methodEnd != -1) {
+			end = methodEnd;
 		}
 		ASTNode node = ASTUtils.findMinimalNode(parsedUnit, offset, end);
 		if (node == null) {
@@ -130,7 +131,7 @@
 			String name = ((NamespaceReference) node).getName();
 			IType[] namespace = PHPModelUtils.getNamespaceOf(name + NamespaceReference.NAMESPACE_SEPARATOR,
 					sourceModule, offset, cache, null);
-			return namespace == null ? EMPTY : namespace;
+			return namespace;
 		}
 		// Class/Interface reference:
 		else if (node instanceof TypeReference) {
@@ -142,7 +143,7 @@
 			String name = evaluatedType.getTypeName();
 			IModelElement[] types = PHPModelUtils.getTypes(name, sourceModule, offset, cache, null,
 					!(evaluatedType instanceof PHPTraitType));
-			if (types == null || types.length == 0) {
+			if (types.length == 0) {
 				// This can be a constant or namespace in PHP 5.3:
 				if (name.length() > 0 && name.charAt(0) == NamespaceReference.NAMESPACE_SEPARATOR) {
 					name = name.substring(1);
@@ -150,14 +151,14 @@
 				IDLTKSearchScope scope = SearchEngine.createSearchScope(sourceModule.getScriptProject());
 				types = PhpModelAccess.getDefault().findNamespaces(null, name, MatchRule.EXACT, 0, 0, scope, null);
 
-				if (types == null || types.length == 0) {
+				if (types.length == 0) {
 					name = NamespaceReference.NAMESPACE_SEPARATOR + name;
 					types = PHPModelUtils.getFields(name, sourceModule, offset, cache, null);
 				}
-				if (types == null || types.length == 0) {
+				if (types.length == 0) {
 					types = PHPModelUtils.getFunctions(name, sourceModule, offset, cache, null);
 				}
-				if (types == null || types.length == 0) {
+				if (types.length == 0) {
 					types = PHPModelUtils.getFunctions(typeReference.getName(), sourceModule, offset, cache, null);
 				}
 			}
