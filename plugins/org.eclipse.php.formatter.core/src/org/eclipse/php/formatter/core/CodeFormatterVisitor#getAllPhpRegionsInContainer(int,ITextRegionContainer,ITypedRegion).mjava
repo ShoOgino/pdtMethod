@@ -1,0 +1,53 @@
+	private List<IRegion> getAllPhpRegionsInContainer(int containerOffset, ITextRegionContainer container,
+			ITypedRegion partition) {
+		int start = partition.getOffset();
+		int end = partition.getOffset() + partition.getLength();
+		List<IRegion> result = new ArrayList<IRegion>();
+		Iterator<?> regionsIt = container.getRegions().iterator();
+		IRegion current = null;
+
+		while (regionsIt.hasNext()) {
+			ITextRegion region = (ITextRegion) regionsIt.next();
+			if (containerOffset + region.getStart() < start) {
+				continue;
+			}
+			if (containerOffset + region.getStart() + region.getLength() > end) {
+				break;
+			}
+			if (PHPRegionContext.PHP_OPEN.equals(region.getType())) {
+				if (current != null) {
+					result.add(current);
+				}
+				current = new Region(containerOffset + region.getStart(), region.getLength());
+			} else if (PHPRegionContext.PHP_CONTENT.equals(region.getType())) {
+				if (current != null) {
+					if (current.getOffset() + current.getLength() == containerOffset + region.getStart()) {
+						current = new Region(current.getOffset(), current.getLength() + region.getLength());
+					} else {
+						result.add(current);
+						current = new Region(containerOffset + region.getStart(), region.getLength());
+					}
+				} else {
+					current = new Region(containerOffset + region.getStart(), region.getLength());
+				}
+			} else if (PHPRegionContext.PHP_CLOSE.equals(region.getType())) {
+				if (current != null) {
+					if (current.getOffset() + current.getLength() == containerOffset + region.getStart()) {
+						result.add(new Region(current.getOffset(), current.getLength() + region.getLength()));
+					} else {
+						result.add(current);
+						result.add(new Region(containerOffset + region.getStart(), region.getLength()));
+					}
+				} else {
+					result.add(new Region(containerOffset + region.getStart(), region.getLength()));
+				}
+				current = null;
+			}
+		}
+		if (current != null) {
+			result.add(current);
+		}
+
+		return result;
+	}
+

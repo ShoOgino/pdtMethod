@@ -1,0 +1,39 @@
+	/**
+	 * PHP Partitions can contain contiguous &lt;?php ?&gt; regions (see
+	 * {@link PHPStructuredTextPartitioner#computePartitioning(int, int)}), we
+	 * have to split them manually.
+	 * 
+	 * @param partition
+	 *            PHP Partition
+	 * @return individual &lt;?php ?&gt; regions
+	 */
+	private List<IRegion> getAllPhpRegionsInPhpPartition(ITypedRegion partition) {
+		assert document instanceof IStructuredDocument;
+		assert PHPPartitionTypes.PHP_DEFAULT.equals(partition.getType());
+
+		List<IRegion> regions = new ArrayList<IRegion>();
+		int offset = partition.getOffset();
+		int end = partition.getOffset() + partition.getLength();
+
+		while (offset < end) {
+			IStructuredDocumentRegion sdRegion = ((IStructuredDocument) document).getRegionAtCharacterOffset(offset);
+			if (sdRegion == null) {
+				return regions;
+			}
+
+			ITextRegion phpScriptRegion = sdRegion.getRegionAtCharacterOffset(offset);
+
+			if (phpScriptRegion instanceof ITextRegionContainer) {
+				regions.addAll(getAllPhpRegionsInContainer(sdRegion.getStartOffset() + phpScriptRegion.getStart(),
+						(ITextRegionContainer) phpScriptRegion, partition));
+				offset = sdRegion.getStartOffset() + phpScriptRegion.getStart() + phpScriptRegion.getLength();
+			} else {
+				// sdRegion contains opening PHP tag, PHP content and closing
+				// PHP tag
+				regions.add(new Region(sdRegion.getStartOffset(), sdRegion.getLength()));
+				offset = sdRegion.getStartOffset() + sdRegion.getLength();
+			}
+		}
+		return regions;
+	}
+
