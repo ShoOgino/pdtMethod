@@ -9,10 +9,18 @@
 						.getRegionAtCharacterOffset(position);
 				if (sdRegion != null) {
 					ITextRegion textRegion = sdRegion.getRegionAtCharacterOffset(position);
+					int startRegion = sdRegion.getStartOffset();
+					// in case of container we have the extract the
+					// PhpScriptRegion
+					if (textRegion instanceof ITextRegionContainer) {
+						ITextRegionContainer container = (ITextRegionContainer) textRegion;
+						startRegion += container.getStart();
+						textRegion = container.getRegionAtCharacterOffset(position);
+					}
 					if (textRegion instanceof IPhpScriptRegion) {
 						IPhpScriptRegion phpScriptRegion = (IPhpScriptRegion) textRegion;
-						textRegion = phpScriptRegion
-								.getPhpToken(position - sdRegion.getStartOffset() - phpScriptRegion.getStart());
+						startRegion += phpScriptRegion.getStart();
+						textRegion = phpScriptRegion.getPhpToken(position - startRegion);
 						return textRegion;
 					}
 				}
