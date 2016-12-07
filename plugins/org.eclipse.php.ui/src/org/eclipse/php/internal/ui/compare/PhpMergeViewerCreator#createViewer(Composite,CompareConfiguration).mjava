@@ -1,5 +1,64 @@
+	@Override
 	public Viewer createViewer(Composite parent, CompareConfiguration config) {
-		// return new TextMergeViewer(parent, config);
-		return new PhpMergeViewer(parent, config);
+		return new org.eclipse.compare.contentmergeviewer.TextMergeViewer(parent, config) {
+
+			@Override
+			protected void configureTextViewer(TextViewer textViewer) {
+				if (textViewer instanceof SourceViewer) {
+					((SourceViewer) textViewer).configure(new PHPStructuredTextViewerConfiguration());
+				}
+			}
+
+			@Override
+			protected String getDocumentPartitioning() {
+				return IStructuredPartitioning.DEFAULT_STRUCTURED_PARTITIONING;
+			}
+
+			public IDocumentPartitioner getDocumentPartitioner() {
+				return new PHPStructuredTextPartitioner();
+			}
+
+			@Override
+			protected void setupDocument(IDocument document) {
+				super.setupDocument(createStructuredDocument(document));
+			}
+
+			@Override
+			protected SourceViewer createSourceViewer(Composite parent, int textOrientation) {
+				return new StructuredTextViewer(parent, new CompositeRuler(), null, false,
+						textOrientation | SWT.H_SCROLL | SWT.V_SCROLL) {
+					@Override
+					public void setDocument(IDocument document, IAnnotationModel annotationModel, int modelRangeOffset,
+							int modelRangeLength) {
+						super.setDocument(createStructuredDocument(document), annotationModel, modelRangeOffset,
+								modelRangeLength);
+					}
+				};
+			}
+
+			/*
+			 * This method is workaround to use SSE viewer to compare files
+			 */
+			private IDocument createStructuredDocument(IDocument document) {
+				IDocument newDoc = document;
+				if (newDoc != null && !(document instanceof IStructuredDocument)) {
+					newDoc = StructuredDocumentFactory.getNewStructuredDocumentInstance(new PhpSourceParser());
+					newDoc.set(document.get());
+
+					IDocumentPartitioner partitioner = getDocumentPartitioner();
+					if (partitioner != null) {
+						if (newDoc instanceof JobSafeStructuredDocument) {
+							((JobSafeStructuredDocument) newDoc).setDocumentPartitioner(
+									"org.eclipse.wst.sse.core.default_structured_text_partitioning", //$NON-NLS-1$
+									partitioner);
+						} else {
+							newDoc.setDocumentPartitioner(partitioner);
+						}
+						partitioner.connect(newDoc);
+					}
+				}
+				return newDoc;
+			}
+		};
 	}
 
