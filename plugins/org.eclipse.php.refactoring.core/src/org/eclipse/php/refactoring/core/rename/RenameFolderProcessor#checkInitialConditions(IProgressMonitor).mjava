@@ -4,14 +4,12 @@
 	 * @see org.eclipse.php.refactoring.core.rename.AbstractRenameProcessor#
 	 * checkInitialConditions(org.eclipse.core.runtime.IProgressMonitor)
 	 */
-	public RefactoringStatus checkInitialConditions(IProgressMonitor pm)
-			throws OperationCanceledException {
+	public RefactoringStatus checkInitialConditions(IProgressMonitor pm) throws OperationCanceledException {
 		RefactoringStatus status = new RefactoringStatus();
 
 		if (!checkReadOnlyAndNull(resource)) {
-			status.merge(RefactoringStatus.createFatalErrorStatus(NLS.bind(
-					PhpRefactoringCoreMessages
-							.getString("RenameFileProcessor.7"), resource))); //$NON-NLS-1$
+			status.merge(RefactoringStatus.createFatalErrorStatus(
+					NLS.bind(PhpRefactoringCoreMessages.getString("RenameFileProcessor.7"), resource))); //$NON-NLS-1$
 		}
 		try {
 			boolean hasExternalDependencies = false;
@@ -23,16 +21,13 @@
 				IContainer container = (IContainer) resource;
 
 				Set<IFile> phpFilesSet = new HashSet<IFile>();
-				MoveUtils.getAllPHPFiles(new IResource[] { container },
-						phpFilesSet);
+				MoveUtils.getAllPHPFiles(new IResource[] { container }, phpFilesSet);
 				for (IFile file : phpFilesSet) {
-					ISourceModule sourceModule = DLTKCore
-							.createSourceModuleFrom(file);
+					ISourceModule sourceModule = DLTKCore.createSourceModuleFrom(file);
 					IProject project = file.getProject();
 					PHPVersion version = ProjectOptions.getPhpVersion(project);
 
-					ASTParser newParser = ASTParser.newParser(version,
-							sourceModule);
+					ASTParser newParser = ASTParser.newParser(version, sourceModule);
 					Program program = newParser.createAST(null);
 					participantFiles.put(file, program);
 
@@ -41,8 +36,7 @@
 			}
 
 			if (hasExternalDependencies) {
-				final String message = PhpRefactoringCoreMessages
-						.getString("AbstractRenameProcessor.1"); //$NON-NLS-1$
+				final String message = PhpRefactoringCoreMessages.getString("AbstractRenameProcessor.1"); //$NON-NLS-1$
 				return RefactoringStatus.createWarningStatus(message);
 			}
 
