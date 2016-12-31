@@ -7,35 +7,28 @@
 			// Work around for getting type binding of class field.
 			// Get the TypeDeclaration of the field at first and then get the
 			// type binding.
-			TypeDeclaration typeDecl = RefactoringUtility
-					.getType(fieldsDeclaration);
+			TypeDeclaration typeDecl = RefactoringUtility.getType(fieldsDeclaration);
 			ITypeBinding declClass = null;
 			if (typeDecl != null) {
 				declClass = typeDecl.resolveTypeBinding();
 			}
 
 			if (declClass != null) {
-				final Variable[] variableNames = fieldsDeclaration
-						.getVariableNames();
+				final Variable[] variableNames = fieldsDeclaration.getVariableNames();
 				for (int j = 0; j < variableNames.length; j++) {
 					// safe cast to identifier
-					if (declClass.equals(type)
-							|| traitEqual(declClass, variableNames[j].getName())) {
+					if (declClass.equals(type) || traitEqual(declClass, variableNames[j].getName())) {
 						assert variableNames[j].getName() instanceof Identifier;
-						final Identifier variable = (Identifier) variableNames[j]
-								.getName();
+						final Identifier variable = (Identifier) variableNames[j].getName();
 						handleIdentifier(variable);
-					} else if (declClass.isSubTypeCompatible(type)
-							|| type.isSubTypeCompatible(declClass)) {
+					} else if (type != null
+							&& (declClass.isSubTypeCompatible(type) || type.isSubTypeCompatible(declClass))) {
 						if (fieldsDeclaration.getModifier() != Modifiers.AccPrivate) {
-							final Identifier variable = (Identifier) variableNames[j]
-									.getName();
+							final Identifier variable = (Identifier) variableNames[j].getName();
 							handleIdentifier(variable);
 						}
-					} else if (traitInSuperEqual(declClass,
-							(Identifier) variableNames[j].getName())) {
-						final Identifier variable = (Identifier) variableNames[j]
-								.getName();
+					} else if (traitInSuperEqual(declClass, (Identifier) variableNames[j].getName())) {
+						final Identifier variable = (Identifier) variableNames[j].getName();
 						handleIdentifier(variable);
 					}
 				}
