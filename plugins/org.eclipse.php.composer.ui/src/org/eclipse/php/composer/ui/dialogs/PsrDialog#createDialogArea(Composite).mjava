@@ -22,6 +22,10 @@
 
 		if (namespace.getNamespace() != null) {
 			namespaceControl.setText(namespace.getNamespace());
+		} else {
+			// must never be null, so at least be sure to always return an empty
+			// string
+			namespace.setNamespace(""); //$NON-NLS-1$
 		}
 
 		namespaceControl.addModifyListener(new ModifyListener() {
@@ -82,6 +86,7 @@
 		btnRemove.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false, 1, 1));
 		btnRemove.setText("Remove");
 
+		// XXX: add/remove listener on dialog open/close
 		btnRemove.addSelectionListener(new SelectionAdapter() {
 
 			@Override
@@ -105,7 +110,12 @@
 
 		namespace.addPropertyChangeListener(new PropertyChangeListener() {
 			public void propertyChange(PropertyChangeEvent e) {
+				// "namespace" can be modified afterwards by
+				// PsrSection#handleEdit()
 				if (e.getPropertyName().contains("#")) {
+					if (pathViewer.getControl().isDisposed()) {
+						return;
+					}
 					pathViewer.refresh();
 				}
 			}

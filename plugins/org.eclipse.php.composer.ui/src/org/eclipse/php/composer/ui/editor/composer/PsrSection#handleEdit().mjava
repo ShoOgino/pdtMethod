@@ -9,7 +9,7 @@
 		}
 
 		if (element instanceof Namespace) {
-			namespace = ((Namespace) element).clone();
+			namespace = (Namespace) element;
 		}
 
 		if (namespace != null) {
@@ -18,9 +18,23 @@
 
 			if (diag.open() == Dialog.OK) {
 				Namespace nmspc = psr.get(namespace.getNamespace());
-				nmspc.clear();
-				nmspc.setNamespace(diag.getNamespace().getNamespace());
-				nmspc.addPaths(diag.getNamespace().getPaths());
+				if (nmspc.equals(diag.getNamespace())) {
+					// nothing changed
+					return;
+				}
+				if (!nmspc.getNamespace().equals(diag.getNamespace().getNamespace())) {
+					// https://bugs.eclipse.org/bugs/show_bug.cgi?id=507543
+					// We cannot simply do
+					// "nmspc.setNamespace(diag.getNamespace().getNamespace());"
+					// since namespace name nmspc.getNamespace() is used as key
+					// in map psr.properties
+					// We do remove&add to properly update psr.properties keys
+					psr.remove(nmspc);
+					psr.add(diag.getNamespace());
+				} else {
+					nmspc.clear();
+					nmspc.addPaths(diag.getNamespace().getPaths());
+				}
 			}
 		}
 	}
