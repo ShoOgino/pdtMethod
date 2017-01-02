@@ -4,24 +4,49 @@
 
 		handleBlockTagTitle(PHPDocumentationMessages.JavaDoc2HTMLTextReader_throws_section);
 
+		ArrayList<String> descList = new ArrayList<String>();
+
 		for (Iterator iter = tags.iterator(); iter.hasNext();) {
 			PHPDocTag tag = (PHPDocTag) iter.next();
-			fBuf.append(BlOCK_TAG_ENTRY_START);
-			handleThrowsTag(tag);
-			doWorkAround();
-			fBuf.append(BlOCK_TAG_ENTRY_END);
+			List<TypeReference> fragments = tag.getTypeReferences();
+			if (fragments.size() > 0) {
+				descList.add(handleThrowsException(fragments.get(0).getName().trim(), tag.getValue()));
+			}
 		}
 		for (int i = 0; i < exceptionDescriptions.length; i++) {
-			CharSequence description = exceptionDescriptions[i];
+			// by construction, the value of "name" must be a tag name in the
+			// "tags" list
 			String name = (String) exceptionNames.get(i);
+			CharSequence rawDescription = exceptionDescriptions[i];
 			if (name != null) {
-				fBuf.append(BlOCK_TAG_ENTRY_START);
-				if (description != null) {
-					fBuf.append(ScriptElementLabels.CONCAT_STRING);
-					fBuf.append(description);
+				String fullDesc = handleThrowsException(name, rawDescription);
+				String emptyDesc = handleThrowsException(name, null);
+				// Add the inherited exception description when it differs from
+				// the tag exception description.
+				// Also only add the inherited description when it is a full
+				// exception description.
+				if (!descList.contains(fullDesc) && !fullDesc.equals(emptyDesc)) {
+					boolean wasEmptyDescFound = false;
+					// replace existing empty descriptions by full descriptions
+					for (int j = 0; j < descList.size(); j++) {
+						if (emptyDesc.equals(descList.get(j))) {
+							descList.set(j, fullDesc);
+							wasEmptyDescFound = true;
+						}
+					}
+					// add the inherited exception description when necessary
+					if (!wasEmptyDescFound) {
+						descList.add(fullDesc);
+					}
 				}
-				fBuf.append(BlOCK_TAG_ENTRY_END);
 			}
+		}
+
+		for (int i = 0; i < descList.size(); i++) {
+			fBuf.append(BlOCK_TAG_ENTRY_START);
+			fBuf.append(descList.get(i));
+			doWorkAround();
+			fBuf.append(BlOCK_TAG_ENTRY_END);
 		}
 	}
 
