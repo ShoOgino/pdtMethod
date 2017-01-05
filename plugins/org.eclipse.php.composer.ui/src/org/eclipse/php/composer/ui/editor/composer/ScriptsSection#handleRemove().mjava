@@ -1,30 +1,42 @@
 	private void handleRemove() {
 		Object element = ((StructuredSelection) scriptsViewer.getSelection()).getFirstElement();
 		ScriptsController controller = (ScriptsController) scriptsViewer.getLabelProvider();
-		String text = controller.getText(element);
 
-		// remove event
-		if (Arrays.asList(Scripts.getEvents()).contains(text)) {
+		if (element instanceof Script) {
+			String text = controller.getText(element);
 			MessageDialog diag = new MessageDialog(scriptsViewer.getTree().getShell(), "Remove Event", null,
 					"Do you really wan't to remove " + text + "?", MessageDialog.WARNING, new String[] { "Yes", "No" },
 					0);
 
 			if (diag.open() == Dialog.OK) {
-				composerPackage.getScripts().remove(text);
+				composerPackage.getScripts().remove((Script) element);
 			}
-		}
+		} else if (element instanceof String) {
+			String text = controller.getText(element);
+			Script script = (Script) ((ScriptsController) scriptsViewer.getContentProvider()).getParent(element);
+			if (script != null) {
+				int index = -1;
+				// find selection index
+				TreeItem selectedItem = scriptsViewer.getTree().getSelection()[0];
+				TreeItem[] items = selectedItem.getParentItem().getItems();
+				for (int i = 0; i < items.length; i++) {
+					if (items[i] == selectedItem) {
+						index = i;
+						break;
+					}
+				}
 
-		// remove handler
-		else {
-			String event = controller.getText(controller.getParent(element));
+				assert index != -1;
 
-			MessageDialog diag = new MessageDialog(scriptsViewer.getTree().getShell(), "Remove Event", null,
-					"Do you really wan't to remove " + text + " in " + event + "?", MessageDialog.WARNING,
-					new String[] { "Yes", "No" }, 0);
+				String event = controller.getText(script);
 
-			if (diag.open() == Dialog.OK) {
-				JsonArray events = composerPackage.getScripts().getAsArray(event);
-				events.remove(text);
+				MessageDialog diag = new MessageDialog(scriptsViewer.getTree().getShell(), "Remove Event", null,
+						"Do you really wan't to remove '" + text + "' in " + event + "?", MessageDialog.WARNING,
+						new String[] { "Yes", "No" }, 0);
+
+				if (diag.open() == Dialog.OK) {
+					script.getHandlers().remove(index);
+				}
 			}
 		}
 	}

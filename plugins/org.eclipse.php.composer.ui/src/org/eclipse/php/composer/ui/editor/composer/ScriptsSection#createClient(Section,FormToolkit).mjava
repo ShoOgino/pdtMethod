@@ -10,8 +10,32 @@
 		Composite container = createClientContainer(section, 2, toolkit);
 		createViewerPartControl(container, SWT.SINGLE, 2, toolkit);
 		TreePart treePart = getTreePart();
-		ScriptsController scriptsController = new ScriptsController();
+		ScriptsController scriptsController = new ScriptsController(treePart.getTreeViewer());
 		scriptsViewer = treePart.getTreeViewer();
+		scriptsViewer.setUseHashlookup(true);
+		scriptsViewer.setComparer(new IElementComparer() {
+			@Override
+			public int hashCode(Object element) {
+				return element.hashCode();
+			}
+
+			// to support duplicate handler values correctly in TreeViewers
+			// since handlers (attached to a Script object) are stored in a
+			// JsonArray (and not in a UniqueJsonArray)
+			@Override
+			public boolean equals(Object a, Object b) {
+				if (a instanceof String && b instanceof String) {
+					// we cannot reliably compare multiple handler strings
+					// between them, because at least multiple empty handler
+					// strings have all same id (java optimization: a single
+					// empty string instance is available)!
+					// TODO: use a wrapper class around strings to be able to
+					// reliably use the "==" operator everywhere
+					return false;
+				}
+				return a == b;
+			}
+		});
 		scriptsViewer.setContentProvider(scriptsController);
 		scriptsViewer.setLabelProvider(scriptsController);
 
