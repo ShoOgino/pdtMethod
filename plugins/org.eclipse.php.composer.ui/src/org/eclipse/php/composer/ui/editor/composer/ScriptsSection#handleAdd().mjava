@@ -1,21 +1,18 @@
 	private void handleAdd() {
-		Script script = null;
-		Object element = ((StructuredSelection) scriptsViewer.getSelection()).getFirstElement();
+		ScriptDialog diag = new ScriptDialog(scriptsViewer.getTree().getShell());
 
-		// get parent if element is string
-		if (element instanceof String) {
-			element = ((ScriptsController) scriptsViewer.getContentProvider()).getParent(element);
+		if (!scriptsViewer.getSelection().isEmpty()) {
+			Object element = ((StructuredSelection) scriptsViewer.getSelection()).getFirstElement();
+			ScriptsController controller = (ScriptsController) scriptsViewer.getLabelProvider();
+			String text = controller.getText(element);
+			if (Arrays.asList(Scripts.getEvents()).contains(text)) {
+				diag.setEvent(text);
+			}
 		}
 
-		if (element instanceof Script) {
-			script = (Script) element;
-		}
-
-		ScriptDialog dialog = new ScriptDialog(scriptsViewer.getTree().getShell(),
-				new Script(script != null ? script.getScript() : null, ""), 0);
-
-		if (dialog.open() == Dialog.OK && dialog.getScript().getScript() != null) {
-			composerPackage.getScripts().add(dialog.getScript());
+		if (diag.open() == Dialog.OK && diag.getEvent() != null) {
+			composerPackage.getScripts().getAsArray(diag.getEvent()).add(diag.getHandler());
+			refresh();
 		}
 	}
 

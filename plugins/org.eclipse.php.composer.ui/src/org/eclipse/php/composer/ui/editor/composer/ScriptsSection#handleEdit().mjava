@@ -1,42 +1,34 @@
 	private void handleEdit() {
-
-		Script script = null;
-		int index = -1;
 		Object element = ((StructuredSelection) scriptsViewer.getSelection()).getFirstElement();
+		ScriptsController controller = (ScriptsController) scriptsViewer.getLabelProvider();
+		String text = controller.getText(element);
+		ScriptDialog diag = new ScriptDialog(scriptsViewer.getTree().getShell());
 
-		// get parent if element is string
-		if (element instanceof String) {
-			element = ((ScriptsController) scriptsViewer.getContentProvider()).getParent(element);
-			// find selection index
-			TreeItem selectedItem = scriptsViewer.getTree().getSelection()[0];
-			TreeItem[] items = selectedItem.getParentItem().getItems();
-			for (int i = 0; i < items.length; i++) {
-				if (items[i] == selectedItem) {
-					index = i;
-					break;
+		// edit event
+		if (Arrays.asList(Scripts.getEvents()).contains(text)) {
+			diag.setEvent(text);
+			diag.setHandlerEnabled(false);
+			if (diag.open() == Dialog.OK && diag.getEvent() != null) {
+				String event = diag.getEvent();
+				if (!event.equalsIgnoreCase(text)) {
+					composerPackage.getScripts().set(event, composerPackage.getScripts().getAsArray(text));
+					composerPackage.getScripts().remove(text);
 				}
 			}
 		}
 
-		if (element instanceof Script) {
-			script = (Script) element;
-		}
-
-		if (script != null && index != -1) {
-			ScriptDialog diag = new ScriptDialog(scriptsViewer.getTree().getShell(), script.clone(), index);
+		// edit handler
+		else {
+			String event = controller.getText(controller.getParent(element));
+			diag.setEvent(event);
+			diag.setHandler(text);
 			diag.setEventEnabled(false);
-
 			if (diag.open() == Dialog.OK) {
-				Script cpscript = composerPackage.getScripts().get(script.getScript());
-				if (cpscript.equals(diag.getScript())) {
-					// nothing changed
-					return;
+				String handler = diag.getHandler();
+				if (!handler.equalsIgnoreCase(text)) {
+					JsonArray events = composerPackage.getScripts().getAsArray(event);
+					events.replace(text, handler);
 				}
-
-				assert cpscript.getScript().equals(diag.getScript().getScript());
-
-				cpscript.clear();
-				cpscript.addHandlers(diag.getScript().getHandlers());
 			}
 		}
 	}
