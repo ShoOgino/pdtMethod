@@ -8,19 +8,25 @@
 				findAllPossibleTypes(possibleType, foundTypes, level, false);
 			}
 			return true;
-		}
-		if (type instanceof MultiTypeType) {
+		} else if (type instanceof MultiTypeType) {
 			// https://bugs.eclipse.org/bugs/show_bug.cgi?id=467151
 			List<IEvaluatedType> allPossibleTypes = ((MultiTypeType) type).getTypes();
-			// XXX: allPossibleTypes should not be empty
-			for (IEvaluatedType possibleType : allPossibleTypes) {
-				findAllPossibleTypes(possibleType, foundTypes, level + 1, false);
+			// empty MultiTypeTypes correspond to "array()" occurrences or
+			// "(array)" value casting occurrences
+			if (!allPossibleTypes.isEmpty()) {
+				for (IEvaluatedType possibleType : allPossibleTypes) {
+					findAllPossibleTypes(possibleType, foundTypes, level + 1, false);
+				}
+				return true;
 			}
-			return true;
 		}
-		if (!firstCall) {
+		if (!firstCall || type instanceof MultiTypeType) {
 			StringBuilder buffer = new StringBuilder();
-			buffer.append(type.getTypeName());
+			if (type instanceof MultiTypeType) {
+				buffer.append(PHPSimpleTypes.ARRAY.getTypeName());
+			} else {
+				buffer.append(type.getTypeName());
+			}
 			for (int i = 1; i <= level; i++) {
 				buffer.append(PHPEvaluationUtils.BRACKETS);
 			}
