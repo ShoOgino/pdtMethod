@@ -1,34 +1,49 @@
 	private void handleEdit() {
-		Object element = ((StructuredSelection) scriptsViewer.getSelection()).getFirstElement();
-		ScriptsController controller = (ScriptsController) scriptsViewer.getLabelProvider();
-		String text = controller.getText(element);
-		ScriptDialog diag = new ScriptDialog(scriptsViewer.getTree().getShell());
 
-		// edit event
-		if (Arrays.asList(Scripts.getEvents()).contains(text)) {
-			diag.setEvent(text);
-			diag.setHandlerEnabled(false);
-			if (diag.open() == Dialog.OK && diag.getEvent() != null) {
-				String event = diag.getEvent();
-				if (!event.equalsIgnoreCase(text)) {
-					composerPackage.getScripts().set(event, composerPackage.getScripts().getAsArray(text));
-					composerPackage.getScripts().remove(text);
+		Script script = null;
+		int index = -1;
+		Object element = ((StructuredSelection) scriptsViewer.getSelection()).getFirstElement();
+
+		// get parent if element is HandlerValue
+		if (element instanceof HandlerValue) {
+			element = ((ScriptsController) scriptsViewer.getContentProvider()).getParent(element);
+			// find selection index
+			TreeItem selectedItem = scriptsViewer.getTree().getSelection()[0];
+			TreeItem[] items = selectedItem.getParentItem().getItems();
+			for (int i = 0; i < items.length; i++) {
+				if (items[i] == selectedItem) {
+					index = i;
+					break;
 				}
 			}
 		}
 
-		// edit handler
-		else {
-			String event = controller.getText(controller.getParent(element));
-			diag.setEvent(event);
-			diag.setHandler(text);
-			diag.setEventEnabled(false);
-			if (diag.open() == Dialog.OK) {
-				String handler = diag.getHandler();
-				if (!handler.equalsIgnoreCase(text)) {
-					JsonArray events = composerPackage.getScripts().getAsArray(event);
-					events.replace(text, handler);
+		if (element instanceof Script) {
+			script = (Script) element;
+		}
+
+		if (script != null && index != -1) {
+			assert index < script.size();
+
+			Script dialogScript = script.clone();
+
+			ScriptDialog dialog = new ScriptDialog(scriptsViewer.getTree().getShell(), dialogScript,
+					dialogScript.get(index));
+			dialog.setEventEnabled(false);
+
+			if (dialog.open() == Dialog.OK) {
+				assert dialogScript == dialog.getScript();
+
+				Script cpscript = composerPackage.getScripts().get(script.getScript());
+				if (cpscript.equals(dialog.getScript())) {
+					// nothing changed
+					return;
 				}
+
+				assert cpscript.getScript() != null && cpscript.getScript().equals(dialog.getScript().getScript());
+
+				cpscript.clear();
+				cpscript.addHandlers(dialog.getScript());
 			}
 		}
 	}
