@@ -2,44 +2,42 @@
 		IModelManager modelManager = StructuredModelManager.getModelManager();
 		if (modelManager != null) {
 			IStructuredModel structuredModel = null;
-			structuredModel = modelManager.getExistingModelForRead(viewer.getDocument());
-			if (structuredModel != null) {
-				try {
-					DOMModelForPHP domModelForPHP = (DOMModelForPHP) structuredModel;
-					try {
-						// Find the structured document region:
-						IStructuredDocument document = (IStructuredDocument) domModelForPHP.getDocument()
-								.getStructuredDocument();
-						IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(offset);
-						if (sdRegion == null) { // empty file case
-							return false;
-						}
-
-						ITextRegion textRegion = sdRegion.getRegionAtCharacterOffset(offset);
-						if (textRegion == null) {
-							return false;
-						}
-
-						ITextRegionCollection container = sdRegion;
-
-						if (textRegion instanceof ITextRegionContainer) {
-							container = (ITextRegionContainer) textRegion;
-							textRegion = container.getRegionAtCharacterOffset(offset);
-						}
-
-						if (textRegion.getType() == PHPRegionContext.PHP_CONTENT) {
-							IPhpScriptRegion phpScriptRegion = (IPhpScriptRegion) textRegion;
-							textRegion = phpScriptRegion
-									.getPhpToken(offset - container.getStartOffset() - phpScriptRegion.getStart());
-							String type = textRegion.getType();
-							if (PHPPartitionTypes.isPHPCommentState(type) || PHPPartitionTypes.isPHPQuotesState(type)) {
-								return true;
-							}
-						}
-					} catch (Exception e) {
-						Logger.logException(e);
+			try {
+				structuredModel = modelManager.getExistingModelForRead(viewer.getDocument());
+				if (structuredModel instanceof DOMModelForPHP) {
+					// Find the structured document region:
+					IStructuredDocument document = structuredModel.getStructuredDocument();
+					IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(offset);
+					if (sdRegion == null) { // empty file case
+						return false;
 					}
-				} finally {
+
+					ITextRegion textRegion = sdRegion.getRegionAtCharacterOffset(offset);
+					if (textRegion == null) {
+						return false;
+					}
+
+					ITextRegionCollection container = sdRegion;
+
+					if (textRegion instanceof ITextRegionContainer) {
+						container = (ITextRegionContainer) textRegion;
+						textRegion = container.getRegionAtCharacterOffset(offset);
+					}
+
+					if (textRegion.getType() == PHPRegionContext.PHP_CONTENT) {
+						IPhpScriptRegion phpScriptRegion = (IPhpScriptRegion) textRegion;
+						textRegion = phpScriptRegion
+								.getPhpToken(offset - container.getStartOffset() - phpScriptRegion.getStart());
+						String type = textRegion.getType();
+						if (PHPPartitionTypes.isPHPCommentState(type) || PHPPartitionTypes.isPHPQuotesState(type)) {
+							return true;
+						}
+					}
+				}
+			} catch (Exception e) {
+				Logger.logException(e);
+			} finally {
+				if (structuredModel != null) {
 					structuredModel.releaseFromRead();
 				}
 			}
