@@ -20,6 +20,12 @@
 			}
 
 			synchronized (tokensContainer) {
+				if (ProjectOptions.getPhpVersion(project) != currentPhpVersion) {
+					// https://bugs.eclipse.org/bugs/show_bug.cgi?id=510509
+					// force full reparse
+					return null;
+				}
+
 				// get the region to re-parse
 				ITextRegion tokenStart = tokensContainer.getToken(offset == 0 ? 0 : offset - 1);
 				ITextRegion tokenEnd = tokensContainer.getToken(offset + lengthToReplace);
@@ -60,7 +66,7 @@
 				final PhpTokenContainer newContainer = new PhpTokenContainer();
 				final AbstractPhpLexer phpLexer = getPhpLexer(
 						new DocumentReader(flatnode, changes, requestStart, lengthToReplace, newTokenOffset),
-						startState);
+						startState, currentPhpVersion);
 
 				if (phpLexer.isHeredocState(startState.getTopState())) {
 					// https://bugs.eclipse.org/bugs/show_bug.cgi?id=498525
