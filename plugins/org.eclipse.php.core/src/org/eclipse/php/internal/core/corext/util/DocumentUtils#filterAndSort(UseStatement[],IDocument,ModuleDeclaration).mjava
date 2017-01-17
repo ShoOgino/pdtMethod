@@ -36,17 +36,24 @@
 			}
 
 			if (parts.size() > 0) {
-				total.add(new UseStatement(statement.start(), statement.end(), parts));
+				total.add(new UseStatement(statement.start(), statement.end(), parts, statement.getStatementType()));
 			}
 		}
 
 		Collections.sort(total, new Comparator<UseStatement>() {
 			@Override
 			public int compare(UseStatement a, UseStatement b) {
-				String partA = createStringFromUseStatement(a).trim().toLowerCase();
-				String partB = createStringFromUseStatement(b).trim().toLowerCase();
-				String[] partsA = partA.substring(4, partA.length() - 1).split("\\\\");
-				String[] partsB = partB.substring(4, partB.length() - 1).split("\\\\");
+				if (a == b) {
+					return 0;
+				}
+				if (a.getStatementType() != b.getStatementType()) {
+					return a.getStatementType() - b.getStatementType();
+				}
+
+				String partA = createStringFromUseStatement(a, false).toLowerCase();
+				String partB = createStringFromUseStatement(b, false).toLowerCase();
+				String[] partsA = partA.split("\\\\");
+				String[] partsB = partB.split("\\\\");
 
 				int checkLength = Math.min(partsA.length, partsB.length);
 				for (int i = 0; i < checkLength; i++) {
@@ -57,7 +64,7 @@
 					}
 				}
 
-				return partsA.length == partsB.length ? 1 : 0;
+				return partsA.length - partsB.length;
 			}
 		});
 
