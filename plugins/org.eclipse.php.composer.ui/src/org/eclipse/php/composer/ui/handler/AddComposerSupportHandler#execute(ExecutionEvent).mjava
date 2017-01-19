@@ -1,6 +1,7 @@
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		ISelection selection = HandlerUtil.getActiveWorkbenchWindow(event).getActivePage().getSelection();
+		IWorkbenchWindow window = HandlerUtil.getActiveWorkbenchWindow(event);
 
 		if (selection instanceof IStructuredSelection) {
 			Object item = ((IStructuredSelection) selection).getFirstElement();
@@ -10,6 +11,15 @@
 				IProject project = ((IResource) adaptable.getAdapter(IResource.class)).getProject();
 
 				FacetManager.installFacets(project, ProjectOptions.getDefaultPhpVersion(), null);
+
+				if (window != null) {
+					IFile composerJson = project.getFile(ComposerConstants.COMPOSER_JSON);
+					try {
+						window.getActivePage().openEditor(new FileEditorInput(composerJson), ComposerFormEditor.ID);
+					} catch (PartInitException e) {
+						Logger.logException(e);
+					}
+				}
 			}
 		}
 
