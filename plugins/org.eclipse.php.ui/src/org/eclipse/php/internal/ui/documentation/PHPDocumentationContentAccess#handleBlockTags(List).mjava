@@ -4,6 +4,9 @@
 			if (tag.getTagKind() == TagKind.INHERITDOC) {
 				continue;
 			} else if (tag.getTagKind() == TagKind.VAR) {
+				if (!tag.isValidVarTag()) {
+					continue;
+				}
 				// https://bugs.eclipse.org/bugs/show_bug.cgi?id=454140
 				// only print @var tags having empty variable name or
 				// having variable name matching the field description
@@ -14,13 +17,15 @@
 								tag.getVariableReference().getName().equals('$' + fMember.getElementName()))) {
 					continue;
 				}
-				handleBlockTagTitle("Type"); //$NON-NLS-1$
+				handleBlockTagTitle(PHPDocumentationMessages.JavaDoc2HTMLTextReader_var_section);
 			} else {
 				handleBlockTagTitle(tag.getTagKind().getName());
 			}
 			fBuf.append(BlOCK_TAG_ENTRY_START);
 			if (tag.getTagKind() == TagKind.LINK) {
 				handleLinkTag(tag);
+			} else if (tag.getTagKind() == TagKind.VAR) {
+				handleVarTag(tag);
 			} else {
 				handleContentElements(tag);
 			}
