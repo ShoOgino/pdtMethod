@@ -1,3 +1,4 @@
+	// See also method MethodCallTypeEvaluator#produceNextSubgoal()
 	private IGoal[] produceNextSubgoal(IGoal previousGoal, IEvaluatedType previousResult, GoalState goalState) {
 
 		ExpressionTypeGoal typedGoal = (ExpressionTypeGoal) goal;
@@ -31,7 +32,6 @@
 
 		// just starting to evaluate method, evaluate method receiver first:
 		if (state == STATE_INIT) {
-
 			if (receiver == null) {
 				state = STATE_GOT_RECEIVER;
 			} else {
@@ -43,6 +43,7 @@
 		// receiver must been evaluated now:
 		if (state == STATE_WAITING_RECEIVER) {
 			receiverType = previousResult;
+			previousResult = null;
 			if (receiverType == null) {
 				return null;
 			}
@@ -63,7 +64,12 @@
 		if (state == STATE_WAITING_FIELD_PHPDOC) {
 			if (goalState != GoalState.PRUNED && previousResult != null && previousResult != UnknownType.INSTANCE) {
 				result = previousResult;
-				return null;
+				previousResult = null;
+				// BUG 507522, stop read if found not simple element
+				if (!PHPTypeInferenceUtils.isSimple(result)
+						|| (result != PHPSimpleTypes.OBJECT && result != PHPSimpleTypes.MIXED)) {
+					return null;
+				}
 			}
 			state = STATE_WAITING_FIELD;
 			TypeContext typeContext = new TypeContext((ISourceModuleContext) goal.getContext(), receiverType);
@@ -75,10 +81,15 @@
 
 		if (state == STATE_WAITING_FIELD) {
 			if (goalState != GoalState.PRUNED && previousResult != null && previousResult != UnknownType.INSTANCE) {
-				result = previousResult;
+				if (result != null) {
+					result = PHPTypeInferenceUtils
+							.combineTypes(Arrays.asList(new IEvaluatedType[] { result, previousResult }));
+				} else {
+					result = previousResult;
+					previousResult = null;
+				}
 			}
 		}
-
 		return null;
 	}
 
