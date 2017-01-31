@@ -3,31 +3,30 @@
 		lineWidth += 2;
 		Statement body = doStatement.getBody();
 		handleAction(doStatement.getStart() + 2, body, true);
-		int lastPosition = body.getEnd();// this variable
-		// will be changed
-		int doActionEnd = body.getEnd();
 		if (preferences.control_statement_insert_newline_before_while_in_do) {
 			insertNewLine();
 			indent();
 		} else {
-			lastPosition = setSpaceAfterBlock(doActionEnd);
+			setSpaceAfterBlock(body);
 		}
 
 		String textBetween = ""; //$NON-NLS-1$
 		int indexOfWhile = -1;
+		int lastPosition = body.getEnd();
 		try {
-			textBetween = document.get(doActionEnd, doStatement.getCondition().getStart() - doActionEnd).toLowerCase();
+			textBetween = document.get(lastPosition, doStatement.getCondition().getStart() - body.getEnd())
+					.toLowerCase();
 		} catch (BadLocationException e) {
 			Logger.logException(e);
 			return false;
 		}
-		indexOfWhile = textBetween.indexOf("while"); //$NON-NLS-1$
+		indexOfWhile = textBetween.lastIndexOf("while"); //$NON-NLS-1$
 		if (indexOfWhile > 0) {
-			indexOfWhile += doActionEnd;
-			handleChars(lastPosition, indexOfWhile);
+			indexOfWhile += lastPosition;
+			handleChars(lastPosition, indexOfWhile + 5); // 5 = "while".length()
 			appendToBuffer("while"); //$NON-NLS-1$
-			handleChars(indexOfWhile, indexOfWhile);
-			lastPosition = indexOfWhile;
+			handleChars(indexOfWhile + 5, indexOfWhile + 5);
+			lastPosition = indexOfWhile + 5;
 		} else {
 			appendToBuffer("while"); //$NON-NLS-1$
 		}

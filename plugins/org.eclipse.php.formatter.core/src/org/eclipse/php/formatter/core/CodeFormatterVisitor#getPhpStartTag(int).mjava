@@ -1,15 +1,29 @@
 	private byte getPhpStartTag(int offset) {
 		try {
-			if (document.getChar(offset) == '<') {
-				if (document.getChar(offset + 1) == '%') {
-					return PHP_OPEN_ASP_TAG;
-				} else if (document.getChar(offset + 2) == '=') {
-					return PHP_OPEN_SHORT_TAG_WITH_EQUAL;
-				} else if (document.getChar(offset + 2) != 'p' && document.getChar(offset + 2) != 'P') {
-					return PHP_OPEN_SHORT_TAG;
-				} else if (document.getChar(offset + 1) == '?') {
-					return PHP_OPEN_TAG;
+			// 6 = "<?php".length() + 1
+			String text = document.get(offset, Math.min(6, document.getLength() - offset)).toLowerCase();
+			if (text.startsWith("<%")) { //$NON-NLS-1$
+				return PHP_OPEN_ASP_TAG;
+			}
+			if (text.startsWith("<?=")) { //$NON-NLS-1$
+				return PHP_OPEN_SHORT_TAG_WITH_EQUAL;
+			}
+			if (text.startsWith("<?")) { //$NON-NLS-1$
+				if (text.startsWith("<?php") && text.length() >= 6) { //$NON-NLS-1$
+					char separatorChar = text.charAt(5);
+					// the definition of token PHP_START in
+					// PHPTokenizer.jflex tells us that "<?php" must ALWAYS
+					// be followed by a whitespace character to be recognized as
+					// a PHP_OPEN_TAG
+					if (separatorChar == ' ' || separatorChar == '\t' || separatorChar == '\r'
+							|| separatorChar == '\n') {
+						return PHP_OPEN_TAG;
+					}
 				}
+				// Short tag "<?".
+				// But also (for example) "<?phpXYZ :" must be handled as
+				// a PHP_OPEN_SHORT_TAG followed by label "XYZ".
+				return PHP_OPEN_SHORT_TAG;
 			}
 		} catch (Exception e) {
 			Logger.logException(e);
