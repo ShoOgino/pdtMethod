@@ -188,7 +188,7 @@
 			indentationLevel--;
 			indentationLevelDescending = true;
 		}
-		int endPosition = block.getEnd() - 1;
+		int endPosition = block.getEnd();
 		boolean hasComments = false;
 		if (startRegionPosition < endPosition && endRegionPosition >= endPosition) {
 			try {
@@ -230,27 +230,28 @@
 			}
 		}
 
-		if (block.getEnd() > block.getStart()) {
-			int end = block.getEnd() - 1;
+		if (endPosition > lastStatementEndOffset) {
+			// exclude closing curly
+			int end = endPosition - 1;
 			if (!block.isCurly()) {
 				switch (block.getParent().getType()) {
 				case ASTNode.SWITCH_STATEMENT:
-					end = block.getEnd() - "endswitch".length();//$NON-NLS-1$
+					end = endPosition - "endswitch".length();//$NON-NLS-1$
 					break;
 				case ASTNode.WHILE_STATEMENT:
-					end = block.getEnd() - "endwhile".length();//$NON-NLS-1$
+					end = endPosition - "endwhile".length();//$NON-NLS-1$
 					break;
 				case ASTNode.FOR_STATEMENT:
-					end = block.getEnd() - "endfor".length();//$NON-NLS-1$
+					end = endPosition - "endfor".length();//$NON-NLS-1$
 					break;
 				case ASTNode.FOR_EACH_STATEMENT:
-					end = block.getEnd() - "endforeach".length();//$NON-NLS-1$
+					end = endPosition - "endforeach".length();//$NON-NLS-1$
 					break;
 				case ASTNode.DECLARE_STATEMENT:
-					end = block.getEnd() - "enddeclare".length();//$NON-NLS-1$
+					end = endPosition - "enddeclare".length();//$NON-NLS-1$
 					break;
 				case ASTNode.IF_STATEMENT:
-					end = block.getEnd();
+					end = endPosition;
 					break;
 				}
 			}
@@ -280,7 +281,9 @@
 			blockEnd = true;
 			handleChars(lastStatementEndOffset, end);
 			blockEnd = false;
-			lineWidth++;// closing curly
+			if (block.isCurly()) {
+				lineWidth++;// closing curly
+			}
 		}
 		return false;
 	}
