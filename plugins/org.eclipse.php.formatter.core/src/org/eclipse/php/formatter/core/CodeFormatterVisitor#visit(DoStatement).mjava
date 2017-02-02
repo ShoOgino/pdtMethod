@@ -10,23 +10,20 @@
 			setSpaceAfterBlock(body);
 		}
 
-		String textBetween = ""; //$NON-NLS-1$
-		int indexOfWhile = -1;
+		int positionOfWhile = -1;
 		int lastPosition = body.getEnd();
 		try {
-			textBetween = document.get(lastPosition, doStatement.getCondition().getStart() - body.getEnd())
-					.toLowerCase();
-		} catch (BadLocationException e) {
+			positionOfWhile = getFirstTokenOffset(lastPosition, doStatement.getCondition().getStart(), stWhile, true);
+		} catch (Exception e) {
 			Logger.logException(e);
 			return false;
 		}
-		indexOfWhile = textBetween.lastIndexOf("while"); //$NON-NLS-1$
-		if (indexOfWhile > 0) {
-			indexOfWhile += lastPosition;
-			handleChars(lastPosition, indexOfWhile + 5); // 5 = "while".length()
+		if (positionOfWhile > lastPosition) {
+			handleChars(lastPosition, positionOfWhile + 5); // 5 =
+															// "while".length()
 			appendToBuffer("while"); //$NON-NLS-1$
-			handleChars(indexOfWhile + 5, indexOfWhile + 5);
-			lastPosition = indexOfWhile + 5;
+			handleChars(positionOfWhile + 5, positionOfWhile + 5);
+			lastPosition = positionOfWhile + 5;
 		} else {
 			appendToBuffer("while"); //$NON-NLS-1$
 		}

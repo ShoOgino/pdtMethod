@@ -1,6 +1,13 @@
 	public boolean visit(IfStatement ifStatement) {
-		// check if the token is 'if' or 'elseif'
-		int len = checkFirstTokenLength(ifStatement.getStart(), ifStatement.getCondition().getStart());
+		int len;
+		try {
+			// looking for 'if' or 'elseif'
+			len = getFirstTokenOffset(ifStatement.getStart(), ifStatement.getCondition().getStart(), stElseIf,
+					true) != -1 ? 6 : 2;
+		} catch (Exception e) {
+			Logger.logException(e);
+			return false;
+		}
 
 		// handle the chars between the 'while' and the condition start position
 		if (this.preferences.insert_space_before_opening_paren_in_if) {
@@ -30,7 +37,6 @@
 		appendToBuffer(CLOSE_PARN);
 
 		// action
-		int lastPosition = ifStatement.getCondition().getEnd();
 		boolean addNewlineBeforeAction = true;
 		if (ifStatement.getTrueStatement().getType() != ASTNode.BLOCK) {
 			if (len == 2) {// if
@@ -41,8 +47,7 @@
 				addNewlineBeforeAction = !preferences.control_statement_keep_then_on_same_line;
 			}
 		}
-		handleAction(lastPosition, ifStatement.getTrueStatement(), addNewlineBeforeAction);
-		lastPosition = ifStatement.getTrueStatement().getEnd();
+		handleAction(ifStatement.getCondition().getEnd(), ifStatement.getTrueStatement(), addNewlineBeforeAction);
 		if (ifStatement.getFalseStatement() == null || ifStatement.getFalseStatement().getType() == ASTNode.AST_ERROR) {
 			return false;
 		}
@@ -64,12 +69,12 @@
 				}
 
 				try {
-					lastPosition = internalHandleElse(ifStatement, lastPosition);
+					int lastPosition = internalHandleElse(ifStatement);
+					handleAction(lastPosition, ifStatement.getFalseStatement(), true);
 				} catch (BadLocationException ble) {
 					Logger.logException(ble);
 					return false;
 				}
-				handleAction(lastPosition, ifStatement.getFalseStatement(), true);
 				boolean processed = isProcessed(ifStatement);
 				if (!((Block) ifStatement.getTrueStatement()).isCurly() && !processed) {
 					handleChars(ifStatement.getFalseStatement().getEnd(), ifStatement.getEnd());
@@ -82,14 +87,13 @@
 				indent();
 
 				try {
-					lastPosition = internalHandleElse(ifStatement, lastPosition);
+					int lastPosition = internalHandleElse(ifStatement);
+					boolean elseActionInSameLine = preferences.control_statement_keep_else_on_same_line;
+					handleAction(lastPosition, ifStatement.getFalseStatement(), !elseActionInSameLine);
 				} catch (BadLocationException ble) {
 					Logger.logException(ble);
 					return false;
 				}
-
-				boolean elseActionInSameLine = preferences.control_statement_keep_else_on_same_line;
-				handleAction(lastPosition, ifStatement.getFalseStatement(), !elseActionInSameLine);
 			}
 		}
 		return false;

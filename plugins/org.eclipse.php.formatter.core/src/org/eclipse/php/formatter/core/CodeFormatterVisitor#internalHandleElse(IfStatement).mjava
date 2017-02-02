@@ -1,0 +1,26 @@
+	// this will perform handleChars() between the statement's end AND the
+	// 'else'
+	private int internalHandleElse(IfStatement ifStatement) throws BadLocationException {
+		int lastPosition = ifStatement.getTrueStatement().getEnd();
+		int positionOfElse = -1;
+		try {
+			// information needed to handleChars between "if" statement end to
+			// the "else"...
+			positionOfElse = getFirstTokenOffset(lastPosition, ifStatement.getFalseStatement().getStart(), stElse,
+					true);
+		} catch (Exception e) {
+			Logger.logException(e);
+			return lastPosition;
+		}
+		if (positionOfElse > lastPosition) {
+			handleChars(lastPosition, positionOfElse + 4); // 4 =
+															// "else".length()
+			appendToBuffer("else"); //$NON-NLS-1$
+			handleChars(positionOfElse + 4, positionOfElse + 4);
+			lastPosition = positionOfElse + 4;
+		} else {
+			appendToBuffer("else"); //$NON-NLS-1$
+		}
+		return lastPosition;
+	}
+

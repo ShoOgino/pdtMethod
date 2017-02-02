@@ -1,32 +1,38 @@
 	private void handleElseIfCases(IfStatement ifStatement) throws BadLocationException {
-		int lastPosition = ifStatement.getTrueStatement().getEnd();
-		int len;
 		IfStatement falseIfStatement = (IfStatement) ifStatement.getFalseStatement();
-		len = checkFirstTokenLength(falseIfStatement.getStart(), falseIfStatement.getCondition().getStart());
 		boolean elseIndentationLevelChanged = false;
-
-		// information needed to handleChars between if statement end to the
-		// else if...
-		String textBetween = ""; //$NON-NLS-1$
 		int trueStatementEnd = ifStatement.getTrueStatement().getEnd();
-		int indexOfElse = -1;
-		textBetween = document.get(trueStatementEnd, ifStatement.getFalseStatement().getStart() - trueStatementEnd)
-				.toLowerCase();
-		indexOfElse = textBetween.lastIndexOf("else"); //$NON-NLS-1$
+		boolean isIfToken = false;
+		int positionOfElse = -1;
+		try {
+			// looking for 'if' or 'elseif'
+			isIfToken = getFirstTokenOffset(falseIfStatement.getStart(), falseIfStatement.getCondition().getStart(),
+					stElseIf, true) == -1;
+			// looking for 'else' or 'elseif'
+			positionOfElse = getFirstTokenOffset(trueStatementEnd, ifStatement.getFalseStatement().getStart(), stElse,
+					true);
+			if (positionOfElse == -1) {
+				positionOfElse = getFirstTokenOffset(trueStatementEnd, ifStatement.getFalseStatement().getStart(),
+						stElseIf, false /* no need to re-scan same range */);
+			}
+		} catch (Exception e) {
+			Logger.logException(e);
+			return;
+		}
 
 		if (ifStatement.getTrueStatement().getType() == ASTNode.BLOCK) {
 			if (preferences.control_statement_insert_newline_before_else_and_elseif_in_if) {
 				insertNewLine();
 				indent();
 			} else {
-				if (len == 2) {
+				if (isIfToken) {
 					setSpaceAfterBlock(ifStatement.getTrueStatement());
 				}
 			}
 
-			if (len != 2) {// elseif case
-				if (indexOfElse > 0) {
-					handleChars(lastPosition, ifStatement.getFalseStatement().getStart());
+			if (!isIfToken) {// elseif case
+				if (positionOfElse > trueStatementEnd) {
+					handleChars(trueStatementEnd, ifStatement.getFalseStatement().getStart());
 				} else {
 					// fix for setSpaceAfterBlock when no space is required
 					// before 'elseif'
@@ -34,12 +40,11 @@
 							&& preferences.insert_space_after_closing_brace_in_block) {
 						insertSpace();
 					}
-					handleChars(ifStatement.getTrueStatement().getEnd(), ifStatement.getFalseStatement().getStart());
+					handleChars(trueStatementEnd, ifStatement.getFalseStatement().getStart());
 				}
 			} else {
-				if (indexOfElse > 0) {
-					indexOfElse += trueStatementEnd;
-					handleChars(lastPosition, indexOfElse);
+				if (positionOfElse > trueStatementEnd) {
+					handleChars(trueStatementEnd, positionOfElse);
 					appendToBuffer("else "); //$NON-NLS-1$
 					if (!preferences.control_statement_keep_else_if_on_same_line) {
 						insertNewLine();
@@ -47,8 +52,7 @@
 						elseIndentationLevelChanged = true;
 						indent();
 					}
-					handleChars(indexOfElse, ifStatement.getFalseStatement().getStart());
-					lastPosition = indexOfElse;
+					handleChars(positionOfElse, ifStatement.getFalseStatement().getStart());
 				} else {
 					appendToBuffer("else "); //$NON-NLS-1$
 					if (!preferences.control_statement_keep_else_if_on_same_line) {
@@ -57,20 +61,17 @@
 						elseIndentationLevelChanged = true;
 						indent();
 					}
-					// the following line handles the case : '}else' when
+					// the following line also handles the case : '}else' when
 					// setSpaceAfterBlock() is called and offset is set to +1
-					indexOfElse = (trueStatementEnd < lastPosition) ? lastPosition : indexOfElse + trueStatementEnd;
-
-					handleChars(indexOfElse, ifStatement.getFalseStatement().getStart());
+					handleChars(trueStatementEnd, ifStatement.getFalseStatement().getStart());
 				}
 			}
 		} else { // if the true statement is not a block then we should add new
 			// line
 			insertNewLine();
 			indent();
-			if (indexOfElse > 0) {
-				indexOfElse += trueStatementEnd;
-				handleChars(lastPosition, indexOfElse);
+			if (positionOfElse > trueStatementEnd) {
+				handleChars(trueStatementEnd, positionOfElse);
 				appendToBuffer("else "); //$NON-NLS-1$
 				if (!preferences.control_statement_keep_else_if_on_same_line) {
 					insertNewLine();
@@ -78,21 +79,17 @@
 					elseIndentationLevelChanged = true;
 					indent();
 				}
-				handleChars(indexOfElse, ifStatement.getFalseStatement().getStart());
-				lastPosition = indexOfElse;
+				handleChars(positionOfElse, ifStatement.getFalseStatement().getStart());
 			} else {
-				appendToBuffer(len == 2 ? "else " : EMPTY_STRING); //$NON-NLS-1$
-				if ((len == 2) && !preferences.control_statement_keep_else_if_on_same_line) {
+				appendToBuffer(isIfToken ? "else " : EMPTY_STRING); //$NON-NLS-1$
+				if (isIfToken && !preferences.control_statement_keep_else_if_on_same_line) {
 					insertNewLine();
 					indentationLevel++;
 					elseIndentationLevelChanged = true;
 					indent();
 				}
-				if (indexOfElse == -1) {// in case of: STATEMENT;elseif ...
-					indexOfElse = 0;
-				}
-
-				handleChars(indexOfElse + trueStatementEnd, ifStatement.getFalseStatement().getStart());
+				// in case of: STATEMENT;elseif ...
+				handleChars(trueStatementEnd, ifStatement.getFalseStatement().getStart());
 			}
 		}
 		boolean processed = isProcessed(ifStatement);
