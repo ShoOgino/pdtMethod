@@ -1,8 +1,25 @@
 	protected void loadVersionsFromCache() {
-		versionCombo.setItems(filterItem.getVersions());
-		versionCombo.select(0);
-		versionCombo.setVisible(true);
-		filterItem.setSelectedVersion(versionCombo.getText());
+		if (!versionCombo.isDisposed()) {
+			String[] versions = filterItem.getVersions();
+			versionCombo.setItems(versions);
+			int index = 0;
+			for (String version : versions) {
+				if (StringUtils.equals(version, filterItem.getSelectedVersion())) {
+					versionCombo.select(index);
+					break;
+				}
+				index++;
+			}
+			if (index == versions.length && versions.length > 0) {
+				versionCombo.select(0);
+			}
+			versionCombo.setVisible(true);
+			if (versionCombo.getSelectionIndex() != -1) {
+				filterItem.setSelectedVersion(versionCombo.getText());
+			}
+		} else {
+			filterItem.setSelectedVersion(null);
+		}
 
 		for (PackageFilterChangedListener listener : listeners) {
 			listener.filterChanged(filterItem);
