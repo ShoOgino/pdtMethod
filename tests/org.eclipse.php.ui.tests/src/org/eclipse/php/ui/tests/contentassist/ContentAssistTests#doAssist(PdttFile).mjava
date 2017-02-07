@@ -1,0 +1,30 @@
+	private void doAssist(final PdttFile pdttFile) throws Exception {
+		final String pdttFileData = pdttFile.getFile();
+		final String cursor = getCursor(pdttFile) != null ? getCursor(pdttFile) : DEFAULT_CURSOR;
+		final int offset = pdttFileData.lastIndexOf(cursor);
+		final String data = pdttFileData.substring(0, offset) + pdttFileData.substring(offset + 1);
+		final Exception[] exception = new Exception[1];
+		final String[] result = new String[1];
+		// Wait for UI
+		Display.getDefault().syncExec(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					pdttFile.applyPreferences();
+					String fileName = Paths.get(pdttFile.getFileName()).getFileName().toString();
+					fileName = fileName.substring(0, fileName.indexOf('.')) + ".php";
+					createFiles(data, fileName, pdttFile.getOtherFiles());
+					openEditor();
+					result[0] = executeAutoInsert(offset);
+					closeEditor();
+					deleteFiles();
+				} catch (Exception e) {
+					exception[0] = e;
+				}
+			}
+		});
+		if (exception[0] != null)
+			throw exception[0];
+		PDTTUtils.assertContents(pdttFile.getExpected(), result[0]);
+	}
+

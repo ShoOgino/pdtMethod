@@ -1,36 +1,6 @@
 	@Test
 	public void assist(String fileName) throws Exception {
 		final PdttFile pdttFile = new PdttFile(PHPUiTests.getDefault().getBundle(), fileName);
-		pdttFile.applyPreferences();
-
-		String data = pdttFile.getFile();
-		final String cursor = getCursor(pdttFile) != null ? getCursor(pdttFile) : DEFAULT_CURSOR;
-		final int offset = data.lastIndexOf(cursor);
-
-		// replace the offset character
-		data = data.substring(0, offset) + data.substring(offset + 1);
-		final ByteArrayInputStream stream = new ByteArrayInputStream(data.getBytes());
-		final Exception[] err = new Exception[1];
-
-		final String[] result = new String[1];
-		Display.getDefault().syncExec(new Runnable() {
-
-			@Override
-			public void run() {
-				try {
-					createFile(stream, Long.toString(System.currentTimeMillis()), prepareOtherStreams(pdttFile));
-					openEditor();
-					result[0] = executeAutoInsert(offset);
-					closeEditor();
-				} catch (Exception e) {
-					err[0] = e;
-				}
-			}
-		});
-		if (err[0] != null) {
-			throw err[0];
-		}
-
-		PDTTUtils.assertContents(pdttFile.getExpected(), result[0]);
+		doAssist(pdttFile);
 	}
 
