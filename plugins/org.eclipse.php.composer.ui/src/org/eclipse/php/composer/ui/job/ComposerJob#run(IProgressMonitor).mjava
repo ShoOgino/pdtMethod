@@ -2,24 +2,35 @@
 	protected IStatus run(final IProgressMonitor monitor) {
 		boolean callDoOnLauncherRunException = false;
 		try {
-
 			this.monitor = monitor;
 
-			try {
-				launcher = manager.getLauncher(ComposerEnvironmentFactory.FACTORY_ID, getProject());
-			} catch (ExecutableNotFoundException e) {
-				callDoOnLauncherRunException = true;
-				doOnLauncherRunException(e);
-				// inform the user of the missing executable
-				Display.getDefault().asyncExec(new MissingExecutableRunner());
-				return Status.OK_STATUS;
-			} catch (ScriptNotFoundException e) {
-				callDoOnLauncherRunException = true;
-				doOnLauncherRunException(e);
-				// run the downloader
-				Display.getDefault().asyncExec(new DownloadRunner());
-				return Status.OK_STATUS;
-			}
+			boolean tryAgain = false;
+			do {
+				try {
+					launcher = manager.getLauncher(ComposerEnvironmentFactory.FACTORY_ID, getProject());
+					tryAgain = false;
+				} catch (ExecutableNotFoundException e) {
+					callDoOnLauncherRunException = true;
+					doOnLauncherRunException(e);
+					// inform the user of the missing executable
+					Display.getDefault().asyncExec(new MissingExecutableRunner());
+					return Status.OK_STATUS;
+				} catch (ScriptNotFoundException e) {
+					callDoOnLauncherRunException = true;
+					doOnLauncherRunException(e);
+					if (tryAgain) {
+						Display.getDefault().asyncExec(
+								new ComposerFailureMessageRunner(Messages.ComposerJob_DownloadErrorMessage, monitor));
+						return Status.OK_STATUS;
+					} else {
+						// run the downloader
+						DownloadJob job = new DownloadJob(getProject());
+						job.schedule();
+						job.join();
+						tryAgain = true;
+					}
+				}
+			} while (tryAgain);
 
 			launcher.addResponseListener(new ConsoleResponseHandler());
 			launcher.addResponseListener(new ExecutionResponseAdapter() {
