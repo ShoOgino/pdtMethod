@@ -30,7 +30,16 @@
 
 				// add empty lines
 				if (emptyLines > 0 && newLinesInBuffer < emptyLines + 1) {
-					for (int line = newLinesInBuffer; line < emptyLines + 1; line++) {
+					// If newLinesInBuffer is = 0, it *could* mean that the
+					// buffer was already (partly or completely) flushed (so
+					// there are big chances that we already inserted a
+					// newline), increase newLinesInBuffer by one to only insert
+					// emptyLines - 1 newlines.
+					// If newLinesInBuffer is > 0, first newline from buffer is
+					// ignored because it either ends a non-empty line or some
+					// formatter preference already forced the insertion of a
+					// newline.
+					for (int line = newLinesInBuffer == 0 ? 1 : newLinesInBuffer; line < emptyLines + 1; line++) {
 						insertNewLine();
 					}
 					if (inComment) {
