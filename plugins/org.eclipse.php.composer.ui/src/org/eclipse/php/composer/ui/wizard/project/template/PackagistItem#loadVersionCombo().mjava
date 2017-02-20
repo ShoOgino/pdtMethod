@@ -18,24 +18,17 @@
 
 			@Override
 			public void packageLoaded(RepositoryPackage repositoryPackage) {
-				Versions versions = repositoryPackage.getVersions();
+				final Versions versions = repositoryPackage.getVersions();
 				final List<String> versionNames = new ArrayList<String>();
-				String selectVersion = null;
 				for (Entry<String, ComposerPackage> version : versions) {
-					Version detailedVersion = versions.getDetailedVersion(version.getValue().getVersion());
-					if (selectVersion == null && detailedVersion != null
-							&& detailedVersion.getStability() == ComposerConstants.STABLE) {
-						selectVersion = version.getValue().getVersion();
-					}
 					versionNames.add(version.getValue().getVersion());
 				}
-				final String selectedVersion = selectVersion;
 
 				getDisplay().asyncExec(new Runnable() {
 					@Override
 					public void run() {
 						filterItem.setVersions(versionNames.toArray(new String[versionNames.size()]));
-						filterItem.setSelectedVersion(selectedVersion);
+						filterItem.setSelectedVersion(versions.getDefaultVersion());
 						loadVersionsFromCache();
 					}
 				});
