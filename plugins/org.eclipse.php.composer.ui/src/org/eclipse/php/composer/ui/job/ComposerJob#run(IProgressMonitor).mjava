@@ -7,7 +7,13 @@
 			boolean tryAgain = false;
 			do {
 				try {
-					launcher = manager.getLauncher(ComposerEnvironmentFactory.FACTORY_ID, getProject());
+					Environment env = new ComposerEnvironmentFactory().getEnvironment(getProject());
+					if (env == null) {
+						throw new ExecutableNotFoundException(Messages.ComposerJob_CannotFindExe);
+					}
+
+					launcher = new ComposerLauncher(env, getProject());
+
 					tryAgain = false;
 				} catch (ExecutableNotFoundException e) {
 					callDoOnLauncherRunException = true;
@@ -31,21 +37,6 @@
 					}
 				}
 			} while (tryAgain);
-
-			launcher.addResponseListener(new ConsoleResponseHandler());
-			launcher.addResponseListener(new ExecutionResponseAdapter() {
-				public void executionFailed(final String response, final Exception exception) {
-					Display.getDefault().asyncExec(new ComposerFailureMessageRunner(response, monitor));
-				}
-
-				@Override
-				public void executionMessage(String message) {
-					if (monitor != null && message != null) {
-						monitor.subTask(message);
-						monitor.worked(1);
-					}
-				}
-			});
 
 			monitor.beginTask(getName(), IProgressMonitor.UNKNOWN);
 			monitor.worked(1);
