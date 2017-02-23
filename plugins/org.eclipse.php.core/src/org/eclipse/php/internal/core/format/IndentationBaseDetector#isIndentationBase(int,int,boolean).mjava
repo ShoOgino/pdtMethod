@@ -1,4 +1,4 @@
-	private boolean isIndentationBase(int offset, int currLineIndex, boolean checkMultiLine)
+	private boolean isIndentationBase(int offset, int currLineIndex, boolean checkMultiLineStatement)
 			throws BadLocationException {
 		final IRegion lineInfo = document.getLineInformation(currLineIndex);
 
@@ -19,13 +19,14 @@
 			return true;
 		}
 
+		// NB: lineStartOffset could be greater than checkedOffset after this
+		// loop
 		while (Character.isWhitespace(document.getChar(lineStartOffset))) {
 			lineStartOffset++;
 		}
 
 		// need to get to the first tRegion - so that we wont get the state of
-		// the
-		// tRegion in the previos line
+		// the tRegion in the previous line
 
 		// checked line beginning offset (after incrementing spaces in beginning
 		final String checkedLineBeginState = FormatterUtils.getPartitionType(document, lineStartOffset, true);
@@ -43,9 +44,8 @@
 		boolean shouldNotConsiderAsIndentationBase = shouldNotConsiderAsIndentationBase(checkedLineBeginState,
 				forLineEndState);
 
-		if ((shouldNotConsiderAsIndentationBase
-				|| (checkMultiLine && isInMultiLineStatement(checkedLineBeginState, checkedLineEndState, checkedOffset,
-						lineStartOffset, currLineIndex) && !isMultilineContentInsideBraceless(checkedOffset)))
+		if ((shouldNotConsiderAsIndentationBase || (checkMultiLineStatement && isInMultiLineStatement(currLineIndex)
+				&& !isMultilineContentInsideBraceless(checkedOffset)))
 				&& !lineContainIncompleteBlock(checkedOffset, lineStartOffset)) {
 			return false;
 		}
