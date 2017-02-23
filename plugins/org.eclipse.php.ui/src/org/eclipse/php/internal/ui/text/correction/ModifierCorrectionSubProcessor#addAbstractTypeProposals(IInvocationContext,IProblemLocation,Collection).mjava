@@ -1,0 +1,26 @@
+	public static void addAbstractTypeProposals(IInvocationContext context, IProblemLocation problem,
+			Collection proposals) {
+		Program astRoot = context.getASTRoot();
+
+		ASTNode selectedNode = problem.getCoveringNode(astRoot);
+		if (selectedNode == null) {
+			return;
+		}
+
+		ClassDeclaration parentTypeDecl = null;
+		if (selectedNode instanceof Identifier) {
+			ASTNode parent = selectedNode.getParent();
+			if (parent != null) {
+				parentTypeDecl = (ClassDeclaration) parent;
+			}
+		} else if (selectedNode instanceof ClassDeclaration) {
+			parentTypeDecl = (ClassDeclaration) selectedNode;
+		}
+
+		if (parentTypeDecl == null) {
+			return;
+		}
+
+		addMakeTypeAbstractProposal(context, parentTypeDecl, proposals, context.getCompilationUnit());
+	}
+

@@ -1,0 +1,36 @@
+	public static void addMethodRequiresBodyProposals(IInvocationContext context, IProblemLocation problem,
+			Collection proposals) {
+		ISourceModule cu = context.getCompilationUnit();
+		AST ast = context.getASTRoot().getAST();
+
+		ASTNode selectedNode = problem.getCoveringNode(context.getASTRoot());
+		if (!(selectedNode.getParent() instanceof FunctionDeclaration)) {
+			return;
+		}
+		selectedNode = selectedNode.getParent();
+		FunctionDeclaration decl = (FunctionDeclaration) selectedNode;
+		MethodDeclaration mdecl = (MethodDeclaration) decl.getParent();
+		{
+			ASTRewrite rewrite = ASTRewrite.create(ast);
+
+			Block body = ast.newBlock();
+			rewrite.set(decl, FunctionDeclaration.BODY_PROPERTY, body, null);
+
+			String label = CorrectionMessages.ModifierCorrectionSubProcessor_addmissingbody_description;
+			Image image = DLTKPluginImages.get(DLTKPluginImages.IMG_CORRECTION_CHANGE);
+			ASTRewriteCorrectionProposal proposal = new ASTRewriteCorrectionProposal(label, cu, rewrite, 9, image);
+
+			proposals.add(proposal);
+		}
+		if (!Flags.isAbstract(mdecl.getModifier())) {
+			ASTRewrite rewrite = ASTRewrite.create(ast);
+			rewrite.set(mdecl, MethodDeclaration.MODIFIER_PROPERTY, mdecl.getModifier() | Modifiers.AccAbstract, null);
+
+			String label = CorrectionMessages.ModifierCorrectionSubProcessor_setmethodabstract_description;
+			Image image = DLTKPluginImages.get(DLTKPluginImages.IMG_CORRECTION_CHANGE);
+			LinkedCorrectionProposal proposal = new LinkedCorrectionProposal(label, cu, rewrite, 8, image);
+			proposals.add(proposal);
+		}
+
+	}
+

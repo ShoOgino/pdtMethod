@@ -1,0 +1,63 @@
+	public static void addNonAccessibleReferenceProposal(IInvocationContext context, IProblemLocation problem,
+			Collection proposals, int kind, int relevance) throws CoreException {
+		ASTNode selectedNode = problem.getCoveringNode(context.getASTRoot());
+		if (selectedNode == null) {
+			return;
+		}
+
+		IBinding binding = null;
+		switch (selectedNode.getType()) {
+		case ASTNode.IDENTIFIER:
+			binding = ((Identifier) selectedNode).resolveBinding();
+			break;
+		case ASTNode.NAMESPACE_NAME:
+			List<Identifier> segments = ((NamespaceName) selectedNode).segments();
+			binding = segments.get(segments.size() - 1).resolveBinding();
+			break;
+		default:
+			return;
+		}
+		ITypeBinding typeBinding = null;
+		String name;
+
+		if (binding instanceof ITypeBinding) {
+			typeBinding = (ITypeBinding) binding;
+			name = PHPModelUtils.extractElementName(binding.getName());
+		} else {
+			return;
+		}
+		if (typeBinding != null) {
+			int excludedModifiers = 0;
+			String label;
+			switch (kind) {
+			case TO_NON_FINAL:
+				label = Messages.format(
+						CorrectionMessages.ModifierCorrectionSubProcessor_changemodifiertononfinal_description, name);
+				excludedModifiers = ClassDeclaration.MODIFIER_FINAL;
+				break;
+			default:
+				throw new IllegalArgumentException("not supported"); //$NON-NLS-1$
+			}
+			IType type = (IType) typeBinding.getPHPElement();
+			ISourceModule targetCU = type.getSourceModule();
+			if (targetCU != null) {
+				try {
+					Image image = DLTKPluginImages.get(DLTKPluginImages.IMG_CORRECTION_CHANGE);
+					Program root = SharedASTProvider.getAST(targetCU, SharedASTProvider.WAIT_YES, null);
+					if (root != null) {
+						AST ast = root.getAST();
+						ASTRewrite rewrite = ASTRewrite.create(ast);
+						ClassDeclaration decl = (ClassDeclaration) root.findDeclaringNode(typeBinding);
+						rewrite.set(decl, ClassDeclaration.MODIFIER_PROPERTY, decl.getModifier() & ~excludedModifiers,
+								null);
+						ASTRewriteCorrectionProposal proposal = new ASTRewriteCorrectionProposal(label, targetCU,
+								rewrite, 6, image);
+						proposals.add(proposal);
+					}
+				} catch (IOException e) {
+					PHPUiPlugin.log(e);
+				}
+			}
+		}
+	}
+

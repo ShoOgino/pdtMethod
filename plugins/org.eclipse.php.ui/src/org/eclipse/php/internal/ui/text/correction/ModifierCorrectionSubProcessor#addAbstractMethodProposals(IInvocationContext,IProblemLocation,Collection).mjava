@@ -1,0 +1,74 @@
+	public static void addAbstractMethodProposals(IInvocationContext context, IProblemLocation problem,
+			Collection proposals) {
+		ISourceModule cu = context.getCompilationUnit();
+
+		Program astRoot = context.getASTRoot();
+
+		ASTNode selectedNode = problem.getCoveringNode(astRoot);
+		if (selectedNode == null) {
+			return;
+		}
+		FunctionDeclaration funcDecl = null;
+		while ((selectedNode = selectedNode.getParent()) != null) {
+			if (selectedNode instanceof FunctionDeclaration) {
+				funcDecl = (FunctionDeclaration) selectedNode;
+				break;
+			}
+		}
+		if (funcDecl == null) {
+			return;
+		}
+
+		MethodDeclaration mdecl = (MethodDeclaration) funcDecl.getParent();
+		ASTNode parent = funcDecl;
+		ClassDeclaration parentTypeDecl = null;
+		boolean parentIsAbstractClass = false;
+		while ((parent = parent.getParent()) != null) {
+			if (parent instanceof ClassDeclaration) {
+				parentTypeDecl = (ClassDeclaration) parent;
+				if (Flags.isAbstract(parentTypeDecl.getModifier())) {
+					parentIsAbstractClass = true;
+				}
+				break;
+			} else if (parent instanceof AnonymousClassDeclaration) {
+				parentIsAbstractClass = false;
+				break;
+			}
+		}
+
+		boolean hasNoBody = funcDecl.getBody() == null;
+
+		IProblemIdentifier id = problem.getProblemIdentifier();
+		if (id == PhpProblemIdentifier.AbstractMethodInAbstractClass || parentIsAbstractClass) {
+			AST ast = astRoot.getAST();
+			ASTRewrite rewrite = ASTRewrite.create(ast);
+
+			rewrite.set(mdecl, MethodDeclaration.MODIFIER_PROPERTY, mdecl.getModifier() & ~Modifiers.AccAbstract, null);
+
+			if (hasNoBody) {
+				Block body = ast.newBlock();
+				rewrite.set(funcDecl, FunctionDeclaration.BODY_PROPERTY, body, null);
+			}
+
+			String label = CorrectionMessages.ModifierCorrectionSubProcessor_removeabstract_description;
+			Image image = DLTKPluginImages.get(DLTKPluginImages.IMG_CORRECTION_CHANGE);
+			ASTRewriteCorrectionProposal proposal = new ASTRewriteCorrectionProposal(label, cu, rewrite, 6, image);
+			proposals.add(proposal);
+		}
+
+		if (!hasNoBody && id == PhpProblemIdentifier.BodyForAbstractMethod) {
+			ASTRewrite rewrite = ASTRewrite.create(funcDecl.getAST());
+			rewrite.remove(funcDecl.getBody(), null);
+
+			String label = CorrectionMessages.ModifierCorrectionSubProcessor_removebody_description;
+			Image image = DLTKPluginImages.get(DLTKPluginImages.IMG_CORRECTION_CHANGE);
+			ASTRewriteCorrectionProposal proposal2 = new ASTRewriteCorrectionProposal(label, cu, rewrite, 5, image);
+			proposals.add(proposal2);
+		}
+
+		if (id == PhpProblemIdentifier.AbstractMethodInAbstractClass && parentTypeDecl != null) {
+			addMakeTypeAbstractProposal(context, parentTypeDecl, proposals, cu);
+		}
+
+	}
+
