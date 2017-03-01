@@ -1,5 +1,5 @@
 	@Override
-	protected void beforeFinish(IProgressMonitor monitor) throws Exception {
+	protected void beforeFinish(IProgressMonitor monitor) {
 
 		PackageFilterItem filterItem = filter.getSelectedPackage();
 		final CountDownLatch latch = new CountDownLatch(1);
@@ -32,6 +32,7 @@
 			@Override
 			public void jobFailed() {
 				latch.countDown();
+				projectJobFailed = true;
 			}
 		});
 
@@ -51,5 +52,9 @@
 		}
 
 		monitor.worked(1);
+
+		if (projectJobFailed) {
+			throw new OperationCanceledException();
+		}
 	}
 

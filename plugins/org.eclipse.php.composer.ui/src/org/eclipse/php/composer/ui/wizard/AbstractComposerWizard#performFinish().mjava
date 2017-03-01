@@ -3,26 +3,28 @@
 
 		boolean res = super.performFinish();
 		if (res) {
-
 			BasicNewProjectResourceWizard.updatePerspective(config);
-			selectAndReveal(lastPage.getScriptProject().getProject());
-			IProject project = lastPage.getScriptProject().getProject();
-			PHPVersion version = firstPage.getPHPVersionValue();
-			if (version == null) {
-				version = ProjectOptions.getDefaultPhpVersion();
-			}
+			IScriptProject scriptProject = lastPage.getScriptProject();
+			if (scriptProject != null) {
+				IProject project = scriptProject.getProject();
+				selectAndReveal(project);
+				PHPVersion version = firstPage.getPHPVersionValue();
+				if (version == null) {
+					version = ProjectOptions.getDefaultPhpVersion();
+				}
 
-			FacetManager.installFacets(project, version, null);
-			IFile json = project.getFile("composer.json"); //$NON-NLS-1$
+				FacetManager.installFacets(project, version, null);
+				IFile json = project.getFile("composer.json"); //$NON-NLS-1$
 
-			if (json != null) {
-				try {
-					IEditorInput editorInput = new FileEditorInput(json);
-					IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
-					IWorkbenchPage page = window.getActivePage();
-					page.openEditor(editorInput, ComposerFormEditor.ID);
-				} catch (Exception e) {
-					Logger.logException(e);
+				if (json != null) {
+					try {
+						IEditorInput editorInput = new FileEditorInput(json);
+						IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+						IWorkbenchPage page = window.getActivePage();
+						page.openEditor(editorInput, ComposerFormEditor.ID);
+					} catch (Exception e) {
+						Logger.logException(e);
+					}
 				}
 			}
 		}
