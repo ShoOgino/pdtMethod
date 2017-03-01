@@ -1,5 +1,5 @@
 	public static @Nullable String getPartitionType(IStructuredDocument document, int offset,
-			boolean preferOpenPartitions) {
+			boolean preferNonWhitespacePartitions) {
 		try {
 			IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(offset);
 			if (sdRegion == null) {
@@ -28,13 +28,16 @@
 
 			if (tRegion != null && tRegion instanceof IPhpScriptRegion) {
 				IPhpScriptRegion scriptRegion = (IPhpScriptRegion) tRegion;
-				int regionOffset = offset - regionStart;
-				return scriptRegion.getPartition(regionOffset);
+				if (preferNonWhitespacePartitions
+						&& scriptRegion.getPhpToken(offset - regionStart).getTextEnd() <= offset - regionStart) {
+					return scriptRegion.getPartition(scriptRegion.getPhpToken(offset - regionStart).getEnd());
+				}
+				return scriptRegion.getPartition(offset - regionStart);
 			}
 		} catch (final BadLocationException e) {
 		}
 
 		partitioner.connect(document);
-		return partitioner.getContentType(offset, preferOpenPartitions);
+		return partitioner.getContentType(offset);
 	}
 
