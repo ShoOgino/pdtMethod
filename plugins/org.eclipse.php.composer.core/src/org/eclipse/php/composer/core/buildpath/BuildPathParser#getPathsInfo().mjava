@@ -1,0 +1,24 @@
+	public List<BuildPathInfo> getPathsInfo() {
+		ComposerPackage composer = project.getComposerPackage();
+		String vendor = project.getVendorDir();
+
+		// empty list for found package paths
+		List<BuildPathInfo> paths = new ArrayList<BuildPathInfo>();
+
+		// add source paths from this package
+		parsePackage(composer, paths, EMPTY, BuildPathInfo.SOURCE);
+
+		// add composer vendor dir
+		paths.add(new BuildPathInfo(vendor + "/composer", BuildPathInfo.VENDOR)); //$NON-NLS-1$
+
+		// all installed packages
+		ComposerPackages packages = project.getInstalledPackages();
+		if (packages != null) {
+			for (ComposerPackage p : packages) {
+				parsePackage(p, paths, vendor + "/" + p.getName(), BuildPathInfo.VENDOR); //$NON-NLS-1$
+			}
+		}
+
+		return paths;
+	}
+

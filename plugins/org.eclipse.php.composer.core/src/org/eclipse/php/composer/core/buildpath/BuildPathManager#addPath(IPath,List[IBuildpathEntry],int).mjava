@@ -1,9 +1,17 @@
-	private void addPath(IPath path, List<IBuildpathEntry> entries) {
+	private void addPath(IPath path, List<IBuildpathEntry> entries, int type) {
 		// find parent
 		IBuildpathEntry parent = null;
 		int parentLength = 0;
 		IPath entryPath;
-		for (IBuildpathEntry entry : entries) {
+		for (Iterator<IBuildpathEntry> it = entries.iterator(); it.hasNext();) {
+			IBuildpathEntry entry = it.next();
+			if (entry.getEntryKind() != IBuildpathEntry.BPE_SOURCE) {
+				continue;
+			}
+			if (entry.getPath().equals(path)) {
+				it.remove();
+				continue;
+			}
 			entryPath = entry.getPath();
 			if (entryPath.isPrefixOf(path) && (parent == null || (entryPath.toString().length() > parentLength))) {
 				parent = entry;
@@ -26,15 +34,23 @@
 			}
 
 			entries.remove(parent);
+			if (parent.getExtraAttribute(ComposerPluginConstants.BPE_ATTR_NAME) != null) {
+				parent = DLTKCore.newSourceEntry(parent.getPath(), BuildpathEntry.INCLUDE_ALL,
+						exclusions.toArray(new IPath[] {}),
+						new IBuildpathAttribute[] {
+								DLTKCore.newBuildpathAttribute(ComposerPluginConstants.BPE_ATTR_NAME,
+										parent.getExtraAttribute(ComposerPluginConstants.BPE_ATTR_NAME)) });
+				entries.add(parent);
+			}
 
-			parent = DLTKCore.newSourceEntry(parent.getPath(), exclusions.toArray(new IPath[] {}));
-			entries.add(parent);
 		}
 
 		// add own entry
 		// leave vendor/composer untouched with exclusions
 		if (vendorPath.equals(path) || composerPath.equals(path)) {
-			entries.add(DLTKCore.newSourceEntry(path));
+			entries.add(DLTKCore.newSourceEntry(path, BuildpathEntry.INCLUDE_ALL, BuildpathEntry.EXCLUDE_NONE,
+					new IBuildpathAttribute[] { DLTKCore.newBuildpathAttribute(ComposerPluginConstants.BPE_ATTR_NAME,
+							ComposerPluginConstants.BPE_ATTR_VENDOR) }));
 
 			// add exclusions
 		} else {
@@ -64,7 +80,9 @@
 				}
 			}
 
-			entries.add(DLTKCore.newSourceEntry(path, ex.toArray(new IPath[] {})));
+			entries.add(DLTKCore.newSourceEntry(path, BuildpathEntry.INCLUDE_ALL, ex.toArray(new IPath[] {}),
+					new IBuildpathAttribute[] { DLTKCore.newBuildpathAttribute(ComposerPluginConstants.BPE_ATTR_NAME,
+							getTypeName(type)) }));
 		}
 	}
 
