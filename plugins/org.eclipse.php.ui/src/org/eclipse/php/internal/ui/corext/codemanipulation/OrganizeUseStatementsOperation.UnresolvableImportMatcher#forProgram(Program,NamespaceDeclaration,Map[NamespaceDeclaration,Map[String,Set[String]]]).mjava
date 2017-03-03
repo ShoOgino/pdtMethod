@@ -1,0 +1,23 @@
+		private static void forProgram(Program cu, NamespaceDeclaration namespace,
+				Map<NamespaceDeclaration, Map<String, Set<String>>> typeImportsBySimpleName) {
+			typeImportsBySimpleName.put(namespace, new HashMap<>());
+			Collection<UseStatement> unresolvableImports = determineUnresolvableImports(cu, namespace);
+			for (UseStatement importDeclaration : unresolvableImports) {
+				for (UseStatementPart part : importDeclaration.parts()) {
+					String qualifiedName = part.getName().getName();
+
+					String simpleName = qualifiedName
+							.substring(qualifiedName.lastIndexOf(NamespaceReference.NAMESPACE_SEPARATOR) + 1);
+
+					Map<String, Set<String>> importsBySimpleName = typeImportsBySimpleName.get(namespace);
+					Set<String> importsWithSimpleName = importsBySimpleName.get(simpleName);
+					if (importsWithSimpleName == null) {
+						importsWithSimpleName = new HashSet<>();
+						importsBySimpleName.put(simpleName, importsWithSimpleName);
+					}
+
+					importsWithSimpleName.add(qualifiedName);
+				}
+			}
+		}
+

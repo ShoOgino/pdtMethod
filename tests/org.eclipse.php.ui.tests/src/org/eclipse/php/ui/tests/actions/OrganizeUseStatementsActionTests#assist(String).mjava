@@ -1,0 +1,34 @@
+	@Test
+	public void assist(String fileName) throws Exception {
+		final PdttFile pdttFile = new PdttFile(PHPUiTests.getDefault().getBundle(), fileName);
+		pdttFile.applyPreferences();
+
+		final Exception[] err = new Exception[1];
+		Display.getDefault().syncExec(new Runnable() {
+
+			@Override
+			public void run() {
+				try {
+					createFile(pdttFile.getFile(), Long.toString(System.currentTimeMillis()),
+							prepareOtherStreams(pdttFile));
+					openEditor();
+					String result = execute();
+					closeEditor();
+					if (!pdttFile.getExpected().replace("\r", "").trim().equals(result.replace("\r", "").trim())) {
+						StringBuilder errorBuf = new StringBuilder();
+						errorBuf.append("\nEXPECTED RESULT:\n-----------------------------\n");
+						errorBuf.append(pdttFile.getExpected());
+						errorBuf.append("\nACTUAL RESULT:\n-----------------------------\n");
+						errorBuf.append(result);
+						fail(errorBuf.toString());
+					}
+				} catch (Exception e) {
+					err[0] = e;
+				}
+			}
+		});
+		if (err[0] != null) {
+			throw err[0];
+		}
+	}
+

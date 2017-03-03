@@ -1,7 +1,26 @@
 	public static void removeImportStatementProposals(IInvocationContext context, IProblemLocation problem,
 			Collection proposals) {
 		RemoveUnusedUseStatementProposal proposal = new RemoveUnusedUseStatementProposal(context, problem, 5);
-		proposals.add(new RunCommandProposal());
 		proposals.add(proposal);
+
+		final ISourceModule cu = context.getCompilationUnit();
+		String name = CorrectionMessages.ReorgCorrectionsSubProcessor_organizeimports_description;
+		ChangeCorrectionProposal proposal1 = new ChangeCorrectionProposal(name, null,
+				IProposalRelevance.ORGANIZE_IMPORTS, DLTKPluginImages.get(DLTKPluginImages.IMG_CORRECTION_CHANGE)) {
+			@Override
+			public void apply(IDocument document) {
+				IEditorInput input = new FileEditorInput((IFile) cu.getResource());
+				IWorkbenchPage p = PHPUiPlugin.getActivePage();
+				if (p == null) {
+					return;
+				}
+				IEditorPart part = p.findEditor(input);
+				if (part instanceof PHPStructuredEditor) {
+					OrganizeUseStatementsAction action = new OrganizeUseStatementsAction(part);
+					action.run(cu);
+				}
+			}
+		};
+		proposals.add(proposal1);
 	}
 

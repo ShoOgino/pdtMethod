@@ -1,0 +1,92 @@
+	public TextEdit createTextEdit(IProgressMonitor monitor)
+			throws CoreException, OperationCanceledException, IOException {
+		if (monitor == null) {
+			monitor = new NullProgressMonitor();
+		}
+		try {
+			fNumberOfImportsAdded = 0;
+			fNumberOfImportsRemoved = 0;
+
+			monitor.beginTask(Messages.format(CodeGenerationMessages.OrganizeImportsOperation_description,
+					BasicElementLabels.getFileName(fSourceModule)), 9);
+
+			Program astRoot = fASTRoot;
+			if (astRoot == null) {
+				astRoot = SharedASTProvider.getAST(fSourceModule, SharedASTProvider.WAIT_YES,
+						SubMonitor.convert(monitor, 2));
+				if (monitor.isCanceled())
+					throw new OperationCanceledException();
+			} else {
+				monitor.worked(2);
+			}
+
+			ImportRewrite importsRewrite = ImportRewrite.create(astRoot, false);
+
+			Map<NamespaceDeclaration, Set<String>> oldSingleImports = new HashMap<>();
+			List<Identifier> typeReferences = new ArrayList<>();
+
+			if (!collectReferences(astRoot, typeReferences, oldSingleImports))
+				return null;
+
+			UnresolvableImportMatcher unresolvableImportMatcher = UnresolvableImportMatcher.forProgram(astRoot);
+
+			TypeReferenceProcessor processor = new TypeReferenceProcessor(oldSingleImports, astRoot, importsRewrite,
+					fIgnoreLowerCaseNames, unresolvableImportMatcher);
+
+			Iterator<Identifier> refIterator = typeReferences.iterator();
+			while (refIterator.hasNext()) {
+				Identifier typeRef = refIterator.next();
+				processor.add(typeRef);
+			}
+
+			Map<NamespaceDeclaration, Boolean> hasOpenChoices = processor.process(SubMonitor.convert(monitor, 3));
+
+			if (fChooseImportQuery != null) {
+				Map<NamespaceDeclaration, TypeNameMatch[][]> choices = processor.getChoices();
+				Map<NamespaceDeclaration, SourceRange[]> ranges = processor.getChoicesSourceRanges();
+				for (Iterator<Entry<NamespaceDeclaration, Boolean>> iter = hasOpenChoices.entrySet().iterator(); iter
+						.hasNext();) {
+					Entry<NamespaceDeclaration, Boolean> entry = iter.next();
+					NamespaceDeclaration namespace = entry.getKey();
+					if (entry.getValue()) {
+						TypeNameMatch[] chosen = fChooseImportQuery.chooseImports(choices.get(namespace),
+								ranges.get(namespace));
+						if (chosen == null) {
+							// cancel pressed by the user
+							throw new OperationCanceledException();
+						}
+						for (int i = 0; i < chosen.length; i++) {
+							TypeNameMatch typeInfo = chosen[i];
+							if (typeInfo != null) {
+								importsRewrite.addImport(namespace, typeInfo.getFullyQualifiedName());
+							} else { // Skipped by user
+								String typeName = choices.get(namespace)[i][0].getSimpleTypeName();
+								Set<String> matchingUnresolvableImports = unresolvableImportMatcher
+										.matchTypeImports(namespace, typeName);
+								if (!matchingUnresolvableImports.isEmpty()) {
+									// If there are matching unresolvable
+									// import(s),
+									// rely on them to provide the type.
+									for (String string : matchingUnresolvableImports) {
+										importsRewrite.addImport(namespace, string, UNRESOLVABLE_IMPORT_CONTEXT);
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			TextEdit result = importsRewrite.rewriteImports(SubMonitor.convert(monitor, 3));
+
+			determineImportDifferences(importsRewrite, oldSingleImports.values());
+
+			return result;
+		} catch (Exception e) {
+			PHPUiPlugin.log(e);
+		} finally {
+			monitor.done();
+		}
+		return null;
+	}
+

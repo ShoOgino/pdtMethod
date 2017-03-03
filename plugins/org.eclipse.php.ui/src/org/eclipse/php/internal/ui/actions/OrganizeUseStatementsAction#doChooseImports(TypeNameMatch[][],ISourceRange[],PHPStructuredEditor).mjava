@@ -1,0 +1,41 @@
+	private TypeNameMatch[] doChooseImports(TypeNameMatch[][] openChoices, final ISourceRange[] ranges,
+			final PHPStructuredEditor editor) {
+		// remember selection
+		ISelection sel = editor.getSelectionProvider().getSelection();
+		TypeNameMatch[] result = null;
+		ILabelProvider labelProvider = new PHPTypeNameMatchLabelProvider(TypeNameMatchLabelProvider.SHOW_FULLYQUALIFIED,
+				PHPUILanguageToolkit.getInstance());
+
+		MultiElementListSelectionDialog dialog = new MultiElementListSelectionDialog(getShell(), labelProvider) {
+			@Override
+			protected void handleSelectionChanged() {
+				super.handleSelectionChanged();
+				// show choices in editor
+				doListSelectionChanged(getCurrentPage(), ranges, editor);
+			}
+		};
+		fIsQueryShowing = true;
+		dialog.setTitle(Messages.OrganizeImportsAction_selectiondialog_title);
+		dialog.setMessage(Messages.OrganizeImportsAction_selectiondialog_message);
+		dialog.setElements(openChoices);
+		dialog.setComparator(ORGANIZE_IMPORT_COMPARATOR);
+		if (dialog.open() == Window.OK) {
+			Object[] res = dialog.getResult();
+			result = new TypeNameMatch[res.length];
+			for (int i = 0; i < res.length; i++) {
+				Object[] array = (Object[]) res[i];
+				if (array.length > 0) {
+					result[i] = (TypeNameMatch) array[0];
+					QualifiedTypeNameHistory.remember(result[i].getFullyQualifiedName());
+				}
+			}
+		}
+		// restore selection
+		if (sel instanceof ITextSelection) {
+			ITextSelection textSelection = (ITextSelection) sel;
+			editor.selectAndReveal(textSelection.getOffset(), textSelection.getLength());
+		}
+		fIsQueryShowing = false;
+		return result;
+	}
+

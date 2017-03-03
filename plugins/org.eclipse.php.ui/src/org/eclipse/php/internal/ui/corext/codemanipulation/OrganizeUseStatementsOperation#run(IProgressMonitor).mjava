@@ -1,0 +1,56 @@
+	/**
+	 * Runs the operation.
+	 * 
+	 * @param monitor
+	 *            the progress monitor
+	 * @throws CoreException
+	 *             thrown when the operation failed
+	 * @throws OperationCanceledException
+	 *             Runtime error thrown when operation is canceled.
+	 */
+	@Override
+	public void run(IProgressMonitor monitor) throws CoreException, OperationCanceledException {
+		if (monitor == null) {
+			monitor = new NullProgressMonitor();
+		}
+		try {
+			monitor.beginTask(Messages.format(CodeGenerationMessages.OrganizeImportsOperation_description,
+					BasicElementLabels.getFileName(fSourceModule)), 10);
+
+			SourceModuleChange cuChange = new SourceModuleChange("OrganizeUseStatements", fSourceModule); //$NON-NLS-1$
+			cuChange.setSaveMode(TextFileChange.LEAVE_DIRTY);
+			TextChange change = cuChange;
+			TextEdit edit = createTextEdit(SubMonitor.convert(monitor));
+			if (edit != null) {
+				change.setEdit(edit);
+			}
+
+			change.initializeValidationData(new NullProgressMonitor());
+			RefactoringStatus valid = change.isValid(new NullProgressMonitor());
+			if (valid.hasFatalError()) {
+				IStatus status = new Status(IStatus.ERROR, PHPUiPlugin.ID, IStatus.ERROR,
+						valid.getMessageMatchingSeverity(RefactoringStatus.FATAL), null);
+				throw new CoreException(status);
+			} else {
+				IUndoManager manager = RefactoringCore.getUndoManager();
+				Change undoChange;
+				boolean successful = false;
+				try {
+					manager.aboutToPerformChange(change);
+					undoChange = change.perform(new NullProgressMonitor());
+					successful = true;
+				} finally {
+					manager.changePerformed(change, successful);
+				}
+				if (undoChange != null) {
+					undoChange.initializeValidationData(new NullProgressMonitor());
+					manager.addUndo("OrganizeUseStatements", undoChange); //$NON-NLS-1$
+				}
+			}
+		} catch (MalformedTreeException | IOException e) {
+			PHPUiPlugin.log(e);
+		} finally {
+			monitor.done();
+		}
+	}
+

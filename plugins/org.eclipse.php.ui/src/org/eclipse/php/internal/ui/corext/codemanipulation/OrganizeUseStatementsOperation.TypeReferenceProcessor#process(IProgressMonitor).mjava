@@ -1,0 +1,20 @@
+		public Map<NamespaceDeclaration, Boolean> process(IProgressMonitor monitor) throws ModelException {
+			try {
+				Map<NamespaceDeclaration, Boolean> hasOpenChoices = new HashMap<>();
+				final IScriptProject project = fImpStructure.getSourceModule().getScriptProject();
+				IDLTKSearchScope scope = SearchEngine.createSearchScope(project);
+
+				List<NamespaceDeclaration> namespaces = fRoot.getNamespaceDeclarations();
+				if (namespaces.size() > 0) {
+					for (NamespaceDeclaration namespace : namespaces) {
+						hasOpenChoices.put(namespace, internalProcess(namespace, scope, monitor));
+					}
+				} else {
+					hasOpenChoices.put(null, internalProcess(null, scope, monitor));
+				}
+				return hasOpenChoices;
+			} finally {
+				monitor.done();
+			}
+		}
+

@@ -1,0 +1,48 @@
+		/**
+		 * Tries to find the given type name and add it to the import structure.
+		 * 
+		 * @param ref
+		 *            the name node
+		 */
+		public void add(Identifier ref) {
+			NamespaceDeclaration namespace = fRoot.getNamespaceDeclaration(ref.getStart());
+			String typeName = ref.getName();
+
+			if (fImportsAdded.get(namespace).contains(typeName)) {
+				return;
+			}
+
+			IBinding binding = ref.resolveBinding();
+			if (binding != null) {
+				if (binding.getKind() != IBinding.TYPE) {
+					return;
+				}
+				ITypeBinding typeBinding = ((ITypeBinding) binding).getTypeDeclaration();
+				if (typeBinding != null) {
+					String alias = null;
+					String typeBindingName = typeBinding.getName();
+					if (typeBindingName != null) {
+						if (typeBindingName.startsWith(NamespaceReference.NAMESPACE_DELIMITER)) {
+							typeBindingName = typeBindingName.substring(1);
+						}
+						if (!typeBindingName.endsWith(typeName)) {
+							alias = typeName;
+						}
+					}
+					fImpStructure.addImport(namespace, typeBindingName, alias);
+					fImportsAdded.get(namespace).add(typeName);
+					return;
+				}
+			} else {
+				if (fDoIgnoreLowerCaseNames && typeName.length() > 0) {
+					char ch = typeName.charAt(0);
+					if (Strings.isLowerCase(ch) && Character.isLetter(ch)) {
+						return;
+					}
+				}
+			}
+
+			fImportsAdded.get(namespace).add(typeName);
+			fUnresolvedTypes.get(namespace).put(typeName, new UnresolvedTypeData(ref));
+		}
+
