@@ -1,0 +1,36 @@
+	public static void addUnimplementedMethodsProposals(IInvocationContext context, IProblemLocation problem,
+			Collection<AbstractCorrectionProposal> proposals) {
+		ISourceModule cu = context.getCompilationUnit();
+		ASTNode selectedNode = problem.getCoveringNode(context.getASTRoot());
+		if (selectedNode == null) {
+			return;
+		}
+		ASTNode typeNode = null;
+		boolean hasProposal = false;
+		if (selectedNode.getType() == ASTNode.CLASS_INSTANCE_CREATION) {
+			if (((ClassInstanceCreation) selectedNode).getAnonymousClassDeclaration() != null) {
+				typeNode = ((ClassInstanceCreation) selectedNode).getAnonymousClassDeclaration();
+				hasProposal = true;
+			}
+		} else if (selectedNode.getType() == ASTNode.IDENTIFIER) {
+			typeNode = selectedNode;
+			while ((typeNode = typeNode.getParent()) != null) {
+				if (typeNode instanceof ClassDeclaration) {
+					if (((ClassDeclaration) typeNode).resolveTypeBinding() != null) {
+						hasProposal = true;
+					}
+					break;
+				}
+			}
+		}
+		if (hasProposal) {
+			UnimplementedMethodsCorrectionProposal proposal = new UnimplementedMethodsCorrectionProposal(cu, typeNode,
+					IProposalRelevance.ADD_UNIMPLEMENTED_METHODS);
+			proposals.add(proposal);
+		}
+		if (typeNode instanceof ClassDeclaration) {
+			ClassDeclaration typeDeclaration = (ClassDeclaration) typeNode;
+			ModifierCorrectionSubProcessor.addMakeTypeAbstractProposal(context, typeDeclaration, proposals, cu);
+		}
+	}
+

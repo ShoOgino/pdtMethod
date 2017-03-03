@@ -1,0 +1,32 @@
+	private String internalAddImport(NamespaceDeclaration namespace, String fullTypeName,
+			ImportRewriteContext context) {
+		int idx = fullTypeName.lastIndexOf(NamespaceReference.NAMESPACE_SEPARATOR);
+		String typeContainerName, typeName;
+		if (idx != -1) {
+			typeContainerName = fullTypeName.substring(0, idx);
+			if (typeContainerName.length() == 0) {
+				typeContainerName = ENCLOSING_TYPE_SEPARATOR;
+			}
+			typeName = fullTypeName.substring(idx + 1);
+		} else {
+			typeContainerName = ENCLOSING_TYPE_SEPARATOR;
+			typeName = fullTypeName;
+		}
+
+		if (typeContainerName.length() == 0) {
+			return fullTypeName;
+		}
+
+		if (context == null)
+			context = this.defaultContext;
+
+		int res = context.findInContext(namespace, typeContainerName, typeName, ImportRewriteContext.KIND_TYPE);
+		if (res == ImportRewriteContext.RES_NAME_CONFLICT) {
+			return fullTypeName;
+		}
+		if (res == ImportRewriteContext.RES_NAME_UNKNOWN) {
+			addEntry(namespace, NORMAL_PREFIX + fullTypeName);
+		}
+		return typeName;
+	}
+

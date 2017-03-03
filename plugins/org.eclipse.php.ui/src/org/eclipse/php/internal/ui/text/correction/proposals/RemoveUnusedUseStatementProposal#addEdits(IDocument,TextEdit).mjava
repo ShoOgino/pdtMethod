@@ -1,0 +1,50 @@
+	@Override
+	protected void addEdits(IDocument doc, TextEdit root) throws CoreException {
+		super.addEdits(doc, root);
+		try {
+			Program astRoot = fContext.getASTRoot();
+
+			ASTNode coveredNode = fLocation.getCoveredNode(astRoot);
+			ASTNode current = coveredNode;
+			while (!(coveredNode instanceof UseStatement)) {
+				coveredNode = coveredNode.getParent();
+			}
+			UseStatement use = (UseStatement) coveredNode;
+			List<UseStatementPart> parts = use.parts();
+			if (parts.size() == 1) {
+				int line = doc.getLineOfOffset(coveredNode.getStart());
+				int lineStart = doc.getLineOffset(line);
+				int length = doc.getLineLength(line);
+				root.addChild(new DeleteEdit(lineStart, length));
+				return;
+			}
+			String currentNamespace = null;
+			if (current instanceof NamespaceName) {
+				currentNamespace = getNamespaceName((NamespaceName) current);
+			} else {
+				currentNamespace = ((Identifier) current).getName();
+			}
+			for (UseStatementPart part : parts) {
+				int index = parts.indexOf(part);
+				String namespace = getNamespaceName(part.getName());
+				if (currentNamespace.equals(namespace)) {
+					int start = part.getStart();
+					int length = 0;
+					if (index == 0) {
+						UseStatementPart next = parts.get(1);
+						length = next.getStart() - part.getStart();
+					} else {
+						UseStatementPart prev = parts.get(index - 1);
+						start = prev.getEnd();
+						length = part.getEnd() - start;
+					}
+					root.addChild(new DeleteEdit(start, length));
+					return;
+				}
+			}
+
+		} catch (BadLocationException e) {
+			PHPUiPlugin.log(e);
+		}
+	}
+

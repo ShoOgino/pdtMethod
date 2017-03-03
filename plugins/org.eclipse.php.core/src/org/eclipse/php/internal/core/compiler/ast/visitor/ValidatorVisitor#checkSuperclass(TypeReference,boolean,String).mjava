@@ -1,0 +1,29 @@
+	private void checkSuperclass(TypeReference superClass, boolean isInterface, String className)
+			throws ModelException {
+		if (superClass != null) {
+			TypeReferenceInfo refInfo = new TypeReferenceInfo(superClass, false);
+			IType[] types = PHPModelUtils.getTypes(refInfo.getFullyQualifiedName(), sourceModule,
+					superClass.sourceStart(), null);
+			for (IType type : types) {
+				if (!isInterface) {
+					if (PHPFlags.isInterface(type.getFlags())) {
+						reportProblem(superClass, Messages.SuperclassMustBeAClass,
+								PhpProblemIdentifier.SuperclassMustBeAClass,
+								new String[] { superClass.getName(), className }, ProblemSeverities.Error);
+					}
+					if (PHPFlags.isFinal(type.getFlags())) {
+						reportProblem(superClass, Messages.ClassExtendFinalClass,
+								PhpProblemIdentifier.ClassExtendFinalClass,
+								new String[] { className, type.getElementName() }, ProblemSeverities.Error);
+					}
+				} else {
+					if (!PHPFlags.isInterface(type.getFlags())) {
+						reportProblem(superClass, Messages.SuperInterfaceMustBeAnInterface,
+								PhpProblemIdentifier.SuperInterfaceMustBeAnInterface,
+								new String[] { superClass.getName(), className }, ProblemSeverities.Error);
+					}
+				}
+			}
+		}
+	}
+

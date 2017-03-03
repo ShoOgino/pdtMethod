@@ -1,0 +1,21 @@
+	@Override
+	public boolean visit(AnonymousClassDeclaration s) throws Exception {
+		int end = s.start();
+		int start = end - 1;
+		while (sourceModule.getSource().charAt(start) != ' ') {
+			start--;
+		}
+		checkUnimplementedMethods(s, start + 1, end);
+
+		IModelElement element = sourceModule.getElementAt(s.start());
+		if (s.getSuperClass() != null && element != null)
+			checkSuperclass(s.getSuperClass(), false, element.getElementName());
+
+		Collection<TypeReference> interfaces = s.getInterfaceList();
+		if (interfaces != null && element != null) {
+			for (TypeReference itf : interfaces)
+				checkSuperclass(itf, true, element.getElementName());
+		}
+		return super.visit(s);
+	}
+

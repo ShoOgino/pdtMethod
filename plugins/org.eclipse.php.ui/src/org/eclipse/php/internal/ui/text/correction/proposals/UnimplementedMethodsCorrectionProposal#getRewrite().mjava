@@ -1,0 +1,34 @@
+	@Override
+	protected ASTRewrite getRewrite() throws CoreException {
+		AST ast = fTypeNode.getAST();
+
+		ASTRewrite rewrite = ASTRewrite.create(ast);
+		IMethod[] methods = null;
+		boolean isInterface = false;
+		ListRewrite listRewrite = null;
+		if (fTypeNode instanceof ClassDeclaration) {
+			ClassDeclaration decl = (ClassDeclaration) fTypeNode;
+			ITypeBinding binding = decl.resolveTypeBinding();
+			listRewrite = rewrite.getListRewrite(decl.getBody(), Block.STATEMENTS_PROPERTY);
+			methods = PHPModelUtils.getUnimplementedMethods((IType) binding.getPHPElement(), null);
+			isInterface = binding.isInterface();
+		} else if (fTypeNode instanceof AnonymousClassDeclaration) {
+			AnonymousClassDeclaration decl = (AnonymousClassDeclaration) fTypeNode;
+			listRewrite = rewrite.getListRewrite(decl.getBody(), Block.STATEMENTS_PROPERTY);
+			IModelElement element = this.getCompilationUnit().getElementAt(fTypeNode.getStart());
+			methods = PHPModelUtils.getUnimplementedMethods((IType) element, null);
+		} else {
+			return null;
+		}
+		Program program = (Program) fTypeNode.getRoot();
+		ImportRewrite imports = createImportRewrite(program);
+		NamespaceDeclaration namespace = program.getNamespaceDeclaration(fTypeNode.getStart());
+		for (int i = 0; i < methods.length; i++) {
+			MethodDeclaration newMethodDecl = StubUtility.createImplementationStub(getCompilationUnit(), namespace,
+					rewrite, imports, methods[i], isInterface);
+			listRewrite.insertLast(newMethodDecl,
+					createTextEditGroup(CorrectionMessages.AddUnimplementedMethodsOperation_AddMissingMethod_group));
+		}
+		return rewrite;
+	}
+

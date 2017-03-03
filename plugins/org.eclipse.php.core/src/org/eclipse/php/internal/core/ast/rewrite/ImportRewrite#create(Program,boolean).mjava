@@ -1,0 +1,49 @@
+	/**
+	 * Creates a {@link ImportRewrite} from a an AST ({@link Program}). The AST
+	 * has to be created from a {@link ISourceModule}, that means
+	 * {@link ASTParser#setSource(ISourceModule)} has been used when creating
+	 * the AST. If <code>restoreExistingImports</code> is <code>true</code>, all
+	 * existing imports are kept, and new imports will be inserted at best
+	 * matching locations. If <code>restoreExistingImports</code> is
+	 * <code>false</code>, the existing imports will be removed and only the
+	 * newly added imports will be created.
+	 * <p>
+	 * Note that this method is more efficient than using
+	 * {@link #create(ISourceModule, boolean)} if an AST is already available.
+	 * </p>
+	 * 
+	 * @param astRoot
+	 *            the AST root node to create the imports for
+	 * @param restoreExistingImports
+	 *            specifies if the existing imports should be kept or removed.
+	 * @return the created import rewriter.
+	 * @throws IllegalArgumentException
+	 *             thrown when the passed AST is null or was not created from a
+	 *             compilation unit.
+	 */
+	public static ImportRewrite create(Program astRoot, boolean restoreExistingImports) {
+		if (astRoot == null) {
+			throw new IllegalArgumentException("AST must not be null"); //$NON-NLS-1$
+		}
+		ISourceModule typeRoot = astRoot.getSourceModule();
+		Map<NamespaceDeclaration, List<String>> existingImport = null;
+		if (restoreExistingImports) {
+			existingImport = new HashMap<NamespaceDeclaration, List<String>>();
+			Iterator<Entry<NamespaceDeclaration, List<UseStatement>>> ite = astRoot.getUseStatements().entrySet()
+					.iterator();
+			while (ite.hasNext()) {
+				Entry<NamespaceDeclaration, List<UseStatement>> entry = ite.next();
+				List<String> imports = new ArrayList<>();
+				for (UseStatement useStatement : entry.getValue()) {
+					for (UseStatementPart part : useStatement.parts()) {
+						StringBuilder buf = new StringBuilder();
+						buf.append(NORMAL_PREFIX).append(part.getName().getName());
+						imports.add(buf.toString());
+					}
+				}
+				existingImport.put(entry.getKey(), imports);
+			}
+		}
+		return new ImportRewrite((ISourceModule) typeRoot, astRoot, existingImport);
+	}
+

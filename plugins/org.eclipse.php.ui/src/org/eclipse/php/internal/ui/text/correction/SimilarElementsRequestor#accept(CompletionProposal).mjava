@@ -1,0 +1,30 @@
+	@Override
+	public void accept(CompletionProposal proposal) {
+		if (proposal.getKind() == CompletionProposal.TYPE_REF
+				|| proposal.getKind() == CompletionProposal.METHOD_DECLARATION) {
+			String name = null;
+			IModelElement element = proposal.getModelElement();
+			if (element instanceof IType || element instanceof FakeConstructor) {
+				IMember type = (IMember) element;
+				try {
+					if (!PHPFlags.isNamespace(type.getFlags())) {
+						if (element instanceof FakeConstructor) {
+							element = ((FakeConstructor) element).getParent();
+						}
+						name = ((IType) element).getTypeQualifiedName(ENCLOSING_TYPE_SEPARATOR);
+					}
+				} catch (ModelException e) {
+				}
+			} else if (element instanceof FakeMethod) {
+				try {
+					name = ((IMethod) element).getTypeQualifiedName(ENCLOSING_TYPE_SEPARATOR, false);
+				} catch (ModelException e) {
+					PHPUiPlugin.log(e);
+				}
+			}
+			if (name != null) {
+				addType(name.toCharArray(), proposal.getFlags(), proposal.getRelevance());
+			}
+		}
+	}
+

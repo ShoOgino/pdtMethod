@@ -1,0 +1,36 @@
+	private int getPackageStatementEndPos(Program root, NamespaceDeclaration namespace) {
+		int flags = this.flags.get(namespace);
+		if (namespace != null) {
+			NamespaceName packDecl = namespace.getName();
+			int afterPackageStatementPos = -1;
+			int lineNumber = root.getLineNumber(packDecl.getStart() + packDecl.getLength());
+			if (lineNumber >= 0) {
+				int lineAfterPackage = lineNumber + 1;
+				afterPackageStatementPos = getPostion(root, lineAfterPackage);
+			}
+			if (afterPackageStatementPos < 0) {
+				flags |= F_NEEDS_LEADING_DELIM;
+				this.flags.put(namespace, flags);
+				return packDecl.getStart() + packDecl.getLength();
+			}
+			int firstTypePos = getFirstTypeBeginPos(root, namespace);
+			if (firstTypePos != -1 && firstTypePos <= afterPackageStatementPos) {
+				if (firstTypePos <= afterPackageStatementPos) {
+					flags |= F_NEEDS_TRAILING_DELIM;
+					if (firstTypePos == afterPackageStatementPos) {
+						flags |= F_NEEDS_LEADING_DELIM;
+					}
+					this.flags.put(namespace, flags);
+					return firstTypePos;
+				}
+			}
+			flags |= F_NEEDS_LEADING_DELIM;
+			this.flags.put(namespace, flags);
+			return afterPackageStatementPos; // insert a line after after
+			// package statement
+		}
+		flags |= F_NEEDS_TRAILING_DELIM;
+		this.flags.put(namespace, flags);
+		return getPostion(root, 2);
+	}
+

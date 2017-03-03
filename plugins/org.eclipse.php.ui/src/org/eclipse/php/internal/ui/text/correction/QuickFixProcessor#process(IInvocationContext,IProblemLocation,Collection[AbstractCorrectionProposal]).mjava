@@ -1,0 +1,43 @@
+	private void process(IInvocationContext context, IProblemLocation problem,
+			Collection<AbstractCorrectionProposal> proposals) throws CoreException {
+		if (!(problem.getProblemIdentifier() instanceof PhpProblemIdentifier))
+			return;
+
+		PhpProblemIdentifier id = (PhpProblemIdentifier) problem.getProblemIdentifier();
+		switch (id) {
+		case UnusedImport:
+		case DuplicateImport:
+		case UnnecessaryImport:
+			ReorgCorrectionsSubProcessor.removeImportStatementProposals(context, problem, proposals);
+			break;
+		case ImportNotFound:
+			ReorgCorrectionsSubProcessor.removeImportStatementProposals(context, problem, proposals);
+			break;
+		case ClassExtendFinalClass:
+			ModifierCorrectionSubProcessor.addNonAccessibleReferenceProposal(context, problem, proposals,
+					ModifierCorrectionSubProcessor.TO_NON_FINAL, IProposalRelevance.REMOVE_FINAL_MODIFIER);
+			break;
+		case AbstractMethodInAbstractClass:
+		case BodyForAbstractMethod:
+			ModifierCorrectionSubProcessor.addAbstractMethodProposals(context, problem, proposals);
+			break;
+		case AbstractMethodsInConcreteClass:
+			ModifierCorrectionSubProcessor.addAbstractTypeProposals(context, problem, proposals);
+			break;
+		case MethodRequiresBody:
+			ModifierCorrectionSubProcessor.addMethodRequiresBodyProposals(context, problem, proposals);
+			break;
+		case UndefinedType:
+			UnresolvedElementsSubProcessor.getTypeProposals(context, problem, proposals);
+			break;
+		case AbstractMethodMustBeImplemented:
+			LocalCorrectionsSubProcessor.addUnimplementedMethodsProposals(context, problem, proposals);
+			break;
+		case SuperclassMustBeAClass:
+			LocalCorrectionsSubProcessor.getInterfaceExtendsClassProposals(context, problem, proposals);
+			break;
+		default:
+			return;
+		}
+	}
+

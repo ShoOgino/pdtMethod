@@ -1,0 +1,24 @@
+	/**
+	 * Not API, package visibility as accessed from an anonymous type
+	 */
+	/* package */final int findInImports(NamespaceDeclaration namespace, String qualifier, String name, int kind) {
+		boolean allowAmbiguity = (kind == ImportRewriteContext.KIND_STATIC_METHOD)
+				|| (name.length() == 1 && name.charAt(0) == '*');
+		if (this.existingImports.get(namespace) == null) {
+			this.existingImports.put(namespace, new ArrayList<String>());
+		}
+		List<String> imports = this.existingImports.get(namespace);
+		char prefix = (kind == ImportRewriteContext.KIND_TYPE) ? NORMAL_PREFIX : STATIC_PREFIX;
+
+		for (int i = imports.size() - 1; i >= 0; i--) {
+			String curr = imports.get(i);
+			int res = compareImport(prefix, qualifier, name, curr);
+			if (res != ImportRewriteContext.RES_NAME_UNKNOWN) {
+				if (!allowAmbiguity || res == ImportRewriteContext.RES_NAME_FOUND) {
+					return res;
+				}
+			}
+		}
+		return ImportRewriteContext.RES_NAME_UNKNOWN;
+	}
+

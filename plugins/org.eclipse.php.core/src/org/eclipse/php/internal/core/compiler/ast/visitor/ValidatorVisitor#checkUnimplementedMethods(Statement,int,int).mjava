@@ -1,0 +1,21 @@
+	private void checkUnimplementedMethods(Statement statement, int nodeStart, int nodeEnd) throws ModelException {
+		IModelElement element = sourceModule.getElementAt(statement.start());
+		if (!(element instanceof IType))
+			return;
+		IType type = (IType) element;
+		if (type.getSuperClasses().length > 0 && !PHPFlags.isAbstract(type.getFlags())) {
+			IMethod[] methods = PHPModelUtils.getUnimplementedMethods(type, null);
+			for (IMethod method : methods) {
+				if (method.getParent().getElementName().equals(type.getElementName())) {
+					continue;
+				}
+				StringBuilder methodName = new StringBuilder(method.getParent().getElementName()).append("::"); //$NON-NLS-1$
+				PHPModelUtils.getMethodLabel(method, methodName);
+				String message = Messages.getString("AbstractMethodMustBeImplemented",
+						new String[] { type.getElementName(), methodName.toString() });
+				reportProblem(nodeStart, nodeEnd, message, PhpProblemIdentifier.AbstractMethodMustBeImplemented,
+						ProblemSeverities.Error);
+			}
+		}
+	}
+

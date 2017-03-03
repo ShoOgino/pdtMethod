@@ -1,0 +1,70 @@
+	@SuppressWarnings("unchecked")
+	public static MethodDeclaration createImplementationStub(@NonNull ISourceModule unit,
+			NamespaceDeclaration namespace, ASTRewrite rewrite, ImportRewrite imports, IMethod method, boolean deferred)
+			throws CoreException {
+		Assert.isNotNull(imports);
+		Assert.isNotNull(rewrite);
+
+		AST ast = rewrite.getAST();
+		MethodDeclaration decl = ast.newMethodDeclaration();
+		decl.setModifier(getImplementationModifiers(ast, method, deferred));
+		FunctionDeclaration func = ast.newFunctionDeclaration();
+		func.setFunctionName(ast.newIdentifier(method.getElementName()));
+		decl.setFunction(func);
+
+		IParameter[] typeParams = method.getParameters();
+		List<FormalParameter> typeParameters = decl.getFunction().formalParameters();
+
+		ISourceModule sourceModule = method.getSourceModule();
+		ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule);
+		org.eclipse.dltk.ast.declarations.MethodDeclaration methodDeclaration = PHPModelUtils
+				.getNodeByMethod(moduleDeclaration, method);
+		List<org.eclipse.php.core.compiler.ast.nodes.FormalParameter> arguments = (List<org.eclipse.php.core.compiler.ast.nodes.FormalParameter>) methodDeclaration
+				.getArguments();
+
+		boolean supportNullable = ProjectOptions.getPHPVersion(unit).isGreaterThan(PHPVersion.PHP7_0);
+		Map<String, ImportDeclaration> importContainers = getImportContainer(method);
+		String declaringNamespace = getDeclaringNamespace(method);
+		if (typeParams != null) {
+			for (int i = 0; i < typeParams.length; i++) {
+				FormalParameter newTypeParam = ast.newFormalParameter();
+				org.eclipse.php.core.compiler.ast.nodes.FormalParameter currTypeParam = arguments.get(i);
+				IParameter curr = typeParams[i];
+
+				if (currTypeParam.getParameterType() != null) {
+					String typeName = addImports(namespace, curr.getType(), declaringNamespace, importContainers,
+							imports);
+					if (typeName != null) {
+						String parameterType = curr.getType();
+						if (supportNullable
+								&& ((FullyQualifiedReference) currTypeParam.getParameterType()).isNullable()) {
+							parameterType = '?' + parameterType;
+						}
+						newTypeParam.setParameterType(ast.newIdentifier(parameterType));
+					}
+				}
+				newTypeParam.setParameterName(ast.newIdentifier(curr.getName()));
+				if (curr.getDefaultValue() != null) {
+					newTypeParam.setDefaultValue(ast.newIdentifier(curr.getDefaultValue()));
+				}
+				typeParameters.add(newTypeParam);
+			}
+		}
+
+		FullyQualifiedReference returnType = (FullyQualifiedReference) ((PHPMethodDeclaration) methodDeclaration)
+				.getReturnType();
+		if (returnType != null && supportNullable) {
+			String returnTypeName = returnType.getName();
+			if (returnType.isNullable()) {
+				returnTypeName = '?' + returnTypeName;
+			}
+			func.setReturnType(ast.newIdentifier(returnTypeName));
+			addImports(namespace, returnType.getName(), declaringNamespace, importContainers, imports);
+		}
+		if (!deferred) {
+			Block body = ast.newBlock();
+			func.setBody(body);
+		}
+		return decl;
+	}
+

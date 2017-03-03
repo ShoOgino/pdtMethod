@@ -1,0 +1,19 @@
+	public Map<NamespaceDeclaration, List<UseStatement>> getUseStatements() {
+		if (fUseStatements == null) {
+			fUseStatements = new HashMap<>();
+			List<NamespaceDeclaration> namespaceDeclarations = getNamespaceDeclarations();
+			if (namespaceDeclarations.size() == 0) {
+				UseStatementFinder visitor = new UseStatementFinder();
+				this.accept(visitor);
+				fUseStatements.put(null, visitor.getUseStatements());
+			} else {
+				for (NamespaceDeclaration namespace : namespaceDeclarations) {
+					UseStatementFinder visitor = new UseStatementFinder();
+					namespace.accept(visitor);
+					fUseStatements.put(namespace, visitor.getUseStatements());
+				}
+			}
+		}
+		return fUseStatements;
+	}
+

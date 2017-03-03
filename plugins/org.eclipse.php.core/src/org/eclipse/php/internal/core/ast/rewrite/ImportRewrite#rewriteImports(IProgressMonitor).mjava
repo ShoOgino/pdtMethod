@@ -1,0 +1,60 @@
+	/**
+	 * Converts all modifications recorded by this rewriter into an object
+	 * representing the corresponding text edits to the source code of the
+	 * rewrite's compilation unit. The compilation unit itself is not modified.
+	 * <p>
+	 * Calling this methods does not discard the modifications on record.
+	 * Subsequence modifications are added to the ones already on record. If
+	 * this method is called again later, the resulting text edit object will
+	 * accurately reflect the net cumulative affect of all those changes.
+	 * </p>
+	 * 
+	 * @param monitor
+	 *            the progress monitor or <code>null</code>
+	 * @return text edit object describing the changes to the document
+	 *         corresponding to the changes recorded by this rewriter
+	 * @throws CoreException
+	 *             the exception is thrown if the rewrite fails.
+	 */
+	public final TextEdit rewriteImports(IProgressMonitor monitor) throws CoreException {
+		if (monitor == null) {
+			monitor = new NullProgressMonitor();
+		}
+
+		try {
+			monitor.beginTask("Updating uses", 2); //$NON-NLS-1$
+			if (!hasRecordedChanges()) {
+				this.createdImports = CharOperation.NO_STRINGS;
+				return new MultiTextEdit();
+			}
+
+			Program usedAstRoot = this.astRoot;
+			if (usedAstRoot == null) {
+				ASTParser parser = ASTParser.newParser(this.compilationUnit);
+				usedAstRoot = parser.createAST(SubMonitor.convert(monitor, 1));
+			}
+
+			ImportRewriteAnalyzer computer = new ImportRewriteAnalyzer(this.compilationUnit, usedAstRoot,
+					this.importOrder, this.restoreExistingImports);
+			computer.setFilterImplicitImports(this.filterImplicitImports);
+
+			List<NamespaceDeclaration> namespaces = usedAstRoot.getNamespaceDeclarations();
+			if (namespaces.size() > 0) {
+				for (NamespaceDeclaration namespace : namespaces) {
+					computeImports(computer, namespace);
+				}
+			} else {
+				computeImports(computer, null);
+			}
+
+			TextEdit result = computer.getResultingEdits(SubMonitor.convert(monitor, 1));
+			this.createdImports = computer.getCreatedImports();
+			return result;
+		} catch (Exception e) {
+			PHPCorePlugin.log(e);
+		} finally {
+			monitor.done();
+		}
+		return null;
+	}
+

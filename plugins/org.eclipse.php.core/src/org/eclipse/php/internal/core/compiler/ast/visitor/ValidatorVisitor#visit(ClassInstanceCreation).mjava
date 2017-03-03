@@ -1,0 +1,17 @@
+	@Override
+	public boolean visit(ClassInstanceCreation s) throws Exception {
+		if (s.getClassName() instanceof TypeReference) {
+			TypeReferenceInfo tri = new TypeReferenceInfo((TypeReference) s.getClassName(), false);
+			IType[] types = PHPModelUtils.getTypes(tri.getFullyQualifiedName(), sourceModule,
+					s.getClassName().sourceStart(), null);
+			for (IType type : types) {
+				if (PHPFlags.isInterface(type.getFlags()) || PHPFlags.isAbstract(type.getFlags())) {
+					reportProblem(s.getClassName(), Messages.CannotInstantiateType,
+							PhpProblemIdentifier.CannotInstantiateType, type.getElementName(), ProblemSeverities.Error);
+					break;
+				}
+			}
+		}
+		return visitGeneral(s);
+	}
+

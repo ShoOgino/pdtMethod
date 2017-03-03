@@ -1,0 +1,28 @@
+	private int getFirstTypeBeginPos(Program root, NamespaceDeclaration namespace) {
+		List<Statement> statements;
+		if (namespace == null) {
+			statements = root.statements();
+		} else {
+			statements = namespace.getBody().statements();
+		}
+		if (!statements.isEmpty()) {
+			ASTNode node = null;
+			boolean isAfterUseStatements = false;
+			if (root.getUseStatements(namespace).size() == 0) {
+				isAfterUseStatements = true;
+			}
+			for (Statement s : statements) {
+				if (s instanceof UseStatement) {
+					isAfterUseStatements = true;
+					continue;
+				}
+				if (isAfterUseStatements) {
+					node = s;
+					break;
+				}
+			}
+			return root.getExtendedStartPosition(node);
+		}
+		return -1;
+	}
+

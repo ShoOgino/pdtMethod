@@ -1,0 +1,32 @@
+	public static void getTypeProposals(IInvocationContext context, IProblemLocation problem,
+			Collection<AbstractCorrectionProposal> proposals) throws CoreException {
+		ISourceModule cu = context.getCompilationUnit();
+
+		ASTNode selectedNode = problem.getCoveringNode(context.getASTRoot());
+		if (selectedNode == null) {
+			return;
+		}
+
+		while (selectedNode.getLocationInParent() == Identifier.NAME_PROPERTY) {
+			selectedNode = selectedNode.getParent();
+		}
+
+		Identifier node = null;
+		if (selectedNode instanceof Identifier) {
+			node = ((Identifier) selectedNode);
+		} else if (selectedNode instanceof Comment) {
+			int start = problem.getOffset();
+			int end = problem.getOffset() + problem.getLength();
+			String nodeName = cu.getSource().substring(start, end);
+			node = new Identifier(start, end, context.getASTRoot().getAST(), nodeName);
+			node.setParent(selectedNode, Comment.COMMENT_TYPE_PROPERTY);
+			selectedNode = node;
+		} else {
+			return;
+		}
+
+		int kind = evauateTypeKind(selectedNode);
+
+		addSimilarTypeProposals(kind, cu, node, 3, proposals);
+	}
+

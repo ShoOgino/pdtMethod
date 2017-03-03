@@ -1,0 +1,28 @@
+	private void rewriteAnonymousClassDeclarationSuperClass(AnonymousClassDeclaration anonymousClassDeclaration)
+			throws CoreException {
+		RewriteEvent event = getEvent(anonymousClassDeclaration, AnonymousClassDeclaration.SUPER_CLASS_PROPERTY);
+		if (event != null) {
+			int changeKind = event.getChangeKind();
+			TextEditGroup editGroup = getEditGroup(event);
+			switch (changeKind) {
+			case RewriteEvent.INSERTED:
+				Identifier superClass = (Identifier) event.getNewValue();
+				int insertionPos = anonymousClassDeclaration.getStart() - 1;
+				String extendsKeyword = " extends "; //$NON-NLS-1$
+				doTextInsert(insertionPos, extendsKeyword, editGroup);
+				doTextInsert(insertionPos, superClass, 0, false, editGroup);
+				break;
+			case RewriteEvent.REMOVED:
+				superClass = (Identifier) event.getOriginalValue();
+				// locate the end offset of the deletion
+				int deletionEnd = getExtendedEnd(superClass);
+				int deletionStart = anonymousClassDeclaration.getStart() - 1;
+				doTextRemoveAndVisit(deletionStart, deletionEnd - deletionStart, superClass, getEditGroup(event));
+				break;
+			case RewriteEvent.REPLACED:
+				rewriteRequiredNode(anonymousClassDeclaration, AnonymousClassDeclaration.SUPER_CLASS_PROPERTY);
+				break;
+			}
+		}
+	}
+

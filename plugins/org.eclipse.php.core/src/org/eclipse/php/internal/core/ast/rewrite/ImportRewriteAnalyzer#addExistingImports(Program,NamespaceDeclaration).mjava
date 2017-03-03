@@ -1,0 +1,60 @@
+	private void addExistingImports(Program root, NamespaceDeclaration namespace) {
+		List<UseStatement> decls = root.getUseStatements(namespace);
+		if (decls.isEmpty()) {
+			return;
+		}
+		PackageEntry currPackage = null;
+
+		UseStatement curr = decls.get(0);
+		int currOffset = curr.getStart();
+		int currLength = curr.getLength();
+		int currEndLine = root.getLineNumber(currOffset + currLength);
+
+		for (int i = 1; i < decls.size(); i++) {
+			String name = getFullName(curr);
+			String packName = getQualifier(name);
+			if (currPackage == null || currPackage.compareTo(packName) != 0) {
+				currPackage = new PackageEntry(packName, null);
+				this.packageEntries.get(namespace).add(currPackage);
+			}
+
+			UseStatement next = decls.get(i);
+			int nextOffset = next.getStart();
+			int nextLength = next.getLength();
+			int nextOffsetLine = root.getLineNumber(nextOffset + 1);
+
+			// if next import is on a different line, modify the end position to
+			// the next line begin offset
+			if (currEndLine < nextOffsetLine) {
+				currEndLine++;
+				nextOffset = getPostion(root, currEndLine);
+			}
+			currPackage.add(new ImportDeclEntry(name, new Region(currOffset, nextOffset - currOffset)));
+			currOffset = nextOffset;
+			curr = next;
+
+			// add a comment entry for spacing between imports
+			if (currEndLine < nextOffsetLine) {
+				nextOffset = getPostion(root, nextOffsetLine);
+
+				currPackage = new PackageEntry(); // create a comment package
+				// entry for this
+				this.packageEntries.get(namespace).add(currPackage);
+				currPackage.add(new ImportDeclEntry(null, new Region(currOffset, nextOffset - currOffset)));
+
+				currOffset = nextOffset;
+			}
+			currEndLine = root.getLineNumber(nextOffset + nextLength);
+		}
+
+		String name = getFullName(curr);
+		String packName = getQualifier(name);
+		if (currPackage == null || currPackage.compareTo(packName) != 0) {
+			currPackage = new PackageEntry(packName, null);
+			this.packageEntries.get(namespace).add(currPackage);
+		}
+		int length = this.replaceRange.get(namespace).getOffset() + this.replaceRange.get(namespace).getLength()
+				- curr.getStart();
+		currPackage.add(new ImportDeclEntry(name, new Region(curr.getStart(), length)));
+	}
+

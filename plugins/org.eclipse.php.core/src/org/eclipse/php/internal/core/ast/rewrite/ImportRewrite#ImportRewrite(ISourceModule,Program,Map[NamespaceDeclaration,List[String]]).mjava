@@ -1,0 +1,37 @@
+	private ImportRewrite(ISourceModule cu, Program astRoot, Map<NamespaceDeclaration, List<String>> existingImports) {
+		this.compilationUnit = cu;
+		this.astRoot = astRoot; // might be null
+		List<NamespaceDeclaration> namespaces = astRoot.getNamespaceDeclarations();
+		if (existingImports != null) {
+			this.existingImports = existingImports;
+			if (namespaces.size() > 0) {
+				for (NamespaceDeclaration namespace : namespaces) {
+					this.restoreExistingImports.put(namespace, !existingImports.get(namespace).isEmpty());
+				}
+			} else {
+				this.restoreExistingImports.put(null, !existingImports.get(null).isEmpty());
+			}
+		} else {
+			this.existingImports = new HashMap<NamespaceDeclaration, List<String>>();
+			if (namespaces.size() > 0) {
+				for (NamespaceDeclaration namespace : namespaces) {
+					this.restoreExistingImports.put(namespace, false);
+				}
+			} else {
+				this.restoreExistingImports.put(null, false);
+			}
+		}
+		this.filterImplicitImports = true;
+
+		this.defaultContext = new ImportRewriteContext() {
+			public int findInContext(NamespaceDeclaration namespace, String qualifier, String name, int kind) {
+				return findInImports(namespace, qualifier, name, kind);
+			}
+		};
+		this.addedImports = null; // Initialized on use
+		this.removedImports = null; // Initialized on use
+		this.createdImports = null;
+
+		this.importOrder = CharOperation.NO_STRINGS;
+	}
+

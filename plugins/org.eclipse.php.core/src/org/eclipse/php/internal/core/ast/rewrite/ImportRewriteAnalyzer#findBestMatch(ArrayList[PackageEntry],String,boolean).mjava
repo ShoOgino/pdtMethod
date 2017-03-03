@@ -1,0 +1,43 @@
+	private PackageEntry findBestMatch(ArrayList<PackageEntry> packageEntries, String newName, boolean isStatic) {
+		if (packageEntries.isEmpty()) {
+			return null;
+		}
+		String groupId = null;
+		int longestPrefix = -1;
+		// find the matching group
+		for (int i = 0; i < packageEntries.size(); i++) {
+			PackageEntry curr = packageEntries.get(i);
+			String currGroup = curr.getGroupID();
+			if (currGroup != null && newName.startsWith(currGroup)) {
+				int prefixLen = currGroup.length();
+				if (prefixLen == newName.length()) {
+					return curr; // perfect fit, use entry
+				}
+				if ((newName.charAt(prefixLen) == NamespaceReference.NAMESPACE_SEPARATOR || prefixLen == 0)
+						&& prefixLen > longestPrefix) {
+					longestPrefix = prefixLen;
+					groupId = currGroup;
+				}
+			}
+		}
+		PackageEntry bestMatch = null;
+		PackageMatcher matcher = new PackageMatcher();
+		matcher.initialize(newName, ""); //$NON-NLS-1$
+		for (int i = 0; i < packageEntries.size(); i++) { // find the best
+			// match with
+			// the same
+			// group
+			PackageEntry curr = packageEntries.get(i);
+			if (!curr.isComment()) {
+				if (groupId == null || groupId.equals(curr.getGroupID())) {
+					boolean preferrCurr = (bestMatch == null)
+							|| (curr.getNumberOfImports() > bestMatch.getNumberOfImports());
+					if (matcher.isBetterMatch(curr.getName(), preferrCurr)) {
+						bestMatch = curr;
+					}
+				}
+			}
+		}
+		return bestMatch;
+	}
+

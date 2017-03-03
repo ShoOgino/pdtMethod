@@ -1,0 +1,68 @@
+	private void getResultingEdits(NamespaceDeclaration namespace, MultiTextEdit resEdit, IProgressMonitor monitor)
+			throws ModelException {
+
+		try {
+			int importsStart = this.replaceRange.get(namespace).getOffset();
+			int importsLen = this.replaceRange.get(namespace).getLength();
+
+			String lineDelim = getLineDelimiterUsed(sourceModule.getScriptProject());
+			IBuffer buffer = this.sourceModule.getBuffer();
+
+			int currPos = importsStart;
+
+			if ((this.flags.get(namespace) & F_NEEDS_LEADING_DELIM) != 0) {
+				// new import container
+				resEdit.addChild(new InsertEdit(currPos, lineDelim));
+			}
+
+			ArrayList<String> stringsToInsert = new ArrayList<String>();
+
+			int nPackageEntries = this.packageEntries.get(namespace).size();
+			for (int i = 0; i < nPackageEntries; i++) {
+				PackageEntry pack = this.packageEntries.get(namespace).get(i);
+				int nImports = pack.getNumberOfImports();
+
+				if (this.filterImplicitImports && isImplicitImport(namespace, pack.getName())) {
+					pack.removeAllNew();
+					nImports = pack.getNumberOfImports();
+				}
+				if (nImports == 0) {
+					continue;
+				}
+
+				for (int k = 0; k < nImports; k++) {
+					ImportDeclEntry currDecl = pack.getImportAt(k);
+					IRegion region = currDecl.getSourceRange();
+
+					if (region == null) { // new entry
+						String str = getNewImportString(namespace, currDecl.getElementName(), lineDelim);
+						stringsToInsert.add(str);
+					} else {
+						int offset = region.getOffset();
+						removeAndInsertNew(buffer, currPos, offset, stringsToInsert, resEdit);
+						stringsToInsert.clear();
+						currPos = offset + region.getLength();
+					}
+				}
+			}
+
+			int end = importsStart + importsLen;
+			removeAndInsertNew(buffer, currPos, end, stringsToInsert, resEdit);
+
+			if (importsLen == 0) {
+				if (!this.importsCreated.get(namespace).isEmpty()) { // new
+					// import
+					// container
+					if ((this.flags.get(namespace) & F_NEEDS_TRAILING_DELIM) != 0) {
+						resEdit.addChild(new InsertEdit(currPos, lineDelim));
+					}
+				} else {
+					resEdit.removeChild(resEdit.getChildrenSize() - 1);
+				}
+			}
+		} finally {
+			monitor.done();
+		}
+
+	}
+

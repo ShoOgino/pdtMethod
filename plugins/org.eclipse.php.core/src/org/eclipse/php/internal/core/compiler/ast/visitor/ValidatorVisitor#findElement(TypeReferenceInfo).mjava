@@ -1,0 +1,26 @@
+	private boolean findElement(TypeReferenceInfo info) {
+		String name = info.getFullyQualifiedName();
+		if (elementExists.containsKey(name)) {
+			return elementExists.get(name);
+		}
+
+		boolean isFound = false;
+		try {
+			TypeReference type = info.getTypeReference();
+			IModelElement[] types = PHPModelUtils.getTypes(name, sourceModule, type.start(), null);
+			if (types.length == 0) {
+				types = PHPModelUtils.getTraits(name, sourceModule, type.start(), null, null);
+			}
+			if (types.length == 0 && info.isUseStatement()) {
+				types = sourceModule.codeSelect(type.start(), type.end() - type.start());
+			}
+			if (types.length > 0) {
+				isFound = true;
+			}
+		} catch (ModelException e) {
+			PHPCorePlugin.log(e);
+		}
+		elementExists.put(name, isFound);
+		return isFound;
+	}
+

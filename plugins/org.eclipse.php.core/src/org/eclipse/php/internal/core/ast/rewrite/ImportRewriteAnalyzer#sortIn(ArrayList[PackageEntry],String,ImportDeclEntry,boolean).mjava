@@ -1,0 +1,32 @@
+	private void sortIn(ArrayList<PackageEntry> packageEntries, String typeContainerName, ImportDeclEntry decl,
+			boolean isStatic) {
+		PackageEntry bestMatch = findBestMatch(packageEntries, typeContainerName, isStatic);
+		if (bestMatch == null) {
+			PackageEntry packEntry = new PackageEntry(typeContainerName, null);
+			packEntry.add(decl);
+			int insertPos = getIndexAfterStatics(packageEntries);
+			packageEntries.add(insertPos, packEntry);
+		} else {
+			int cmp = typeContainerName.compareTo(bestMatch.getName());
+			if (cmp == 0) {
+				bestMatch.sortIn(decl);
+			} else {
+				// create a new package entry
+				String group = bestMatch.getGroupID();
+				if (group != null) {
+					if (!typeContainerName.startsWith(group)) {
+						group = null;
+					}
+				}
+				PackageEntry packEntry = new PackageEntry(typeContainerName, group);
+				packEntry.add(decl);
+				int index = packageEntries.indexOf(bestMatch);
+				if (cmp < 0) { // insert ahead of best match
+					packageEntries.add(index, packEntry);
+				} else { // insert after best match
+					packageEntries.add(index + 1, packEntry);
+				}
+			}
+		}
+	}
+
