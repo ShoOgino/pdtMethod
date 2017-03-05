@@ -13,7 +13,7 @@
 			// get original line information
 			final IRegion originalLineInfo = document.getLineInformation(lineNumber);
 			final int originalLineStart = originalLineInfo.getOffset();
-			final int originalLineLength = originalLineInfo.getLength();
+			int originalLineLength = originalLineInfo.getLength();
 
 			// fast resolving of empty line
 			if (originalLineLength == 0)
@@ -30,9 +30,9 @@
 			// remove ending spaces.
 			final int formattedLineStart = formattedLineInformation.getOffset();
 			final int formattedTextEnd = formattedLineStart + formattedLineInformation.getLength();
-			final int originalTextEnd = originalLineStart + originalLineLength;
-			if (formattedTextEnd != originalTextEnd) {
-				document.replace(formattedTextEnd, originalTextEnd - formattedTextEnd, ""); //$NON-NLS-1$
+			if (formattedTextEnd != originalLineStart + originalLineLength) {
+				document.replace(formattedTextEnd, originalLineStart + originalLineLength - formattedTextEnd, ""); //$NON-NLS-1$
+				originalLineLength = formattedTextEnd - originalLineStart;
 				// in case there is no text in the line just quit (since the
 				// formatted of empty line is empty line)
 				if (formattedLineStart == formattedTextEnd) {
@@ -56,18 +56,18 @@
 			}
 			if (firstTokenInLine instanceof IPhpScriptRegion) {
 				IPhpScriptRegion scriptRegion = (IPhpScriptRegion) firstTokenInLine;
-				if (scriptRegion.getEnd() <= formattedLineStart) {
+				if (regionStart + scriptRegion.getEnd() <= formattedLineStart) {
 					return;
 				}
-				scriptRegionPos += scriptRegion.getStart();
+				scriptRegionPos = regionStart;
 				firstTokenInLine = scriptRegion.getPhpToken(formattedLineStart - regionStart);
-				if (firstTokenInLine.getStart() + sdRegion.getStartOffset() < originalLineStart
+				if (regionStart + firstTokenInLine.getStart() < originalLineStart
 						&& firstTokenInLine.getType() == PHPRegionTypes.WHITESPACE) {
 					firstTokenInLine = scriptRegion.getPhpToken(firstTokenInLine.getEnd());
 				}
-				if (formattedTextEnd <= scriptRegion.getEnd()) {
+				if (formattedTextEnd <= regionStart + scriptRegion.getEnd()) {
 					lastTokenInLine = scriptRegion.getPhpToken(formattedTextEnd - regionStart - 1);
-					if (lastTokenInLine.getEnd() + sdRegion.getStartOffset() > originalLineStart + originalLineLength
+					if (regionStart + lastTokenInLine.getEnd() > originalLineStart + originalLineLength
 							&& lastTokenInLine.getType() == PHPRegionTypes.WHITESPACE
 							&& lastTokenInLine.getStart() > 0) {
 						lastTokenInLine = scriptRegion.getPhpToken(lastTokenInLine.getStart() - 1);
@@ -112,8 +112,7 @@
 			// Fill the buffer with blanks as if we added a "\n" to the end of
 			// the prev element.
 			// insertionStrategy.placeMatchingBlanks(editor,doc,insertionStrtegyKey,resultBuffer,startOffset-1);
-			insertionStrategy.placeMatchingBlanks(document, resultBuffer, lineNumber,
-					document.getLineOffset(lineNumber));
+			insertionStrategy.placeMatchingBlanks(document, resultBuffer, lineNumber, originalLineStart);
 
 			// replace the starting spaces
 			final String newIndentation = resultBuffer.toString();
