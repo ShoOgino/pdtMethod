@@ -3,7 +3,6 @@
 	 * 
 	 * @param document
 	 * @param lineNumber
-	 *            TODO: we should invoke document.replace() one and not twice!
 	 */
 	private void formatLine(IStructuredDocument document, int lineNumber) {
 		resultBuffer.setLength(0);
@@ -16,8 +15,11 @@
 			int originalLineLength = originalLineInfo.getLength();
 
 			// fast resolving of empty line
-			if (originalLineLength == 0)
+			if (originalLineLength == 0) {
+				retrieveEmptyLineIndentation(document, resultBuffer, lineNumber, originalLineStart);
+				document.replace(originalLineStart, originalLineLength, resultBuffer.toString());
 				return;
+			}
 
 			// get formatted line information
 			final String lineText = document.get(originalLineStart, originalLineLength);
@@ -36,6 +38,8 @@
 				// in case there is no text in the line just quit (since the
 				// formatted of empty line is empty line)
 				if (formattedLineStart == formattedTextEnd) {
+					retrieveEmptyLineIndentation(document, resultBuffer, lineNumber, originalLineStart);
+					document.replace(originalLineStart, originalLineLength, resultBuffer.toString());
 					return;
 				}
 			}
@@ -57,6 +61,8 @@
 			if (firstTokenInLine instanceof IPhpScriptRegion) {
 				IPhpScriptRegion scriptRegion = (IPhpScriptRegion) firstTokenInLine;
 				if (regionStart + scriptRegion.getEnd() <= formattedLineStart) {
+					retrieveEmptyLineIndentation(document, resultBuffer, lineNumber, originalLineStart);
+					document.replace(originalLineStart, originalLineLength, resultBuffer.toString());
 					return;
 				}
 				scriptRegionPos = regionStart;
@@ -76,8 +82,11 @@
 			}
 
 			// if the next char is not from this line
-			if (firstTokenInLine == null)
+			if (firstTokenInLine == null) {
+				retrieveEmptyLineIndentation(document, resultBuffer, lineNumber, originalLineStart);
+				document.replace(originalLineStart, originalLineLength, resultBuffer.toString());
 				return;
+			}
 
 			String firstTokenType = firstTokenInLine.getType();
 
@@ -126,7 +135,7 @@
 				oldChar = oldIndentation.charAt(0);
 			}
 			if (newIndentation.length() != oldIndentation.length() || newChar != oldChar) {
-				document.replaceText(sdRegion, originalLineStart, endingWhiteSpaces, newIndentation);
+				document.replace(originalLineStart, endingWhiteSpaces, newIndentation);
 			}
 
 		} catch (BadLocationException e) {
