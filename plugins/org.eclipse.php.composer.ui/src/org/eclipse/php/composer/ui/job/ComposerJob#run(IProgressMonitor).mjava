@@ -1,6 +1,7 @@
 	@Override
 	protected IStatus run(final IProgressMonitor monitor) {
 		boolean callDoOnLauncherRunException = false;
+		IResourceFilterDescription resourceFilter = null;
 		try {
 			this.monitor = monitor;
 
@@ -45,6 +46,8 @@
 
 			monitor.beginTask(getName(), IProgressMonitor.UNKNOWN);
 			monitor.worked(1);
+			// Add filter to skip unwanted resource notifications
+			resourceFilter = ResourceFilterUtil.createExcludeFilter(project, FILTER_RESOURCE_PATH);
 			launch(launcher);
 			monitor.worked(1);
 
@@ -61,6 +64,13 @@
 			Logger.logException(e);
 			return ERROR_STATUS;
 		} finally {
+			if (resourceFilter != null)
+				try {
+					// Remove filter and refresh to reflect all changes.
+					resourceFilter.delete(IResource.BACKGROUND_REFRESH, new NullProgressMonitor());
+				} catch (CoreException e) {
+					Logger.logException(e);
+				}
 			monitor.done();
 		}
 
