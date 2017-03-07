@@ -24,8 +24,7 @@
 
 			// fast resolving of empty line
 			if (originalLineLength == 0) {
-				retrieveEmptyLineIndentation(document, resultBuffer, lineNumber, originalLineStart);
-				document.replace(originalLineStart, originalLineLength, resultBuffer.toString());
+				doEmptyLineIndentation(document, resultBuffer, lineNumber, originalLineStart, originalLineLength);
 				return;
 			}
 
@@ -33,15 +32,13 @@
 			final int formattedLineStart = formattedLineInformation.getOffset();
 			final int formattedTextEnd = formattedLineStart + formattedLineInformation.getLength();
 			if (formattedTextEnd != originalLineStart + originalLineLength) {
-				document.replace(formattedTextEnd, originalLineStart + originalLineLength - formattedTextEnd, ""); //$NON-NLS-1$
-				originalLineLength = formattedTextEnd - originalLineStart;
-				// in case there is no text in the line just quit (since the
-				// formatted of empty line is empty line)
+				// resolve blank line
 				if (formattedLineStart == formattedTextEnd) {
-					retrieveEmptyLineIndentation(document, resultBuffer, lineNumber, originalLineStart);
-					document.replace(originalLineStart, originalLineLength, resultBuffer.toString());
+					doEmptyLineIndentation(document, resultBuffer, lineNumber, originalLineStart, originalLineLength);
 					return;
 				}
+				document.replace(formattedTextEnd, originalLineStart + originalLineLength - formattedTextEnd, ""); //$NON-NLS-1$
+				originalLineLength = formattedTextEnd - originalLineStart;
 			}
 
 			// get regions
@@ -61,8 +58,7 @@
 			if (firstTokenInLine instanceof IPhpScriptRegion) {
 				IPhpScriptRegion scriptRegion = (IPhpScriptRegion) firstTokenInLine;
 				if (regionStart + scriptRegion.getEnd() <= formattedLineStart) {
-					retrieveEmptyLineIndentation(document, resultBuffer, lineNumber, originalLineStart);
-					document.replace(originalLineStart, originalLineLength, resultBuffer.toString());
+					doEmptyLineIndentation(document, resultBuffer, lineNumber, originalLineStart, 0);
 					return;
 				}
 				scriptRegionPos = regionStart;
@@ -83,8 +79,7 @@
 
 			// if the next char is not from this line
 			if (firstTokenInLine == null) {
-				retrieveEmptyLineIndentation(document, resultBuffer, lineNumber, originalLineStart);
-				document.replace(originalLineStart, originalLineLength, resultBuffer.toString());
+				doEmptyLineIndentation(document, resultBuffer, lineNumber, originalLineStart, 0);
 				return;
 			}
 
@@ -126,15 +121,7 @@
 			// replace the starting spaces
 			final String newIndentation = resultBuffer.toString();
 			final String oldIndentation = lineText.substring(0, endingWhiteSpaces);
-			char newChar = '\0';
-			if (newIndentation.length() > 0) {
-				newChar = newIndentation.charAt(0);
-			}
-			char oldChar = '\0';
-			if (oldIndentation.length() > 0) {
-				oldChar = oldIndentation.charAt(0);
-			}
-			if (newIndentation.length() != oldIndentation.length() || newChar != oldChar) {
+			if (!StringUtils.equals(oldIndentation, newIndentation)) {
 				document.replace(originalLineStart, endingWhiteSpaces, newIndentation);
 			}
 
