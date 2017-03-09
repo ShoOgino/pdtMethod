@@ -1,0 +1,27 @@
+	/**
+	 * @param text
+	 *            {@link #compile(String)}
+	 * @return {@link #compile(String)}
+	 */
+	public String compile(String text) {
+		Object val;
+		String valCompiled;
+		String var;
+
+		if ("".equals(text)) //$NON-NLS-1$
+			return ""; //$NON-NLS-1$
+
+		final Matcher matcher = Pattern
+				.compile(StringUtils.replace(REGEXP_VAR, REGEXP_ELEMENT_PLACEHOLDER, REGEXP_ELEMENT_VALID))
+				.matcher(text);
+		while (matcher.find()) {
+			var = matcher.group(1);
+			val = vars.get(var);
+			if (val == null)
+				continue;
+			valCompiled = compile(val.toString()); // WARNING: recursion
+			text = StringUtils.replace(text, matcher.group(0), valCompiled);
+		}
+		return text;
+	}
+

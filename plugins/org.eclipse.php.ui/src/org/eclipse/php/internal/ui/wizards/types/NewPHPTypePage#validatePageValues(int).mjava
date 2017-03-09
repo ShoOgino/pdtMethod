@@ -1,0 +1,189 @@
+	protected void validatePageValues(int validationCode) {
+		switch (validationCode) {
+		case VALIDATE_ELEMENT_NAME:
+			elementNameStatus = new StatusInfo();
+			if (getElementName() == null || getElementName().length() == 0) {
+				String message = IDEUIMessages.getString("NewPHPTypePage_nameMustNotBeEmpty"); //$NON-NLS-1$
+				switch (fTypeKind) {
+				case CLASS_TYPE:
+					message = IDEUIMessages.getString("NewPHPTypePage_class") //$NON-NLS-1$
+							+ message;
+					break;
+				case INTERFACE_TYPE:
+					message = IDEUIMessages.getString("NewPHPTypePage_interface") //$NON-NLS-1$
+							+ message;
+					break;
+				case TRAIT_TYPE:
+					message = IDEUIMessages.getString("NewPHPTypePage_trait") //$NON-NLS-1$
+							+ message;
+					break;
+				}
+				elementNameStatus.setError(message);
+			} else if (isInExistingPHPFile()) {
+				Path p = new Path(getSourceText() + File.separatorChar + getExistingFileName());
+				IWorkspaceRoot wsRoot = ResourcesPlugin.getWorkspace().getRoot();
+				IFile file = wsRoot.getFile(p);
+
+				// PHPFileData fileData =
+				// PHPWorkspaceModelManager.getInstance().getModelForFile(p.toString());
+
+				ISourceModule sourceModule = DLTKCore.createSourceModuleFrom(file);
+				if (sourceModule != null && sourceModule.exists()) {
+					IType[] types = null;
+					try {
+						types = sourceModule.getTypes();
+					} catch (ModelException e) {
+						Logger.logException(e);
+					}
+
+					if (types != null) {
+						// check if the new class/interface already exists in a
+						// current file
+						for (IType type : types) {
+							if (type.getElementName().equalsIgnoreCase(getElementName())) {
+								if (fTypeKind == CLASS_TYPE && !PHPFlags.isClass(type.getElementType())) {
+									elementNameStatus.setError(IDEUIMessages.getString("NewPHPTypePage_class") //$NON-NLS-1$
+											+ getElementName()
+											+ IDEUIMessages.getString("NewPHPTypePage_alreadyExistsInFile") //$NON-NLS-1$
+											+ existingFileName);
+									break;
+								} else if (fTypeKind == INTERFACE_TYPE && PHPFlags.isInterface(type.getElementType())) {
+									elementNameStatus.setError(IDEUIMessages.getString("NewPHPTypePage_interface") //$NON-NLS-1$
+											+ getElementName()
+											+ IDEUIMessages.getString("NewPHPTypePage_alreadyExistsInFile")); //$NON-NLS-1$
+									break;
+								} else if (fTypeKind == TRAIT_TYPE && PHPFlags.isInterface(type.getElementType())) {
+									elementNameStatus.setError(IDEUIMessages.getString("NewPHPTypePage_trait") //$NON-NLS-1$
+											+ getElementName()
+											+ IDEUIMessages.getString("NewPHPTypePage_alreadyExistsInFile")); //$NON-NLS-1$
+									break;
+								}
+							}
+						}
+					} // do nothing here, no elements exists in the file
+				}
+
+			}
+
+			// fix bug 14446 - add PHP identifier validation
+			if (getProject() != null) {
+				if (!isValidPhpIdentifier(getElementName())) {
+					String message = IDEUIMessages.getString("NewPHPTypePage_InvalidPhp"); //$NON-NLS-1$
+					String nameLabel = IDEUIMessages.getString("NewPHPTypePage_InvalidPhpName"); //$NON-NLS-1$
+					switch (fTypeKind) {
+					case CLASS_TYPE:
+						message = message + IDEUIMessages.getString("NewPHPTypePage_class") //$NON-NLS-1$
+								+ nameLabel;
+						break;
+					case INTERFACE_TYPE:
+						message = message + IDEUIMessages.getString("NewPHPTypePage_interface") //$NON-NLS-1$
+								+ nameLabel;
+						break;
+					case TRAIT_TYPE:
+						message = message + IDEUIMessages.getString("NewPHPTypePage_trait") //$NON-NLS-1$
+								+ nameLabel;
+						break;
+					}
+					elementNameStatus.setError(message);
+				}
+			}
+			updateStatus(findMostSevereStatus());
+			break;
+		case VALIDATE_SOURCE_FOLDER:
+			// since source folder is a critical location (PHP model)
+			// we should check how it affects the wizard pages
+			sourceFolderChanged();
+			break;
+		case VALIDATE_EXISTING_FILE:
+			existingFileStatus = new StatusInfo();
+			if (isInExistingPHPFile()) {
+				if (existingFileText.getText().length() == 0) {
+					existingFileStatus.setError(IDEUIMessages.getString("NewPHPTypePage_existingFileMustNotBeEmpty")); //$NON-NLS-1$
+				} else if (!isPathExist(sourceText.getText() + File.separatorChar + existingFileText.getText())) {
+					existingFileStatus.setError(IDEUIMessages.getString("NewPHPTypePage_targetPHPFile") //$NON-NLS-1$
+							+ existingFileText.getText() + IDEUIMessages.getString("NewPHPTypePage_doesNotExist")); //$NON-NLS-1$
+				} else if (!isPHPSuffix(existingFileText.getText())) {
+					existingFileStatus.setError(IDEUIMessages.getString("NewPHPTypePage_phpFile") //$NON-NLS-1$
+							+ existingFileText.getText() + IDEUIMessages.getString("NewPHPTypePage_notPhpExtention")); //$NON-NLS-1$
+				}
+			}
+			updateStatus(findMostSevereStatus());
+			break;
+		case VALIDATE_NEW_FILE:
+			newFileStatus = new StatusInfo();
+			if (!isInExistingPHPFile()) {
+				String fileName = newFileText.getText();
+				if (fileName.length() == 0) {
+					newFileStatus.setError(IDEUIMessages.getString("NewPHPTypePage_fileMustnotBeEmpty")); //$NON-NLS-1$
+				}
+
+				else if (isPathExist(sourceText.getText() + File.separatorChar + fileName)) {
+					newFileStatus.setError(IDEUIMessages.getString("NewPHPTypePage_phpFile") //$NON-NLS-1$
+							+ fileName + IDEUIMessages.getString("NewPHPTypePage_alreadyExists")); //$NON-NLS-1$
+				} else if (!isPHPSuffix(fileName)) {
+					newFileStatus.setError(IDEUIMessages.getString("NewPHPTypePage_phpFile") //$NON-NLS-1$
+							+ fileName + IDEUIMessages.getString("NewPHPTypePage_notPhpExtention")); //$NON-NLS-1$
+				} else if (!isValidFileName(fileName)) {
+					newFileStatus.setError(IDEUIMessages.getString("NewPHPTypePage_phpFile") //$NON-NLS-1$
+
+							+ IDEUIMessages.format("NewPHPTypePage.0", //$NON-NLS-1$
+									new String[] { fileName }));
+				}
+			}
+			updateStatus(findMostSevereStatus());
+			break;
+		case VALIDATE_NAMESPACE:
+			namespaceStatus = new StatusInfo();
+			String namespace = getNamespace();
+			if (namespace != null && !namespace.isEmpty()) {
+				int separator = namespace.indexOf("/", 0); //$NON-NLS-1$
+				if (separator != -1) {
+					namespaceStatus.setError(IDEUIMessages.getString("NewPHPTypePage_invalidSeparator")); //$NON-NLS-1$
+				} else {
+					if (namespace.endsWith("\\")) {//$NON-NLS-1$
+						namespaceStatus.setError(IDEUIMessages.getString("NewPHPTypePage_emptySublevel")); //$NON-NLS-1$
+					} else {
+						String[] segments = namespace.split("\\\\");//$NON-NLS-1$
+						if (segments.length == 1 && !isValidPhpIdentifier(namespace.trim())) {
+							namespaceStatus.setError(IDEUIMessages.getString("NewPHPTypePage_invalidNamespaceName")); //$NON-NLS-1$
+						} else {
+							for (String segment : segments) {
+								if (segment.isEmpty()) {
+									namespaceStatus.setError(IDEUIMessages.getString("NewPHPTypePage_emptySublevel")); //$NON-NLS-1$
+								} else {
+									try {
+										Integer.valueOf(segment);
+										namespaceStatus
+												.setError(IDEUIMessages.getString("NewPHPTypePage_invalidSublevel")); //$NON-NLS-1$
+									} catch (NumberFormatException e) {
+										// valid segment
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			updateStatus(findMostSevereStatus());
+			break;
+		}
+		String sourcePathStr = getProjectName(getSourceText());
+		if (sourcePathStr == null || sourcePathStr.length() == 0) {
+			return;
+		}
+
+		Path projPath = new Path(sourcePathStr);
+		if (projPath.segmentCount() == 1) {
+			IProject currentProject = getCurrentProject();
+			if (currentProject != null && currentProject.exists()) {
+				IScriptProject model = DLTKCore.create(currentProject);
+				if (getInterfaces().size() > 0) {
+					validateInterfaces(model);
+				}
+				if (getTraits().size() > 0) {
+					validateTraits(model);
+				}
+			}
+		}
+	}
+

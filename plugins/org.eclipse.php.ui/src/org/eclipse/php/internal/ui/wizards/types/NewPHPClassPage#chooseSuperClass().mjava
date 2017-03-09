@@ -1,0 +1,46 @@
+	/**
+	 * Creates a UI component withing this Wizard page for selecting the
+	 * Superclass
+	 * 
+	 * @return the selected super class
+	 */
+	protected IType chooseSuperClass() {
+		final IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
+		IProject project = workspaceRoot.getProject(getProjectName(sourceText.getText()));
+
+		FilteredTypesSelectionDialog dialog = new FilteredTypesSelectionDialog(getShell(), false,
+				PlatformUI.getWorkbench().getProgressService(),
+				SearchEngine.createSearchScope(DLTKCore.create(project)), IDLTKSearchConstants.TYPE,
+				new TypeSelectionExtension() {
+					public ITypeInfoFilterExtension getFilterExtension() {
+						return new ITypeInfoFilterExtension() {
+							public boolean select(ITypeInfoRequestor typeInfoRequestor) {
+								int modifiers = typeInfoRequestor.getModifiers();
+								if (!PHPFlags.isFinal(modifiers) && !PHPFlags.isInterface(modifiers)
+										&& !PHPFlags.isNamespace(modifiers) && !PHPFlags.isTrait(modifiers)) {
+									return true;
+								}
+								return false;
+							}
+						};
+					}
+				}, PHPLanguageToolkit.getDefault());
+
+		dialog.setListLabelProvider(new PHPFullPathLabelProvider());
+		dialog.setListSelectionLabelDecorator(new PHPFullPathLabelProvider());
+		dialog.setDetailsLabelProvider(new StatusLineLabelProvider());
+
+		dialog.setTitle(Messages.NewPHPClassPage_0);
+		dialog.setMessage(Messages.NewPHPClassPage_15);
+		dialog.setInitialPattern("", //$NON-NLS-1$
+				FilteredItemsSelectionDialog.FULL_SELECTION);
+
+		if (dialog.open() == Window.OK) {
+			Object[] resultArray = dialog.getResult();
+			if ((resultArray != null) && (resultArray.length > 0)) {
+				return (IType) resultArray[0];
+			}
+		}
+		return null;
+	}
+

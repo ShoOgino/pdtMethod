@@ -1,0 +1,41 @@
+	/**
+	 * @param templateEngine
+	 */
+	protected void injectCodeIntoExistingFile() {
+		// locate location for injection of :
+		// --------------------------------
+		// 1. Require list only when not in new block
+		if (page.isInFirstPHPBlock()) {
+
+			int injectOffset = findPhpBlockOffset();
+
+			int phpBlockEndOffset = -1;
+			if (injectOffset == -1) {
+				injectOffset = 0;
+
+				// create injector at offset
+				CodeInjector phpBlockInjector = new CodeInjector(existingPHPFile, injectOffset);
+				phpBlockInjector.inject("<?php", false, true);//$NON-NLS-1$
+
+				// find created php block end
+				injectOffset = findPhpBlockOffset();
+				if (injectOffset != -1) {
+					phpBlockEndOffset = injectOffset;
+				}
+			} else {
+				phpBlockEndOffset = injectOffset;
+			}
+			// if no PHP block and no include/require found, set offset at the
+			// start of the file
+
+			CodeInjector generatedCodeInjector = new CodeInjector(existingPHPFile, phpBlockEndOffset);
+			generatedCodeInjector.setOffset(phpBlockEndOffset);
+			generatedCodeInjector.inject("\n" + compilationResult, true, true); //$NON-NLS-1$
+
+		} else {
+			// isInFirstPHPBlock = false
+			CodeInjector injector = new CodeInjector(existingPHPFile);
+			injector.inject("\n" + compilationResult, true, true); //$NON-NLS-1$
+		}
+	}
+

@@ -1,0 +1,64 @@
+	public IFolder createNewFolder(IPath newFolderPath) {
+		IFolder newFolder = null;
+
+		// create the new folder and cache it if successful
+		// final IPath containerPath = resourceGroup.getContainerFullPath();
+		// IPath newFolderPath =
+		// containerPath.append(resourceGroup.getResource());
+		final IFolder newFolderHandle = createFolderHandle(newFolderPath);
+
+		final boolean createVirtualFolder = false;
+		IRunnableWithProgress op = new IRunnableWithProgress() {
+			public void run(IProgressMonitor monitor) {
+				AbstractOperation op;
+				op = new CreateFolderOperation(newFolderHandle, null, createVirtualFolder, null,
+						IDEWorkbenchMessages.WizardNewFolderCreationPage_title);
+				try {
+					// see bug
+					// https://bugs.eclipse.org/bugs/show_bug.cgi?id=219901
+					// directly execute the operation so that the undo state is
+					// not preserved. Making this undoable can result in
+					// accidental
+					// folder (and file) deletions.
+					op.execute(monitor, WorkspaceUndoUtil.getUIInfoAdapter(getShell()));
+				} catch (final ExecutionException e) {
+					getContainer().getShell().getDisplay().syncExec(new Runnable() {
+						public void run() {
+							if (e.getCause() instanceof CoreException) {
+								ErrorDialog.openError(getContainer().getShell(), // Was
+																					// Utilities.getFocusShell()
+										IDEWorkbenchMessages.WizardNewFolderCreationPage_errorTitle, null, // no
+																											// special
+																											// message
+										((CoreException) e.getCause()).getStatus());
+							} else {
+								IDEWorkbenchPlugin.log(getClass(), "createNewFolder()", e.getCause()); //$NON-NLS-1$
+								MessageDialog.openError(getContainer().getShell(),
+										IDEWorkbenchMessages.WizardNewFolderCreationPage_internalErrorTitle,
+										NLS.bind(IDEWorkbenchMessages.WizardNewFolder_internalError,
+												e.getCause().getMessage()));
+							}
+						}
+					});
+				}
+			}
+		};
+
+		try {
+			getContainer().run(true, true, op);
+		} catch (InterruptedException e) {
+			return null;
+		} catch (InvocationTargetException e) {
+			// ExecutionExceptions are handled above, but unexpected runtime
+			// exceptions and errors may still occur.
+			IDEWorkbenchPlugin.log(getClass(), "createNewFolder()", e.getTargetException()); //$NON-NLS-1$
+			MessageDialog.open(MessageDialog.ERROR, getContainer().getShell(),
+					IDEWorkbenchMessages.WizardNewFolderCreationPage_internalErrorTitle,
+					NLS.bind(IDEWorkbenchMessages.WizardNewFolder_internalError, e.getTargetException().getMessage()),
+					SWT.SHEET);
+			return null;
+		}
+
+		return newFolder;
+	}
+

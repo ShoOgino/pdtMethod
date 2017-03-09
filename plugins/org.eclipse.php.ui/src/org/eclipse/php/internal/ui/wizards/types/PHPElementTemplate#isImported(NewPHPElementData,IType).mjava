@@ -1,0 +1,29 @@
+	protected boolean isImported(NewPHPElementData data, IType superClass) {
+		String name = superClass.getElementName();
+		try {
+			IModelElement parent = superClass.getParent();
+			if (parent instanceof IType) {
+				if (PHPFlags.isNamespace(((IType) parent).getFlags())) {
+					name = parent.getElementName() + "\\" + name; //$NON-NLS-1$
+				}
+			}
+		} catch (ModelException e) {
+			// do not log, just continue
+		}
+		if ((data.realNamespace + "\\" + superClass.getElementName()) //$NON-NLS-1$
+				.equals(name)) {
+			return true;
+		}
+		for (String importEntry : data.imports) {
+			if (importEntry.equals(name)) {
+				return true;
+			}
+		}
+		for (String importEntry : data.existingImports) {
+			if (importEntry.equals(name)) {
+				return true;
+			}
+		}
+		return false;
+	}
+

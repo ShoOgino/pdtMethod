@@ -1,0 +1,69 @@
+	// populate data object that is passed to the template engine
+	private NewPHPElementData populatePHPElementData() {
+		PHPVersion phpVersion = page.getPhpVersion();
+		NewPHPClassPage page = (NewPHPClassPage) this.page;
+		NewPHPElementData data = new NewPHPElementData();
+		data.phpVersion = phpVersion;
+		data.isGeneratePHPDoc = page.isCheckboxCreationChecked(NewPHPClassPage.PHP_DOC_BLOCKS);
+		data.isGenerateTODOs = page.isCheckboxCreationChecked(NewPHPClassPage.TODOS);
+		data.superClass = page.getSuperClassData();
+		List<IType> interfacesList = page.getInterfaces();
+		IType[] interfaces = new IType[interfacesList.size()];
+		interfacesList.toArray(interfaces);
+		data.interfaces = interfaces;
+		List<IType> traitsList = page.getTraits();
+		IType[] traits = new IType[traitsList.size()];
+		traitsList.toArray(traits);
+		data.traits = traits;
+		List<String> existingImports = getExistingImports();
+		data.existingImports = existingImports.toArray(new String[0]);
+		List<String> imports = new ArrayList<String>();
+		for (IType type : interfaces) {
+			addImport(imports, type, existingImports);
+		}
+		if (data.superClass != null) {
+			addImport(imports, data.superClass, existingImports);
+		}
+		for (IType type : traits) {
+			addImport(imports, type, existingImports);
+		}
+		data.isGenerateConstructor = page.isCheckboxCreationChecked(NewPHPClassPage.CONSTRUCTOR);
+
+		data.isGenerateDestructor = page.isCheckboxCreationChecked(NewPHPClassPage.DESTRUCTOR);
+		data.isFinal = page.isCreateModifierChecked(1);
+		data.isAbstract = page.isCreateModifierChecked(2);
+
+		IMethod[] funcs = new IMethod[funcsToAdd.size()];
+		funcsToAdd.toArray(funcs);
+		for (IMethod method : funcs) {
+			try {
+				IParameter[] parameters = method.getParameters();
+				for (IParameter parameter : parameters) {
+					if (parameter.getType() != null) {
+						IType[] parameterTypes = PHPModelUtils.getTypes(parameter.getType(), method.getSourceModule(),
+								method.getSourceRange().getOffset(), null);
+						for (IType parameterType : parameterTypes) {
+							addImport(imports, parameterType, existingImports);
+						}
+					}
+				}
+			} catch (ModelException e) {
+			}
+		}
+		data.funcsToAdd = funcs;
+		data.className = page.getElementName();
+		data.namespace = page.getNamespace();
+		data.realNamespace = page.getRealNamespace();
+		data.isExistingFile = page.isInExistingPHPFile();
+		data.requiredToAdd = getRequires();
+		if (data.isExistingFile) {
+			data.isInFirstBlock = page.isInFirstPHPBlock();
+			// if (existingPHPFile.getPHPBlocks() != null &&
+			// existingPHPFile.getPHPBlocks().length > 0) {
+			data.hasFirstBlock = true;
+			// }
+		}
+		data.imports = imports.toArray(new String[0]);
+		return data;
+	}
+

@@ -1,0 +1,94 @@
+	protected IModelElement getInitialPHPElement(final IStructuredSelection selection) {
+
+		if (selection != null && !selection.isEmpty()) {
+			Object obj = selection.getFirstElement();
+			IModelElement codeData = null;
+			if (obj instanceof NodeImpl) {
+				if (obj instanceof IAdaptable) {
+					obj = ((IAdaptable) obj).getAdapter(IModelElement.class);
+				}
+			}
+
+			if (obj instanceof ISourceModule) {
+				codeData = (ISourceModule) obj;
+				while (codeData != null && !(codeData instanceof ISourceModule) && !(codeData instanceof IType)
+						&& !(codeData instanceof IMethod)) {
+					codeData = codeData.getParent();
+				}
+
+				// fixed bug 14462 - find the file element and get the name of
+				// the file
+				// in case of interface insert the interface to super interfaces
+				// list
+				if (codeData instanceof ISourceModule) {
+					try {
+						if (codeData.getCorrespondingResource() == null) {
+							isInExistingPHPFile = false;
+							return codeData;
+						}
+					} catch (ModelException e) {
+						Logger.logException(e);
+					}
+					isInExistingPHPFile = true;
+					String filename = null;
+					try {
+						filename = codeData.getCorrespondingResource().getFullPath().toOSString();
+					} catch (ModelException e) {
+						Logger.logException(e);
+						return null;
+					}
+					int idx = Math.max(filename.lastIndexOf('\\'), filename.lastIndexOf('/'));
+					if (idx != -1) {
+						existingFileName = filename.substring(idx + 1);
+					}
+					try {
+						existingFile = (IFile) codeData.getCorrespondingResource();
+					} catch (ModelException e) {
+					}
+				} else if (codeData instanceof IType) {
+					isInExistingPHPFile = false;
+					IType pClassData = (IType) codeData;
+
+					if (Flags.isInterface(pClassData.getElementType())) {
+						openByInterface = pClassData;
+					} else if (PHPFlags.isTrait(pClassData.getElementType())) {
+						openByTrait = pClassData;
+					}
+				} else {
+					isInExistingPHPFile = false;
+				}
+
+				return codeData;
+			} else if (obj instanceof IFile) {
+				isInExistingPHPFile = true;
+				existingFileName = ((IFile) obj).getName();
+				existingFile = (IFile) obj;
+				codeData = DLTKCore.create((IFile) obj);
+			}
+			// the following lines were removed since currently the
+			// new php element can be inserted in php blocks and not within
+			// methods.
+			// if (codeData instanceof PHPFileData) {
+			// final PHPFileData fileData = (PHPFileData) codeData;
+			// final PHPClassData[] classes = fileData.getClasses();
+			// if (classes.length > 0)
+			// codeData = classes[0];
+			// else {
+			// final PHPFunctionData[] functions = fileData.getFunctions();
+			// if (functions.length > 0)
+			// codeData = functions[0];
+			// }
+			// } else if (codeData instanceof PHPFunctionData) {
+			// final PHPCodeData classData = codeData.getContainer();
+			// if (classData instanceof PHPClassData)
+			// codeData = codeData.getContainer();
+			// }
+
+			if (codeData != null) {
+				return codeData;
+			}
+		}
+		return null;
+
+	}
+

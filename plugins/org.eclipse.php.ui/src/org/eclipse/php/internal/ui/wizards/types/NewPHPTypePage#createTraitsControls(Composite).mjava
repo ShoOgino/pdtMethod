@@ -1,0 +1,50 @@
+	/**
+	 * Traits Control
+	 * 
+	 * @param parent
+	 */
+	protected void createTraitsControls(Composite parent) {
+		final String INTERFACE = "trait"; //$NON-NLS-1$
+		Control[] controls = fTraitsDialogField.doFillIntoGrid(parent, 3);
+		GridData gd = new GridData(GridData.FILL_BOTH);
+		gd.grabExcessHorizontalSpace = true;
+		controls[1].setLayoutData(gd);
+		final TableViewer tableViewer = fTraitsDialogField.getTableViewer();
+		tableViewer.setColumnProperties(new String[] { INTERFACE });
+		tableViewer.getTable().addKeyListener(new KeyAdapter() {
+			public void keyPressed(KeyEvent event) {
+				if (event.keyCode == SWT.F2 && event.stateMask == 0) {
+					ISelection selection = tableViewer.getSelection();
+					if (!(selection instanceof IStructuredSelection))
+						return;
+					IStructuredSelection structuredSelection = (IStructuredSelection) selection;
+					tableViewer.editElement(structuredSelection.getFirstElement(), 0);
+				}
+			}
+		});
+		gd = (GridData) fTraitsDialogField.getListControl(null).getLayoutData();
+		if (fTypeKind == CLASS_TYPE) {
+			gd.heightHint = convertHeightInCharsToPixels(3);
+		} else {
+			gd.heightHint = convertHeightInCharsToPixels(6);
+		}
+		gd.grabExcessVerticalSpace = true;
+		gd.widthHint = getMaxFieldWidth();
+		addTraitsBtn = (Button) fTraitsDialogField.getButtonBox(parent).getChildren()[0];
+		addTraitsBtn.addSelectionListener(new SelectionListener() {
+
+			public void widgetDefaultSelected(SelectionEvent e) {
+			}
+
+			public void widgetSelected(SelectionEvent e) {
+				Object result = chooseTraits();
+				if (result != null && result instanceof IType) {
+					fTraitsDialogField.addElement((IType) result);
+				}
+				fTraitsDialogField.refresh();
+				validateTraits(getProject());
+			}
+
+		});
+	}
+

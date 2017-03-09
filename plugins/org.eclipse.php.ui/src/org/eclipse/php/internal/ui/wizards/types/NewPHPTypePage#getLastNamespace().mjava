@@ -1,0 +1,24 @@
+	protected String getLastNamespace() {
+		ISourceModule existingPHPFile = DLTKCore.createSourceModuleFrom(getExisitngFile());
+		if (existingPHPFile != null && existingPHPFile.exists()) {
+			try {
+				IModelElement[] rootElements = existingPHPFile.getChildren();
+				for (int i = rootElements.length - 1; i >= 0; i--) {
+					if (rootElements[i] instanceof IType) {
+						IType firstElement = (IType) rootElements[i];
+						if (PHPFlags.isNamespace(firstElement.getFlags())) {
+							return firstElement.getFullyQualifiedName();
+						}
+					}
+				}
+				return "";//$NON-NLS-1$
+			} catch (ModelException e) {
+				// means that there where a problem with getting a model
+				// do not log and just return null
+				return null;
+			}
+		} else {
+			return null;
+		}
+	}
+

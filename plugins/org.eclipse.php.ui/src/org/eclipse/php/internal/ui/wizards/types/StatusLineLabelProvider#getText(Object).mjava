@@ -1,0 +1,39 @@
+	public String getText(Object element) {
+		if (element != null) {
+			String elementName = ""; //$NON-NLS-1$
+			String projectName = ""; //$NON-NLS-1$
+			IType type = null;
+			if (element instanceof DLTKSearchTypeNameMatch) {
+				DLTKSearchTypeNameMatch typeMatch = (DLTKSearchTypeNameMatch) element;
+				type = typeMatch.getType();
+				elementName = type.getElementName();
+
+			} else if (element instanceof SourceType) {
+				type = (IType) element;
+				elementName = type.getElementName();
+				projectName = type.getResource().getProject().getName();
+			}
+
+			if (type != null) {
+				IResource member = ResourcesPlugin.getWorkspace().getRoot().findMember(type.getPath());
+				if (member != null) {
+					projectName = member.getProject().getName();
+				} else if (type.getParent() instanceof ExternalSourceModule) {
+					IModelElement parent = type.getParent();
+					do {
+						parent = parent.getParent();
+					} while (parent != null && parent.getElementType() != IModelElement.SCRIPT_PROJECT);
+					if (parent instanceof IScriptProject) {
+						projectName = ((IScriptProject) parent).getElementName();
+					}
+				}
+			}
+
+			StringBuilder result = new StringBuilder(elementName);
+			result.append(" - "); //$NON-NLS-1$
+			result.append(projectName);
+			return result.toString();
+		}
+		return ""; //$NON-NLS-1$
+	}
+

@@ -1,0 +1,55 @@
+	// add the UI section that handles the Superclass selection
+	private void addElementSuperClass(Composite elementSection) {
+		GridData gd = new GridData();
+		Label superclassLabel = new Label(elementSection, SWT.NULL);
+		superclassLabel.setText(Messages.NewPHPClassPage_8);
+		superclassLabel.setLayoutData(gd);
+		superClassName = new Text(elementSection, SWT.BORDER | SWT.SINGLE);
+		gd = new GridData(GridData.FILL_HORIZONTAL);
+		superClassName.setLayoutData(gd);
+		superClassName.addModifyListener(new ModifyListener() {
+
+			public void modifyText(ModifyEvent e) {
+				final IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
+				String projectName = getProjectName(getSourceText());
+				if (projectName != null && projectName.length() > 0) {
+					IProject currentProject = workspaceRoot.getProject(projectName);
+					IScriptProject model = DLTKCore.create(currentProject);
+					String superClassName = ((Text) e.getSource()).getText().trim();
+					if (model != null) {
+						validateSuperClass(model, superClassName);
+					}
+				}
+			}
+		});
+
+		browseSuperBtn = new Button(elementSection, SWT.PUSH);
+		browseSuperBtn.setText(Messages.NewPHPClassPage_9);
+		gd = new GridData();
+		// gd.verticalAlignment = GridData.BEGINNING;
+		gd.widthHint = SWTUtil.getButtonWidthHint(browseSuperBtn);
+		browseSuperBtn.setLayoutData(gd);
+		browseSuperBtn.addSelectionListener(new SelectionListener() {
+			public void widgetDefaultSelected(SelectionEvent e) {
+			}
+
+			public void widgetSelected(SelectionEvent e) {
+				IType result = chooseSuperClass();
+				superClassData = result;
+				if (result != null) {
+					superClassName.setText(result.getElementName());
+				}
+				changeButtonEnableStatus();
+			}
+
+		});
+
+		// // use this dummy to take care of layout
+		new Label(elementSection, SWT.NULL);
+
+		superPath = new Label(elementSection, SWT.NULL);
+		gd = new GridData(GridData.FILL_HORIZONTAL);
+		superPath.setLayoutData(gd);
+		new Label(elementSection, SWT.NULL);
+	}
+

@@ -1,0 +1,49 @@
+	public boolean performFinish() {
+		if (page.isInExistingPHPFile()) {
+			// add the existing file's name to the already existings requires !
+			existingPHPFile = DLTKCore.createSourceModuleFrom(page.getExisitngFile());
+		}
+
+		// populate data members from the UI's values using the Post Finish
+		// validator
+		final PostFinishValidator validator = new ClassPostFinishValidator();
+		validator.packAndValidate();
+
+		final String containerName = page.getSourceText();
+		final String fileName = page.getNewFileName();
+
+		// ///TEMPLATE///////////////
+
+		PHPElementTemplate templateEngine = new PHPClassTemplate();
+		try {
+			templateEngine.resolveTemplate();
+		} catch (IOException ioe) {
+			Logger.logException(ioe);
+		}
+
+		// The data object that will be passed to the template engine
+		NewPHPElementData data = populatePHPElementData();
+
+		final String contents = templateEngine.processTemplate(data);
+		compilationResult = contents;
+		// Create the class in a new file :
+		// Create an interface in a new file
+		if (!page.isInExistingPHPFile()) {
+			// create a new file and inject the code
+			createNewPhpFile(containerName, fileName, contents);
+		} else { // an existing file
+			injectCodeIntoExistingFile();
+		}
+
+		if (validator.hasWarnings()) {
+			getShell().getDisplay().asyncExec(new Runnable() {
+
+				public void run() {
+					showWarningsDialog(validator.getWarnings());
+				}
+			});
+		}
+		page.saveGeneratedGroupValues();
+		return true;
+	}
+

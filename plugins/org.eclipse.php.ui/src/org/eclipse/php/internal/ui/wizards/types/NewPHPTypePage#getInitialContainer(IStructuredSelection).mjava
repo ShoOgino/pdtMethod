@@ -1,0 +1,27 @@
+	protected IContainer getInitialContainer(final IStructuredSelection selection) {
+		if (selection != null && !selection.isEmpty()) {
+			final Object obj = selection.getFirstElement();
+			if (obj instanceof IModelElement) {
+				IResource resource = ((IModelElement) obj).getResource();
+				if (resource != null && !(resource instanceof IContainer)) {
+					resource = resource.getParent();
+				}
+				if (resource == null) {
+					IScriptProject sp = (IScriptProject) ((IModelElement) obj)
+							.getAncestor(IModelElement.SCRIPT_PROJECT);
+					if (sp != null) {
+						resource = sp.getProject();
+					}
+				}
+				return (IContainer) resource;
+			} else if (obj instanceof IResource) {
+				IResource resource = (IResource) obj;
+				if (resource != null && !(resource instanceof IContainer)) {
+					resource = resource.getParent();
+				}
+				return (IContainer) resource;
+			}
+		}
+		return null;
+	}
+

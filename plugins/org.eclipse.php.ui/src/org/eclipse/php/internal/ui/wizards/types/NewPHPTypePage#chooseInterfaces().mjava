@@ -1,0 +1,43 @@
+	// Interfaces Selection Control
+	protected Object chooseInterfaces() {
+		FilteredTypesSelectionDialog dialog = new FilteredTypesSelectionDialog(getShell(), false,
+				PlatformUI.getWorkbench().getProgressService(), SearchEngine.createSearchScope(getProject()),
+				IDLTKSearchConstants.TYPE, new TypeSelectionExtension() {
+					public ITypeInfoFilterExtension getFilterExtension() {
+						return new ITypeInfoFilterExtension() {
+							public boolean select(ITypeInfoRequestor typeInfoRequestor) {
+								// is interface
+								if (Flags.isInterface(typeInfoRequestor.getModifiers())) {
+									List<IType> alreadySelectedInterfaces = fSuperInterfacesDialogField.getElements();
+									for (IType interfaceName : alreadySelectedInterfaces) {
+										if (interfaceName.getElementName()
+												.equalsIgnoreCase(typeInfoRequestor.getTypeName())) {
+											return false;
+										}
+									}
+									return true;
+								}
+								return false;
+							}
+						};
+					}
+				}, PHPLanguageToolkit.getDefault());
+		dialog.setListLabelProvider(new PHPFullPathLabelProvider());
+		dialog.setListSelectionLabelDecorator(new PHPFullPathLabelProvider());
+		dialog.setDetailsLabelProvider(new StatusLineLabelProvider());
+
+		dialog.setTitle(IDEUIMessages.getString("NewPHPTypePage_interfacesSelection")); //$NON-NLS-1$
+		dialog.setMessage(IDEUIMessages.getString("NewPHPTypePage_selectInterfaces")); //$NON-NLS-1$
+		// dialog.setInitialPattern("");
+		dialog.setInitialPattern("", //$NON-NLS-1$
+				FilteredItemsSelectionDialog.FULL_SELECTION);
+
+		if (dialog.open() == Window.OK) {
+			Object[] resultArray = dialog.getResult();
+			if ((resultArray != null) && (resultArray.length > 0)) {
+				return resultArray[0];
+			}
+		}
+		return null;
+	}
+

@@ -1,0 +1,28 @@
+	// a UI component to select an existing file
+	private IFile[] choosePHPEntries(IPath initialSelection, List<Object> usedFiles) {
+		Class<?>[] acceptedClasses = new Class[] { IFile.class };
+		TypedElementSelectionValidator validator = new TypedElementSelectionValidator(acceptedClasses, true);
+		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+		IResource focus = initialSelection != null ? root.findMember(initialSelection) : null;
+
+		ElementTreeSelectionDialog dialog = new ElementTreeSelectionDialog(getShell(), new WorkbenchLabelProvider(),
+				new WorkbenchContentProvider());
+		dialog.setValidator(validator);
+		dialog.setTitle(IDEUIMessages.getString("NewPHPTypePage.phpFileSelection")); //$NON-NLS-1$
+		dialog.setMessage(IDEUIMessages.getString("NewPHPTypePage.selectExistingPHPFile")); //$NON-NLS-1$
+		dialog.addFilter(new NotUsedPHPFileFilter(usedFiles));
+		dialog.setInput(root);
+		dialog.setComparator(new ResourceComparator(ResourceComparator.NAME));
+		dialog.setInitialSelection(focus);
+
+		if (dialog.open() == Window.OK) {
+			Object[] elements = dialog.getResult();
+			IFile[] res = new IFile[elements.length];
+			for (int i = 0; i < res.length; i++) {
+				res[i] = (IFile) elements[i];
+			}
+			return res;
+		}
+		return null;
+	}
+

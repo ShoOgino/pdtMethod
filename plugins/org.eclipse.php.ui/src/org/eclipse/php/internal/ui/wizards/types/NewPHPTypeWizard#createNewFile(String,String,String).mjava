@@ -1,0 +1,81 @@
+	protected boolean createNewFile(final String containerName, final String fileName, final String contents) {
+		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+		IResource resource = root.findMember(new Path(containerName));
+		if (resource == null || !resource.exists() || !(resource instanceof IContainer)) {
+			createNewFolder(new Path(containerName));
+		}
+
+		final IFile file = root.getFile(new Path(containerName).append(fileName));
+		IRunnableWithProgress op = new IRunnableWithProgress() {
+			public void run(IProgressMonitor monitor) throws InvocationTargetException {
+				try {
+
+					new FileCreator() {
+						@Override
+						protected void normalizeFile(IFile file) {
+							super.normalizeFile(file);
+							IContentFormatter formatter = PHPUiPlugin.getDefault().getActiveFormatter();
+							try {
+								IStructuredModel structuredModel = null;
+
+								structuredModel = StructuredModelManager.getModelManager().getModelForEdit(file);
+								if (structuredModel == null) {
+									return;
+								}
+								try {
+									// setup structuredModel
+									// Note: We are getting model for edit. Will
+									// save model if model
+									// changed.
+									IStructuredDocument structuredDocument = structuredModel.getStructuredDocument();
+
+									IRegion region = new Region(0, structuredDocument.getLength());
+									if (formatter instanceof IContentFormatter2) {
+										IContentFormatter2 contentFormatter2 = (IContentFormatter2) formatter;
+										if (NewPHPTypeWizard.this instanceof NewPHPTraitWizard) {
+											contentFormatter2.format(structuredDocument, region, PHPVersion.PHP5_4);
+										} else if (NewPHPTypeWizard.this instanceof NewPHPInterfaceWizard) {
+											contentFormatter2.format(structuredDocument, region, PHPVersion.PHP5_4);
+										} else {
+											formatter.format(structuredDocument, region);
+										}
+									} else {
+										formatter.format(structuredDocument, region);
+									}
+									structuredModel.save();
+								} finally {
+									// release from model manager
+									if (structuredModel != null) {
+										structuredModel.releaseFromEdit();
+									}
+								}
+								currentProject.getProject().build(IncrementalProjectBuilder.INCREMENTAL_BUILD, null);
+							} catch (IOException e) {
+								Logger.logException(e);
+							} catch (CoreException e) {
+								Logger.logException(e);
+							}
+						}
+					}.createFile(NewPHPTypeWizard.this, file, monitor, contents);
+				} catch (CoreException e) {
+					throw new InvocationTargetException(e);
+				} finally {
+					monitor.done();
+				}
+			}
+		};
+		try {
+			getContainer().run(true, false, op);
+			return true;
+		} catch (InterruptedException e) {
+			Logger.logException(e);
+			return false;
+		} catch (InvocationTargetException e) {
+			Logger.logException(e);
+			Throwable realException = e.getTargetException();
+			MessageDialog.openError(getShell(), "Error", //$NON-NLS-1$
+					realException.getMessage());
+			return false;
+		}
+	}
+

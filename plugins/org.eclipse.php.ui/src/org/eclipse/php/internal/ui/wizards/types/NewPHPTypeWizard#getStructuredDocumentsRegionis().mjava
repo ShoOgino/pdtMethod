@@ -1,0 +1,27 @@
+	protected ITextRegion[] getStructuredDocumentsRegionis() {
+		IResource resource = existingPHPFile.getResource();
+		IStructuredModel existingModelForRead = null;
+		try {
+			IFile file = (IFile) resource;
+			existingModelForRead = ModelManagerImpl.getInstance().getExistingModelForRead(file);
+			if (existingModelForRead == null) {
+				existingModelForRead = ModelManagerImpl.getInstance().createUnManagedStructuredModelFor(file);
+			}
+
+		} catch (IOException | CoreException e) {
+			PHPUiPlugin.log(e);
+			return new ITextRegion[0];
+		}
+		IStructuredDocument structuredDocument = existingModelForRead.getStructuredDocument();
+		IStructuredDocumentRegion[] subRegions = structuredDocument.getStructuredDocumentRegions();
+
+		for (IStructuredDocumentRegion currentRegion : subRegions) {
+			if (currentRegion instanceof XMLStructuredDocumentRegion) {
+				ITextRegion[] textRegions = currentRegion.getRegions().toArray();
+				return textRegions;
+			}
+		}
+
+		return new ITextRegion[0];
+	}
+

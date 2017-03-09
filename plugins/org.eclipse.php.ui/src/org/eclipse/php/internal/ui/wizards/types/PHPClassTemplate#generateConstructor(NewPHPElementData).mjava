@@ -1,0 +1,152 @@
+	// generates a constructor
+	private void generateConstructor(NewPHPElementData data) {
+		IMethod func = null;
+		if ((data.superClass != null)) {
+			IMethod[] methods = null;
+			try {
+				methods = data.superClass.getMethods();
+			} catch (ModelException e) {
+				Logger.logException(e);
+			}
+			if (methods != null) {
+				for (IMethod m : methods) {
+					String elName = m.getElementName();
+					if (elName.equalsIgnoreCase(data.superClass.getElementName())
+							|| elName.equalsIgnoreCase("__construct")) { //$NON-NLS-1$
+						func = m;
+						break;
+					}
+
+				}
+			}
+		}
+
+		MethodDeclaration decl = null;
+		if (func != null) {
+			ISourceModule sourceModule = func.getSourceModule();
+			ModuleDeclaration module = SourceParserUtil.getModuleDeclaration(sourceModule);
+
+			try {
+				decl = PHPModelUtils.getNodeByMethod(module, func);
+			} catch (ModelException e) {
+				if (DLTKCore.DEBUG) {
+					e.printStackTrace();
+				}
+			}
+		}
+
+		// check for PHPDoc
+		if (data.isGeneratePHPDoc) {
+			set(FUNC_PHPDOC_PARAM_VAR, ""); //$NON-NLS-1$
+			set(FUNC_PHPDOC_SEE_VAR, ""); //$NON-NLS-1$
+			compile(FUNC_PHPDOC_PARAMS_STRUCT_COMPILED, FUNC_PHPDOC_PARAMS_STRUCT, false);
+			if (func != null) {
+				PHPDocBlock docBlock = null;
+				if (decl != null && decl instanceof IPHPDocAwareDeclaration) {
+					IPHPDocAwareDeclaration docDecl = (IPHPDocAwareDeclaration) decl;
+					docBlock = docDecl.getPHPDoc();
+				}
+
+				if (docBlock != null) {
+					PHPDocTag[] tags = docBlock.getTags();
+					// loop on all phpdoc params
+					for (PHPDocTag docTag : tags) {
+						String phpdocParamType = " " //$NON-NLS-1$
+								+ docTag.getTagKind().getValue();
+						String phpdocParamValue = docTag.getValue();
+						set(FUNC_PHPDOC_PARAM_VAR, phpdocParamType + " " + phpdocParamValue); //$NON-NLS-1$
+						compile(FUNC_PHPDOC_PARAMS_STRUCT_COMPILED, FUNC_PHPDOC_PARAMS_STRUCT, true);
+					}
+				} else {
+					if (decl != null) {
+						List<?> paramsList = decl.getArguments();
+						FormalParameter[] params = (FormalParameter[]) paramsList
+								.toArray(new FormalParameter[paramsList.size()]);
+						if (params != null) {
+							for (int k = 0; k < params.length; k++) {
+								String funcParam = params[k].getName();
+								if (params[k].getParameterType() != null) {
+									funcParam = params[k].getParameterType().getName() + " " + funcParam; //$NON-NLS-1$
+								}
+								set(FUNC_PHPDOC_PARAM_VAR, " @param " //$NON-NLS-1$
+										+ funcParam + "\n"); //$NON-NLS-1$
+								compile(FUNC_PHPDOC_PARAMS_STRUCT_COMPILED, FUNC_PHPDOC_PARAMS_STRUCT, true);
+							}
+						}
+					}
+				}
+			}
+			compile(FUNC_PHPDOC_STRUCT_COMPILED, FUNC_PHPDOC_STRUCT, false);
+		}
+
+		// loop on all function's params
+		FormalParameter[] params = null;
+		if (decl != null) {
+			List<?> paramsList = decl.getArguments();
+			params = (FormalParameter[]) paramsList.toArray(new FormalParameter[paramsList.size()]);
+		}
+
+		StringBuffer paramsOverriden = new StringBuffer();
+		if (func != null) {
+			paramsOverriden.append("parent::__construct("); //$NON-NLS-1$
+		}
+		set(FUNC_PARAM_NAME_VAR, ""); //$NON-NLS-1$
+		compile(FUNC_PARAMS_STRUCT_COMPILED, FUNC_PARAMS_STRUCT, false);
+		String defaultValue = null;
+		if (params != null) {
+			for (int k = 0; k < params.length; k++) {
+				String funcParam = params[k].getName();
+				// handle default value
+				ASTNode argumentDefaultValueNode = params[k].getInitialization();
+				if (argumentDefaultValueNode instanceof Scalar) {
+					Scalar scalarNode = (Scalar) argumentDefaultValueNode;
+					defaultValue = scalarNode.getValue();
+
+				}
+
+				if (defaultValue != null && !defaultValue.equals("")) { //$NON-NLS-1$
+					funcParam += " = " + defaultValue; //$NON-NLS-1$
+				}
+				if ((k + 1) < params.length) {
+					funcParam += ","; //$NON-NLS-1$
+				}
+				paramsOverriden.append(funcParam);
+				if (params[k].getParameterType() != null) {
+					funcParam = params[k].getParameterType().getName() + " " //$NON-NLS-1$
+							+ funcParam;
+				}
+				set(FUNC_PARAM_NAME_VAR, funcParam);
+				compile(FUNC_PARAMS_STRUCT_COMPILED, FUNC_PARAMS_STRUCT, true);
+			}
+		}
+
+		if (func != null) {
+			paramsOverriden.append(");"); //$NON-NLS-1$
+		}
+
+		set(FUNCTION_PARENT_CALL, paramsOverriden.toString());
+		if (data.isGenerateTODOs) {
+			set(TODO_VAR, TODO_TEXT);
+		} else {
+			set(TODO_VAR, ""); //$NON-NLS-1$
+		}
+		String funcModifier = "public"; //$NON-NLS-1$
+		String funcName = TypeWizardConstants.PHP5_CONSTRUCTOR_TEMPLATE;
+
+		if (func != null) {
+			int flags = 0;
+			try {
+				flags = func.getFlags();
+			} catch (ModelException e) {
+				if (DLTKCore.DEBUG) {
+					e.printStackTrace();
+				}
+			}
+			funcModifier = getVisibilityModifier(flags);
+			funcName = func.getElementName();
+		}
+		set(FUNCTION_MODIFIER_VAR, funcModifier);
+		set(FUNCTION_NAME_VAR, funcName);
+		compile(FUNCTIONS_STRUCT_COMPILED, FUNCTIONS_STRUCT, true);
+	}
+

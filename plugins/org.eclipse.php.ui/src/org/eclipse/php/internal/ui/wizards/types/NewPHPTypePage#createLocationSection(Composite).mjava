@@ -1,0 +1,179 @@
+	// the location of where to inject the new element's code
+	protected void createLocationSection(Composite parent) {
+		final Composite container = new Composite(parent, SWT.NULL);
+		GridData gd = new GridData(GridData.FILL_BOTH);
+		container.setLayoutData(gd);
+
+		final GridLayout layout = new GridLayout();
+		container.setLayout(layout);
+		layout.numColumns = 3;
+		layout.marginHeight = 0;
+		layout.marginWidth = 0;
+
+		Label label = new Label(container, SWT.NULL);
+		label.setText(IDEUIMessages.getString("NewPHPTypePage_sourceFolder")); //$NON-NLS-1$
+
+		sourceText = new Text(container, SWT.BORDER | SWT.SINGLE);
+		gd = new GridData(GridData.FILL_HORIZONTAL);
+		sourceText.setLayoutData(gd);
+		sourceText.setEditable(false);
+
+		// init PHPVersion
+		handlePHPVersion();
+		sourceText.setText(sourceFolder);
+		handlePHPVersion();
+		sourceText.addModifyListener(new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+				Text textSource = (Text) e.getSource();
+				sourceFolder = textSource.getText();
+				handlePHPVersion();
+				validatePageValues(VALIDATE_SOURCE_FOLDER);
+				validatePageValues(VALIDATE_NEW_FILE);
+				updateDisabled();
+				// setDefaultNamespace();
+			}
+		});
+
+		browseSourceBtn = new Button(container, SWT.PUSH);
+		browseSourceBtn.setText(IDEUIMessages.getString("NewPHPTypePage_browse")); //$NON-NLS-1$
+		gd = new GridData();
+		gd.verticalAlignment = GridData.BEGINNING;
+		gd.widthHint = SWTUtil.getButtonWidthHint(browseSourceBtn);
+		browseSourceBtn.setLayoutData(gd);
+		browseSourceBtn.addSelectionListener(new SelectionListener() {
+
+			public void widgetDefaultSelected(SelectionEvent e) {
+			}
+
+			public void widgetSelected(SelectionEvent e) {
+				chooseNewSourceFolder();
+				String sourcePath = sourceText.getText();
+				if (sourcePath.length() > 0) {
+					handlePHPVersion();
+				}
+				validatePageValues(VALIDATE_SOURCE_FOLDER);
+				setDefaultNamespace();
+			}
+		});
+
+		final Button newFileBtn = new Button(container, SWT.RADIO);
+		newFileBtn.setText(IDEUIMessages.getString("NewPHPTypePage_createNewFile")); //$NON-NLS-1$
+		newFileBtn.setSelection(!isInExistingPHPFile);
+		newFileBtn.addSelectionListener(new SelectionListener() {
+
+			public void widgetDefaultSelected(SelectionEvent e) {
+			}
+
+			public void widgetSelected(SelectionEvent e) {
+				if (isInExistingPHPFile) {
+					isInExistingPHPFile = false;
+
+					if (TypeWizardConstants.NEW_FILE_DEFAULT_NAME.equals(newFileText.getText())
+							|| newFileText.getText().trim().length() == 0) {
+						updateNewFilename();
+					}
+
+					updateDisabled();
+					setDefaultNamespace();
+					validatePageValues(VALIDATE_NEW_FILE);
+					// fix bug #14458 - Validate existing file
+					// In case of switch the radio buttons from 'Add existing
+					// file' to 'Create new file' erase the error message.
+					validatePageValues(VALIDATE_EXISTING_FILE);
+				}
+			}
+		});
+
+		newFileText = new Text(container, SWT.BORDER | SWT.SINGLE);
+		gd = new GridData(GridData.FILL_HORIZONTAL);
+		gd.widthHint = 300;
+		newFileText.setLayoutData(gd);
+		newFileText.addModifyListener(new ModifyListener() {
+
+			public void modifyText(ModifyEvent e) {
+				validatePageValues(VALIDATE_NEW_FILE);
+			}
+		});
+
+		new Label(container, SWT.NULL);
+
+		existingFileBtn = new Button(container, SWT.RADIO);
+		existingFileBtn.setText(IDEUIMessages.getString("NewPHPTypePage_addInExistingFile")); //$NON-NLS-1$
+		existingFileBtn.setSelection(isInExistingPHPFile);
+		existingFileBtn.addSelectionListener(new SelectionListener() {
+
+			public void widgetDefaultSelected(SelectionEvent e) {
+			}
+
+			public void widgetSelected(SelectionEvent e) {
+				if (!isInExistingPHPFile) {
+					isInExistingPHPFile = true;
+					if (existingFile != null) {
+						sourceFolder = existingFile.getParent().getFullPath().toOSString();
+						sourceText.setText(sourceFolder);
+					}
+					updateDisabled();
+					setDefaultNamespace();
+					validatePageValues(VALIDATE_NEW_FILE);
+					validatePageValues(VALIDATE_EXISTING_FILE);
+					validatePageValues(VALIDATE_SOURCE_FOLDER);
+				}
+			}
+
+		});
+
+		existingFileText = new Text(container, SWT.BORDER | SWT.SINGLE);
+		gd = new GridData(GridData.FILL_HORIZONTAL);
+		gd.widthHint = 300;
+		existingFileText.setLayoutData(gd);
+		existingFileText.setText(existingFileName);
+		existingFileText.addModifyListener(new ModifyListener() {
+
+			public void modifyText(ModifyEvent e) {
+				validatePageValues(VALIDATE_EXISTING_FILE);
+				updateDisabled();
+				setDefaultNamespace();
+			}
+
+		});
+
+		gd = new GridData(GridData.FILL_HORIZONTAL);
+		browseExistingFile = new Button(container, SWT.PUSH);
+		browseExistingFile.setText(IDEUIMessages.getString("NewPHPTypePage_browse")); //$NON-NLS-1$
+		gd = new GridData();
+		gd.verticalAlignment = GridData.BEGINNING;
+		gd.widthHint = SWTUtil.getButtonWidthHint(browseExistingFile);
+		browseExistingFile.setLayoutData(gd);
+
+		browseExistingFile.addSelectionListener(new SelectionListener() {
+
+			public void widgetDefaultSelected(SelectionEvent e) {
+			}
+
+			public void widgetSelected(SelectionEvent e) {
+				openPhpFileDialog();
+				validatePageValues(VALIDATE_EXISTING_FILE);
+				validatePageValues(VALIDATE_SOURCE_FOLDER);
+				updateDisabled();
+				setDefaultNamespace();
+			}
+
+		});
+		// the radio buttons
+		new Label(container, SWT.NULL);
+
+		injectLocation = new Composite(container, SWT.NULL);
+		GridLayout injectLayout = new GridLayout(2, true);
+		injectLocation.setLayout(injectLayout);
+		injectLayout.marginHeight = 0;
+		injectLayout.marginWidth = 0;
+
+		firstBlockBtn = new Button(injectLocation, SWT.RADIO);
+		firstBlockBtn.setText(IDEUIMessages.getString("NewPHPTypePage_firstPHPBlock")); //$NON-NLS-1$
+		firstBlockBtn.setSelection(true);
+		Button newPHPBlockBtn = new Button(injectLocation, SWT.RADIO);
+		newPHPBlockBtn.setText(IDEUIMessages.getString("NewPHPTypePage_newPHPBlock")); //$NON-NLS-1$
+
+		new Separator(SWT.SEPARATOR | SWT.HORIZONTAL).doFillIntoGrid(container, 3, 1);
+	}
+

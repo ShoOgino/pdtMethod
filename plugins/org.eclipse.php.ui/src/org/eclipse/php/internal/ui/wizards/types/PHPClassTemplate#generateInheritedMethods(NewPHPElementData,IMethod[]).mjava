@@ -1,0 +1,122 @@
+	private void generateInheritedMethods(NewPHPElementData data, IMethod[] methodsToOverride) {
+		MethodDeclaration decl = null;
+		ISourceModule sourceModule = null;
+		for (int i = 0; i < methodsToOverride.length; i++) {
+			IMethod func = (IMethod) methodsToOverride[i];
+
+			sourceModule = func.getSourceModule();
+			ModuleDeclaration module = SourceParserUtil.getModuleDeclaration(sourceModule);
+
+			try {
+				decl = PHPModelUtils.getNodeByMethod(module, func);
+			} catch (ModelException e) {
+				PHPUiPlugin.log(e);
+				return;
+			}
+
+			// check for PHPDoc
+			if (data.isGeneratePHPDoc) {
+				set(FUNC_PHPDOC_PARAM_VAR, "(non-PHPdoc)"); //$NON-NLS-1$
+				String targetTypeName = func.getDeclaringType()
+						.getTypeQualifiedName(PHPModelUtils.ENCLOSING_TYPE_SEPARATOR);
+				if (targetTypeName.indexOf(PHPModelUtils.ENCLOSING_TYPE_SEPARATOR) > 0) {
+					targetTypeName = PHPModelUtils.ENCLOSING_TYPE_SEPARATOR + targetTypeName;
+				}
+				set(FUNC_PHPDOC_SEE_VAR, "* @see " + targetTypeName + "::" //$NON-NLS-1$ //$NON-NLS-2$
+						+ func.getElementName() + "()\n"); //$NON-NLS-1$
+				compile(FUNC_PHPDOC_PARAMS_STRUCT_COMPILED, FUNC_PHPDOC_PARAMS_STRUCT, false);
+				compile(FUNC_PHPDOC_STRUCT_COMPILED, FUNC_PHPDOC_STRUCT, false);
+			}
+
+			// loop on all function's params
+
+			// PHPFunctionParameter[] params = func.getParameters();
+			List<?> paramsList = decl.getArguments();
+			FormalParameter[] params = (FormalParameter[]) paramsList.toArray(new FormalParameter[paramsList.size()]);
+
+			set(FUNC_PARAM_NAME_VAR, ""); //$NON-NLS-1$
+			compile(FUNC_PARAMS_STRUCT_COMPILED, FUNC_PARAMS_STRUCT, false);
+
+			for (int k = 0; k < params.length; k++) {
+				SimpleReference referenceType = null;
+				if (params[k].getParameterType() != null) {
+					referenceType = params[k].getParameterType();
+				}
+
+				String argType = null;
+				if (referenceType != null) {
+					argType = referenceType.getName();
+					boolean isExcluded = false;// check if the param's type
+					// should be added to the method
+					// arguments
+					for (String comparedType : EXCLUDE_PARAM_TYPES_LIST) {
+						if (comparedType.equalsIgnoreCase(argType)) {
+							isExcluded = true;
+							break;
+						}
+					}
+					if (isExcluded) {
+						argType = ""; //$NON-NLS-1$
+					} else {
+						argType += " "; //$NON-NLS-1$
+
+					}
+				} else {
+					argType = ""; //$NON-NLS-1$
+				}
+
+				String funcParam = argType + params[k].getName();
+
+				// handle default value
+				ASTNode node = params[k].getInitialization();
+				String sourceCode = null;
+				try {
+					String defaultValue = null;
+					if (node != null) {
+						sourceCode = sourceModule.getSource();
+						if (sourceCode != null) {
+							defaultValue = sourceCode.substring(node.sourceStart(), node.sourceEnd());
+						}
+					}
+
+					if (defaultValue != null && !defaultValue.equals("")) { //$NON-NLS-1$
+						funcParam += " = " + defaultValue; //$NON-NLS-1$
+					}
+					if ((k + 1) < params.length) {
+						funcParam += ","; //$NON-NLS-1$
+					}
+					set(FUNC_PARAM_NAME_VAR, funcParam);
+					compile(FUNC_PARAMS_STRUCT_COMPILED, FUNC_PARAMS_STRUCT, true);
+
+				} catch (ModelException e) {
+					Logger.logException(e);
+				}
+			}
+
+			if (data.isGenerateTODOs) {
+				set(TODO_VAR, TODO_TEXT);
+			} else {
+				set(TODO_VAR, ""); //$NON-NLS-1$
+			}
+			set(FUNCTION_PARENT_CALL, ""); //$NON-NLS-1$
+			int flags = 0;
+			try {
+				flags = func.getFlags();
+			} catch (ModelException e) {
+				if (DLTKCore.DEBUG) {
+					e.printStackTrace();
+				}
+			}
+			String funcModifier = getVisibilityModifier(flags);
+			set(FUNCTION_MODIFIER_VAR, funcModifier);
+			if (isStaticFunction(func.getElementType())) {
+				set(FUNCTION_STATIC_VAR, TypeWizardConstants.STATIC_MODIFIER);
+			} else {
+				set(FUNCTION_STATIC_VAR, ""); //$NON-NLS-1$
+			}
+
+			set(FUNCTION_NAME_VAR, func.getElementName());
+			compile(FUNCTIONS_STRUCT_COMPILED, FUNCTIONS_STRUCT, true);
+		}
+	}
+

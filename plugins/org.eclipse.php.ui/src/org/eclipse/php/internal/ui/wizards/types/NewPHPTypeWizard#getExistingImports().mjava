@@ -1,0 +1,20 @@
+	protected List<String> getExistingImports() {
+		List<String> result = new ArrayList<String>();
+		if (existingPHPFile != null && existingPHPFile.exists()) {
+			try {
+				IModelElement[] rootElements = existingPHPFile.getChildren();
+				for (IModelElement element : rootElements) {
+					if (!addImport(result, element) && element instanceof IType) {
+						IModelElement[] elementChildren = ((IType) element).getChildren();
+						for (IModelElement child : elementChildren) {
+							addImport(result, child);
+						}
+					}
+				}
+			} catch (ModelException e) {
+				PHPUiPlugin.log(e);
+			}
+		}
+		return result;
+	}
+

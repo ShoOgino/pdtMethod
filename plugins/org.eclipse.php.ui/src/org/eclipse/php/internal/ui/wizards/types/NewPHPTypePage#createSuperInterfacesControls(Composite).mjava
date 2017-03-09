@@ -1,0 +1,51 @@
+	/**
+	 * SuperInterfaces Control
+	 * 
+	 * @param parent
+	 */
+	protected void createSuperInterfacesControls(Composite parent) {
+		final String INTERFACE = "interface"; //$NON-NLS-1$
+		Control[] controls = fSuperInterfacesDialogField.doFillIntoGrid(parent, 3);
+		GridData gd = new GridData(GridData.FILL_BOTH);
+		gd.grabExcessHorizontalSpace = true;
+		controls[1].setLayoutData(gd);
+		final TableViewer tableViewer = fSuperInterfacesDialogField.getTableViewer();
+		tableViewer.setColumnProperties(new String[] { INTERFACE });
+
+		tableViewer.getTable().addKeyListener(new KeyAdapter() {
+			public void keyPressed(KeyEvent event) {
+				if (event.keyCode == SWT.F2 && event.stateMask == 0) {
+					ISelection selection = tableViewer.getSelection();
+					if (!(selection instanceof IStructuredSelection))
+						return;
+					IStructuredSelection structuredSelection = (IStructuredSelection) selection;
+					tableViewer.editElement(structuredSelection.getFirstElement(), 0);
+				}
+			}
+		});
+		gd = (GridData) fSuperInterfacesDialogField.getListControl(null).getLayoutData();
+		if (fTypeKind == CLASS_TYPE) {
+			gd.heightHint = convertHeightInCharsToPixels(3);
+		} else {
+			gd.heightHint = convertHeightInCharsToPixels(6);
+		}
+		gd.grabExcessVerticalSpace = true;
+		gd.widthHint = getMaxFieldWidth();
+		addInterfacesBtn = (Button) fSuperInterfacesDialogField.getButtonBox(parent).getChildren()[0];
+		addInterfacesBtn.addSelectionListener(new SelectionListener() {
+
+			public void widgetDefaultSelected(SelectionEvent e) {
+			}
+
+			public void widgetSelected(SelectionEvent e) {
+				Object result = chooseInterfaces();
+				if (result != null && result instanceof IType) {
+					fSuperInterfacesDialogField.addElement((IType) result);
+				}
+				fSuperInterfacesDialogField.refresh();
+				validateInterfaces(getProject());
+			}
+
+		});
+	}
+

@@ -1,0 +1,71 @@
+	protected void validateTraits(IScriptProject model) {
+
+		traitsStatus = new StatusInfo();
+
+		Iterator<IType> iter = getTraits().iterator();
+
+		while (iter.hasNext()) {
+
+			traitsStatus = new StatusInfo();
+			IType interfaceObj = (IType) iter.next();
+
+			String interfaceName = interfaceObj.getElementName();
+
+			IDLTKSearchScope scope = SearchEngine.createSearchScope(getProject());
+			IType[] classes = PhpModelAccess.getDefault().findTypes(interfaceName, MatchRule.EXACT,
+					Modifiers.AccInterface, 0, scope, new NullProgressMonitor());
+
+			// could be null coming from a non PHP project when the user
+			// changes source folder manually by typing a location to a Java
+			// project for example..
+			if (classes == null || classes.length == 0) {
+				traitsStatus.setError(IDEUIMessages.getString("NewPHPTypePage_trait") //$NON-NLS-1$
+						+ interfaceName + IDEUIMessages.getString("NewPHPTypePage_doesnotExistInProject")); //$NON-NLS-1$
+				updateStatus(findMostSevereStatus());
+				return;
+			}
+
+			boolean foundSiblings = false;
+			for (IType element : classes) {
+				// check if php file name equals
+				if (element.getPath().toOSString().equals(interfaceObj.getPath().toOSString())) {
+					interfaceObj = element;
+					foundSiblings = true;
+					break;
+				}
+			}
+
+			// not found exact file but same interface name...
+			if (!foundSiblings) {
+				traitsStatus.setWarning(IDEUIMessages.getString("NewPHPClassPage_trait") //$NON-NLS-1$
+						+ interfaceName + ""); //$NON-NLS-1$
+				updateStatus(findMostSevereStatus());
+				return;
+			}
+
+			// check if the interface comes from a PHP file with the same name
+			// as the injected one
+			ISourceModule sourceModel = interfaceObj.getSourceModule();
+			if (sourceModel != null) {
+				IPath superClassSrcPath = sourceModel.getPath();
+				String superClassSrcFileName = superClassSrcPath.toOSString();
+				String currentSrcFileName = null;
+				if (isInExistingPHPFile()) {
+					currentSrcFileName = getExistingFileName();
+				} else {
+					currentSrcFileName = getNewFileName();
+				}
+
+				// check if the file name are equals and path are different
+				if (!superClassSrcPath.removeLastSegments(1).equals(new Path(getSourceText()))
+						&& superClassSrcFileName.equals(currentSrcFileName)) {
+					traitsStatus.setError(IDEUIMessages.getString("NewPHPTypePage_cannotImplementTrait") //$NON-NLS-1$
+							+ interfaceName + IDEUIMessages.getString("NewPHPClassPage_fileNameColission")); //$NON-NLS-1$
+					updateStatus(findMostSevereStatus());
+					return;
+				}
+			}
+		}
+		updateStatus(findMostSevereStatus());
+	}
+
