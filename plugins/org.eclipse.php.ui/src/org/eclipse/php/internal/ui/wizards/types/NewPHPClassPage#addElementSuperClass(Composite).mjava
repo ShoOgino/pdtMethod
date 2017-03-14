@@ -7,18 +7,15 @@
 		superClassName = new Text(elementSection, SWT.BORDER | SWT.SINGLE);
 		gd = new GridData(GridData.FILL_HORIZONTAL);
 		superClassName.setLayoutData(gd);
-		superClassName.addModifyListener(new ModifyListener() {
-
-			public void modifyText(ModifyEvent e) {
-				final IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
-				String projectName = getProjectName(getSourceText());
-				if (projectName != null && projectName.length() > 0) {
-					IProject currentProject = workspaceRoot.getProject(projectName);
-					IScriptProject model = DLTKCore.create(currentProject);
-					String superClassName = ((Text) e.getSource()).getText().trim();
-					if (model != null) {
-						validateSuperClass(model, superClassName);
-					}
+		superClassName.addModifyListener(e -> {
+			final IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
+			String projectName = getProjectName(getSourceText());
+			if (projectName != null && projectName.length() > 0) {
+				IProject currentProject = workspaceRoot.getProject(projectName);
+				IScriptProject model = DLTKCore.create(currentProject);
+				String superClassName = ((Text) e.getSource()).getText().trim();
+				if (model != null) {
+					validateSuperClass(model, superClassName);
 				}
 			}
 		});
@@ -29,10 +26,7 @@
 		// gd.verticalAlignment = GridData.BEGINNING;
 		gd.widthHint = SWTUtil.getButtonWidthHint(browseSuperBtn);
 		browseSuperBtn.setLayoutData(gd);
-		browseSuperBtn.addSelectionListener(new SelectionListener() {
-			public void widgetDefaultSelected(SelectionEvent e) {
-			}
-
+		browseSuperBtn.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
 				IType result = chooseSuperClass();
 				superClassData = result;
@@ -41,7 +35,6 @@
 				}
 				changeButtonEnableStatus();
 			}
-
 		});
 
 		// // use this dummy to take care of layout
