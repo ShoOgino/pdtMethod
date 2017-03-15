@@ -38,9 +38,6 @@
 					insertSpace();
 				}
 				appendToBuffer(COMMA);
-				if (insertSpaceAfterComma) {
-					insertSpace();
-				}
 			}
 
 			// after the first element and wrap policy is except first element
@@ -49,7 +46,7 @@
 				changesIndex = changes.size() - 1;
 				savedLastPosition = lastPosition;
 			}
-
+			boolean isInsertNewLine = false;
 			switch (lineWrapPolicy) {
 			case NO_LINE_WRAP:
 				break;
@@ -62,12 +59,14 @@
 					}
 
 					indent();
+					isInsertNewLine = true;
 				}
 				break;
 			case WRAP_WHEN_NECESSARY:
 				if (lineWidth + array[i].getLength() > this.preferences.line_wrap_line_split) {
 					insertNewLine();
 					indent();
+					isInsertNewLine = true;
 				}
 				break;
 			case WRAP_FIRST_ELEMENT:
@@ -81,6 +80,7 @@
 						indentationLevel += indentGap;
 					}
 					indent();
+					isInsertNewLine = true;
 				}
 				break;
 			case WRAP_ALL_ELEMENTS:
@@ -94,6 +94,7 @@
 						indentationLevel += indentGap;
 					}
 					indent();
+					isInsertNewLine = true;
 				}
 				break;
 			case WRAP_ALL_ELEMENTS_NO_INDENT_FIRST:
@@ -108,6 +109,7 @@
 						indentationLevel += indentGap;
 					}
 					indent();
+					isInsertNewLine = true;
 
 					// increase the indentation level after the first element
 					indentationLevel++;
@@ -126,12 +128,18 @@
 						indentationLevel += indentGap;
 					}
 					indent();
+					isInsertNewLine = true;
 				}
 				break;
 			case ALWAYS_WRAP_ELEMENT:
 				insertNewLine();
 				indent();
+				isInsertNewLine = true;
 				break;
+			}
+
+			if (!isInsertNewLine && !isFirst && insertSpaceAfterComma) {
+				insertSpace();
 			}
 
 			handleChars1(lastPosition, array[i].getStart(), oldIndentationLevel != indentationLevel, indentGap);
