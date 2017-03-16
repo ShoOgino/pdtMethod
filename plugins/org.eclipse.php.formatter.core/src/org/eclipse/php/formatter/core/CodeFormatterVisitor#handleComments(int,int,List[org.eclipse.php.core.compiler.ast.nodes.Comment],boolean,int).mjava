@@ -2,7 +2,7 @@
 	// https://bugs.eclipse.org/bugs/show_bug.cgi?id=440209
 	// https://bugs.eclipse.org/bugs/show_bug.cgi?id=440820
 	private void handleComments(int offset, int end,
-			List<org.eclipse.php.internal.core.compiler.ast.nodes.Comment> commentList, boolean isIndented,
+			List<org.eclipse.php.core.compiler.ast.nodes.Comment> commentList, boolean isIndented,
 			int indentGap) throws Exception {
 		boolean oldIgnoreEmptyLineSetting = ignoreEmptyLineSetting;
 		ignoreEmptyLineSetting = false;
@@ -15,9 +15,9 @@
 		boolean previousCommentIsSingleLine = false;
 		resetCommentIndentVariables();
 
-		comments: for (Iterator<org.eclipse.php.internal.core.compiler.ast.nodes.Comment> iter = commentList
+		comments: for (Iterator<org.eclipse.php.core.compiler.ast.nodes.Comment> iter = commentList
 				.iterator(); iter.hasNext();) {
-			org.eclipse.php.internal.core.compiler.ast.nodes.Comment comment = iter.next();
+			org.eclipse.php.core.compiler.ast.nodes.Comment comment = iter.next();
 			int commentStartLine = document.getLineOfOffset(comment.sourceStart() + offset);
 			int position = replaceBuffer.lastIndexOf(lineSeparator);
 			boolean startAtFirstColumn = (document.getLineOffset(commentStartLine) == comment.sourceStart() + offset);
@@ -26,7 +26,7 @@
 			boolean indentOnFirstColumn;
 			String commentContent;
 			switch (comment.getCommentType()) {
-			case org.eclipse.php.internal.core.compiler.ast.nodes.Comment.TYPE_SINGLE_LINE:
+			case org.eclipse.php.core.compiler.ast.nodes.Comment.TYPE_SINGLE_LINE:
 				indentOnFirstColumn = !startAtFirstColumn
 						|| !this.preferences.never_indent_line_comments_on_first_column;
 				if (startLine == commentStartLine) {
@@ -203,7 +203,7 @@
 
 				start = comment.sourceEnd() + offset;
 				break;
-			case org.eclipse.php.internal.core.compiler.ast.nodes.Comment.TYPE_PHPDOC:
+			case org.eclipse.php.core.compiler.ast.nodes.Comment.TYPE_PHPDOC:
 				previousCommentIsSingleLine = false;
 				inComment = false;
 				handleCharsWithoutComments(start, comment.sourceStart() + offset);
@@ -222,8 +222,8 @@
 					appendToBuffer("/**"); //$NON-NLS-1$
 
 					commentWords = new ArrayList<String>();
-					org.eclipse.php.internal.core.compiler.ast.nodes.Scalar[] texts = block.getTexts().toArray(
-							new org.eclipse.php.internal.core.compiler.ast.nodes.Scalar[block.getTexts().size()]);
+					org.eclipse.php.core.compiler.ast.nodes.Scalar[] texts = block.getTexts().toArray(
+							new org.eclipse.php.core.compiler.ast.nodes.Scalar[block.getTexts().size()]);
 					PHPDocTag[] tags = block.getTags();
 					if ((tags == null || tags.length == 0)) {
 						texts = getNonblankScalars(texts);
@@ -233,7 +233,7 @@
 
 					// description is blank
 					if (getNonblankScalars(texts).length == 0) {
-						texts = new org.eclipse.php.internal.core.compiler.ast.nodes.Scalar[0];
+						texts = new org.eclipse.php.core.compiler.ast.nodes.Scalar[0];
 					}
 					if (this.preferences.comment_new_lines_at_javadoc_boundaries) {
 						insertNewLineForPHPDoc();
@@ -244,7 +244,7 @@
 					}
 					int textsLength = texts.length;
 					for (int j = 0; j < textsLength; j++) {
-						org.eclipse.php.internal.core.compiler.ast.nodes.Scalar scalar = texts[j];
+						org.eclipse.php.core.compiler.ast.nodes.Scalar scalar = texts[j];
 						String word = scalar.getValue();
 						if (word.trim().length() > 0) {
 							commentWords.add(word);
@@ -358,7 +358,7 @@
 				insertNewLine();
 				indent();
 				break;
-			case org.eclipse.php.internal.core.compiler.ast.nodes.Comment.TYPE_MULTILINE:
+			case org.eclipse.php.core.compiler.ast.nodes.Comment.TYPE_MULTILINE:
 				previousCommentIsSingleLine = false;
 				// ignore multi line comments in the middle of code
 				// example while /* kuku */ ( /* kuku */$a > 0 )
@@ -371,7 +371,7 @@
 					resetEnableStatus(
 							document.get(comment.sourceStart() + offset, comment.sourceEnd() - comment.sourceStart()));
 					for (; iter.hasNext();) {
-						org.eclipse.php.internal.core.compiler.ast.nodes.Comment nextComment = iter.next();
+						org.eclipse.php.core.compiler.ast.nodes.Comment nextComment = iter.next();
 						resetEnableStatus(document.get(nextComment.sourceStart() + offset,
 								nextComment.sourceEnd() - nextComment.sourceStart()));
 					}
