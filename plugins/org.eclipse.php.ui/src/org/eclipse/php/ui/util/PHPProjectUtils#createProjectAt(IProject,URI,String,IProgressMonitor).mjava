@@ -1,0 +1,31 @@
+	public static void createProjectAt(IProject project, URI locationURI, String natureId, IProgressMonitor monitor)
+			throws CoreException {
+		if (monitor == null) {
+			monitor = new NullProgressMonitor();
+		}
+		monitor.beginTask(NewWizardMessages.BuildPathsBlock_operationdesc_project, 10);
+		// create the project
+		try {
+			if (!project.exists()) {
+				IProjectDescription desc = project.getWorkspace().newProjectDescription(project.getName());
+				if (locationURI != null
+						&& ResourcesPlugin.getWorkspace().getRoot().getLocationURI().equals(locationURI)) {
+					locationURI = null;
+				}
+				desc.setLocationURI(locationURI);
+
+				if (natureId != null) {
+					desc.setNatureIds(new String[] { natureId });
+				}
+
+				project.create(desc, monitor);
+			}
+			if (!project.isOpen()) {
+				project.open(monitor);
+			}
+		} finally {
+			// not null
+			monitor.done();
+		}
+	}
+
