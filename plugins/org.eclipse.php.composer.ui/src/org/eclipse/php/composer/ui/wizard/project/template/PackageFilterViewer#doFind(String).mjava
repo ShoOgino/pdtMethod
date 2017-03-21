@@ -1,6 +1,7 @@
 	@Override
 	protected void doFind(String text) {
 		try {
+			lastQuery = text;
 
 			contentProvider.clear();
 			viewer.setInput(contentProvider.packages);
@@ -19,7 +20,7 @@
 				}
 
 				@Override
-				public void packagesFound(List<MinimalPackage> packages, String query, final SearchResult result) {
+				public void packagesFound(List<MinimalPackage> packages, final String query, final SearchResult result) {
 					if (packages != null) {
 						final List<PackageFilterItem> items = new ArrayList<PackageFilterItem>();
 						for (MinimalPackage pkg : packages) {
@@ -30,6 +31,10 @@
 							@Override
 							public void run() {
 								if (viewer.getControl().isDisposed()) {
+									return;
+								}
+								if (!Objects.equals(query, lastQuery)) {
+									// this data is already obsolete
 									return;
 								}
 								contentProvider.add(items);
