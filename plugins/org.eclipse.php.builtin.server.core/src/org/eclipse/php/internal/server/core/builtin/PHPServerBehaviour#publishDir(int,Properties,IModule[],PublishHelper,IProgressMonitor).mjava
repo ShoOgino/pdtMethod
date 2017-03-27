@@ -1,0 +1,70 @@
+	/**
+	 * Publish a web module.
+	 * 
+	 * @param deltaKind
+	 * @param p
+	 * @param module
+	 * @param monitor
+	 * @throws CoreException
+	 */
+	private void publishDir(int deltaKind, Properties p, IModule module[], PublishHelper helper,
+			IProgressMonitor monitor) throws CoreException {
+		List<IStatus> status = new ArrayList<IStatus>();
+		// Remove if requested or if previously published and are now serving
+		// without publishing
+		if (deltaKind == REMOVED) {
+			String publishPath = (String) p.get(module[0].getId());
+			if (publishPath != null) {
+				try {
+					File f = new File(publishPath);
+					if (f.exists()) {
+						IStatus[] stat = PublishHelper.deleteDirectory(f, monitor);
+						PublishOperation2.addArrayToList(status, stat);
+					}
+				} catch (Exception e) {
+					throw new CoreException(new Status(IStatus.WARNING, PHPServerPlugin.PLUGIN_ID, 0,
+							NLS.bind(Messages.errorPublishCouldNotRemoveModule, module[0].getName()), e));
+				}
+				p.remove(module[0].getId());
+			}
+		} else {
+			IPath path = getModuleDeployDirectory(module[0]);
+			IModuleResource[] mr = getResources(module);
+			IPath[] jarPaths = null;
+			// IWebModule webModule =
+			// (IWebModule)module[0].loadAdapter(IWebModule.class, monitor);
+			// IModule [] childModules = getServer().getChildModules(module,
+			// monitor);
+			// if (childModules != null && childModules.length > 0) {
+			// jarPaths = new IPath[childModules.length];
+			// for (int i = 0; i < childModules.length; i++) {
+			// if (webModule != null) {
+			// jarPaths[i] = new Path(webModule.getURI(childModules[i]));
+			// }
+			// else {
+			// IJ2EEModule childModule =
+			// (IJ2EEModule)childModules[i].loadAdapter(IJ2EEModule.class,
+			// monitor);
+			// if (childModule != null && childModule.isBinary()) {
+			// jarPaths[i] = new
+			// Path("WEB-INF/lib").append(childModules[i].getName());
+			// }
+			// else {
+			// jarPaths[i] = new
+			// Path("WEB-INF/lib").append(childModules[i].getName() + ".jar");
+			// }
+			// }
+			// }
+			// }
+			IStatus[] stat = helper.publishSmart(mr, path, jarPaths, monitor);
+			PublishOperation2.addArrayToList(status, stat);
+			p.put(module[0].getId(), path.toOSString());
+		}
+		try {
+			processPathMapping(module, deltaKind, monitor);
+		} catch (MalformedURLException e) {
+			throw new CoreException(new Status(IStatus.ERROR, PHPServerPlugin.PLUGIN_ID, 0, e.getMessage(), e));
+		}
+		PublishOperation2.throwException(status);
+	}
+

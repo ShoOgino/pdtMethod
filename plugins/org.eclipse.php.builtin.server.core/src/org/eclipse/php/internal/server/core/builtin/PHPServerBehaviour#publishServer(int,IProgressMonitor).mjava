@@ -1,0 +1,34 @@
+	protected void publishServer(int kind, IProgressMonitor monitor) throws CoreException {
+		if (getServer().getRuntime() == null)
+			return;
+
+		IPath installDir = getServer().getRuntime().getLocation();
+		IPath confDir = null;
+		confDir = installDir;
+		IStatus status = PHPServerHelper.createDeploymentDirectory(getServerDeployDirectory());
+		if (status != null && !status.isOK())
+			throw new CoreException(status);
+
+		monitor = ProgressUtil.getMonitorFor(monitor);
+		monitor.beginTask(Messages.publishServerTask, 600);
+
+		status = getPHPServerConfiguration().cleanupServer(confDir, installDir, false,
+				ProgressUtil.getSubMonitorFor(monitor, 100));
+		if (status != null && !status.isOK())
+			throw new CoreException(status);
+
+		status = getPHPServerConfiguration().backupAndPublish(confDir, false,
+				ProgressUtil.getSubMonitorFor(monitor, 400));
+		if (status != null && !status.isOK())
+			throw new CoreException(status);
+
+		status = getPHPServerConfiguration().localizeConfiguration(confDir, getServerDeployDirectory(), getPHPServer(),
+				ProgressUtil.getSubMonitorFor(monitor, 100));
+		if (status != null && !status.isOK())
+			throw new CoreException(status);
+
+		monitor.done();
+
+		setServerPublishState(IServer.PUBLISH_STATE_NONE);
+	}
+

@@ -1,0 +1,43 @@
+	/**
+	 * @see ServerEditorSection#getSaveStatus()
+	 */
+	public IStatus[] getSaveStatus() {
+		if (phpServer != null) {
+			// Check the instance directory
+			String dir = phpServer.getDocumentRootDirectory();
+			if (dir != null) {
+				IPath path = new Path(dir);
+				// Must not be the same as the workspace location
+				if (dir.length() == 0 || workspacePath.equals(path)) {
+					return new IStatus[] {
+							new Status(IStatus.ERROR, PHPServerUIPlugin.PLUGIN_ID, Messages.errorServerDirIsRoot) };
+				}
+				// User specified value may not be under the ".metadata" folder
+				// of the workspace
+				else if (workspacePath.isPrefixOf(path)
+						|| (!path.isAbsolute() && METADATADIR.equals(path.segment(0)))) {
+					int cnt = path.matchingFirstSegments(workspacePath);
+					if (METADATADIR.equals(path.segment(cnt))) {
+						return new IStatus[] { new Status(IStatus.ERROR, PHPServerUIPlugin.PLUGIN_ID,
+								NLS.bind(Messages.errorServerDirUnderRoot, METADATADIR)) };
+					}
+				} else if (path.equals(installDirPath))
+					return new IStatus[] { new Status(IStatus.ERROR, PHPServerUIPlugin.PLUGIN_ID,
+							NLS.bind(Messages.errorServerDirCustomNotInstall,
+									NLS.bind(Messages.serverEditorServerDirInstall, "").trim())) };
+			} else {
+				IPath path = phpServer.getRuntimeBaseDirectory();
+				// If non-custom instance dir is not the install and metadata
+				// isn't the selection, return error
+				if (!path.equals(installDirPath) && !serverDirMetadata.getSelection()) {
+					return new IStatus[] { new Status(IStatus.ERROR, PHPServerUIPlugin.PLUGIN_ID,
+							NLS.bind(Messages.errorServerDirCustomNotMetadata,
+									NLS.bind(Messages.serverEditorServerDirMetadata, "").trim())) };
+				}
+			}
+
+		}
+		// use default implementation to return success
+		return super.getSaveStatus();
+	}
+

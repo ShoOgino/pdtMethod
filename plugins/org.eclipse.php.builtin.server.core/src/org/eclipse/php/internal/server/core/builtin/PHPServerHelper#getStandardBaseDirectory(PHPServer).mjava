@@ -1,0 +1,26 @@
+	/**
+	 * Gets the base directory for this server. This directory is used as the
+	 * "base" property for the server.
+	 * 
+	 * @param ps
+	 *            PHPServer from which to derive the base directory directory.
+	 *            Only used to get the temp directory if needed.
+	 * @return path to base directory
+	 */
+	public static IPath getStandardBaseDirectory(PHPServer ps) {
+		String baseDir = ps.getDocumentRootDirectory();
+		// If test mode and no instance directory specified, use temporary
+		// directory
+		if (baseDir == null) {
+			PHPServerBehaviour tsb = (PHPServerBehaviour) ps.getServer().loadAdapter(PHPServerBehaviour.class, null);
+			return tsb.getTempDirectory();
+		}
+		IPath path = new Path(baseDir);
+		if (!path.isAbsolute()) {
+			IPath rootPath = ResourcesPlugin.getWorkspace().getRoot().getLocation();
+			path = rootPath.append(path);
+		}
+		// Return specified instance directory
+		return path;
+	}
+

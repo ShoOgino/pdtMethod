@@ -1,0 +1,47 @@
+	protected void setupPortEditors() {
+		viewer.setCellEditors(new CellEditor[] { null, new TextCellEditor(ports) });
+
+		ICellModifier cellModifier = new ICellModifier() {
+			public Object getValue(Object element, String property) {
+				ServerPort sp = (ServerPort) element;
+				if (sp.getPort() < 0)
+					return "-"; //$NON-NLS-1$
+				return sp.getPort() + ""; //$NON-NLS-1$
+			}
+
+			public boolean canModify(Object element, String property) {
+				if ("port".equals(property)) //$NON-NLS-1$
+					return true;
+
+				return false;
+			}
+
+			public void modify(Object element, String property, Object value) {
+				try {
+					Item item = (Item) element;
+					ServerPort sp = (ServerPort) item.getData();
+					int port = Integer.parseInt((String) value);
+					execute(new ModifyPortCommand(fPHPServerConfiguration, sp.getId(), port));
+				} catch (Exception ex) {
+					// ignore
+				}
+			}
+		};
+		viewer.setCellModifier(cellModifier);
+
+		// preselect second column (Windows-only)
+		String os = System.getProperty("os.name"); //$NON-NLS-1$
+		if (os != null && os.toLowerCase().indexOf("win") >= 0) {
+			ports.addSelectionListener(new SelectionAdapter() {
+				public void widgetSelected(SelectionEvent event) {
+					try {
+						int n = ports.getSelectionIndex();
+						viewer.editElement(ports.getItem(n).getData(), 1);
+					} catch (Exception e) {
+						// ignore
+					}
+				}
+			});
+		}
+	}
+

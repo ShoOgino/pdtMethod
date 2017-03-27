@@ -1,0 +1,37 @@
+	/**
+	 * Initialize the fields in this editor.
+	 */
+	protected void initialize() {
+		if (serverDir == null || phpServer == null)
+			return;
+		updating = true;
+
+		IRuntime runtime = server.getRuntime();
+		if (runtime != null)
+			installDirPath = runtime.getLocation();
+
+		// determine if editing of locations is allowed
+		allowRestrictedEditing = false;
+		IPath basePath = phpServer.getRuntimeBaseDirectory();
+		if (!readOnly) {
+			// If server has not been published, or server is published with no
+			// modules, allow editing
+			// TODO Find better way to determine if server hasn't been published
+			if ((basePath != null && !basePath.append("conf").toFile().exists()) //$NON-NLS-1$
+					|| (server.getOriginal().getServerPublishState() == IServer.PUBLISH_STATE_NONE
+							&& server.getOriginal().getModules().length == 0)) {
+				allowRestrictedEditing = true;
+			}
+		}
+
+		// Update server related fields
+		updateServerDirButtons();
+		updateServerDirFields();
+
+		serverDirMetadata.setEnabled(allowRestrictedEditing);
+		serverDirCustom.setEnabled(allowRestrictedEditing);
+
+		updating = false;
+		validate();
+	}
+

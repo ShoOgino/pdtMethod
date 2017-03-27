@@ -1,0 +1,78 @@
+	/**
+	 * Provide a wizard page to change the PHP executable installation
+	 * directory.
+	 */
+	protected void createControl() {
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 2;
+		setLayout(layout);
+		setLayoutData(new GridData(GridData.FILL_BOTH));
+		// PlatformUI.getWorkbench().getHelpSystem().setHelp(this,
+		// ContextIds.RUNTIME_COMPOSITE);
+
+		Label label = new Label(this, SWT.NONE);
+		label.setText(Messages.runtimeName);
+		GridData data = new GridData();
+		data.horizontalSpan = 2;
+		label.setLayoutData(data);
+
+		name = new Text(this, SWT.BORDER);
+		data = new GridData(GridData.FILL_HORIZONTAL);
+		name.setLayoutData(data);
+		name.addModifyListener(new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+				runtimeWC.setName(name.getText());
+				validate();
+			}
+		});
+
+		updateExecutables();
+
+		label = new Label(this, SWT.NONE);
+		label.setText(Messages.installedJRE);
+		data = new GridData();
+		data.horizontalSpan = 2;
+		label.setLayoutData(data);
+
+		combo = new Combo(this, SWT.DROP_DOWN | SWT.READ_ONLY);
+		combo.setItems(executableNames);
+		data = new GridData(GridData.HORIZONTAL_ALIGN_FILL);
+		combo.setLayoutData(data);
+
+		combo.addSelectionListener(new SelectionListener() {
+			public void widgetSelected(SelectionEvent e) {
+				int sel = combo.getSelectionIndex();
+				PHPexeItem item = (PHPexeItem) installedExecutables.get(sel);
+				runtime.setExecutableInstall(item);
+				runtimeWC.setLocation(new Path(item.getExecutable().getParent()));
+				validate();
+			}
+
+			public void widgetDefaultSelected(SelectionEvent e) {
+				widgetSelected(e);
+			}
+		});
+
+		Button button = SWTUtil.createButton(this, Messages.installedJREs);
+		button.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				String currentVM = combo.getText();
+				if (showPreferencePage()) {
+					updateExecutables();
+					combo.setItems(executableNames);
+					combo.setText(currentVM);
+					if (combo.getSelectionIndex() == -1)
+						combo.select(0);
+					validate();
+				}
+			}
+		});
+
+		init();
+		validate();
+
+		Dialog.applyDialogFont(this);
+
+		name.forceFocus();
+	}
+

@@ -1,0 +1,49 @@
+	private void processPathMapping(IModule[] module, int deltaKind, IProgressMonitor monitor)
+			throws MalformedURLException, CoreException {
+		Server server = ServersManager.getServer(getServer().getName());
+		PathMapper pathMapper = PathMapperRegistry.getByServer(server);
+		Map<String, Mapping> mappings = new HashMap<>();
+		for (IModule m : module) {
+			String moduleName = m.getName();
+			if (deltaKind == REMOVED) {
+				getPHPServerConfiguration().setPathMapping(moduleName, new Mapping[0]);
+				getPHPServer().saveConfiguration(monitor);
+				pathMapper.setMapping(getPHPServerConfiguration().getPathMappings());
+			} else {
+				IProject project = (IProject) ResourcesPlugin.getWorkspace().getRoot().findMember(moduleName);
+				IScriptProject scriptProject = DLTKCore.create(project);
+				VirtualPath remotePath = new VirtualPath(getModuleDeployDirectory(m).toOSString());
+				for (IProjectFragment fragment : scriptProject.getProjectFragments()) {
+					if (!fragment.isExternal()) {
+						VirtualPath localPath = new VirtualPath(fragment.getResource().getFullPath().toString());
+						Mapping mapping = new Mapping(localPath, remotePath, Type.WORKSPACE, MappingSource.ENVIRONMENT);
+						mappings.put(localPath.toString(), mapping);
+					}
+				}
+				boolean isChanged = false;
+				Mapping[] storedMappings = getPHPServerConfiguration().getPathMappings(moduleName);
+				if (storedMappings.length != mappings.size()) {
+					isChanged = true;
+				} else {
+					for (int i = 0; i < storedMappings.length; i++) {
+						Mapping mapping = storedMappings[i];
+						String local = mapping.localPath.toString();
+						if (mappings.containsKey(local)) {
+							if (!mappings.get(local).equals(mapping)) {
+								isChanged = true;
+								break;
+							}
+						}
+
+					}
+				}
+				if (isChanged) {
+					getPHPServerConfiguration().setPathMapping(moduleName,
+							mappings.values().toArray(new Mapping[mappings.size()]));
+					getPHPServer().saveConfiguration(monitor);
+					pathMapper.setMapping(getPHPServerConfiguration().getPathMappings());
+				}
+			}
+		}
+	}
+

@@ -1,0 +1,46 @@
+	/**
+	 * Searches the specified directory recursively for installed PHP
+	 * executables, adding each detected executable to the <code>found</code>
+	 * list. Any directories specified in the <code>ignore</code> are not
+	 * traversed.
+	 * 
+	 * @param directory
+	 * @param found
+	 * @param types
+	 * @param ignore
+	 */
+	protected void searchForRuntimes2(final File directory, final List<File> found, final IProgressMonitor monitor) {
+		if (monitor.isCanceled())
+			return;
+		// Search the root directory
+		List<File> foundExecs = findPHPExecutable(directory);
+		if (!foundExecs.isEmpty()) {
+			found.addAll(foundExecs);
+			monitor.setTaskName(MessageFormat.format(Messages.PHPRuntimeLocator_Searching_with_found, found.size()));
+		}
+		final String[] names = directory.list();
+		if (names == null)
+			return;
+		final List<File> subDirs = new ArrayList<File>();
+		for (String element : names) {
+			if (monitor.isCanceled())
+				return;
+			final File file = new File(directory, element);
+			if (file.isDirectory()) {
+				try {
+					monitor.subTask(MessageFormat.format(Messages.PHPRuntimeLocator_14, file.getCanonicalPath()));
+				} catch (final IOException e) {
+				}
+				if (monitor.isCanceled())
+					return;
+				subDirs.add(file);
+			}
+		}
+		while (!subDirs.isEmpty()) {
+			final File subDir = subDirs.remove(0);
+			searchForRuntimes2(subDir, found, monitor);
+			if (monitor.isCanceled())
+				return;
+		}
+	}
+

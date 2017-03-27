@@ -1,0 +1,32 @@
+	private void publishDir(IModule module2, List<IStatus> status, IProgressMonitor monitor) throws CoreException {
+		IPath path = server.getModuleDeployDirectory(module2);
+
+		// Remove if requested or if previously published and are now serving
+		// without publishing
+		if (kind == IServer.PUBLISH_CLEAN || deltaKind == ServerBehaviourDelegate.REMOVED) {
+			File f = path.toFile();
+			if (f.exists()) {
+				IStatus[] stat = PublishHelper.deleteDirectory(f, monitor);
+				addArrayToList(status, stat);
+			}
+
+			if (deltaKind == ServerBehaviourDelegate.REMOVED)
+				return;
+		}
+
+		if (kind == IServer.PUBLISH_CLEAN || kind == IServer.PUBLISH_FULL) {
+			IModuleResource[] mr = server.getResources(module);
+			IStatus[] stat = helper.publishFull(mr, path, monitor);
+			addArrayToList(status, stat);
+			return;
+		}
+
+		IModuleResourceDelta[] delta = server.getPublishedResourceDelta(module);
+
+		int size = delta.length;
+		for (int i = 0; i < size; i++) {
+			IStatus[] stat = helper.publishDelta(delta[i], path, monitor);
+			addArrayToList(status, stat);
+		}
+	}
+

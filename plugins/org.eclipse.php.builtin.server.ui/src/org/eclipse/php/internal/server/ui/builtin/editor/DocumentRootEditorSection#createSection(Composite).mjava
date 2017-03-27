@@ -1,0 +1,112 @@
+	/**
+	 * Creates the SWT controls for this workbench part.
+	 *
+	 * @param parent
+	 *            the parent control
+	 */
+	public void createSection(Composite parent) {
+		super.createSection(parent);
+		FormToolkit toolkit = getFormToolkit(parent.getDisplay());
+
+		section = toolkit.createSection(parent, ExpandableComposite.TWISTIE | ExpandableComposite.EXPANDED
+				| ExpandableComposite.TITLE_BAR | Section.DESCRIPTION | ExpandableComposite.FOCUS_TITLE);
+		section.setText(Messages.serverEditorLocationsSection);
+		section.setDescription(Messages.serverEditorLocationsDescription);
+		section.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_FILL));
+
+		Composite composite = toolkit.createComposite(section);
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 3;
+		layout.marginHeight = 5;
+		layout.marginWidth = 10;
+		layout.verticalSpacing = 5;
+		layout.horizontalSpacing = 15;
+		composite.setLayout(layout);
+		composite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_FILL));
+		IWorkbenchHelpSystem whs = PlatformUI.getWorkbench().getHelpSystem();
+		// whs.setHelp(composite, ContextIds.SERVER_EDITOR);
+		// whs.setHelp(section, ContextIds.SERVER_EDITOR);
+		toolkit.paintBordersFor(composite);
+		section.setClient(composite);
+
+		serverDirMetadata = toolkit.createButton(composite, Messages.serverEditorServerDirMetadata, SWT.RADIO);
+		GridData data = new GridData(SWT.FILL, SWT.CENTER, true, false);
+		data.horizontalSpan = 3;
+		serverDirMetadata.setLayoutData(data);
+		serverDirMetadata.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				if (updating || !serverDirMetadata.getSelection())
+					return;
+				updating = true;
+				execute(new SetTestEnvironmentCommand(phpServer));
+				updateServerDirFields();
+				updating = false;
+				validate();
+			}
+		});
+
+		serverDirCustom = toolkit.createButton(composite, Messages.serverEditorServerDirCustom, SWT.RADIO);
+		data = new GridData(SWT.FILL, SWT.CENTER, true, false);
+		data.horizontalSpan = 3;
+		serverDirCustom.setLayoutData(data);
+		serverDirCustom.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				if (updating || !serverDirCustom.getSelection())
+					return;
+				updating = true;
+				execute(new SetTestEnvironmentCommand(phpServer));
+				updateServerDirFields();
+				updating = false;
+				validate();
+			}
+		});
+
+		// server directory
+		Label label = createLabel(toolkit, composite, Messages.serverEditorServerDir);
+		data = new GridData(SWT.BEGINNING, SWT.CENTER, false, false);
+		label.setLayoutData(data);
+
+		serverDir = toolkit.createText(composite, null, SWT.SINGLE);
+		data = new GridData(SWT.FILL, SWT.CENTER, true, false);
+		data.widthHint = 75;
+		serverDir.setLayoutData(data);
+		serverDir.addModifyListener(new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+				if (updating)
+					return;
+				updating = true;
+				execute(new SetDocumentRootDirectoryCommand(phpServer, getServerDir()));
+				updating = false;
+				validate();
+			}
+		});
+
+		serverDirBrowse = toolkit.createButton(composite, Messages.editorBrowse, SWT.PUSH);
+		serverDirBrowse.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent se) {
+				DirectoryDialog dialog = new DirectoryDialog(serverDir.getShell());
+				dialog.setMessage(Messages.serverEditorBrowseDeployMessage);
+				dialog.setFilterPath(serverDir.getText());
+				String selectedDirectory = dialog.open();
+				if (selectedDirectory != null && !selectedDirectory.equals(serverDir.getText())) {
+					updating = true;
+					// Make relative if relative to the workspace
+					IPath path = new Path(selectedDirectory);
+					if (workspacePath.isPrefixOf(path)) {
+						int cnt = path.matchingFirstSegments(workspacePath);
+						path = path.removeFirstSegments(cnt).setDevice(null);
+						selectedDirectory = path.toOSString();
+					}
+					execute(new SetDocumentRootDirectoryCommand(phpServer, selectedDirectory));
+					updateServerDirButtons();
+					updateServerDirFields();
+					updating = false;
+					validate();
+				}
+			}
+		});
+		serverDirBrowse.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
+
+		initialize();
+	}
+

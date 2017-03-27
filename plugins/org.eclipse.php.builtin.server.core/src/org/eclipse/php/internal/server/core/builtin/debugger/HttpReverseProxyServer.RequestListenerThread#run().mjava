@@ -1,0 +1,24 @@
+		@Override
+		public void run() {
+			isRunning = true;
+			while (isRunning) {
+				try {
+
+					final int bufsize = 512 * 1024;
+					// Set up incoming HTTP connection
+					final Socket insocket = this.serversocket.accept();
+					final DefaultBHttpServerConnection inconn = new DefaultBHttpServerConnection(bufsize);
+					inconn.bind(insocket);
+
+					// Start worker thread
+					final Thread t = new ProxyThread(this.httpService, inconn, handler);
+					t.setDaemon(true);
+					t.start();
+				} catch (final InterruptedIOException ex) {
+					break;
+				} catch (final IOException e) {
+					break;
+				}
+			}
+		}
+

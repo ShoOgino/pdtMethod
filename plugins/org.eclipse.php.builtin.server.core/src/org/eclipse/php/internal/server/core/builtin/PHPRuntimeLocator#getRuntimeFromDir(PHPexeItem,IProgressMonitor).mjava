@@ -1,0 +1,24 @@
+	protected static IRuntimeWorkingCopy getRuntimeFromDir(PHPexeItem phpExe, IProgressMonitor monitor) {
+		for (int i = 0; i < runtimeTypes.length; i++) {
+			try {
+				IRuntimeType runtimeType = ServerCore.findRuntimeType(runtimeTypes[i]);
+				String absolutePath = phpExe.getExecutable().getParent();
+				String id = absolutePath.replace(File.separatorChar, '_').replace(':', '-');
+				IRuntimeWorkingCopy runtime = runtimeType.createRuntime(id, monitor);
+
+				runtime.setName(phpExe.getName());
+				runtime.setLocation(new Path(absolutePath));
+				PHPRuntime phpRuntime = (PHPRuntime) runtime.loadAdapter(PHPRuntime.class, monitor);
+				if (phpRuntime != null)
+					phpRuntime.setExecutableInstall(phpExe);
+				IStatus status = runtime.validate(monitor);
+				if (status == null || status.getSeverity() != IStatus.ERROR)
+					return runtime;
+				Trace.trace(Trace.FINER, "False runtime found at " + absolutePath + ": " + status.getMessage()); //$NON-NLS-1$ //$NON-NLS-2$
+			} catch (Exception e) {
+				Trace.trace(Trace.SEVERE, "Could not find runtime", e); //$NON-NLS-1$
+			}
+		}
+		return null;
+	}
+

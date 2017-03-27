@@ -1,0 +1,59 @@
+	@Override
+	public void run(PHPServerRunnerConfiguration configuration, ILaunch launch, IProgressMonitor monitor)
+			throws CoreException {
+		if (monitor == null) {
+			monitor = new NullProgressMonitor();
+		}
+
+		IProgressMonitor subMonitor = SubMonitor.convert(monitor, 1);
+		subMonitor.beginTask(Messages.DefaultPHPServerRunner_Launching_server____1, 2);
+		subMonitor.subTask(Messages.DefaultPHPServerRunner_Constructing_command_line____2);
+
+		fPort = configuration.getPort();
+
+		String[] cmdLine = fetchCmdLineFromConf(configuration);
+
+		subMonitor.worked(1);
+
+		subMonitor.subTask(Messages.DefaultPHPServerRunner_Starting_server____3);
+		// check for cancellation
+		if (monitor.isCanceled()) {
+			return;
+		}
+		String workingDirectory = configuration.getWorkingDirectory();
+		Process p = exec(cmdLine, new File(configuration.getWorkingDirectory()));
+		if (p == null) {
+			return;
+		}
+
+		// check for cancellation
+		if (monitor.isCanceled()) {
+			p.destroy();
+			return;
+		}
+
+		String timestamp = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM)
+				.format(new Date(System.currentTimeMillis()));
+		IProcess process = newProcess(launch, p, renderProcessLabel(cmdLine, timestamp), getDefaultProcessMap());
+		process.setAttribute(DebugPlugin.ATTR_PATH, cmdLine[0]);
+		process.setAttribute(IProcess.ATTR_CMDLINE, renderCommandLine(cmdLine));
+		String ltime = launch.getAttribute(DebugPlugin.ATTR_LAUNCH_TIMESTAMP);
+		process.setAttribute(DebugPlugin.ATTR_LAUNCH_TIMESTAMP, ltime != null ? ltime : timestamp);
+		if (workingDirectory != null) {
+			process.setAttribute(DebugPlugin.ATTR_WORKING_DIRECTORY, workingDirectory);
+		}
+		// if (envp != null) {
+		// Arrays.sort(envp);
+		// StringBuffer buff = new StringBuffer();
+		// for (int i = 0; i < envp.length; i++) {
+		// buff.append(envp[i]);
+		// if (i < envp.length - 1) {
+		// buff.append('\n');
+		// }
+		// }
+		// process.setAttribute(DebugPlugin.ATTR_ENVIRONMENT, buff.toString());
+		// }
+		subMonitor.worked(1);
+		subMonitor.done();
+	}
+

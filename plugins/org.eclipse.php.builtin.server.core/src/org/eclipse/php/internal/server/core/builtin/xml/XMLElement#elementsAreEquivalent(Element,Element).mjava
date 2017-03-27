@@ -1,0 +1,50 @@
+	private static boolean elementsAreEquivalent(Element element, Element otherElement) {
+		if (element == otherElement)
+			return true;
+		
+		if (!element.getNodeName().equals(otherElement.getNodeName()))
+			return false;
+		
+		if (element.hasChildNodes()) {
+			if (otherElement.hasChildNodes() && attributesAreEqual(element, otherElement)) {
+				// Compare child nodes
+				NodeList nodelist = element.getChildNodes();
+				NodeList otherNodelist = otherElement.getChildNodes();
+				if (nodelist.getLength() == otherNodelist.getLength()) {
+					Node node = nextNonTextNode(element.getFirstChild());
+					Node otherNode = nextNonTextNode(otherElement.getFirstChild());
+					while (node != null) {
+						if (otherNode == null)
+							return false;
+						short nextNodeType = node.getNodeType();
+						if (nextNodeType != otherNode.getNodeType())
+							return false;
+						// If elements, compare 
+						if (nextNodeType == Node.ELEMENT_NODE) {
+							if (!elementsAreEquivalent((Element)node, (Element)otherNode))
+								return false;
+						}
+						// Else if comment, compare
+						else if (nextNodeType == Node.COMMENT_NODE) {
+							if (!nodeValuesAreEqual(node, otherNode))
+								return false;
+						}
+						// Else punt on other node types
+						else {
+							return false;
+						}
+						node = nextNonTextNode(node.getNextSibling());
+						otherNode = nextNonTextNode(otherNode.getNextSibling());
+					}
+					// If also at end of other children, return equal
+					if (otherNode == null)
+						return true;
+				}
+			}
+		}
+		else if (!otherElement.hasChildNodes()) {
+			return attributesAreEqual(element, otherElement);
+		}
+		return false;
+	}
+

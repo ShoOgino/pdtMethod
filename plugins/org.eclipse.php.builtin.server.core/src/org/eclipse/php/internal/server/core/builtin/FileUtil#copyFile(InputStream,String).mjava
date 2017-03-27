@@ -1,0 +1,41 @@
+	/**
+	 * Copy a file from a to b. Closes the input stream after use.
+	 *
+	 * @param in
+	 *            java.io.InputStream
+	 * @param to
+	 *            java.lang.String
+	 * @return a status
+	 */
+	public static IStatus copyFile(InputStream in, String to) {
+		OutputStream out = null;
+
+		try {
+			out = new FileOutputStream(to);
+
+			int avail = in.read(buf);
+			while (avail > 0) {
+				out.write(buf, 0, avail);
+				avail = in.read(buf);
+			}
+			return Status.OK_STATUS;
+		} catch (Exception e) {
+			Trace.trace(Trace.SEVERE, "Error copying file", e); //$NON-NLS-1$
+			return new Status(IStatus.ERROR, PHPServerPlugin.PLUGIN_ID, 0,
+					NLS.bind(Messages.errorCopyingFile, new String[] { to, e.getLocalizedMessage() }), e);
+		} finally {
+			try {
+				if (in != null)
+					in.close();
+			} catch (Exception ex) {
+				// ignore
+			}
+			try {
+				if (out != null)
+					out.close();
+			} catch (Exception ex) {
+				// ignore
+			}
+		}
+	}
+

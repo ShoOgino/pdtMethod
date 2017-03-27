@@ -9,12 +9,15 @@
 		 */
 		if (launch == null)
 			launch = fetchLaunch(sessionDescriptor);
-		/*
-		 * If session is primary (new one has come) and launch exists then it
-		 * means that session has been restarted. If so, terminate the previous
-		 * launch.
-		 */
-		else if (sessionDescriptor.isPrimary() && !launch.isTerminated())
+		else if (isBuildinServerLaunch(launch)) {
+			hookBuiltinServerLaunch(launch, sessionDescriptor);
+			return true;
+			/*
+			 * If session is primary (new one has come) and launch exists then
+			 * it means that session has been restarted. If so, terminate the
+			 * previous launch.
+			 */
+		} else if (sessionDescriptor.isPrimary() && !launch.isTerminated())
 			try {
 				launch.terminate();
 			} catch (DebugException e) {

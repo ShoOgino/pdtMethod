@@ -1,0 +1,50 @@
+	/**
+	 * Add listeners to detect undo changes and publishing of the server.
+	 */
+	protected void addChangeListeners() {
+		listener = new PropertyChangeListener() {
+			public void propertyChange(PropertyChangeEvent event) {
+				if (updating)
+					return;
+				updating = true;
+				if (IPHPServer.PROPERTY_DOCUMENT_ROOT_DIR.equals(event.getPropertyName())) {
+					updateServerDirButtons();
+					updateServerDirFields();
+					validate();
+				}
+				updating = false;
+			}
+		};
+		server.addPropertyChangeListener(listener);
+
+		publishListener = new PublishAdapter() {
+			public void publishFinished(IServer server2, IStatus status) {
+				boolean flag = false;
+				if (status.isOK() && server2.getModules().length == 0)
+					flag = true;
+				if (flag != allowRestrictedEditing) {
+					allowRestrictedEditing = flag;
+					// Update the state of the fields
+					PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
+						public void run() {
+							boolean customServerDir = false;
+							if (!DocumentRootEditorSection.this.serverDirCustom.isDisposed())
+								customServerDir = DocumentRootEditorSection.this.serverDirCustom.getSelection();
+							if (!DocumentRootEditorSection.this.serverDirMetadata.isDisposed())
+								DocumentRootEditorSection.this.serverDirMetadata.setEnabled(allowRestrictedEditing);
+							if (!DocumentRootEditorSection.this.serverDirCustom.isDisposed())
+								DocumentRootEditorSection.this.serverDirCustom.setEnabled(allowRestrictedEditing);
+							if (!DocumentRootEditorSection.this.serverDir.isDisposed())
+								DocumentRootEditorSection.this.serverDir
+										.setEnabled(allowRestrictedEditing && customServerDir);
+							if (!DocumentRootEditorSection.this.serverDirBrowse.isDisposed())
+								DocumentRootEditorSection.this.serverDirBrowse
+										.setEnabled(allowRestrictedEditing && customServerDir);
+						}
+					});
+				}
+			}
+		};
+		server.getOriginal().addPublishListener(publishListener);
+	}
+

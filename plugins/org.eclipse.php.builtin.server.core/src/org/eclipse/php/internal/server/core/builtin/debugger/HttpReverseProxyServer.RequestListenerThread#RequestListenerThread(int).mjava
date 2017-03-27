@@ -1,0 +1,14 @@
+		public RequestListenerThread(final int port) throws IOException {
+			setName("PHP Debugger Proxy Server"); //$NON-NLS-1$
+			this.serversocket = new ServerSocket(port);
+
+			final HttpProcessor inhttpproc = new ImmutableHttpProcessor(new HttpRequestInterceptor[] {
+					new RequestContent(), new RequestTargetHost(), new RequestConnControl(),
+					new RequestUserAgent("PHP Debugger Proxy Server/1.1"), new RequestExpectContinue(true) }); //$NON-NLS-1$
+			handler = new ProxyHandler();
+			final UriHttpRequestHandlerMapper reqistry = new UriHttpRequestHandlerMapper();
+			reqistry.register("*", handler); //$NON-NLS-1$
+
+			this.httpService = new HttpService(inhttpproc, reqistry);
+		}
+

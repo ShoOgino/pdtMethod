@@ -1,0 +1,59 @@
+	/**
+	 * Ping the server until it is started. Then set the server
+	 * state to STATE_STARTED.
+	 */
+	protected void ping() {
+		int count = 0;
+		try {
+			Thread.sleep(PING_DELAY);
+		} catch (Exception e) {
+			// ignore
+		}
+		while (!stop) {
+			try {
+				if (count == maxPings) {
+					try {
+						server.stop(false);
+					} catch (Exception e) {
+						Trace.trace(Trace.FINEST, "Ping: could not stop server"); //$NON-NLS-1$
+					}
+					stop = true;
+					break;
+				}
+				count++;
+				
+				Trace.trace(Trace.FINEST, "Ping: pinging " + count); //$NON-NLS-1$
+				URL pingUrl = new URL(url);
+				URLConnection conn = pingUrl.openConnection();
+				((HttpURLConnection)conn).setInstanceFollowRedirects(false);
+				((HttpURLConnection)conn).getResponseCode();
+	
+				// ping worked - server is up
+				if (!stop) {
+					Trace.trace(Trace.FINEST, "Ping: success"); //$NON-NLS-1$
+					Thread.sleep(200);
+					behaviour.setServerStarted();
+				}
+				stop = true;
+			} catch (FileNotFoundException fe) {
+				try {
+					Thread.sleep(200);
+				} catch (Exception e) {
+					// ignore
+				}
+				behaviour.setServerStarted();
+				stop = true;
+			} catch (Exception e) {
+				Trace.trace(Trace.FINEST, "Ping: failed"); //$NON-NLS-1$
+				// pinging failed
+				if (!stop) {
+					try {
+						Thread.sleep(PING_INTERVAL);
+					} catch (InterruptedException e2) {
+						// ignore
+					}
+				}
+			}
+		}
+	}
+

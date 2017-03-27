@@ -1,0 +1,20 @@
+	@Override
+	public void run(PHPServerRunnerConfiguration configuration, ILaunch launch, IProgressMonitor monitor)
+			throws CoreException {
+		super.run(configuration, launch, monitor);
+
+		IDebugTarget target = new PHPServerDebugTarget(launch, launch.getProcesses()[0]);
+		launch.addDebugTarget(target);
+
+		IDebugParametersInitializer parametersInitializer = DebugParametersInitializersRegistry
+				.getBestMatchDebugParametersInitializer(launch);
+		String query = PHPLaunchUtilities.generateQuery(launch, parametersInitializer);
+
+		proxyServer = new HttpReverseProxyServer(new HttpRequestHandler(getServerPort(), query));
+		try {
+			proxyServer.start(configuration.getPort());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+

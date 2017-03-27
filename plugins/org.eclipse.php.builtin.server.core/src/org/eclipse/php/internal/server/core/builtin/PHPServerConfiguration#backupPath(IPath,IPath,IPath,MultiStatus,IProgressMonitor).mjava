@@ -1,0 +1,36 @@
+	protected void backupPath(IPath path, IPath confDir, IPath backup, MultiStatus ms, IProgressMonitor monitor) {
+		File[] files = path.toFile().listFiles();
+		if (files == null)
+			return;
+
+		int size = files.length;
+		monitor.beginTask(Messages.publishConfigurationTask, size * 100);
+		for (int i = 0; i < size; i++) {
+			try {
+				File file = files[i];
+				String name = file.getName();
+				monitor.subTask(NLS.bind(Messages.publisherPublishTask, new String[] { name }));
+				if (Trace.isTraceEnabled())
+					Trace.trace(Trace.FINEST, "Publishing " + name); //$NON-NLS-1$
+
+				// backup and copy file
+				boolean copy = true;
+				if (backup != null && !(backup.append(name).toFile().exists())) {
+					IStatus status = FileUtil.copyFile(confDir.append(name).toOSString(),
+							backup + File.separator + name);
+					ms.add(status);
+					if (!status.isOK())
+						copy = false;
+				}
+
+				if (copy)
+					ms.add(FileUtil.copyFile(file.getAbsolutePath(), confDir.append(name).toOSString()));
+			} catch (Exception e) {
+				Trace.trace(Trace.SEVERE, "backupAndPublish() error", e); //$NON-NLS-1$
+				ms.add(new Status(IStatus.ERROR, PHPServerPlugin.PLUGIN_ID, 0,
+						NLS.bind(Messages.errorPublishConfiguration, new String[] { e.getLocalizedMessage() }), e));
+			}
+			monitor.worked(100);
+		}
+	}
+

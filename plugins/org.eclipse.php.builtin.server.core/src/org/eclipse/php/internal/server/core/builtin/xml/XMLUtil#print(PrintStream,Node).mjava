@@ -1,0 +1,101 @@
+	protected static void print(PrintStream out, Node node) {
+		if (node == null)
+			return;
+		short type = node.getNodeType();
+		switch (type) {
+			case Node.DOCUMENT_NODE: {
+				out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"); //$NON-NLS-1$
+				//out.println("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n");
+				NodeList nodelist = node.getChildNodes();
+				int size = nodelist.getLength();
+				for (int i = 0; i < size; i++)
+					print(out, nodelist.item(i));
+				break;
+			}
+	
+			case Node.DOCUMENT_TYPE_NODE: {
+				DocumentType docType = (DocumentType) node;
+				out.print("<!DOCTYPE " + getDocumentTypeData(docType) + ">\n"); //$NON-NLS-1$ //$NON-NLS-2$
+				break;
+			}
+	
+			case Node.ELEMENT_NODE: {
+				out.print('<');
+				out.print(node.getNodeName());
+				NamedNodeMap map = node.getAttributes();
+				if (map != null) {
+					int size = map.getLength();
+					for (int i = 0; i < size; i++) {
+						Attr attr = (Attr) map.item(i);
+						out.print(' ');
+						out.print(attr.getNodeName());
+						out.print("=\""); //$NON-NLS-1$
+						out.print(normalize(attr.getNodeValue()));
+						out.print('"');
+					}
+				}
+	
+				if (!node.hasChildNodes())
+					out.print("/>"); //$NON-NLS-1$
+				else {
+					out.print('>');
+					NodeList nodelist = node.getChildNodes();
+					int numChildren = nodelist.getLength();
+					for (int i = 0; i < numChildren; i++)
+						print(out, nodelist.item(i));
+	
+					out.print("</"); //$NON-NLS-1$
+					out.print(node.getNodeName());
+					out.print('>');
+				}
+				break;
+			}
+	
+			case Node.ENTITY_REFERENCE_NODE: {
+				NodeList nodelist = node.getChildNodes();
+				if (nodelist != null) {
+					int size = nodelist.getLength();
+					for (int i = 0; i < size; i++)
+						print(out, nodelist.item(i));
+	
+				}
+				break;
+			}
+	
+			case Node.CDATA_SECTION_NODE: {
+				out.print(normalize(node.getNodeValue()));
+				break;
+			}
+	
+			case Node.TEXT_NODE: {
+				out.print(normalize(node.getNodeValue()));
+				break;
+			}
+	
+			case Node.PROCESSING_INSTRUCTION_NODE: {
+				out.print("<?"); //$NON-NLS-1$
+				out.print(node.getNodeName());
+				String s = node.getNodeValue();
+				if (s != null && s.length() > 0) {
+					out.print(' ');
+					out.print(s);
+				}
+				out.print("?>"); //$NON-NLS-1$
+				break;
+			}
+	
+			case Node.COMMENT_NODE: {
+				out.print("<!--"); //$NON-NLS-1$
+				out.print(node.getNodeValue());
+				out.print("-->"); //$NON-NLS-1$
+				break;
+			}
+	
+			default: {
+				out.print(normalize(node.getNodeValue()));
+				break;
+			}
+		}
+		out.flush();
+	}
+

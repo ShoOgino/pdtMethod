@@ -1,0 +1,43 @@
+	@Override
+	public void importRuntimeConfiguration(IRuntime runtime, IProgressMonitor monitor) throws CoreException {
+		// Initialize state
+		synchronized (versionLock) {
+			configuration = null;
+			currentVersion = 0;
+			loadedVersion = 0;
+		}
+		if (runtime == null) {
+			return;
+		}
+		IPath path = runtime.getLocation();
+
+		IFolder folder = getServer().getServerConfiguration();
+		PHPServerConfiguration tcConfig = new DefaultPHPServerConfiguration(folder);
+
+		try {
+			tcConfig.importFromPath(path, getPHPRuntime().getExecutableInstall(), monitor);
+		} catch (CoreException ce) {
+			throw ce;
+		}
+		// Update version
+		synchronized (versionLock) {
+			// If not already initialized by some other thread, save the
+			// configuration
+			if (configuration == null) {
+				configuration = tcConfig;
+			}
+		}
+
+		String serverName = getServer().getName();
+		Server server = ServersManager.getServer(serverName);
+		if (server == null) {
+			try {
+				server = new Server(serverName, getServer().getHost(), getRootUrl().toString(),
+						getDocumentRootDirectory());
+				ServersManager.addServer(server);
+				ServersManager.save();
+			} catch (MalformedURLException e) {
+			}
+		}
+	}
+

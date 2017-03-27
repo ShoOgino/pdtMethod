@@ -1,0 +1,34 @@
+		@Override
+		public void run() {
+			final HttpContext context = new BasicHttpContext(null);
+
+			try {
+				while (!Thread.interrupted()) {
+					if (!this.inconn.isOpen()) {
+						handler.notifyConnectionClosed(inconn);
+						break;
+					}
+					context.setAttribute(HTTP_IN_CONN, this.inconn);
+					this.httpservice.handleRequest(this.inconn, context);
+
+					context.setAttribute(HTTP_CONN_KEEPALIVE, true);
+					// final Boolean keepalive = (Boolean)
+					// context.getAttribute(HTTP_CONN_KEEPALIVE);
+					// if (!Boolean.TRUE.equals(keepalive)) {
+					// handler.notifyConnectionClosed(inconn);
+					// this.inconn.close();
+					// break;
+					// }
+				}
+			} catch (final ConnectionClosedException ex) {
+			} catch (final IOException ex) {
+			} catch (final HttpException ex) {
+			} finally {
+				handler.notifyConnectionClosed(inconn);
+				try {
+					this.inconn.shutdown();
+				} catch (final IOException ignore) {
+				}
+			}
+		}
+

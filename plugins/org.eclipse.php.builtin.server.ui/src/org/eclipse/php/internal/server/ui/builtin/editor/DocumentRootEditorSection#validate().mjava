@@ -1,0 +1,40 @@
+	protected void validate() {
+		if (phpServer != null) {
+			// Validate instance directory
+			String dir = phpServer.getDocumentRootDirectory();
+			if (dir != null) {
+				IPath path = new Path(dir);
+				// Must not be the same as the workspace location
+				if (dir.length() == 0 || workspacePath.equals(path)) {
+					setErrorMessage(Messages.errorServerDirIsRoot);
+					return;
+				}
+				// User specified value may not be under the ".metadata" folder
+				// of the workspace
+				else if (workspacePath.isPrefixOf(path)
+						|| (!path.isAbsolute() && METADATADIR.equals(path.segment(0)))) {
+					int cnt = path.matchingFirstSegments(workspacePath);
+					if (METADATADIR.equals(path.segment(cnt))) {
+						setErrorMessage(NLS.bind(Messages.errorServerDirUnderRoot, METADATADIR));
+						return;
+					}
+				} else if (path.equals(installDirPath)) {
+					setErrorMessage(NLS.bind(Messages.errorServerDirCustomNotInstall,
+							NLS.bind(Messages.serverEditorServerDirInstall, "").trim()));
+					return;
+				}
+			} else {
+				IPath path = phpServer.getRuntimeBaseDirectory();
+				// If non-custom instance dir is not the install and metadata
+				// isn't the selection, return error
+				if (path != null && !path.equals(installDirPath) && !serverDirMetadata.getSelection()) {
+					setErrorMessage(NLS.bind(Messages.errorServerDirCustomNotMetadata,
+							NLS.bind(Messages.serverEditorServerDirMetadata, "").trim()));
+				}
+			}
+
+		}
+		// All is okay, clear any previous error
+		setErrorMessage(null);
+	}
+

@@ -1,0 +1,46 @@
+	public PHPServerConfiguration getPHPServerConfiguration() throws CoreException {
+		int current;
+		PHPServerConfiguration tcConfig;
+		// Grab current state
+		synchronized (versionLock) {
+			current = currentVersion;
+			tcConfig = configuration;
+		}
+		// If configuration needs loading
+		if (tcConfig == null || loadedVersion != current) {
+			IFolder folder = getServer().getServerConfiguration();
+			if (folder == null || !folder.exists()) {
+				String path = null;
+				if (folder != null) {
+					path = folder.getFullPath().toOSString();
+					IProject project = folder.getProject();
+					if (project != null && project.exists() && !project.isOpen())
+						throw new CoreException(new Status(IStatus.ERROR, PHPServerPlugin.PLUGIN_ID, 0,
+								NLS.bind(Messages.errorConfigurationProjectClosed, path, project.getName()), null));
+				}
+				throw new CoreException(new Status(IStatus.ERROR, PHPServerPlugin.PLUGIN_ID, 0,
+						NLS.bind(Messages.errorNoConfiguration, path), null));
+			}
+			// If not yet loaded
+			if (tcConfig == null) {
+				tcConfig = new DefaultPHPServerConfiguration(folder);
+			}
+			try {
+
+				tcConfig.load(folder, null);
+				// Update loaded version
+				synchronized (versionLock) {
+					// If newer version not already loaded, update version
+					if (configuration == null || loadedVersion < current) {
+						configuration = tcConfig;
+						loadedVersion = current;
+					}
+				}
+			} catch (CoreException ce) {
+				// Ignore
+				throw ce;
+			}
+		}
+		return tcConfig;
+	}
+

@@ -1,0 +1,55 @@
+	protected void backupFolder(IFolder folder, IPath confDir, IPath backup, MultiStatus ms, IProgressMonitor monitor)
+			throws CoreException {
+		IResource[] children = folder.members();
+		if (children == null)
+			return;
+
+		int size = children.length;
+		monitor.beginTask(Messages.publishConfigurationTask, size * 100);
+		for (int i = 0; i < size; i++) {
+			if (children[i] instanceof IFile) {
+				try {
+					IFile file = (IFile) children[i];
+					String name = file.getName();
+					monitor.subTask(NLS.bind(Messages.publisherPublishTask, new String[] { name }));
+					if (Trace.isTraceEnabled())
+						Trace.trace(Trace.FINEST, "Publishing " + name); //$NON-NLS-1$
+
+					// backup and copy file
+					boolean copy = true;
+					if (backup != null && !(backup.append(name).toFile().exists())) {
+						IStatus status = FileUtil.copyFile(confDir.append(name).toOSString(),
+								backup + File.separator + name);
+						ms.add(status);
+						if (!status.isOK())
+							copy = false;
+					}
+
+					if (copy) {
+						String destPath = confDir.append(name).toOSString();
+						String destContents = null;
+						String srcContents = null;
+						File dest = new File(destPath);
+						if (dest.exists()) {
+							InputStream fis = new FileInputStream(destPath);
+							destContents = PHPServerHelper.getFileContents(fis);
+							if (destContents != null) {
+								fis = file.getContents();
+								srcContents = PHPServerHelper.getFileContents(fis);
+							}
+						}
+						if (destContents == null || srcContents == null || !srcContents.equals(destContents)) {
+							InputStream in = file.getContents();
+							ms.add(FileUtil.copyFile(in, destPath));
+						}
+					}
+				} catch (Exception e) {
+					Trace.trace(Trace.SEVERE, "backupAndPublish() error", e); //$NON-NLS-1$
+					ms.add(new Status(IStatus.ERROR, PHPServerPlugin.PLUGIN_ID, 0,
+							NLS.bind(Messages.errorPublishConfiguration, new String[] { e.getLocalizedMessage() }), e));
+				}
+			}
+			monitor.worked(100);
+		}
+	}
+
