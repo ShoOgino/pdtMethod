@@ -1,0 +1,130 @@
+	@Override
+	public Object getHoverInfo2(ITextViewer textViewer, IRegion hoverRegion) {
+		PHPStackFrame frame = (PHPStackFrame) getFrame();
+		if (frame == null)
+			return null;
+
+		expressionsUtil = ExpressionsUtil.getInstance(getDebugTarget().getExpressionManager());
+
+		IVariable variable = null;
+		try {
+			ISourceModule sourceModule = getEditorInputModelElement();
+			ASTNode root = SharedASTProvider.getAST(sourceModule, SharedASTProvider.WAIT_NO, null);
+			if (root == null) {
+				ASTParser parser = ASTParser.newParser(sourceModule);
+				root = parser.createAST(null);
+			}
+			ASTNode node = NodeFinder.perform(root, hoverRegion.getOffset(), hoverRegion.getLength());
+
+			if (node instanceof Scalar) {
+				Scalar scalar = (Scalar) node;
+				if (node.getParent() instanceof ArrayAccess) {
+					ArrayAccess access = (ArrayAccess) node.getParent();
+					Expression expression = expressionsUtil.buildExpression(computeExpression(access.getName()));
+					Expression[] children = expression.getValue().getOriChildren();
+					if (children != null && children.length > 0) {
+						for (Expression child : children) {
+							String name = child.getLastName();
+							if (scalar.getScalarType() == Scalar.TYPE_STRING) {
+								name = "\"" + name + "\""; //$NON-NLS-1$ //$NON-NLS-2$
+							}
+							if (name.equals(scalar.getStringValue())) {
+								variable = new PHPVariable(getDebugTarget(), child);
+							}
+						}
+					}
+				} else if (!(scalar.getParent() instanceof Include) && scalar.getScalarType() == Scalar.TYPE_STRING) {
+					if (!(scalar.getStringValue().startsWith("\"") && scalar.getStringValue().endsWith("\""))) { //$NON-NLS-1$ //$NON-NLS-2$
+						if (!scalar.getStringValue().trim().equals("")) {
+							Expression constant = expressionsUtil.fetchConstant(scalar.getStringValue());
+							variable = new PHPVariable(getDebugTarget(), constant);
+						}
+					}
+				}
+			} else if (node.getParent() instanceof Variable && node.getParent().getParent() instanceof FieldAccess) {
+				String nodeName = ((Identifier) node).getName();
+				String expression = computeExpression(((FieldAccess) node.getParent().getParent()).getDispatcher());
+				variable = fetchClassMember(expression, nodeName);
+			} else if (node.getParent() instanceof StaticConstantAccess) {
+				String nodeName = ((Identifier) node).getName();
+				StaticConstantAccess staticAccess = (StaticConstantAccess) node.getParent();
+				String className = resolveTypeName((Identifier) staticAccess.getClassName());
+				if (className != null) {
+					if (nodeName.equals("class")) { //$NON-NLS-1$
+						variable = new PHPVariable(getDebugTarget(), expressionsUtil.fetchClassContext(className));
+					} else {
+						variable = fetchClassConstant(className, nodeName);
+					}
+				}
+			} else if (node.getParent() instanceof StaticFieldAccess) {
+				Variable var = (Variable) node;
+				String nodeName = ((Identifier) var.getName()).getName();
+				StaticFieldAccess staticAccess = (StaticFieldAccess) node.getParent();
+				Identifier identifier = null;
+				if (staticAccess.getClassName() instanceof Identifier) {
+					identifier = (Identifier) staticAccess.getClassName();
+				} else if (staticAccess.getClassName() instanceof VariableBase) {
+					identifier = (Identifier) var.getName();
+				}
+				variable = fetchStaticMember(identifier, nodeName);
+			} else if (node.getParent() instanceof ConstantDeclaration) {
+				String nodeName = ((Identifier) node).getName();
+				IField field = (IField) sourceModule.getElementAt(node.getStart());
+				if (field.getParent() instanceof IType) {
+					IType type = (IType) field.getParent();
+					String typeName = type.getFullyQualifiedName(NamespaceReference.NAMESPACE_DELIMITER);
+					if (!PHPFlags.isNamespace(type.getFlags())) {
+						variable = fetchClassConstant(typeName, nodeName);
+					} else {
+						Expression constant = expressionsUtil
+								.fetchConstant(typeName + NamespaceReference.NAMESPACE_DELIMITER + nodeName);
+						variable = new PHPVariable(getDebugTarget(), constant);
+					}
+				}
+			} else if (node.getParent() instanceof SingleFieldDeclaration) {
+				IField field = (IField) sourceModule.getElementAt(node.getStart());
+				String typeName = "";
+				boolean isAnonymous = false;
+				if (field.getParent() instanceof IType) {
+					IType type = (IType) field.getParent();
+					typeName = type.getFullyQualifiedName(NamespaceReference.NAMESPACE_DELIMITER);
+					isAnonymous = PHPFlags.isAnonymous(type.getFlags());
+				}
+				Variable var = (Variable) node;
+				String nodeName = ((Identifier) var.getName()).getName();
+				if (!PHPFlags.isStatic(field.getFlags())) {
+					Expression e = expressionsUtil.buildExpression("$this"); //$NON-NLS-1$
+					if (isAnonymous || typeName.equals(e.getValue().getValue().toString())) {
+						variable = fetchClassMember(e, nodeName);
+					}
+				} else {
+					variable = fetchStaticMember(typeName, nodeName);
+				}
+			} else {
+				// local variables
+				String variableName = null;
+				// ${a}
+				if (node instanceof Identifier && node.getParent() instanceof Variable
+						&& !((Variable) node.getParent()).isDollared()) {
+					variableName = "$" + ((Identifier) node).getName(); //$NON-NLS-1$
+				} else {
+					IDocument document = textViewer.getDocument();
+					if (document != null) {
+						// $$a
+						if (node instanceof ReflectionVariable) {
+							variableName = document.get(((ReflectionVariable) node).getName().getStart(),
+									((ReflectionVariable) node).getName().getLength());
+						} else {
+							// $a
+							variableName = document.get(hoverRegion.getOffset(), hoverRegion.getLength());
+						}
+					}
+				}
+				variable = frame.findVariable(variableName);
+			}
+		} catch (Exception e) {
+			PHPDebugPlugin.log(e);
+		}
+		return variable;
+	}
+

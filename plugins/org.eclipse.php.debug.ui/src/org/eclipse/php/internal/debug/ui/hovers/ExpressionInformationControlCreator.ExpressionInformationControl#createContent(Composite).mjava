@@ -1,0 +1,96 @@
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see
+		 * org.eclipse.jface.text.AbstractInformationControl#createContent(org.
+		 * eclipse.swt.widgets.Composite)
+		 */
+		@Override
+		protected void createContent(Composite parent) {
+
+			fSashForm = new SashForm(parent, parent.getStyle());
+			fSashForm.setOrientation(SWT.VERTICAL);
+
+			// update presentation context
+			AbstractDebugView view = getViewToEmulate();
+			fContext = new PresentationContext(IDebugUIConstants.ID_VARIABLE_VIEW);
+			if (view != null) {
+				// copy over properties
+				IPresentationContext copy = ((TreeModelViewer) view.getViewer()).getPresentationContext();
+				String[] properties = copy.getProperties();
+				for (int i = 0; i < properties.length; i++) {
+					String key = properties[i];
+					fContext.setProperty(key, copy.getProperty(key));
+				}
+			}
+
+			fViewer = new TreeModelViewer(fSashForm, SWT.NO_TRIM | SWT.MULTI | SWT.VIRTUAL, fContext);
+			fViewer.setAutoExpandLevel(1);
+
+			if (view != null) {
+				// copy over filters
+				StructuredViewer structuredViewer = (StructuredViewer) view.getViewer();
+				if (structuredViewer != null) {
+					ViewerFilter[] filters = structuredViewer.getFilters();
+					for (int i = 0; i < filters.length; i++) {
+						fViewer.addFilter(filters[i]);
+					}
+				}
+			}
+
+			fDetailPaneComposite = SWTFactory.createComposite(fSashForm, 1, 1, GridData.FILL_BOTH);
+			Layout layout = fDetailPaneComposite.getLayout();
+			if (layout instanceof GridLayout) {
+				GridLayout gl = (GridLayout) layout;
+				gl.marginHeight = 0;
+				gl.marginWidth = 0;
+			}
+
+			fDetailPane = new DetailPaneProxy(new DetailPaneContainer());
+			fDetailPane.display(null); // Bring up the default pane so the user
+										// doesn't see an empty composite
+
+			fTree = fViewer.getTree();
+			fTree.addSelectionListener(new SelectionListener() {
+				@Override
+				public void widgetSelected(SelectionEvent e) {
+					fDetailPane.display((IStructuredSelection) fViewer.getSelection());
+				}
+
+				@Override
+				public void widgetDefaultSelected(SelectionEvent e) {
+				}
+			});
+
+			initSashWeights();
+
+			// add update listener to auto-select and display details of root
+			// expression
+			fViewer.addViewerUpdateListener(new IViewerUpdateListener() {
+				@Override
+				public void viewerUpdatesComplete() {
+				}
+
+				@Override
+				public void viewerUpdatesBegin() {
+				}
+
+				@Override
+				public void updateStarted(IViewerUpdate update) {
+				}
+
+				@Override
+				public void updateComplete(IViewerUpdate update) {
+					if (update instanceof IChildrenUpdate) {
+						TreeSelection selection = new TreeSelection(new TreePath(new Object[] { fVariable }));
+						fViewer.setSelection(selection);
+						fDetailPane.display(selection);
+						fViewer.removeViewerUpdateListener(this);
+					}
+				}
+			});
+
+			setForegroundColor(getShell().getDisplay().getSystemColor(SWT.COLOR_INFO_FOREGROUND));
+			setBackgroundColor(getShell().getDisplay().getSystemColor(SWT.COLOR_INFO_BACKGROUND));
+		}
+

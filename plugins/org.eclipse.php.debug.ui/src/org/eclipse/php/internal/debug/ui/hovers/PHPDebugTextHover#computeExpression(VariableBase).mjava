@@ -1,0 +1,32 @@
+	protected String computeExpression(VariableBase node) {
+		final StringBuffer dispatcher = new StringBuffer();
+		node.accept(new AbstractVisitor() {
+			private boolean isFirstVariable = true;
+
+			public boolean visit(Identifier identifier) {
+				if (identifier.getParent() instanceof Identifier) {
+					String typeName = resolveTypeName((Identifier) identifier.getParent());
+					if (typeName != null)
+						dispatcher.append(typeName);
+				} else if (identifier.getParent() instanceof Variable) {
+					Variable variable = (Variable) identifier.getParent();
+					if (variable.isDollared()) {
+						if (!isFirstVariable) {
+							dispatcher.append("::"); //$NON-NLS-1$
+						}
+						dispatcher.append("$"); //$NON-NLS-1$
+					} else {
+						if (!isFirstVariable) {
+							dispatcher.append("->"); //$NON-NLS-1$
+						}
+					}
+					dispatcher.append(((Identifier) variable.getName()).getName());
+				}
+
+				isFirstVariable = false;
+				return false;
+			};
+		});
+		return dispatcher.toString();
+	}
+

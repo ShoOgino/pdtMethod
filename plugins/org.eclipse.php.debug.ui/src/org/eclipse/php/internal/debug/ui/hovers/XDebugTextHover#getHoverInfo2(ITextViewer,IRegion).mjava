@@ -1,0 +1,128 @@
+	@Override
+	public Object getHoverInfo2(ITextViewer textViewer, IRegion hoverRegion) {
+		DBGpStackFrame frame = (DBGpStackFrame) getFrame();
+		if (frame == null)
+			return null;
+
+		DBGpVariable variable = null;
+		try {
+			ISourceModule sourceModule = getEditorInputModelElement();
+			ASTNode root = SharedASTProvider.getAST(sourceModule, SharedASTProvider.WAIT_NO, null);
+			if (root == null) {
+				ASTParser parser = ASTParser.newParser(sourceModule);
+				root = parser.createAST(null);
+			}
+			ASTNode node = NodeFinder.perform(root, hoverRegion.getOffset(), hoverRegion.getLength());
+
+			if (node instanceof Scalar) {
+				Scalar scalar = (Scalar) node;
+				if (node.getParent() instanceof ArrayAccess) {
+					ArrayAccess access = (ArrayAccess) node.getParent();
+					DBGpVariable var = getVariable(computeExpression(access.getName()));
+					String arrayAccessKey = scalar.getStringValue();
+					if (scalar.getScalarType() == Scalar.TYPE_STRING) {
+						arrayAccessKey = arrayAccessKey.replace("\"", ""); //$NON-NLS-1$ //$NON-NLS-2$
+					}
+					arrayAccessKey = "[" + arrayAccessKey + "]"; //$NON-NLS-1$ //$NON-NLS-2$
+					variable = fetchMember(var, arrayAccessKey);
+				} else if (!(scalar.getParent() instanceof Include) && scalar.getScalarType() == Scalar.TYPE_STRING) {
+					if (!(scalar.getStringValue().startsWith("\"") && scalar.getStringValue().endsWith("\""))) { //$NON-NLS-1$ //$NON-NLS-2$
+						variable = getVariable(scalar.getStringValue());
+						variable.addFacets(KIND_CONSTANT);
+						variable.addFacets(MOD_PUBLIC);
+					}
+				}
+			} else if (node.getParent() instanceof Variable && node.getParent().getParent() instanceof FieldAccess) {
+				String nodeName = ((Identifier) node).getName();
+				String expression = computeExpression(((FieldAccess) node.getParent().getParent()).getDispatcher());
+				DBGpVariable var = getVariable(expression);
+				variable = fetchMember(var, nodeName);
+			} else if (node.getParent() instanceof StaticConstantAccess) {
+				String nodeName = ((Identifier) node).getName();
+				StaticConstantAccess staticAccess = (StaticConstantAccess) node.getParent();
+				String className = resolveTypeName((Identifier) staticAccess.getClassName());
+				if (className != null) {
+					String name = className + "::" + nodeName; //$NON-NLS-1$
+					variable = getVariable(name);
+					if (nodeName.equals("class")) { //$NON-NLS-1$
+						variable.addFacets(VIRTUAL_CLASS);
+					} else {
+						variable.addFacets(KIND_CONSTANT);
+						variable.addFacets(MOD_PUBLIC);
+					}
+				}
+			} else if (node.getParent() instanceof StaticFieldAccess) {
+				Variable var = (Variable) node;
+				String nodeName = ((Identifier) var.getName()).getName();
+				StaticFieldAccess staticAccess = (StaticFieldAccess) node.getParent();
+				Identifier identifier = null;
+				if (staticAccess.getClassName() instanceof Identifier) {
+					identifier = (Identifier) staticAccess.getClassName();
+				} else if (staticAccess.getClassName() instanceof VariableBase) {
+					identifier = (Identifier) var.getName();
+				}
+				String className = resolveTypeName(identifier);
+				String name = className + "::$" + nodeName; //$NON-NLS-1$
+				variable = getVariable(name);
+			} else if (node.getParent() instanceof ConstantDeclaration) {
+				String nodeName = ((Identifier) node).getName();
+				IField field = (IField) sourceModule.getElementAt(node.getStart());
+				if (field.getParent() instanceof IType) {
+					IType type = (IType) field.getParent();
+					String typeName = type.getFullyQualifiedName(NamespaceReference.NAMESPACE_DELIMITER);
+					if (!PHPFlags.isNamespace(type.getFlags())) {
+						variable = getVariable(typeName + "::" + nodeName); //$NON-NLS-1$
+					} else {
+						variable = getVariable(typeName + NamespaceReference.NAMESPACE_DELIMITER + nodeName);
+					}
+					variable.addFacets(KIND_CONSTANT);
+					variable.addFacets(MOD_PUBLIC);
+				}
+			} else if (node.getParent() instanceof SingleFieldDeclaration) {
+				IField field = (IField) sourceModule.getElementAt(node.getStart());
+				String typeName = "";
+				boolean isAnonymous = false;
+				if (field.getParent() instanceof IType) {
+					IType type = (IType) field.getParent();
+					typeName = type.getFullyQualifiedName(NamespaceReference.NAMESPACE_DELIMITER);
+					isAnonymous = PHPFlags.isAnonymous(type.getFlags());
+				}
+				Variable var = (Variable) node;
+				String nodeName = ((Identifier) var.getName()).getName();
+				if (!PHPFlags.isStatic(field.getFlags())) {
+					DBGpVariable varThis = getVariable("$this"); //$NON-NLS-1$
+					if (isAnonymous || typeName.equals(varThis.getValue().getValueString())) {
+						variable = fetchMember(varThis, nodeName);
+					}
+				} else {
+					variable = getVariable(typeName + "::$" + nodeName); //$NON-NLS-1$
+				}
+			} else {
+				// local variables
+				String variableName = null;
+				// ${a}
+				if (node instanceof Identifier && node.getParent() instanceof Variable
+						&& !((Variable) node.getParent()).isDollared()) {
+					variableName = "$" + ((Identifier) node).getName(); //$NON-NLS-1$
+				} else {
+					IDocument document = textViewer.getDocument();
+					if (document != null) {
+						// $$a
+						if (node instanceof ReflectionVariable) {
+							variableName = document.get(((ReflectionVariable) node).getName().getStart(),
+									((ReflectionVariable) node).getName().getLength());
+						} else {
+							// $a
+							variableName = document.get(hoverRegion.getOffset(), hoverRegion.getLength());
+						}
+					}
+				}
+				variable = (DBGpVariable) frame.findVariable(variableName);
+			}
+		} catch (Exception e) {
+			PHPDebugPlugin.log(e);
+		}
+		return variable;
+
+	}
+

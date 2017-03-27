@@ -1,5 +1,4 @@
-	protected String getByProperty(DBGpStackFrame context, String variable) {
-		String value = null;
+	protected DBGpVariable getByProperty(DBGpStackFrame context, String variable) {
 		DBGpTarget debugTarget = (DBGpTarget) context.getDebugTarget();
 		String stackLevel = context.getStackLevel();
 		Node resp = debugTarget.getProperty(variable, stackLevel, 0);
@@ -9,25 +8,10 @@
 			resp = debugTarget.getProperty(variable, stackLevel, 0);
 		}
 		if (resp == null) {
-			return ""; //$NON-NLS-1$
+			return null; // $NON-NLS-1$
 		}
-		IVariable tempVar = new DBGpStackVariable(debugTarget, resp, Integer.valueOf(stackLevel));
-		IValue val = null;
-		try {
-			val = tempVar.getValue();
-			if (val != null) {
-				value = val.getValueString();
-			}
-		} catch (DebugException e) {
-		}
-		if (value != null && value.length() == 0) {
-			value = PHPDebugUIMessages.XDebugHover_empty;
-			return value;
-		}
-		if (value != null) {
-			value = value.replaceAll("\t", "    ").replaceAll("&", "&amp;") //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
-					.replaceAll("<", "&lt;").replaceAll(">", "&gt;"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
-		}
-		return value;
+		DBGpVariable var = new DBGpStackVariable(debugTarget, resp, Integer.valueOf(stackLevel));
+		setContextFacets(var);
+		return var;
 	}
 
