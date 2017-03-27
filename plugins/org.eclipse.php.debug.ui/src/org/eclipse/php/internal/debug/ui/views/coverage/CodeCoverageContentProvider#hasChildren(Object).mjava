@@ -1,0 +1,26 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.eclipse.php.ui.StandardPHPElementContentProvider#hasChildrenInternal
+	 * (java.lang.Object)
+	 */
+	public boolean hasChildren(final Object element) {
+		boolean hasChildren = provider.hasChildren(element);
+		if (!hasChildren) {
+			return false;
+		}
+		if (element instanceof IFile || element instanceof ISourceModule) {
+			return false;
+		}
+		if (element instanceof IProject && project != null && element != project) {
+			return false;
+		}
+		hasChildren = false;
+		final Object[] children = getChildren(element);
+		for (int i = 0; i < children.length; ++i) {
+			hasChildren |= hasChildren(children[i]) | !isFiltered(children[i]);
+		}
+		return hasChildren;
+	}
+

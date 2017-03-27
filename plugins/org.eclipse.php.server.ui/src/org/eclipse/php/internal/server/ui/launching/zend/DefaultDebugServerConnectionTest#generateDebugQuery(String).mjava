@@ -1,12 +1,22 @@
 	protected String generateDebugQuery(String host) {
-		String urlToDebug = ""; //$NON-NLS-1$
-		StringBuilder queryBuilder = new StringBuilder();
-		queryBuilder.append(fURL);
-		queryBuilder.append("/dummy.php?start_debug=1&debug_port="); //$NON-NLS-1$
-		queryBuilder.append(getPort());
-		queryBuilder.append("&debug_fastfile=1&debug_host="); //$NON-NLS-1$
-		queryBuilder.append(host + "&testConnection=true"); //$NON-NLS-1$
-		urlToDebug = queryBuilder.toString();
-		return urlToDebug;
+		StringBuilder debugQuery = new StringBuilder();
+		debugQuery.append(fURL);
+		String dummyFile = Platform.getPreferencesService().getString(PHPDebugPlugin.ID,
+				PHPDebugCorePreferenceNames.ZEND_DEBUG_DUMMY_FILE, "", //$NON-NLS-1$
+				null);
+		if (!dummyFile.startsWith("/")) { //$NON-NLS-1$
+			dummyFile = "/" + dummyFile; //$NON-NLS-1$
+		}
+		debugQuery.append(dummyFile).append("?start_debug=1&debug_port="); //$NON-NLS-1$
+		int port = getDebugPort();
+		debugQuery.append(port);
+		debugQuery.append("&debug_fastfile=1&debug_host="); //$NON-NLS-1$
+		debugQuery.append(host + "&testConnection=true"); //$NON-NLS-1$
+		boolean useSSL = InstanceScope.INSTANCE.getNode(PHPDebugPlugin.ID)
+				.getBoolean(PHPDebugCorePreferenceNames.ZEND_DEBUG_ENCRYPTED_SSL_DATA, false);
+		if (useSSL) {
+			debugQuery.append("&use_ssl=1"); //$NON-NLS-1$
+		}
+		return debugQuery.toString();
 	}
 

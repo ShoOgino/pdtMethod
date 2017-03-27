@@ -1,0 +1,78 @@
+		/**
+		 * Sets extension_dir in php.ini file for all php executables (i.e.
+		 * resources/php53, resources/php54) provided by extension point
+		 * "phpExe", for OSs different than Windows.
+		 * 
+		 * @throws IOException
+		 * @throws URISyntaxException
+		 */
+		public static void setExtDirInPHPIniFile() {
+
+			final IExtensionRegistry registry = Platform.getExtensionRegistry();
+			final IConfigurationElement[] elements = registry.getConfigurationElementsFor("org.eclipse.php.debug.core",
+					EXTENSION_POINT_NAME);
+			Matcher matcher = null;
+			Pattern pattern = null;
+			for (final IConfigurationElement element : elements) {
+				if (PHPEXE_TAG.equals(element.getName())) {
+					try {
+						String location = substitudeVariables(element.getAttribute(LOCATION_ATTRIBUTE));
+						final String pluginId = element.getDeclaringExtension().getNamespaceIdentifier();
+						location = location.substring(0, location.lastIndexOf("/")) //$NON-NLS-1$
+								.concat("/php.ini"); //$NON-NLS-1$
+
+						File phpIni = getFileFromLocation(location, pluginId);
+						if (phpIni == null)
+							continue;
+
+						File phpIniDir = phpIni.getParentFile();
+						String fileName = phpIni.getAbsolutePath();
+						String iniContent = readFile(fileName);
+						String correctDir = phpIniDir.getAbsolutePath().concat(File.separator).replaceAll("\\\\",
+								"\\\\\\\\");
+						pattern = Pattern.compile("(extension_dir=.*)(ext[^\\s]*)");
+						matcher = pattern.matcher(iniContent);
+						if (matcher.find()) {
+							Path iniPath = new Path(matcher.group(1).replaceAll("extension_dir=", ""));
+							Path currentPath = new Path(correctDir);
+							if (!currentPath.isPrefixOf(iniPath)) {
+								iniContent = iniContent.replaceAll(matcher.group(0).replaceAll("\\\\", "\\\\\\\\"),
+										"extension_dir=\"" + correctDir
+												+ matcher.group(2).replace("\"", "").replaceAll("\\\\", "\\\\\\\\")
+												+ "\"");
+								pattern = Pattern.compile("(zend_extension=.*)(ext[^\\s]ZendDebugger[^\\s]*)");
+								matcher = pattern.matcher(iniContent);
+								if (matcher.find()) {
+									iniContent = iniContent.replaceAll(matcher.group(0).replaceAll("\\\\", "\\\\\\\\"),
+											"zend_extension=\"" + correctDir
+													+ matcher.group(2).replace("\"", "").replaceAll("\\\\", "\\\\\\\\")
+													+ "\"");
+								}
+								pattern = Pattern.compile("(zend_extension=.*)(ext[^\\s]xdebug[^\\s]*)");
+								matcher = pattern.matcher(iniContent);
+								if (matcher.find()) {
+									iniContent = iniContent.replaceAll(matcher.group(0).replaceAll("\\\\", "\\\\\\\\"),
+											"zend_extension=\"" + correctDir
+													+ matcher.group(2).replace("\"", "").replaceAll("\\\\", "\\\\\\\\")
+													+ "\"");
+								}
+								pattern = Pattern.compile("(openssl.cafile=.*)(ca-bundle.crt[^\\s]*)");
+								matcher = pattern.matcher(iniContent);
+								if (matcher.find()) {
+									iniContent = iniContent.replaceAll(matcher.group(0).replaceAll("\\\\", "\\\\\\\\"),
+											"openssl.cafile=\"" + correctDir + matcher.group(2).replace("\"", "")
+													+ "\"");
+								}
+								BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
+								writer.write(iniContent);
+								writer.flush();
+								writer.close();
+							}
+						}
+					} catch (Exception ex) {
+						log(ex);
+					}
+				}
+			}
+		}
+

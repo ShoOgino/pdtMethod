@@ -1,11 +1,67 @@
 	public void sessionStarted(String remoteFile, String uri, String query, String options) {
 		super.sessionStarted(remoteFile, uri, query, options);
+
+		fUseLocalCopy = true;
+		ILaunchConfiguration launchConfiguration = fDebugTarget.getLaunch().getLaunchConfiguration();
+		try {
+			fUseLocalCopy = !launchConfiguration.getAttribute(IPHPDebugConstants.DEBUGGING_USE_SERVER_FILES, false);
+		} catch (CoreException e) {
+			DebugPlugin.log(e);
+		}
+
+		if (fUseLocalCopy) {
+			// Bind server with this launch configuration if we can find any:
+			final String serverURL = fDebugTarget.getURL();
+			if (serverURL != null) {
+				try {
+					String serverName = null;
+					Server serverLookup = ServersManager.findByURL(serverURL);
+					if (serverLookup != null)
+						serverName = serverLookup.getName();
+					if (serverName != null) {
+						ILaunchConfigurationWorkingCopy wc = launchConfiguration.getWorkingCopy();
+						wc.setAttribute(Server.NAME, serverName);
+						synchronized (launchConfiguration) {
+							wc.doSave();
+						}
+					}
+				} catch (CoreException e) {
+					DebugPlugin.log(e);
+				}
+			}
+			// XXX: add initial mapping for debugging via PHP Web Script (needed
+			// for the first breakpoint)
+			try {
+				String debugType = launchConfiguration.getAttribute(IDebugParametersKeys.PHP_DEBUG_TYPE, ""); //$NON-NLS-1$
+				if (debugType.equals(IDebugParametersKeys.PHP_WEB_SCRIPT_DEBUG)) {
+					PathMapper pathMapper = PathMapperRegistry.getByLaunchConfiguration(launchConfiguration);
+					String debugFilePath = launchConfiguration.getAttribute(IPHPDebugConstants.ATTR_FILE,
+							(String) null);
+					String debugFileFullPath = launchConfiguration.getAttribute(IPHPDebugConstants.ATTR_FILE_FULL_PATH,
+							(String) null);
+					if (pathMapper != null && debugFilePath != null && debugFileFullPath != null
+							&& pathMapper.getLocalFile(debugFileFullPath) == null) {
+						IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(debugFilePath);
+						if (resource instanceof IFile) {
+							pathMapper.addEntry(debugFileFullPath,
+									new PathEntry(debugFilePath, Type.WORKSPACE, resource.getParent()),
+									MappingSource.ENVIRONMENT);
+						} else if (new File(debugFilePath).exists()) {
+							pathMapper.addEntry(debugFilePath, new PathEntry(debugFilePath, Type.EXTERNAL,
+									new File(debugFilePath).getParentFile()), MappingSource.ENVIRONMENT);
+						}
+					}
+				}
+			} catch (CoreException e) {
+				Logger.logException(e);
+			}
+		}
+
 		if (isUsingPathMapper()) {
 			/*
 			 * Hack for the case when htdocs is symlinked to the workspace. Zend
 			 * Debugger resolves symbolic links later and it breaks path mapper.
 			 */
-			ILaunchConfiguration launchConfiguration = fDebugTarget.getLaunch().getLaunchConfiguration();
 			try {
 				String lcServerName = launchConfiguration.getAttribute(Server.NAME, (String) null);
 				if ((lcServerName == null || lcServerName.isEmpty()) && fDebugTarget.getURL() != null) {
@@ -58,5 +114,7 @@
 				startLock.setRunStart(true);
 			}
 		}
+
+		fCodeCoverage = query.indexOf(DefaultDebugParametersInitializer.CODE_COVERAGE) != -1;
 	}
 

@@ -18,7 +18,7 @@
 		GridData layoutData;
 		final Font boldFont = new Font(parent.getFont().getDevice(), fontData);
 		Label remoteLabel = new Label(parent, SWT.NONE);
-		remoteLabel.setText(Messages.OpenLocalFileSearchFilter_Select_the_local_resource_match);
+		remoteLabel.setText(Messages.OpenLocalFileSearchFilter_Remote_file_is_requested);
 		layoutData = new GridData();
 		layoutData.horizontalSpan = 2;
 		remoteLabel.setLayoutData(layoutData);
@@ -29,11 +29,40 @@
 		layoutData.horizontalSpan = 2;
 		layoutData.horizontalIndent = convertVerticalDLUsToPixels(10);
 		label.setLayoutData(layoutData);
+
+		selectRemoteRadio = new Button(parent, SWT.RADIO);
+		selectRemoteRadio.setSelection(false);
+		selectRemoteRadio.setText(Messages.OpenLocalFileSearchFilter_Open_remote);
+		layoutData = new GridData();
+		layoutData.horizontalSpan = 2;
+		selectRemoteRadio.setLayoutData(layoutData);
+
+		selectMappingRadio = new Button(parent, SWT.RADIO);
+		selectMappingRadio.setSelection(true);
+		selectMappingRadio.setText(Messages.OpenLocalFileSearchFilter_Map_and_open_local);
+		layoutData = new GridData();
+		layoutData.horizontalSpan = 2;
+		selectMappingRadio.setLayoutData(layoutData);
+
+		selectRemoteRadio.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				selectMappingRadio.setSelection(!selectRemoteRadio.getSelection());
+			}
+		});
+		selectMappingRadio.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				selectRemoteRadio.setSelection(!selectMappingRadio.getSelection());
+				entriesViewer.getTree().setEnabled(selectMappingRadio.getSelection());
+				validate();
+			}
+		});
+
 		entriesViewer = new TreeViewer(parent, SWT.SINGLE | SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER);
 		layoutData = new GridData(GridData.FILL_BOTH);
 		layoutData.horizontalSpan = 2;
 		layoutData.minimumHeight = convertVerticalDLUsToPixels(80);
-		layoutData.verticalIndent = 10;
 		entriesViewer.getControl().setLayoutData(layoutData);
 		entriesViewer.setContentProvider(new ContentProvider());
 		entriesViewer.setLabelProvider(new LabelProvider());

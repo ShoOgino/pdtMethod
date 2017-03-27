@@ -1,0 +1,40 @@
+	public static void requestRemoteFile(final IRemoteFileContentRequestor requester, String fileName,
+			final int lineNumber, String remoteURL) {
+		RemoteFileContentRequestorsRegistry.getInstance().addRequestor(requester, fileName, lineNumber);
+		final StringBuilder urlBuf = new StringBuilder(RemoteFileQuery.generateQuery(remoteURL));
+		try {
+			fileName = URLEncoder.encode(fileName, "UTF-8"); //$NON-NLS-1$
+		} catch (UnsupportedEncodingException e) {
+		}
+		urlBuf.append("&") //$NON-NLS-1$
+				.append(DefaultDebugParametersInitializer.GET_FILE_CONTENT).append('=').append(fileName);
+		urlBuf.append("&") //$NON-NLS-1$
+				.append(DefaultDebugParametersInitializer.LINE_NUMBER).append('=').append(lineNumber);
+		final String fileName2 = fileName;
+		// Send the request to the server:
+		Job requestFileJob = new Job(PHPDebugCoreMessages.RemoteDebugger_RequestFileFromServer) {
+			public IStatus run(IProgressMonitor monitor) {
+				try {
+					URL requestURL = new URL(urlBuf.toString());
+					URLConnection connection = requestURL.openConnection();
+					InputStream inputStream = connection.getInputStream();
+					while (inputStream.read() != -1) {
+						// do nothing on the content returned by standard stream
+					}
+					requester.requestCompleted(null);
+
+				} catch (Exception e) {
+					RemoteFileContentRequestorsRegistry.getInstance().removeRequestor(fileName2, lineNumber);
+					requester.requestCompleted(e);
+
+					Logger.logException(e);
+				} finally {
+					monitor.done();
+				}
+				return Status.OK_STATUS;
+			}
+		};
+		requestFileJob.setUser(false);
+		requestFileJob.schedule();
+	}
+

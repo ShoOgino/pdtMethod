@@ -1,0 +1,51 @@
+	public void deserialize(DataInputStream in) throws IOException {
+		setID(in.readInt());
+		int numFiles = in.readInt();
+		fCodeCoverageData = new CodeCoverageData[numFiles];
+		for (int i = 0; i < numFiles; ++i) {
+			// reading file name:
+			String fileName = CommunicationUtilities.readString(in);
+			if (isDebugMode)
+				System.out.println("Covered file: " + fileName); //$NON-NLS-1$
+
+			// reading number of lines:
+			int numberOfLines = in.readInt();
+			if (isDebugMode)
+				System.out.println("Number of lines (1): " + numberOfLines); //$NON-NLS-1$
+			int numberOfBytes = numberOfLines / 8 + 1;
+			if (isDebugMode)
+				System.out.println("Number of bytes (1): " + numberOfBytes); //$NON-NLS-1$
+			byte[] coverageBitmask = new byte[numberOfBytes];
+
+			// reading covered bitmask:
+			for (int j = 0; j < numberOfBytes; ++j) {
+				coverageBitmask[j] = in.readByte();
+			}
+
+			fCodeCoverageData[i] = new CodeCoverageData(fileName, numberOfLines, coverageBitmask);
+
+			// reading number of lines again:
+			int numberOfLines2 = in.readInt();
+			if (isDebugMode)
+				System.out.println("Number of lines (2): " + numberOfLines2); //$NON-NLS-1$
+			if (numberOfLines != numberOfLines2)
+				throw new IOException("Old format code coverage responce."); //$NON-NLS-1$
+			numberOfBytes = numberOfLines / 8 + 1;
+			if (isDebugMode)
+				System.out.println("Number of bytes (2): " + numberOfBytes); //$NON-NLS-1$
+			byte[] significanceBitmask = new byte[numberOfBytes];
+
+			// reading significant bitmask:
+			for (int j = 0; j < numberOfBytes; ++j) {
+				significanceBitmask[j] = in.readByte();
+			}
+			fCodeCoverageData[i].setSignificanceBitmask(significanceBitmask);
+
+			// reading number of php lines:
+			int numberOfPhpLines = in.readInt();
+			if (isDebugMode)
+				System.out.println("Number of php lines: " + numberOfPhpLines); //$NON-NLS-1$
+			fCodeCoverageData[i].setPhpLinesNum(numberOfPhpLines);
+		}
+	}
+

@@ -1,0 +1,22 @@
+	public void doubleClickFile(final Object element) {
+		try {
+			if (element instanceof String) {
+				String remoteFile = (String) element;
+				final CodeCoverageData data = ((CodeCoverageContentProvider) viewer.getContentProvider())
+						.getCoverageData(remoteFile);
+				IEditorPart part = EditorUtility.openLocalFile(remoteFile, 0);
+				if (part == null) {
+					IRemoteFileContentRequestor requestor = new OpenRemoteFileContentRequestor();
+					RemoteDebugger.requestRemoteFile(requestor, remoteFile, 1, data.getURL());
+				}
+			} else if (element instanceof ISourceModule || element instanceof IFile) {
+				final IEditorPart part = org.eclipse.dltk.internal.ui.editor.EditorUtility.openInEditor(element, false);
+				if (part != null && element instanceof IModelElement && !(element instanceof ISourceModule))
+					org.eclipse.dltk.internal.ui.editor.EditorUtility.revealInEditor(part, (IModelElement) element);
+			} else
+				viewer.setExpandedState(element, !viewer.getExpandedState(element));
+		} catch (final CoreException e) {
+		}
+
+	}
+

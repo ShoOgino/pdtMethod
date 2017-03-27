@@ -1,0 +1,63 @@
+	private IEditorInput getEditorInput(byte[] content, String serverAddress, String originalURL, String remoteFile) {
+		PathMapper mapper = null;
+		PathEntry entry = null;
+		final IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+		// Check if we have local file that is a direct match of the remote one
+		final IFile file = root.getFileForLocation(new Path(remoteFile));
+		if (file != null) {
+			return new FileEditorInput(file);
+		}
+		// Check for a server address to find a perfect match.
+		Server serverMatch = null;
+		try {
+			String serverURL = "http://" + serverAddress;
+			// Try perfect match first
+			serverMatch = ServersManager.findByURL(serverURL);
+			if (serverMatch != null) {
+				mapper = PathMapperRegistry.getByServer(serverMatch);
+				entry = mapper.getLocalFile(remoteFile);
+				// If no mapping, try to find one
+				if (entry == null) {
+					LocalFileSearchEngine searchEngine = new LocalFileSearchEngine();
+					LocalFileSearchResult searchResult = searchEngine.find(root, remoteFile, serverMatch.getUniqueId());
+					if (searchResult == null) {
+						File localFile = new File(remoteFile);
+						if (localFile.exists()) {
+							IPath path = new Path(remoteFile);
+							String parentPath = path.removeLastSegments(1).toOSString();
+							IFileStore fileStore = EFS.getLocalFileSystem().getStore(new Path(parentPath));
+							fileStore = fileStore.getChild(path.lastSegment());
+							return new FileStoreEditorInput(fileStore);
+						} else {
+							return new RemoteFileStorageEditorInput(
+									new RemoteFileStorage(content, remoteFile, originalURL));
+						}
+					}
+					if (searchResult.getStatus().isOK() && searchResult.getPathEntry() == null) {
+						return new RemoteFileStorageEditorInput(
+								new RemoteFileStorage(content, remoteFile, originalURL));
+					} else if (!searchResult.getStatus().isOK()) {
+						return null;
+					} else {
+						entry = searchResult.getPathEntry();
+					}
+				}
+			} else {
+				// Check all servers
+				for (Server server : ServersManager.getServers()) {
+					mapper = PathMapperRegistry.getByServer(server);
+					entry = mapper.getLocalFile(remoteFile);
+					if (entry != null)
+						break;
+				}
+			}
+		} catch (InterruptedException e) {
+			DebugPlugin.log(e);
+		}
+		if (entry != null) {
+			return new FileEditorInput(root.getFile(new Path(entry.getPath())));
+		}
+		return new RemoteFileStorageEditorInput(new RemoteFileStorage(content, remoteFile, originalURL));
+
+	}
+

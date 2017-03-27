@@ -1,0 +1,30 @@
+	/**
+	 * Tries to obtain LAN private addresses.
+	 * 
+	 * @return LAN private addresses
+	 */
+	public static List<Inet4Address> getPrivateAddresses() {
+		List<Inet4Address> descriptors = new ArrayList<Inet4Address>();
+		try {
+			// Add localhost first
+			Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+			while (networkInterfaces.hasMoreElements()) {
+				NetworkInterface networkInterface = networkInterfaces.nextElement();
+				// Skip VMware's
+				if (networkInterface.getDisplayName().contains("VMware")) { //$NON-NLS-1$
+					continue;
+				}
+				Enumeration<InetAddress> inetAddresses = networkInterface.getInetAddresses();
+				while (inetAddresses.hasMoreElements()) {
+					InetAddress inetAddress = inetAddresses.nextElement();
+					if (inetAddress instanceof Inet4Address && !inetAddress.isLoopbackAddress()) {
+						descriptors.add((Inet4Address) inetAddress);
+					}
+				}
+			}
+		} catch (Exception e) {
+			// in this case continue with already detected hosts
+		}
+		return descriptors;
+	}
+

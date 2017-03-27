@@ -1,0 +1,32 @@
+	/**
+	 * Tries to obtain workstation public IP address.
+	 * 
+	 * @return workstation public IP address or <code>null</code> if can not be
+	 *         obtained
+	 */
+	public static Inet4Address getPublicAddress() {
+		for (String callback : WHAT_IS_MY_IP_CALLBACKS) {
+			BufferedReader bufferedReader = null;
+			try {
+				URL whatismyip = new URL(callback);
+				URLConnection connection = whatismyip.openConnection();
+				connection.setConnectTimeout(WHAT_IS_MY_IP_CONNECTION_TIMEOUT);
+				connection.setReadTimeout(WHAT_IS_MY_IP_READ_TIMEOUT);
+				bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+				String publicIP = bufferedReader.readLine();
+				return getByName(publicIP, 2000);
+			} catch (Exception e) {
+				// ignore
+			} finally {
+				if (bufferedReader != null) {
+					try {
+						bufferedReader.close();
+					} catch (IOException e) {
+						// ignore
+					}
+				}
+			}
+		}
+		return null;
+	}
+

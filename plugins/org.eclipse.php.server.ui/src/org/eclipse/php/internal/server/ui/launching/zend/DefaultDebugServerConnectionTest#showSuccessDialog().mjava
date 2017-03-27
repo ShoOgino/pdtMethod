@@ -1,14 +1,20 @@
 	protected void showSuccessDialog() {
-		String message = NLS.bind(PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_success"), //$NON-NLS-1$
-				fCurrentHost);
+		String message = MessageFormat.format(Messages.DebugServerConnectionTest_test_successfull, fCurrentHost);
 		final StringBuilder stringBuilder = new StringBuilder();
 		stringBuilder.append(message);
-		if (fTimeoutServerList.size() > 0) {
-			stringBuilder.append("\n"); //$NON-NLS-1$
-			stringBuilder.append(PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_however")); //$NON-NLS-1$
-			stringBuilder.append(addTimeOutsMessage("")); //$NON-NLS-1$
+		if (getAllLocalHostsAddresses().length > 1) {
+			stringBuilder.append('\n');
+			stringBuilder.append(Messages.DebugServerConnectionTest_some_IPs_seems_to_be_redundant);
+			StringBuilder addresses = new StringBuilder();
+			for (String address : getAllLocalHostsAddresses()) {
+				if (!address.equals(fCurrentHost)) {
+					addresses.append((addresses.length() != 0 ? ", " : "") //$NON-NLS-1$ //$NON-NLS-2$
+							+ '\'' + address + '\'');
+				}
+			}
+			stringBuilder.append(addresses.toString());
 		}
-		fShell.getDisplay().asyncExec(new Runnable() {
+		fShell.getDisplay().syncExec(new Runnable() {
 			public void run() {
 				MessageDialog.openInformation(fShell,
 						PHPServerUIMessages.getString("DefaultDebugServerConnectionTest_testDebugServer"), //$NON-NLS-1$

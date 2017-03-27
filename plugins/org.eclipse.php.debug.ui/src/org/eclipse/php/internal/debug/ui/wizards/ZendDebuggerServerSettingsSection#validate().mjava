@@ -20,15 +20,94 @@
 					IMessageProvider.ERROR);
 			return;
 		}
-		String responseTimeout = (String) settingsWorkingCopy.getAttribute(PROP_RESPONSE_TIMEOUT);
-		if (responseTimeout == null || responseTimeout.isEmpty()) {
-			compositeFragment.setMessage(Messages.ZendDebuggerServerSettingsSection_Response_timeout_is_missing,
+		String responseTime = (String) settingsWorkingCopy.getAttribute(PROP_RESPONSE_TIMEOUT);
+		Integer responseTimeout = null;
+		try {
+			responseTimeout = Integer.valueOf(responseTime);
+			int i = responseTimeout.intValue();
+			if (i < 5000) {
+				compositeFragment.setMessage(
+						NLS.bind(PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_invalid_response_time, 5000),
+						IMessageProvider.ERROR);
+				return;
+			}
+		} catch (Exception exc) {
+			compositeFragment.setMessage(PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_invalid_response_time_exc,
 					IMessageProvider.ERROR);
 			return;
 		}
-		int port = Integer.valueOf(clientPort);
-		if (!PHPLaunchUtilities.isPortAvailable(port)
-				&& !PHPLaunchUtilities.isDebugDaemonActive(port, DebuggerCommunicationDaemon.ZEND_DEBUGGER_ID)) {
+
+		// Check warnings
+		String[] clientHosts = PHPDebugUtil.getZendHostsArray(clientIpText.getText());
+		// Check invalid addresses
+		if (!skipNetworkMonitor) {
+			networkMonitor.validate(clientHosts, new IHostsValidationListener[] { new IHostsValidationListener() {
+				public void validated(List<String> invalidAddresses) {
+					if (!invalidAddresses.isEmpty()) {
+						StringBuilder addresses = new StringBuilder();
+						for (String address : invalidAddresses) {
+							addresses.append((addresses.length() != 0 ? ", " : "") //$NON-NLS-1$ //$NON-NLS-2$
+									+ '\'' + address + '\'');
+						}
+						String message;
+						if (invalidAddresses.size() == 1) {
+							message = MessageFormat.format(
+									Messages.ZendDebuggerServerSettingsSection_Client_host_IP_might_be_invalid,
+									addresses.toString());
+						} else {
+							message = MessageFormat.format(
+									Messages.ZendDebuggerServerSettingsSection_Client_hosts_IPs_might_be_invalid,
+									addresses.toString());
+						}
+						final String warningMessage = message;
+						PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
+							public void run() {
+								if (!compositeFragment.isDisposed() && compositeFragment.isVisible()
+										&& compositeFragment.isComplete())
+									compositeFragment.setMessage(warningMessage, IMessageProvider.WARNING);
+							}
+						});
+					} else {
+						skipNetworkMonitor = true;
+						PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
+							public void run() {
+								if (!compositeFragment.isDisposed() && compositeFragment.isVisible())
+									validate();
+							}
+						});
+					}
+				}
+			} });
+		} else {
+			skipNetworkMonitor = false;
+		}
+		// Check redundant hosts
+		if (clientHosts.length > 1) {
+			compositeFragment.setMessage(Messages.ZendDebuggerServerSettingsSection_Client_host_IPS_might_be_redundant,
+					IMessageProvider.WARNING);
+			return;
+		}
+		Integer portNumber = null;
+		try {
+			portNumber = Integer.valueOf(clientPort);
+			int i = portNumber.intValue();
+			if (i < 1 || i > 65535) {
+				compositeFragment.setMessage(PHPDebugCoreMessages.DebugConfigurationDialog_invalidPortRange,
+						IMessageProvider.ERROR);
+				return;
+			}
+		} catch (NumberFormatException ex) {
+			compositeFragment.setMessage(PHPDebugCoreMessages.DebugConfigurationDialog_invalidPort,
+					IMessageProvider.ERROR);
+			return;
+		} catch (Exception e) {
+			compositeFragment.setMessage(PHPDebugCoreMessages.DebugConfigurationDialog_invalidPort,
+					IMessageProvider.ERROR);
+			return;
+		}
+		// Check ports
+		if (!PHPLaunchUtilities.isPortAvailable(portNumber)
+				&& !PHPLaunchUtilities.isDebugDaemonActive(portNumber, DebuggerCommunicationDaemon.ZEND_DEBUGGER_ID)) {
 			compositeFragment.setMessage(
 					MessageFormat.format(Messages.DebuggerCommonSettingsSection_Port_is_already_in_use, clientPort),
 					IMessageProvider.WARNING);

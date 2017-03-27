@@ -1,0 +1,58 @@
+	public CodeCoverageResult getCodeCoverageResult(final Object element) {
+		if (cachedCoverage.containsKey(element)) {
+			return cachedCoverage.get(element);
+		}
+		final CodeCoverageResult coverageResult;
+		CodeCoverageData coverageData = null;
+		if (element instanceof IModelElement) {
+			ISourceModule sourceModule = PHPToolkitUtil.getSourceModule((IModelElement) element);
+			if (sourceModule != null) {
+				coverageData = coveredFilesMap.get(new VirtualPath(sourceModule.getResource().getName()));
+			}
+		} else if (element instanceof IFile) {
+			coverageData = coveredFilesMap.get(new VirtualPath(((IFile) element).getFullPath().toString()));
+		} else {
+			coverageData = coveredFilesMap.get(new VirtualPath(element.toString()));
+		}
+		if (coverageData != null) {
+			final int linesNum = coverageData.getLinesNum();
+			int linesCovered = 0;
+			int significantLines = 0;
+			final byte[] coverageBitmask = coverageData.getCoverageBitmask();
+			for (int i = 1; i <= linesNum; ++i) {
+				if (coverageBitmask.length > i / 8) {
+					if ((coverageBitmask[i / 8] >> i % 8 & 0x1) == (byte) 1) {
+						++linesCovered;
+					}
+				}
+			}
+			final byte[] significanceBitmask = coverageData.getSignificanceBitmask();
+			if (significanceBitmask != null) {
+				for (int i = 1; i <= linesNum; ++i) {
+					if (significanceBitmask.length > i / 8) {
+						if ((significanceBitmask[i / 8] >> i % 8 & 0x1) == (byte) 1) {
+							++significantLines;
+						} else if ((coverageBitmask[i / 8] >> i % 8 & 0x1) == (byte) 1) {
+							++significantLines;
+							// --linesCovered;
+						}
+					}
+				}
+			} else {
+				significantLines = -1;
+			}
+			coverageResult = new CodeCoverageResult(linesNum, linesCovered, significantLines, 1);
+		} else if (element instanceof IModelElement) {
+			// TODO calculate inner elements coverage
+			coverageResult = new CodeCoverageResult(0, 0, -1, 0);
+		} else {
+			coverageResult = new CodeCoverageResult(0, 0, -1, 0);
+			final Object[] children = getChildren(element);
+			for (int i = 0; i < children.length; ++i) {
+				coverageResult.addCoverageResult(getCodeCoverageResult(children[i]));
+			}
+			cachedCoverage.put(element, coverageResult);
+		}
+		return coverageResult;
+	}
+

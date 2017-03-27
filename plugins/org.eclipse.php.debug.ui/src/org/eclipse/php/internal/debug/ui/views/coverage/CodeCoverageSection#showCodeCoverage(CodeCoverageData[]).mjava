@@ -1,0 +1,28 @@
+	public void showCodeCoverage(final CodeCoverageData[] coveredFiles) {
+		if (coveredFiles != null) {
+			if (!viewer.getTree().isDisposed()) {
+				// try to detect project:
+				for (CodeCoverageData element : coveredFiles) {
+					String localFileName = element.getLocalFileName();
+					IResource resource = ResourcesPlugin.getWorkspace().getRoot()
+							.getFileForLocation(new Path(localFileName));
+					if (resource != null && resource instanceof IFile) {
+						IFile file = (IFile) resource;
+						cProvider.setProject(file.getProject());
+						break;
+					}
+				}
+				cProvider.setCoveredFiles(coveredFiles);
+				viewer.setAutoExpandLevel(2);
+				viewer.getControl().setRedraw(false);
+				viewer.setInput(ResourcesPlugin.getWorkspace().getRoot());
+				viewer.getControl().setRedraw(true);
+				viewer.refresh(false);
+			}
+		} else {
+			if (viewer.getContentProvider() != null) {
+				viewer.setInput(null);
+			}
+		}
+	}
+

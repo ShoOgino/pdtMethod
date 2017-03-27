@@ -1,0 +1,48 @@
+		/**
+		 * Generates and return query URL.
+		 * 
+		 * @param url
+		 * @param isProfile
+		 * @param launchConfiguration
+		 * @return query URL
+		 */
+		public static String generateQuery(String url) {
+			StringBuffer buffer = new StringBuffer(url);
+			if (url.indexOf("?") == -1) { //$NON-NLS-1$
+				buffer.append('?');
+			} else {
+				if (!url.endsWith("&")) {
+					buffer.append('&');
+				}
+			}
+			Map<String, String> parameters = new Hashtable<String, String>();
+			parameters.put(DefaultDebugParametersInitializer.START_DEBUG, "1"); //$NON-NLS-1$
+			parameters.put(DefaultDebugParametersInitializer.SEND_SESS_END, "1"); //$NON-NLS-1$
+			parameters.put(DefaultDebugParametersInitializer.DEBUG_NO_CACHE, Long.toString(System.currentTimeMillis()));
+			parameters.put(DefaultDebugParametersInitializer.ORIGINAL_URL, url);
+			parameters.put(DefaultDebugParametersInitializer.DEBUG_SESSION_ID,
+					String.valueOf(DebugSessionIdGenerator.generateSessionID()));
+			parameters.put(DefaultDebugParametersInitializer.DEBUG_NO_REMOTE, "1"); //$NON-NLS-1$
+			parameters.put(DefaultDebugParametersInitializer.DEBUG_FASTFILE, "1"); //$NON-NLS-1$
+			parameters.put(DefaultDebugParametersInitializer.ZRAY_DISABLE, "1"); //$NON-NLS-1$
+			parameters.put(DefaultDebugParametersInitializer.IS_DEBUG_URL, "1"); //$NON-NLS-1$
+			boolean useSSL = InstanceScope.INSTANCE.getNode(PHPDebugPlugin.ID)
+					.getBoolean(PHPDebugCorePreferenceNames.ZEND_DEBUG_ENCRYPTED_SSL_DATA, false);
+			if (useSSL) {
+				parameters.put(DefaultDebugParametersInitializer.USE_SSL, "1"); //$NON-NLS-1$
+			}
+			Iterator<String> it = parameters.keySet().iterator();
+			while (it.hasNext()) {
+				String key = it.next();
+				buffer.append(key).append('=');
+				try {
+					buffer.append(URLEncoder.encode(parameters.get(key), "UTF-8"));
+				} catch (UnsupportedEncodingException e) {
+				}
+				if (it.hasNext()) {
+					buffer.append('&');
+				}
+			}
+			return buffer.toString();
+		}
+

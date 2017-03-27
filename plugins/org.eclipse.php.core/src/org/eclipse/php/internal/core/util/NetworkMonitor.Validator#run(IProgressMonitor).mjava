@@ -1,0 +1,46 @@
+		@Override
+		protected IStatus run(final IProgressMonitor monitor) {
+			try {
+				// Wait for addresses to be collected
+				latch.await();
+			} catch (InterruptedException e) {
+				return Status.CANCEL_STATUS;
+			}
+			List<String> invalid = new ArrayList<String>();
+			for (String clientHost : addresses) {
+				if (monitor.isCanceled())
+					return Status.CANCEL_STATUS;
+				if (!NetworkUtil.isIPv4Address(clientHost) && !clientHost.equalsIgnoreCase("localhost")) { //$NON-NLS-1$
+					// Mark invalid if it is not a literal IP address
+					invalid.add(clientHost);
+					continue;
+				}
+				if (monitor.isCanceled())
+					return Status.CANCEL_STATUS;
+				Inet4Address clientHostAddress;
+				try {
+					clientHostAddress = (Inet4Address) InetAddress.getByName(clientHost);
+				} catch (UnknownHostException e) {
+					invalid.add(clientHost);
+					continue;
+				}
+				boolean isInvalid = true;
+				if (clientHostAddress != null) {
+					if (NetworkUtil.isLoopbackAddress(clientHostAddress))
+						// Local addresses are always valid
+						continue;
+					for (Inet4Address address : allAddresses) {
+						if (clientHostAddress.getHostAddress().equals(address.getHostAddress())) {
+							isInvalid = false;
+							break;
+						}
+					}
+				}
+				if (isInvalid)
+					invalid.add(clientHost);
+			}
+			for (IHostsValidationListener validationListener : validationListeners)
+				validationListener.validated(invalid);
+			return monitor.isCanceled() ? Status.CANCEL_STATUS : Status.OK_STATUS;
+		}
+

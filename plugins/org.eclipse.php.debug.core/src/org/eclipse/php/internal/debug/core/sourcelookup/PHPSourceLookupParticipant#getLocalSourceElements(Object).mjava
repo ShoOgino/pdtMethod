@@ -1,0 +1,57 @@
+	private Object[] getLocalSourceElements(Object object) throws CoreException {
+		Object[] sourceElements = EMPTY;
+		try {
+			sourceElements = super.findSourceElements(object);
+		} catch (CoreException e) {
+			// Check if the lookup failed because the source is outside the
+			// workspace.
+		}
+		if (sourceElements == EMPTY) {
+			// If the lookup returned an empty elements array, check if the
+			// source is outside the workspace.
+			String sourceFilePath = null;
+			if (object instanceof PHPStackFrame) {
+				sourceFilePath = ((PHPStackFrame) object).getSourceName();
+			} else if (object instanceof DBGpStackFrame) {
+				sourceFilePath = ((DBGpStackFrame) object).getQualifiedFile();
+			}
+			if (sourceFilePath != null) {
+				// Check if we have it in DLTK model
+				HandleFactory handleFactory = new HandleFactory();
+				IDLTKSearchScope scope = SearchEngine.createWorkspaceScope(PHPLanguageToolkit.getDefault());
+				IPath localPath = EnvironmentPathUtils.getFile(LocalEnvironment.getInstance(), new Path(sourceFilePath))
+						.getFullPath();
+				Openable openable = handleFactory.createOpenable(localPath.toString(), scope);
+				if (openable instanceof IStorage) {
+					return new Object[] { openable };
+				}
+				// Check if it is not a file from PHAR
+				final PharPath pharPath = PharPath.getPharPath(new Path(sourceFilePath));
+				if (pharPath != null && !pharPath.getFile().isEmpty()) {
+					try {
+						final PharArchiveFile archiveFile = new PharArchiveFile(pharPath.getPharName());
+						final IArchiveEntry entry = archiveFile.getArchiveEntry((pharPath.getFolder().length() == 0 ? "" //$NON-NLS-1$
+								: pharPath.getFolder() + "/") //$NON-NLS-1$
+								+ pharPath.getFile());
+						return new Object[] { new ExternalEntryFile(sourceFilePath, archiveFile, entry) };
+					} catch (Exception e) {
+						PHPDebugPlugin.log(e);
+					}
+				}
+				// Check if file exists before moving on to the next checks
+				File file = new File(sourceFilePath);
+				if (!file.exists()) {
+					return EMPTY;
+				}
+				// Check if we have corresponding "linked chain subject" file
+				Object linkedFile = linkSubjectFileFinder.find(sourceFilePath, object);
+				if (linkedFile != null) {
+					return new Object[] { linkedFile };
+				}
+				// None from above succeeded - just open external file
+				return new Object[] { new LocalFile(file) };
+			}
+		}
+		return sourceElements;
+	}
+

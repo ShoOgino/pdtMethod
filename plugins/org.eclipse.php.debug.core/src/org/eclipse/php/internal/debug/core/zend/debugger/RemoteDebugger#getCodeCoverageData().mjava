@@ -1,0 +1,29 @@
+	/**
+	 * Requests Code Coverage information from the debugger and returns it.
+	 * 
+	 * @return CodeCoverageData[] Code coverage information. If this remote
+	 *         debugger is not active, or in case of error this method returns
+	 *         <code>null</code>.
+	 */
+	public CodeCoverageData[] getCodeCoverageData() {
+		if (!this.isActive()) {
+			return null;
+		}
+
+		GetCodeCoverageRequest request = new GetCodeCoverageRequest();
+		IDebugResponseMessage response = sendCustomRequest(request);
+		if (response != null && response instanceof GetCodeCoverageResponse) {
+			CodeCoverageData[] codeCoverageData = ((GetCodeCoverageResponse) response).getCodeCoverageData();
+			for (int i = 0; i < codeCoverageData.length; ++i) {
+				String localFileName = convertToLocalFilename(codeCoverageData[i].getFileName(), null, null);
+				if (localFileName == null) {
+					localFileName = codeCoverageData[i].getFileName();
+				}
+				codeCoverageData[i].setLocalFileName(localFileName);
+				codeCoverageData[i].setURL(getDebugHandler().getDebugTarget().getURL());
+			}
+			return codeCoverageData;
+		}
+		return null;
+	}
+

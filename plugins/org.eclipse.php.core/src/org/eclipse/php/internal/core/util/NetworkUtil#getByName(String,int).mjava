@@ -1,0 +1,21 @@
+	/**
+	 * Does the same what {@link InetAddress#getByName(String)} but with
+	 * possibility to provide custom timeout.
+	 * 
+	 * @param host
+	 * @param timeout
+	 * @return IP address of a host
+	 */
+	public static Inet4Address getByName(String host, int timeout) {
+		DNSJob resolver = new DNSJob(host);
+		resolver.schedule();
+		try {
+			resolver.join(timeout, new NullProgressMonitor());
+		} catch (OperationCanceledException e) {
+			// ignore
+		} catch (InterruptedException e) {
+			// ignore
+		}
+		return resolver.getAddress();
+	}
+

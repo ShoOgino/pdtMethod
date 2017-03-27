@@ -1,0 +1,32 @@
+		/**
+		 * Initialize a ServerSocket or a SSLServerSocket to listen for debug
+		 * requests on a specified port. The port and the SSL definitions are
+		 * defined in the workspace preferences.
+		 * 
+		 * @return True, if the reset did not yield any errors; False,
+		 *         otherwise.
+		 */
+		public boolean resetSocket() {
+			stopListen();
+			int port = getReceiverPort();
+			try {
+				synchronized (lock) {
+					if (useSSL) {
+						SSLServerSocket sslServerSocket = (SSLServerSocket) SSLServerSocketFactory.getDefault()
+								.createServerSocket(port);
+						sslServerSocket.setEnabledCipherSuites(sslServerSocket.getSupportedCipherSuites());
+						serverSocket = sslServerSocket;
+					} else {
+						serverSocket = new ServerSocket(port);
+					}
+					startListen();
+					return true;
+				}
+			} catch (BindException exc) {
+				handleMultipleBindingError();
+			} catch (IOException e) {
+				Logger.logException(e);
+			}
+			return false;
+		}
+

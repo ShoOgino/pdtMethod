@@ -12,13 +12,17 @@
 			int lineNumber) {
 		try {
 			FileContentDebugHandler handler = new FileContentDebugHandler(this);
-			RemoteDebugger debugger = (RemoteDebugger) handler.getRemoteDebugger();
+			IRemoteDebugger debugger = handler.getRemoteDebugger();
 			if (!debugger.isActive()) {
 				throw new IllegalStateException(
 						"Could not read the content of the file. The debugger is not connected."); //$NON-NLS-1$
 			}
 			try {
-				debugger.setProtocol(RemoteDebugger.PROTOCOL_ID_LATEST);
+				if (PHPDebugUtil.isSystem5()) {
+					debugger.setProtocol(RemoteDebugger.COMMERCIAL_I5_PROTOCOL_ID_LATEST);
+				} else {
+					debugger.setProtocol(RemoteDebugger.COMMERCIAL_PROTOCOL_ID_LATEST);
+				}
 				try {
 					fileName = URLDecoder.decode(fileName, "UTF-8"); //$NON-NLS-1$
 				} catch (UnsupportedEncodingException e) {
@@ -27,8 +31,16 @@
 				if (content == null) {
 					content = new byte[0];
 				}
-				IFileContentRequestor requester = new OpenRemoteFileRequestor(notification);
-				requester.fileContentReceived(content, fileName, lineNumber);
+				String serverAddress = extractParameterFromQuery(notification.getOptions(), "server_address");
+				String originalURL = notification.getUri();
+				IRemoteFileContentRequestor requestor = RemoteFileContentRequestorsRegistry.getInstance()
+						.removeRequestor(fileName, lineNumber);
+				if (requestor == null) {
+					RemoteFileContentRequestorsRegistry.getInstance().handleExternalRequest(content, serverAddress,
+							originalURL, fileName, lineNumber);
+					return;
+				}
+				requestor.fileContentReceived(content, serverAddress, originalURL, fileName, lineNumber);
 			} finally {
 				debugger.closeDebugSession();
 			}

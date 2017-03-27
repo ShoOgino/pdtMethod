@@ -1,0 +1,32 @@
+	/**
+	 * Opens editor with the use of provided editor input and line number.
+	 * 
+	 * @param editorInput
+	 * @param lineNumber
+	 */
+	private void openEditor(final IEditorInput editorInput, final int lineNumber) {
+		try {
+			IWorkbenchPage p = DLTKUIPlugin.getActivePage();
+			if (p != null) {
+				IEditorPart editorPart = p.openEditor(editorInput, EditorUtility.getEditorID(editorInput, null), true);
+				if (editorPart != null) {
+					if (lineNumber > 0 && editorPart instanceof StructuredTextEditor) {
+						IRegion region = ((StructuredTextEditor) editorPart).getTextViewer().getDocument()
+								.getLineInformation(lineNumber - 1);
+						if (region != null) {
+							EditorUtility.revealInEditor(editorPart, region.getOffset(), region.getLength());
+						}
+					}
+					if (editorPart.getSite() != null) {
+						editorPart.getSite().getShell().forceActive();
+					}
+				}
+			}
+		} catch (PartInitException e) {
+			DebugPlugin.log(e);
+		} catch (BadLocationException e) {
+			DebugPlugin.log(e);
+		}
+
+	}
+

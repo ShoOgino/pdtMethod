@@ -1,15 +1,20 @@
 	public void linkActivated() {
+		Object element = findSourceModule(fileName);
 		try {
-			Object element = findSourceModule(fileName);
 			if (element != null) {
 				openElementInEditor(element);
+				return;
+			}
+			if (url != null) {
+				IRemoteFileContentRequestor requestor = new OpenRemoteFileContentRequestor();
+				RemoteDebugger.requestRemoteFile(requestor, fileName, lineNumber, url);
 				return;
 			}
 			if (EditorUtility.openLocalFile(fileName, lineNumber) != null) {
 				return;
 			}
 		} catch (CoreException e) {
-			PHPDebugUIPlugin.log(e);
+			Logger.logException(e);
 		}
 		// did not find source
 		MessageDialog.openInformation(PHPDebugUIPlugin.getActiveWorkbenchShell(), Messages.PHPFileLink_0,

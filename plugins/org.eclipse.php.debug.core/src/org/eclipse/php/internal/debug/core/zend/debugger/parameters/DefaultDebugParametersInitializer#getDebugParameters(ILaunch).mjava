@@ -75,6 +75,37 @@
 		// Disable Z-Ray
 		parameters.put(ZRAY_DISABLE, "1"); //$NON-NLS-1$
 
+		String isExecutableLaunch = launch.getAttribute(IDebugParametersKeys.EXECUTABLE_LAUNCH);
+		if (isExecutableLaunch == null || !Boolean.valueOf(isExecutableLaunch).booleanValue()) {
+			// Advanced session settings
+			if (launchConfiguration != null) {
+				try {
+					if (launchConfiguration.getAttribute(IPHPDebugConstants.DEBUGGING_USE_SERVER_FILES, false)) {
+						// do not allow access to local files
+						parameters.put(DEBUG_NO_REMOTE, "1"); //$NON-NLS-1$
+					} else {
+						parameters.put(DEBUG_USE_REMOTE, "1"); //$NON-NLS-1$
+					}
+				} catch (CoreException e) {
+				}
+			}
+		} else {
+			// Debug agains PHP exe also using dummy.php:
+			parameters.put(DEBUG_USE_REMOTE, "1"); //$NON-NLS-1$
+		}
+
+		String codeCoverageFlag = launch.getAttribute(IPHPDebugConstants.DEBUGGING_COLLECT_CODE_COVERAGE);
+		if (codeCoverageFlag != null) {
+			if (Integer.parseInt(codeCoverageFlag) > 0)
+				parameters.put(CODE_COVERAGE, codeCoverageFlag); // $NON-NLS-1$
+		}
+		// Set the use_ssl for any local or remote debug configuration
+		boolean useSSL = InstanceScope.INSTANCE.getNode(PHPDebugPlugin.ID)
+				.getBoolean(PHPDebugCorePreferenceNames.ZEND_DEBUG_ENCRYPTED_SSL_DATA, false);
+		if (useSSL) {
+			parameters.put(USE_SSL, "1"); //$NON-NLS-1$
+		}
+		parameters.put(DEBUG_FASTFILE, "1"); //$NON-NLS-1$
 		return parameters;
 	}
 

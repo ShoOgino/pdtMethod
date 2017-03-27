@@ -1,0 +1,24 @@
+	private RemoteFileStorage getRemoteFileStorage(RemoteDebugger remoteDebugger, final String fileName,
+			final String originalURL) {
+		final SyncObject<RemoteFileStorage> syncObject = new SyncObject<>();
+		final CountDownLatch waitForContentLatch = new CountDownLatch(1);
+		if (remoteDebugger == null || !remoteDebugger.isActive()) {
+			return null;
+		}
+		RemoteDebugger.requestRemoteFile(new IRemoteFileContentRequestor() {
+			public void fileContentReceived(byte[] content, String serverAddress, String originalURL, String fileName,
+					int lineNumber) {
+				syncObject.set(new RemoteFileStorage(content, fileName, originalURL));
+			}
+
+			public void requestCompleted(Exception e) {
+				waitForContentLatch.countDown();
+			}
+		}, fileName, 0, originalURL);
+		try {
+			waitForContentLatch.await(10, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+		}
+		return syncObject.get();
+	}
+

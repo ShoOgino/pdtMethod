@@ -50,6 +50,35 @@
 			return;
 		}
 		// Check warnings
+		String[] clientHosts = PHPDebugUtil.getZendHostsArray(fClientIP.getText());
+		fNetworkMonitor.validate(clientHosts, new IHostsValidationListener[] { new IHostsValidationListener() {
+			public void validated(List<String> invalidAddresses) {
+				if (!invalidAddresses.isEmpty()) {
+					StringBuilder addresses = new StringBuilder();
+					for (String address : invalidAddresses) {
+						addresses.append((addresses.length() != 0 ? ", " : "") //$NON-NLS-1$ //$NON-NLS-2$
+								+ '\'' + address + '\'');
+					}
+					String message;
+					if (invalidAddresses.size() == 1) {
+						message = MessageFormat.format(
+								PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_ClientIPWarning,
+								addresses.toString());
+					} else {
+						message = MessageFormat.format(
+								PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_ClientIPsWarning,
+								addresses.toString());
+					}
+					final String warningMessage = message;
+					PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
+						public void run() {
+							if (!getShell().isDisposed() && getButton(IDialogConstants.OK_ID).isEnabled())
+								setMessage(warningMessage, IMessageProvider.WARNING);
+						}
+					});
+				}
+			}
+		} });
 		if (!PHPLaunchUtilities.isPortAvailable(debugPortNumber) && !PHPLaunchUtilities
 				.isDebugDaemonActive(debugPortNumber, DebuggerCommunicationDaemon.ZEND_DEBUGGER_ID)) {
 			setMessage(NLS.bind(PHPDebugCoreMessages.DebugConfigurationDialog_PortInUse, debugPort),

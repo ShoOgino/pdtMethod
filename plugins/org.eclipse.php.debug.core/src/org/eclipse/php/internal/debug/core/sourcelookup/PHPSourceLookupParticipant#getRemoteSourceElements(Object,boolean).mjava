@@ -1,0 +1,39 @@
+	private Object[] getRemoteSourceElements(Object stackFrameObj, boolean forceRetrieval) throws CoreException {
+
+		if (stackFrameObj instanceof PHPStackFrame) {
+
+			PHPStackFrame stackFrame = (PHPStackFrame) stackFrameObj;
+			ILaunchConfiguration launchConfiguration = stackFrame.getLaunch().getLaunchConfiguration();
+
+			if (launchConfiguration != null) {
+				if (forceRetrieval
+						|| launchConfiguration.getAttribute(IPHPDebugConstants.DEBUGGING_USE_SERVER_FILES, false)) {
+					// Return a Remote
+					PHPDebugTarget debugTarget = (PHPDebugTarget) stackFrame.getDebugTarget();
+
+					String fileName = stackFrame.getAbsoluteFileName();
+					RemoteFileStorage fileStorage = (RemoteFileStorage) remoteStorageCache.get(fileName);
+
+					if (fileStorage == null) {
+
+						RemoteDebugger remoteDebugger = (RemoteDebugger) debugTarget.getRemoteDebugger();
+						String decodedFileName;
+						try {
+							decodedFileName = URLDecoder.decode(fileName, "UTF-8");
+						} catch (UnsupportedEncodingException e) {
+							decodedFileName = fileName;
+						}
+
+						String originalURL = debugTarget.getLaunch().getAttribute(IDebugParametersKeys.ORIGINAL_URL);
+
+						fileStorage = getRemoteFileStorage(remoteDebugger, decodedFileName, originalURL);
+
+						remoteStorageCache.put(fileName, fileStorage);
+					}
+					return new Object[] { fileStorage };
+				}
+			}
+		}
+		return EMPTY;
+	}
+

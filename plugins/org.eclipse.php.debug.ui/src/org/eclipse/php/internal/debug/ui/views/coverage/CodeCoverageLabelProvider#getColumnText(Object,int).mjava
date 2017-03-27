@@ -1,0 +1,31 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.eclipse.jface.viewers.ITableLabelProvider#getColumnText(java.lang
+	 * .Object, int)
+	 */
+	public String getColumnText(Object element, final int columnIndex) {
+		CodeCoverageResult coverageResult = cProvider.getCodeCoverageResult(element);
+		switch (columnIndex) {
+		case 0:
+			if (element instanceof String) {
+				return (String) element;
+			}
+			StringBuffer text = new StringBuffer(super.getText(element));
+			if (coverageResult.getFiles() > 1 || cProvider.hasChildren(element)) {
+				text.append(MessageFormat.format(" ({0})", new Object[] { String.valueOf(coverageResult.getFiles()) })); //$NON-NLS-1$
+			}
+			return text.toString();
+		case 1:
+			float percentage = coverageResult.getPercentage();
+			if (Float.isNaN(percentage)) {
+				return null;
+			}
+			return MessageFormat.format("{0,number,percent} ({1}/{2}/{3})", new Object[] { //$NON-NLS-1$
+					new Float(coverageResult.getPercentage()), String.valueOf(coverageResult.getCovered()),
+					String.valueOf(coverageResult.getSignificant()), String.valueOf(coverageResult.getLines()) });
+		}
+		return null;
+	}
+

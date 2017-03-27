@@ -5,7 +5,10 @@
 	 *         <code>false</code>
 	 */
 	protected boolean detectProtocolID() {
-		boolean isUseNewProtocol = false;
+		String isWebServerLaunch = getDebugHandler().getDebugTarget().getLaunch()
+				.getAttribute(IDebugParametersKeys.WEB_SERVER_DEBUGGER);
+		boolean isWebDebug = (isWebServerLaunch != null && Boolean.valueOf(isWebServerLaunch).booleanValue());
+		boolean isUseNewProtocol = true;
 		try {
 			ILaunchConfiguration config = getDebugHandler().getDebugTarget().getLaunch().getLaunchConfiguration();
 			String debuggerId = config.getAttribute(PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID,
@@ -16,34 +19,56 @@
 				isUseNewProtocol = debuggerConfiguration.isUseNewProtocol();
 			}
 		} catch (CoreException e) {
-			PHPDebugPlugin.log(e);
+			Logger.logException(e);
 		}
-		// check whether debugger is using the latest protocol ID:
-		if (isUseNewProtocol && setProtocol(PROTOCOL_ID_LATEST)) {
-			return true;
+
+		if (isWebDebug && PHPDebugUtil.isSystem5()) {
+			if (setProtocol(COMMERCIAL_I5_PROTOCOL_ID_LATEST)) {
+				return true;
+			}
+			if (setProtocol(COMMERCIAL_PROTOCOL_ID_2006040905)) {
+				warnOlderDebugVersion();
+				return true;
+			}
+			if (setProtocol(COMMERCIAL_I5_PROTOCOL_ID_2006040904)) {
+				warnOlderDebugVersion();
+				return true;
+			}
+			if (setProtocol(COMMERCIAL_I5_PROTOCOL_ID_2006040902)) {
+				warnOlderDebugVersion();
+				return true;
+			}
+			// Debugger is not an i5 edition
+			warnNonI5Debugger();
+			finish();
+		} else {
+			// check whether debugger is using the latest protocol ID:
+			if (isUseNewProtocol && setProtocol(COMMERCIAL_PROTOCOL_ID_LATEST)) {
+				return true;
+			}
+			if (setProtocol(COMMERCIAL_PROTOCOL_ID_2006040905)) {
+				// do not warn that it is old, it does not support Add Files
+				// only
+				return true;
+			}
+			if (setProtocol(COMMERCIAL_PROTOCOL_ID_2006040903)) {
+				warnOlderDebugVersion();
+				return true;
+			}
+			// check whether debugger is using one of older protocol ID:
+			if (setProtocol(COMMERCIAL_PROTOCOL_ID_2006040901)) {
+				// warn user that he is using an old debugger
+				warnOlderDebugVersion();
+				return true;
+			}
+			// All of above failed, check if the connection is active (it could
+			// be
+			// terminated in the meantime by the user i.e.)
+			if (!isActive())
+				return true;
+			// user is using an incompatible version of debugger:
+			getDebugHandler().wrongDebugServer();
 		}
-		// check whether debugger is using one of older protocol ID:
-		if (setProtocol(PROTOCOL_ID_2006040705)) {
-			return true;
-		}
-		// check whether debugger is using one of older protocol ID:
-		if (setProtocol(PROTOCOL_ID_2006040703)) {
-			// warn user that he is using an old debugger
-			warnOlderDebugVersion();
-			return true;
-		}
-		// check whether debugger is using one of older protocol ID:
-		if (setProtocol(PROTOCOL_ID_2006040701)) {
-			// warn user that he is using an old debugger
-			warnOlderDebugVersion();
-			return true;
-		}
-		// All of above failed, check if the connection is active (it could be
-		// terminated in the meantime by the user i.e.)
-		if (!isActive())
-			return true;
-		// user is using an incompatible version of debugger:
-		getDebugHandler().wrongDebugServer();
 		return false;
 	}
 

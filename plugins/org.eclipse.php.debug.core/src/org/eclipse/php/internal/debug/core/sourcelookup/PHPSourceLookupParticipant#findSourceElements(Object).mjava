@@ -5,59 +5,75 @@
 	 * findSourceElements(java.lang.Object)
 	 */
 	public Object[] findSourceElements(Object object) throws CoreException {
-		Object[] sourceElements = EMPTY;
 		try {
-			sourceElements = super.findSourceElements(object);
-		} catch (CoreException e) {
-			// Check if the lookup failed because the source is outside the
-			// workspace.
-		}
-		if (sourceElements == EMPTY) {
-			// If the lookup returned an empty elements array, check if the
-			// source is outside the workspace.
-			String sourceFilePath = null;
-			if (object instanceof PHPStackFrame) {
-				sourceFilePath = ((PHPStackFrame) object).getSourceName();
-			} else if (object instanceof DBGpStackFrame) {
-				sourceFilePath = ((DBGpStackFrame) object).getQualifiedFile();
+			// Check if the source should be retrieved from the server.
+			// If so, get it.
+			Object[] sourceElements = getRemoteSourceElements(object, false);
+			if (sourceElements != EMPTY) {
+				return sourceElements;
 			}
-			if (sourceFilePath != null) {
-				// Check if we have it in DLTK model
-				HandleFactory handleFactory = new HandleFactory();
-				IDLTKSearchScope scope = SearchEngine.createWorkspaceScope(PHPLanguageToolkit.getDefault());
-				IPath localPath = EnvironmentPathUtils.getFile(LocalEnvironment.getInstance(), new Path(sourceFilePath))
-						.getFullPath();
-				Openable openable = handleFactory.createOpenable(localPath.toString(), scope);
-				if (openable instanceof IStorage) {
-					return new Object[] { openable };
-				}
-				// Check if it is not a file from PHAR
-				final PharPath pharPath = PharPath.getPharPath(new Path(sourceFilePath));
-				if (pharPath != null && !pharPath.getFile().isEmpty()) {
-					try {
-						final PharArchiveFile archiveFile = new PharArchiveFile(pharPath.getPharName());
-						final IArchiveEntry entry = archiveFile.getArchiveEntry((pharPath.getFolder().length() == 0 ? "" //$NON-NLS-1$
-								: pharPath.getFolder() + "/") //$NON-NLS-1$
-								+ pharPath.getFile());
-						return new Object[] { new ExternalEntryFile(sourceFilePath, archiveFile, entry) };
-					} catch (Exception e) {
-						PHPDebugPlugin.log(e);
+		} catch (CoreException ce) {
+		}
+		// In case that the source should be obtained from the local client, or,
+		// in case that the source was
+		// not found on the client, perform the code below.
+		try {
+			// Try to get it locally.
+			Object[] result = getLocalSourceElements(object);
+			if (result != EMPTY) {
+				return result;
+			}
+		} catch (CoreException ce) {
+		}
+
+		List<Object> results = new ArrayList<Object>();
+		CoreException single = null;
+		MultiStatus multiStatus = null;
+		String name = getSourceName(object);
+		if (name != null) {
+			ISourceContainer[] containers = getSourceContainers();
+			for (int i = 0; i < containers.length; i++) {
+				try {
+					ISourceContainer container = getDelegateContainer(containers[i]);
+					if (container != null) {
+						Object[] objects = container.findSourceElements(name);
+						if (objects.length > 0) {
+							if (isFindDuplicates()) {
+								for (int j = 0; j < objects.length; j++) {
+									results.add(objects[j]);
+								}
+							} else {
+								if (objects.length == 1) {
+									return objects;
+								}
+								return new Object[] { objects[0] };
+							}
+						} else {
+							// Try to get the file remotely from the server
+							return getRemoteSourceElements(object, true);
+						}
+					}
+				} catch (CoreException e) {
+					if (single == null) {
+						single = e;
+					} else if (multiStatus == null) {
+						multiStatus = new MultiStatus(PHPDebugPlugin.ID, PHPDebugPlugin.INTERNAL_ERROR,
+								new IStatus[] { single.getStatus() }, SourceLookupMessages.Source_Lookup_Error, null);
+						multiStatus.add(e.getStatus());
+					} else {
+						multiStatus.add(e.getStatus());
 					}
 				}
-				// Check if file exists before moving on to the next checks
-				File file = new File(sourceFilePath);
-				if (!file.exists()) {
-					return EMPTY;
-				}
-				// Check if we have corresponding "linked chain subject" file
-				Object linkedFile = linkSubjectFileFinder.find(sourceFilePath, object);
-				if (linkedFile != null) {
-					return new Object[] { linkedFile };
-				}
-				// None from above succeeded - just open external file
-				return new Object[] { new LocalFile(file) };
 			}
 		}
-		return sourceElements;
+		if (results.isEmpty()) {
+			if (multiStatus != null) {
+				throw new CoreException(multiStatus);
+			} else if (single != null) {
+				throw single;
+			}
+			return EMPTY;
+		}
+		return results.toArray();
 	}
 

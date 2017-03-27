@@ -1,0 +1,18 @@
+	private static void initializeFilters() {
+		if (filters == null) {
+			IConfigurationElement[] elements = Platform.getExtensionRegistry()
+					.getConfigurationElementsFor("com.zend.php.debug.ui.codeCoverageFilter"); //$NON-NLS-1$
+			List<ICodeCoverageFilter> filtersList = new LinkedList<ICodeCoverageFilter>();
+			for (IConfigurationElement element : elements) {
+				if (element.getName().equals("filter")) { //$NON-NLS-1$
+					try {
+						filtersList.add((ICodeCoverageFilter) element.createExecutableExtension("class")); //$NON-NLS-1$
+					} catch (CoreException e) {
+						PHPCorePlugin.log(e);
+					}
+				}
+			}
+			filters = (ICodeCoverageFilter[]) filtersList.toArray(new ICodeCoverageFilter[filtersList.size()]);
+		}
+	}
+

@@ -1,0 +1,16 @@
+	private String getIPsProposal() {
+		final Server server = (Server) compositeFragment.getData();
+		// Check if server exists and is not registered yet (wizard context)
+		if (server == null || ServersManager.findServer(server.getUniqueId()) != null)
+			return null;
+		final StringBuilder bestMatches = new StringBuilder();
+		BusyIndicator.showWhile(PlatformUI.getWorkbench().getDisplay(), new Runnable() {
+			public void run() {
+				String proposals = (new ZendDebuggerHostProposalComputer()).computeProposals(server);
+				if (proposals != null)
+					bestMatches.append(proposals);
+			}
+		});
+		return bestMatches.length() != 0 ? bestMatches.toString() : null;
+	}
+

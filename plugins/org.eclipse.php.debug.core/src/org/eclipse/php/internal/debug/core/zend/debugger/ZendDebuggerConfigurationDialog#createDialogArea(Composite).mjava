@@ -7,14 +7,14 @@
 		getShell().setText(PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_Dialog_title);
 		setTitle(PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_zendDebuggerSettings);
 		setMessage(PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_Dialog_description);
-		titleImage = getDialogImage();
-		if (titleImage != null)
-			setTitleImage(titleImage);
+		fTitleImage = getDialogImage();
+		if (fTitleImage != null)
+			setTitleImage(fTitleImage);
 		getShell().addDisposeListener(new DisposeListener() {
 			@Override
 			public void widgetDisposed(DisposeEvent e) {
-				if (titleImage != null)
-					titleImage.dispose();
+				if (fTitleImage != null)
+					fTitleImage.dispose();
 			}
 		});
 		// Connection settings
@@ -22,31 +22,63 @@
 				PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_Connection_settings_group);
 		addLabelControl(connectionSettingsGroup, PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_client_host_ip,
 				PHPDebugCorePreferenceNames.CLIENT_IP);
-		autoModeButton = new Button(connectionSettingsGroup, SWT.RADIO);
-		autoModeButton.setText(PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_AutoMode);
-		autoModeButton.addSelectionListener(new SelectionAdapter() {
+		fAutoModeButton = new Button(connectionSettingsGroup, SWT.RADIO);
+		fAutoModeButton.setText(PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_AutoMode);
+		fAutoModeButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				if (autoModeButton.getSelection()) {
+				if (fAutoModeButton.getSelection()) {
 					// bring back a default value
 					String value = DefaultScope.INSTANCE.getNode(PHPDebugPlugin.ID)
 							.get(PHPDebugCorePreferenceNames.CLIENT_IP, "127.0.0.1"); //$NON-NLS-1$
 					fClientIP.setText(value);
+					fClientIPButton.setText(PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_Reload);
+					fClientIpComposite.layout(true);
 				}
 			}
 		});
-		manualModeButton = new Button(connectionSettingsGroup, SWT.RADIO);
-		manualModeButton.setText(PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_ManualMode);
-		manualModeButton.addSelectionListener(new SelectionAdapter() {
+		fManualModeButton = new Button(connectionSettingsGroup, SWT.RADIO);
+		fManualModeButton.setText(PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_ManualMode);
+		fManualModeButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				fClientIP.setEnabled(manualModeButton.getSelection());
+				fClientIP.setEnabled(fManualModeButton.getSelection());
+				fClientIPButton.setText(PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_Configure);
+				fClientIpComposite.layout(true);
 			}
 		});
 		new Label(connectionSettingsGroup, SWT.NONE);
-		fClientIP = addTextField(connectionSettingsGroup, PHPDebugCorePreferenceNames.CLIENT_IP, 0, 2);
+		fClientIpComposite = new Composite(connectionSettingsGroup, SWT.NONE);
+		fClientIpComposite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
+		GridLayout cicLayout = new GridLayout(3, false);
+		cicLayout.marginHeight = 0;
+		cicLayout.marginWidth = 0;
+		fClientIpComposite.setLayout(cicLayout);
+		fClientIP = addTextField(fClientIpComposite, PHPDebugCorePreferenceNames.CLIENT_IP, 0, 1);
+		fClientIP.addModifyListener(new ModifyListener() {
+			@Override
+			public void modifyText(ModifyEvent e) {
+				validate();
+			}
+		});
 		GridData gridData = (GridData) fClientIP.getLayoutData();
 		gridData.widthHint = convertWidthInCharsToPixels(80);
+		fClientIPButton = SWTFactory.createPushButton(fClientIpComposite, null, null);
+		fClientIPButton.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+				widgetSelected(e);
+			}
+
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				if (fAutoModeButton.getSelection()) {
+					reloadIPs();
+				} else if (fManualModeButton.getSelection()) {
+					openIPsDialog();
+				}
+			}
+		});
 		addLabelControl(connectionSettingsGroup, PHPDebugCoreMessages.DebuggerConfigurationDialog_debugPort,
 				PHPDebugCorePreferenceNames.ZEND_DEBUG_PORT);
 		fDebugTextBox = addTextField(connectionSettingsGroup, PHPDebugCorePreferenceNames.ZEND_DEBUG_PORT, 6, 2);
@@ -54,7 +86,7 @@
 		gridData.widthHint = convertWidthInCharsToPixels(80);
 		fDebugTextBox.addModifyListener(new ModifyListener() {
 			@Override
-			public void modifyText(ModifyEvent e) {
+			public void modifyText(ModifyEvent arg0) {
 				validate();
 			}
 		});
@@ -67,7 +99,7 @@
 		gridData.widthHint = convertWidthInCharsToPixels(80);
 		fDebugResponseTimeout.addModifyListener(new ModifyListener() {
 			@Override
-			public void modifyText(ModifyEvent e) {
+			public void modifyText(ModifyEvent arg0) {
 				validate();
 			}
 		});
@@ -77,7 +109,6 @@
 		// General settings
 		Composite generalSettingsGroup = createSubsection(parent,
 				PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_General_settings_group);
-
 		addLabelControl(generalSettingsGroup, PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_Broadcast_port,
 				PHPDebugCorePreferenceNames.ZEND_DEBUG_BROADCAST_PORT);
 		fBroadcastPortText = addTextField(generalSettingsGroup, PHPDebugCorePreferenceNames.ZEND_DEBUG_BROADCAST_PORT,
@@ -86,13 +117,20 @@
 		gridData.widthHint = convertWidthInCharsToPixels(100);
 		fBroadcastPortText.addModifyListener(new ModifyListener() {
 			@Override
-			public void modifyText(ModifyEvent event) {
+			public void modifyText(ModifyEvent arg0) {
 				validate();
 			}
 		});
+
 		addLabelControl(generalSettingsGroup, PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_Dummy_file_name,
 				PHPDebugCorePreferenceNames.ZEND_DEBUG_DUMMY_FILE);
 		fDummyFileText = addTextField(generalSettingsGroup, PHPDebugCorePreferenceNames.ZEND_DEBUG_DUMMY_FILE, 20, 2);
+		gridData = (GridData) fDummyFileText.getLayoutData();
+		gridData.widthHint = convertWidthInCharsToPixels(100);
+
+		fUseSSLButton = addCheckBox(generalSettingsGroup,
+				PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_UseSSLEncryption,
+				PHPDebugCorePreferenceNames.ZEND_DEBUG_ENCRYPTED_SSL_DATA, 0);
 		fRunWithDebugInfo = addCheckBox(generalSettingsGroup,
 				PHPDebugCoreMessages.ZendDebuggerConfigurationDialog_runWithDebugInfo,
 				PHPDebugCorePreferenceNames.RUN_WITH_DEBUG_INFO, 0);

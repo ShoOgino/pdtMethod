@@ -1,6 +1,22 @@
 	protected IEditorInput getLineBreakpointEditorInput(Object element) {
 		ILineBreakpoint bp = (ILineBreakpoint) element;
 		IMarker marker = bp.getMarker();
+		try {
+			String originalURL = (String) marker.getAttribute(IDebugParametersKeys.ORIGINAL_URL);
+			if (originalURL != null) {
+				final String location = (String) marker
+						.getAttribute(StructuredResourceMarkerAnnotationModel.SECONDARY_ID_KEY);
+				String decodedFileName;
+				try {
+					decodedFileName = URLDecoder.decode(location, "UTF-8"); //$NON-NLS-1$
+				} catch (UnsupportedEncodingException e) {
+					decodedFileName = location;
+				}
+				return new RemoteFileStorageEditorInput(new RemoteFileStorage(null, decodedFileName, originalURL));
+			}
+		} catch (CoreException e) {
+			DLTKUIPlugin.log(e);
+		}
 		IResource resource = marker.getResource();
 		if (resource instanceof IFile) {
 			return new FileEditorInput((IFile) resource);

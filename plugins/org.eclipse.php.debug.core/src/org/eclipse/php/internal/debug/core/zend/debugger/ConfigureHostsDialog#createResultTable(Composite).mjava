@@ -1,0 +1,107 @@
+	private Control createResultTable(Composite composite) {
+		// Parent composite layout
+		GridLayout compositeLayout = new GridLayout();
+		compositeLayout.marginHeight = 0;
+		compositeLayout.marginWidth = 0;
+		compositeLayout.numColumns = 2;
+		composite.setLayout(compositeLayout);
+		// Result table composite
+		Composite tableComposite = new Composite(composite, SWT.NONE);
+		GridLayout tableCompositeLayout = new GridLayout();
+		tableCompositeLayout.marginHeight = 0;
+		tableCompositeLayout.marginWidth = 0;
+		tableComposite.setLayout(new TableColumnLayout());
+		tableComposite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+		// Buttons composite
+		Composite buttonsComposite = new Composite(composite, SWT.NONE);
+		GridLayout buttonsCompositeLayout = new GridLayout();
+		buttonsCompositeLayout.marginHeight = 0;
+		buttonsCompositeLayout.marginWidth = 0;
+		buttonsComposite.setLayout(buttonsCompositeLayout);
+		buttonsComposite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
+		GridData tableGridData = new GridData(SWT.BEGINNING, SWT.BEGINNING, false, false);
+		Table ipsTable = new Table(tableComposite,
+				SWT.CHECK | SWT.SINGLE | SWT.FULL_SELECTION | SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
+		ipsTable.setLayoutData(tableGridData);
+		ipsTable.setHeaderVisible(true);
+		ipsTable.setLinesVisible(true);
+		ipsTableViewer = new CheckboxTableViewer(ipsTable);
+		ipsTableViewer.setLabelProvider(new LabelProvider());
+		ipsTableViewer.setContentProvider(new ArrayContentProvider());
+		ColumnViewerToolTipSupport.enableFor(ipsTableViewer);
+		createColumn(tableComposite, ipsTableViewer, PHPDebugCoreMessages.ConfigureHostsDialog_Address_column, 60,
+				new AddressLabelProvider());
+		createColumn(tableComposite, ipsTableViewer, PHPDebugCoreMessages.ConfigureHostsDialog_Type_column, 40,
+				new TypeLabelProvider());
+		ipsTableViewer.setInput(mergedIPs);
+		setSelection();
+		setInitialState();
+		Button selectAll = new Button(buttonsComposite, SWT.PUSH);
+		selectAll.setText(PHPDebugCoreMessages.ConfigureHostsDialog_Select_all_button);
+		selectAll.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+		selectAll.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				ipsTableViewer.setAllChecked(true);
+				updateReset();
+			}
+		});
+		Button deselectAll = new Button(buttonsComposite, SWT.PUSH);
+		deselectAll.setText(PHPDebugCoreMessages.ConfigureHostsDialog_Deselect_all_button);
+		deselectAll.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+		deselectAll.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				ipsTableViewer.setAllChecked(false);
+				updateReset();
+			}
+		});
+		resetButton = new Button(buttonsComposite, SWT.PUSH);
+		resetButton.setText(PHPDebugCoreMessages.ConfigureHostsDialog_Reset_button);
+		resetButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+		resetButton.setEnabled(false);
+		resetButton.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				restoreInitialState();
+			}
+		});
+		final Button moveUp = new Button(buttonsComposite, SWT.PUSH);
+		moveUp.setText(PHPDebugCoreMessages.ConfigureHostsDialog_Up_button);
+		moveUp.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+		moveUp.setEnabled(false);
+		moveUp.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				moveSelectionUp();
+			}
+		});
+		final Button moveDown = new Button(buttonsComposite, SWT.PUSH);
+		moveDown.setText(PHPDebugCoreMessages.ConfigureHostsDialog_Down_button);
+		moveDown.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+		moveDown.setEnabled(false);
+		moveDown.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				moveSelectionDown();
+			}
+		});
+		ipsTableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
+			public void selectionChanged(SelectionChangedEvent event) {
+				ISelection selection = event.getSelection();
+				if (selection instanceof IStructuredSelection) {
+					IStructuredSelection structuredSelection = (IStructuredSelection) selection;
+					if (structuredSelection.getFirstElement() != null) {
+						moveUp.setEnabled(true);
+						moveDown.setEnabled(true);
+					} else {
+						moveUp.setEnabled(false);
+						moveDown.setEnabled(false);
+					}
+				}
+				updateReset();
+			}
+		});
+		return composite;
+	}
+

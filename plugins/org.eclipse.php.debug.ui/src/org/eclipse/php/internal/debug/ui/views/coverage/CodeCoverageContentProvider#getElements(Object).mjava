@@ -1,0 +1,41 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.eclipse.jface.viewers.IStructuredContentProvider#getElements(java
+	 * .lang.Object)
+	 */
+	public Object[] getElements(final Object inputElement) {
+		if (coveredFilesMap.isEmpty()) {
+			return new Object[] {};
+		}
+		cachedChildren = new HashMap<Object, Object[]>(0);
+		cachedCoverage = new HashMap<Object, CodeCoverageResult>(0);
+		remoteFiles = new HashSet<VirtualPath>();
+		// Filter out non-relevant elements:
+		HashMap<VirtualPath, Object> filteredDataMap = new HashMap<VirtualPath, Object>();
+		for (VirtualPath path : fileDataMap.keySet()) {
+			boolean isFiltered = false;
+			for (ICodeCoverageFilter filter : filters) {
+				if (filter.isFiltered(path)) {
+					isFiltered = true;
+					break;
+				}
+			}
+			if (!isFiltered) {
+				filteredDataMap.put(path, fileDataMap.get(path));
+			}
+		}
+		remoteFiles.addAll(filteredDataMap.keySet());
+		Object[] elements = getChildren(inputElement);
+		Object[] newElements = new Object[elements.length + remoteFiles.size()];
+		System.arraycopy(elements, 0, newElements, 0, elements.length);
+		int c = elements.length;
+		Iterator<VirtualPath> i = remoteFiles.iterator();
+		while (i.hasNext()) {
+			VirtualPath key = i.next();
+			newElements[c++] = filteredDataMap.get(key);
+		}
+		return newElements;
+	}
+

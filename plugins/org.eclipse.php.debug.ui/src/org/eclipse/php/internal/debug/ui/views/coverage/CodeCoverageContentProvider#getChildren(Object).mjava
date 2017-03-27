@@ -1,0 +1,34 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.eclipse.jface.viewers.ITreeContentProvider#getChildren(java.lang.
+	 * Object)
+	 */
+	public Object[] getChildren(final Object element) {
+		if (cachedChildren.containsKey(element)) {
+			return cachedChildren.get(element);
+		}
+		if (element instanceof IFile || element instanceof ISourceModule) {
+			return EMPTY;
+		}
+		if (element instanceof IProject && project != null && element != project) {
+			return EMPTY;
+		}
+		final Object[] children = provider.getChildren(element);
+		final List<Object> filteredChildrenList = new ArrayList<Object>(children.length);
+		for (int i = 0; i < children.length; ++i) {
+			final Object child = children[i];
+			if (child instanceof IFile || child instanceof ISourceModule) {
+				if (!isFiltered(child)) {
+					filteredChildrenList.add(child);
+				}
+			} else if (hasChildren(child)) {
+				filteredChildrenList.add(child);
+			}
+		}
+		final Object[] result = filteredChildrenList.toArray();
+		cachedChildren.put(element, result);
+		return result;
+	}
+

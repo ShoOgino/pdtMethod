@@ -1,0 +1,31 @@
+	/**
+	 * Check if specified notification for a new session is generated for the
+	 * same original URL as a terminated session with the same id.
+	 * 
+	 * @param debugSessionStartedNotification
+	 *            fresh session started notification
+	 * @param launch
+	 *            launch associated with particular session id
+	 * @return <code>true</code> if provided notification is generated for a
+	 *         different original URL; otherwise return <code>false</code>
+	 */
+	private boolean isDifferentOriginalURL(SessionDescriptor sessionDescriptor, ILaunch launch) {
+		try {
+			// Might be null - not a web launch
+			String originalURL = launch.getAttribute(IDebugParametersKeys.ORIGINAL_URL);
+			if (originalURL == null)
+				return false;
+			URL launchUrl = new URL(originalURL);
+			String incomingUrl = getOriginalURL(sessionDescriptor.getStartedNotification().getOptions());
+			URL currentUrl = incomingUrl == null ? null : new URL(incomingUrl);
+			if (currentUrl != null && launchUrl != null) {
+				if (!currentUrl.getHost().equals(launchUrl.getHost()) || currentUrl.getPort() != launchUrl.getPort()) {
+					return true;
+				}
+			}
+		} catch (MalformedURLException e) {
+			PHPDebugPlugin.log(e);
+		}
+		return false;
+	}
+

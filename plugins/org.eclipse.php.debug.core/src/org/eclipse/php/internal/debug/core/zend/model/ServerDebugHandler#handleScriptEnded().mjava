@@ -1,11 +1,20 @@
 	public void handleScriptEnded() {
-		Logger.debugMSG("ServerDebugHandler: handleScriptEnded"); //$NON-NLS-1$
 		try {
-			Logger.debugMSG("ServerDebugHandler: Calling Terminate()"); //$NON-NLS-1$
-			fDebugTarget.terminate();
+			if (fCodeCoverage) {
+				IRemoteDebugger remoteDebugger = getRemoteDebugger();
+				if (remoteDebugger instanceof RemoteDebugger) {
+					fCodeCoverageData = ((RemoteDebugger) remoteDebugger).getCodeCoverageData();
+				}
+			}
+		} finally {
+			Logger.debugMSG("ServerDebugHandler: handleScriptEnded"); //$NON-NLS-1$
+			try {
+				Logger.debugMSG("ServerDebugHandler: Calling Terminate()"); //$NON-NLS-1$
+				fDebugTarget.terminate();
 
-		} catch (DebugException e1) {
-			Logger.logException("ServerDebugHandler: terminate failed", e1); //$NON-NLS-1$
+			} catch (DebugException e1) {
+				Logger.logException("ServerDebugHandler: terminate failed", e1); //$NON-NLS-1$
+			}
 		}
 	}
 

@@ -1,0 +1,29 @@
+	public void setCoveredFiles(final CodeCoverageData[] coveredFiles) {
+		if (coveredFiles == null) {
+			coveredFilesMap = new HashMap<VirtualPath, CodeCoverageData>(0);
+			return;
+		}
+		coveredFilesMap = new HashMap<VirtualPath, CodeCoverageData>(coveredFiles.length);
+		fileDataMap = new HashMap<VirtualPath, Object>(coveredFiles.length);
+		for (CodeCoverageData element : coveredFiles) {
+			final ISourceModule fileData = (ISourceModule) element.getAdapter(ISourceModule.class);
+			if (fileData != null) {
+				VirtualPath key = new VirtualPath(fileData.getPath().toString());
+				coveredFilesMap.put(key, element);
+				fileDataMap.put(key, fileData);
+			} else {
+				String localPath = element.getLocalFileName();
+				IFile localFile = ResourcesPlugin.getWorkspace().getRoot().getFile(Path.fromOSString(localPath));
+				if (localFile.exists()) {
+					VirtualPath key = new VirtualPath(localFile.getFullPath().toString());
+					coveredFilesMap.put(key, element);
+					fileDataMap.put(key, localFile);
+				} else {
+					VirtualPath key = new VirtualPath(localPath);
+					coveredFilesMap.put(key, element);
+					fileDataMap.put(key, localPath);
+				}
+			}
+		}
+	}
+
