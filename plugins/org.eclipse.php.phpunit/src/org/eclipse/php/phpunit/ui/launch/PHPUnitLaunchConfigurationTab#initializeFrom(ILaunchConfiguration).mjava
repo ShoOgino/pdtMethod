@@ -1,0 +1,70 @@
+	@Override
+	public void initializeFrom(final ILaunchConfiguration config) {
+		try {
+			boolean isContainer = config.getAttribute(ATTRIBUTE_RUN_CONTAINER, false);
+			String container = config.getAttribute(ATTRIBUTE_CONTAINER, ""); //$NON-NLS-1$
+			String containerTypeName = config.getAttribute(ATTRIBUTE_CONTAINER_TYPE, ""); //$NON-NLS-1$
+			String projectName = config.getAttribute(ATTRIBUTE_PROJECT, ""); //$NON-NLS-1$
+			String testClassName = config.getAttribute(ATTRIBUTE_CLASS, ""); //$NON-NLS-1$
+			String testFileName = config.getAttribute(ATTRIBUTE_FILE, ""); //$NON-NLS-1$
+
+			boolean codeCoverage = config.getAttribute(ATTRIBUTE_CODE_COVERAGE, false);
+			boolean xmlReporting = config.getAttribute(ATTRIBUTE_LOG_XML, false);
+			String xmlUnitConfig = config.getAttribute(ATTRIBUTE_PHPUNIT_CFG, ""); //$NON-NLS-1$
+
+			String executionType = config.getAttribute(ATTRIBUTE_EXECUTION_TYPE, PHAR_EXECUTION_TYPE);
+
+			fSingleTestRadioButton.setSelection(!isContainer);
+			fTestContainerRadioButton.setSelection(isContainer);
+			setEnableSingleTestGroup(!isContainer);
+			setEnableContainerTestGroup(isContainer);
+			if (isContainer && !projectName.isEmpty()) {
+				IResource containerElement = null;
+				IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
+
+				if (!container.isEmpty()) {
+					if (SOURCE_CONTAINER.equals(containerTypeName)) {
+						final IFile file = project.getFile(container);
+						containerElement = file;
+					}
+
+					if (FOLDER_CONTAINER.equals(containerTypeName)) {
+						final IFolder folder = project.getFolder(container);
+						containerElement = folder;
+					}
+				}
+
+				if (PROJECT_CONTAINER.equals(containerTypeName)) {
+					containerElement = project;
+				}
+				// }
+
+				if (containerElement != null) {
+					fContainerElement = containerElement;
+					fContainerText.setText(fContainerElement.getFullPath().toPortableString());
+				}
+
+				if (fContainerElement != null) {
+
+				} else {
+					testModeChanged();
+				}
+				fTestText.setText(""); //$NON-NLS-1$
+				fTestFileLabel.setText(""); //$NON-NLS-1$
+			} else {
+				fProjText.setText(projectName);
+				fTestText.setText(testClassName);
+				fTestFileLabel.setText(testFileName);
+				fContainerText.setText(""); //$NON-NLS-1$
+			}
+
+			fPhpunitConfigPath.setText(xmlUnitConfig);
+			fCodeCoverageButton.setSelection(codeCoverage);
+			fReportingButton.setSelection(xmlReporting);
+
+			fUsePharButton.setSelection(executionType.equals(PHAR_EXECUTION_TYPE));
+			fUseComposerButton.setSelection(!fUsePharButton.getSelection());
+		} catch (final CoreException ce) {
+		}
+	}
+

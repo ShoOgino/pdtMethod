@@ -1,0 +1,69 @@
+	private void validatePage() {
+		setErrorMessage(null);
+		setMessage(null);
+
+		if (fSingleTestRadioButton.getSelection()) {
+			IScriptProject scriptProject = getPhpProject();
+
+			if (scriptProject == null) {
+				testElementFinder.cleareCaches();
+				setErrorMessage(PHPUnitMessages.PHPUnitLaunchConfigurationTab_No_Project);
+				return;
+			}
+			String projectName = scriptProject.getElementName();
+			final IStatus status = ResourcesPlugin.getWorkspace().validatePath(IPath.SEPARATOR + projectName,
+					IResource.PROJECT);
+			if (!status.isOK()) {
+				testElementFinder.cleareCaches();
+				setErrorMessage(PHPUnitMessages.format(PHPUnitMessages.PHPUnitLaunchConfigurationTab_Bad_Project_Name,
+						projectName));
+				return;
+			}
+
+			final IProject project = scriptProject.getProject();
+			if (!project.exists()) {
+				testElementFinder.cleareCaches();
+				setErrorMessage(PHPUnitMessages.PHPUnitLaunchConfigurationTab_Project_unavailable);
+				return;
+			}
+
+			try {
+				if (!project.hasNature(PHPNature.ID)) {
+					setErrorMessage(PHPUnitMessages.PHPUnitLaunchConfigurationTab_Project_Not_PHP);
+					testElementFinder.cleareCaches();
+					return;
+				}
+			} catch (CoreException e) {
+			}
+
+			if (validatePhpProject(project.getProject())) {
+				final String className = fTestText.getText().trim();
+				if (className.length() == 0) {
+					setErrorMessage(PHPUnitMessages.PHPUnitLaunchConfigurationTab_No_Test);
+					return;
+				} else {
+					IDLTKSearchScope searchScope = SearchEngine.createSearchScope(scriptProject);
+					IType[] classes = PhpModelAccess.getDefault().findTypes(className, MatchRule.EXACT, 0,
+							Modifiers.AccInterface | Modifiers.AccNameSpace | Modifiers.AccAbstract, searchScope, null);
+					if (classes.length < 1) {
+						setErrorMessage(PHPUnitMessages.format(PHPUnitMessages.PHPUnitValidator_Not_In_Project,
+								new String[] { className, projectName }));
+					}
+				}
+			}
+		} else {
+			IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+			IResource resource = root.findMember(fContainerText.getText());
+			if (resource == null) {
+				setErrorMessage(PHPUnitMessages.PHPUnitLaunchConfigurationTab_No_Element_To_Test);
+				return;
+			}
+		}
+
+		if (fUseComposerButton.getSelection() && fSelectedProject != null
+				&& PHPUnitLaunchUtils.findComposerExecutionFile(fSelectedProject) == null) {
+			setErrorMessage(PHPUnitMessages.PHPUnitLaunchConfigurationTab_Unable_find_dependencies);
+			return;
+		}
+	}
+

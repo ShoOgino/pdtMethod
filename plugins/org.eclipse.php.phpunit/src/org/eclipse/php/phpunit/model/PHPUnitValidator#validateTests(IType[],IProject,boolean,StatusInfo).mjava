@@ -1,0 +1,40 @@
+	public static IType[] validateTests(final IType[] tests, final IProject project, final boolean validateProject,
+			final StatusInfo status) {
+		if (validateProject && validateProject(project, status) == null) {
+			return EMPTY_TYPES;
+		}
+
+		if (project == null)
+			return EMPTY_TYPES;
+
+		if (tests == null) {
+			status.setWarning(
+					MessageFormat.format(PHPUnitMessages.PHPUnitValidator_Folder_No_Suites, project.getName()));
+			return EMPTY_TYPES;
+		}
+
+		if (tests.length == 0) {
+			status.setWarning(PHPUnitMessages.PHPUnitValidator_No_Suites);
+			return EMPTY_TYPES;
+		}
+
+		final PHPUnitSearchEngine searchEngine = new PHPUnitSearchEngine(DLTKCore.create(project));
+
+		for (int i = 0; i < tests.length; ++i) {
+			final IResource resource = tests[i].getResource();
+			if (resource.getProject() != project) {
+				if (status != null) {
+					status.setError(MessageFormat.format(PHPUnitMessages.PHPUnitValidator_Not_Exists,
+							tests[i].getElementName(), project.getName()));
+				}
+				return EMPTY_TYPES;
+			}
+			if (!searchEngine.isTest(tests[i])) {
+				status.setError(
+						MessageFormat.format(PHPUnitMessages.PHPUnitValidator_Not_Test, tests[i].getElementName()));
+				return EMPTY_TYPES;
+			}
+		}
+		return tests;
+	}
+

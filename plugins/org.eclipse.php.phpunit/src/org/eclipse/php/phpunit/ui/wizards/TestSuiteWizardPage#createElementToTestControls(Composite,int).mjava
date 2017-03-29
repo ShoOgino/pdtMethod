@@ -1,0 +1,66 @@
+	@Override
+	protected void createElementToTestControls(final Composite composite, final int columns) {
+		String[] addButtons = new String[] { "Add", null, "Remove" }; //$NON-NLS-1$ //$NON-NLS-2$
+		IListAdapter<IType> listAdapter = new IListAdapter<IType>() {
+			@Override
+			public void customButtonPressed(ListDialogField<IType> field, int index) {
+			}
+
+			@Override
+			public void doubleClicked(ListDialogField<IType> field) {
+			}
+
+			@Override
+			public void selectionChanged(ListDialogField<IType> field) {
+			}
+		};
+
+		fElementsToTestList = new ListDialogField<IType>(listAdapter, addButtons, new PHPTypeListLabelProvider()) {
+			// override these methods to validate interfaces
+			@Override
+			public void removeElement(IType element) throws IllegalArgumentException {
+				super.removeElement(element);
+				elementsToTestChanged();
+			}
+
+			@Override
+			public void removeElements(List<IType> elements) {
+				super.removeElements(elements);
+				elementsToTestChanged();
+			}
+
+			@Override
+			public void removeAllElements() {
+				super.removeAllElements();
+				elementsToTestChanged();
+			}
+		};
+		fElementsToTestList.setLabelText(PHPUnitMessages.TestSuiteWizardPage_2);
+		fElementsToTestList.setRemoveButtonIndex(2);
+		fElementsToTestList.removeAllElements();
+
+		final String INTERFACE = "interface"; //$NON-NLS-1$
+		Control[] controls = fElementsToTestList.doFillIntoGrid(composite, 3);
+		GridData gd = new GridData(GridData.FILL_BOTH);
+		gd.grabExcessHorizontalSpace = true;
+		controls[1].setLayoutData(gd);
+		final TableViewer tableViewer = fElementsToTestList.getTableViewer();
+		tableViewer.setColumnProperties(new String[] { INTERFACE });
+		gd = (GridData) fElementsToTestList.getListControl(null).getLayoutData();
+		gd.grabExcessVerticalSpace = true;
+		gd.widthHint = getMaxFieldWidth();
+		addInterfacesBtn = (Button) fElementsToTestList.getButtonBox(composite).getChildren()[0];
+		addInterfacesBtn.addSelectionListener(new SelectionAdapter() {
+
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				IType[] result = choosePHPUnitElementsToTest();
+				if (result != null && result.length > 0) {
+					fElementsToTestList.addElements(Arrays.asList(result));
+					fElementsToTestList.refresh();
+					elementsToTestChanged();
+				}
+			}
+		});
+	}
+

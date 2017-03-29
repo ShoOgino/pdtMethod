@@ -1,0 +1,25 @@
+	@Override
+	public void run() {
+		final ILaunch launch = PHPUnitView.getDefault().getLaunch();
+		int tries = 3;
+		String message = PHPUnitMessages.PHPUnitView_Run_Error;
+		do
+			try {
+				serverSocket = new ServerSocket(port, 1);
+				serverSocket.setSoTimeout(5000);
+				serverSocket.setReuseAddress(true);
+				socket = serverSocket.accept();
+				handleReport(socket);
+			} catch (final IOException e) {
+				tries--;
+				if (tries == 0) {
+					PHPUnitPlugin.log(e);
+					message = NLS.bind(PHPUnitMessages.PHPUnitView_Run_SocketError, port, e.getMessage());
+				}
+			} finally {
+				shutdown(false);
+			}
+		while ((tries > 0 && socket == null) || (!launch.isTerminated() && "debug".equals(launch.getLaunchMode()))); //$NON-NLS-1$
+		PHPUnitView.getDefault().stop(PHPUnitElementManager.getInstance().getRoot(), message);
+	}
+

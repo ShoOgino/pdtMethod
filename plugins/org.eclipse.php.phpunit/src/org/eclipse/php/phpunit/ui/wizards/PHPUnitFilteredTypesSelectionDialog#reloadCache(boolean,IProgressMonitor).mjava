@@ -1,0 +1,26 @@
+	@Override
+	public void reloadCache(boolean checkDuplicates, IProgressMonitor monitor) {
+		IProgressMonitor remainingMonitor;
+		if (ConsistencyRunnable.needsExecution(fToolkit)) {
+			monitor.beginTask(DLTKUIMessages.TypeSelectionDialog_progress_consistency, 10);
+			try {
+				ConsistencyRunnable runnable = new ConsistencyRunnable(fToolkit);
+				runnable.run(new SubProgressMonitor(monitor, 1));
+			} catch (InvocationTargetException e) {
+				ExceptionHandler.handle(e, DLTKUIMessages.TypeSelectionDialog_error3Title,
+						DLTKUIMessages.TypeSelectionDialog_error3Message);
+				close();
+				return;
+			} catch (InterruptedException e) {
+				// cancelled by user
+				close();
+				return;
+			}
+			remainingMonitor = new SubProgressMonitor(monitor, 9);
+		} else {
+			remainingMonitor = monitor;
+		}
+		super.reloadCache(checkDuplicates, remainingMonitor);
+		monitor.done();
+	}
+

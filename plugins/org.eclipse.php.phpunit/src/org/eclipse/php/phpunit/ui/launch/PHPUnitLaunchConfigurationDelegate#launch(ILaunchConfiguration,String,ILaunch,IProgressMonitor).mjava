@@ -1,0 +1,95 @@
+	@Override
+	public void launch(ILaunchConfiguration config, final String mode, final ILaunch launch,
+			final IProgressMonitor monitor) throws CoreException {
+		if (!PHPUnitLaunchUtils.launchIsPHPUnit(launch)) {
+			displayErrorMessage(PHPUnitMessages.PHPUnitLaunchConfigurationDelegate_Bad_Config);
+		}
+
+		if (config.getAttribute(PHPUnitLaunchAttributes.ATTRIBUTE_CODE_COVERAGE, false)) {
+			launch.setAttribute(PHPUnitLaunchAttributes.ATTRIBUTE_COLLECT_CODE_COVERAGE, "1"); //$NON-NLS-1$
+		}
+
+		IPath elementToTest = findElementToTest(config);
+		if (elementToTest == null || elementToTest.isEmpty()) {
+			displayErrorMessage(PHPUnitMessages.PHPUnitLaunchShortcut_Unable_To_Generate);
+			return;
+		}
+
+		final IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
+		final IResource resource = workspaceRoot.findMember(elementToTest);
+		if (resource == null) {
+			displayErrorMessage(PHPUnitMessages.PHPUnitLaunchConfigurationTab_No_Container);
+			return;
+		}
+		final IProject project = resource.getProject();
+
+		String fileToExecute = findFileToExecute(config, project);
+		if (fileToExecute == null) {
+			return;
+		}
+
+		final ILaunchConfigurationWorkingCopy wconfig;
+		if (config.isWorkingCopy()) {
+			wconfig = (ILaunchConfigurationWorkingCopy) config;
+		} else {
+			wconfig = config.getWorkingCopy();
+		}
+		setAdditionalAttributes(wconfig, fileToExecute, project);
+		setEnvironmentVariables(wconfig, project);
+
+		PHPUnitOptionsList phpUnitOptionsList = createPHPUnitOptionsList(wconfig, project);
+		config = wconfig.doSave();
+
+		if (!(resource instanceof IProject)) {
+			phpUnitOptionsList.setElementToTest(resource.getLocation().toOSString());
+		}
+
+		File workingDirectory = resource.getLocation().toFile();
+		if (workingDirectory.isFile()) {
+			workingDirectory = workingDirectory.getParentFile();
+		}
+
+		final int port = Integer.parseInt(envVariables.get(ENV_PORT));
+		if (!PHPUnitConnection.getInstance().listen(port, launch)) {
+			return;
+		}
+
+		PHPexeItem execItem = PHPLaunchUtilities.getPHPExe(config);
+		if (execItem != null) {
+			// Update launch configuration - in case PHP executable attributes
+			// have changed
+			ILaunchConfigurationWorkingCopy wc = config.getWorkingCopy();
+			wc.setAttribute(IPHPDebugConstants.ATTR_EXECUTABLE_LOCATION, execItem.getExecutable().toString());
+			wc.setAttribute(PHPDebugCorePreferenceNames.PHP_DEBUGGER_ID, execItem.getDebuggerID());
+			IDebuggerConfiguration debuggerConfiguration = PHPDebuggersRegistry
+					.getDebuggerConfiguration(execItem.getDebuggerID());
+			wc.setAttribute(PHPDebugCorePreferenceNames.CONFIGURATION_DELEGATE_CLASS,
+					debuggerConfiguration.getScriptLaunchDelegateClass());
+			if ((mode.equals(ILaunchManager.DEBUG_MODE) || mode.equals(ILaunchManager.PROFILE_MODE))
+					&& debuggerConfiguration.getDebuggerId().equals(PHPDebuggersRegistry.NONE_DEBUGGER_ID)) {
+				wc.setAttribute(IDebugUIConstants.ATTR_PRIVATE, true);
+			}
+			if (execItem.getINILocation() != null) {
+				wc.setAttribute(IPHPDebugConstants.ATTR_INI_LOCATION, execItem.getINILocation().toString());
+			} else {
+				wc.setAttribute(IPHPDebugConstants.ATTR_INI_LOCATION, (String) null);
+			}
+			config = wc.doSave();
+		}
+
+		if (execItem != null) {
+			PHPUnitBasicLauncher launcher = new PHPUnitBasicLauncher(config, launch, phpUnitOptionsList);
+			if (XDebugCommunicationDaemon.XDEBUG_DEBUGGER_ID.equals(execItem.getDebuggerID())) {
+				launcher = new PHPUnitXDLauncher(config, launch, phpUnitOptionsList);
+			} else if (DebuggerCommunicationDaemon.ZEND_DEBUGGER_ID.equals(execItem.getDebuggerID())) {
+				launcher = new PHPUnitZDLauncher(config, launch, phpUnitOptionsList);
+			}
+			launcher.launch(mode, project, workingDirectory, envVariables, monitor);
+		} else {
+			displayErrorMessage(PHPDebugCoreMessages.PHPExecutableLaunchDelegate_4);
+			return;
+		}
+
+		PHPUnitView.activateView(true);
+	}
+

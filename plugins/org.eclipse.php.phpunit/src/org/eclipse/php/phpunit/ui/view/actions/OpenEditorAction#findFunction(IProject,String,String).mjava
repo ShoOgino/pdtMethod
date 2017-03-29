@@ -1,0 +1,27 @@
+	protected IMethod findFunction(final IProject project, final String functionName, final String fileName) {
+		IModelElement element = null;
+		if (fileName != null && fileName.length() > 0) {
+			Path path = new Path(fileName);
+			IFile iFile = null;
+			if (path.isAbsolute() && path.getDevice() != null) {
+				iFile = project.getWorkspace().getRoot().getFileForLocation(path);
+			} else {
+				iFile = project.getWorkspace().getRoot().getFile(path);
+			}
+			element = DLTKCore.createSourceModuleFrom(iFile);
+		} else {
+			IMethod[] methods = PhpModelAccess.getDefault().findMethods(functionName, MatchRule.EXACT, 0, 0,
+					SearchEngine.createSearchScope(DLTKCore.create(project)), null);
+
+			if (methods != null && methods.length > 0) {
+				element = methods[0].getSourceModule();
+			}
+		}
+
+		if (element != null && element.getElementType() == IModelElement.SOURCE_MODULE) {
+			ISourceModule module = (ISourceModule) element;
+			return module.getMethod(functionName);
+		}
+		return null;
+	}
+

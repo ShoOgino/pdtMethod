@@ -1,0 +1,36 @@
+	/**
+	 * This method finds all types that extend basic PHPUnit suite class,
+	 * including abstract classes.
+	 * 
+	 * @param scriptProject
+	 */
+	private void findSuiteBaseClasses(final IScriptProject scriptProject) {
+		if (PHP_UNIT_SUITE_BASE_CLASS_CACHE != null) {
+			return;
+		}
+		final PHPUnitSearchEngine searchEngine = new PHPUnitSearchEngine(scriptProject);
+		final List<IType> elementsList = new ArrayList<>();
+		try {
+			IWizardContainer container = getContainer();
+			if (getControl() != null) {
+				container.run(true, true, pm -> {
+					pm.beginTask(PHPUnitMessages.PHPUnitSearchEngine_Searching, IProgressMonitor.UNKNOWN);
+					IType[] elements = searchEngine.findPHPUnitClassesByTestSuite(scriptProject, true, false,
+							new SubProgressMonitor(pm, IProgressMonitor.UNKNOWN));
+					if (pm.isCanceled()) {
+						return;
+					}
+					if (elements != null && elements.length > 0) {
+						elementsList.addAll(Arrays.asList(elements));
+					}
+					pm.done();
+				});
+				if (!elementsList.isEmpty()) {
+					PHP_UNIT_SUITE_BASE_CLASS_CACHE = elementsList.toArray(new IType[elementsList.size()]);
+				}
+			}
+		} catch (InvocationTargetException | InterruptedException e) {
+			PHPUnitPlugin.log(e);
+		}
+	}
+

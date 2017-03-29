@@ -1,0 +1,38 @@
+	public void launch(String mode, IProject project, File workingDir, Map<String, String> envVariables,
+			IProgressMonitor monitor) throws CoreException {
+		// Check for previous launches.
+		if (!PHPLaunchUtilities.notifyPreviousLaunches(launch)) {
+			monitor.setCanceled(true);
+			monitor.done();
+			return;
+		}
+		if (monitor.isCanceled()) {
+			return;
+		}
+		String phpExeString = configuration.getAttribute(IPHPDebugConstants.ATTR_EXECUTABLE_LOCATION, (String) null);
+		String fileName = configuration.getAttribute(IPHPDebugConstants.ATTR_FILE_FULL_PATH, (String) null);
+		if (monitor.isCanceled()) {
+			return;
+		}
+		if (phpExeString == null) {
+			displayErrorMessage(PHPDebugCoreMessages.PHPExecutableLaunchDelegate_4);
+			return;
+		}
+		// Locate the php.ini by using the attribute. If the attribute was null,
+		// try to locate an php.ini that exists next to the executable.
+		// File phpIni = (phpIniPath != null && new File(phpIniPath).exists()) ?
+		// new File(phpIniPath)
+		// : PHPINIUtil.findPHPIni(phpExeString);
+		// File tempIni = PHPINIUtil.prepareBeforeLaunch(phpIni, phpExeString,
+		// project);
+		// launch.setAttribute(IDebugParametersKeys.PHP_INI_LOCATION,
+		// tempIni.getAbsolutePath());
+		if (mode.equals(ILaunchManager.PROFILE_MODE)) {
+			launchProfileMode(fileName, workingDir, phpExeString, project, envVariables, monitor);
+		} else if (mode.equals(ILaunchManager.DEBUG_MODE)) {
+			launchDebugMode(fileName, workingDir, phpExeString, project, envVariables, monitor);
+		} else if (mode.equals(ILaunchManager.RUN_MODE)) {
+			launchRunMode(fileName, workingDir, phpExeString, project, envVariables, monitor);
+		}
+	}
+

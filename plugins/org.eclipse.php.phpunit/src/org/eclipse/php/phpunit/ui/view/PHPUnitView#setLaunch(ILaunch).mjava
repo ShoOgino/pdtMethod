@@ -1,0 +1,20 @@
+	protected void setLaunch(final ILaunch launch) {
+		this.launch = launch;
+		try {
+			final String projectName = getDefault().getLaunch().getLaunchConfiguration()
+					.getAttribute(PHPUnitLaunchAttributes.ATTRIBUTE_PROJECT, (String) null);
+			final IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
+			project = workspaceRoot.getProject(projectName);
+
+			final String codeCoverageAttributeValue = launch
+					.getAttribute(PHPUnitLaunchAttributes.ATTRIBUTE_COLLECT_CODE_COVERAGE);
+			if (codeCoverageAttributeValue != null && !"profile".equals(launch.getLaunchMode())) //$NON-NLS-1$
+				setCodeCoverageTabVisible(Integer.parseInt(codeCoverageAttributeValue) > 0);
+			else
+				setCodeCoverageTabVisible(false);
+			fRerunLastTestAction.setLaunch(launch);
+		} catch (final CoreException e) {
+			PHPUnitPlugin.log(e);
+		}
+	}
+

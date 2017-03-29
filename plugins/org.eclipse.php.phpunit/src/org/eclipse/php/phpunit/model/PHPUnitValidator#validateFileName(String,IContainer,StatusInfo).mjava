@@ -1,0 +1,35 @@
+	public static String validateFileName(String fileName, final IContainer container, final StatusInfo status) {
+		fileName = fileName.trim();
+		if (container == null) {
+			if (status != null) {
+				status.setError(PHPUnitMessages.PHPUnitValidator_No_Container);
+			}
+			return fileName;
+		}
+		if (fileName.length() == 0) {
+			if (status != null) {
+				status.setError(PHPUnitMessages.PHPUnitValidator_No_FileName);
+			}
+			return fileName;
+		}
+
+		if (container.findMember(new Path(fileName)) != null) {
+			if (status != null) {
+				status.setError(MessageFormat.format(PHPUnitMessages.PHPUnitValidator_File_Exists, fileName,
+						container.getName()));
+			}
+			return fileName;
+		}
+
+		final IContentType contentType = Platform.getContentTypeManager()
+				.getContentType(ContentTypeIdForPHP.ContentTypeID_PHP);
+		if (!contentType.isAssociatedWith(fileName)) {
+			if (status != null) {
+				status.setError(MessageFormat.format(PHPUnitMessages.PHPUnitValidator_File_Not_PHP, fileName));
+			}
+			return fileName;
+		}
+		return fileName;
+
+	}
+

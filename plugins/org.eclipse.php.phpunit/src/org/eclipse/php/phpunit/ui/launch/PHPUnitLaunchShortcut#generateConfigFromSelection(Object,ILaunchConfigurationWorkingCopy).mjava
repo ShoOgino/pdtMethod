@@ -1,0 +1,56 @@
+	private void generateConfigFromSelection(Object selectedElement, ILaunchConfigurationWorkingCopy config) {
+		IProject project = null;
+		// case of xml configuration file
+		if (selectedElement instanceof IResource) {
+			IResource resource = (IResource) selectedElement;
+			config.setAttribute(ATTRIBUTE_PROJECT, resource.getProject().getName());
+			config.setAttribute(ATTRIBUTE_FILE, resource.getFullPath().toString());
+
+			if (resource.getType() == IResource.FILE) {
+				final IFile file = (IFile) selectedElement;
+				if (PHPToolkitUtil.hasPhpExtention(file)) {
+					selectedElement = DLTKCore.create(file);
+				} else if (CONFIG_FILES.contains(file.getName())) {
+					config.setAttribute(ATTRIBUTE_PHPUNIT_CFG, file.getProjectRelativePath().toString());
+					selectedElement = DLTKCore.create(file.getParent());
+				}
+
+			}
+			project = resource.getProject();
+		}
+		if (selectedElement instanceof IModelElement) {
+			if (selectedElement instanceof IMethod) {
+				IMethod method = (IMethod) selectedElement;
+
+				config.setAttribute(ATTRIBUTE_METHOD_NAME, method.getElementName());
+
+				selectedElement = method.getDeclaringType();
+			}
+
+			if (selectedElement instanceof IType) {
+				IType type = (IType) selectedElement;
+
+				config.setAttribute(ATTRIBUTE_RUN_CONTAINER, false);
+				config.setAttribute(ATTRIBUTE_PROJECT, type.getScriptProject().getProject().getName());
+				config.setAttribute(ATTRIBUTE_CLASS, type.getElementName());
+				config.setAttribute(ATTRIBUTE_FILE,
+						type.getSourceModule().getResource().getProjectRelativePath().toString());
+				project = type.getScriptProject().getProject();
+			} else {
+				IModelElement fContainerElement = (IModelElement) selectedElement;
+				project = fContainerElement.getScriptProject().getProject();
+
+				config.setAttribute(ATTRIBUTE_RUN_CONTAINER, true);
+				config.setAttribute(ATTRIBUTE_PROJECT, project.getName());
+				config.setAttribute(ATTRIBUTE_CONTAINER, getProjectRelativePath(fContainerElement));
+				String typeName = getContainerType(fContainerElement);
+				config.setAttribute(ATTRIBUTE_CONTAINER_TYPE, typeName);
+
+			}
+		}
+
+		if (project != null && PHPUnitLaunchUtils.findComposerExecutionFile(project) != null) {
+			config.setAttribute(ATTRIBUTE_EXECUTION_TYPE, COMPOSER_EXECUTION_TYPE);
+		}
+	}
+

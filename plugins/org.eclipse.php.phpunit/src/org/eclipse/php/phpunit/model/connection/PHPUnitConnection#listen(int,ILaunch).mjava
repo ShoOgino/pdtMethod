@@ -1,0 +1,19 @@
+	public boolean listen(final int port, final ILaunch launch) {
+		PHPUnitView.activateView(true);
+		PHPUnitMessageParser.getInstance().clean();
+		if (PHPUnitView.getDefault().isRunning()) {
+			Display.getDefault()
+					.syncExec(() -> ErrorDialog.openError(Display.getCurrent().getActiveShell(),
+							PHPUnitMessages.PHPUnitConnection_Launching,
+							PHPUnitMessages.PHPUnitConnection_Unable_to_run, new Status(IStatus.ERROR, PHPUnitPlugin.ID,
+									0, PHPUnitMessages.PHPUnitConnection_Previous_session_exists, null)));
+			return false;
+		}
+		listener = new PHPUnitConnectionListener(port, launch, autoRefresh);
+		DebugPlugin.getDefault().getLaunchManager().addLaunchListener(listener);
+		PHPUnitView.getDefault().startRunning(launch, listener);
+
+		listener.start();
+		return true;
+	}
+

@@ -1,0 +1,44 @@
+	public static IProject validateProject(final Object project, final StatusInfo status) {
+		final String projectName;
+		final IProject theProject;
+		if (project instanceof IProject) {
+			theProject = (IProject) project;
+			projectName = theProject.getName();
+		} else if (project instanceof String) {
+			projectName = (String) project;
+			final IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
+			theProject = workspaceRoot.getProject(projectName);
+		} else {
+			if (status != null) {
+				status.setError(MessageFormat.format(PHPUnitMessages.PHPUnitValidator_Not_Project, project));
+			}
+			return null;
+		}
+
+		try {
+
+			if (!theProject.isAccessible()) {
+				if (status != null)
+					status.setError(MessageFormat.format(PHPUnitMessages.PHPUnitValidator_Project_Not_Accessible,
+							theProject.getName()));
+				return null;
+			}
+
+			if (!theProject.hasNature(PHPNature.ID)) {
+				if (status != null) {
+					status.setError(MessageFormat.format(PHPUnitMessages.PHPUnitValidator_Project_Not_PHP,
+							theProject.getName()));
+				}
+				return null;
+			}
+		} catch (final CoreException e) {
+			if (status != null) {
+				status.setError(
+						MessageFormat.format(PHPUnitMessages.PHPUnitValidator_No_Project, projectName, e.getMessage()));
+			}
+		}
+
+		return theProject;
+
+	}
+

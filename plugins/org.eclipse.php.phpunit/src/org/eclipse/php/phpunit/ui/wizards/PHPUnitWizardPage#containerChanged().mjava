@@ -1,0 +1,25 @@
+	protected void containerChanged() {
+		final StatusInfo status = new StatusInfo();
+		IContainer newContainer = PHPUnitValidator.validateContainer(fContainerDialogField.getText(), true, status);
+
+		// when we changed the project in the field, we invalidate all cached
+		// elements.
+		if (fContainer != newContainer) {
+			invalidatCachedElements();
+		}
+
+		fContainer = newContainer;
+		fContainerStatus = status;
+		if (fContainer != null) {
+			IProject project = fContainer.getProject();
+			if (project != null) {
+				IScriptProject scriptProject = DLTKCore.create(project);
+				if (fScriptProject != scriptProject) {
+					fScriptProject = scriptProject;
+					fSearchEngine = new PHPUnitSearchEngine(fScriptProject);
+				}
+			}
+		}
+		updateStatus(getStatusList());
+	}
+

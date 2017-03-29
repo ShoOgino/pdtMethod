@@ -1,0 +1,29 @@
+	@Override
+	protected IModelElement findElement(final IProject project, final String elementName, final String fileName) {
+		IModelElement element = null;
+		if (elementName != null) {
+			element = findClass(project, elementName, fileName);
+			return element;
+		}
+
+		IWorkspaceRoot root = project.getWorkspace().getRoot();
+		IFile iFile = root.getFile(new Path(fileName));
+		if (iFile == null || !iFile.exists()) {
+			iFile = root.getFileForLocation(new Path(fileName));
+		}
+		if (iFile != null && iFile.exists()) {
+			element = DLTKCore.create(iFile);
+		}
+		if (element == null) {
+			IFileHandle file = EnvironmentPathUtils.getFile(LocalEnvironment.getInstance(), new Path(fileName));
+			if (file != null) {
+				IPath fullPath = file.getFullPath();
+				HandleFactory fac = new HandleFactory();
+				IDLTKSearchScope scope = DLTKSearchScopeFactory.getInstance().createWorkspaceScope(true,
+						PHPLanguageToolkit.getDefault());
+				element = fac.createOpenable(fullPath.toString(), scope);
+			}
+		}
+		return element;
+	}
+

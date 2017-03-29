@@ -1,0 +1,70 @@
+	public static IModelElement validateElement(final Object element, final IProject project,
+			final boolean validateProject, int elementType, final StatusInfo status) {
+		if (validateProject && validateProject(project, status) == null) {
+			return null;
+		}
+
+		if (element instanceof IModelElement) {
+			if (project == null) {
+				return null;
+			}
+
+			IModelElement modelElement = (IModelElement) element;
+			IScriptProject scriptProject = modelElement.getScriptProject();
+			if (scriptProject.getProject() != project) {
+				// validate class name
+				IDLTKSearchScope searchScope = SearchEngine.createSearchScope(scriptProject);
+				IType[] foundClassElementsToTest = PhpModelAccess.getDefault().findTypes(modelElement.getElementName(),
+						MatchRule.EXACT, 0, Modifiers.AccInterface, searchScope, null);
+				if (foundClassElementsToTest == null || foundClassElementsToTest.length < 1) {
+					if (status != null)
+						status.setError(MessageFormat.format(PHPUnitMessages.PHPUnitValidator_Not_In_Project,
+								modelElement.getElementName(), project.getName()));
+					return null;
+				}
+				modelElement = foundClassElementsToTest[0];
+			}
+			return modelElement;
+		} else if (element instanceof String) {
+			if (project == null)
+				return null;
+			final String elementName = ((String) element).trim();
+			if (elementName.length() == 0) { // $NON-NLS-1$
+				if (status != null) {
+					status.setWarning(PHPUnitMessages.PHPUnitValidator_No_Element);
+				}
+				return null;
+			}
+			// validate class name
+			IScriptProject scriptProject = DLTKCore.create(project);
+			IDLTKSearchScope searchScope = SearchEngine.createSearchScope(scriptProject);
+
+			IModelElement[] foundClassElementsToTest = null;
+			if (elementType == IModelElement.TYPE) {
+				foundClassElementsToTest = PhpModelAccess.getDefault().findTypes(elementName, MatchRule.EXACT, 0,
+						Modifiers.AccInterface, searchScope, null);
+			} else {
+				foundClassElementsToTest = PhpModelAccess.getDefault().findMethods(elementName, MatchRule.PREFIX,
+						Modifiers.AccGlobal, 0, searchScope, null);
+			}
+
+			if (foundClassElementsToTest == null || foundClassElementsToTest.length == 0) {
+				if (status != null)
+					status.setWarning(MessageFormat.format(PHPUnitMessages.PHPUnitValidator_No_Element_In_Project,
+							elementName, project.getName()));
+				return null;
+			} else if (foundClassElementsToTest.length > 1) {
+				if (status != null) {
+					status.setError(MessageFormat.format(PHPUnitMessages.PHPUnitValidator_Multiple_Elements,
+							elementName, project.getName()));
+					return null;
+				}
+			}
+			return foundClassElementsToTest[0];
+		} else {
+			if (status != null)
+				status.setWarning(MessageFormat.format(PHPUnitMessages.PHPUnitValidator_Unknown_Element, element));
+			return null;
+		}
+	}
+

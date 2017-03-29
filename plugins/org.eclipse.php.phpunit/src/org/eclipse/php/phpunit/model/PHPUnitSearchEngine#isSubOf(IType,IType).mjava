@@ -1,0 +1,26 @@
+	/**
+	 * @param classData
+	 * @param superClass
+	 * @return
+	 */
+	private boolean isSubOf(final IType classData, IType superClass) {
+		if (classData == null || superClass == null) {
+			return false;
+		}
+		try {
+			if (Flags.isAbstract(classData.getFlags())) {
+				return false;
+			}
+			Set<IType> subclasses = typeHierarchyCache.get(superClass);
+
+			if (subclasses == null) {
+				findPHPUnitClassesBySupertype(project, superClass, true, false, null);
+				subclasses = typeHierarchyCache.get(superClass);
+			}
+			return subclasses.contains(classData);
+		} catch (ModelException e) {
+			PHPUnitPlugin.log(e);
+		}
+		return false;
+	}
+

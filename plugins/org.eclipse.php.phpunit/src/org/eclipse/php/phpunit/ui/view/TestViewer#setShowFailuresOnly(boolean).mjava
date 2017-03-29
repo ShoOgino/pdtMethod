@@ -1,0 +1,26 @@
+	public synchronized void setShowFailuresOnly(final boolean failuresOnly) {
+		try {
+			fViewerbook.setRedraw(false);
+
+			// avoid realizing all TableItems, especially in flat mode!
+			final StructuredViewer viewer = getActiveViewer();
+			if (failuresOnly) {
+				if (!getActiveViewerHasFilter()) {
+					setActiveViewerHasFilter(true);
+					if (getActiveViewerNeedsRefresh())
+						viewer.setInput(null);
+					viewer.addFilter(fFailuresOnlyFilter);
+				}
+
+			} else if (getActiveViewerHasFilter()) {
+				setActiveViewerHasFilter(false);
+				if (getActiveViewerNeedsRefresh())
+					viewer.setInput(null);
+				viewer.removeFilter(fFailuresOnlyFilter);
+			}
+			processChangesInUI();
+		} finally {
+			fViewerbook.setRedraw(true);
+		}
+	}
+

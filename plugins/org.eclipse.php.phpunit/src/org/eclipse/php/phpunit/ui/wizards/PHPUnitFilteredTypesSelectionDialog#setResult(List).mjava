@@ -1,0 +1,30 @@
+	@Override
+	protected void setResult(List newResult) {
+
+		List<IType> resultToReturn = new ArrayList<>();
+
+		for (int i = 0; i < newResult.size(); i++) {
+			if (newResult.get(i) instanceof TypeNameMatch) {
+				IType type = ((TypeNameMatch) newResult.get(i)).getType();
+				if (type.exists()) {
+					// items are added to history in the
+					// org.eclipse.ui.dialogs.FilteredItemsSelectionDialog#computeResult()
+					// method
+					resultToReturn.add(type);
+				} else {
+					TypeNameMatch typeInfo = (TypeNameMatch) newResult.get(i);
+					IProjectFragment root = typeInfo.getProjectFragment();
+					IDLTKUILanguageToolkit uiToolkit = DLTKUILanguageManager.getLanguageToolkit(fToolkit.getNatureId());
+					ScriptElementLabels labels = uiToolkit.getScriptElementLabels();
+					String containerName = labels.getElementLabel(root, ScriptElementLabels.ALL_FULLY_QUALIFIED);
+					String message = MessageFormat.format(DLTKUIMessages.FilteredTypesSelectionDialog_dialogMessage,
+							typeInfo.getFullyQualifiedName(), containerName);
+					MessageDialog.openError(getShell(), fTitle, message);
+					getSelectionHistory().remove(typeInfo);
+				}
+			}
+		}
+
+		super.setResult(resultToReturn);
+	}
+

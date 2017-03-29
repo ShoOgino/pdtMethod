@@ -1,0 +1,50 @@
+	/**
+	 * To be called periodically by the PHPUnitView (in the UI thread).
+	 */
+	public void processChangesInUI() {
+		if (view.isDisposed())
+			return;
+		if (testRoot == null) {
+			registerViewersRefresh();
+			fTreeNeedsRefresh = false;
+			fTreeViewer.setInput(null);
+			// fTableViewer.setInput(null);
+			return;
+		}
+
+		final StructuredViewer viewer = getActiveViewer();
+		if (viewer.getInput() != testRoot)
+			viewer.setInput(testRoot);
+		viewer.refresh();
+
+		if (getActiveViewerNeedsRefresh()) {
+			clearUpdateAndExpansion();
+			setActiveViewerRefreshed();
+		} else {
+			PHPUnitElement[] toUpdate;
+			synchronized (this) {
+				toUpdate = fNeedUpdate.toArray(new PHPUnitElement[0]);
+				fNeedUpdate.clear();
+			}
+			if (!fTreeNeedsRefresh && toUpdate.length > 0)
+				if (fTreeHasFilter)
+					for (PHPUnitElement element : toUpdate)
+						updateElementInTree(element);
+				else {
+					final Set<PHPUnitElement> toUpdateWithParents = new HashSet<>();
+					toUpdateWithParents.addAll(Arrays.asList(toUpdate));
+					for (PHPUnitElement element : toUpdate) {
+						if (element != null) {
+							PHPUnitElement parent = element.getParent();
+							while (parent != null) {
+								toUpdateWithParents.add(parent);
+								parent = parent.getParent();
+							}
+						}
+					}
+					fTreeViewer.update(toUpdateWithParents.toArray(), null);
+				}
+		}
+		autoScrollInUI();
+	}
+

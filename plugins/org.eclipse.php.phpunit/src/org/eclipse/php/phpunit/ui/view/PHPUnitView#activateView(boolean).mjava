@@ -1,0 +1,25 @@
+	public static synchronized void activateView(final boolean focus) {
+		PlatformUI.getWorkbench().getDisplay().syncExec(() -> {
+			final IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+			if (window != null) {
+				final IWorkbenchPage activePage = window.getActivePage();
+				if (activePage == null)
+					return;
+				try {
+					if (focus)
+						instance = (PHPUnitView) activePage.showView(NAME);
+					else {
+						IViewPart foundView = activePage.findView(NAME);
+						if (foundView != null) {
+							instance = (PHPUnitView) foundView;
+						} else {
+							instance = (PHPUnitView) activePage.showView(NAME);
+						}
+					}
+				} catch (final PartInitException e) {
+					PHPUnitPlugin.log(e);
+				}
+			}
+		});
+	}
+

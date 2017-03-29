@@ -1,0 +1,62 @@
+	@Override
+	public void performApply(final ILaunchConfigurationWorkingCopy config) {
+		fSelectedProject = null;
+		if (fTestContainerRadioButton.getSelection()) {
+			config.setAttribute(ATTRIBUTE_RUN_CONTAINER, true);
+			if (fContainerElement != null) {
+				fElementPath = fContainerElement.getFullPath().toOSString();
+				fSelectedProject = fContainerElement.getProject();
+				config.setAttribute(ATTRIBUTE_PROJECT, fSelectedProject.getProject().getName());
+				config.setAttribute(ATTRIBUTE_CONTAINER, getProjectRelativePath(fContainerElement));
+				String typeName = getContainerType(fContainerElement);
+				config.setAttribute(ATTRIBUTE_CONTAINER_TYPE, typeName);
+			}
+		} else {
+			config.setAttribute(ATTRIBUTE_RUN_CONTAINER, false);
+			final String pText = fProjText.getText();
+			config.setAttribute(ATTRIBUTE_PROJECT, pText);
+			if (pText != null) {
+				final IScriptProject[] scriptProjects = getScriptProjects();
+				for (IScriptProject script : scriptProjects) {
+					if (pText.equals(script.getProject().getName())) {
+						fSelectedProject = script.getProject();
+						break;
+					}
+				}
+			}
+			config.setAttribute(ATTRIBUTE_CLASS, fTestText.getText());
+			config.setAttribute(ATTRIBUTE_FILE, fTestFileLabel.getText());
+			config.setAttribute(ATTRIBUTE_CONTAINER_TYPE, SOURCE_CONTAINER);
+		}
+		if (fElementPath != null && !fElementPath.isEmpty()) {
+			config.setAttribute(PHPUnitPlugin.ELEMENT_PATH_ATTR, fElementPath);
+			fElementPath = ""; //$NON-NLS-1$
+		}
+
+		config.setAttribute(ATTRIBUTE_CODE_COVERAGE, fCodeCoverageButton.getSelection());
+		config.setAttribute(ATTRIBUTE_LOG_XML, fReportingButton.getSelection());
+		config.setAttribute(ATTRIBUTE_PHPUNIT_CFG, fPhpunitConfigPath.getText());
+		if (fUsePharButton.getSelection()) {
+			config.setAttribute(ATTRIBUTE_EXECUTION_TYPE, PHAR_EXECUTION_TYPE);
+		} else if (fUseComposerButton.getSelection()) {
+			config.setAttribute(ATTRIBUTE_EXECUTION_TYPE, COMPOSER_EXECUTION_TYPE);
+		}
+		// Set up PHP script launching specific attributes
+		String projectName;
+		try {
+			// Don't stop on a first breakpoint if in debug mode
+			config.setAttribute(IDebugParametersKeys.FIRST_LINE_BREAKPOINT, false);
+			projectName = config.getAttribute(ATTRIBUTE_PROJECT, ""); //$NON-NLS-1$
+			if (projectName != null && !projectName.isEmpty()) {
+				IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
+				config.setAttribute(IPHPDebugConstants.PHP_Project, project.getName());
+				String fileToExecute = findFileToExecute(config, project);
+				config.setAttribute(IPHPDebugConstants.ATTR_FILE, fileToExecute);
+				config.setAttribute(IPHPDebugConstants.ATTR_FILE_FULL_PATH, fileToExecute);
+			}
+		} catch (CoreException e) {
+			Logger.logException(e);
+		}
+
+	}
+

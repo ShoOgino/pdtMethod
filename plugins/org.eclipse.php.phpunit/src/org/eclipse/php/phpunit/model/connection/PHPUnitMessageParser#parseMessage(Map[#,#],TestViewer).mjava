@@ -1,0 +1,24 @@
+	public void parseMessage(final Map<?, ?> message, final TestViewer viewer) {
+		if (!isInProgress()) {
+			setInProgress(true);
+		}
+		if (message == null) {
+			return;
+		}
+		final String target = (String) message.get(PROPERTY_TARGET);
+		final String event = (String) message.get(ELEMENT_EVENT);
+		final Map<?, ?> mTest = (Map<?, ?>) message.get(ELEMENT_TEST);
+		if (target.equals(ELEMENT_TARGET_TESTSUITE)) {
+			parseGroupStart(viewer, event, mTest);
+			if (event.equals(TAG_END)) {
+				parseGroupEnd(viewer);
+			}
+		} else if (target.equals(ELEMENT_TARGET_TESTCASE)) {
+			if (event.equals(TAG_START)) {
+				parseTestStart(viewer, event, mTest);
+			} else {
+				parseTestEnd(message, viewer, event, mTest);
+			}
+		}
+	}
+

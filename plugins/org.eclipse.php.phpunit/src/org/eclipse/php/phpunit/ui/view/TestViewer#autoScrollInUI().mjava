@@ -1,0 +1,44 @@
+	private void autoScrollInUI() {
+		if (!view.isAutoScroll()) {
+			clearAutoExpand();
+			fAutoClose.clear();
+			return;
+		}
+
+		synchronized (this) {
+			for (final Iterator iter = fAutoExpand.iterator(); iter.hasNext();) {
+				final PHPUnitTestGroup suite = (PHPUnitTestGroup) iter.next();
+				fTreeViewer.setExpandedState(suite, true);
+			}
+			clearAutoExpand();
+		}
+
+		final PHPUnitTestCase current = fAutoScrollTarget;
+		fAutoScrollTarget = null;
+
+		PHPUnitTestGroup parent = current == null ? null : (PHPUnitTestGroup) fTreeContentProvider.getParent(current);
+		if (fAutoClose.isEmpty() || !fAutoClose.getLast().equals(parent)) {
+			// we're in a new branch, so let's close old OK branches:
+			for (final ListIterator<Object> iter = fAutoClose.listIterator(fAutoClose.size()); iter.hasPrevious();) {
+				final PHPUnitTestGroup previousAutoOpened = (PHPUnitTestGroup) iter.previous();
+				if (previousAutoOpened.equals(parent))
+					break;
+
+				if (previousAutoOpened.getStatus() == PHPUnitTest.STATUS_PASS) {
+					// auto-opened the element, and all children are OK -> auto
+					// close
+					iter.remove();
+					fTreeViewer.collapseToLevel(previousAutoOpened, AbstractTreeViewer.ALL_LEVELS);
+				}
+			}
+
+			while (parent != null && !testRoot.equals(parent) && fTreeViewer.getExpandedState(parent) == false) {
+				fAutoClose.add(parent); // add to auto-opened elements -> close
+				// later if STATUS_OK
+				parent = (PHPUnitTestGroup) fTreeContentProvider.getParent(parent);
+			}
+		}
+		if (current != null)
+			fTreeViewer.reveal(current);
+	}
+

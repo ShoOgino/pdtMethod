@@ -1,0 +1,21 @@
+	void handleDefaultSelected() {
+		final IStructuredSelection selection = (IStructuredSelection) fSelectionProvider.getSelection();
+		if (selection.size() != 1)
+			return;
+
+		final PHPUnitTest test = (PHPUnitTest) selection.getFirstElement();
+
+		OpenTestAction action;
+		if (test instanceof PHPUnitTestGroup)
+			action = new OpenTestAction(null, view, test.getName(), test.getLocalFile(), test.getLine());
+		else if (test instanceof PHPUnitTestCase) {
+			final PHPUnitTestCase testCase = (PHPUnitTestCase) test;
+			action = new OpenTestAction(null, view, ((PHPUnitTestGroup) testCase.getParent()).getName(),
+					testCase.getLocalFile(), testCase.getLine(), testCase.getName());
+		} else
+			throw new IllegalStateException(String.valueOf(test));
+
+		if (action.isEnabled())
+			action.run();
+	}
+

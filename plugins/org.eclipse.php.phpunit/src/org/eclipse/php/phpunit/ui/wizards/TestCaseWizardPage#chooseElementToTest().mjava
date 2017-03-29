@@ -1,0 +1,63 @@
+	private IModelElement chooseElementToTest() {
+		final IContainer root = getTestContainer();
+
+		if (root == null)
+			return null;
+
+		IProject project = getTestContainer().getProject();
+
+		SelectionStatusDialog dialog = null;
+		final IDLTKSearchScope searchScope = SearchEngine.createSearchScope(DLTKCore.create(project),
+				IDLTKSearchScope.SOURCES);
+		if (isClassOrMethodElementToTest) {
+			dialog = new PHPUnitFilteredTypesSelectionDialog(getShell(), false,
+					PlatformUI.getWorkbench().getProgressService(), searchScope, IDLTKSearchConstants.TYPE,
+					new TypeSelectionExtension() {
+						@Override
+						public ITypeInfoFilterExtension getFilterExtension() {
+							return new ITypeInfoFilterExtension() {
+								@Override
+								public boolean select(ITypeInfoRequestor typeInfoRequestor) {
+									int modifiers = typeInfoRequestor.getModifiers();
+									if (!PHPFlags.isInterface(modifiers) && !PHPFlags.isNamespace(modifiers)
+											&& !PHPFlags.isAbstract(modifiers)) {
+										return true;
+									}
+									return false;
+								}
+							};
+						}
+					}, PHPLanguageToolkit.getDefault());
+			((PHPUnitFilteredTypesSelectionDialog) dialog).setInitialPattern("."); //$NON-NLS-1$
+		} else {
+			final List<IMethod> staticOrGlobalMethods = new LinkedList<>();
+
+			IMethod[] globalFunctions = PhpModelAccess.getDefault().findMethods(null, MatchRule.PREFIX,
+					Modifiers.AccGlobal, 0, searchScope, new NullProgressMonitor());
+			if (globalFunctions != null) {
+				staticOrGlobalMethods.addAll(Arrays.asList(globalFunctions));
+			}
+			IMethod[] staticMethods = PhpModelAccess.getDefault().findMethods(null, MatchRule.PREFIX,
+					Modifiers.AccStatic, Modifiers.AccGlobal | Modifiers.AccPrivate, searchScope,
+					new NullProgressMonitor());
+			if (staticMethods != null) {
+				staticOrGlobalMethods.addAll(Arrays.asList(staticMethods));
+			}
+
+			IMethod[] methodScope = staticOrGlobalMethods.toArray(new IMethod[staticOrGlobalMethods.size()]);
+
+			dialog = new PHPUnitMethodSelectionDialog(getShell(), methodScope);
+		}
+
+		dialog.setTitle(PHPUnitMessages.TestCaseWizardPage_2);
+		dialog.setMessage(PHPUnitMessages.TestCaseWizardPage_3);
+
+		if (dialog.open() == Window.OK) {
+			Object[] resultArray = dialog.getResult();
+			if ((resultArray != null) && (resultArray.length > 0)) {
+				return (IModelElement) resultArray[0];
+			}
+		}
+		return null;
+	}
+

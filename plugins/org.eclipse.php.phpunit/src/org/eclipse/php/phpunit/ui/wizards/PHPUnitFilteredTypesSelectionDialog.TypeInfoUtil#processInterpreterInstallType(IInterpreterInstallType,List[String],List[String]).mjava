@@ -1,0 +1,26 @@
+		private void processInterpreterInstallType(IInterpreterInstallType installType, List<String> locations,
+				List<String> labels) {
+			if (installType != null) {
+				IInterpreterInstall[] installs = installType.getInterpreterInstalls();
+				boolean isMac = Platform.OS_MACOSX.equals(Platform.getOS());
+				final String HOME_SUFFIX = "/Home"; //$NON-NLS-1$
+				for (int i = 0; i < installs.length; i++) {
+					String label = getFormattedLabel(installs[i].getName());
+					LibraryLocation[] libLocations = installs[i].getLibraryLocations();
+					if (libLocations != null) {
+						processLibraryLocation(libLocations, label);
+					} else {
+						String filePath = installs[i].getInstallLocation().toOSString();
+						if (filePath != null) {
+							// on MacOS X install locations end in an additional
+							// "/Home" segment; remove it
+							if (isMac && filePath.endsWith(HOME_SUFFIX))
+								filePath = filePath.substring(0, filePath.length() - HOME_SUFFIX.length() + 1);
+							locations.add(filePath);
+							labels.add(label);
+						}
+					}
+				}
+			}
+		}
+

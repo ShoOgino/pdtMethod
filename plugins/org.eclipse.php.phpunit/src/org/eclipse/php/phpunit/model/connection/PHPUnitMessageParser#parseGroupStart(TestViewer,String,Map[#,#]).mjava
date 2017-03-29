@@ -1,0 +1,20 @@
+	private void parseGroupStart(final TestViewer viewer, final String event, final Map<?, ?> mTest) {
+		if (event.equals(TAG_START)) {
+			final PHPUnitTestGroup group = new PHPUnitTestGroup(mTest, currentGroup, remoteDebugger);
+			mapTest(group);
+			if (currentGroup.getTotalCount() > 0) {
+				currentGroup.addChild(group, false);
+				viewer.registerViewerUpdate(currentGroup);
+				viewer.registerTestAdded();
+				group.setParent(currentGroup);
+			}
+			currentGroup = group;
+			currentTestCase = null;
+			if (currentGroup.getTotalCount() > 0
+					&& PHPUnitElementManager.getInstance().getRoot().getTotalCount() == 0) {
+				PHPUnitElementManager.getInstance().setRoot(currentGroup);
+				viewer.registerTestAdded();
+			}
+		}
+	}
+

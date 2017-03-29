@@ -1,0 +1,89 @@
+	public IType[] findPHPUnitClassesBySupertype(IModelElement elementContainer, IType superClass, boolean listAbstract,
+			boolean isFirst, IProgressMonitor monitor) {
+
+		IType[] subtypes = null;
+
+		if (superClass == null || elementContainer == null) {
+			return subtypes;
+		}
+
+		IPath parentPath = elementContainer.getPath();
+		List<IType> result = new LinkedList<>();
+		try {
+			IScriptProject scriptProject = elementContainer.getScriptProject();
+			if (elementContainer != null && scriptProject.getProject().hasNature(PHPNature.ID)) {
+
+				Set<IType> subClasses = null;
+				try {
+					subClasses = typeHierarchyCache.get(superClass);
+					if (subClasses == null) {
+
+						IType baseClass = getByName(PHPUNIT_BASE);
+						ITypeHierarchy hierarchy = baseClass.newTypeHierarchy(scriptProject, monitor);
+
+						if (monitor != null && monitor.isCanceled()) {
+							return null;
+						}
+
+						IType testCase = getTestCase();
+						IType[] caseSubtypes = hierarchy.getAllSubtypes(testCase);
+
+						IType testSuite = getTestSuite();
+						IType[] suiteSubtypes = hierarchy.getAllSubtypes(testSuite);
+
+						Set<IType> caseSubtypesSet = new HashSet<>();
+						for (IType type : caseSubtypes) {
+							caseSubtypesSet.add(type);
+						}
+						typeHierarchyCache.put(testCase, caseSubtypesSet);
+
+						Set<IType> suiteSubtypesSet = new HashSet<>();
+						for (IType type : suiteSubtypes) {
+							suiteSubtypesSet.add(type);
+						}
+
+						typeHierarchyCache.put(testSuite, suiteSubtypesSet);
+					}
+
+					IDLTKSearchScope scope = SearchEngine.createSearchScope(elementContainer);
+					subClasses = typeHierarchyCache.get(superClass);
+
+					first: for (IType type : subClasses) {
+						int flags = type.getFlags();
+
+						if (listAbstract || !PHPFlags.isAbstract(flags)) {
+							if (parentPath.isPrefixOf(type.getPath())) {
+								result.add(type);
+								if (isFirst) {
+									subtypes = result.toArray(new IType[result.size()]);
+									return subtypes;
+								}
+								continue first;
+							}
+
+							IModelElement element = type;
+
+							second: do {
+								if (scope.encloses(element)) {
+									result.add(type);
+									break second;
+								}
+								element = element.getParent();
+							} while (element != null && element instanceof IModelElement
+									&& !(element instanceof Model));
+						}
+					}
+					if (listAbstract) {
+						result.add(superClass);
+					}
+					subtypes = result.toArray(new IType[result.size()]);
+				} catch (ModelException e) {
+					PHPUnitPlugin.log(e);
+				}
+			}
+		} catch (CoreException e) {
+			PHPUnitPlugin.log(e);
+		}
+		return subtypes;
+	}
+

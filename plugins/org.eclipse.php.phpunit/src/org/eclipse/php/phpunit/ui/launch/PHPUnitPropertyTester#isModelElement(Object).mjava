@@ -1,0 +1,24 @@
+	private boolean isModelElement(Object receiver) {
+		if (receiver instanceof List) {
+			List<?> list = (List<?>) receiver;
+			for (Object item : list) {
+				if (!(item instanceof IModelElement)) {
+					if (item instanceof IFileEditorInput) {
+						IFileEditorInput fileEditorInput = (IFileEditorInput) item;
+						return PHPToolkitUtil.isPhpFile(fileEditorInput.getFile());
+					} else if (item instanceof IResource) {
+						IResource folder = (IResource) item;
+						IProject project = folder.getProject();
+						try {
+							return PHPToolkitUtil.isPhpProject(project);
+						} catch (CoreException e) {
+							PHPCorePlugin.log(e);
+						}
+					}
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+

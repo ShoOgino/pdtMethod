@@ -1,0 +1,23 @@
+		@Override
+		public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
+			if (fgFirstTime) {
+				// Join the initialize after load job.
+				IJobManager manager = Job.getJobManager();
+				manager.join(DLTKUIPlugin.PLUGIN_ID, monitor);
+			}
+			OpenTypeHistory history = OpenTypeHistory.getInstance(tookit);
+			if (fgFirstTime || history.isEmpty()) {
+				if (history.needConsistencyCheck()) {
+					monitor.beginTask(DLTKUIMessages.TypeSelectionDialog_progress_consistency, 100);
+					refreshSearchIndices(new SubProgressMonitor(monitor, 90));
+					history.checkConsistency(new SubProgressMonitor(monitor, 10));
+				} else {
+					refreshSearchIndices(monitor);
+				}
+				monitor.done();
+				fgFirstTime = false;
+			} else {
+				history.checkConsistency(monitor);
+			}
+		}
+

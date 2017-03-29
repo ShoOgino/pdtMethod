@@ -1,0 +1,70 @@
+	protected IModelElement getInitialPHPElement(final IStructuredSelection selection) {
+		IModelElement modelElement = null;
+		int offset = -1;
+		if (selection != null && !selection.isEmpty()) {
+
+			Object obj = selection.getFirstElement();
+			if (obj instanceof NodeImpl) {
+				if (obj instanceof IAdaptable) {
+					obj = ((IAdaptable) obj).getAdapter(IModelElement.class);
+				}
+
+			} else if (obj != null && obj instanceof ISourceModule) {
+
+				// get current document offset
+				if (selection instanceof ITextSelection) {
+					ITextSelection textSelection = (ITextSelection) selection;
+					offset = textSelection.getOffset();
+
+				}
+
+				// find the IType at current offset
+				IType selectedType = null;
+				ISourceModule sourceModule = (ISourceModule) obj;
+				if (offset > -1) {
+					selectedType = PHPModelUtils.getCurrentType(sourceModule, offset);
+				} else {
+					IType[] types = null;
+					try {
+						types = sourceModule.getTypes();
+					} catch (ModelException e) {
+						PHPUnitPlugin.log(e);
+					}
+					if (types != null && types.length >= 1) {
+						selectedType = types[0];
+					}
+				}
+
+				// found currently selected IType
+				if (selectedType != null) {
+					int flags;
+					try {
+						flags = selectedType.getFlags();
+						if (!PHPFlags.isInterface(flags) && !PHPFlags.isAbstract(flags) && fSearchEngine != null
+								&& !fSearchEngine.isCase(selectedType)) {
+							modelElement = (IType) selectedType;
+						}
+					} catch (ModelException e) {
+						PHPUnitPlugin.log(e);
+					}
+				}
+
+				// no luck ti find currently selected IType
+				if (modelElement == null) {
+					modelElement = sourceModule;
+				}
+			} else if (obj instanceof IType) {
+				modelElement = (IType) obj;
+			} else if (obj instanceof IFile) {
+				IFile file = (IFile) obj;
+				boolean isPhpFile = PHPToolkitUtil.isPhpFile(file);
+				if (isPhpFile) {
+					modelElement = DLTKCore.create((IFile) obj);
+				} else {
+					// TODO message not php file
+				}
+			}
+		}
+		return modelElement;
+	}
+

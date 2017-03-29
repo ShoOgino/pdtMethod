@@ -1,0 +1,28 @@
+	protected void handleReport(final Socket socket) {
+		if (PHPUnitView.getDefault().isRunning()) {
+			try {
+				final PHPUnitMessageParser parser = PHPUnitMessageParser.getInstance();
+				parser.setDebugTarget(PHPUnitView.getDefault().getLaunch().getDebugTarget());
+				final BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+				String line;
+				Map<?, ?> value = null;
+				parser.setInProgress(true);
+				while ((line = reader.readLine()) != null && PHPUnitView.getDefault().isRunning()
+						&& parser.isInProgress()) {
+					try {
+						value = gson.fromJson(line, LinkedTreeMap.class);
+					} catch (final Throwable e) {
+						value = null;
+					}
+					parser.parseMessage((Map<?, ?>) value, PHPUnitView.getDefault().getViewer());
+					if (autoRefresh) {
+						PHPUnitView.getDefault().refresh(PHPUnitElementManager.getInstance().getRoot());
+					}
+				}
+
+			} catch (final IOException e) {
+				PHPUnitPlugin.log(e);
+			}
+		}
+	}
+

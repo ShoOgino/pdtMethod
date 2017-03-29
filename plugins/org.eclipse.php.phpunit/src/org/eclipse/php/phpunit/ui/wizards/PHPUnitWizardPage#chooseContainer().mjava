@@ -1,0 +1,28 @@
+	protected IContainer chooseContainer() {
+		final ContainerSelectionDialog dialog = new ContainerSelectionDialog(getShell(),
+				ResourcesPlugin.getWorkspace().getRoot(), false, "Select New Source Folder"); //$NON-NLS-1$
+		dialog.setHelpAvailable(false);
+		dialog.setTitle(PHPUnitMessages.PHPUnitWizardPage_10);
+		dialog.setMessage(PHPUnitMessages.PHPUnitWizardPage_11);
+
+		if (dialog.open() == Window.OK) {
+			final Object[] result = dialog.getResult();
+			if (result.length == 1) {
+				IPath path = (IPath) result[0];
+				IResource foundMemder = ResourcesPlugin.getWorkspace().getRoot().findMember(path);
+				if (foundMemder instanceof IContainer) {
+					IContainer container = (IContainer) foundMemder;
+					fContainerDialogField.setText(container.getFullPath().toOSString());
+
+					if (container.getType() == IContainer.FOLDER) {
+						return PHPUnitValidator.validateContainer(container);
+					}
+					if (container.getType() == IContainer.PROJECT) {
+						return PHPUnitValidator.validateProject(container);
+					}
+				}
+			}
+		}
+		return null;
+	}
+

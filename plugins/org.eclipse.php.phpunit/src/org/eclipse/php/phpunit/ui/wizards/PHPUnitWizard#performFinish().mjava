@@ -1,0 +1,71 @@
+	@Override
+	public boolean performFinish() {
+		final IRunnableWithProgress op = monitor -> {
+			IProject project = page.getTestContainer().getProject();
+			final IScriptProject scriptProject = DLTKCore.create(project);
+
+			PHPUnitSearchEngine fSearchEngine = new PHPUnitSearchEngine(scriptProject);
+			if (!fSearchEngine.hasTestCaseClass()) {
+				ModelManager.getModelManager().getIndexManager().waitUntilReady();
+			}
+
+			Display.getDefault().syncExec(() -> page.superClassChanged());
+			String generatedFile = generateFile();
+
+			IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+			final IFile file = root.getFile(page.getTestContainer().getFullPath().append(page.getFileName()));
+			try {
+				new FileCreator() {
+					@Override
+					protected void normalizeFile(IFile file) {
+						super.normalizeFile(file);
+						IContentFormatter formatter = PHPUiPlugin.getDefault().getActiveFormatter();
+						try {
+							IStructuredModel structuredModel = null;
+
+							structuredModel = StructuredModelManager.getModelManager().getModelForEdit(file);
+							if (structuredModel == null) {
+								return;
+							}
+							try {
+								// setup structuredModel
+								// Note: We are getting model for edit. Will
+								// save model if model
+								// changed.
+								IStructuredDocument structuredDocument = structuredModel.getStructuredDocument();
+
+								IRegion region = new Region(0, structuredDocument.getLength());
+
+								formatter.format(structuredDocument, region);
+								structuredModel.save();
+							} finally {
+								// release from model manager
+								if (structuredModel != null) {
+									structuredModel.releaseFromEdit();
+								}
+							}
+						} catch (IOException e) {
+							PHPUnitPlugin.log(e);
+						} catch (CoreException e) {
+							PHPUnitPlugin.log(e);
+						}
+					}
+				}.createFile(PHPUnitWizard.this, file, monitor, generatedFile);
+			} catch (CoreException e) {
+				throw new InvocationTargetException(e);
+			} finally {
+				monitor.done();
+			}
+		};
+		try {
+			getContainer().run(true, false, op);
+		} catch (final InterruptedException e) {
+			return false;
+		} catch (final InvocationTargetException e) {
+			final Throwable realException = e.getTargetException();
+			MessageDialog.openError(getShell(), PHPUnitMessages.PHPUnitWizard_Error_Title, realException.getMessage());
+			return false;
+		}
+		return true;
+	}
+

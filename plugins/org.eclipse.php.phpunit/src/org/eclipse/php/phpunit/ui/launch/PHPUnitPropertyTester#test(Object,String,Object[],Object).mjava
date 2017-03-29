@@ -1,0 +1,42 @@
+	/**
+	 * true only if receiver is a PHP model element and is project or folder, or
+	 * file with extension xml/php/php4/php5, or a method
+	 */
+	@Override
+	public boolean test(Object receiver, String property, Object[] args, Object expectedValue) {
+		if (!PROPERTY.equals(property)) {
+			return false;
+		}
+
+		if (!isModelElement(receiver)) {
+			return false;
+		}
+
+		IResource res = getReceiverResource(receiver);
+
+		if (res instanceof IProject) {
+			IProject project = (IProject) res;
+			try {
+				return project.hasNature(PHPNature.ID);
+			} catch (CoreException e) {
+				return false;
+			}
+		} else if (res instanceof IFile) {
+			String ext = ((IFile) res).getFileExtension();
+			if (ext == null) {
+				return false;
+			}
+			ext = ext.toLowerCase();
+
+			String[] acceptedExts = new String[] { "xml", "php", "php5", "php4" }; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+
+			if (ext != null && Arrays.asList(acceptedExts).contains(ext)) {
+				return true;
+			}
+		} else { // always can run PHPUnit project or folder
+			return true;
+		}
+
+		return false;
+	}
+

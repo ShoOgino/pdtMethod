@@ -1,0 +1,32 @@
+	protected void elementsToTestChanged() {
+		final StatusInfo status = new StatusInfo();
+		if (fElementsToTestList != null) {
+			List<IType> addedElementsToTest = fElementsToTestList.getElements();
+			final IType[] addedElementsToTestArray = (IType[]) addedElementsToTest
+					.toArray(new IType[addedElementsToTest.size()]);
+
+			if (PHP_UNIT_CASE_AND_SUITE_NON_ABSTRAXT_CLASS_CACHE == null) {
+
+				if (getTestContainer() != null && getContainer().getCurrentPage() != null) {
+					IProject project = getTestContainer().getProject();
+					if (project != null) {
+						final IScriptProject scriptProject = DLTKCore.create(project);
+						findAllNonAbstractSuitesAndCases(scriptProject);
+					}
+				}
+			}
+
+			if (PHP_UNIT_CASE_AND_SUITE_NON_ABSTRAXT_CLASS_CACHE != null) {
+				List<IType> allTests = Arrays.asList(PHP_UNIT_CASE_AND_SUITE_NON_ABSTRAXT_CLASS_CACHE);
+				for (IType test : addedElementsToTestArray) {
+					if (!allTests.contains(test)) {
+						status.setError(
+								MessageFormat.format(PHPUnitMessages.PHPUnitValidator_Not_Test, test.getElementName()));
+					}
+				}
+				fElementToTestStatus = status;
+				updateStatus(getStatusList());
+			}
+		}
+	}
+

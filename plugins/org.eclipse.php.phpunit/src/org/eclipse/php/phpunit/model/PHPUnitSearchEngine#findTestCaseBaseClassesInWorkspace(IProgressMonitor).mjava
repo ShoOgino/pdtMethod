@@ -1,0 +1,24 @@
+	public Set<IType> findTestCaseBaseClassesInWorkspace(final IProgressMonitor monitor) {
+
+		final Set<IType> cache = new HashSet<>();
+		IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
+		for (IProject project : projects) {
+			if (project.isOpen()) {
+				IScriptProject scriptProject = DLTKCore.create(project);
+				boolean hasNature = false;
+				try {
+					hasNature = project.hasNature(PHPNature.ID);
+				} catch (CoreException e) {
+					PHPUnitPlugin.log(e);
+				}
+				if (scriptProject != null && scriptProject.isOpen() && hasNature) {
+					IType[] foundTestCases = findTestCaseBaseClasses(scriptProject, getTestCase(), false, monitor);
+					if (foundTestCases.length > 0) {
+						cache.addAll(Arrays.asList(foundTestCases));
+					}
+				}
+			}
+		}
+		return cache;
+	}
+

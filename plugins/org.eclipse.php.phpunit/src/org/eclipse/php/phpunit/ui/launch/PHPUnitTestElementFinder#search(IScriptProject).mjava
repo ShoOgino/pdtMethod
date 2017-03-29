@@ -1,0 +1,23 @@
+	public IRunnableWithProgress search(final IScriptProject phpProject) {
+		return pm -> {
+			final PHPUnitSearchEngine searchEngine = new PHPUnitSearchEngine(phpProject);
+
+			pm.beginTask(PHPUnitMessages.PHPUnitSearchEngine_Searching, IProgressMonitor.UNKNOWN);
+			if (PHP_UNIT_CASE_CACHED == null) {
+				IType[] cases = searchEngine.findTestCaseBaseClasses(phpProject, false,
+						new SubProgressMonitor(pm, IProgressMonitor.UNKNOWN));
+				if (cases != null) {
+					updateCasesCache(cases);
+				}
+			}
+			if (PHP_UNIT_SUITE_CACHED == null) {
+				IType[] suites = searchEngine.findTestSuiteBaseClasses(phpProject, false,
+						new SubProgressMonitor(pm, IProgressMonitor.UNKNOWN));
+				if (suites != null) {
+					updateSuitesCache(suites);
+				}
+			}
+			pm.done();
+		};
+	}
+

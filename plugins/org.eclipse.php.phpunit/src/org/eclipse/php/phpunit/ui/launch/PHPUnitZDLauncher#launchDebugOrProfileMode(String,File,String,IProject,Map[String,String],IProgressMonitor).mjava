@@ -1,0 +1,103 @@
+	private void launchDebugOrProfileMode(String fileName, File workingDir, String phpExeString, IProject project,
+			Map<String, String> envVariables, IProgressMonitor monitor) throws CoreException {
+		PHPexeItem phpExeItem = PHPLaunchUtilities.getPHPExe(configuration);
+		int requestPort = getDebugPort(phpExeItem);
+		// Check that the debug daemon is running
+		if (!PHPLaunchUtilities.isDebugDaemonActive(requestPort, DebuggerCommunicationDaemon.ZEND_DEBUGGER_ID)) {
+			PHPLaunchUtilities.showLaunchErrorMessage(NLS.bind(
+					PHPDebugCoreMessages.ExeLaunchConfigurationDelegate_PortInUse, requestPort, phpExeItem.getName()));
+			monitor.setCanceled(true);
+			monitor.done();
+			return;
+		}
+		boolean stopAtFirstLine = configuration.getAttribute(IDebugParametersKeys.FIRST_LINE_BREAKPOINT,
+				PHPProjectPreferences.getStopAtFirstLine(project));
+		ILaunchConfigurationWorkingCopy wc;
+		if (configuration.isWorkingCopy()) {
+			wc = (ILaunchConfigurationWorkingCopy) configuration;
+		} else {
+			wc = configuration.getWorkingCopy();
+		}
+		// Set Project Name
+		if (project != null) {
+			wc.setAttribute(IPHPDebugConstants.PHP_Project, project.getFullPath().toString());
+		}
+		// Set transfer encoding:
+		wc.setAttribute(IDebugParametersKeys.TRANSFER_ENCODING, PHPProjectPreferences.getTransferEncoding(project));
+		wc.setAttribute(IDebugParametersKeys.OUTPUT_ENCODING, PHPProjectPreferences.getOutputEncoding(project));
+		wc.setAttribute(IDebugParametersKeys.PHP_DEBUG_TYPE, IDebugParametersKeys.PHP_EXE_SCRIPT_DEBUG);
+		wc.doSave();
+
+		if (monitor.isCanceled()) {
+			return;
+		}
+		// Generate a session id for this launch and put it in the map
+		int sessionID = DebugSessionIdGenerator.generateSessionID();
+		PHPSessionLaunchMapper.put(sessionID, launch);
+		// Define all needed debug attributes:
+		launch.setAttribute(IDebugParametersKeys.PORT, Integer.toString(requestPort));
+		launch.setAttribute(IDebugParametersKeys.FIRST_LINE_BREAKPOINT, Boolean.toString(stopAtFirstLine));
+		launch.setAttribute(IDebugParametersKeys.SESSION_ID, Integer.toString(sessionID));
+		// Trigger the session by initiating a debug request to the php.exe
+		try {
+			launch.setAttribute(IDebugParametersKeys.EXECUTABLE_LAUNCH, Boolean.toString(true));
+			IDebugParametersInitializer parametersInitializer = DebugParametersInitializersRegistry
+					.getBestMatchDebugParametersInitializer(launch);
+			String query = PHPLaunchUtilities.generateQuery(launch, parametersInitializer);
+			String iniFileLocation = launch.getAttribute(IDebugParametersKeys.PHP_INI_LOCATION);
+			File phpExeFile = new File(phpExeString);
+			// Determine configuration file directory:
+			String phpConfigDir = phpExeFile.getParent();
+			if (iniFileLocation != null && !iniFileLocation.isEmpty()) {
+				phpConfigDir = new File(iniFileLocation).getParent();
+			}
+			// Detect PHP SAPI type:
+			String sapiType = null;
+			PHPexeItem[] items = PHPexes.getInstance().getAllItems();
+			for (PHPexeItem item : items) {
+				if (item.getExecutable().equals(phpExeFile)) {
+					sapiType = item.getSapiType();
+					break;
+				}
+			}
+			String[] args = PHPLaunchUtilities.getProgramArguments(launch.getLaunchConfiguration());
+			// Prepare the environment
+			Map<String, String> additionalLaunchEnvironment = PHPLaunchUtilities.getPHPCGILaunchEnvironment(fileName,
+					query, phpConfigDir, phpExeFile.getParent(), sapiType == PHPexeItem.SAPI_CGI ? args : null);
+			if (envVariables == null) {
+				envVariables = additionalLaunchEnvironment;
+			} else {
+				additionalLaunchEnvironment.putAll(envVariables);
+				envVariables = additionalLaunchEnvironment;
+			}
+			String[] environmetVars = PHPLaunchUtilities.getEnvironment(launch.getLaunchConfiguration(),
+					asAttributesArray(envVariables));
+			// Prepare the command line.
+			String[] phpCmdArray = getCommandLine(project, phpExeString, phpConfigDir, fileName,
+					sapiType == PHPexeItem.SAPI_CLI ? args : null);
+			List<String> allArgs = new ArrayList<>();
+			allArgs.addAll(Arrays.asList(phpCmdArray));
+			allArgs.addAll(optionsList.getList());
+			phpCmdArray = allArgs.toArray(new String[0]);
+			// Make sure that we have executable permissions on the file.
+			PHPexes.changePermissions(new File(phpCmdArray[0]));
+			if (PHPDebugPlugin.DEBUG) {
+				System.out.println("Executing: " + Arrays.toString(phpCmdArray)); //$NON-NLS-1$
+				System.out.println("Process environment: " //$NON-NLS-1$
+						+ Arrays.toString(environmetVars));
+			}
+			DaemonPlugin.getDefault().makeSureDebuggerInitialized(null);
+			// Execute the command line.
+			Process p = Runtime.getRuntime().exec(phpCmdArray, environmetVars, workingDir);
+			// Attach a crash detector
+			new Thread(new CrashDetector(launch, p)).start();
+		} catch (java.io.IOException e1) {
+			Logger.logException("PHPDebugTarget: Debugger didn't find file to debug.", e1); //$NON-NLS-1$
+			String errorMessage = PHPDebugCoreMessages.DebuggerFileNotFound_1;
+			throw new DebugException(new Status(IStatus.ERROR, PHPDebugPlugin.getID(),
+					IPHPDebugConstants.INTERNAL_ERROR, errorMessage, e1));
+		} catch (CoreException e) {
+			PHPUnitPlugin.log(e);
+		}
+	}
+

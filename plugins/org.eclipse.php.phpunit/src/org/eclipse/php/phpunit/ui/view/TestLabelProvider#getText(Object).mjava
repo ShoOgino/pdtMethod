@@ -1,0 +1,44 @@
+	@Override
+	public String getText(final Object element) {
+		final PHPUnitElement test = (PHPUnitElement) element;
+		String fileName = test.getLocalFile();
+		if (!fileName.equals("")) { //$NON-NLS-1$
+			IFile file = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(fileName));
+			if (file == null)
+				file = view.getProject().getFile(fileName);
+			if (file != null)
+				fileName = file.getProjectRelativePath().toString();
+		}
+
+		final int line = test.getLine();
+		if (test instanceof PHPUnitTest) {
+			String name = ((PHPUnitTest) test).getName();
+			if (name.equals("")) //$NON-NLS-1$
+				name = fileName + ":" + line; //$NON-NLS-1$
+			if (test instanceof PHPUnitTestCase) {
+				final PHPUnitTestException exception = ((PHPUnitTestCase) test).getException();
+				if (exception != null && exception.getMessage() != null && !exception.getMessage().equals("")) {//$NON-NLS-1$
+					name += ": " + exception.getMessage(); //$NON-NLS-1$
+					if (exception.getDiff() != null && !exception.getDiff().isEmpty()) {
+						name += " (see Object Diff tab ->)";//$NON-NLS-1$
+					}
+				}
+			}
+			return name;
+		}
+		if (test instanceof PHPUnitTestEvent) {
+			final String message = ((PHPUnitTestEvent) test).getMessage();
+			String prefix = ""; //$NON-NLS-1$
+			if (test instanceof PHPUnitTestException)
+				prefix = ((PHPUnitTestException) test).getExceptionClass();
+			else if (test instanceof PHPUnitTestWarning)
+				prefix = ((PHPUnitTestWarning) test).getCode();
+			if (!message.equals("") && message != null) //$NON-NLS-1$
+				return prefix + ": " + message; //$NON-NLS-1$
+			return prefix;
+		}
+		if (test instanceof PHPUnitTraceFrame)
+			return test.toString() + "()"; //$NON-NLS-1$
+		return test.toString();
+	}
+

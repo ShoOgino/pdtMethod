@@ -1,0 +1,31 @@
+	String generateClassFile() {
+		final TestCaseClassTemplate template = new TestCaseClassTemplate();
+		try {
+			final TestCaseWizardPage page = (TestCaseWizardPage) this.page;
+			template.resolveTemplate();
+			final IType masterClass = (IType) page.getElementToTest();
+			final IProject project = page.getTestContainer().getProject();
+			template.setMasterElement(masterClass, page.getElementToTestName(), project);
+			template.setTestClassParams(page.getClassName(),
+					page.getTestContainer().getLocation().append(page.getFileName()).toOSString());
+			template.setTestSuperClass(page.getSuperClass(), page.getSuperClassName(), project);
+			if (masterClass != null) {
+				final IMethod[] functions = masterClass.getMethods();
+				int modifiers;
+				for (int i = 0; i < functions.length; ++i) {
+					modifiers = functions[i].getFlags();
+
+					if (!PHPFlags.isAbstract(modifiers) && !PHPFlags.isPrivate(modifiers)
+							&& !PHPFlags.isProtected(modifiers)) {
+						template.addMethod(functions[i].getElementName(), (modifiers & PHPFlags.AccStatic) > 0);
+					}
+				}
+			}
+			template.compileMethods();
+			return template.compileTemplate();
+		} catch (final IOException | ModelException e) {
+			PHPUnitPlugin.log(e);
+		}
+		return ""; //$NON-NLS-1$
+	}
+

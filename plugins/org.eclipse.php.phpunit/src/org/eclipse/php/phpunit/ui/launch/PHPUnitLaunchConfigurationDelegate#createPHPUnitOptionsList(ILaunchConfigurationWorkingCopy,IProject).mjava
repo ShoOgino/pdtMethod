@@ -1,0 +1,29 @@
+	private PHPUnitOptionsList createPHPUnitOptionsList(ILaunchConfigurationWorkingCopy config, IProject project)
+			throws CoreException {
+		PHPUnitOptionsList optionsList = new PHPUnitOptionsList();
+		optionsList.add(PHPUnitOption.INCLUDE_PATH, getPrinterDirectory());
+		optionsList.add(PHPUnitOption.PRINTER, PRINTER_NAME);
+
+		boolean logXml = config.getAttribute(ATTRIBUTE_LOG_XML, false);
+		if (logXml) {
+			String xmlLocation = PHPUnitPreferenceKeys.getReportPath();
+			if (xmlLocation != null) {
+				String timestamp = new SimpleDateFormat(TIMESTAMP_DATA_FORMAT).format(new Date());
+				String fileName = String.format(XML_FILE_FORMAT, config.getName(), timestamp);
+				optionsList.add(PHPUnitOption.LOG_JUNIT, new Path(xmlLocation).append(fileName).toOSString());
+
+				config.setAttribute(PHPUnitLaunchAttributes.ATTRIBUTE_LOG_XML_LOCATION,
+						new Path(xmlLocation).append(fileName).toOSString());
+			}
+		}
+
+		String configurationXml = config.getAttribute(ATTRIBUTE_PHPUNIT_CFG, (String) null);
+		if (configurationXml != null && !configurationXml.isEmpty()) {
+			IResource configurationXmlResource = project.findMember(configurationXml);
+			if (configurationXmlResource != null && configurationXmlResource.exists()) {
+				optionsList.add(PHPUnitOption.CONFIGURATION, configurationXmlResource.getLocation().toOSString());
+			}
+		}
+		return optionsList;
+	}
+

@@ -1,0 +1,26 @@
+	public static String validateClassName(String className, final IProject project, final StatusInfo status) {
+		className = className.trim();
+		if (className.length() == 0) {
+			if (status != null) {
+				status.setError(PHPUnitMessages.PHPUnitValidator_Empty_Class_Name);
+			}
+			return className;
+		}
+		final Matcher matcher = Pattern.compile(CLASS_NAME_VALID_REGEXP).matcher(className);
+		if (!matcher.matches()) {
+			if (status != null) {
+				status.setError(MessageFormat.format(PHPUnitMessages.PHPUnitValidator_Class_Invalid, className));
+			}
+			return className;
+		}
+		if (project != null) {
+
+			final IType[] typesByName = getTypesByName(className, project);
+			if (typesByName != null && typesByName.length > 0)
+				if (status != null)
+					status.setError(MessageFormat.format(PHPUnitMessages.PHPUnitValidator_Class_Exists,
+							project.getName(), className));
+		}
+		return matcher.group();
+	}
+

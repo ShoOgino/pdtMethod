@@ -1,0 +1,20 @@
+	public void stop(final PHPUnitTestGroup root, final String message) {
+		instance.stopRunning(false);
+		if (PHPUnitMessageParser.getInstance().isInProgress()) {
+			instance.fProgressBar.stopped();
+		}
+		instance.fRerunLastTestAction.setEnabled(true);
+
+		PHPUnitTestCase currentTestCase = PHPUnitMessageParser.getInstance().getCurrentTestCase();
+		if (currentTestCase != null) {
+			PHPUnitTestException.addAbnormalException(currentTestCase);
+			fTestViewer.registerAutoScrollTarget(currentTestCase);
+			fTestViewer.registerFailedForAutoScroll(currentTestCase);
+		}
+		refresh(root);
+		if (root.getRunCount() == 0 && currentTestCase == null) {
+			PlatformUI.getWorkbench().getDisplay().asyncExec(() -> MessageDialog.openError(getSite().getShell(),
+					PHPUnitMessages.PHPUnitWizard_Error_Title, message));
+		}
+	}
+

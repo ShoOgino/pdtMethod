@@ -1,0 +1,99 @@
+	protected void launchRunMode(String fileName, File workingDir, String phpExeString, IProject project,
+			Map<String, String> envVariables, IProgressMonitor monitor) throws CoreException {
+		// Resolve location
+		IPath phpExe = new Path(phpExeString);
+		String[] envp = DebugPlugin.getDefault().getLaunchManager().getEnvironment(configuration);
+		File phpExeFile = new File(phpExeString);
+		String phpIniLocation = launch.getAttribute(IDebugParametersKeys.PHP_INI_LOCATION);
+		// Determine PHP configuration file location:
+		String phpConfigDir = phpExeFile.getParent();
+		if (phpIniLocation != null && !phpIniLocation.equals("")) { //$NON-NLS-1$
+			phpConfigDir = new File(phpIniLocation).getParent();
+		}
+		// Detect PHP SAPI type:
+		String sapiType = null;
+		String phpV = null;
+		PHPexeItem[] items = PHPexes.getInstance().getAllItems();
+		for (PHPexeItem item : items) {
+			if (item.getExecutable().equals(phpExeFile)) {
+				sapiType = item.getSapiType();
+				phpV = item.getVersion();
+				break;
+			}
+		}
+		String[] args = PHPLaunchUtilities.getProgramArguments(launch.getLaunchConfiguration());
+		String[] cmdLine = getCommandLine(project, phpExeString, phpConfigDir, fileName,
+				PHPexeItem.SAPI_CLI.equals(sapiType) ? args : null);
+		// Set library search path
+		String libPath = PHPLaunchUtilities.getLibrarySearchPathEnv(phpExeFile.getParentFile());
+		if (libPath != null) {
+			String[] envpNew = new String[envp == null ? 1 : envp.length + 1];
+			if (envp != null) {
+				System.arraycopy(envp, 0, envpNew, 0, envp.length);
+			}
+			envpNew[envpNew.length - 1] = libPath;
+			envp = envpNew;
+		}
+		if (monitor.isCanceled()) {
+			return;
+		}
+		List<String> allArgs = new ArrayList<String>();
+		allArgs.addAll(Arrays.asList(cmdLine));
+		allArgs.addAll(optionsList.getList());
+		cmdLine = allArgs.toArray(new String[0]);
+		if (PHPDebugPlugin.DEBUG) {
+			System.out.println("Executing: " + Arrays.toString(cmdLine)); //$NON-NLS-1$
+			System.out.println("Process environment: " //$NON-NLS-1$
+					+ Arrays.toString(envp));
+		}
+		Process p = workingDir.exists() ? DebugPlugin.exec(cmdLine, workingDir, envp)
+				: DebugPlugin.exec(cmdLine, null, envp);
+		// Attach a crash detector
+		new Thread(new ProcessCrashDetector(launch, p)).start();
+		IProcess process = null;
+		// Add process type to process attributes
+		Map<String, String> processAttributes = new HashMap<>();
+		String programName = phpExe.lastSegment();
+		String extension = phpExe.getFileExtension();
+		if (extension != null) {
+			programName = programName.substring(0, programName.length() - (extension.length() + 1));
+		}
+		programName = programName.toLowerCase();
+		processAttributes.put(IProcess.ATTR_PROCESS_TYPE, programName);
+		IProgressMonitor subMonitor = new SubProgressMonitor(monitor, 10);
+		if (p != null) {
+			subMonitor = new SubProgressMonitor(monitor, 80);
+			process = DebugPlugin.newProcess(launch, p, phpExe.toOSString(), processAttributes);
+			if (process == null) {
+				p.destroy();
+				throw new CoreException(new Status(IStatus.ERROR, PHPDebugPlugin.getID(), 0, null, null));
+			}
+			subMonitor.done();
+		}
+		process.setAttribute(IProcess.ATTR_CMDLINE, fileName);
+		if (CommonTab.isLaunchInBackground(configuration)) {
+			// Refresh resources after process finishes
+			/*
+			 * if (RefreshTab.getRefreshScope(configuration) != null) {
+			 * BackgroundResourceRefresher refresher = new
+			 * BackgroundResourceRefresher(configuration, process);
+			 * refresher.startBackgroundRefresh(); }
+			 */
+		} else {
+			// Wait for process to exit
+			while (!process.isTerminated()) {
+				try {
+					if (monitor.isCanceled()) {
+						process.terminate();
+						break;
+					}
+					Thread.sleep(50);
+				} catch (InterruptedException e) {
+				}
+			}
+			// Refresh resources
+			subMonitor = new SubProgressMonitor(monitor, 10);
+			RefreshTab.refreshResources(configuration, subMonitor);
+		}
+	}
+

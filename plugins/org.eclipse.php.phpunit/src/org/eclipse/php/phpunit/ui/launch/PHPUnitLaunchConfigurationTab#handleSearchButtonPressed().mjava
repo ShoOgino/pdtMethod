@@ -1,0 +1,58 @@
+	/**
+	 * Show a dialog that lists all main classess
+	 */
+	private void handleSearchButtonPressed() {
+		final IScriptProject phpProject = getPhpProject();
+		if (phpProject == null) {
+			return;
+		}
+		boolean[] radioSetting = new boolean[2];
+		try {
+			// fix for 66922 Wrong radio behaviour when switching
+			// remember the selected radio button
+			radioSetting[0] = fSingleTestRadioButton.getSelection();
+			radioSetting[1] = fTestContainerRadioButton.getSelection();
+			if (testElementFinder.getPHP_UNIT_SUITE_CACHED() == null
+					&& testElementFinder.getPHP_UNIT_CASE_CACHED() == null) {
+				getLaunchConfigurationDialog().run(true, false, testElementFinder.search(phpProject));
+			}
+		} catch (InterruptedException e) {
+			setErrorMessage(e.getMessage());
+			return;
+		} catch (InvocationTargetException e) {
+			PHPUnitPlugin.log(e.getTargetException());
+			return;
+		} finally {
+			fSingleTestRadioButton.setSelection(radioSetting[0]);
+			fTestContainerRadioButton.setSelection(radioSetting[1]);
+		}
+
+		Shell shell = getShell();
+		SelectionDialog dialog = new TestSelectionDialog(shell, testElementFinder.getPHP_UNIT_CASES_AND_SUITES());
+		dialog.setTitle(PHPUnitMessages.PHPUnitLaunchConfigurationTab_Test_Selection);
+		dialog.setMessage(PHPUnitMessages.PHPUnitLaunchConfigurationTab_Choose_Test);
+		if (dialog.open() == Window.CANCEL) {
+			return;
+		}
+
+		Object[] results = dialog.getResult();
+		if ((results == null) || (results.length < 1)) {
+			return;
+		}
+		IType type = (IType) results[0];
+
+		if (type != null) {
+			fElementPath = type.getPath().toOSString();
+			fTestText.setText(type.getElementName());
+			fProjText.setText(type.getScriptProject().getElementName());
+			IResource typResource = type.getResource();
+			if (typResource != null) {
+				IPath relativePath = typResource.getFullPath().makeRelativeTo(typResource.getProject().getFullPath());
+				fTestFileLabel.setText(relativePath.toPortableString());
+			} else {
+				fTestFileLabel.setText(""); //$NON-NLS-1$
+			}
+			validatePhpProject(typResource.getProject());
+		}
+	}
+

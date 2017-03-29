@@ -1,0 +1,34 @@
+	void handleMenuAboutToShow(final IMenuManager manager) {
+		final IStructuredSelection selection = (IStructuredSelection) fSelectionProvider.getSelection();
+		if (!selection.isEmpty()) {
+			final PHPUnitTest test = (PHPUnitTest) selection.getFirstElement();
+
+			final String testLabel = test.getName();
+			String className = testLabel;
+			String fileName = test.getLocalFile();
+			int lineNumber = test.getLine();
+			if (test instanceof PHPUnitTestGroup) {
+				manager.add(new OpenTestAction(null, view, testLabel, fileName, lineNumber));
+				manager.add(new Separator());
+				final IType phpClass = getClass(className, fileName);
+				if (phpClass != null) {
+					manager.add(new RerunAction(view, test.getTestId(), phpClass, null, ILaunchManager.RUN_MODE));
+					manager.add(new RerunAction(view, test.getTestId(), phpClass, null, ILaunchManager.DEBUG_MODE));
+				}
+			} else {
+				final String testMethodName = test.getName();
+				final PHPUnitTestGroup parent = (PHPUnitTestGroup) test.getParent();
+				className = parent.getName();
+				fileName = parent.getFile();
+				lineNumber = parent.getLine();
+				final IType phpClass = getClass(className, fileName);
+				if (phpClass != null) {
+					manager.add(new OpenTestAction(null, view, className,
+							phpClass.getResource().getFullPath().toPortableString(), lineNumber, testMethodName));
+				}
+			}
+		}
+		manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
+		manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS + "-end")); //$NON-NLS-1$
+	}
+

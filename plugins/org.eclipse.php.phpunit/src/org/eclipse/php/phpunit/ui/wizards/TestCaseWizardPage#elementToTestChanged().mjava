@@ -1,0 +1,43 @@
+	protected void elementToTestChanged() {
+		final StatusInfo status = new StatusInfo();
+		Object element = fElementToTest;
+		if (fElementToTest == null || !fElementToTest.getElementName().equals(fElementToTestField.getText())) {
+			fElementToTest = null;
+			element = fElementToTestField.getText();
+		}
+
+		final Object finalElementToTest = element;
+		try {
+			if (getContainer() != null && getContainer().getCurrentPage() != null
+					&& getContainer().getCurrentPage().isPageComplete()) {
+				getContainer().run(true, true, pm -> {
+					pm.beginTask(PHPUnitMessages.PHPUnitSearchEngine_Searching, IProgressMonitor.UNKNOWN);
+					int elementTypeToValidate;
+					if (isClassOrMethodElementToTest) {
+						elementTypeToValidate = IModelElement.TYPE;
+					} else {
+						elementTypeToValidate = IModelElement.METHOD;
+					}
+					fElementToTest = PHPUnitValidator.validateElement(finalElementToTest,
+							getTestContainer() != null ? getTestContainer().getProject() : null, false,
+							elementTypeToValidate, status);
+					pm.done();
+				});
+			}
+		} catch (InvocationTargetException | InterruptedException e) {
+			PHPUnitPlugin.log(e);
+		}
+
+		final String elementToTestName = fElementToTest != null ? fElementToTest.getPath().lastSegment() : ""; //$NON-NLS-1$
+		if (fElementToTestFileNameLabel != null && !fElementToTestFileNameLabel.isDisposed())
+			fElementToTestFileNameLabel.setText(elementToTestName);
+		fClassNameProposal = (fElementToTest != null ? fElementToTest.getElementName() : fElementToTestField.getText())
+				+ testSuffix();
+		if (!fClassNameManual && fClassNameDialogField != null) {
+			fClassNameDialogField.setText(fClassNameProposal);
+		}
+		fElementToTestStatus = status;
+
+		updateStatus(getStatusList());
+	}
+

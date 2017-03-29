@@ -1,0 +1,63 @@
+	public static IContainer validateContainer(final Object container, final boolean validateProject,
+			final StatusInfo status) {
+		String containerName;
+		if (container instanceof String) {
+			containerName = (String) container;
+		} else if (container instanceof IContainer) {
+			final IContainer theContainer = (IContainer) container;
+			containerName = theContainer.getFullPath().toOSString();
+			if (!theContainer.isAccessible())
+				if (status != null) {
+					status.setError(MessageFormat.format(PHPUnitMessages.PHPUnitValidator_Not_Accessible,
+							new Object[] { containerName }));
+				}
+		} else {
+			if (status != null) {
+				status.setError(MessageFormat.format(PHPUnitMessages.PHPUnitValidator_Not_Folder, container));
+			}
+			return null;
+		}
+
+		if (containerName.length() == 0) {
+			if (status != null) {
+				status.setError(PHPUnitMessages.PHPUnitValidator_Folder_Name_Empty);
+			}
+			return null;
+		}
+
+		final IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
+		final IPath containerPath = new Path(containerName);
+		IResource resource = workspaceRoot.findMember(containerPath);
+		if (resource == null) {
+			if (status != null) {
+				status.setError(
+						MessageFormat.format(PHPUnitMessages.PHPUnitValidator_Folder_Not_Exists, containerName));
+			}
+			return null;
+		}
+
+		if (!(resource instanceof IContainer)) {
+			if (status != null) {
+				status.setError(MessageFormat.format(PHPUnitMessages.PHPUnitValidator_Not_Folder, containerName));
+			}
+			return null;
+		}
+
+		if (validateProject) {
+			if (PHPUnitValidator.validateProject(resource.getProject(), status) == null) {
+				return null;
+			}
+
+			resource = workspaceRoot.findMember(containerPath);
+			if (resource == null || !resource.isAccessible()) {
+				if (status != null) {
+					status.setError(MessageFormat.format(PHPUnitMessages.PHPUnitValidator_Folder_Not_Accessible,
+							containerName));
+				}
+				return null;
+			}
+		}
+
+		return (IContainer) resource;
+	}
+

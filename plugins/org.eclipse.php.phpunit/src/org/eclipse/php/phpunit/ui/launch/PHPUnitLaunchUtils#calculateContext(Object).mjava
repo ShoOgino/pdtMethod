@@ -1,0 +1,37 @@
+	/**
+	 * Returns the current element context from which to initialize default
+	 * settings, or <code>null</code> if none.
+	 *
+	 * @return Java element context.
+	 */
+	protected static IModelElement calculateContext(final Object context) {
+		IStructuredSelection sSelection = null;
+		IEditorPart editor = null;
+		IModelElement obj = null;
+
+		if (context != null)
+			if (context instanceof IStructuredSelection)
+				sSelection = (IStructuredSelection) context;
+			else if (context instanceof IEditorPart)
+				editor = (IEditorPart) context;
+		if (sSelection == null && editor == null) {
+			final IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+			if (window == null)
+				return null;
+			final IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+			if (page == null)
+				return null;
+			final ISelection selection = page.getSelection();
+			if (selection instanceof IStructuredSelection)
+				sSelection = (IStructuredSelection) selection;
+			editor = page.getActiveEditor();
+		}
+		if (sSelection != null)
+			obj = calculateContext(sSelection);
+		if (obj == null && editor != null) {
+			obj = calculateContext(editor);
+		}
+
+		return obj;
+	}
+

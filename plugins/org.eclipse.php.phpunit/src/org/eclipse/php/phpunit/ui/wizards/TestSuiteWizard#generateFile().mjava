@@ -1,0 +1,27 @@
+	@Override
+	String generateFile() {
+		final TestSuiteTemplate template = new TestSuiteTemplate();
+		try {
+			template.resolveTemplate();
+			template.setTestClassParams(page.getClassName(),
+					page.getTestContainer().getFullPath().append(page.getFileName()).toOSString());
+			template.setTestSuperClass(page.getSuperClass(), page.getSuperClassName(),
+					page.getTestContainer().getProject());
+			final IType[] tests = ((TestSuiteWizardPage) page).getElementsToTest();
+			if (tests != null)
+				for (int i = 0; i < tests.length; ++i) {
+					template.addTest(tests[i].getElementName());
+					IPath relativeLocation = IncludePathUtils
+							.getRelativeLocationFromIncludePath(tests[i].getScriptProject(), tests[i]);
+					if (!relativeLocation.isEmpty()) {
+						template.addRequire(relativeLocation.toOSString());
+					}
+				}
+			template.compileTests();
+			return template.compileTemplate();
+		} catch (final IOException e) {
+			PHPUnitPlugin.log(e);
+		}
+		return ""; //$NON-NLS-1$
+	}
+

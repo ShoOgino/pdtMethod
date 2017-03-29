@@ -1,0 +1,46 @@
+	private void launch(Object selectedElement, final String mode) {
+		try {
+			String osString = null;
+			String configName = null;
+			if (selectedElement instanceof IModelElement) {
+				IModelElement me = (IModelElement) selectedElement;
+				osString = me.getPath().toOSString();
+				configName = me.getElementName();
+			} else if (selectedElement instanceof IFile) {
+				final IFile iFile = (IFile) selectedElement;
+				osString = iFile.getFullPath().toOSString();
+				configName = iFile.getName();
+			} else {
+				configName = PHPUnitMessages.PHPUnitLaunchShortcut_New_Configuration;
+			}
+
+			ILaunchManager launchManager = DebugPlugin.getDefault().getLaunchManager();
+			final ILaunchConfiguration[] launchConfigurations = launchManager
+					.getLaunchConfigurations(launchManager.getLaunchConfigurationType(PHPUnitPlugin.CONFIG_TYPE));
+			ILaunchConfiguration config = null;
+			for (ILaunchConfiguration launchConfig : launchConfigurations) {
+				if (launchConfig.getAttribute(PHPUnitPlugin.ELEMENT_PATH_ATTR, "").equals(osString)) { //$NON-NLS-1$
+					config = launchConfig;
+					break;
+				}
+			}
+			if (config == null) {
+				final ILaunchConfigurationWorkingCopy wconfig = launchManager
+						.getLaunchConfigurationType(PHPUnitPlugin.CONFIG_TYPE)
+						.newInstance(null, launchManager.generateLaunchConfigurationName(configName));
+
+				getPHPExeTab().setDefaults(wconfig);
+				getTab().setDefaults(wconfig);
+				wconfig.setAttribute(IDebugUIConstants.ATTR_LAUNCH_IN_BACKGROUND, launchInBackground);
+				wconfig.setAttribute(PHPUnitPlugin.ELEMENT_PATH_ATTR, osString);
+
+				generateConfigFromSelection(selectedElement, wconfig);
+				wconfig.setAttribute(IPHPDebugConstants.RUN_WITH_DEBUG_INFO, false);
+				config = wconfig.doSave();
+			}
+			DebugUITools.launch(config, mode);
+		} catch (final CoreException e) {
+			PHPUnitPlugin.log(e);
+		}
+	}
+

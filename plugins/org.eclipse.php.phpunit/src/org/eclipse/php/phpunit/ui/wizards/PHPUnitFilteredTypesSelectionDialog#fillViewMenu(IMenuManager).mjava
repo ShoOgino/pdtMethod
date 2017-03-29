@@ -1,0 +1,21 @@
+	@Override
+	protected void fillViewMenu(IMenuManager menuManager) {
+		super.fillViewMenu(menuManager);
+
+		if (fAllowScopeSwitching) {
+			fFilterActionGroup = new WorkingSetFilterActionGroup(getShell(), DLTKUIPlugin.getActivePage(), event -> {
+				IWorkingSet ws = (IWorkingSet) event.getNewValue();
+				if (ws == null || (ws.isAggregateWorkingSet() && ws.isEmpty())) {
+					setSearchScope(SearchEngine.createWorkspaceScope(fToolkit));
+					setSubtitle(null);
+				} else {
+					setSearchScope(DLTKSearchScopeFactory.getInstance().createSearchScope(ws, true, fToolkit));
+					setSubtitle(ws.getLabel());
+				}
+
+				applyFilter();
+			});
+			fFilterActionGroup.fillViewMenu(menuManager);
+		}
+	}
+

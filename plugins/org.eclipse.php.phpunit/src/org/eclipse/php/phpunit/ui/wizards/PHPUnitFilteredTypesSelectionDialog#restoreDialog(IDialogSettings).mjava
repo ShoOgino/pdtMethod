@@ -1,0 +1,28 @@
+	@Override
+	protected void restoreDialog(IDialogSettings settings) {
+		super.restoreDialog(settings);
+
+		fTypeInfoLabelProvider.setContainerInfo(true);
+
+		if (fAllowScopeSwitching) {
+			String setting = settings.get(WORKINGS_SET_SETTINGS);
+			if (setting != null) {
+				try {
+					IMemento memento = XMLMemento.createReadRoot(new StringReader(setting));
+					fFilterActionGroup.restoreState(memento);
+				} catch (WorkbenchException e) {
+					// don't do anything. Simply don't restore the settings
+					DLTKUIPlugin.log(e);
+				}
+			}
+			IWorkingSet ws = fFilterActionGroup.getWorkingSet();
+			if (ws == null || (ws.isAggregateWorkingSet() && ws.isEmpty())) {
+				setSearchScope(SearchEngine.createWorkspaceScope(fToolkit));
+				setSubtitle(null);
+			} else {
+				setSearchScope(DLTKSearchScopeFactory.getInstance().createSearchScope(ws, true, fToolkit));
+				setSubtitle(ws.getLabel());
+			}
+		}
+	}
+
