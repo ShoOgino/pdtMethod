@@ -2,6 +2,7 @@
 	 * @see org.eclipse.jface.dialogs.IDialogPage#createControl(org.eclipse.swt.
 	 * widgets .Composite)
 	 */
+	@Override
 	public void createControl(Composite parent) {
 		initializeDialogUnits(parent);
 
@@ -18,11 +19,7 @@
 
 		fWorkingSetName = new Text(composite, SWT.SINGLE | SWT.BORDER);
 		fWorkingSetName.setLayoutData(new GridData(GridData.GRAB_HORIZONTAL | GridData.HORIZONTAL_ALIGN_FILL));
-		fWorkingSetName.addModifyListener(new ModifyListener() {
-			public void modifyText(ModifyEvent e) {
-				validateInput();
-			}
-		});
+		fWorkingSetName.addModifyListener(e -> validateInput());
 		fWorkingSetName.setFocus();
 
 		label = new Label(composite, SWT.WRAP);
@@ -53,20 +50,19 @@
 
 		fTree.setInput(DLTKCore.create(ResourcesPlugin.getWorkspace().getRoot()));
 
-		fTree.addCheckStateListener(new ICheckStateListener() {
-			public void checkStateChanged(CheckStateChangedEvent event) {
-				handleCheckStateChange(event);
-			}
-		});
+		fTree.addCheckStateListener(event -> handleCheckStateChange(event));
 
 		fTree.addTreeListener(new ITreeViewerListener() {
+			@Override
 			public void treeCollapsed(TreeExpansionEvent event) {
 			}
 
+			@Override
 			public void treeExpanded(TreeExpansionEvent event) {
 				final Object element = event.getElement();
 				if (fTree.getGrayed(element) == false)
 					BusyIndicator.showWhile(getShell().getDisplay(), new Runnable() {
+						@Override
 						public void run() {
 							setSubtreeChecked(element, fTree.getChecked(element), false);
 						}
@@ -86,6 +82,7 @@
 		selectAllButton.setText(WorkingSetMessages.PhpWorkingSetPage_selectAll_label);
 		selectAllButton.setToolTipText(WorkingSetMessages.PhpWorkingSetPage_selectAll_toolTip);
 		selectAllButton.addSelectionListener(new SelectionAdapter() {
+			@Override
 			public void widgetSelected(SelectionEvent selectionEvent) {
 				fTree.setCheckedElements(fTreeContentProvider.getElements(fTree.getInput()));
 				validateInput();
@@ -98,6 +95,7 @@
 		deselectAllButton.setText(WorkingSetMessages.PhpWorkingSetPage_deselectAll_label);
 		deselectAllButton.setToolTipText(WorkingSetMessages.PhpWorkingSetPage_deselectAll_toolTip);
 		deselectAllButton.addSelectionListener(new SelectionAdapter() {
+			@Override
 			public void widgetSelected(SelectionEvent selectionEvent) {
 				fTree.setCheckedElements(new Object[0]);
 				validateInput();
@@ -116,7 +114,5 @@
 		if (DLTKCore.DEBUG) {
 			System.err.println("Add help support here..."); //$NON-NLS-1$
 		}
-		// ScriptUIHelp.setHelp(fTree,
-		// IScriptHelpContextIds.Script_WORKING_SET_PAGE);
 	}
 

@@ -21,9 +21,6 @@
 				IWorkspaceRoot wsRoot = ResourcesPlugin.getWorkspace().getRoot();
 				IFile file = wsRoot.getFile(p);
 
-				// PHPFileData fileData =
-				// PHPWorkspaceModelManager.getInstance().getModelForFile(p.toString());
-
 				ISourceModule sourceModule = DLTKCore.createSourceModuleFrom(file);
 				if (sourceModule != null && sourceModule.exists()) {
 					IType[] types = null;
@@ -59,23 +56,21 @@
 			}
 
 			// fix bug 14446 - add PHP identifier validation
-			if (getProject() != null) {
-				if (!isValidPhpIdentifier(getElementName())) {
-					String message = Messages.NewPHPTypePage_InvalidPhp;
-					String nameLabel = Messages.NewPHPTypePage_InvalidPhpName;
-					switch (fTypeKind) {
-					case CLASS_TYPE:
-						message = message + Messages.NewPHPTypePage_class + nameLabel;
-						break;
-					case INTERFACE_TYPE:
-						message = message + Messages.NewPHPTypePage_interface + nameLabel;
-						break;
-					case TRAIT_TYPE:
-						message = message + Messages.NewPHPTypePage_trait + nameLabel;
-						break;
-					}
-					elementNameStatus.setError(message);
+			if (getProject() != null && !isValidPhpIdentifier(getElementName())) {
+				String message = Messages.NewPHPTypePage_InvalidPhp;
+				String nameLabel = Messages.NewPHPTypePage_InvalidPhpName;
+				switch (fTypeKind) {
+				case CLASS_TYPE:
+					message = message + Messages.NewPHPTypePage_class + nameLabel;
+					break;
+				case INTERFACE_TYPE:
+					message = message + Messages.NewPHPTypePage_interface + nameLabel;
+					break;
+				case TRAIT_TYPE:
+					message = message + Messages.NewPHPTypePage_trait + nameLabel;
+					break;
 				}
+				elementNameStatus.setError(message);
 			}
 			updateStatus(findMostSevereStatus());
 			break;
@@ -140,7 +135,7 @@
 									namespaceStatus.setError(Messages.NewPHPTypePage_emptySublevel);
 								} else {
 									try {
-										Integer.valueOf(segment);
+										Integer.parseInt(segment);
 										namespaceStatus.setError(Messages.NewPHPTypePage_invalidSublevel);
 									} catch (NumberFormatException e) {
 										// valid segment

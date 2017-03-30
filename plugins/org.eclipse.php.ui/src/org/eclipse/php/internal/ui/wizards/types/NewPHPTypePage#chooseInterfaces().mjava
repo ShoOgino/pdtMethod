@@ -3,22 +3,21 @@
 		FilteredTypesSelectionDialog dialog = new FilteredTypesSelectionDialog(getShell(), false,
 				PlatformUI.getWorkbench().getProgressService(), SearchEngine.createSearchScope(getProject()),
 				IDLTKSearchConstants.TYPE, new TypeSelectionExtension() {
+					@Override
 					public ITypeInfoFilterExtension getFilterExtension() {
-						return new ITypeInfoFilterExtension() {
-							public boolean select(ITypeInfoRequestor typeInfoRequestor) {
-								// is interface
-								if (Flags.isInterface(typeInfoRequestor.getModifiers())) {
-									List<IType> alreadySelectedInterfaces = fSuperInterfacesDialogField.getElements();
-									for (IType interfaceName : alreadySelectedInterfaces) {
-										if (interfaceName.getElementName()
-												.equalsIgnoreCase(typeInfoRequestor.getTypeName())) {
-											return false;
-										}
+						return typeInfoRequestor -> {
+							// is interface
+							if (Flags.isInterface(typeInfoRequestor.getModifiers())) {
+								List<IType> alreadySelectedInterfaces = fSuperInterfacesDialogField.getElements();
+								for (IType interfaceName : alreadySelectedInterfaces) {
+									if (interfaceName.getElementName()
+											.equalsIgnoreCase(typeInfoRequestor.getTypeName())) {
+										return false;
 									}
-									return true;
 								}
-								return false;
+								return true;
 							}
+							return false;
 						};
 					}
 				}, PHPLanguageToolkit.getDefault());
