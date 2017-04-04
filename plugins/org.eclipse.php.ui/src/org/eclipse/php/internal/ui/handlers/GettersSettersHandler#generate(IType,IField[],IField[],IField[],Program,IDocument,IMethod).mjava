@@ -1,0 +1,41 @@
+	/**
+	 * Generates the code.
+	 * 
+	 * @param type
+	 * @param getterFields
+	 * @param setterFields
+	 * @param getterSetterFields
+	 * @param program
+	 * @param document
+	 * @param elementPosition
+	 */
+	private void generate(IType type, IField[] getterFields, IField[] setterFields, IField[] getterSetterFields,
+			Program program, IDocument document, IMethod elementPosition) {
+		try {
+			CodeGenerationSettings settings = new CodeGenerationSettings();
+			settings.createComments = fGenerateComment;
+
+			AddGetterSetterOperation op = new AddGetterSetterOperation(type, getterFields, setterFields,
+					getterSetterFields, program, document, elementPosition, settings, true);
+			setOperationStatusFields(op);
+
+			IRunnableContext context = PHPUiPlugin.getDefault().getWorkbench().getActiveWorkbenchWindow();
+			if (context == null) {
+				context = new BusyIndicatorRunnableContext();
+			}
+
+			PlatformUI.getWorkbench().getProgressService().runInUI(context,
+					new WorkbenchRunnableAdapter(op, op.getSchedulingRule()), op.getSchedulingRule());
+
+		} catch (InvocationTargetException e) {
+			String message = Messages.GettersSettersHandler_6;
+			MessageDialog.openError(fWindow.getShell(),
+					Messages.bind(DIALOG_TITLE, new String[] { Messages.GettersSettersHandler_1 }), message);
+
+		} catch (InterruptedException e) {
+			// operation canceled
+		} finally {
+		}
+
+	}
+

@@ -1,0 +1,89 @@
+	@Override
+	public final void run(IProgressMonitor monitor) throws CoreException {
+		if (monitor == null)
+			monitor = new NullProgressMonitor();
+		try {
+			monitor.beginTask("", 2); //$NON-NLS-1$
+			monitor.setTaskName("AddUnimplementedMethodsOperation_description"); //$NON-NLS-1$
+			fCreatedMethods.clear();
+			Program cu = fASTRoot.getProgramRoot();
+
+			AST ast = fASTRoot.getAST();
+
+			ASTRewrite astRewrite = ASTRewrite.create(ast);
+
+			ITypeBinding currTypeBinding = fType;
+			ListRewrite memberRewriter = null;
+
+			try {
+				ASTNode node = null;
+				if (PHPFlags.isAnonymous(fElement.getFlags())) {
+					node = fASTRoot.getElementAt(fElement.getSourceRange().getOffset());
+					while (!(node instanceof Program)) {
+						node = fASTRoot.getElementAt(node.getEnd());
+						if (node instanceof ClassInstanceCreation) {
+							if (((ClassInstanceCreation) node).getAnonymousClassDeclaration() != null) {
+								node = ((ClassInstanceCreation) node).getAnonymousClassDeclaration();
+								break;
+							}
+						}
+					}
+				} else {
+					node = fASTRoot.getElementAt(fElement.getNameRange().getOffset()).getParent();
+				}
+				if (node instanceof ClassDeclaration) {
+					memberRewriter = astRewrite.getListRewrite(((ClassDeclaration) node).getBody(),
+							Block.STATEMENTS_PROPERTY);
+				} else if (node instanceof AnonymousClassDeclaration) {
+					memberRewriter = astRewrite.getListRewrite(((AnonymousClassDeclaration) node).getBody(),
+							Block.STATEMENTS_PROPERTY);
+				} else {
+					throw new IllegalArgumentException();
+					// not possible, we checked this in the constructor
+				}
+
+			} catch (ModelException e) {
+				throw e;
+			}
+
+			final CodeGenerationSettings settings = new CodeGenerationSettings();
+			settings.createComments = fDoCreateComments;
+
+			ASTNode insertion = null;
+			if (fInsertPos != -1) {
+				insertion = CodeGenerationUtils.getNodeToInsertBefore(memberRewriter, fInsertPos);
+			}
+
+			IMethodBinding[] methodsToImplement = fMethodsToImplement;
+			if (methodsToImplement == null) {
+				methodsToImplement = CodeGenerationUtils.getUnimplementedMethods(currTypeBinding);
+			}
+
+			for (IMethodBinding curr : methodsToImplement) {
+				MethodDeclaration stub = CodeGenerationUtils.createImplementationStub(cu, astRewrite, curr,
+						currTypeBinding.getName(), settings, currTypeBinding.isInterface());
+				if (stub != null) {
+					fCreatedMethods.add(curr.getKey());
+					if (insertion != null) {
+						memberRewriter.insertBefore(stub, insertion, null);
+					} else {
+						memberRewriter.insertLast(stub, null);
+					}
+				}
+			}
+
+			TextEdit fEdit = astRewrite.rewriteAST(fDocument, null);
+			if (fApply) {
+				try {
+					fEdit.apply(fDocument);
+				} catch (MalformedTreeException | BadLocationException e) {
+					throw new CoreException(
+							new Status(IStatus.ERROR, PHPUiPlugin.ID, IStatus.ERROR, "error file content", null)); //$NON-NLS-1$
+				}
+			}
+
+		} finally {
+			monitor.done();
+		}
+	}
+

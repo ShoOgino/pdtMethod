@@ -1,0 +1,30 @@
+	/**
+	 * Creates the Program instance for the given document. Especially the
+	 * Comment Mapper is initialised, so that the generating of the code can
+	 * aware of the existing of the comments.
+	 * 
+	 * @param source
+	 * @param document
+	 * @param project
+	 * @return program instance.
+	 */
+	public static Program getASTRoot(ISourceModule source, IDocument document, IProject project) {
+		ASTParser parserForExpected = ASTParser.newParser(ProjectOptions.getPHPVersion(project), source);
+
+		Program program = null;
+		try {
+			parserForExpected.setSource(document.get().toCharArray());
+			program = parserForExpected.createAST(new NullProgressMonitor());
+			program.setSourceModule(source);
+
+			final Reader reader = new StringReader(document.get());
+
+			program.initCommentMapper(document, new PhpAstLexer(reader));
+			program.recordModifications();
+
+		} catch (Exception e) {
+			PHPUiPlugin.log(e);
+		}
+		return program;
+	}
+

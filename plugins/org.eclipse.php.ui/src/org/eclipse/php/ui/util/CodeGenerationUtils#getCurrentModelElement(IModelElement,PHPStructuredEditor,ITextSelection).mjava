@@ -1,0 +1,36 @@
+	/**
+	 * Returns the current model element from the PHP editor
+	 * 
+	 * @param source
+	 * @param editor
+	 * @param selection2
+	 * @return
+	 * @throws ModelException
+	 */
+	public static IModelElement getCurrentModelElement(IModelElement source, PHPStructuredEditor editor,
+			ITextSelection selection) throws ExecutionException {
+		ISourceViewer viewer = editor.getTextViewer();
+		Point originalSelection = viewer.getSelectedRange();
+		int offset = -1;
+
+		if (originalSelection == null) {
+			if (selection instanceof TextSelection) {
+				TextSelection textSelection = (TextSelection) selection;
+				offset = textSelection.getOffset();
+			}
+		} else {
+			offset = originalSelection.x;
+		}
+
+		if (source instanceof ISourceModule) {
+			ISourceModule module = (ISourceModule) source;
+			try {
+				return module.getElementAt(offset);
+			} catch (ModelException e) {
+				throw new ExecutionException("Error trying to resolve document's element", e); //$NON-NLS-1$
+			}
+		}
+
+		return null;
+	}
+

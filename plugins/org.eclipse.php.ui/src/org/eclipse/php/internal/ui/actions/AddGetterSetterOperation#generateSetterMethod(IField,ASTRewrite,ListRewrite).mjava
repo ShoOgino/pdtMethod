@@ -1,0 +1,26 @@
+	/**
+	 * Generates a new setter method for the specified field
+	 * 
+	 * @param field
+	 *            the field
+	 * @param astRewrite
+	 * @param rewrite
+	 *            the list rewrite to use
+	 * @throws CoreException
+	 *             if an error occurs
+	 * @throws OperationCanceledException
+	 *             if the operation has been cancelled
+	 */
+	private void generateSetterMethod(final IField field, ASTRewrite astRewrite, final ListRewrite rewrite)
+			throws CoreException {
+		final IType type = field.getDeclaringType();
+		final String name = CodeGenerationUtils.getSetterName(field);
+		final IMethod existing = CodeGenerationUtils.findMethod(name, 1, false, type);
+		if (existing == null) {
+			IModelElement sibling = fInsert;
+			ASTNode insertion = CodeGenerationUtils.getNodeToInsertBefore(rewrite, sibling);
+			CodeGenerationUtils.createSetterStub(field, name, fSettings.createComments,
+					fVisibility | (field.getFlags() & Flags.AccStatic), rewrite, insertion);
+		}
+	}
+

@@ -1,0 +1,38 @@
+		@Override
+		public IStatus validate(Object[] selection) {
+			if (selection == null || selection.length == 0) {
+				return new Status(IStatus.ERROR, PHPUiPlugin.ID, ""); //$NON-NLS-1$
+			}
+
+			Set<String> map = new HashSet<>(selection.length);
+			int count = 0;
+			for (Object element : selection) {
+				try {
+					if (element instanceof GetterSetterEntry) {
+						IField getsetField = ((GetterSetterEntry) element).field;
+						if (((GetterSetterEntry) element).isGetter) {
+							if (!map.add(CodeGenerationUtils.getGetterName(getsetField))) {
+								return new Status(IStatus.WARNING, PHPUiPlugin.ID, Messages.GettersSettersDialog_3);
+							}
+						} else {
+							String key = createSignatureKey(CodeGenerationUtils.getSetterName(getsetField),
+									getsetField);
+							if (!map.add(key)) {
+								return new Status(IStatus.WARNING, PHPUiPlugin.ID, Messages.GettersSettersDialog_3);
+							}
+						}
+						count++;
+					}
+				} catch (ModelException e) {
+					PHPUiPlugin.log(e);
+				}
+			}
+
+			if (count == 0) {
+				return new Status(IStatus.ERROR, PHPUiPlugin.ID, ""); //$NON-NLS-1$
+			}
+			String message = MessageFormat.format(Messages.SourceActions_ValidatorText,
+					new Object[] { String.valueOf(count), String.valueOf(fEntries) });
+			return new Status(IStatus.INFO, PHPUiPlugin.ID, message);
+		}
+

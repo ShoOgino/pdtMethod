@@ -1,0 +1,31 @@
+	@Test
+	public void generate(String fileName) throws Exception {
+		final PdttFile pdttFile = new PdttFile(PHPUiTests.getDefault().getBundle(), fileName);
+		pdttFile.applyPreferences();
+
+		IField field = createFile(pdttFile.getFile());
+
+		IType type = (IType) field.getParent();
+		IField[] input = new IField[] { field };
+		CodeGenerationSettings settings = new CodeGenerationSettings();
+		settings.createComments = true;
+
+		final ASTParser parser = ASTParser.newParser(phpVersion, type.getSourceModule());
+		Program unit = parser.createAST(new NullProgressMonitor());
+		final AddGetterSetterOperation operation = new AddGetterSetterOperation(type, input, input, new IField[0], unit,
+				testDocument, null, settings, true);
+		final Exception[] err = new Exception[1];
+		Display.getDefault().syncExec(() -> {
+			try {
+				operation.run(new NullProgressMonitor());
+			} catch (Exception e) {
+				err[0] = e;
+			}
+		});
+		if (err[0] != null) {
+			throw err[0];
+		}
+
+		PDTTUtils.assertContents(pdttFile.getExpected(), testDocument.get());
+	}
+

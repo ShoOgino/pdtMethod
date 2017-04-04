@@ -1,0 +1,15 @@
+	private static void getOverridableMethods(AST ast, ITypeBinding superBinding, List<IMethodBinding> allMethods) {
+		IMethodBinding[] methods = superBinding.getDeclaredMethods();
+		for (IMethodBinding method : methods) {
+			final int modifiers = method.getModifiers();
+			if (!method.isConstructor() && !PHPFlags.isPrivate(modifiers)
+					&& findOverridingMethod(method, allMethods) == null) {
+				allMethods.add(method);
+			}
+		}
+		ITypeBinding[] superInterfaces = superBinding.getInterfaces();
+		for (ITypeBinding superInterface : superInterfaces) {
+			getOverridableMethods(ast, superInterface, allMethods);
+		}
+	}
+

@@ -1,0 +1,86 @@
+	/**
+	 * Create a stub for a getter of the given field using getter/setter
+	 * templates. The resulting code has to be formatted and indented.
+	 * 
+	 * @param field
+	 *            The field to create a getter for
+	 * @param getterName
+	 *            The chosen name for the getter
+	 * @param addComments
+	 *            If <code>true</code>, comments will be added.
+	 * @param flags
+	 *            The flags signaling visibility, if static, synchronized or
+	 *            final
+	 * @param insertion
+	 * @param rewrite
+	 * @param field2
+	 * @param type
+	 * @return Returns the generated stub.
+	 * @throws CoreException
+	 *             when stub creation failed
+	 */
+	public static void createGetterStub(IField field, String getterName, boolean addComments, int flags, IType type,
+			ListRewrite rewrite, ASTNode insertion) throws CoreException {
+		String fieldName = field.getElementName();
+		IType parentType = field.getDeclaringType();
+		String lineDelim = StubUtility.getLineDelimiterUsed(field.getScriptProject());
+
+		AST ast = rewrite.getASTRewrite().getAST();
+
+		MethodDeclaration method = new MethodDeclarationStub(ast);
+
+		FunctionDeclaration func = ast.newFunctionDeclaration();
+
+		func.setFunctionName(ast.newIdentifier(getGetterName(field)));
+
+		method.setFunction(func);
+
+		boolean isStatic = Flags.isStatic(flags);
+		boolean isFinal = Flags.isFinal(flags);
+		fieldName = isStatic ? parentType.getElementName() + "::" + fieldName : "$this->" + removeDollarSign(fieldName); //$NON-NLS-1$
+
+		int modifiers = 0;
+		if (isStatic) {
+			modifiers = modifiers | Modifiers.AccStatic;
+		}
+		if (isFinal) {
+			modifiers = modifiers | Modifiers.AccFinal;
+		}
+		if (Flags.isPublic(flags)) {
+			modifiers = modifiers | Modifiers.AccPublic;
+		}
+		if (Flags.isProtected(flags)) {
+			modifiers = modifiers | Modifiers.AccProtected;
+		}
+		if (Flags.isPrivate(flags)) {
+			modifiers = modifiers | Modifiers.AccPrivate;
+		}
+
+		method.setModifier(modifiers);
+
+		Block body = ast.newBlock();
+		func.setBody(body);
+
+		String bodyContent = CodeGeneration.getGetterMethodBodyContent(field.getScriptProject(),
+				parentType.getElementName(), getterName, fieldName, lineDelim);
+
+		if (bodyContent != null) {
+			ASTNode todoNode = rewrite.getASTRewrite().createStringPlaceholder(bodyContent, ASTNode.EMPTY_STATEMENT);
+			body.statements().add((Statement) todoNode);
+		}
+
+		if (addComments) {
+			String filedType = getFieldType(field);
+			String comment = CodeGeneration.getGetterComment(field.getScriptProject(),
+					field.getDeclaringType().getElementName(), getterName, fieldName, filedType, field.getElementName(),
+					lineDelim);
+			if (comment != null) {
+				Comment commentNode = (Comment) rewrite.getASTRewrite().createStringPlaceholder(comment + lineDelim,
+						ASTNode.COMMENT);
+				commentNode.setCommentType(Comment.TYPE_PHPDOC);
+				method.setComment(commentNode);
+			}
+		}
+		addNewAccessor(method, rewrite, insertion);
+	}
+

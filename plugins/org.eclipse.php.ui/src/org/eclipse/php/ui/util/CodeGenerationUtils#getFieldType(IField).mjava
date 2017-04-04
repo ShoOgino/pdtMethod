@@ -1,0 +1,26 @@
+	private static String getFieldType(IField field) throws ModelException {
+		String filedType = field.getType();
+		IType type = field.getDeclaringType();
+		PHPClassType classType = PHPClassType.fromIType(type);
+
+		ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(type.getSourceModule(), null);
+		FileContext fileContext = new FileContext(type.getSourceModule(), moduleDeclaration,
+				field.getNameRange().getOffset());
+		TypeContext typeContext = new TypeContext(fileContext, classType);
+		PHPTypeInferencer typeInferencer = new PHPTypeInferencer();
+		PHPDocClassVariableGoal phpDocGoal = new PHPDocClassVariableGoal(typeContext, field.getElementName(),
+				field.getNameRange().getOffset());
+		IEvaluatedType evaluatedType = typeInferencer.evaluateTypePHPDoc(phpDocGoal, 3000);
+		if (evaluatedType instanceof UnknownType) {
+
+			ClassVariableDeclarationGoal goal = new ClassVariableDeclarationGoal(typeContext, new IType[] { type },
+					field.getElementName());
+			evaluatedType = typeInferencer.evaluateType(goal);
+
+		}
+		if (!(evaluatedType instanceof UnknownType)) {
+			filedType = evaluatedType.getTypeName();
+		}
+		return filedType;
+	}
+

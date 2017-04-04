@@ -1,0 +1,59 @@
+	@Override
+	public final void run(IProgressMonitor monitor) throws CoreException {
+		if (monitor == null) {
+			monitor = new NullProgressMonitor();
+		}
+		monitor.setTaskName("AddGetterSetterOperation_description"); //$NON-NLS-1$
+		monitor.beginTask("", fGetterFields.length + fSetterFields.length); //$NON-NLS-1$
+		final ASTRewrite astRewrite = ASTRewrite.create(fASTRoot.getAST());
+		ListRewrite listRewriter = null;
+
+		final ClassDeclaration declaration = (ClassDeclaration) ASTNodes.getParent(
+				NodeFinder.perform(fASTRoot, fType.getNameRange().getOffset(), fType.getNameRange().getLength()),
+				ClassDeclaration.class);
+
+		if (declaration != null) {
+			listRewriter = astRewrite.getListRewrite(declaration.getBody(), Block.STATEMENTS_PROPERTY);
+		}
+
+		if (listRewriter == null) {
+			throw new CoreException(
+					new Status(IStatus.ERROR, PHPUiPlugin.ID, IStatus.ERROR, "error_input_type_not_found", null)); //$NON-NLS-1$
+		}
+		if (!fSort) {
+			for (IField accessorField : fAccessorFields) {
+				generateGetterMethod(accessorField, listRewriter);
+				generateSetterMethod(accessorField, astRewrite, listRewriter);
+				monitor.worked(1);
+				if (monitor.isCanceled()) {
+					throw new OperationCanceledException();
+				}
+			}
+		}
+		for (IField getterField : fGetterFields) {
+			generateGetterMethod(getterField, listRewriter);
+			monitor.worked(1);
+			if (monitor.isCanceled()) {
+				throw new OperationCanceledException();
+			}
+		}
+		for (IField setterField : fSetterFields) {
+			generateSetterMethod(setterField, astRewrite, listRewriter);
+			monitor.worked(1);
+			if (monitor.isCanceled()) {
+				throw new OperationCanceledException();
+			}
+		}
+		fEdit = astRewrite.rewriteAST(fDocument, null);
+		if (fApply) {
+			try {
+				fEdit.apply(fDocument);
+			} catch (MalformedTreeException | BadLocationException e) {
+				throw new CoreException(
+						new Status(IStatus.ERROR, PHPUiPlugin.ID, IStatus.ERROR, "error file content", null)); //$NON-NLS-1$
+			}
+		}
+
+		monitor.done();
+	}
+

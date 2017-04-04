@@ -1,0 +1,111 @@
+	/**
+	 * The method opens the input dialog and generates the code.
+	 * 
+	 * @param source
+	 *            the source module.
+	 * @param element
+	 *            the current selected element.
+	 * @param editor
+	 *            the editor
+	 */
+	private void run(ISourceModule source, IModelElement element, TextEditor editor) throws ModelException {
+		IType type = CodeGenerationUtils.getType(element);
+
+		// The current selection is not in a class.
+		if (type == null) {
+			MessageDialog.openError(fWindow.getShell(),
+					Messages.bind(DIALOG_TITLE, new String[] { Messages.GettersSettersHandler_1 }),
+					Messages.GettersSettersHandler_2);
+			return;
+		}
+
+		int flags = type.getFlags();
+
+		// The current selection is a interface.
+		if (PHPFlags.isInterface(flags)) {
+			MessageDialog.openInformation(fWindow.getShell(),
+					Messages.bind(DIALOG_TITLE, new String[] { Messages.GettersSettersHandler_1 }),
+					Messages.GettersSettersHandler_4);
+			return;
+		}
+
+		resetNumEntries();
+
+		Map<IField, GetterSetterEntry[]> entries = createGetterSetterMapping(type);
+
+		// No fields are eligible to generate getter/setter.
+		if (entries.isEmpty()) {
+			MessageDialog.openInformation(fWindow.getShell(),
+					Messages.bind(DIALOG_TITLE, new String[] { Messages.GettersSettersHandler_1 }),
+					Messages.GettersSettersHandler_5);
+			return;
+		}
+
+		GettersSettersDialog dialog = new GettersSettersDialog(fWindow.getShell(), new GetterSetterLabelProvider(),
+				new GettersSettersContentProvider(entries), type, editor);
+
+		dialog.setTitle(Messages.bind(DIALOG_TITLE, type.getElementName()));
+		String message = Messages.GettersSettersHandler_9;
+		dialog.setMessage(message);
+		dialog.setValidator(createValidator(fNumEntries));
+		dialog.setProject(source.getScriptProject().getProject());
+
+		dialog.setContainerMode(true);
+		dialog.setSize(60, 18);
+		dialog.setInput(type);
+		if (element instanceof IField) {
+			dialog.setInitialSelections(new Object[] { element });
+			dialog.setExpandedElements(new Object[] { element });
+
+		}
+
+		final Set<IField> keySet = new LinkedHashSet<>(entries.keySet());
+		int dialogResult = dialog.open();
+		if (dialogResult != Window.OK) {
+			return;
+		}
+		Object[] result = dialog.getResult();
+		if (result == null) {
+			return;
+		}
+		fSort = dialog.getSortOrder();
+		fFinal = dialog.isFinal();
+		fVisibility = dialog.getVisibilityModifier();
+		fGenerateComment = dialog.getGenerateComment();
+		IField[] getterFields, setterFields, getterSetterFields;
+		if (fSort) {
+			getterFields = getGetterFields(result, keySet);
+			setterFields = getSetterFields(result, keySet);
+			getterSetterFields = new IField[0];
+		} else {
+			getterFields = getGetterOnlyFields(result, keySet);
+			setterFields = getSetterOnlyFields(result, keySet);
+			getterSetterFields = getGetterSetterFields(result, keySet);
+		}
+
+		IProject project = source.getScriptProject().getProject();
+
+		Program program = null;
+		IDocument document = editor.getDocumentProvider().getDocument(editor.getEditorInput());
+		program = CodeGenerationUtils.getASTRoot(source, document, project);
+
+		final IRewriteTarget target = editor.getAdapter(IRewriteTarget.class);
+		if (target != null) {
+			target.setRedraw(false);
+			target.beginCompoundChange();
+		}
+
+		try {
+			if (program != null) {
+				generate(type, getterFields, setterFields, getterSetterFields, program, document,
+						dialog.getElementPosition());
+			}
+		} finally {
+			if (target != null) {
+				target.setRedraw(true);
+				target.endCompoundChange();
+			}
+		}
+
+	}
+

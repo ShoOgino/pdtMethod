@@ -1,0 +1,39 @@
+	protected Composite createVisibilityControl(Composite parent,
+			final IVisibilityChangeListener visibilityChangeListener, int[] availableVisibilities,
+			int correctVisibility) {
+		List<Integer> allowedVisibilities = convertToIntegerList(availableVisibilities);
+		if (allowedVisibilities.size() == 1) {
+			return null;
+		}
+
+		Group group = new Group(parent, SWT.NONE);
+		group.setText(Messages.GettersSettersAction_33); // $NON-NLS-1$
+		GridData gd = new GridData(GridData.FILL_BOTH);
+		group.setLayoutData(gd);
+		GridLayout layout = new GridLayout();
+		layout.makeColumnsEqualWidth = true;
+		layout.numColumns = 4;
+		group.setLayout(layout);
+
+		String[] labels = new String[] { Messages.GettersSettersAction_34, Messages.GettersSettersAction_35,
+				Messages.GettersSettersAction_36, };
+		Integer[] data = new Integer[] { Flags.AccPublic, Flags.AccProtected, Flags.AccPrivate };
+		Integer initialVisibility = correctVisibility;
+		for (int i = 0; i < labels.length; i++) {
+			Button radio = new Button(group, SWT.RADIO);
+			Integer visibilityCode = data[i];
+			radio.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL));
+			radio.setText(labels[i]);
+			radio.setData(visibilityCode);
+			radio.setSelection(visibilityCode.equals(initialVisibility));
+			radio.setEnabled(allowedVisibilities.contains(visibilityCode));
+			radio.addSelectionListener(new SelectionAdapter() {
+				@Override
+				public void widgetSelected(SelectionEvent event) {
+					visibilityChangeListener.visibilityChanged(((Integer) event.widget.getData()).intValue());
+				}
+			});
+		}
+		return group;
+	}
+

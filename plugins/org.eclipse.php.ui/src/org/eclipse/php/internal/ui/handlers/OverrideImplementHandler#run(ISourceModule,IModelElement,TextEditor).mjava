@@ -1,0 +1,76 @@
+	private void run(ISourceModule source, IModelElement element, TextEditor editor) throws ModelException {
+		IType type = CodeGenerationUtils.getType(element);
+		if (type == null) {
+			MessageDialog.openError(fWindow.getShell(), DIALOG_TITLE, Messages.OverrideImplementHandler_4);
+			return;
+		}
+
+		int flags = type.getFlags();
+		if (PHPFlags.isInterface(flags)) {
+			MessageDialog.openInformation(fWindow.getShell(), DIALOG_TITLE, Messages.OverrideImplementHandler_5);
+			return;
+		}
+
+		OverrideMethodDialog dialog = new OverrideMethodDialog(fWindow.getShell(), editor, type, false);
+		dialog.setProject(source.getScriptProject().getProject());
+
+		if (!dialog.hasMethodsToOverride()) {
+			MessageDialog.openInformation(fWindow.getShell(), Messages.OverrideImplementHandler_6,
+					Messages.OverrideImplementHandler_7);
+
+			return;
+		}
+		if (dialog.open() != Window.OK || dialog.getResult() == null) {
+			return;
+		}
+
+		final Object[] selected = dialog.getResult();
+		ArrayList<Object> methods = new ArrayList<>();
+		for (Object elem : selected) {
+			if (elem instanceof IMethodBinding) {
+				methods.add(elem);
+			}
+		}
+		IMethodBinding[] methodToOverride = methods.toArray(new IMethodBinding[methods.size()]);
+		final IRewriteTarget target = editor.getAdapter(IRewriteTarget.class);
+		if (target != null) {
+			target.setRedraw(false);
+			target.beginCompoundChange();
+		}
+
+		try {
+			Program astRoot = dialog.getCompilationUnit();
+
+			IEvaluatedType evaluatedType = PHPClassType.fromIType(type);
+			final ITypeBinding typeBinding = new TypeBinding(astRoot.getAST().getBindingResolver(), evaluatedType,
+					type);
+
+			int insertPos = dialog.getInsertOffset();
+
+			IDocument document = editor.getDocumentProvider().getDocument(editor.getEditorInput());
+			AddUnimplementedMethodsOperation operation = createRunnable(astRoot, type, typeBinding, methodToOverride,
+					insertPos, dialog.getGenerateComment(), document);
+			IRunnableContext context = PHPUiPlugin.getDefault().getWorkbench().getActiveWorkbenchWindow();
+			if (context == null) {
+				context = new BusyIndicatorRunnableContext();
+			}
+			PlatformUI.getWorkbench().getProgressService().runInUI(context,
+					new WorkbenchRunnableAdapter(operation, operation.getSchedulingRule()),
+					operation.getSchedulingRule());
+			final String[] created = operation.getCreatedMethods();
+			if (created == null || created.length == 0) {
+				MessageDialog.openInformation(fWindow.getShell(), DIALOG_TITLE, Messages.OverrideImplementHandler_8);
+			}
+		} catch (InvocationTargetException exception) {
+			MessageDialog.openInformation(fWindow.getShell(), DIALOG_TITLE, Messages.OverrideImplementHandler_9);
+			PHPUiPlugin.log(exception);
+		} catch (InterruptedException exception) {
+			// Do nothing. Operation has been canceled by user.
+		} finally {
+			if (target != null) {
+				target.setRedraw(true);
+				target.endCompoundChange();
+			}
+		}
+	}
+

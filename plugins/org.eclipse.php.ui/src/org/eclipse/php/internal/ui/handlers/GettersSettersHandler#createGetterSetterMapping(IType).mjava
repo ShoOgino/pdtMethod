@@ -1,0 +1,36 @@
+	/**
+	 * @param type
+	 *            the type
+	 * @return map IField -> GetterSetterEntry[]
+	 * @throws ModelException
+	 *             if the type does not exist or if an exception occurs while
+	 *             accessing its corresponding resource
+	 */
+	private Map<IField, GetterSetterEntry[]> createGetterSetterMapping(IType type) throws ModelException {
+		IField[] fields = type.getFields();
+		Map<IField, GetterSetterEntry[]> result = new LinkedHashMap<>();
+		for (IField field : fields) {
+			int flags = field.getFlags();
+
+			if (PHPFlags.isConstant(flags)) {
+				continue;
+			}
+
+			List<GetterSetterEntry> l = new ArrayList<>(2);
+			if (CodeGenerationUtils.getGetter(field) == null) {
+				l.add(new GetterSetterEntry(field, true, Flags.isFinal(flags), PHPFlags.isConstant(flags)));
+				incNumEntries();
+			}
+
+			if (CodeGenerationUtils.getSetter(field) == null) {
+				l.add(new GetterSetterEntry(field, false, Flags.isFinal(flags), PHPFlags.isConstant(flags)));
+				incNumEntries();
+			}
+
+			if (!l.isEmpty()) {
+				result.put(field, l.toArray(new GetterSetterEntry[l.size()]));
+			}
+		}
+		return result;
+	}
+

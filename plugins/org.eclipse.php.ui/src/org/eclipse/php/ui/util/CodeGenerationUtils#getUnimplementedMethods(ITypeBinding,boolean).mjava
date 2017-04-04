@@ -1,0 +1,60 @@
+	/**
+	 * The array of unimplemented methods of given type.
+	 * 
+	 * @param typeBinding
+	 * @param implementAbstractsOfInput
+	 *            weather the abstract method should be included.
+	 * @return the array of unimplemented methods
+	 */
+	public static IMethodBinding[] getUnimplementedMethods(ITypeBinding typeBinding,
+			boolean implementAbstractsOfInput) {
+		List<IMethodBinding> allMethods = new ArrayList<>();
+		List<IMethodBinding> toImplement = new ArrayList<>();
+
+		IMethodBinding[] typeMethods = typeBinding.getDeclaredMethods();
+		for (IMethodBinding typeMethod : typeMethods) {
+			int modifiers = typeMethod.getModifiers();
+			if (!typeMethod.isConstructor() && !PHPFlags.isStatic(modifiers) && !PHPFlags.isPrivate(modifiers)) {
+				allMethods.add(typeMethod);
+			}
+		}
+
+		ITypeBinding superClass = typeBinding.getSuperclass();
+		Set<ITypeBinding> bindingSet = new HashSet<>();
+		while (superClass != null && !bindingSet.contains(superClass)) {
+			bindingSet.add(superClass);
+			typeMethods = superClass.getDeclaredMethods();
+			for (IMethodBinding curr : typeMethods) {
+				int modifiers = curr.getModifiers();
+				if (!curr.isConstructor() && !PHPFlags.isStatic(modifiers) && !PHPFlags.isPrivate(modifiers)
+						&& findMethodBinding(curr, allMethods) == null) {
+					allMethods.add(curr);
+				}
+			}
+			superClass = superClass.getSuperclass();
+		}
+
+		for (IMethodBinding curr : allMethods) {
+			int modifiers = curr.getModifiers();
+			if ((PHPFlags.isAbstract(modifiers) || curr.getDeclaringClass().isInterface())
+					&& (implementAbstractsOfInput || typeBinding != curr.getDeclaringClass())) {
+				// implement all abstract methods
+				toImplement.add(curr);
+			}
+		}
+
+		Set<ITypeBinding> visited = new HashSet<>();
+		ITypeBinding curr = typeBinding;
+		bindingSet.clear();
+		while (curr != null && !bindingSet.contains(curr)) {
+			bindingSet.add(curr);
+			ITypeBinding[] superInterfaces = curr.getInterfaces();
+			for (ITypeBinding superInterface : superInterfaces) {
+				findUnimplementedInterfaceMethods(superInterface, visited, allMethods, toImplement);
+			}
+			curr = curr.getSuperclass();
+		}
+
+		return toImplement.toArray(new IMethodBinding[toImplement.size()]);
+	}
+

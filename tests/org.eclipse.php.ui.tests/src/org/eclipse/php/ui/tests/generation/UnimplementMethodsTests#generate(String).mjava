@@ -1,0 +1,38 @@
+	@Test
+	public void generate(String fileName) throws Exception {
+		final PdttFile pdttFile = new PdttFile(PHPUiTests.getDefault().getBundle(), fileName);
+		pdttFile.applyPreferences();
+
+		IType type = createFile(pdttFile.getFile());
+		final ASTParser parser = ASTParser.newParser(phpVersion, type.getSourceModule());
+		Program unit = parser.createAST(new NullProgressMonitor());
+
+		IEvaluatedType evaluatedType = PHPClassType.fromIType(type);
+		final ITypeBinding binding = new TypeBinding(unit.getAST().getBindingResolver(), evaluatedType, type);
+
+		List<IMethodBinding> toImplement = new ArrayList<>();
+		IMethodBinding[] overridable = null;
+
+		final IMethodBinding[] methods = CodeGenerationUtils.getOverridableMethods(unit.getAST(), binding, false);
+		List<IMethodBinding> list = new ArrayList<>(methods.length);
+		for (final IMethodBinding cur : methods) {
+			if (Bindings.isVisibleInHierarchy(cur)) {
+				list.add(cur);
+			}
+		}
+		overridable = list.toArray(new IMethodBinding[list.size()]);
+
+		for (IMethodBinding element : overridable) {
+			toImplement.add(element);
+		}
+
+		IMethodBinding[] toImplementArray = toImplement.toArray(new IMethodBinding[toImplement.size()]);
+		AddUnimplementedMethodsOperation operation = new AddUnimplementedMethodsOperation(unit, type, binding,
+				toImplementArray, -1, true, testDocument);
+		operation.setCreateComments(true);
+
+		operation.run(new NullProgressMonitor());
+
+		PDTTUtils.assertContents(pdttFile.getExpected(), testDocument.get());
+	}
+

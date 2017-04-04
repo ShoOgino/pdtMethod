@@ -1,0 +1,21 @@
+	private static void findUnimplementedInterfaceMethods(ITypeBinding typeBinding, Set<ITypeBinding> visited,
+			List<IMethodBinding> allMethods, List<IMethodBinding> toImplement) {
+		if (visited.add(typeBinding)) {
+			IMethodBinding[] typeMethods = typeBinding.getDeclaredMethods();
+			for (IMethodBinding curr : typeMethods) {
+				IMethodBinding impl = findMethodBinding(curr, allMethods);
+				if (impl == null || !Bindings.isVisibleInHierarchy(impl)) {
+					if (impl != null) {
+						allMethods.remove(impl);
+					}
+					toImplement.add(curr);
+					allMethods.add(curr);
+				}
+			}
+			ITypeBinding[] superInterfaces = typeBinding.getInterfaces();
+			for (ITypeBinding superInterface : superInterfaces) {
+				findUnimplementedInterfaceMethods(superInterface, visited, allMethods, toImplement);
+			}
+		}
+	}
+

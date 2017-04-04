@@ -1,0 +1,61 @@
+	public OverrideMethodDialog(Shell shell, TextEditor editor, IType type, boolean isSubType) throws ModelException {
+		super(shell, new BindingLabelProvider(), new OverrideMethodContentProvider(), type, editor);
+
+		IDocument document = editor.getDocumentProvider().getDocument(editor.getEditorInput());
+		fUnit = CodeGenerationUtils.getASTRoot(type.getSourceModule(), document, type.getScriptProject().getProject());
+
+		ITypeBinding binding = getTypeBinding(fUnit, type);
+
+		List<IMethodBinding> toImplement = new ArrayList<>();
+		List<IMethodBinding> overridable = new ArrayList<>();
+		if (binding != null) {
+			final IMethodBinding[] methods = CodeGenerationUtils.getOverridableMethods(fUnit.getAST(), binding, false);
+			for (final IMethodBinding cur : methods) {
+				if (Bindings.isVisibleInHierarchy(cur)) {
+					overridable.add(cur);
+				}
+			}
+		}
+		for (IMethodBinding element : overridable) {
+			if (Flags.isAbstract(element.getModifiers())) {
+				toImplement.add(element);
+			}
+		}
+
+		IMethodBinding[] toImplementArray = toImplement.toArray(new IMethodBinding[toImplement.size()]);
+		setInitialSelections(toImplementArray);
+
+		ArrayList<ITypeBinding> expanded = new ArrayList<>(toImplementArray.length);
+		for (int i = 0; i < toImplementArray.length; i++) {
+			if (!expanded.contains(toImplementArray[i].getDeclaringClass())) {
+				expanded.add(toImplementArray[i].getDeclaringClass());
+			}
+		}
+
+		ArrayList<ITypeBinding> types = new ArrayList<>(overridable.size());
+		for (IMethodBinding o : overridable) {
+			if (!types.contains(o.getDeclaringClass())) {
+				types.add(o.getDeclaringClass());
+			}
+		}
+
+		ITypeBinding[] typesArrays = types.toArray(new ITypeBinding[types.size()]);
+		OverrideMethodComparator comparator = new OverrideMethodComparator(binding);
+		if (expanded.isEmpty() && typesArrays.length > 0) {
+			comparator.sort(null, typesArrays);
+			expanded.add(typesArrays[0]);
+		}
+		setExpandedElements(expanded.toArray());
+
+		((OverrideMethodContentProvider) getContentProvider()).init(overridable.toArray(new IMethodBinding[0]),
+				typesArrays);
+
+		setTitle(Messages.OverrideMethodDialog_8);
+		setMessage(null);
+		setValidator(new OverrideMethodValidator(overridable.size()));
+		setComparator(comparator);
+		setContainerMode(true);
+		setSize(60, 18);
+		setInput(new Object());
+	}
+

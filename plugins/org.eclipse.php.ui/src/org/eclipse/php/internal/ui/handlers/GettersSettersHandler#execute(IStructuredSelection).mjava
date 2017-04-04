@@ -1,0 +1,30 @@
+	private void execute(IStructuredSelection selection) throws ExecutionException {
+		Object object = selection.getFirstElement();
+
+		if (object instanceof IModelElement) {
+			IModelElement element = (IModelElement) object;
+
+			if (element.getOpenable() instanceof ExternalSourceModule) {
+				MessageDialog.openError(fWindow.getShell(),
+						Messages.bind(DIALOG_TITLE, new String[] { Messages.GettersSettersHandler_1 }),
+						Messages.GettersSettersHandler_2);
+				return;
+			}
+
+			try {
+				IEditorPart editor = CodeGenerationUtils.openInEditor(element, true);
+				if (editor instanceof PHPStructuredEditor) {
+					run((ISourceModule) ((PHPStructuredEditor) editor).getModelElement(), element,
+							(PHPStructuredEditor) editor);
+				}
+			} catch (PartInitException e) {
+				MessageDialog.openError(fWindow.getShell(),
+						Messages.bind(DIALOG_TITLE, new String[] { Messages.GettersSettersHandler_1 }),
+						Messages.GettersSettersHandler_2);
+				throw new ExecutionException("Editor open Error", e); //$NON-NLS-1$
+			} catch (ModelException e) {
+				PHPUiPlugin.log(e);
+			}
+		}
+	}
+

@@ -1,0 +1,43 @@
+	public static IMethodBinding[] getOverridableMethods(AST ast, ITypeBinding typeBinding, boolean isSubType) {
+		List<IMethodBinding> allMethods = new ArrayList<>();
+		IMethodBinding[] typeMethods = typeBinding.getDeclaredMethods();
+		for (IMethodBinding methodBinding : typeMethods) {
+			final int modifiers = methodBinding.getModifiers();
+			if (!Flags.isPrivate(modifiers)) {
+				allMethods.add(methodBinding);
+			}
+		}
+		ITypeBinding clazz = typeBinding.getSuperclass();
+		while (clazz != null) {
+			IMethodBinding[] methods = clazz.getDeclaredMethods();
+			for (IMethodBinding methodBinding : methods) {
+				final int modifiers = methodBinding.getModifiers();
+				if (!Flags.isPrivate(modifiers) && findOverridingMethod(methodBinding, allMethods) == null) {
+					allMethods.add(methodBinding);
+				}
+			}
+			clazz = clazz.getSuperclass();
+		}
+		clazz = typeBinding;
+		while (clazz != null) {
+			ITypeBinding[] superInterfaces = clazz.getInterfaces();
+			for (ITypeBinding superInterface : superInterfaces) {
+				getOverridableMethods(ast, superInterface, allMethods);
+			}
+			clazz = clazz.getSuperclass();
+		}
+		if (!isSubType) {
+			allMethods.removeAll(Arrays.asList(typeMethods));
+		}
+		if (!typeBinding.isInterface()) {
+			for (int index = allMethods.size() - 1; index >= 0; index--) {
+				IMethodBinding method = allMethods.get(index);
+				int modifiers = method.getModifiers();
+				if (PHPFlags.isFinal(modifiers)) {
+					allMethods.remove(index);
+				}
+			}
+		}
+		return allMethods.toArray(new IMethodBinding[allMethods.size()]);
+	}
+

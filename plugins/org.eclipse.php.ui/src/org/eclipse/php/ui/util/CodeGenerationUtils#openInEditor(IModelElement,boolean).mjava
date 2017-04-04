@@ -1,0 +1,43 @@
+	/**
+	 * Opens the editor currently associated with the given element
+	 * (IJavaElement, IFile, IStorage...)
+	 * 
+	 * @param inputElement
+	 *            the input element
+	 * @param activate
+	 *            <code>true</code> if the editor should be activated
+	 * @return an open editor or <code>null</code> if an external editor was
+	 *         opened
+	 * @throws PartInitException
+	 *             if the editor could not be opened or the input element is not
+	 *             valid Status code if opening the editor failed as no editor
+	 *             input could be created for the given element.
+	 */
+	public static IEditorPart openInEditor(IModelElement inputElement, boolean activate) throws PartInitException {
+		if (inputElement instanceof IField) {
+			IWorkbenchPage page = PHPUiPlugin.getDefault().getWorkbench().getActiveWorkbenchWindow().getActivePage();
+			IEditorPart editor = page != null ? page.getActiveEditor() : null;
+			if (editor != null && editor instanceof PHPStructuredEditor) {
+				IModelElement source = ((PHPStructuredEditor) editor).getModelElement();
+
+				if (source.equals(((IField) inputElement).getSourceModule())) {
+					if (activate && (page != null && page.getActivePart() != editor)) {
+						page.activate(editor);
+					}
+					return editor;
+				}
+
+			}
+
+		}
+
+		IEditorInput input = getEditorInput(inputElement);
+		if (input == null) {
+			IStatus status = new Status(IStatus.ERROR, PHPUiPlugin.ID, IStatus.OK, "Can't open editor", //$NON-NLS-1$
+					null);
+			throw new PartInitException(status);
+		}
+
+		return openInEditor(input, getEditorID(input), activate);
+	}
+

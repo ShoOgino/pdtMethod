@@ -1,0 +1,144 @@
+	/**
+	 * Creates the method stub of the given method.
+	 * 
+	 * @param unit
+	 * @param rewrite
+	 * @param binding
+	 * @param type
+	 * @param settings
+	 * @param deferred
+	 * @return the block of the method.
+	 * @throws CoreException
+	 */
+	public static MethodDeclaration createImplementationStub(Program unit, ASTRewrite rewrite, IMethodBinding binding,
+			String type, CodeGenerationSettings settings, boolean deferred) throws CoreException {
+		AST ast = rewrite.getAST();
+
+		MethodDeclaration decl = new MethodDeclarationStub(ast);
+
+		decl.setModifier(getImplementationModifiers(binding, deferred));
+
+		FunctionDeclaration func = ast.newFunctionDeclaration();
+		func.setFunctionName(ast.newIdentifier(binding.getName()));
+		func.setFlags(getImplementationModifiers(binding, deferred));
+		decl.setFunction(func);
+
+		IMethod method = (IMethod) ((MethodBinding) binding).getPHPElement();
+
+		MethodDeclaration methodDecl = null;
+		if (method.getSourceModule() != unit.getSourceModule()) {
+			Program program = null;
+			ISourceModule source = method.getSourceModule();
+			IProject project = source.getScriptProject().getProject();
+			ASTParser parserForExpected = ASTParser.newParser(ProjectOptions.getPHPVersion(project),
+					ProjectOptions.useShortTags(project));
+			try {
+				parserForExpected.setSource(source);
+				program = parserForExpected.createAST(new NullProgressMonitor());
+				program.recordModifications();
+				program.setSourceModule(source);
+
+				ASTNode function = program.getElementAt(method.getSourceRange().getOffset());
+				if (function instanceof FunctionDeclaration) {
+					methodDecl = (MethodDeclaration) function.getParent();
+				}
+				if (function instanceof MethodDeclaration) {
+					methodDecl = (MethodDeclaration) function;
+				}
+			} catch (Exception e) {
+				PHPUiPlugin.log(e);
+			}
+		} else {
+			ASTNode function = unit.getElementAt(method.getSourceRange().getOffset());
+
+			if (function instanceof FunctionDeclaration) {
+				methodDecl = (MethodDeclaration) function.getParent();
+			}
+			if (function instanceof MethodDeclaration) {
+				methodDecl = (MethodDeclaration) function;
+			}
+		}
+		List<FormalParameter> typeParams = null;
+		List<FormalParameter> typeParameters = null;
+		if (methodDecl != null) {
+			func.setReturnType(ASTNode.copySubtree(ast, methodDecl.getFunction().getReturnType()));
+
+			typeParams = methodDecl.getFunction().formalParameters();
+
+			typeParameters = func.formalParameters();
+			for (int i = 0; typeParams != null && i < typeParams.size(); i++) {
+				FormalParameter curr = typeParams.get(i);
+
+				FormalParameter newTypeParam = ast.newFormalParameter();
+
+				Expression exp = ASTNode.copySubtree(ast, curr.getParameterName());
+				newTypeParam.setParameterName(exp);
+				newTypeParam.setIsVariadic(curr.isVariadic());
+
+				Expression value = curr.getDefaultValue();
+				if (value != null) {
+					newTypeParam.setDefaultValue(ASTNode.copySubtree(ast, value));
+				}
+
+				Expression ptype = curr.getParameterType();
+				if (ptype != null) {
+					Expression expression = ASTNode.copySubtree(ast, ptype);
+					if (ptype instanceof NamespaceName) {
+						NamespaceName newName = (NamespaceName) expression;
+						if (!newName.isGlobal()) {
+							String fullName = PHPModelUtils.getFullName(newName);
+							fullName = PHPModelUtils.getFullName(fullName, method.getSourceModule(),
+									newName.getStart());
+							String[] names = fullName.split("\\\\"); //$NON-NLS-1$
+							if (names.length > 1) {
+								newName.segments().clear();
+								newName.setGlobal(true);
+								for (int j = 0; j < names.length; j++) {
+									Identifier identifier = ast.newIdentifier();
+									identifier.setName(names[j]);
+									newName.segments().add(identifier);
+								}
+							}
+						}
+					}
+					newTypeParam.setParameterType(expression);
+				}
+
+				typeParameters.add(newTypeParam);
+
+			}
+		}
+		String delimiter = StubUtility.getLineDelimiterUsed(unit.getSourceModule().getScriptProject());
+		if (!deferred) {
+			Block body = ast.newBlock();
+			func.setBody(body);
+			String bodyStatement = ""; //$NON-NLS-1$
+
+			String placeHolder = CodeGeneration.getMethodBodyContent(unit.getSourceModule().getScriptProject(), type,
+					binding.getName(), false, bodyStatement, delimiter);
+			if (placeHolder != null) {
+				ASTNode todoNode = rewrite.createStringPlaceholder(placeHolder, ASTNode.EMPTY_STATEMENT);
+				body.statements().add((Statement) todoNode);
+				if (addReturnStatement(methodDecl)) {
+					Identifier parentIdentifier = ast.newIdentifier("parent");
+					FunctionName functionName = ast.newFunctionName(ast.newIdentifier(binding.getName()));
+					FunctionInvocation functionInvocation = ast.newFunctionInvocation(functionName, null);
+					Expression expression = ast.newStaticMethodInvocation(parentIdentifier, functionInvocation);
+					body.statements().add(ast.newReturnStatement(expression));
+				}
+			}
+		}
+
+		if (settings != null && settings.createComments) {
+			String comment = CodeGeneration.getMethodComment(method, method, delimiter);
+
+			if (comment != null) {
+				Comment phpdoc = (Comment) rewrite.createStringPlaceholder(comment + delimiter, ASTNode.COMMENT);
+				phpdoc.setCommentType(Comment.TYPE_PHPDOC);
+				decl.setComment(phpdoc);
+			}
+		}
+
+		return decl;
+	}
+

@@ -1,0 +1,29 @@
+	private void execute(ExecutionEvent event, ITextSelection selection) throws ExecutionException {
+		PHPStructuredEditor editor = CodeGenerationUtils.getPHPEditor(event);
+		if (editor == null) {
+			return;
+		}
+		IModelElement source = editor.getModelElement();
+
+		if (!(source instanceof ISourceModule) || source instanceof ExternalSourceModule) {
+			MessageDialog.openError(fWindow.getShell(),
+					Messages.bind(DIALOG_TITLE, new String[] { Messages.GettersSettersHandler_1 }),
+					Messages.GettersSettersHandler_2);
+			return;
+		}
+		IModelElement element = CodeGenerationUtils.getCurrentModelElement(source, editor, selection);
+
+		// This is a bug of HandlerUtils. When open the file first time, the
+		// current selection returns the offset as 0.
+		// try to get the element via the editor.
+		if (element == null) {
+			element = CodeGenerationUtils.getCurrentModelElement(event);
+		}
+
+		try {
+			run((ISourceModule) source, element, editor);
+		} catch (ModelException e) {
+			PHPUiPlugin.log(e);
+		}
+	}
+
