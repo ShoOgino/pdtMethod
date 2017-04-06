@@ -1,18 +1,16 @@
-	public Object createLexicalStateMemento() {
+	@SuppressWarnings("null")
+	public @NonNull LexerState createLexicalStateMemento() {
 		// buffered token state
 		if (bufferedTokens != null && !bufferedTokens.isEmpty()) {
+			assert bufferedState != null;
 			return bufferedState;
 		}
-
-		// System.out.println("lexerStates size:" + lexerStates.size());
-		final int key = buildStateKey();
-		Object state = getLexerStates().get(key);
-		if (state == null) {
-			state = new BasicLexerState(this);
-			if (ArrayUtils.contains(getHeredocStates(), getZZLexicalState()))
-				state = new HeredocState((BasicLexerState) state, this);
-			getLexerStates().put(key, state);
+		LexerState currentState = buildLexerState();
+		LexerState cachedState = getLexerStates().get(currentState);
+		if (cachedState != null) {
+			return cachedState;
 		}
-		return state;
+		getLexerStates().put(currentState, currentState);
+		return currentState;
 	}
 
