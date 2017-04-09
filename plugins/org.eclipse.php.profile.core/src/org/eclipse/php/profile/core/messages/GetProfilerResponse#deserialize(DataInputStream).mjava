@@ -1,0 +1,27 @@
+	public void deserialize(DataInputStream in) throws IOException {
+		setID(in.readInt());
+		ProfilerGlobalData profilerGlobalData = new ProfilerGlobalData();
+		profilerGlobalData.setURI(CommunicationUtilities.readString(in));
+		profilerGlobalData.setQuery(CommunicationUtilities.readString(in));
+		profilerGlobalData.setPath(CommunicationUtilities.readString(in));
+		profilerGlobalData.setTimeSeconds(in.readInt());
+		profilerGlobalData.setTimeMicroSeconds(in.readInt());
+		profilerGlobalData.setDataSize(in.readInt());
+		profilerGlobalData.setFileCount(in.readInt());
+
+		String dummyFile = Platform.getPreferencesService().getString(
+				PHPDebugPlugin.ID,
+				PHPDebugCorePreferenceNames.ZEND_DEBUG_DUMMY_FILE, "", //$NON-NLS-1$
+				null);
+
+		for (int i = 0; i < profilerGlobalData.getFileCount(); i++) {
+			String fileName = CommunicationUtilities.readString(in);
+			if (i == 0 && fileName.endsWith(dummyFile)) {
+				continue;
+			}
+			profilerGlobalData.addFileName(fileName);
+		}
+
+		setProfilerData(profilerGlobalData);
+	}
+

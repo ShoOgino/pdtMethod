@@ -1,0 +1,56 @@
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see
+		 * org.eclipse.jface.viewers.IStructuredContentProvider#getElements(
+		 * java.lang.Object)
+		 */
+		public Object[] getElements(Object inputElement) {
+			if (inputElement instanceof ProfilerFunctionData) {
+				ProfilerFunctionData function = (ProfilerFunctionData) inputElement;
+				IntHashtable invokees = new IntHashtable();
+				Vector<Integer> callerIDs = new Vector<Integer>(); // queue of
+																	// callers
+
+				ProfilerCallTrace callTrace = fProfilerDB.getCallTrace();
+				ProfilerCallTraceLayer[] layers = callTrace.getLayers();
+				if (layers.length > 0) {
+					callerIDs.add(layers[0].getCalledID()); // store
+															// first
+															// caller
+					for (int i = 1; i < layers.length; ++i) {
+						if (layers[i].getType() == ProfilerCallTraceLayer.EXIT && callerIDs.size() > 0) {
+							callerIDs.removeElementAt(callerIDs.size() - 1);
+							continue;
+						}
+						if (callerIDs.size() > 0) {
+							if (((Integer) callerIDs.lastElement()).intValue() == function.getID()) { // this
+																										// function
+																										// calls
+																										// somebody
+								int id = layers[i].getCalledID();
+								if (invokees.containsKey(id)) {
+									InvokeFunctionTableElement invokee = (InvokeFunctionTableElement) invokees.get(id);
+									invokee.setInvokesNumber(invokee.getInvokesNumber() + 1);
+								} else {
+									InvokeFunctionTableElement invokee = new InvokeFunctionTableElement();
+									invokee.setFunctionData(fProfilerDB.getFunctionData(id));
+									invokee.setInvokesNumber(1);
+									invokees.put(id, invokee);
+								}
+							}
+						}
+						callerIDs.add(layers[i].getCalledID());
+					}
+				}
+				Object[] elements = new Object[invokees.size()];
+				Enumeration<?> e = invokees.elements();
+				int i = 0;
+				while (e.hasMoreElements()) {
+					elements[i++] = e.nextElement();
+				}
+				return elements;
+			}
+			return EMPTY_SET;
+		}
+

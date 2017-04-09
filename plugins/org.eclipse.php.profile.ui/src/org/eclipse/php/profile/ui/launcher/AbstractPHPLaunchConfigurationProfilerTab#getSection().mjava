@@ -1,0 +1,29 @@
+	private IProfilerLaunchSettingsSection getSection() {
+		try {
+			String launchTypeId = getConfiguration().getType().getIdentifier();
+			String profilerId = getCurrentProfilerId();
+			IProfilerLaunchSettingsSection section = currentSection
+					.get(profilerId);
+			if (section == null) {
+				// Debugger type has been changed, rebuild section
+				if (PHPDebuggersRegistry.NONE_DEBUGGER_ID.equals(profilerId)) {
+					section = new NoneProfilerSection();
+				} else {
+					section = ProfilerLaunchSettingsSectionRegistry
+							.getSection(profilerId, launchTypeId);
+					if (section == null) {
+						section = new UnsupportedProfilerSection();
+					}
+				}
+				if (settingsComposite != null) {
+					buildSection(profilerId, section);
+				}
+			}
+			return section;
+		} catch (CoreException e) {
+			Logger.logException(e);
+		}
+		// Should never return null
+		return null;
+	}
+

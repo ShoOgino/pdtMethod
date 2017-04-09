@@ -1,0 +1,112 @@
+	private void redrawPieChart(ProfilerDB db) {
+		if (db != null) {
+			ProfilerGlobalData globalData = db.getGlobalData();
+
+			String[] fileNames = globalData.getFileNames();
+			int fileCount = fileNames.length;
+			FileTime[] allValues = new FileTime[fileCount];
+			// create FileTime values
+			for (int i = 0; i < fileCount; i++) {
+				ProfilerFileData fileData = db.getFileData(fileNames[i]);
+				if (fileData != null) {
+					allValues[i] = new FileTime(fileData.getTotalOwnTimeInMilli(), fileData.getName());
+				}
+			}
+			Arrays.sort(allValues);
+
+			int slicesLimit = 5;
+
+			int actualNumber = Math.min(slicesLimit, fileCount);
+			FileTime[] selectedFiles = new FileTime[actualNumber];
+			// creating the new array of values
+			int index = 0;
+			for (int i = fileCount - 1; i >= 0; i--) {
+				if (index >= slicesLimit - 1 && fileCount != slicesLimit) { // sum
+																			// the
+																			// other
+																			// values
+																			// all
+																			// together
+																			// -
+																			// the
+																			// "Other"
+					if (selectedFiles[slicesLimit - 1] == null) {
+						selectedFiles[slicesLimit - 1] = new FileTime(allValues[i].getTime(),
+								NLS.bind(PHPProfileUIMessages.getString("ProfilerInformationView_8"), //$NON-NLS-1$
+										Integer.toString(fileCount - slicesLimit + 1)));
+					} else {
+						selectedFiles[slicesLimit - 1]
+								.setTime(selectedFiles[slicesLimit - 1].getTime() + allValues[i].getTime());
+					}
+				} else {
+					selectedFiles[index] = new FileTime(allValues[i].getTime(), allValues[i].getName());
+					index++;
+				}
+			}
+
+			double globalTime = 0;
+			final double values[] = new double[selectedFiles.length];
+			for (int i = 0; i < selectedFiles.length; ++i) {
+				values[i] = selectedFiles[i].getTime() * 1000;
+				globalTime += selectedFiles[i].getTime();
+			}
+
+			final String labels[] = new String[selectedFiles.length];
+			String tooltips[] = new String[selectedFiles.length];
+			DecimalFormat percentFormat = new DecimalFormat("#0.#", //$NON-NLS-1$
+					new DecimalFormatSymbols(new Locale("en"))); //$NON-NLS-1$
+			double percentageSum = 0;
+			for (int i = 0; i < selectedFiles.length; i++) {
+				FileTime file = selectedFiles[i];
+				if (file != null) {
+					File currentFile = new File(file.getName());
+					String percentageString = ""; //$NON-NLS-1$
+					if (i == selectedFiles.length - 1) {
+						percentageString = NLS.bind(PHPProfileUIMessages.getString("ProfilerInformationView_11"), //$NON-NLS-1$
+								percentFormat.format(100 - percentageSum));
+					} else {
+						double currentPercent = (file.getTime() / globalTime) * 100;
+						percentageSum += currentPercent;
+						percentageString = NLS.bind(PHPProfileUIMessages.getString("ProfilerInformationView_11"), //$NON-NLS-1$
+								percentFormat.format(currentPercent));
+					}
+					labels[i] = NLS.bind(PHPProfileUIMessages.getString("ProfilerInformationView_12"), //$NON-NLS-1$
+							new String[] { currentFile.getName(),
+									file.isMicroSecOrLess() ? ("<= " + fDecimalFormat //$NON-NLS-1$
+											.format(file.getTime())) : fDecimalFormat.format(file.getTime()),
+									percentageString });
+					String fullPath = currentFile.getAbsolutePath();
+					// to check whether it's the last file with the Other
+					if (currentFile.getName()
+							.startsWith(PHPProfileUIMessages.getString("ProfilerInformationView_8").substring(0, //$NON-NLS-1$
+									PHPProfileUIMessages.getString("ProfilerInformationView_8") //$NON-NLS-1$
+											.indexOf("("))) //$NON-NLS-1$
+							&& i == selectedFiles.length - 1) {
+						fullPath = currentFile.getName();
+					}
+					tooltips[i] = NLS.bind(PHPProfileUIMessages.getString("ProfilerInformationView_12"), //$NON-NLS-1$
+							new String[] { fullPath, fDecimalFormat.format(file.getTime()), percentageString });
+				}
+			}
+
+			if (labels.length > 0) {
+				final Display display = getSite().getShell().getDisplay();
+				display.asyncExec(new Runnable() {
+					public void run() {
+						BusyIndicator.showWhile(getSite().getShell().getDisplay(), new Runnable() {
+							public void run() {
+								Chart chart = ChartUtil.createPieChart(labels, values);
+								chart.getBlock()
+										.setBackground(ColorDefinitionImpl.create(fForm.getBackground().getRed(),
+												fForm.getBackground().getGreen(), fForm.getBackground().getBlue()));
+								fChartViewer.updateChartModel(chart);
+							}
+						});
+					}
+				});
+			}
+		} else {
+			fChartViewer.updateChartModel(null);
+		}
+	}
+

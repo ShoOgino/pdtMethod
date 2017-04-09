@@ -1,0 +1,49 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.eclipse.ui.part.WorkbenchPart#createPartControl(org.eclipse.swt.
+	 * widgets.Composite)
+	 */
+	public void createPartControl(Composite parent) {
+		fTree = new Tree(parent, SWT.H_SCROLL | SWT.V_SCROLL | SWT.MULTI | SWT.FULL_SELECTION);
+		fTree.setLinesVisible(true);
+		fTree.setHeaderVisible(true);
+
+		for (int i = 0; i < fColumnHeaders.length; ++i) {
+			TreeColumn tableColumn = new TreeColumn(fTree, SWT.LEFT, i);
+			tableColumn.setText(fColumnHeaders[i]);
+			tableColumn.setWidth(fColumnWidths[i]);
+			for (int c = 0; c < fNumericColumns.length; ++c) {
+				if (fNumericColumns[c] == i) {
+					tableColumn.setAlignment(SWT.RIGHT);
+					break;
+				}
+			}
+		}
+
+		fViewer = new TreeViewer(fTree);
+		fViewer.setContentProvider(new ExecutionFlowContentProvider());
+		fViewer.setLabelProvider(new ExecutionFlowLabelProvider());
+
+		fViewer.addDoubleClickListener(this);
+
+		fActionSet = new ExecutionFlowActionGroup(this);
+		fActionSet.fillActionBars(getViewSite().getActionBars());
+
+		hookContextMenu();
+
+		ProfileSessionsManager.addProfileSessionListener(this);
+		setInput(ProfileSessionsManager.getCurrent());
+
+		// TODO - help context
+
+		// parent.setData(WorkbenchHelpSystem.HELP_KEY,
+		// IStudioHelpContextIds.EXECUTION_FLOW_VIEW);
+		// parent.addHelpListener(new HelpListener() {
+		// public void helpRequested(HelpEvent arg0) {
+		// org.eclipse.swt.program.Program
+		// .launch(IStudioHelpContextIds.EXECUTION_FLOW_VIEW);
+		// }
+		// });
+	}
+

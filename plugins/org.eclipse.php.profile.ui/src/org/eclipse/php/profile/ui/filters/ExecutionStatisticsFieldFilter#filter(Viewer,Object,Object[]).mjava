@@ -1,0 +1,36 @@
+	public Object[] filter(Viewer viewer, Object parent, Object[] elements) {
+		if (FIELD_AVERAGE_OWN_TIME.equals(fField)) {
+			fSorter.setColumn(0);
+		} else if (FIELD_CALLS_COUNT.equals(fField)) {
+			fSorter.setColumn(1);
+		} else if (FIELD_OTHERS_TIME.equals(fField)) {
+			fSorter.setColumn(2);
+		} else if (FIELD_OWN_TIME.equals(fField)) {
+			fSorter.setColumn(3);
+		} else if (FIELD_TOTAL_TIME.equals(fField)) {
+			fSorter.setColumn(4);
+		}
+
+		if (DESC_HIGHEST.equals(fDescriptor)) {
+			fSorter.setOrder(ProfilerUIConstants.SORT_DESCENDING);
+		} else if (DESC_LOWEST.equals(fDescriptor)) {
+			fSorter.setOrder(ProfilerUIConstants.SORT_ASCENDING);
+		}
+
+		elements = elements.clone(); // we can't modify the elements of the
+										// model.
+		fSorter.sort(viewer, elements);
+
+		ArrayList<Object> resultElements = new ArrayList<Object>(elements.length);
+		int countElements = 0;
+		for (int i = 0; i < elements.length && countElements < fNumber; ++i) {
+			resultElements.add(elements[i]);
+			if (i > 0 && fSorter.compare(viewer, elements[i - 1], elements[i]) == 0) {
+				continue;
+			}
+			countElements++;
+		}
+
+		return resultElements.toArray(new Object[resultElements.size()]);
+	}
+

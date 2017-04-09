@@ -1,0 +1,48 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.eclipse.jface.dialogs.Dialog#okPressed()
+	 */
+	protected void okPressed() {
+
+		if (fFilter == null) {
+			fFilter = new ExecutionStatisticsFilter();
+		}
+
+		fFilter.setName(fFilterName.getText());
+
+		String filterPattern = fFilterString.getText().trim();
+		if (filterPattern.length() > 0) {
+			ExecutionStatisticsFilterString filterString = new ExecutionStatisticsFilterString();
+			filterString.setString(filterPattern);
+			filterString.setCaseSensitive(fCaseSensitive.getSelection());
+			if (fFilterByFile.getSelection()) {
+				filterString.setFilterBy(ExecutionStatisticsFilterString.FILTER_BY_FILE_NAME);
+			} else if (fFilterByClass.getSelection()) {
+				filterString.setFilterBy(ExecutionStatisticsFilterString.FILTER_BY_CLASS_NAME);
+			} else if (fFilterByFunction.getSelection()) {
+				filterString.setFilterBy(ExecutionStatisticsFilterString.FILTER_BY_FUNCTION_NAME);
+			}
+			fFilter.setFilterString(filterString);
+		}
+
+		if (fShowInformationMatching.getSelection()) {
+			ExecutionStatisticsFieldFilter fieldFilter = new ExecutionStatisticsFieldFilter();
+			fieldFilter.setDescriptor(fDescriptor.getText());
+			fieldFilter.setField(fField.getText());
+			fieldFilter.setNumber(Integer.parseInt(fNumber.getText()));
+			fFilter.setFieldFilter(fieldFilter);
+		} else {
+			fFilter.setFieldFilter(null);
+		}
+
+		TableItem[] items = fCondTable.getItems();
+		ExecutionStatisticsFilterCondition[] conditions = new ExecutionStatisticsFilterCondition[items.length];
+		for (int i = 0; i < items.length; ++i) {
+			conditions[i] = (ExecutionStatisticsFilterCondition) items[i].getData();
+		}
+		fFilter.setFilterConditions(conditions);
+
+		super.okPressed();
+	}
+

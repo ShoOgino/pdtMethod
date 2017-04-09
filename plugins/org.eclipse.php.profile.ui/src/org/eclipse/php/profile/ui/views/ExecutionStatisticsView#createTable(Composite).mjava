@@ -1,0 +1,90 @@
+	private void createTable(Composite parent) {
+
+		fTree = new Tree(parent, SWT.H_SCROLL | SWT.V_SCROLL | SWT.MULTI | SWT.FULL_SELECTION);
+		fTree.setLinesVisible(true);
+		fTree.setHeaderVisible(true);
+
+		fSorter = new ExecutionStatisticsSorter();
+		for (int i = 0; i < fColumnHeaders.length; ++i) {
+			TreeColumn tableColumn = new TreeColumn(fTree, SWT.LEFT, i);
+			tableColumn.setText(fColumnHeaders[i]);
+			tableColumn.setWidth(fColumnWidths[i]);
+
+			for (int c = 0; c < fNumericColumns.length; ++c) {
+				if (fNumericColumns[c] == i) {
+					tableColumn.setAlignment(SWT.RIGHT);
+					break;
+				}
+			}
+
+			final int field = i;
+			tableColumn.addSelectionListener(new SelectionAdapter() {
+				/*
+				 * (non-Javadoc)
+				 * 
+				 * @see
+				 * org.eclipse.swt.events.SelectionAdapter#widgetSelected(org
+				 * .eclipse.swt.events.SelectionEvent)
+				 */
+				public void widgetSelected(SelectionEvent e) {
+					fSorter.setColumn(field);
+
+					TreeColumn[] tableColumns = fTree.getColumns();
+					for (int i = 0; i < fColumnHeaders.length; ++i) {
+						tableColumns[i].setImage(null);
+					}
+					if (fSorter.getOrder() == ProfilerUIConstants.SORT_ASCENDING) {
+						tableColumns[field]
+								.setImage(ProfilerUIImages.get(ProfilerUIImages.IMG_OBJ_SORT_ASCENDING));
+					} else if (fSorter.getOrder() == ProfilerUIConstants.SORT_DESCENDING) {
+						tableColumns[field]
+								.setImage(ProfilerUIImages.get(ProfilerUIImages.IMG_OBJ_SORT_DESCENDING));
+					}
+
+					BusyIndicator.showWhile(fTree.getDisplay(), new Runnable() {
+						public void run() {
+							fTreeViewer.getControl().setRedraw(false);
+							fTreeViewer.refresh();
+							fTreeViewer.getControl().setRedraw(true);
+							restoreExpandedElements();
+						}
+					});
+				}
+			});
+		}
+
+		fTreeViewer = new TreeViewer(fTree);
+		fTreeViewer.setAutoExpandLevel(TreeViewer.ALL_LEVELS);
+		fTreeViewer.setContentProvider(new ExecutionStatisticsContentProvider());
+		fTreeViewer.setLabelProvider(new ExecutionStatisticsLabelProvider());
+		fTreeViewer.setSorter(fSorter);
+
+		String selectedFilter = fPreferenceStore.getString(PreferenceKeys.EXECUTION_STATISTICS_SELECTED_FILTER);
+		if (selectedFilter.length() > 0) {
+			ExecutionStatisticsFilter filter = ExecutionStatisticsFiltersRegistry.getFilterByName(selectedFilter);
+			if (filter != null) {
+				fTreeViewer.addFilter(filter);
+			}
+		}
+
+		fTreeViewer.addDoubleClickListener(this);
+		fTreeViewer.addTreeListener(this);
+
+		fActionSet = new ExecutionStatisticsActionGroup(this);
+		fActionSet.fillActionBars(getViewSite().getActionBars());
+
+		hookContextMenu();
+
+		// TODO - context menu
+
+		// fTree.setData(WorkbenchHelpSystem.HELP_KEY,
+		// IStudioHelpContextIds.EXECUTION_STATISTICS_VIEW);
+		// fTree.addHelpListener(new HelpListener() {
+		// public void helpRequested(HelpEvent arg0) {
+		// org.eclipse.swt.program.Program
+		// .launch(IStudioHelpContextIds.EXECUTION_STATISTICS_VIEW);
+		// }
+		// });
+
+	}
+

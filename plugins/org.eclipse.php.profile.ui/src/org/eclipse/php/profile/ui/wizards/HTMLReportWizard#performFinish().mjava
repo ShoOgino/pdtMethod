@@ -1,0 +1,39 @@
+	public boolean performFinish() {
+		WorkbenchJob reportJob = new WorkbenchJob(PHPProfileUIMessages.getString("HTMLReportWizard.0")) { //$NON-NLS-1$
+			public IStatus runInUIThread(IProgressMonitor monitor) {
+				try {
+					String targetFile = page1.getTargetFile();
+					ProfilerDB session = page1.getSession();
+
+					List<String> viewIds = new ArrayList<String>();
+					if (page1.isExportCommonInfo()) {
+						openView(ProfilerUIConstants.PROFILER_INFO_VIEW, session);
+						viewIds.add(ProfilerUIConstants.PROFILER_INFO_VIEW);
+					}
+					if (page1.isExportExecutionStatistics()) {
+						openView(ProfilerUIConstants.EXECUTION_STATISTICS_VIEW, session);
+						viewIds.add(ProfilerUIConstants.EXECUTION_STATISTICS_VIEW);
+					}
+					if (page1.isExportExecutionFlow()) {
+						openView(ProfilerUIConstants.EXECUTION_FLOW_VIEW, session);
+						viewIds.add(ProfilerUIConstants.EXECUTION_FLOW_VIEW);
+					}
+
+					PrintWriter out = new PrintWriter(new FileWriter(targetFile));
+					HTMLReporter.generateReport(session, (String[]) viewIds.toArray(new String[viewIds.size()]), out);
+					HTMLReporter.saveImages(new File(targetFile).getParent());
+					out.close();
+
+				} catch (IOException e) {
+					ProfilerUiPlugin.log(e);
+				}
+
+				return Status.OK_STATUS;
+			}
+		};
+		reportJob.setUser(true);
+		reportJob.schedule();
+
+		return true;
+	}
+

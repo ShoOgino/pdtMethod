@@ -1,0 +1,58 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.eclipse.jface.dialogs.Dialog#createDialogArea(org.eclipse.swt.widgets
+	 * .Composite)
+	 */
+	protected Control createDialogArea(Composite parent) {
+		parent = (Composite) super.createDialogArea(parent);
+
+		PixelConverter pixelConverter = new PixelConverter(parent);
+
+		// Filter Name:
+		Composite nameGroup = new Composite(parent, SWT.NONE);
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 2;
+		nameGroup.setLayout(layout);
+
+		Label label = new Label(nameGroup, SWT.NONE);
+		label.setText(PHPProfileUIMessages.getString("ExecutionStatisticsFilterDialog.41")); //$NON-NLS-1$
+
+		fFilterName = new Text(nameGroup, SWT.BORDER);
+		GridData data = new GridData(GridData.FILL_HORIZONTAL);
+		data.widthHint = pixelConverter.convertWidthInCharsToPixels(50);
+		fFilterName.setLayoutData(data);
+		fFilterName.addModifyListener(new ModifyListener() {
+			/*
+			 * (non-Javadoc)
+			 * 
+			 * @see
+			 * org.eclipse.swt.events.ModifyListener#modifyText(org.eclipse.
+			 * swt.events.ModifyEvent)
+			 */
+			public void modifyText(ModifyEvent e) {
+				ExecutionStatisticsFilterDialog.this.validateFilterName();
+			}
+		});
+
+		// Filter configuration:
+		fTabFolder = SWTUtil.createTabFolder(parent);
+		data = new GridData(GridData.FILL_BOTH);
+		data.heightHint = pixelConverter.convertHeightInCharsToPixels(20);
+		data.widthHint = pixelConverter.convertWidthInCharsToPixels(100);
+		fTabFolder.setLayoutData(data);
+
+		addStandardFilterTab(fTabFolder);
+		addAdvancedFilterTab(fTabFolder);
+
+		initializeValues();
+		updateAddDeleteButtonsStatus();
+
+		if (fFilter == null) {
+			updateStatus(new StatusInfo(IStatus.ERROR, "")); //$NON-NLS-1$
+		}
+
+		return parent;
+	}
+

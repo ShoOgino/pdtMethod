@@ -1,0 +1,58 @@
+	/**
+	 * Initialize filters contributed by extensions.
+	 * 
+	 * @param List
+	 *            result
+	 */
+	private static void initFromExtensions(List<ExecutionStatisticsFilter> filters) {
+		IConfigurationElement[] elements = Platform.getExtensionRegistry()
+				.getConfigurationElementsFor(ProfilerUiPlugin.ID, EXTENSION_POINT_NAME);
+
+		for (IConfigurationElement element : elements) {
+			if (FILTER_TAG.equals(element.getName())) {
+				IConfigurationElement[] children = element.getChildren();
+
+				if (children.length > 0) {
+					ExecutionStatisticsFilter filter = new ExecutionStatisticsFilter();
+					filter.setName(element.getAttribute(NAME_ATTRIBUTE));
+					filter.setId(element.getAttribute(ID_ATTRIBUTE));
+					filter.setRemovable(false);
+
+					for (int j = 0; j < children.length; ++j) {
+						if (STANDARD_FILTER_TAG.equals(children[j].getName())) {
+							IConfigurationElement[] filterStringElements = children[j].getChildren(FILTER_STRING_TAG);
+							if (filterStringElements.length > 0) {
+								filter.setFilterString(new ExecutionStatisticsFilterString(
+										filterStringElements[0].getAttribute(STRING_ATTRIBUTE),
+										filterStringElements[0].getAttribute(FILTER_BY_ATTRIBUTE),
+										"true".equals(filterStringElements[0].getAttribute(CASE_SENSITIVE_ATTRIBUTE)))); //$NON-NLS-1$
+							}
+
+							IConfigurationElement[] fieldFilterElements = children[j].getChildren(FIELD_FILTER_TAG);
+							if (fieldFilterElements.length > 0) {
+								filter.setFieldFilter(new ExecutionStatisticsFieldFilter(
+										fieldFilterElements[0].getAttribute(DESCRIPTOR_ATTRIBUTE),
+										Integer.parseInt(fieldFilterElements[0].getAttribute(NUMBER_ATTRIBUTE)),
+										fieldFilterElements[0].getAttribute(FIELD_ATTRIBUTE)));
+							}
+
+						} else if (ADVANCED_FILTER_TAG.equals(children[j].getName())) {
+							IConfigurationElement[] conditionElements = children[j].getChildren(CONDITION_TAG);
+							List<ExecutionStatisticsFilterCondition> conditions = new ArrayList<ExecutionStatisticsFilterCondition>(
+									conditionElements.length);
+							for (int c = 0; c < conditionElements.length; ++c) {
+								conditions.add(new ExecutionStatisticsFilterCondition(
+										conditionElements[c].getAttribute(ATTRIBUTE_ATTRIBUTE),
+										conditionElements[c].getAttribute(OPERATOR_ATTRIBUTE),
+										conditionElements[c].getAttribute(VALUE_ATTRIBUTE)));
+							}
+							filter.setFilterConditions((ExecutionStatisticsFilterCondition[]) conditions
+									.toArray(new ExecutionStatisticsFilterCondition[conditions.size()]));
+						}
+					}
+					filters.add(filter);
+				}
+			}
+		}
+	}
+

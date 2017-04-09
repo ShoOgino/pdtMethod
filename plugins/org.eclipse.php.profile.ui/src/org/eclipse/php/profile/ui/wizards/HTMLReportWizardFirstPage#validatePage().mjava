@@ -1,0 +1,44 @@
+	protected boolean validatePage() {
+		IStructuredSelection selection = (IStructuredSelection) fTableViewer.getSelection();
+		Object element = selection.getFirstElement();
+		if (element == null) {
+			setErrorMessage(null);
+			setMessage(PHPProfileUIMessages.getString("HTMLReportWizardPage1.11")); //$NON-NLS-1$
+			return false;
+		}
+		fSession = (ProfilerDB) element;
+
+		fExportCommonInfo = fCommonBtn.getSelection();
+		fExportExecutionStatistics = fExecutionStatisticsBtn.getSelection();
+		fExportExecutionFlow = fExecutionFlowBtn.getSelection();
+
+		String targetFile = fTargetFileField.getText().trim();
+		if (targetFile.length() == 0) {
+			setErrorMessage(null);
+			setMessage(PHPProfileUIMessages.getString("HTMLReportWizardPage1.12")); //$NON-NLS-1$
+			return false;
+		}
+		File file = new File(targetFile);
+		if (file.isDirectory()) {
+			setMessage(null);
+			setErrorMessage(PHPProfileUIMessages.getString("HTMLReportWizardPage1.13")); //$NON-NLS-1$
+			return false;
+		}
+		File parentFile = file.getParentFile();
+		if (parentFile == null) {
+			setMessage(null);
+			setErrorMessage(PHPProfileUIMessages.getString("HTMLReportWizardPage1.14")); //$NON-NLS-1$
+			return false;
+		}
+		if (!parentFile.isDirectory()) {
+			setMessage(null);
+			setErrorMessage(NLS.bind(PHPProfileUIMessages.getString("HTMLReportWizardPage1.15"), file.getParent())); //$NON-NLS-1$
+			return false;
+		}
+		fTargetFile = targetFile;
+
+		setErrorMessage(null);
+		setMessage(null);
+		return true;
+	}
+

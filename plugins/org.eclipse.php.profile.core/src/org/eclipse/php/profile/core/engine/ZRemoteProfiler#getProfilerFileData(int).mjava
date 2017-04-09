@@ -1,0 +1,31 @@
+	public ProfilerFileData getProfilerFileData(int fileNumber) {
+		if (!this.isActive()) {
+			return null;
+		}
+		ProfilerFileData fileData;
+		try {
+			GetProfilerFileRequest getProfilerFileRequest = new GetProfilerFileRequest();
+			getProfilerFileRequest.setFileNumber(fileNumber);
+			GetProfilerFileResponse getProfilerFileResponse = (GetProfilerFileResponse) getConnection()
+					.sendRequest(getProfilerFileRequest);
+			if (getProfilerFileResponse == null) {
+				return null;
+			}
+			fileData = getProfilerFileResponse.getProfilerFileData();
+
+			String localFileName = convertToLocalFilename(fileData.getName(),
+					null, null);
+			fileData.setLocalName(localFileName);
+
+			ProfilerFunctionData[] functions = fileData.getFunctions();
+			for (int i = 0; i < functions.length; ++i) {
+				functions[i].setLocalFileName(localFileName);
+			}
+
+		} catch (Exception e) {
+			PHPProfileCorePlugin.log(e);
+			return null;
+		}
+		return fileData;
+	}
+

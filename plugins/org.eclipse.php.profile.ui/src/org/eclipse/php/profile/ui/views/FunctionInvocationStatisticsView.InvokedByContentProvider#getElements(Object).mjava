@@ -1,0 +1,56 @@
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see
+		 * org.eclipse.jface.viewers.IStructuredContentProvider#getElements(
+		 * java.lang.Object)
+		 */
+		public Object[] getElements(Object inputElement) {
+			if (inputElement instanceof ProfilerFunctionData) {
+				ProfilerFunctionData function = (ProfilerFunctionData) inputElement;
+				IntHashtable invokers = new IntHashtable();
+				Vector<Integer> callerIDs = new Vector<Integer>(); // queue of
+																	// callers
+
+				ProfilerCallTrace callTrace = fProfilerDB.getCallTrace();
+				ProfilerCallTraceLayer[] layers = callTrace.getLayers();
+				if (layers.length > 0) {
+					callerIDs.add(layers[0].getCalledID()); // store
+															// first
+															// caller
+					for (int i = 1; i < layers.length; ++i) {
+						if (layers[i].getType() == ProfilerCallTraceLayer.EXIT && callerIDs.size() > 0) {
+							callerIDs.removeElementAt(callerIDs.size() - 1);
+							continue;
+						}
+						if (layers[i].getCalledID() == function.getID() && callerIDs.size() > 0) { // this
+																									// function
+																									// is
+																									// called
+							int id = ((Integer) callerIDs.lastElement()).intValue(); // get
+																						// last
+																						// caller
+							if (invokers.containsKey(id)) {
+								InvokeFunctionTableElement invoker = (InvokeFunctionTableElement) invokers.get(id);
+								invoker.setInvokesNumber(invoker.getInvokesNumber() + 1);
+							} else {
+								InvokeFunctionTableElement invoker = new InvokeFunctionTableElement();
+								invoker.setFunctionData(fProfilerDB.getFunctionData(id));
+								invoker.setInvokesNumber(1);
+								invokers.put(id, invoker);
+							}
+						}
+						callerIDs.add(layers[i].getCalledID());
+					}
+				}
+				Object[] elements = new Object[invokers.size()];
+				Enumeration<?> e = invokers.elements();
+				int i = 0;
+				while (e.hasMoreElements()) {
+					elements[i++] = e.nextElement();
+				}
+				return elements;
+			}
+			return EMPTY_SET;
+		}
+

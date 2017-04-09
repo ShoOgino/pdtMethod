@@ -1,0 +1,52 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.eclipse.jface.dialogs.Dialog#createDialogArea(org.eclipse.swt.widgets
+	 * .Composite)
+	 */
+	protected Control createDialogArea(Composite parent) {
+		parent = (Composite) super.createDialogArea(parent);
+
+		fMainLabel = new Label(parent, SWT.NONE);
+		fMainLabel.setText(PHPProfileUIMessages.getString("FiltersDialog_4")); //$NON-NLS-1$
+		GridData layoutData = new GridData();
+		layoutData.grabExcessHorizontalSpace = true;
+		layoutData.horizontalAlignment = SWT.FILL;
+		fMainLabel.setLayoutData(layoutData);
+
+		fViewer = new TableViewer(parent);
+		layoutData = new GridData();
+		layoutData.grabExcessHorizontalSpace = true;
+		layoutData.horizontalAlignment = SWT.FILL;
+		layoutData.verticalAlignment = SWT.FILL;
+		layoutData.heightHint = 300;
+		layoutData.widthHint = 250;
+		fViewer.getControl().setLayoutData(layoutData);
+
+		fViewer.setContentProvider(new FiltersListContentProvider());
+		fViewer.setLabelProvider(new FiltersListLabelProvider());
+
+		ExecutionStatisticsFiltersRegistry.getFilters(fFilters);
+		fViewer.setInput(fFilters);
+
+		fViewer.addSelectionChangedListener(new ISelectionChangedListener() {
+			/*
+			 * (non-Javadoc)
+			 * 
+			 * @see org.eclipse.jface.viewers.ISelectionChangedListener#
+			 * selectionChanged
+			 * (org.eclipse.jface.viewers.SelectionChangedEvent)
+			 */
+			public void selectionChanged(SelectionChangedEvent event) {
+				updateNewEditRemoveButtonsStates();
+			}
+		});
+
+		addButtonsGroup(parent);
+
+		updateNewEditRemoveButtonsStates();
+
+		return parent;
+	}
+

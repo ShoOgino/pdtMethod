@@ -1,0 +1,54 @@
+	private void createTargetFileGroup(Composite parent) {
+		Group group = new Group(parent, SWT.NONE);
+		group.setText(PHPProfileUIMessages.getString("HTMLReportWizardPage1.7")); //$NON-NLS-1$
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 2;
+		layout.marginHeight = 10;
+		layout.marginWidth = 10;
+		GridData data = new GridData(GridData.FILL_HORIZONTAL);
+		group.setLayout(layout);
+		group.setLayoutData(data);
+
+		Label label = new Label(group, SWT.NONE);
+		label.setText(PHPProfileUIMessages.getString("HTMLReportWizardPage1.8")); //$NON-NLS-1$
+		data = new GridData();
+		data.horizontalSpan = 2;
+		label.setLayoutData(data);
+
+		fTargetFileField = new Text(group, SWT.BORDER);
+		data = new GridData(GridData.FILL_HORIZONTAL);
+		data.horizontalIndent = convertWidthInCharsToPixels(2);
+		fTargetFileField.setLayoutData(data);
+		fTargetFileField.addListener(SWT.Modify, fieldModifyListener);
+
+		fTargetBtn = new Button(group, SWT.NONE);
+		fTargetBtn.setText(PHPProfileUIMessages.getString("HTMLReportWizardPage1.9")); //$NON-NLS-1$
+		fTargetBtn.addSelectionListener(new SelectionAdapter() {
+			/*
+			 * (non-Javadoc)
+			 * 
+			 * @see org.eclipse.swt.events.SelectionAdapter#widgetSelected(org.
+			 * eclipse .swt.events.SelectionEvent)
+			 */
+			public void widgetSelected(SelectionEvent e) {
+				FileDialog dialog = new FileDialog(getShell(), SWT.SAVE);
+				dialog.setText(PHPProfileUIMessages.getString("HTMLReportWizardPage1.10")); //$NON-NLS-1$
+				dialog.setFilterExtensions(new String[] { "*.html" }); //$NON-NLS-1$
+
+				String dirName = new File(fTargetFileField.getText().trim()).getParent();
+				if (dirName != null && dirName.length() > 0 && new File(dirName).exists()) {
+					dialog.setFilterPath(new Path(dirName).toOSString());
+				}
+
+				String selectedFile = dialog.open();
+				if (selectedFile != null) {
+					int dotIndex = selectedFile.lastIndexOf('.');
+					if (dotIndex == -1) {
+						selectedFile += ".html"; //$NON-NLS-1$
+					}
+					fTargetFileField.setText(selectedFile);
+				}
+			}
+		});
+	}
+

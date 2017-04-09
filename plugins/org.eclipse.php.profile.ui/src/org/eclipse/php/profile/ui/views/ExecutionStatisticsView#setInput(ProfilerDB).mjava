@@ -1,0 +1,59 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.eclipse.php.profile.ui.views.AbstractProfilerView#setInput(org.eclipse.
+	 * php.profile.core.profiler.ProfilerDB)
+	 */
+	public void setInput(ProfilerDB profilerDB) {
+		if (fTreeViewer == null || fTreeViewer.getContentProvider() == null) {
+			return;
+		}
+		if (fProfilerDB != profilerDB) {
+			if (profilerDB != null) {
+				ProfilerFileData[] files = profilerDB.getFiles();
+				SimpleHTMLPresentableTreeElement root = new SimpleHTMLPresentableTreeElement();
+				for (int i = 0; i < files.length; ++i) {
+					SimpleHTMLPresentableTreeElement fileItem = new SimpleHTMLPresentableTreeElement(root, files[i]);
+					root.addChild(fileItem);
+
+					ProfilerClassData[] classes = files[i].getClasses();
+					for (int j = 0; j < classes.length; ++j) {
+						SimpleHTMLPresentableTreeElement classItem = new SimpleHTMLPresentableTreeElement(fileItem,
+								classes[j]);
+						fileItem.addChild(classItem);
+
+						ProfilerFunctionData[] methods = classes[j].getMethods();
+						for (int k = 0; k < methods.length; ++k) {
+							SimpleHTMLPresentableTreeElement element = new SimpleHTMLPresentableTreeElement(classItem,
+									methods[k]);
+							classItem.addChild(element);
+						}
+					}
+					ProfilerFunctionData[] functions = files[i].getFunctions();
+					for (int j = 0; j < functions.length; ++j) {
+						if (functions[j].getClassName() == null) {
+							SimpleHTMLPresentableTreeElement element = new SimpleHTMLPresentableTreeElement(fileItem,
+									functions[j]);
+							fileItem.addChild(element);
+						}
+					}
+				}
+				fTreeViewer.setInput(root);
+			} else {
+				fTreeViewer.setInput(null);
+			}
+
+			BusyIndicator.showWhile(fTreeViewer.getControl().getDisplay(), new Runnable() {
+				public void run() {
+					fTreeViewer.getControl().setRedraw(false);
+					fTreeViewer.refresh();
+					fTreeViewer.getControl().setRedraw(true);
+					storeExpandedElements();
+				}
+			});
+
+			fProfilerDB = profilerDB;
+		}
+	}
+

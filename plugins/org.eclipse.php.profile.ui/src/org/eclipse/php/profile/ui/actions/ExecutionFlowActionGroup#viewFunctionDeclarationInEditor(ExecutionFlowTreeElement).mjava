@@ -1,0 +1,18 @@
+	public void viewFunctionDeclarationInEditor(ExecutionFlowTreeElement element) {
+		ProfilerFunctionData data = (ProfilerFunctionData) element.getData();
+		try {
+			if (EditorUtility.openLocalFile(data.getLocalFileName(), data.getLineNumber()) == null) {
+				String url = fView.getInput().getGlobalData().getOriginalURL();
+				if (!ProfilerGlobalData.URL_NOT_AVAILABLE_MSG.equals(url)) {
+					// try to retrieve the file from server
+					RemoteDebugger.requestRemoteFile(new OpenRemoteFileContentRequestor(), data.getAbsoluteFileName(),
+							data.getLineNumber(), url);
+				}
+			}
+		} catch (CoreException e) {
+			MessageDialog.openError(fView.getViewer().getControl().getShell(),
+					PHPProfileUIMessages.getString("ExecutionFlowActionGroup.2"), //$NON-NLS-1$
+					NLS.bind(PHPProfileUIMessages.getString("ExecutionFlowActionGroup.3"), data.getLocalFileName())); //$NON-NLS-1$
+		}
+	}
+

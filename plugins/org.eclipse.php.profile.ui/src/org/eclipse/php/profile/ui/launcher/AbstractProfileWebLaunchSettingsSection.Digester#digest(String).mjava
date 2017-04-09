@@ -1,0 +1,39 @@
+		/**
+		 * Returns a MD5 digest in a hex format for the given string.
+		 * 
+		 * @param content
+		 *            The string to digest
+		 * @return MD5 digested string in a hex format; null, in case of an
+		 *         error or a null input
+		 */
+		public static String digest(String content) {
+			if (content == null) {
+				return null;
+			}
+			if (content.length() == 0) {
+				return ""; //$NON-NLS-1$
+			}
+			String passwordDigest = null;
+			try {
+				MessageDigest md = MessageDigest.getInstance("MD5"); //$NON-NLS-1$
+				md.reset();
+				md.update(content.getBytes());
+				byte digest[] = md.digest();
+				StringBuffer buffer = new StringBuffer();
+				for (int i = 0; i < digest.length; i++) {
+					String hex = Integer.toHexString(0xff & digest[i]);
+					if (hex.length() == 1) {
+						buffer.append('0');
+					}
+					buffer.append(hex);
+				}
+				passwordDigest = buffer.toString();
+			} catch (Exception e) {
+				Logger.logException("Message digest error", e); //$NON-NLS-1$
+			}
+			if (passwordDigest == null) {
+				return null;
+			}
+			return passwordDigest;
+		}
+

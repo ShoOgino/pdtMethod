@@ -1,0 +1,52 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.eclipse.php.internal.debug.core.debugger.IDebugHandler#
+	 * handleScriptEnded ()
+	 */
+	public void handleScriptEnded() {
+		try {
+			if (fParsingErrorOccurred) {
+				super.handleScriptEnded();
+			} else {
+				Job profileJob = new Job(PHPProfileCoreMessages.ZProfiler_0) {
+					@Override
+					protected IStatus run(IProgressMonitor monitor) {
+						if (!monitor.isCanceled()) {
+							try {
+								fDBManager = new ProfilerDBManager(new DefaultProfilerDB(ZProfiler.this));
+								ProfilerGlobalData globalData = fDBManager.getGlobalData();
+								if (globalData != null) {
+									globalData.setOptions(fAdditionalOptions);
+								}
+							} finally {
+								monitor.done();
+							}
+						}
+						return Status.OK_STATUS;
+					}
+				};
+				profileJob.schedule();
+				profileJob.join();
+				// Call super
+				super.handleScriptEnded();
+				if (fDBManager.getGlobalData() != null) {
+					CodeCoverageData[] codeCoverageData = getLastCodeCoverageData();
+					if (codeCoverageData != null) {
+						for (int i = 0; i < codeCoverageData.length; ++i) {
+							ProfilerFileData fileData = fDBManager.getFileData(codeCoverageData[i].getFileName());
+							if (fileData != null) {
+								fileData.setCodeCoverageData(codeCoverageData[i]);
+							}
+						}
+					}
+					ProfileSessionsManager.addSession(fDBManager);
+				}
+			}
+		} catch (Exception e) {
+			PHPProfileCorePlugin.log(e);
+		} finally {
+			getDebugTarget().terminated();
+		}
+	}
+

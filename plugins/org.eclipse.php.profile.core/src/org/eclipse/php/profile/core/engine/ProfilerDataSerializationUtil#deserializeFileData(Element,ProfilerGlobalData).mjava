@@ -1,0 +1,25 @@
+	private ProfilerFileData deserializeFileData(Element rootElement,
+			ProfilerGlobalData globalData) {
+		String fileName = rootElement.getAttribute("name"); //$NON-NLS-1$
+		String localFileName = rootElement.getAttribute("local"); //$NON-NLS-1$
+		int functionsNum = Integer.parseInt(rootElement
+				.getAttribute("functions")); //$NON-NLS-1$
+		double totalOwnTime = Double.parseDouble(rootElement
+				.getAttribute("time")); //$NON-NLS-1$
+
+		ArrayList<ProfilerFunctionData> functionData = new ArrayList<ProfilerFunctionData>();
+		NodeList l = rootElement.getElementsByTagName("functionData"); //$NON-NLS-1$
+		for (int i = 0; l.item(i) != null; ++i) {
+			functionData.add(deserializeFunctionData((Element) l.item(i)));
+		}
+
+		Element e = (Element) rootElement
+				.getElementsByTagName("coverageData").item(0); //$NON-NLS-1$
+		CodeCoverageData codeCoverage = deserializeCoverageData(e, globalData);
+
+		ProfilerFileData data = new ProfilerFileData(fileName, localFileName,
+				functionsNum, totalOwnTime, functionData);
+		data.setCodeCoverageData(codeCoverage);
+		return data;
+	}
+

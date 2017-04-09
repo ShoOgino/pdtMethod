@@ -1,0 +1,60 @@
+	public void createControl(Composite parent) {
+		initializeDialogUnits(parent);
+
+		Composite composite = new Composite(parent, SWT.NULL);
+		GridLayout layout = new GridLayout();
+		layout.verticalSpacing = 10;
+		layout.numColumns = 2;
+		composite.setLayout(layout);
+		composite.setLayoutData(new GridData(GridData.FILL_BOTH));
+		composite.setFont(parent.getFont());
+
+		Label label = new Label(composite, SWT.NONE);
+		label.setText(PHPProfileUIMessages.getString("ImportSessionWizardPage1.2")); //$NON-NLS-1$
+		GridData gridData = new GridData();
+		gridData.horizontalSpan = 2;
+		label.setLayoutData(gridData);
+
+		fSourceField = new Text(composite, SWT.BORDER);
+		fSourceField.addListener(SWT.Modify, fieldModifyListener);
+		fSourceField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+		fSourceBtn = new Button(composite, SWT.NONE);
+		fSourceBtn.setText(PHPProfileUIMessages.getString("ImportSessionWizardPage1.3")); //$NON-NLS-1$
+		fSourceBtn.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				FileDialog dialog = new FileDialog(fSourceBtn.getShell(), SWT.OPEN);
+				dialog.setFilterExtensions(new String[] { "*.xml", "*.*" }); //$NON-NLS-1$ //$NON-NLS-2$
+				dialog.setText(PHPProfileUIMessages.getString("ImportSessionWizardPage1.4")); //$NON-NLS-1$
+
+				String dirName = new File(fSourceField.getText().trim()).getParent();
+				if (dirName != null && dirName.length() > 0 && new File(dirName).exists()) {
+					dialog.setFilterPath(new Path(dirName).toOSString());
+				}
+
+				String file = dialog.open();
+				if (file != null) {
+					fSourceField.setText(file);
+				}
+			}
+		});
+
+		setPageComplete(validatePage());
+
+		setErrorMessage(null);
+		setMessage(null);
+
+		setControl(composite);
+
+		// TODO - help context
+
+		// composite.setData(WorkbenchHelpSystem.HELP_KEY,
+		// IStudioHelpContextIds.EXPORT);
+		// composite.addHelpListener(new HelpListener() {
+		// public void helpRequested(HelpEvent arg0) {
+		// org.eclipse.swt.program.Program
+		// .launch(IStudioHelpContextIds.IMPORT);
+		// }
+		// });
+	}
+

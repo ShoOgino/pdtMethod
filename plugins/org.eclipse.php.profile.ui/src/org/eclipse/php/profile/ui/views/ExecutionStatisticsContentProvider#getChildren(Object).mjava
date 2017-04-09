@@ -1,0 +1,38 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.eclipse.jface.viewers.ITreeContentProvider#getChildren(java.lang.
+	 * Object)
+	 */
+	public Object[] getChildren(Object parentElement) {
+		TreeElement parent = (TreeElement) parentElement;
+		if (parent.getParent() == null) {
+			if (fStore.getInt(PreferenceKeys.EXECUTION_VIEW_GROUP_BY) != ProfilerUIConstants.GROUP_BY_FILE) {
+				List<Object> children = new ArrayList<Object>();
+				Object[] files = parent.getChildren();
+				for (int i = 0; i < files.length; ++i) {
+					Object[] classes = ((TreeElement) files[i]).getChildren();
+					for (int j = 0; j < classes.length; ++j) {
+						if (fStore
+								.getInt(PreferenceKeys.EXECUTION_VIEW_GROUP_BY) == ProfilerUIConstants.GROUP_BY_CLASS) {
+							children.add(classes[j]);
+						} else if (fStore.getInt(
+								PreferenceKeys.EXECUTION_VIEW_GROUP_BY) == ProfilerUIConstants.GROUP_BY_FUNCTION) {
+							if (((TreeElement) classes[j]).getData() instanceof ProfilerFunctionData) {
+								children.add(classes[j]);
+							} else {
+								Object[] functions = ((TreeElement) classes[j]).getChildren();
+								for (int k = 0; k < functions.length; ++k) {
+									children.add(functions[k]);
+								}
+							}
+						}
+					}
+				}
+				return children.toArray();
+			}
+		}
+		return ((TreeElement) parentElement).getChildren();
+	}
+

@@ -1,0 +1,71 @@
+	private void createSelectedMethodSection(FormToolkit toolkit) {
+		Section section = toolkit.createSection(fForm.getBody(), SWT.DEFAULT);
+		GridData data = new GridData();
+		data.grabExcessHorizontalSpace = true;
+		data.horizontalAlignment = SWT.FILL;
+		section.setLayoutData(data);
+		section.setText(PHPProfileUIMessages.getString("FunctionInvocationStatisticsView_15")); //$NON-NLS-1$
+
+		Composite sectionClient = new Composite(section, SWT.NONE);
+		toolkit.paintBordersFor(sectionClient);
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 1;
+		layout.marginHeight = 0;
+		layout.marginWidth = 0;
+		sectionClient.setLayout(layout);
+
+		fSelectedMethodViewer = new TableViewer(sectionClient,
+				SWT.H_SCROLL | SWT.V_SCROLL | SWT.MULTI | SWT.FULL_SELECTION);
+		Table table = fSelectedMethodViewer.getTable();
+		table.setLinesVisible(true);
+
+		TableLayout tableLayout = new TableLayout();
+		table.setLayout(tableLayout);
+		table.setHeaderVisible(true);
+		data = new GridData();
+		data.grabExcessHorizontalSpace = true;
+		data.horizontalAlignment = SWT.FILL;
+		table.setLayoutData(data);
+
+		for (int i = 0; i < fSelectedMethodHeaders.length; ++i) {
+			tableLayout.addColumnData(fSelectedMethodWeights[i]);
+
+			TableColumn tableColumn = new TableColumn(table, SWT.NONE, i);
+			tableColumn.setText(fSelectedMethodHeaders[i]);
+			tableColumn.setResizable(fSelectedMethodWeights[i].resizable);
+
+			final int field = i;
+			tableColumn.addSelectionListener(new SelectionAdapter() {
+				/*
+				 * (non-Javadoc)
+				 * 
+				 * @see
+				 * org.eclipse.swt.events.SelectionAdapter#widgetSelected(org
+				 * .eclipse.swt.events.SelectionEvent)
+				 */
+				public void widgetSelected(SelectionEvent e) {
+					SelectedMethodSorter sorter = (SelectedMethodSorter) fSelectedMethodViewer.getSorter();
+					sorter.setColumn(field);
+
+					TableColumn[] tableColumns = fSelectedMethodViewer.getTable().getColumns();
+					for (int i = 0; i < fSelectedMethodHeaders.length; ++i) {
+						tableColumns[i].setImage(null);
+					}
+					if (sorter.getOrder() == ProfilerUIConstants.SORT_ASCENDING) {
+						tableColumns[field].setImage(ProfilerUIImages.get(ProfilerUIImages.IMG_OBJ_SORT_ASCENDING));
+					} else if (sorter.getOrder() == ProfilerUIConstants.SORT_DESCENDING) {
+						tableColumns[field].setImage(ProfilerUIImages.get(ProfilerUIImages.IMG_OBJ_SORT_DESCENDING));
+					}
+					fSelectedMethodViewer.refresh();
+				}
+			});
+		}
+
+		section.setClient(sectionClient);
+		toolkit.adapt(sectionClient);
+
+		fSelectedMethodViewer.setContentProvider(new SelectedMethodContentProvider());
+		fSelectedMethodViewer.setLabelProvider(new SelectedMethodLabelProvider());
+		fSelectedMethodViewer.setSorter(new SelectedMethodSorter());
+	}
+

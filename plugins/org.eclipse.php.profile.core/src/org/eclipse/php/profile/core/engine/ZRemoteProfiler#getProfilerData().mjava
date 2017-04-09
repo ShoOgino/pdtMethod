@@ -1,0 +1,38 @@
+	public ProfilerData getProfilerData() {
+		ProfilerData profilerData = new ProfilerData();
+		ProfilerGlobalData profilerGlobalData = getProfilerGlobalData();
+		if (profilerGlobalData == null) {
+			return null;
+		}
+		profilerGlobalData.setOriginalURL(getDebugHandler().getDebugTarget()
+				.getURL());
+		profilerData.setGlobalData(profilerGlobalData);
+
+		String dummyFile = Platform.getPreferencesService().getString(
+				PHPDebugPlugin.ID,
+				PHPDebugCorePreferenceNames.ZEND_DEBUG_DUMMY_FILE, "", //$NON-NLS-1$
+				null);
+		boolean isDummyFiltered = false;
+
+		int fileCount = profilerGlobalData.getFileCount();
+		for (int i = 0; i < fileCount; i++) {
+			ProfilerFileData fileData = getProfilerFileData(i);
+			if (fileData != null) {
+				if (i == 0 && fileData.getName().endsWith(dummyFile)) {
+					isDummyFiltered = true;
+				} else {
+					profilerData.addFile(fileData);
+				}
+			}
+		}
+
+		ProfilerCallTrace callTrace = getProfilerCallTrace();
+		if (callTrace != null) {
+			if (isDummyFiltered) {
+				callTrace.removeFirstLayer();
+			}
+			profilerData.setCallTrace(callTrace);
+		}
+		return profilerData;
+	}
+

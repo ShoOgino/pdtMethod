@@ -1,0 +1,56 @@
+	public String getColumnText(Object element, int columnIndex) {
+		TreeElement item = (TreeElement) element;
+		Object data = item.getData();
+
+		boolean showAsPercentage = fStore.getBoolean(PreferenceKeys.EXECUTION_VIEW_SHOW_AS_PERCENTAGE);
+
+		if (data instanceof ProfilerFileData) {
+			ProfilerFileData fileData = (ProfilerFileData) data;
+			switch (columnIndex) {
+			case 0:
+				return new File(fileData.getName()).getName();
+			case 5:
+				return fNumberFormatter.format(fileData.getTotalOwnTime());
+			}
+		} else if (data instanceof ProfilerFunctionData) {
+			ProfilerFunctionData funcData = (ProfilerFunctionData) data;
+			switch (columnIndex) {
+			case 0:
+				return funcData.getFunctionName();
+			case 1:
+				return Integer.toString(funcData.getCallsCount());
+			case 2:
+				if (funcData.getCallsCount() > 0) {
+					double averageOwnTime = funcData.getOwnTime() / funcData.getCallsCount();
+					if (showAsPercentage) {
+						return getPercents(funcData.getTotalTime(), averageOwnTime);
+					}
+					return fNumberFormatter.format(averageOwnTime);
+				}
+			case 3:
+				double ownTime = funcData.getOwnTime();
+				if (showAsPercentage) {
+					return getPercents(funcData.getTotalTime(), ownTime);
+				}
+				return fNumberFormatter.format(ownTime);
+			case 4:
+				double othersTime = funcData.getTotalTime() - funcData.getOwnTime();
+				if (showAsPercentage) {
+					return getPercents(funcData.getTotalTime(), othersTime);
+				}
+				return fNumberFormatter.format(othersTime);
+			case 5:
+				return fNumberFormatter.format(funcData.getTotalTime());
+			}
+		} else if (data instanceof ProfilerClassData) {
+			ProfilerClassData classData = (ProfilerClassData) data;
+			switch (columnIndex) {
+			case 0:
+				return classData.getName();
+			case 5:
+				return fNumberFormatter.format(classData.getTotalOwnTime());
+			}
+		}
+		return null;
+	}
+

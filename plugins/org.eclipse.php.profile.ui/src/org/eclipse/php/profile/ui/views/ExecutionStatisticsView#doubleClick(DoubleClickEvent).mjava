@@ -1,0 +1,39 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.eclipse.jface.viewers.IDoubleClickListener#doubleClick(org.eclipse
+	 * .jface.viewers.DoubleClickEvent)
+	 */
+	public void doubleClick(DoubleClickEvent event) {
+		ISelection selection = event.getSelection();
+		if (selection != null && selection instanceof IStructuredSelection) {
+			IStructuredSelection sSelection = (IStructuredSelection) selection;
+			SimpleHTMLPresentableTreeElement ExecutionStatisticsTreeElement = (SimpleHTMLPresentableTreeElement) sSelection
+					.getFirstElement();
+			Object element = ExecutionStatisticsTreeElement.getData();
+			if (element instanceof ProfilerFunctionData) {
+				ProfilerFunctionData data = (ProfilerFunctionData) element;
+				try {
+					if (EditorUtility.openLocalFile(data.getLocalFileName(), data.getLineNumber()) == null) {
+						String url = fProfilerDB.getGlobalData().getOriginalURL();
+						if (!ProfilerGlobalData.URL_NOT_AVAILABLE_MSG.equals(url)) {
+							// try to retrieve the file from server
+							RemoteDebugger.requestRemoteFile(new OpenRemoteFileContentRequestor(),
+									data.getAbsoluteFileName(), data.getLineNumber(), url);
+						}
+					}
+				} catch (CoreException e) {
+					MessageDialog.openError(fTreeViewer.getControl().getShell(),
+							PHPProfileUIMessages.getString("ExecutionStatisticsView.0"), //$NON-NLS-1$
+							NLS.bind(PHPProfileUIMessages.getString("ExecutionStatisticsView.1"), //$NON-NLS-1$
+									data.getLocalFileName()));
+				}
+			} else {
+				boolean expanded = !fTreeViewer.getExpandedState(ExecutionStatisticsTreeElement);
+				fTreeViewer.setExpandedState(ExecutionStatisticsTreeElement, expanded);
+				fTreeViewer.getControl().setRedraw(true);
+			}
+		}
+	}
+

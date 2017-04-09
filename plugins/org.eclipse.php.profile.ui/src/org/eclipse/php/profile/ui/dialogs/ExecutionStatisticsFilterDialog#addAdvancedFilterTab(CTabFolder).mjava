@@ -1,0 +1,157 @@
+	private void addAdvancedFilterTab(CTabFolder folder) {
+		Composite page = new Composite(folder, SWT.NONE);
+		GridLayout layout = new GridLayout();
+		layout.marginHeight = 10;
+		layout.marginWidth = 10;
+		page.setLayout(layout);
+		page.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+		PixelConverter pixelConverter = new PixelConverter(page);
+
+		// Condition composite:
+		Composite condComposite = new Composite(page, SWT.NONE);
+		layout = new GridLayout();
+		layout.numColumns = 3;
+		condComposite.setLayout(layout);
+		condComposite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+
+		// Condition:
+		Label label = new Label(condComposite, SWT.NONE);
+		label.setText(PHPProfileUIMessages.getString("ExecutionStatisticsFilterDialog.35")); //$NON-NLS-1$
+		GridData data = new GridData();
+		data.horizontalSpan = 3;
+		label.setLayoutData(data);
+
+		SelectionAdapter fAddDeleteButtonsStatusUpdater = new SelectionAdapter() {
+			/*
+			 * (non-Javadoc)
+			 * 
+			 * @see org.eclipse.swt.events.SelectionAdapter#widgetSelected(org.
+			 * eclipse .swt.events.SelectionEvent)
+			 */
+			public void widgetSelected(SelectionEvent e) {
+				updateAddDeleteButtonsStatus();
+				ExecutionStatisticsFilterDialog.this.validateCondition();
+			}
+		};
+
+		fCondAttribute = new Combo(condComposite, SWT.READ_ONLY);
+		for (int i = 0; i < fAttributes.length; ++i) {
+			fCondAttribute.add(fAttributes[i]);
+			fCondAttribute.setData(fAttributes[i], fAttributesData[i]);
+		}
+		fCondAttribute.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		fCondAttribute.addSelectionListener(fAddDeleteButtonsStatusUpdater);
+
+		fCondOperator = new Combo(condComposite, SWT.READ_ONLY);
+		for (int i = 0; i < fOperators.length; ++i) {
+			fCondOperator.add(fOperators[i]);
+			fCondOperator.setData(fOperators[i], fOperatorsData[i]);
+		}
+		fCondOperator.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		fCondOperator.addSelectionListener(fAddDeleteButtonsStatusUpdater);
+
+		fCondValue = new Text(condComposite, SWT.BORDER);
+		data = new GridData(GridData.FILL_HORIZONTAL);
+		data.widthHint = pixelConverter.convertWidthInCharsToPixels(30);
+		fCondValue.setLayoutData(data);
+		fCondValue.addModifyListener(new ModifyListener() {
+			/*
+			 * (non-Javadoc)
+			 * 
+			 * @see
+			 * org.eclipse.swt.events.ModifyListener#modifyText(org.eclipse.
+			 * swt.events.ModifyEvent)
+			 */
+			public void modifyText(ModifyEvent e) {
+				ExecutionStatisticsFilterDialog.this.validateCondition();
+			}
+		});
+
+		// Table composite
+		Composite condTableComposite = new Composite(page, SWT.NONE);
+		layout = new GridLayout();
+		layout.numColumns = 2;
+		condTableComposite.setLayout(layout);
+		condTableComposite.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+		// Table:
+		fCondTable = new Table(condTableComposite,
+				SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER | SWT.MULTI | SWT.FULL_SELECTION);
+		data = new GridData(GridData.FILL_BOTH);
+		fCondTable.setLayoutData(data);
+		fCondTable.setHeaderVisible(true);
+		fCondTable.setLinesVisible(true);
+
+		TableLayout tableLayout = new TableLayout();
+
+		for (int i = 0; i < fCondTableColumns.length; ++i) {
+			int width = pixelConverter.convertWidthInCharsToPixels(fCondTableColumnsWidths[i]);
+			tableLayout.addColumnData(new ColumnWeightData(width, true));
+			TableColumn column = new TableColumn(fCondTable, SWT.NONE);
+			column.setText(fCondTableColumns[i]);
+		}
+
+		fCondTable.setLayout(tableLayout);
+
+		fCondTableViewer = new TableViewer(fCondTable);
+		fCondTableViewer.setUseHashlookup(true);
+		fCondTableViewer.setContentProvider(new CondTableContentProvider());
+		fCondTableViewer.setLabelProvider(new CondTableLabelProvider());
+
+		fCondTableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
+			/*
+			 * (non-Javadoc)
+			 * 
+			 * @seeorg.eclipse.jface.viewers.ISelectionChangedListener#
+			 * selectionChanged
+			 * (org.eclipse.jface.viewers.SelectionChangedEvent)
+			 */
+			public void selectionChanged(SelectionChangedEvent event) {
+				IStructuredSelection sSelection = (IStructuredSelection) fCondTableViewer.getSelection();
+				ExecutionStatisticsFilterCondition cond = (ExecutionStatisticsFilterCondition) sSelection
+						.getFirstElement();
+				if (cond != null) {
+					fCondAttribute.setText(cond.getAttribute());
+					fCondOperator.setText(cond.getOperator());
+					fCondValue.setText(cond.getValue());
+				}
+				updateAddDeleteButtonsStatus();
+			}
+		});
+
+		// Buttons bar:
+		Composite buttonsBar = new Composite(condTableComposite, SWT.NONE);
+		layout = new GridLayout();
+		buttonsBar.setLayout(layout);
+		buttonsBar.setLayoutData(new GridData(GridData.VERTICAL_ALIGN_BEGINNING));
+
+		fAddButton = new Button(buttonsBar, SWT.NONE);
+		fAddButton.setText(PHPProfileUIMessages.getString("ExecutionStatisticsFilterDialog.39")); //$NON-NLS-1$
+		fAddButton.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				ExecutionStatisticsFilterCondition cond = new ExecutionStatisticsFilterCondition();
+				cond.setAttribute(fCondAttribute.getText());
+				cond.setOperator(fCondOperator.getText());
+				cond.setValue(fCondValue.getText());
+				fCondTableViewer.add(cond);
+			}
+		});
+
+		fDeleteButton = new Button(buttonsBar, SWT.NONE);
+		fDeleteButton.setText(PHPProfileUIMessages.getString("ExecutionStatisticsFilterDialog.40")); //$NON-NLS-1$
+		fDeleteButton.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				IStructuredSelection sSelection = (IStructuredSelection) fCondTableViewer.getSelection();
+				ExecutionStatisticsFilterCondition cond = (ExecutionStatisticsFilterCondition) sSelection
+						.getFirstElement();
+				fCondTableViewer.remove(cond);
+			}
+		});
+
+		fAdvancedTab = new CTabItem(folder, SWT.NONE);
+		fAdvancedTab.setText(PHPProfileUIMessages.getString("ExecutionStatisticsFilterDialog.3")); //$NON-NLS-1$
+		fAdvancedTab.setImage(fFilterImage);
+		fAdvancedTab.setControl(page);
+	}
+

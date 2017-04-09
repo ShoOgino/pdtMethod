@@ -1,0 +1,71 @@
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.eclipse.php.profile.ui.views.AbstractProfilerView#setInput(org.
+	 * eclipse. php.profile.core.profiler.ProfilerDB)
+	 */
+	public void setInput(ProfilerDB profilerDB) {
+		if (fViewer == null || fViewer.getContentProvider() == null) {
+			return;
+		}
+		if (fProfilerDB != profilerDB) {
+			if (profilerDB != null) {
+				ProfilerCallTrace callTrace = profilerDB.getCallTrace();
+				if (callTrace != null) {
+					ProfilerCallTraceLayer[] layers = callTrace.getLayers();
+
+					ExecutionFlowTreeElement current = null;
+					ExecutionFlowTreeElement root = new ExecutionFlowTreeElement();
+					ArrayList<ExecutionFlowTreeElement> elements = new ArrayList<ExecutionFlowTreeElement>();
+					for (int i = 0; i < layers.length; ++i) {
+						if (layers[i].getType() == ProfilerCallTraceLayer.ENTER) { // enter
+							// function
+							ExecutionFlowTreeElement element = new ExecutionFlowTreeElement(i);
+							element.setData(profilerDB.getFunctionData(layers[i].getCalledID()));
+							element.setLayer(layers[i]);
+							if (current != null) {
+								current.addChild(element);
+								element.setParent(current);
+							}
+							current = element;
+							elements.add(element);
+						} else { // exit function
+							if (current != null) {
+								ProfilerCallTraceLayer currentLayer = (ProfilerCallTraceLayer) current.getLayer();
+								currentLayer.setDuration(layers[i].getTimestampSeconds(),
+										layers[i].getTimestampMicroseconds());
+								current.setDuration(currentLayer.getDurationInMilli());
+								if (current.getParent() != null) {
+									current = (ExecutionFlowTreeElement) current.getParent();
+								}
+							}
+						}
+					}
+
+					if (current != null) { // current element is a top element
+											// (main
+						// function)
+
+						double totalDuration = profilerDB.getGlobalData().getGlobalTimeInMilli();
+						for (int i = 0; i < elements.size(); ++i) {
+							ExecutionFlowTreeElement element = (ExecutionFlowTreeElement) elements.get(i);
+							element.setTimePercentage(element.getDuration() / totalDuration * 100);
+						}
+
+						root.addChild(current);
+						current.setParent(root);
+
+						fViewer.setInput(root);
+					}
+				}
+			} else {
+				fViewer.setInput(null);
+			}
+
+			fViewer.getControl().setRedraw(false);
+			fViewer.refresh();
+			fViewer.getControl().setRedraw(true);
+			fProfilerDB = profilerDB;
+		}
+	}
+

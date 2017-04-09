@@ -1,0 +1,41 @@
+	protected boolean validatePage() {
+		IStructuredSelection selection = (IStructuredSelection) fTableViewer.getSelection();
+		Object[] elements = selection.toArray();
+		if (elements == null || elements.length == 0) {
+			setErrorMessage(null);
+			setMessage(PHPProfileUIMessages.getString("ExportSessionWizardPage1.7")); //$NON-NLS-1$
+			return false;
+		}
+		fSessions = new ProfilerDB[elements.length];
+		System.arraycopy(elements, 0, fSessions, 0, elements.length);
+
+		String targetFile = fTargetFileField.getText().trim();
+		if (targetFile.length() == 0) {
+			setErrorMessage(null);
+			setMessage(PHPProfileUIMessages.getString("ExportSessionWizardPage1.8")); //$NON-NLS-1$
+			return false;
+		}
+		File file = new File(targetFile);
+		if (file.isDirectory()) {
+			setMessage(null);
+			setErrorMessage(PHPProfileUIMessages.getString("ExportSessionWizardPage1.9")); //$NON-NLS-1$
+			return false;
+		}
+		File parentFile = file.getParentFile();
+		if (parentFile == null) {
+			setMessage(null);
+			setErrorMessage(PHPProfileUIMessages.getString("ExportSessionWizardPage1.10")); //$NON-NLS-1$
+			return false;
+		}
+		if (!parentFile.isDirectory()) {
+			setMessage(null);
+			setErrorMessage(NLS.bind(PHPProfileUIMessages.getString("ExportSessionWizardPage1.11"), file.getParent())); //$NON-NLS-1$
+			return false;
+		}
+		fTargetFile = targetFile;
+
+		setErrorMessage(null);
+		setMessage(null);
+		return true;
+	}
+
