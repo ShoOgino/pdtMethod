@@ -36,39 +36,9 @@
 					tokenStart = tokensContainer.getToken(tokenStart.getStart() - 1);
 				}
 
-				// make sure, region to re-parse doesn't end with unknown token
-				while (PHPRegionTypes.UNKNOWN_TOKEN.equals(tokenEnd.getType())
-						&& (tokensContainer.getLastToken() != tokenEnd)) {
-					tokenEnd = tokensContainer.getToken(tokenEnd.getEnd());
-				}
-
-				boolean shouldDeprecatedKeyword = false;
-				int previousIndex = tokensContainer.phpTokens.indexOf(tokenStart) - 1;
-				if (previousIndex >= 0) {
-					ITextRegion previousRegion = tokensContainer.phpTokens.get(previousIndex);
-					if (PhpTokenContainer.deprecatedKeywordAfter(previousRegion.getType())) {
-						shouldDeprecatedKeyword = true;
-					}
-					if (PHPPartitionTypes.isPHPMultiLineCommentRegion(tokenStart.getType())
-							&& tokenStart.getLength() == 1
-							&& PHPPartitionTypes.isPHPMultiLineCommentStartRegion(previousRegion.getType())) {
-						requestStart = previousRegion.getStart();
-					}
-
-				}
-
 				int newTokenOffset = tokenStart.getStart();
 
-				// get start and end states
-				final LexerState startState = tokensContainer.getState(newTokenOffset);
-				final LexerState endState = tokensContainer.getState(tokenEnd.getEnd());
-
-				final PhpTokenContainer newContainer = new PhpTokenContainer();
-				final AbstractPhpLexer phpLexer = getPhpLexer(
-						new DocumentReader(flatnode, changes, requestStart, lengthToReplace, newTokenOffset),
-						startState, currentPhpVersion);
-
-				if (ArrayUtils.contains(phpLexer.getHeredocStates(), startState.getFirstState())) {
+				if (isHeredocState(newTokenOffset)) {
 					// https://bugs.eclipse.org/bugs/show_bug.cgi?id=498525
 					// Fully re-parse when we're in a heredoc/nowdoc section.
 					// NB: it's much easier and safer to use the lexer state to
@@ -90,6 +60,37 @@
 					// highlight opening and closing heredoc/nowdoc tags asap.
 					return null;
 				}
+
+				// make sure, region to re-parse doesn't end with unknown token
+				while (PHPRegionTypes.UNKNOWN_TOKEN.equals(tokenEnd.getType())
+						&& (tokensContainer.getLastToken() != tokenEnd)) {
+					tokenEnd = tokensContainer.getToken(tokenEnd.getEnd());
+				}
+
+				boolean shouldDeprecatedKeyword = false;
+				int previousIndex = tokensContainer.phpTokens.indexOf(tokenStart) - 1;
+				if (previousIndex >= 0) {
+					ITextRegion previousRegion = tokensContainer.phpTokens.get(previousIndex);
+					if (PhpTokenContainer.deprecatedKeywordAfter(previousRegion.getType())) {
+						shouldDeprecatedKeyword = true;
+					}
+					if (PHPPartitionTypes.isPHPMultiLineCommentRegion(tokenStart.getType())
+							&& tokenStart.getLength() == 1
+							&& PHPPartitionTypes.isPHPMultiLineCommentStartRegion(previousRegion.getType())) {
+						requestStart = previousRegion.getStart();
+					}
+				}
+
+				// get start and end states
+				final LexerState startState = tokensContainer.getState(newTokenOffset);
+				final LexerState endState = tokensContainer.getState(tokenEnd.getEnd());
+
+				assert startState != null && endState != null;
+
+				final PhpTokenContainer newContainer = new PhpTokenContainer();
+				final AbstractPhpLexer phpLexer = getPhpLexer(
+						new DocumentReader(flatnode, changes, requestStart, lengthToReplace, newTokenOffset),
+						startState, currentPhpVersion);
 
 				LexerState state = startState;
 				try {
@@ -126,7 +127,7 @@
 				final int size = length - lengthToReplace;
 				final int end = newContainer.getLastToken().getEnd();
 
-				if (!state.equals(endState) || tokenEnd.getEnd() + size != end) {
+				if ((state != null && !state.equals(endState)) || tokenEnd.getEnd() + size != end) {
 					return null;
 				}
 

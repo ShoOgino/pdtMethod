@@ -62,6 +62,12 @@
 					doEmptyLineIndentation(document, resultBuffer, lineNumber, originalLineStart, 0);
 					return;
 				}
+				if (scriptRegion.isPhpQuotesState(formattedLineStart - regionStart)
+						&& (formattedLineStart - regionStart == 0
+								|| scriptRegion.isPhpQuotesState(formattedLineStart - regionStart - 1))) {
+					// do never indent the content of php strings
+					return;
+				}
 				scriptRegionPos = regionStart;
 				firstTokenInLine = scriptRegion.getPhpToken(formattedLineStart - regionStart);
 				if (regionStart + firstTokenInLine.getStart() < originalLineStart
@@ -86,24 +92,6 @@
 
 			String firstTokenType = firstTokenInLine.getType();
 
-			boolean formatThisLine = !isInHeredoc;
-			if (firstTokenType == PHPRegionTypes.PHP_HEREDOC_TAG
-					|| (lastTokenInLine != null && lastTokenInLine.getType() == PHPRegionTypes.PHP_HEREDOC_TAG)) {
-				isInHeredoc = !isInHeredoc;
-			}
-
-			if (firstTokenType == PHPRegionTypes.PHP_CONSTANT_ENCAPSED_STRING) {
-				int startLine = document.getLineOfOffset(scriptRegionPos + firstTokenInLine.getStart());
-				if (startLine < lineNumber) {
-					ignoreLines.add(lineNumber);
-					return;
-				}
-			}
-
-			if (!formatThisLine) {
-				ignoreLines.add(lineNumber);
-				return;
-			}
 			if (firstTokenType == PHPRegionTypes.PHP_CASE || firstTokenType == PHPRegionTypes.PHP_DEFAULT) {
 				insertionStrategy = caseDefaultIndentationStrategy;
 			} else if (isInsideOfPHPCommentRegion(firstTokenType)) {
