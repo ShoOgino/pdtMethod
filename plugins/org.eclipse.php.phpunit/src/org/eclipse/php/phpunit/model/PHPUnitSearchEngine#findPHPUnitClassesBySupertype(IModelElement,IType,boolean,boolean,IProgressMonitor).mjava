@@ -1,12 +1,9 @@
-	public IType[] findPHPUnitClassesBySupertype(IModelElement elementContainer, IType superClass, boolean listAbstract,
-			boolean isFirst, IProgressMonitor monitor) {
-
-		IType[] subtypes = null;
-
+	public List<IType> findPHPUnitClassesBySupertype(IModelElement elementContainer, IType superClass,
+			boolean listAbstract, boolean isFirst, IProgressMonitor monitor) {
 		if (superClass == null || elementContainer == null) {
-			return subtypes;
+			return Collections.emptyList();
 		}
-
+		List<IType> subtypes = Collections.emptyList();
 		IPath parentPath = elementContainer.getPath();
 		List<IType> result = new LinkedList<>();
 		try {
@@ -22,7 +19,7 @@
 						ITypeHierarchy hierarchy = baseClass.newTypeHierarchy(scriptProject, monitor);
 
 						if (monitor != null && monitor.isCanceled()) {
-							return null;
+							return Collections.emptyList();
 						}
 
 						IType testCase = getTestCase();
@@ -55,7 +52,7 @@
 							if (parentPath.isPrefixOf(type.getPath())) {
 								result.add(type);
 								if (isFirst) {
-									subtypes = result.toArray(new IType[result.size()]);
+									subtypes = result;
 									return subtypes;
 								}
 								continue first;
@@ -76,7 +73,7 @@
 					if (listAbstract) {
 						result.add(superClass);
 					}
-					subtypes = result.toArray(new IType[result.size()]);
+					subtypes = result;
 				} catch (ModelException e) {
 					PHPUnitPlugin.log(e);
 				}
