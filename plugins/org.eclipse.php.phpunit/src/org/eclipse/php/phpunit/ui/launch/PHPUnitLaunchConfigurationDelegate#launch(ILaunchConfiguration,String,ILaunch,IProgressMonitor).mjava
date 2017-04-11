@@ -49,12 +49,17 @@
 			workingDirectory = workingDirectory.getParentFile();
 		}
 
-		if (PHPUnitView.getDefault().isRunning()) {
+		if (PHPUnitLaunchUtils.isPHPUnitRunning()) {
 			Display.getDefault()
 					.syncExec(() -> ErrorDialog.openError(Display.getCurrent().getActiveShell(),
 							PHPUnitMessages.PHPUnitConnection_Launching,
 							PHPUnitMessages.PHPUnitConnection_Unable_to_run, new Status(IStatus.ERROR, PHPUnitPlugin.ID,
 									0, PHPUnitMessages.PHPUnitConnection_Previous_session_exists, null)));
+			return;
+		}
+
+		final int port = Integer.parseInt(envVariables.get(ENV_PORT));
+		if (!PHPUnitConnection.getInstance().listen(port, launch)) {
 			return;
 		}
 
@@ -88,6 +93,8 @@
 			} else if (DebuggerCommunicationDaemon.ZEND_DEBUGGER_ID.equals(execItem.getDebuggerID())) {
 				launcher = new PHPUnitZDLauncher(config, launch, phpUnitOptionsList);
 			}
+
+			launch.setAttribute(PHPUnitLaunchAttributes.ATTRIBUTE_PHPUNIT_LAUNCH, Boolean.TRUE.toString());
 			launcher.launch(mode, project, workingDirectory, envVariables, monitor);
 		} else {
 			displayErrorMessage(PHPDebugCoreMessages.PHPExecutableLaunchDelegate_4);
