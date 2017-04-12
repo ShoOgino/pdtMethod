@@ -1,0 +1,76 @@
+	@Override
+	public int autoEditAfterNewLine(IStructuredDocument document, DocumentCommand command, StringBuilder buffer) {
+		try {
+
+			boolean isClosingParen = isClosingParen(document, command);
+			int offset = command.offset;
+
+			int rvPosition = offset + buffer.length();
+			if (!isClosingParen) {
+				rvPosition += copyRestOfLine(document, command, buffer);
+			}
+
+			boolean addCurlyClose = false;
+			int curlyCloseCounter = 0;
+			int currOffset = offset;
+			IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(currOffset);
+			if (sdRegion == null) {
+				return -1;
+			}
+
+			int regionStart = sdRegion.getStartOffset();
+			String text = sdRegion.getFullText();
+
+			ITextRegion tRegion = null;
+			int indexInText = text.length() - 1;
+			while (indexInText >= 0) {
+				char currChar = text.charAt(indexInText);
+				if (currChar == CURLY_CLOSE) {
+					tRegion = getPhpToken(sdRegion, regionStart + indexInText);
+					if (tRegion == null || tRegion.getType() == PHPRegionTypes.PHP_CURLY_CLOSE) {
+						curlyCloseCounter++;
+					}
+				} else if (currChar == CURLY_OPEN) {
+					tRegion = getPhpToken(sdRegion, regionStart + indexInText);
+					boolean found = false;
+					if (tRegion != null) {
+						if (tRegion.getType().equals(PHPRegionTypes.PHP_CURLY_OPEN)) {
+							found = true;
+						} else if (tRegion.getType().equals(PHPRegionTypes.PHP_TOKEN) && tRegion.getLength() == 2) {
+							ITextRegion reg = sdRegion.getRegionAtCharacterOffset(regionStart + indexInText);
+							int start = reg.getStart() + tRegion.getStart();
+							if (text.substring(start, start + 2).equals("${")) { //$NON-NLS-1$
+								found = true;
+							}
+						}
+					}
+					if (!found) {
+						indexInText--;
+						continue;
+					}
+					curlyCloseCounter--;
+					if (curlyCloseCounter < 0) {
+						if (matcher.match(document, regionStart + indexInText + 1) == null) {
+							addCurlyClose = true;
+							break;
+						}
+						curlyCloseCounter++;
+					}
+				}
+				indexInText--;
+			}
+
+			if (addCurlyClose) {
+				addCurlyCloseBracket(document, command, buffer);
+			}
+			if (isClosingParen) {
+				rvPosition += copyRestOfLine(document, command, buffer);
+			}
+
+			return rvPosition;
+		} catch (BadLocationException e) {
+			Logger.logException(e);
+		}
+		return -1;
+	}
+

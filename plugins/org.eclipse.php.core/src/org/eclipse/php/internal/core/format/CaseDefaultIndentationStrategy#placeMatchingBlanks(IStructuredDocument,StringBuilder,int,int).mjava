@@ -1,0 +1,80 @@
+	public void placeMatchingBlanks(IStructuredDocument document, StringBuilder result, int lineNumber, int offset)
+			throws BadLocationException {
+
+		IRegion indentationBase = null;
+		boolean found = false;
+		boolean addIndentation = false;
+		int curlyCount = 0;
+		/*
+		 * TODO this function has a bug in it: if there is a '{' inside inner
+		 * state then it will not ignore it as it should.
+		 */
+
+		IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(offset);
+		if (sdRegion == null) {
+			return;
+		}
+
+		// in 'case default' indentation case we move one char back to avoid
+		// the first 'case' or 'default' region
+		ITextRegion tRegion = sdRegion.getRegionAtCharacterOffset(offset);
+		if (tRegion == null) {
+			return;
+		}
+
+		int regionStart = sdRegion.getStartOffset(tRegion);
+
+		// in case of container we have to extract the PhpScriptRegion
+		if (tRegion instanceof ITextRegionContainer) {
+			ITextRegionContainer container = (ITextRegionContainer) tRegion;
+			tRegion = container.getRegionAtCharacterOffset(offset);
+			regionStart += tRegion.getStart();
+		}
+
+		if (tRegion instanceof IPhpScriptRegion) {
+			IPhpScriptRegion scriptRegion = (IPhpScriptRegion) tRegion;
+			tRegion = scriptRegion.getPhpToken(offset - regionStart - 1);
+
+			// go backward over the region to find a 'case' or 'default' region
+			// in this case is the same indentation
+			// other case if look for the '{' of the 'switch' region
+			while (true) {
+				String token = tRegion.getType();
+				if (token == PHPRegionTypes.PHP_CURLY_OPEN) {
+					curlyCount--;
+					if (curlyCount < 0) {
+						found = true;
+						addIndentation = true;
+					}
+				} else if (token == PHPRegionTypes.PHP_CURLY_CLOSE) {
+					curlyCount++;
+				} else if ((token == PHPRegionTypes.PHP_CASE) || (token == PHPRegionTypes.PHP_DEFAULT)) {
+					if (curlyCount == 0)
+						found = true;
+				}
+				if (found) {
+					indentationBase = document.getLineInformationOfOffset(tRegion.getStart() + regionStart);
+					break;
+				}
+				if (tRegion.getStart() > 0) {
+					tRegion = scriptRegion.getPhpToken(tRegion.getStart() - 1);
+				} else {
+					break;
+				}
+			}
+		}
+
+		if (indentationBase != null) {
+			String blanks = FormatterUtils.getLineBlanks(document, indentationBase);
+			result.append(blanks);
+			if (addIndentation) {
+				if (indentationObject == null) {
+					indentationObject = new IndentationObject(document);
+				}
+				for (int i = 0; i < indentationObject.getIndentationSize(); i++) {
+					result.append(indentationObject.getIndentationChar());
+				}
+			}
+		}
+	}
+

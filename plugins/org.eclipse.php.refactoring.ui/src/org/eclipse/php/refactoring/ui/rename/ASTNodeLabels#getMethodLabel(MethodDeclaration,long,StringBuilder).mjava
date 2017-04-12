@@ -1,0 +1,28 @@
+	public static void getMethodLabel(MethodDeclaration method, long flags, StringBuilder buf) {
+		// qualification
+		if (getFlag(flags, M_FULLY_QUALIFIED)) {
+			final ASTNode parent = method.getParent().getParent();
+			assert parent != null && (parent.getType() == ASTNode.CLASS_DECLARATION
+					|| parent.getType() == ASTNode.INTERFACE_DECLARATION);
+			TypeDeclaration typeDeclaration = (TypeDeclaration) parent;
+			getTypeLabel(typeDeclaration, T_FULLY_QUALIFIED | (flags & P_COMPRESSED), buf);
+			buf.append('.');
+		}
+
+		getFunctionLabel(method.getFunction(), flags, buf);
+
+		// TODO : exceptions
+		// post qualification
+		if (getFlag(flags, M_POST_QUALIFIED)) {
+			buf.append(CONCAT_STRING);
+			ASTNode container = method.getParent().getParent();
+			assert container.getType() == ASTNode.CLASS_DECLARATION
+					|| container.getType() == ASTNode.INTERFACE_DECLARATION;
+			TypeDeclaration declaration = (TypeDeclaration) container;
+			if (declaration != null) {
+				getTypeLabel(declaration, T_FULLY_QUALIFIED | (flags & P_COMPRESSED), buf);
+			}
+		}
+
+	}
+
