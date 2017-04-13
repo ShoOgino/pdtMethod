@@ -8,13 +8,11 @@
 	 */
 	public static IEvaluatedType[] evaluatePHPDocType(String[] typeNames, IModelElement space, int offset,
 			IType[] types) {
-
 		ISourceModule sourceModule = space.getAncestor(ISourceModule.class);
 		IType currentNamespace = space instanceof IType ? (IType) space : null;
-		MultiTypeType evalMultiType = null;
-		List<IEvaluatedType> res = new LinkedList<IEvaluatedType>();
+		List<IEvaluatedType> res = new LinkedList<>();
 		for (String typeName : typeNames) {
-			List<IEvaluatedType> evaluated = new LinkedList<IEvaluatedType>();
+			List<IEvaluatedType> evaluated = new LinkedList<>();
 			if (StringUtils.isBlank(typeName)) {
 				continue;
 			}
@@ -22,13 +20,6 @@
 			if (evaluatedType != null) {
 				evaluated.add(evaluatedType);
 			} else {
-				boolean isMulti = false;
-				// XXX: also treat AmbiguousType?
-				Matcher multi = MULTITYPE_PATTERN.matcher(typeName);
-				if (multi.find()) {
-					isMulti = true;
-					typeName = multi.group(1);
-				}
 				if (PHPSimpleTypes.isSimpleTypeCS(typeName)) {
 					ClassFinder classFinder = new ClassFinder(typeName);
 					try {
@@ -85,20 +76,8 @@
 						evaluated.add(type);
 					}
 				}
-				if (isMulti) {
-					if (evalMultiType == null) {
-						evalMultiType = new MultiTypeType();
-					}
-					for (IEvaluatedType t : evaluated) {
-						evalMultiType.addType(t);
-					}
-					continue;
-				}
 			}
 			res.addAll(evaluated);
-		}
-		if (evalMultiType != null) {
-			res.add(evalMultiType);
 		}
 		if (res.isEmpty()) {
 			return EMPTY_LIST;
