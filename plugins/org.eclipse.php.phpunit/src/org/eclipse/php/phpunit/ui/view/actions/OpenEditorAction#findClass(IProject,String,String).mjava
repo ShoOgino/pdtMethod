@@ -1,20 +1,18 @@
 	protected IType findClass(final IProject project, String className, final String fileName) {
 		ISourceModule element = null;
 
-		if (fileName != null && fileName.length() > 0) {
+		if (fileName != null && !fileName.isEmpty()) {
 			Path path = new Path(fileName);
-			IFile iFile = null;
-			if (path.isAbsolute() && path.getDevice() != null) {
+			IFile iFile;
+			if (path.isAbsolute()) {
 				iFile = project.getWorkspace().getRoot().getFileForLocation(path);
 			} else {
 				iFile = project.getWorkspace().getRoot().getFile(path);
 			}
-			if (iFile != null) {
-				element = DLTKCore.createSourceModuleFrom(iFile);
-			}
+
+			element = DLTKCore.createSourceModuleFrom(iFile);
 		}
 		if (element == null) {
-
 			IType[] classes = PhpModelAccess.getDefault().findTypes(className, MatchRule.EXACT, 0, 0,
 					SearchEngine.createSearchScope(DLTKCore.create(project)), null);
 
@@ -23,12 +21,11 @@
 			}
 		}
 
-		if (element != null && element.getElementType() == IModelElement.SOURCE_MODULE) {
-			ISourceModule module = (ISourceModule) element;
+		if (element != null) {
 			if (className.contains("\\")) { //$NON-NLS-1$
 				className = className.substring(1 + className.lastIndexOf("\\")); //$NON-NLS-1$
 				try {
-					final IType[] allTypes = module.getAllTypes();
+					final IType[] allTypes = element.getAllTypes();
 					for (IType t : allTypes) {
 						if (t.getElementName().equals(className)) {
 							return t;
@@ -38,7 +35,7 @@
 					// will happen when data provider test case is given
 				}
 			}
-			return module.getType(className);
+			return element.getType(className);
 		}
 
 		return null;
