@@ -1,0 +1,29 @@
+	/*
+	 * This method is workaround to use SSE viewer to compare files
+	 */
+	private IDocument createStructuredDocument(IDocument document) {
+		if (useBasic) {
+			return document;
+		}
+		IStructuredDocument newDoc = null;
+		if (document instanceof IStructuredDocument) {
+			newDoc = (IStructuredDocument) document;
+		} else if (document != null) {
+			newDoc = StructuredDocumentFactory.getNewStructuredDocumentInstance(new PhpSourceParser());
+			newDoc.set(document.get());
+
+			IDocumentPartitioner partitioner = getDocumentPartitioner();
+			if (partitioner != null) {
+				if (newDoc instanceof JobSafeStructuredDocument) {
+					((JobSafeStructuredDocument) newDoc).setDocumentPartitioner(
+							"org.eclipse.wst.sse.core.default_structured_text_partitioning", //$NON-NLS-1$
+							partitioner);
+				} else {
+					newDoc.setDocumentPartitioner(partitioner);
+				}
+				partitioner.connect(newDoc);
+			}
+		}
+		return newDoc;
+	}
+
