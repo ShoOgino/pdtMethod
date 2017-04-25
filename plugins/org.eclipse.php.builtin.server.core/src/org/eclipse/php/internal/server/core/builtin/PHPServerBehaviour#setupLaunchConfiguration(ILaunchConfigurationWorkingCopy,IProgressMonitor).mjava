@@ -1,10 +1,15 @@
 	@Override
 	public void setupLaunchConfiguration(ILaunchConfigurationWorkingCopy workingCopy, IProgressMonitor monitor)
 			throws CoreException {
-		workingCopy.setAttribute(IPHPDebugConstants.ATTR_INI_LOCATION, getServer().getServerConfiguration()
-				.getRawLocation().append(PHPServerConfiguration.PHP_INI_FILENAME).toOSString());
-		workingCopy.setAttribute(IPHPDebugConstants.ATTR_EXECUTABLE_LOCATION,
-				getPHPRuntime().getExecutableInstall().getExecutable().getAbsolutePath());
+		PHPexeItem item = getPHPRuntime().getExecutableInstall();
+		workingCopy.setAttribute(IPHPDebugConstants.ATTR_EXECUTABLE_LOCATION, item.getExecutable().getAbsolutePath());
+
+		if (item.getINILocation() != null) {
+			workingCopy.setAttribute(IPHPDebugConstants.ATTR_INI_LOCATION, item.getINILocation().getAbsolutePath());
+		} else {
+			workingCopy.setAttribute(IPHPDebugConstants.ATTR_INI_LOCATION, StringUtils.EMPTY);
+		}
+
 		workingCopy.setAttribute(Server.NAME, getServer().getName());
 		workingCopy.setAttribute(Server.BASE_URL, getPHPServer().getRootUrl().toString());
 		workingCopy.setAttribute(IDebugParametersKeys.TRANSFER_ENCODING,
