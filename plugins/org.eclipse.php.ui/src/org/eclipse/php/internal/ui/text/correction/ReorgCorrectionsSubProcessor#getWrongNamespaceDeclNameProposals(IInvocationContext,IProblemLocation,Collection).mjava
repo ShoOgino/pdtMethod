@@ -1,0 +1,54 @@
+	public static void getWrongNamespaceDeclNameProposals(IInvocationContext context, IProblemLocation problem,
+			Collection proposals) {
+		ISourceModule cu = context.getCompilationUnit();
+		boolean isLinked = cu.getResource().isLinked();
+		String namespaceName = PHPToolkitUtil.getNamespaceResolver(cu.getScriptProject().getProject())
+				.resolveNamespace(cu.getParent().getPath());
+		int relevance = namespaceName.equals("") ? 7 : 5; //$NON-NLS-1$
+		// correct package declaration
+		proposals.add(new CorrectNamespaceDeclarationProposal(context, problem, relevance));
+
+		// move to package
+		Program program = context.getASTRoot();
+		INamespaceResolver resolver = PHPToolkitUtil.getNamespaceResolver(cu.getScriptProject().getProject());
+		String newNamespaceName = ""; //$NON-NLS-1$
+		ASTNode coveredNode = problem.getCoveredNode(program);
+		if (coveredNode != null) {
+			NamespaceDeclaration namespace = program.getNamespaceDeclaration(coveredNode.getStart());
+			if (namespace != null) {
+				newNamespaceName = namespace.getName().getName();
+			}
+		}
+		IPath resolveLocation = resolver.resolveLocation(cu.getPath(), newNamespaceName);
+		if (resolveLocation == null) {
+			return;
+		}
+		IFolder loc = ResourcesPlugin.getWorkspace().getRoot().getFolder(resolveLocation);
+		IScriptFolder newPack = (IScriptFolder) ModelManager.create(loc, cu.getScriptProject());
+		if (newPack == null) {
+			// XXX: calculated dir outside buildpath
+			return;
+		}
+
+		ISourceModule newCU = newPack.getSourceModule(cu.getElementName());
+		if (!newCU.exists() && !isLinked) {
+			String packageLabel = resolver.resolveNamespace(newPack.getPath());
+			String label;
+			if (packageLabel.isEmpty()) {
+				label = Messages.format(CorrectionMessages.ReorgCorrectionsSubProcessor_movecu_default_description,
+						BasicElementLabels.getFileName(cu));
+			} else {
+
+				label = Messages.format(CorrectionMessages.ReorgCorrectionsSubProcessor_movecu_description,
+						new Object[] { BasicElementLabels.getFileName(cu), packageLabel });
+			}
+			CompositeChange composite = new CompositeChange(label);
+			composite.add(new CreateSourceFolderChange(newPack));
+			composite.add(new MoveSourceModuleChange(cu, newPack));
+
+			proposals.add(new ChangeCorrectionProposal(label, composite, 6,
+					DLTKPluginImages.get(DLTKPluginImages.IMG_CORRECTION_MOVE)));
+		}
+
+	}
+

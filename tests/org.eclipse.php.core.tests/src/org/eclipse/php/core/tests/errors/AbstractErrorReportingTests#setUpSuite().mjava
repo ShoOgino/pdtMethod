@@ -1,5 +1,15 @@
 	@BeforeList
 	public void setUpSuite() throws Exception {
+		IProblemPreferences problemPreferences = PHPCorePlugin.getDefault().getProblemPreferences();
+		for (PHPProblemIdentifier ident : PHPProblemIdentifier.values()) {
+			InstanceScope.INSTANCE.getNode(problemPreferences.getPreferenceQualifier(ident))
+					.put(PHPCoreConstants.SEVERITY, ProblemSeverity.WARNING.name());
+		}
+		// disable
+		problemPreferences.setSeverity(PHPProblemIdentifier.UnexpectedNamespaceDeclaration, ProblemSeverity.IGNORE,
+				InstanceScope.INSTANCE);
+		problemPreferences.setSeverity(PHPProblemIdentifier.FirstClassMustMatchFileName, ProblemSeverity.IGNORE,
+				InstanceScope.INSTANCE);
 		ResourcesPlugin.getWorkspace().run((m) -> {
 			project = TestUtils.createProject("ErrorReportingTests");
 			TestUtils.setProjectPHPVersion(project, getPHPVersion());

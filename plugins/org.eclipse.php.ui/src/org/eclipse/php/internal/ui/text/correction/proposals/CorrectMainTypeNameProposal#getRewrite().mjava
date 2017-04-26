@@ -1,0 +1,20 @@
+	@Override
+	protected ASTRewrite getRewrite() throws CoreException {
+		Program astRoot = fContext.getASTRoot();
+
+		AST ast = astRoot.getAST();
+		ASTRewrite rewrite = ASTRewrite.create(ast);
+
+		TypeDeclaration decl = findTypeDeclaration(astRoot.statements(), fOldName);
+		if (decl != null) {
+			ASTNode[] sameNodes = LinkedNodeFinder.findByNode(astRoot, decl.getName());
+			for (int i = 0; i < sameNodes.length; i++) {
+				rewrite.replace(sameNodes[i], fNewName, null);
+			}
+			if (sameNodes.length == 0) {
+				rewrite.replace(fOldName, fNewName, null);
+			}
+		}
+		return rewrite;
+	}
+

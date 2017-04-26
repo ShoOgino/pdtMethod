@@ -1,0 +1,18 @@
+	@Override
+	public final Change perform(IProgressMonitor pm) throws CoreException {
+		try {
+			pm.beginTask(RefactoringCoreMessages.AbstractRenameChange_Renaming, 1);
+			IResource resource = getResource();
+			IPath newPath = createNewPath();
+			Change result = createUndoChange(resource.getModificationStamp());
+			doRename(SubMonitor.convert(pm, 1));
+			if (fStampToRestore != IResource.NULL_STAMP) {
+				IResource newResource = ResourcesPlugin.getWorkspace().getRoot().findMember(newPath);
+				newResource.revertModificationStamp(fStampToRestore);
+			}
+			return result;
+		} finally {
+			pm.done();
+		}
+	}
+

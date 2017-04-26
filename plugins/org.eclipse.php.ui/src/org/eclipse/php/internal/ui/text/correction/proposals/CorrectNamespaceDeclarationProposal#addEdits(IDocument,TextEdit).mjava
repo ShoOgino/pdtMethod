@@ -1,0 +1,35 @@
+	@Override
+	protected void addEdits(IDocument doc, TextEdit root) throws CoreException {
+		super.addEdits(doc, root);
+
+		ISourceModule cu = getCompilationUnit();
+
+		IScriptFolder parentPack = (IScriptFolder) cu.getParent();
+		NamespaceName namespace = getNamespaceName(cu);
+		if (parentPack.isRootFolder() && namespace != null) {
+			String lineDelim = StubUtility.getLineDelimiterUsed(cu.getScriptProject());
+			int line;
+			try {
+				line = doc.getLineOfOffset(namespace.getStart());
+				int lineStart = doc.getLineOffset(line);
+				int length = doc.getLineLength(line) - lineDelim.length();
+				root.addChild(new DeleteEdit(lineStart, length));
+				return;
+			} catch (BadLocationException e) {
+				return;
+			}
+		}
+		if (!parentPack.isRootFolder() && namespace == null) {
+			String lineDelim = StubUtility.getLineDelimiterUsed(cu.getScriptProject());
+			String namespaceName = PHPToolkitUtil.getNamespaceResolver(cu.getScriptProject().getProject())
+					.resolveNamespace(parentPack.getPath());
+			String str = "namespace " + namespaceName + ';' //$NON-NLS-1$ //$NON-NLS-2$
+					+ lineDelim + lineDelim;
+			root.addChild(new InsertEdit(fLocation.getOffset(), str));
+			return;
+		}
+
+		root.addChild(new ReplaceEdit(fLocation.getOffset(), fLocation.getLength(), PHPToolkitUtil
+				.getNamespaceResolver(cu.getScriptProject().getProject()).resolveNamespace(parentPack.getPath())));
+	}
+

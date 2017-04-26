@@ -9,6 +9,14 @@
 			typeDeclarations.addLast(s);
 			declarationScope.addLast(new HashMap<String, ISourceNode>());
 		}
-		return super.visit(s);
+		boolean res = super.visit(s);
+		INamespaceResolver resolver = (INamespaceResolver) context.get(NAMESPACE_RESOLVER);
+		if (resolver == null) {
+			resolver = PHPToolkitUtil.getNamespaceResolver(sourceModule.getScriptProject().getProject());
+			context.set(NAMESPACE_RESOLVER, resolver);
+		}
+		expectedNamespace = resolver.resolveNamespace(sourceModule.getParent().getPath());
+		expectedTypeName = PHPModelUtils.getTypeNameByFileName(sourceModule);
+		return res;
 	}
 

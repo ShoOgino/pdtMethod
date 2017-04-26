@@ -1,0 +1,36 @@
+	@Override
+	Change doPerformReorg(IProgressMonitor pm) throws CoreException, OperationCanceledException {
+		String name;
+		String newName = getNewName();
+		if (newName == null)
+			name = getCu().getElementName();
+		else
+			name = newName;
+
+		// get current modification stamp
+		long currentStamp = IResource.NULL_STAMP;
+		IResource resource = getCu().getResource();
+		if (resource != null) {
+			currentStamp = resource.getModificationStamp();
+		}
+
+		IScriptFolder destination = getDestinationPackage();
+		fUndoable = !destination.getSourceModule(name).exists();
+
+		// perform the move and restore modification stamp
+		getCu().move(destination, null, newName, true, pm);
+		if (fStampToRestore != IResource.NULL_STAMP) {
+			ISourceModule moved = destination.getSourceModule(name);
+			IResource movedResource = moved.getResource();
+			if (movedResource != null) {
+				movedResource.revertModificationStamp(fStampToRestore);
+			}
+		}
+
+		if (fUndoable) {
+			return new MoveSourceModuleChange(destination, getCu().getElementName(), getOldPackage(), currentStamp);
+		} else {
+			return null;
+		}
+	}
+
