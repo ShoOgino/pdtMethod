@@ -1,8 +1,19 @@
 		@Override
-		public boolean visit(NamespaceName namespace) {
-			if (namespace.isGlobal() || namespace.getParent() instanceof NamespaceDeclaration) {
-				return false;
+		public boolean visit(NamespaceName name) {
+			if (!name.isGlobal() && !(name.getParent() instanceof NamespaceDeclaration)) {
+				if (PHPSimpleTypes.isHintable(name.getName(), name.getAST().apiLevel())
+						|| TYPE_SKIP.contains(name.getName())) {
+					return false;
+				}
+				List<Identifier> segs = name.segments();
+				if (segs.size() > 0) {
+					Identifier node = segs.get(segs.size() - 1);
+					if (PhpElementConciliator.concile(node) == PhpElementConciliator.CONCILIATOR_CLASSNAME
+							|| PhpElementConciliator.concile(node) == PhpElementConciliator.CONCILIATOR_TRAITNAME) {
+						fTypeReferences.add(name);
+					}
+				}
 			}
-			return true;
+			return false;
 		}
 

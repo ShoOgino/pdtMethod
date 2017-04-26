@@ -8,7 +8,12 @@
 			NamespaceDeclaration namespace = fRoot.getNamespaceDeclaration(ref.getStart());
 			String typeName = ref.getName();
 
-			if (fImportsAdded.get(namespace).contains(typeName)) {
+			int index = typeName.indexOf(NamespaceReference.NAMESPACE_DELIMITER);
+			if (index > 0) {
+				typeName = typeName.substring(0, index);
+			}
+
+			if (fImportsAdded.get(namespace) == null || fImportsAdded.get(namespace).contains(typeName)) {
 				return;
 			}
 
@@ -32,13 +37,6 @@
 					fImpStructure.addImport(namespace, typeBindingName, alias);
 					fImportsAdded.get(namespace).add(typeName);
 					return;
-				}
-			} else {
-				if (fDoIgnoreLowerCaseNames && typeName.length() > 0) {
-					char ch = typeName.charAt(0);
-					if (Strings.isLowerCase(ch) && Character.isLetter(ch)) {
-						return;
-					}
 				}
 			}
 
