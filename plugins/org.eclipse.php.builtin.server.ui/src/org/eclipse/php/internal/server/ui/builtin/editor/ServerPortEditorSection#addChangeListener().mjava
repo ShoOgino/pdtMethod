@@ -1,11 +1,13 @@
 	protected void addChangeListener() {
-		listener = new PropertyChangeListener() {
-			@Override
-			public void propertyChange(PropertyChangeEvent event) {
-				if (PHPServerConfiguration.MODIFY_PORT_PROPERTY.equals(event.getPropertyName())) {
-					String id = (String) event.getOldValue();
-					Integer i = (Integer) event.getNewValue();
-					changePortNumber(id, i.intValue());
+		listener = event -> {
+			if (PHPServerConfiguration.MODIFY_PORT_PROPERTY.equals(event.getPropertyName())) {
+				String id = (String) event.getOldValue();
+				Integer value = (Integer) event.getNewValue();
+				if (value < 1 || value > 65535) {
+					setErrorMessage(Messages.ServerPortEditorSection_port_range_validator);
+				} else {
+					setErrorMessage(null);
+					changePortNumber(id, value);
 				}
 			}
 		};
