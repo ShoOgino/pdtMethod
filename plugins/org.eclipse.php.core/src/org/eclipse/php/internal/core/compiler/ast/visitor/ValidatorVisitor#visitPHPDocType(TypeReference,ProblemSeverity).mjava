@@ -1,0 +1,30 @@
+	/**
+	 * Generic checks to only visit PHPDoc type references whose names are valid
+	 * php identifier names. See also
+	 * {@link PHPSelectionEngine#lookForMatchingElements()} for more complete
+	 * and precise PHPDoc type references handling.
+	 */
+	private void visitPHPDocType(TypeReference typeReference, ProblemSeverity severity) throws Exception {
+		if (PHPDOC_TYPE_SKIP.contains(typeReference.getName().toLowerCase())) {
+			return;
+		}
+
+		String name = typeReference.getName();
+		assert name.length() > 0;
+
+		int idx = name.indexOf(PAAMAYIM_NEKUDOTAIM);
+		if (idx == -1) {
+			// look if complete name is a valid identifier name
+			if (PHPTextSequenceUtilities.readNamespaceStartIndex(name, name.length(), false) == 0) {
+				visit(typeReference, severity);
+			}
+		} else if (idx > 0) {
+			// look if name part before "::" is a valid (and non-empty)
+			// identifier name
+			if (PHPTextSequenceUtilities.readNamespaceStartIndex(name, idx, false) == 0) {
+				visit(new TypeReference(typeReference.start(), typeReference.start() + idx, name.substring(0, idx)),
+						severity);
+			}
+		}
+	}
+
