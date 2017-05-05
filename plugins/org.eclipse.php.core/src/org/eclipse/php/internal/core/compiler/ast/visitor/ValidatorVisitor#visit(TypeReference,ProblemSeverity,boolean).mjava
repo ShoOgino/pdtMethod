@@ -1,5 +1,11 @@
-	private boolean visit(TypeReference node, ProblemSeverity severity) throws Exception {
-		if (PHPSimpleTypes.isSimpleType(node.getName()) || TYPE_SKIP.contains(node.getName())) {
+	private boolean visit(TypeReference node, ProblemSeverity severity, boolean isInDoc) throws Exception {
+		boolean skip = false;
+		if (isInDoc) {
+			skip = PHPSimpleTypes.isSimpleType(node.getName());
+		} else {
+			skip = PHPSimpleTypes.isHintable(node.getName(), version);
+		}
+		if (skip || TYPE_SKIP.contains(node.getName().toLowerCase())) {
 			return true;
 		}
 		TypeReferenceInfo tri = new TypeReferenceInfo(node, false);
