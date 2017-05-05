@@ -1,0 +1,23 @@
+	private void checkDuplicateTypeDeclaration(TypeDeclaration node) {
+		String name = node.getName();
+		String currentNamespaceName;
+		if (currentNamespace == null) {
+			currentNamespaceName = ""; //$NON-NLS-1$
+		} else {
+			currentNamespaceName = currentNamespace.getName();
+		}
+		boolean isDuplicateWithUse = false;
+		UsePartInfo info = usePartInfo.get(name.toLowerCase());
+		if (info != null) {
+			String fullyQualifiedName = PHPModelUtils.concatFullyQualifiedNames(NamespaceReference.NAMESPACE_DELIMITER,
+					currentNamespaceName, name);
+			if (!info.getFullyQualifiedName().equals(fullyQualifiedName)) {
+				isDuplicateWithUse = true;
+			}
+		}
+		if (isDuplicateWithUse || !typeDeclared.add(name.toLowerCase())) {
+			reportProblem(node.getRef(), Messages.DuplicateDeclaration, PhpProblemIdentifier.DuplicateDeclaration, name,
+					ProblemSeverities.Error);
+		}
+	}
+

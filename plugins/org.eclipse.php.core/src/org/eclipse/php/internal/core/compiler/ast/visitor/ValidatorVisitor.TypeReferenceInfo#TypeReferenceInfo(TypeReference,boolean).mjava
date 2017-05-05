@@ -7,8 +7,9 @@
 				if (fullTypeReference.getNamespace() != null) {
 					hasNamespace = true;
 					namespaceName = fullTypeReference.getNamespace().getName();
-					if (usePartInfo.get(namespaceName) != null) {
-						namespaceName = usePartInfo.get(namespaceName).getFullyQualifiedName();
+					UsePartInfo info = usePartInfo.get(namespaceName.toLowerCase());
+					if (info != null) {
+						namespaceName = info.getFullyQualifiedName();
 					}
 				}
 			}
@@ -23,7 +24,7 @@
 			if (fullTypeReference != null && isGlobal) {
 				fullyQualifiedName = fullTypeReference.getFullyQualifiedName();
 			} else if (hasNamespace) {
-				fullyQualifiedName = namespaceName + NamespaceReference.NAMESPACE_DELIMITER + typeReference.getName();
+				fullyQualifiedName = PHPModelUtils.concatFullyQualifiedNames(namespaceName, typeReference.getName());
 			} else {
 				fullyQualifiedName = typeName;
 			}
@@ -31,11 +32,14 @@
 				String key = getFirstSegmentOfTypeName(fullyQualifiedName).toLowerCase();
 				if (usePartInfo.containsKey(key)) {
 					fullyQualifiedName = usePartInfo.get(key).getFullyQualifiedName();
-				} else if (currentNamespace != null)
-					fullyQualifiedName = currentNamespace.getName() + NamespaceReference.NAMESPACE_DELIMITER
-							+ fullyQualifiedName;
+				} else if (currentNamespace != null) {
+					fullyQualifiedName = PHPModelUtils.concatFullyQualifiedNames(currentNamespace.getName(),
+							fullyQualifiedName);
+				}
 			}
-			if (!fullyQualifiedName.startsWith(NamespaceReference.NAMESPACE_DELIMITER))
-				fullyQualifiedName = NamespaceReference.NAMESPACE_DELIMITER + fullyQualifiedName;
+			if (fullyQualifiedName.length() > 0
+					&& fullyQualifiedName.charAt(0) != NamespaceReference.NAMESPACE_SEPARATOR) {
+				fullyQualifiedName = NamespaceReference.NAMESPACE_SEPARATOR + fullyQualifiedName;
+			}
 		}
 
