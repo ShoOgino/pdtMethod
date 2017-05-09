@@ -1,0 +1,27 @@
+	/*
+	 * get php region by given IStructuredDocumentRegion and offset
+	 */
+	private ITextRegion getPHPRegion(IStructuredDocumentRegion sdRegion, int offset) throws BadLocationException {
+		ITextRegion tRegion = sdRegion.getRegionAtCharacterOffset(offset);
+
+		if (tRegion.getType().equals(PHPRegionContext.PHP_CLOSE)) {
+			offset--;
+			tRegion = sdRegion.getRegionAtCharacterOffset(offset);
+		}
+
+		int regionStart = sdRegion.getStartOffset(tRegion);
+		// in case of container we have to extract the PhpScriptRegion
+		if (tRegion instanceof ITextRegionContainer) {
+			ITextRegionContainer container = (ITextRegionContainer) tRegion;
+			tRegion = container.getRegionAtCharacterOffset(offset);
+			regionStart += tRegion.getStart();
+		}
+
+		if (tRegion instanceof IPHPScriptRegion) {
+			IPHPScriptRegion scriptRegion = (IPHPScriptRegion) tRegion;
+			tRegion = scriptRegion.getPHPToken(offset - regionStart);
+			return tRegion;
+		}
+		return null;
+	}
+

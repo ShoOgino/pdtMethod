@@ -1,0 +1,43 @@
+	/**
+	 * @param containerName
+	 * @param fileName
+	 * @param contents
+	 */
+	protected boolean createNewPHPFile(final String containerName, final String fileName, final String contents) {
+		if (!createNewFile(containerName, fileName, contents)) {
+			return false;
+		}
+		Path p = new Path(containerName + File.separatorChar + fileName);
+		IFile file = ResourcesPlugin.getWorkspace().getRoot().getFile(p);
+
+		// open file in IDE
+		IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+		try {
+			IDE.openEditor(page, file, true);
+		} catch (Exception e) {
+			Logger.logException(e);
+		}
+		IStructuredModel model = null;
+		try {
+			model = StructuredModelManager.getModelManager().getModelForEdit(file);
+		} catch (Exception e) {
+			Logger.logException(e);
+			return false;
+		}
+		IStructuredDocument document = model.getStructuredDocument();
+		model.releaseFromEdit();
+
+		// TODO - Vadim fix the formatting
+		// format the code
+		CodeInjector injector = new CodeInjector();
+		injector.formatDocument(document, 0, document.getLength());
+
+		// save file
+		try {
+			model.save();
+		} catch (Exception e) {
+			Logger.logException(e);
+		}
+		return true;
+	}
+

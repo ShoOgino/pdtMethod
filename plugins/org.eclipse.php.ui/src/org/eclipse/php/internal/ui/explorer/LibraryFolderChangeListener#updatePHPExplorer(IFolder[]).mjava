@@ -1,0 +1,34 @@
+	/**
+	 * Updates the visual state of the given folders and all their subfolders
+	 * (recursively) in the PHP Explorer view.
+	 * 
+	 * @param folders
+	 *            an array of folders to update
+	 * 
+	 * @throws CoreException
+	 *             if any of the folders does not exist or is in a closed
+	 *             project
+	 */
+	private void updatePHPExplorer(IFolder[] folders) throws CoreException {
+		LibraryFolderManager lfm = LibraryFolderManager.getInstance();
+		final IFolder[] subfolders = lfm.getAllSubfolders(folders);
+
+		// make sure the actual update in the PHP Explorer is executed in the UI
+		// thread
+		Display.getDefault().asyncExec(new Runnable() {
+			@Override
+			public void run() {
+				PHPExplorerPart phpExplorer = getPHPExplorer();
+				if (phpExplorer != null) {
+					TreeViewer tree = phpExplorer.getTreeViewer();
+					for (IFolder subfolder : subfolders) {
+						IModelElement element = DLTKCore.create(subfolder);
+						if (element != null) {
+							tree.update(element, null);
+						}
+					}
+				}
+			}
+		});
+	}
+

@@ -1,0 +1,91 @@
+	/**
+	 * Constructor for ClasspathVariablesPreferencePage
+	 */
+	public PHPLibraryPreferencePage() {
+		setPreferenceStore(DLTKUIPlugin.getDefault().getPreferenceStore());
+		fDummyProject = createPlaceholderProject();
+
+		fAttributeDescriptors = DLTKUIPlugin.getDefault().getClasspathAttributeConfigurationDescriptors();
+
+		// title only used when page is shown programatically
+		setTitle(PreferencesMessages.UserLibraryPreferencePage_title);
+		setDescription(PreferencesMessages.UserLibraryPreferencePage_description);
+		noDefaultAndApplyButton();
+
+		fDialogSettings = DLTKUIPlugin.getDefault().getDialogSettings();
+
+		UserLibraryAdapter adapter = new UserLibraryAdapter();
+
+		handlers = new ArrayList<IPHPLibraryButtonHandler>();
+		// NEW
+		handlers.add(new NewButtonHandler());
+		// EDIT
+		handlers.add(new EditButtonHandler());
+		// ADD
+		handlers.add(new AddZipButtonHandler());
+		// ADD EXTERNAL
+		handlers.add(new AddExternalButtonHandler());
+		// REMOVE
+		handlers.add(new RemoveButtonHandler());
+		// SEPARATOR
+		handlers.add(new EmptyButtonHandler());
+		// UP
+		handlers.add(new UpButtonHandler());
+		// DOWN
+		handlers.add(new DownButtonHandler());
+		// SEPARATOR
+		handlers.add(new EmptyButtonHandler());
+		// LOAD
+		handlers.add(new LoadButtonHandler());
+		// SAVE
+		handlers.add(new SaveButtonHandler());
+
+		List<IPHPLibraryButtonHandler> additionalHandlers = getHandlers();
+		for (IPHPLibraryButtonHandler handler : additionalHandlers) {
+			int position = handler.getPosition();
+			if (position < 0) {
+				position = 0;
+			}
+			if (position > handlers.size()) {
+				position = handlers.size();
+			}
+			handlers.add(handler.getPosition(), handler);
+		}
+
+		String[] buttonLabels = new String[handlers.size()];
+		int size = handlers.size();
+		for (int i = 0; i < size; i++) {
+			buttonLabels[i] = handlers.get(i).getLabel();
+		}
+
+		IDecoratorManager decoratorManager = PlatformUI.getWorkbench().getDecoratorManager();
+		fLibraryList = new TreeListDialogField(adapter, buttonLabels,
+				new DecoratingLabelProvider(new BPListLabelProvider(), decoratorManager));
+		fLibraryList.setLabelText(PreferencesMessages.UserLibraryPreferencePage_libraries_label);
+
+		String[] names = DLTKCore.getUserLibraryNames(getLanguageToolkit());
+		ArrayList elements = new ArrayList();
+
+		for (int i = 0; i < names.length; i++) {
+			UserLibrary lib = ModelManager.getUserLibraryManager().getUserLibrary(names[i], getLanguageToolkit());
+
+			if (lib != null) {
+				IPath path = new Path(DLTKCore.USER_LIBRARY_CONTAINER_ID)
+						.append(UserLibraryManager.makeLibraryName(names[i], getLanguageToolkit()));
+
+				try {
+					IBuildpathContainer container = DLTKCore.getBuildpathContainer(path, fDummyProject);
+					elements.add(new BPUserLibraryElement(names[i], container, fDummyProject, lib.getAttributes()));
+				} catch (ModelException e) {
+					DLTKUIPlugin.log(e);
+					// ignore
+				}
+			}
+
+		}
+		fLibraryList.setElements(elements);
+		fLibraryList.setViewerComparator(new BPListElementSorter());
+
+		doSelectionChanged(fLibraryList); // update button enable state
+	}
+
