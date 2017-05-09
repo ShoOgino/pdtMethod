@@ -1,0 +1,165 @@
+	@Override
+	public StructuredDocumentEvent updateRegion(Object requester, IStructuredDocumentRegion flatnode, String changes,
+			int requestStart, int lengthToReplace) {
+		isFullReparsed = true;
+		updatedTokensStart = -1;
+		updatedTokensEnd = -1;
+		try {
+			final int offset = requestStart - flatnode.getStartOffset() - getStart();
+
+			// support the <?php case
+			if (offset < 4) {
+				return null;
+			}
+			// checks for odd quotes
+			final String deletedText = lengthToReplace == 0 ? "" //$NON-NLS-1$
+					: flatnode.getParentDocument().get(requestStart, lengthToReplace);
+			final int length = changes.length();
+			if (startQuoted(deletedText) || startQuoted(changes)) {
+				return null;
+			}
+
+			synchronized (tokensContainer) {
+				if (ProjectOptions.getPHPVersion(project) != currentPhpVersion) {
+					// https://bugs.eclipse.org/bugs/show_bug.cgi?id=510509
+					// force full reparse
+					return null;
+				}
+
+				// get the region to re-parse
+				ITextRegion tokenStart = tokensContainer.getToken(offset == 0 ? 0 : offset - 1);
+				ITextRegion tokenEnd = tokensContainer.getToken(offset + lengthToReplace);
+
+				// make sure, region to re-parse doesn't start with unknown
+				// token
+				while (PHPRegionTypes.UNKNOWN_TOKEN.equals(tokenStart.getType()) && (tokenStart.getStart() > 0)) {
+					tokenStart = tokensContainer.getToken(tokenStart.getStart() - 1);
+				}
+
+				int newTokenOffset = tokenStart.getStart();
+
+				if (isHeredocState(newTokenOffset)) {
+					// https://bugs.eclipse.org/bugs/show_bug.cgi?id=498525
+					// Fully re-parse when we're in a heredoc/nowdoc section.
+					// NB: it's much easier and safer to use the lexer state to
+					// determine if we're in a heredoc/nowdoc section,
+					// using PHPRegionTypes make us depend on how each PHP
+					// lexer version analyzes the heredoc/nowdoc content.
+					// In the same way, PHPPartitionTypes.isPhpQuotesState(type)
+					// cannot be used here because it's not exclusive to
+					// heredoc/nowdoc sections.
+					return null;
+				}
+				if (isMaybeStartingNewHeredocSection(tokenStart)) {
+					// In case a user is (maybe) starting to write a brand new
+					// heredoc/nowdoc section in a php document, we should fully
+					// re-parse the document to update the lexer to
+					// distinguish "<<" bitwise shift operators from "<<" and
+					// "<<<" operators that are followed by a label.
+					// This also allows highlighters to correctly detect and
+					// highlight opening and closing heredoc/nowdoc tags asap.
+					return null;
+				}
+
+				// make sure, region to re-parse doesn't end with unknown token
+				while (PHPRegionTypes.UNKNOWN_TOKEN.equals(tokenEnd.getType())
+						&& (tokensContainer.getLastToken() != tokenEnd)) {
+					tokenEnd = tokensContainer.getToken(tokenEnd.getEnd());
+				}
+
+				boolean shouldDeprecatedKeyword = false;
+				int previousIndex = tokensContainer.phpTokens.indexOf(tokenStart) - 1;
+				if (previousIndex >= 0) {
+					ITextRegion previousRegion = tokensContainer.phpTokens.get(previousIndex);
+					if (PHPTokenContainer.deprecatedKeywordAfter(previousRegion.getType())) {
+						shouldDeprecatedKeyword = true;
+					}
+					if (PHPPartitionTypes.isPHPMultiLineCommentRegion(tokenStart.getType())
+							&& tokenStart.getLength() == 1
+							&& PHPPartitionTypes.isPHPMultiLineCommentStartRegion(previousRegion.getType())) {
+						requestStart = previousRegion.getStart();
+					}
+				}
+
+				// get start and end states
+				final LexerState startState = tokensContainer.getState(newTokenOffset);
+				final LexerState endState = tokensContainer.getState(tokenEnd.getEnd());
+
+				assert startState != null && endState != null;
+
+				final PHPTokenContainer newContainer = new PHPTokenContainer();
+				final AbstractPHPLexer phpLexer = getPHPLexer(
+						new DocumentReader(flatnode, changes, requestStart, lengthToReplace, newTokenOffset),
+						startState, currentPhpVersion);
+
+				LexerState state = startState;
+				try {
+					String yylex = phpLexer.getNextToken();
+					if (shouldDeprecatedKeyword && PHPTokenContainer.isKeyword(yylex)) {
+						yylex = PHPRegionTypes.PHP_LABEL;
+					}
+					int yylength;
+					final int toOffset = offset + length;
+					while (yylex != null && newTokenOffset <= toOffset && yylex != PHPRegionTypes.PHP_CLOSETAG) {
+						yylength = phpLexer.getLength();
+						newContainer.addLast(yylex, newTokenOffset, yylength, yylength, state);
+						newTokenOffset += yylength;
+						state = phpLexer.createLexicalStateMemento();
+						yylex = phpLexer.getNextToken();
+					}
+					if (yylex == PHPRegionTypes.WHITESPACE) {
+						yylength = phpLexer.getLength();
+						newContainer.adjustWhitespace(yylex, newTokenOffset, yylength, yylength, state);
+					}
+				} catch (IOException e) {
+					Logger.logException(e);
+				}
+
+				// if the fast reparser couldn't lex - - reparse all
+				if (newContainer.isEmpty()) {
+					return null;
+				}
+
+				// if the two streams end with the same lexer state -
+				// 1. replace the regions
+				// 2. adjust next regions start location
+				// 3. update state changes
+				final int size = length - lengthToReplace;
+				final int end = newContainer.getLastToken().getEnd();
+
+				if ((state != null && !state.equals(endState)) || tokenEnd.getEnd() + size != end) {
+					return null;
+				}
+
+				// 1. replace the regions
+				final ListIterator oldIterator = tokensContainer.removeTokensSubList(tokenStart, tokenEnd);
+
+				ITextRegion[] newTokens = newContainer.getPHPTokens(); // now,
+																		// add
+				// the new
+				// ones
+				for (int i = 0; i < newTokens.length; i++) {
+					oldIterator.add(newTokens[i]);
+				}
+
+				// 2. adjust next regions start location
+				while (oldIterator.hasNext()) {
+					final ITextRegion adjust = (ITextRegion) oldIterator.next();
+					adjust.adjustStart(size);
+				}
+
+				// 3. update state changes
+				tokensContainer.updateStateChanges(newContainer, tokenStart.getStart(), end);
+				updatedTokensStart = tokenStart.getStart();
+				updatedTokensEnd = end;
+				isFullReparsed = false;
+			}
+
+			return super.updateRegion(requester, flatnode, changes, requestStart, lengthToReplace);
+
+		} catch (BadLocationException e) {
+			PHPCorePlugin.log(e);
+			return null; // causes to full reparse in this case
+		}
+	}
+

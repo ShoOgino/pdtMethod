@@ -1,0 +1,28 @@
+	/**
+	 * @see IPHPScriptRegion#isPHPQuotesState(int)
+	 */
+	public boolean isPHPQuotesState(int relativeOffset) throws BadLocationException {
+		String type = getPHPTokenType(relativeOffset);
+		// First, check if current type is a known "quoted" type.
+		if (PHPPartitionTypes.isPHPQuotesState(type)) {
+			return true;
+		}
+		// If not, it means that maybe we are "deeper" in the stack, in an
+		// encapsed variable for example.
+		// Also note that the states PHP_HEREDOC_START_TAG and
+		// PHP_NOWDOC_START_TAG are NOT put on the lexer substates stack
+		// (because the way the lexers actually work), but
+		// PHPPartitionTypes.isPhpQuotesState(type) will be enough to catch
+		// them.
+		LexerState lexState = tokensContainer.getState(relativeOffset);
+		if (lexState == null) {
+			return false;
+		}
+		for (int state : phpQuotesStates) {
+			if (lexState.isSubstateOf(state)) {
+				return true;
+			}
+		}
+		return false;
+	}
+

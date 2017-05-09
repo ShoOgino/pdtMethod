@@ -1,0 +1,29 @@
+	/**
+	 * Updates the container with the new states
+	 * 
+	 * @param newContainer
+	 * @param fromOffset
+	 * @param toOffset
+	 * @param size
+	 */
+	public synchronized void updateStateChanges(PHPTokenContainer newContainer, int fromOffset, int toOffset) {
+		if (newContainer.lexerStateChanges.size() < 2) {
+			return;
+		}
+
+		// remove
+		final ListIterator<LexerStateChange> oldIterator = removeOldChanges(fromOffset, toOffset);
+
+		// add
+		final Iterator<LexerStateChange> newIterator = newContainer.lexerStateChanges.iterator();
+		newIterator.next(); // ignore the first state change (it is identical to
+		// the original one)
+
+		// goto the previous before adding
+		setIterator(oldIterator, fromOffset, toOffset);
+
+		while (newIterator.hasNext()) {
+			oldIterator.add(newIterator.next());
+		}
+	}
+

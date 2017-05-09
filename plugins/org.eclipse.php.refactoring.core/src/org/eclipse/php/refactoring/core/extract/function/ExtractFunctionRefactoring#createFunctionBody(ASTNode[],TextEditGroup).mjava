@@ -1,20 +1,15 @@
-	private Block createFunctionBody(ASTNode[] selectedNodes,
-			TextEditGroup substitute) {
+	private Block createFunctionBody(ASTNode[] selectedNodes, TextEditGroup substitute) {
 		Block result = fAST.newBlock();
-		ListRewrite statements = fRewriter.getListRewrite(result,
-				Block.STATEMENTS_PROPERTY);
+		ListRewrite statements = fRewriter.getListRewrite(result, Block.STATEMENTS_PROPERTY);
 
-		for (Iterator<ParameterInfo> iter = fParameterInfos.iterator(); iter
-				.hasNext();) {
+		for (Iterator<ParameterInfo> iter = fParameterInfos.iterator(); iter.hasNext();) {
 			ParameterInfo parameter = iter.next();
 			if (parameter.isRenamed()) {
 				for (int n = 0; n < selectedNodes.length; n++) {
-					Identifier[] oldNames = LinkedNodeFinder.findByBinding(
-							selectedNodes[n], parameter.getOldBinding());
+					Identifier[] oldNames = LinkedNodeFinder.findByBinding(selectedNodes[n], parameter.getOldBinding());
 					for (int i = 0; i < oldNames.length; i++) {
-						fRewriter.replace(oldNames[i], fAST
-								.newIdentifier(removeDollar(parameter
-										.getNewName())), substitute);
+						fRewriter.replace(oldNames[i], fAST.newIdentifier(removeDollar(parameter.getNewName())),
+								substitute);
 					}
 				}
 			}
@@ -31,27 +26,20 @@
 		if (extractsExpression) {
 			// if we have an expression then only one node is selected.
 			ReturnStatement rs = fAST.newReturnStatement();
-			rs.setExpression((Expression) fRewriter
-					.createMoveTarget(selectedNodes[0]));
+			rs.setExpression((Expression) fRewriter.createMoveTarget(selectedNodes[0]));
 			statements.insertLast(rs, null);
 			fRewriter.replace(selectedNodes[0], replacementNode, substitute);
 		} else {
 			if (selectedNodes.length == 1) {
-				statements.insertLast(
-						fRewriter.createMoveTarget(selectedNodes[0]),
-						substitute);
-				fRewriter
-						.replace(selectedNodes[0], replacementNode, substitute);
+				statements.insertLast(fRewriter.createMoveTarget(selectedNodes[0]), substitute);
+				fRewriter.replace(selectedNodes[0], replacementNode, substitute);
 			} else {
-				ListRewrite source = fRewriter.getListRewrite(selectedNodes[0]
-						.getParent(),
-						(ChildListPropertyDescriptor) selectedNodes[0]
-								.getLocationInParent());
+				ListRewrite source = fRewriter.getListRewrite(selectedNodes[0].getParent(),
+						(ChildListPropertyDescriptor) selectedNodes[0].getLocationInParent());
 
 				ASTNode[] nodes = filterComments(selectedNodes);
 				if (nodes.length > 0) {
-					ASTNode toMove = source.createMoveTarget(nodes[0],
-							selectedNodes[nodes.length - 1], replacementNode,
+					ASTNode toMove = source.createMoveTarget(nodes[0], selectedNodes[nodes.length - 1], replacementNode,
 							substitute);
 					statements.insertLast(toMove, substitute);
 				}

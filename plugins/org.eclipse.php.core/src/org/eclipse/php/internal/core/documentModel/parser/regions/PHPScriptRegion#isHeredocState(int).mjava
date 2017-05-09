@@ -1,0 +1,26 @@
+	protected boolean isHeredocState(int relativeOffset) throws BadLocationException {
+		String type = getPHPTokenType(relativeOffset);
+		// First, check if current type is a known "heredoc/nowdoc" type.
+		if (type == PHPRegionTypes.PHP_HEREDOC_START_TAG || type == PHPRegionTypes.PHP_HEREDOC_CLOSE_TAG
+				|| type == PHPRegionTypes.PHP_NOWDOC_START_TAG || type == PHPRegionTypes.PHP_NOWDOC_CLOSE_TAG) {
+			return true;
+		}
+		// If not, it means that maybe we are "deeper" in the stack, in an
+		// encapsed variable for example, or maybe simply in the "text" part of
+		// a heredoc/nowdoc section.
+		// Also note that the states PHP_HEREDOC_START_TAG and
+		// PHP_NOWDOC_START_TAG are NOT put on the lexer substates stack
+		// (because the way the lexers actually work), but previous type tests
+		// will be enough to catch them.
+		LexerState lexState = tokensContainer.getState(relativeOffset);
+		if (lexState == null) {
+			return false;
+		}
+		for (int state : heredocStates) {
+			if (lexState.isSubstateOf(state)) {
+				return true;
+			}
+		}
+		return false;
+	}
+

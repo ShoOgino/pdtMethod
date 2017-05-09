@@ -1,0 +1,35 @@
+	/**
+	 * @param script
+	 * @return a list of php tokens
+	 */
+	private synchronized void setPHPTokens(AbstractPHPLexer lexer) {
+		setLength(0);
+		setTextLength(0);
+
+		isFullReparsed = true;
+		assert lexer != null;
+
+		int start = 0;
+		this.tokensContainer.getModelForCreation();
+		this.tokensContainer.reset();
+		try {
+			LexerState state = lexer.createLexicalStateMemento();
+			String yylex = lexer.getNextToken();
+			int yylength = 0;
+			while (yylex != null && yylex != PHPRegionTypes.PHP_CLOSETAG) {
+				yylength = lexer.getLength();
+				this.tokensContainer.addLast(yylex, start, yylength, yylength, state);
+				start += yylength;
+				state = lexer.createLexicalStateMemento();
+				yylex = lexer.getNextToken();
+			}
+			adjustLength(start);
+			adjustTextLength(start);
+
+		} catch (IOException e) {
+			Logger.logException(e);
+		} finally {
+			this.tokensContainer.releaseModelFromCreation();
+		}
+	}
+

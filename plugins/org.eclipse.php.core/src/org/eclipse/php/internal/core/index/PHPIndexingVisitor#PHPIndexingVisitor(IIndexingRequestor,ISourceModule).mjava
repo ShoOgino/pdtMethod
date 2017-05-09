@@ -1,0 +1,21 @@
+	public PHPIndexingVisitor(IIndexingRequestor requestor, ISourceModule module) {
+		this.requestor = requestor;
+
+		List<PHPIndexingVisitorExtension> extensions = new ArrayList<PHPIndexingVisitorExtension>(
+				extensionElements.length);
+		for (IConfigurationElement element : extensionElements) {
+			try {
+				PHPIndexingVisitorExtension ext = (PHPIndexingVisitorExtension) element
+						.createExecutableExtension(CLASS_ATTR);
+				ext.setRequestor(requestor);
+				// pass the ISourceModule over to the extension
+				// in case it needs it during indexing
+				ext.setSourceModule(module);
+				extensions.add(ext);
+			} catch (CoreException e) {
+				Logger.logException(e);
+			}
+		}
+		this.extensions = extensions.toArray(new PHPIndexingVisitorExtension[extensions.size()]);
+	}
+

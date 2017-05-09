@@ -13,8 +13,8 @@
 		}
 
 		if (tRegion != null && tRegion.getType() == PHPRegionContext.PHP_CONTENT) {
-			IPhpScriptRegion phpScriptRegion = (IPhpScriptRegion) tRegion;
-			tRegion = phpScriptRegion.getPhpToken(offset - container.getStartOffset() - phpScriptRegion.getStart());
+			IPHPScriptRegion phpScriptRegion = (IPHPScriptRegion) tRegion;
+			tRegion = phpScriptRegion.getPHPToken(offset - container.getStartOffset() - phpScriptRegion.getStart());
 			// Determine element name:
 			int elementStart = container.getStartOffset() + phpScriptRegion.getStart() + tRegion.getStart();
 			TextSequence statement = PHPTextSequenceUtilities.getStatement(elementStart + tRegion.getLength(), sRegion,
@@ -38,7 +38,7 @@
 			// Determine next word:
 			ITextRegion nextRegion = tRegion;
 			do {
-				nextRegion = phpScriptRegion.getPhpToken(nextRegion.getEnd());
+				nextRegion = phpScriptRegion.getPHPToken(nextRegion.getEnd());
 				if (!PHPPartitionTypes.isPHPCommentState(nextRegion.getType())
 						&& nextRegion.getType() != PHPRegionTypes.WHITESPACE) {
 					break;
@@ -137,7 +137,7 @@
 			// If this is variable:
 			if (elementName.charAt(0) == '$' && !PAAMAYIM_NEKUDOTAIM.equals(trigger)) {
 				// Don't show escaped variables within PHP string:
-				if (PHPPartitionTypes.isPhpQuotesState(tRegion.getType())) {
+				if (PHPPartitionTypes.isPHPQuotesState(tRegion.getType())) {
 					try {
 						char charBefore = sDoc.get(elementStart - 2, 1).charAt(0);
 						if (charBefore == NamespaceReference.NAMESPACE_SEPARATOR) {
@@ -179,7 +179,7 @@
 			}
 			if (NamespaceReference.NAMESPACE_DELIMITER.equals(nextWord)) {
 				IDLTKSearchScope scope = SearchEngine.createSearchScope(sourceModule.getScriptProject());
-				return PhpModelAccess.getDefault().findNamespaces(null, elementName, MatchRule.EXACT, 0, 0, scope,
+				return PHPModelAccess.getDefault().findNamespaces(null, elementName, MatchRule.EXACT, 0, 0, scope,
 						null);
 			}
 

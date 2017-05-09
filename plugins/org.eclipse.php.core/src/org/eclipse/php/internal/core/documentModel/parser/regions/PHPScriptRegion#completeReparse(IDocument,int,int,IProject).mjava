@@ -1,0 +1,19 @@
+	/**
+	 * @see IPHPScriptRegion#completeReparse(IDocument, int, int, IProject)
+	 */
+	public synchronized void completeReparse(IDocument doc, int start, int length, @Nullable IProject project) {
+		this.project = project;
+		currentPhpVersion = ProjectOptions.getPHPVersion(this.project);
+		// bug fix for 225118 we need to refresh the constants since this
+		// function is being called
+		// after the project's PHP version was changed.
+		AbstractPHPLexer phpLexer = getPHPLexer(new BlockDocumentReader(doc, start, length), null, currentPhpVersion);
+
+		// these values are specific to each PHP version lexer
+		inScriptingState = phpLexer.getInScriptingState();
+		phpQuotesStates = phpLexer.getPHPQuotesStates();
+		heredocStates = phpLexer.getHeredocStates();
+
+		completeReparse(phpLexer);
+	}
+

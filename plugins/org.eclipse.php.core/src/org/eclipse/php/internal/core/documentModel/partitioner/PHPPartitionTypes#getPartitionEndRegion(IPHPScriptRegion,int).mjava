@@ -1,0 +1,25 @@
+	/**
+	 * Returns region current partition ends on
+	 * 
+	 * @param region
+	 *            Region containing current offset
+	 * @param relativeOffset
+	 *            Current position relative to the containing region
+	 * @return Ending region of the current partition
+	 * @throws BadLocationException
+	 */
+	public static final ITextRegion getPartitionEndRegion(IPHPScriptRegion region, int relativeOffset)
+			throws BadLocationException {
+		String partitionType = region.getPartition(relativeOffset);
+		ITextRegion internalRegion = region.getPHPToken(relativeOffset);
+		ITextRegion endRegion = internalRegion;
+		while (internalRegion.getEnd() != region.getLength()) {
+			internalRegion = region.getPHPToken(internalRegion.getEnd());
+			if (region.getPartition(internalRegion.getStart()) != partitionType) {
+				break;
+			}
+			endRegion = internalRegion;
+		}
+		return endRegion;
+	}
+
