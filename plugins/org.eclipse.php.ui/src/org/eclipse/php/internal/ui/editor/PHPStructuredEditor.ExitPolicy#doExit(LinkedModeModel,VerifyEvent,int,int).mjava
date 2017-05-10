@@ -1,0 +1,55 @@
+		@Override
+		public ExitFlags doExit(LinkedModeModel model, VerifyEvent event, int offset, int length) {
+
+			if (fSize == fStack.size() && !isMasked(offset)) {
+				if (event.character == fExitCharacter) {
+					BracketLevel level = fStack.peek();
+					if (level.fFirstPosition.offset > offset || level.fSecondPosition.offset < offset)
+						return null;
+					if (level.fSecondPosition.offset == offset && length == 0)
+						// don't enter the character if if its the closing peer
+						return new ExitFlags(ILinkedModeListener.UPDATE_CARET, false);
+				}
+				// when entering an anonymous class between the parenthesis', we
+				// don't want
+				// to jump after the closing parenthesis when return is pressed
+				if (event.character == SWT.CR && offset > 0) {
+					ISourceViewer sourceViewer = getSourceViewer();
+					IDocument document = sourceViewer.getDocument();
+					try {
+						if (document.getChar(offset - 1) == '{')
+							return new ExitFlags(ILinkedModeListener.EXIT_ALL, true);
+
+						// see bug 308217: while overriding a method and using
+						// '(' followed by parameter type to filter the content
+						// assist proposals, if ')' is added
+						// automatically on typing '(', pressing return key
+						// should not result in jumping after ')' instead of
+						// applying the selected proposal.
+						// if (document.getChar(offset) == ')' && sourceViewer
+						// instanceof AdaptedSourceViewer &&
+						// ((AdaptedSourceViewer)
+						// sourceViewer).getContentAssistant() instanceof
+						// ContentAssistant) {
+						// ContentAssistant contentAssistant= (ContentAssistant)
+						// ((AdaptedSourceViewer)
+						// sourceViewer).getContentAssistant();
+						// IContentAssistProcessor processor=
+						// contentAssistant.getContentAssistProcessor(IDocument.DEFAULT_CONTENT_TYPE);
+						// if (processor instanceof ContentAssistProcessor) {
+						// ICompletionProposal proposal=
+						// ((ContentAssistProcessor)
+						// processor).getSelectedProposal();
+						// if (proposal instanceof OverrideCompletionProposal) {
+						// return new ExitFlags(ILinkedModeListener.EXIT_ALL,
+						// true);
+						// }
+						// }
+						// }
+					} catch (BadLocationException e) {
+					}
+				}
+			}
+			return null;
+		}
+

@@ -1,0 +1,41 @@
+		@Override
+		public void left(LinkedModeModel environment, int flags) {
+
+			final BracketLevel level = fBracketLevelStack.pop();
+
+			if (flags != ILinkedModeListener.EXTERNAL_MODIFICATION)
+				return;
+
+			// remove brackets
+			final ISourceViewer sourceViewer = getSourceViewer();
+			final IDocument document = sourceViewer.getDocument();
+			if (document instanceof IDocumentExtension) {
+				IDocumentExtension extension = (IDocumentExtension) document;
+				extension.registerPostNotificationReplace(null, new IDocumentExtension.IReplace() {
+
+					@Override
+					public void perform(IDocument d, IDocumentListener owner) {
+						if ((level.fFirstPosition.isDeleted || level.fFirstPosition.length == 0)
+								&& !level.fSecondPosition.isDeleted
+								&& level.fSecondPosition.offset == level.fFirstPosition.offset) {
+							try {
+								document.replace(level.fSecondPosition.offset, level.fSecondPosition.length, ""); //$NON-NLS-1$
+							} catch (BadLocationException e) {
+								PHPUiPlugin.log(e);
+							}
+						}
+
+						if (fBracketLevelStack.size() == 0) {
+							document.removePositionUpdater(fUpdater);
+							try {
+								document.removePositionCategory(CATEGORY);
+							} catch (BadPositionCategoryException e) {
+								PHPUiPlugin.log(e);
+							}
+						}
+					}
+				});
+			}
+
+		}
+

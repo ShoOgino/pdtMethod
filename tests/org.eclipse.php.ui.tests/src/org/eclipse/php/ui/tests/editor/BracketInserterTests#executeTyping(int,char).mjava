@@ -1,0 +1,38 @@
+	private String executeTyping(int offset, char character) {
+		StructuredTextViewer viewer = null;
+		Display display = Display.getDefault();
+		long timeout = System.currentTimeMillis() + 3000;
+		while ((System.currentTimeMillis() < timeout) && ((viewer = fEditor.getTextViewer()) == null)) {
+			if (!display.readAndDispatch()) {
+				display.sleep();
+			}
+		}
+		if (viewer == null) {
+			fail("fEditor.getTextViewer() returns null for file " + testFile.getFullPath() + "("
+					+ testFile.getLocation() + ")");
+		}
+		StyledText textWidget = viewer.getTextWidget();
+		textWidget.setCaretOffset(offset);
+
+		String oldContent = fEditor.getDocument().get();
+
+		Event e = new Event();
+		e.character = character;
+		e.display = Display.getDefault();
+		e.type = SWT.KeyDown;
+		e.widget = textWidget;
+		VerifyEvent ve = new VerifyEvent(e);
+
+		// Workaround,need to find a better way to test it
+		fEditor.getfBracketInserter().verifyKey(ve);
+
+		String newContent = fEditor.getDocument().get();
+		if (oldContent.equals(newContent)) {
+			// workaround, while the BracketInserter didn't close bracket,
+			// insert the character at cursor to get right content
+			textWidget.insert(String.valueOf(character));
+			return fEditor.getDocument().get();
+		}
+		return newContent;
+	}
+
