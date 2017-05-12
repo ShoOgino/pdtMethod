@@ -1,11 +1,18 @@
 	public boolean visit(TypeDeclaration node) throws Exception {
 		if (node instanceof NamespaceDeclaration) {
 			FileContext fileContext = (FileContext) contextStack.peek();
+			PHPNamespaceType instanceType;
 			if (((NamespaceDeclaration) node).isGlobal()) {
-				fileContext.setNamespace(null);
+				instanceType = new PHPNamespaceType(null);
 			} else {
-				fileContext.setNamespace(node.getName());
+				instanceType = new PHPNamespaceType(node.getName());
 			}
+			contextStack.push(new NamespaceContext(fileContext, instanceType));
+			boolean visitGeneral = visitGeneral(node);
+			if (!visitGeneral) {
+				contextStack.pop();
+			}
+			return visitGeneral;
 		} else {
 			ISourceModuleContext parentContext = (ISourceModuleContext) contextStack.peek();
 			PHPClassType instanceType;
@@ -43,7 +50,5 @@
 			}
 			return visitGeneral;
 		}
-
-		return visitGeneral(node);
 	}
 
