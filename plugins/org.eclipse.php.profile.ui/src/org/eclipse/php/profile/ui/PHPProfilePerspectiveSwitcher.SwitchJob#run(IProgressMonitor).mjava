@@ -1,0 +1,33 @@
+		@Override
+		protected IStatus run(final IProgressMonitor monitor) {
+			if (monitor.isCanceled()) {
+				return Status.CANCEL_STATUS;
+			}
+			Display asyncDisplay = PlatformUI.getWorkbench().getDisplay();
+			if (asyncDisplay == null || asyncDisplay.isDisposed()) {
+				return Status.CANCEL_STATUS;
+			}
+			asyncDisplay.asyncExec(new Runnable() {
+				@Override
+				public void run() {
+					IStatus result = null;
+					Throwable throwable = null;
+					try {
+						if (monitor.isCanceled()) {
+							result = Status.CANCEL_STATUS;
+						} else {
+							result = runInUIThread(monitor);
+						}
+					} catch (Throwable t) {
+						throwable = t;
+					} finally {
+						if (result == null) {
+							result = new Status(IStatus.ERROR, PlatformUI.PLUGIN_ID, IStatus.ERROR, "Error", throwable);
+						}
+						done(result);
+					}
+				}
+			});
+			return Job.ASYNC_FINISH;
+		}
+

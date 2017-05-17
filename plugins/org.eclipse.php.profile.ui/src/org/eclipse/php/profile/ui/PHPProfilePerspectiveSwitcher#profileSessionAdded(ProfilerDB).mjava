@@ -1,0 +1,30 @@
+	@Override
+	public void profileSessionAdded(ProfilerDB db) {
+		final String shouldAsk = ProfilerUiPlugin.getDefault().getPreferenceStore()
+				.getString(PreferenceKeys.OPEN_PROFILE_PERSPECTIVE_ON_SESSION_DATA);
+		if (shouldAsk.equals(MessageDialogWithToggle.NEVER)) {
+			return;
+		}
+		SwitchJob switchJob = new SwitchJob() {
+			public IStatus runInUIThread(IProgressMonitor monitor) {
+				IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+				if (window != null) {
+					Shell shell = window.getShell();
+					if (shell != null) {
+						shell.forceActive();
+					}
+				} else {
+					return Status.CANCEL_STATUS;
+				}
+				if (!isProfilePerspectiveOpen(window)) {
+					if (shouldAsk.equals(MessageDialogWithToggle.ALWAYS) || shouldOpenPerspective(window)) {
+						switchToProfilePerspective(window);
+						return Status.OK_STATUS;
+					}
+				}
+				return Status.CANCEL_STATUS;
+			};
+		};
+		switchJob.schedule();
+	}
+
