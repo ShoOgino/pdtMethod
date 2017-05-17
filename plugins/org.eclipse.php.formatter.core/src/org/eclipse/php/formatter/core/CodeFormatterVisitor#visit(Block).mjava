@@ -1,7 +1,7 @@
 	@Override
 	public boolean visit(Block block) {
 		boolean blockIndentation = false;
-		boolean isPhpMode = true;
+		boolean isPHPMode = true;
 		boolean isEmptyBlockNewLine = true;
 		boolean isUnbracketedNamespace = false;
 		boolean isNamespace = false;
@@ -110,15 +110,15 @@
 				// next statement start position
 				lastStatementEndOffset = statements[i + 1].getStart();
 			} else {
-				if (isPhpMode && !isHtmlStatement) {
+				if (isPHPMode && !isHtmlStatement) {
 					// PHP -> PHP
-					if (!isStatementAfterError && getPhpStartTag(lastStatementEndOffset) != -1) {
+					if (!isStatementAfterError && getPHPStartTag(lastStatementEndOffset) != -1) {
 						// https://bugs.eclipse.org/bugs/show_bug.cgi?id=489361
 						// if previous statement was in a <?= ?> section and
 						// now we have a statement in a <?php ?> section,
 						// we're still in the PHP -> PHP case, but
-						// isPhpEqualTag is outdated
-						isPhpEqualTag = getPhpStartTag(lastStatementEndOffset) == PHP_OPEN_SHORT_TAG_WITH_EQUAL;
+						// isPHPEqualTag is outdated
+						isPHPEqualTag = getPHPStartTag(lastStatementEndOffset) == PHP_OPEN_SHORT_TAG_WITH_EQUAL;
 						insertNewLine();
 					}
 					if (isThrowOrReturnFormatCase(statements)) {
@@ -132,20 +132,20 @@
 					if (lastStatementEndOffset <= statements[i].getStart()) {
 						handleChars(lastStatementEndOffset, statements[i].getStart());
 					}
-				} else if (isPhpMode && isHtmlStatement) {
+				} else if (isPHPMode && isHtmlStatement) {
 					// PHP -> HTML
-					isPhpMode = false;
-				} else if (!isPhpMode && !isHtmlStatement) {
+					isPHPMode = false;
+				} else if (!isPHPMode && !isHtmlStatement) {
 					// HTML -> PHP
 					if (!isStatementAfterError) {
-						isPhpEqualTag = getPhpStartTag(lastStatementEndOffset) == PHP_OPEN_SHORT_TAG_WITH_EQUAL;
+						isPHPEqualTag = getPHPStartTag(lastStatementEndOffset) == PHP_OPEN_SHORT_TAG_WITH_EQUAL;
 						insertNewLines(statements[i]);
 						indent();
 					}
 					if (lastStatementEndOffset <= statements[i].getStart()) {
 						handleChars(lastStatementEndOffset, statements[i].getStart());
 					}
-					isPhpMode = true;
+					isPHPMode = true;
 				} else {
 					// HTML -> HTML
 					assert false;
@@ -182,8 +182,8 @@
 			}
 		}
 		// in case of the last statement is html statement
-		if (!isPhpMode) {
-			isPhpEqualTag = false;
+		if (!isPHPMode) {
+			isPHPEqualTag = false;
 		}
 		// set the block end
 		if (blockIndentation) {

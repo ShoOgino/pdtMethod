@@ -1,8 +1,8 @@
 	@Override
 	public boolean visit(Program program) {
-		isPhpEqualTag = false;
+		isPHPEqualTag = false;
 		int lastStatementEndOffset = 0;
-		boolean isPhpMode = false;
+		boolean isPHPMode = false;
 		List<Statement> statementList = program.statements();
 		Statement[] statements = new Statement[statementList.size()];
 		statements = statementList.toArray(statements);
@@ -40,23 +40,23 @@
 				// next statement start position
 				lastStatementEndOffset = statements[i + 1].getStart();
 			} else {
-				if (isPhpMode && !isHtmlStatement) {
+				if (isPHPMode && !isHtmlStatement) {
 					// PHP -> PHP
 					if (lastStatementEndOffset > 0) {
-						if (!isStatementAfterError && getPhpStartTag(lastStatementEndOffset) != -1) {
+						if (!isStatementAfterError && getPHPStartTag(lastStatementEndOffset) != -1) {
 							// https://bugs.eclipse.org/bugs/show_bug.cgi?id=489361
 							// if previous statement was in a <?= ?> section and
 							// now we have a statement in a <?php ?> section,
 							// we're still in the PHP -> PHP case, but
-							// isPhpEqualTag and indentationLevel are outdated
-							if (isPhpEqualTag) {
+							// isPHPEqualTag and indentationLevel are outdated
+							if (isPHPEqualTag) {
 								// no need to recalculate the indentation if
 								// previous statement was in a <?php ?> section
-								// (i.e. previous value of isPhpEqualTag was
+								// (i.e. previous value of isPHPEqualTag was
 								// false)
-								indentationLevel = getPhpTagIndentationLevel(lastStatementEndOffset);
+								indentationLevel = getPHPTagIndentationLevel(lastStatementEndOffset);
 							}
-							isPhpEqualTag = getPhpStartTag(lastStatementEndOffset) == PHP_OPEN_SHORT_TAG_WITH_EQUAL;
+							isPHPEqualTag = getPHPStartTag(lastStatementEndOffset) == PHP_OPEN_SHORT_TAG_WITH_EQUAL;
 							insertNewLine();
 						}
 						if (!isStatementAfterError) {
@@ -67,29 +67,29 @@
 							handleChars(lastStatementEndOffset, statements[i].getStart());
 						}
 					}
-				} else if (isPhpMode && isHtmlStatement) {
+				} else if (isPHPMode && isHtmlStatement) {
 					// PHP -> HTML
 					if (lastStatementEndOffset > 0) {
 						if (lastStatementEndOffset <= statements[i].getStart()) {
 							handleChars(lastStatementEndOffset, statements[i].getStart());
 						}
 					}
-					isPhpMode = false;
-				} else if (!isPhpMode && !isHtmlStatement) {
+					isPHPMode = false;
+				} else if (!isPHPMode && !isHtmlStatement) {
 					// HTML -> PHP
 					if (!isStatementAfterError) {
-						isPhpEqualTag = getPhpStartTag(lastStatementEndOffset) == PHP_OPEN_SHORT_TAG_WITH_EQUAL;
-						indentationLevel = getPhpTagIndentationLevel(lastStatementEndOffset);
+						isPHPEqualTag = getPHPStartTag(lastStatementEndOffset) == PHP_OPEN_SHORT_TAG_WITH_EQUAL;
+						indentationLevel = getPHPTagIndentationLevel(lastStatementEndOffset);
 						insertNewLines(statements[i]);
 						indent();
 					}
 					if (lastStatementEndOffset <= statements[i].getStart()) {
 						handleChars(lastStatementEndOffset, statements[i].getStart());
 					}
-					isPhpMode = true;
+					isPHPMode = true;
 				} else {
 					// first HTML
-					isPhpMode = false;
+					isPHPMode = false;
 				}
 				statements[i].accept(this);
 				lastStatementEndOffset = statements[i].getEnd();
