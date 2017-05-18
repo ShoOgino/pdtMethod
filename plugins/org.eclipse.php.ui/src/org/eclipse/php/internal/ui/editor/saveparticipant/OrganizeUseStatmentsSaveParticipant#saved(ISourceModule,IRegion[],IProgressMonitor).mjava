@@ -1,0 +1,22 @@
+	@Override
+	public void saved(ISourceModule compilationUnit, IRegion[] changedRegions, IProgressMonitor monitor)
+			throws CoreException {
+		IScriptProject project = compilationUnit.getScriptProject();
+		updateSaveActionsState(project != null ? project.getProject() : null);
+
+		if (!organzieOnSaveEnabled) {
+			return;
+		}
+
+		IEditorInput input = new FileEditorInput((IFile) compilationUnit.getResource());
+		IWorkbenchPage p = PHPUiPlugin.getActivePage();
+		if (p == null) {
+			return;
+		}
+		IEditorPart part = p.findEditor(input);
+		if (part instanceof PHPStructuredEditor) {
+			OrganizeUseStatementsAction action = new OrganizeUseStatementsAction(part);
+			action.run(compilationUnit);
+		}
+	}
+
