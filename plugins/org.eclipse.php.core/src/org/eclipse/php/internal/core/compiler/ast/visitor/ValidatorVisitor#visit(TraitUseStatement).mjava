@@ -1,0 +1,17 @@
+	@Override
+	public boolean visit(TraitUseStatement s) throws Exception {
+		List<TypeReference> traits = s.getTraitList();
+		for (TypeReference trait : traits) {
+			TypeReferenceInfo tri = new TypeReferenceInfo(trait, false);
+			IType[] types = getAllTypes(tri.getFullyQualifiedName(), sourceModule, trait.start());
+			for (IType type : types) {
+				if (!PHPFlags.isTrait(type.getFlags())) {
+					reportProblem(trait, Messages.CannotUseTypeAsTrait, PHPProblemIdentifier.CannotUseTypeAsTrait,
+							new String[] { trait.getName() }, ProblemSeverities.Error);
+					break;
+				}
+			}
+		}
+		return true;
+	}
+

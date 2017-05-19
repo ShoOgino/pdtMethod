@@ -2,11 +2,10 @@
 			throws ModelException {
 		if (superClass != null) {
 			TypeReferenceInfo refInfo = new TypeReferenceInfo(superClass, false);
-			IType[] types = PHPModelUtils.getTypes(refInfo.getFullyQualifiedName(), sourceModule,
-					superClass.sourceStart(), null);
+			IType[] types = getAllTypes(refInfo.getFullyQualifiedName(), sourceModule, superClass.sourceStart());
 			for (IType type : types) {
 				if (!isInterface) {
-					if (PHPFlags.isInterface(type.getFlags())) {
+					if (PHPFlags.isTrait(type.getFlags()) || PHPFlags.isInterface(type.getFlags())) {
 						reportProblem(superClass, Messages.SuperclassMustBeAClass,
 								PHPProblemIdentifier.SuperclassMustBeAClass,
 								new String[] { superClass.getName(), className }, ProblemSeverities.Error);
@@ -17,7 +16,7 @@
 								new String[] { className, type.getElementName() }, ProblemSeverities.Error);
 					}
 				} else {
-					if (!PHPFlags.isInterface(type.getFlags())) {
+					if (PHPFlags.isTrait(type.getFlags()) || !PHPFlags.isInterface(type.getFlags())) {
 						reportProblem(superClass, Messages.SuperInterfaceMustBeAnInterface,
 								PHPProblemIdentifier.SuperInterfaceMustBeAnInterface,
 								new String[] { superClass.getName(), className }, ProblemSeverities.Error);

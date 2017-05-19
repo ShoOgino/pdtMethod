@@ -1,11 +1,29 @@
 	public static void getInterfaceExtendsClassProposals(IInvocationContext context, IProblemLocation problem,
-			Collection<AbstractCorrectionProposal> proposals) {
+			Collection<IScriptCompletionProposal> proposals) {
 		ASTNode selectedNode = problem.getCoveringNode(context.getASTRoot());
 		if (selectedNode == null) {
 			return;
 		}
 		while (selectedNode.getParent() instanceof NamespaceName) {
 			selectedNode = selectedNode.getParent();
+		}
+
+		boolean isType = false;
+		if (selectedNode instanceof Identifier) {
+			ITypeBinding typeBinding = ((Identifier) selectedNode).resolveTypeBinding();
+			if (typeBinding != null && typeBinding.getPHPElement() instanceof IType) {
+				try {
+					int flags = ((IType) typeBinding.getPHPElement()).getFlags();
+					if (PHPFlags.isClass(flags) || PHPFlags.isInterface(flags)) {
+						isType = true;
+					}
+				} catch (ModelException e) {
+					PHPUiPlugin.log(e);
+				}
+			}
+		}
+		if (!isType) {
+			return;
 		}
 
 		StructuralPropertyDescriptor locationInParent = selectedNode.getLocationInParent();
