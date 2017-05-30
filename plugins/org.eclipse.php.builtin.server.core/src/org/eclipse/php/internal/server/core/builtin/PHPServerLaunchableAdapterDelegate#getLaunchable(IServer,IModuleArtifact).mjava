@@ -1,0 +1,26 @@
+	@Override
+	public Object getLaunchable(IServer server, IModuleArtifact moduleArtifact)
+			throws CoreException {
+		if (server.getAdapter(PHPServer.class) == null)
+			return null;
+		if (!(moduleArtifact instanceof WebResource))
+			return null;
+
+		HttpLaunchable launchable = null;
+		try {
+			URL url = ((IURLProvider) server.loadAdapter(IURLProvider.class, null)).getModuleRootURL(moduleArtifact.getModule());
+
+			if (moduleArtifact instanceof WebResource) {
+				WebResource resource = (WebResource) moduleArtifact;
+				String path = resource.getPath().toString();
+				// append path to the root url
+				url = new URL(url.getProtocol(), url.getHost(), url.getPort(), url.getFile() + path);
+			}
+			launchable = new HttpLaunchable(url);
+		} catch (Exception e) {
+			Trace.trace(Trace.SEVERE, "Error getting URL for " + moduleArtifact, e); //$NON-NLS-1$
+		}
+
+		return launchable;
+	}
+
