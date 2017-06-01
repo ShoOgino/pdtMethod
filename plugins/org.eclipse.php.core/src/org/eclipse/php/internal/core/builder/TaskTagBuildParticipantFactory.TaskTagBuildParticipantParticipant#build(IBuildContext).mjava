@@ -42,8 +42,15 @@
 					IDocument document = new Document(new String(context.getContents()));
 					for (Comment comment : ((PHPModuleDeclaration) moduleDeclaration).getCommentList()) {
 						List<Scalar> foundTaskTags = new ArrayList<Scalar>();
-						checkForTodo(todos, foundTaskTags, comment.start(),
-								document.get(comment.start(), comment.end() - comment.start()));
+						String commentContent = document.get(comment.start(), comment.end() - comment.start());
+						// https://bugs.eclipse.org/bugs/show_bug.cgi?id=517510
+						if (comment.getCommentType() == Comment.TYPE_MULTILINE
+								|| comment.getCommentType() == Comment.TYPE_PHPDOC) {
+							if (commentContent.endsWith("*/")) { //$NON-NLS-1$
+								commentContent = commentContent.substring(0, commentContent.length() - 2);
+							}
+						}
+						checkForTodo(todos, foundTaskTags, comment.start(), commentContent);
 						if (foundTaskTags.isEmpty()) {
 							comment.setTaskTags(null);
 						} else {
@@ -54,6 +61,7 @@
 										foundTaskTag.end() - foundTaskTag.start());
 								int priority = getTaskPriority(taskTags, taskKeyword);
 								reportTask(document, context.getFile(), context.getTaskReporter(), foundTaskTag.start(),
+										comment.start() + commentContent.length(),
 										i + 1 < foundTaskTags.size() ? foundTaskTags.get(i + 1) : null, priority);
 							}
 						}
