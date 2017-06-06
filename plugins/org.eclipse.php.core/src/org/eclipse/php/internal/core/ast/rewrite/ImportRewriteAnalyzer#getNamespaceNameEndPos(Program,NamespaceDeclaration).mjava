@@ -1,18 +1,12 @@
 	private int getNamespaceNameEndPos(Program root, NamespaceDeclaration namespace) {
 		int flags = this.flags.get(namespace);
 		if (namespace != null) {
-			int offset = 0;
-			if (namespace.getName() == null) {
-				offset = namespace.getBody().getStart();
-			} else {
-				NamespaceName packDecl = namespace.getName();
-				offset = packDecl.getStart() + packDecl.getLength();
-			}
+			int offset = namespace.getBody().getStart() + 1;
 			int afterPackageStatementPos = -1;
 			int lineNumber = root.getLineNumber(offset);
 			if (lineNumber >= 0) {
 				int lineAfterPackage = lineNumber + 1;
-				afterPackageStatementPos = getPostion(root, lineAfterPackage);
+				afterPackageStatementPos = getPosition(root, lineAfterPackage);
 			}
 			if (afterPackageStatementPos < 0) {
 				flags |= F_NEEDS_LEADING_DELIM;
@@ -37,6 +31,6 @@
 		}
 		flags |= F_NEEDS_TRAILING_DELIM;
 		this.flags.put(namespace, flags);
-		return getPostion(root, 2);
+		return getFirstStatementBeginPos(root, null);
 	}
 
