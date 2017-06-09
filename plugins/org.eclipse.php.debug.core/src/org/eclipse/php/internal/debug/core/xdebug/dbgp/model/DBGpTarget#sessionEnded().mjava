@@ -13,8 +13,7 @@
 			session = null;
 			if (hasState(STATE_TERMINATING)) {
 				// we are terminating, if we are a web launch, we need to issue
-				// the
-				// stop URL, then terminate the debug target.
+				// the stop URL, then terminate the debug target.
 				if (isWebLaunch() && !isMultiSessionManaged()) {
 					sendStopDebugURL();
 				}
@@ -32,7 +31,7 @@
 				// we
 				// terminate the debug target.
 				if (isWebLaunch() && !isMultiSessionManaged()) {
-					if (isSuspended()) {
+					if (isSuspended() && DebugPlugin.getDefault() != null) {
 						// if we are suspended, then inform eclipse we have
 						// resumed
 						// so all the user can do is terminate or disconnect
@@ -50,18 +49,20 @@
 			}
 		}
 
-		if (unexpectedTermination) {
+		if (unexpectedTermination && DebugPlugin.getDefault() != null) {
 			// an unexpected termination occurred, so put out a message.
 			final String errorMessage = PHPDebugCoreMessages.XDebugMessage_unexpectedTermination;
 			Status status = new Status(IStatus.ERROR, PHPDebugPlugin.getID(), IPHPDebugConstants.INTERNAL_ERROR,
 					errorMessage, null);
 			DebugPlugin.log(status);
-			Display.getDefault().asyncExec(new Runnable() {
-				public void run() {
-					MessageDialog.openError(Display.getDefault().getActiveShell(),
-							PHPDebugCoreMessages.XDebugMessage_debugError, errorMessage);
-				}
-			});
+			if (!Display.getDefault().isDisposed()) {
+				Display.getDefault().asyncExec(new Runnable() {
+					public void run() {
+						MessageDialog.openError(Display.getDefault().getActiveShell(),
+								PHPDebugCoreMessages.XDebugMessage_debugError, errorMessage);
+					}
+				});
+			}
 
 		}
 	}

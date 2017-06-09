@@ -9,9 +9,13 @@
 		// check we haven't already terminated
 		if (!hasState(STATE_TERMINATED)) {
 			DBGpSessionHandler.getInstance().removeSessionListener(this);
-			IBreakpointManager bpmgr = DebugPlugin.getDefault().getBreakpointManager();
-			bpmgr.removeBreakpointListener(this);
-			bpmgr.removeBreakpointManagerListener(this);
+			if (DebugPlugin.getDefault() != null) {
+				// remove the listeners (when eclipse and DebugPlugin are NOT
+				// shutting down) ...
+				IBreakpointManager bpmgr = DebugPlugin.getDefault().getBreakpointManager();
+				bpmgr.removeBreakpointListener(this);
+				bpmgr.removeBreakpointManagerListener(this);
+			}
 
 			if (isTerminate && hasState(STATE_STARTED_RUNNING)) {
 				setState(STATE_TERMINATING);
@@ -40,11 +44,17 @@
 			if (session != null) {
 				session.endSession();
 			}
-			if (langThread != null) {
+			if (langThread != null && DebugPlugin.getDefault() != null) {
+				// eclipse and DebugPlugin are NOT shutting down, we can fire
+				// the event...
 				langThread.fireTerminateEvent();
 			}
 			stepping = false;
-			fireTerminateEvent();
+			if (DebugPlugin.getDefault() != null) {
+				// eclipse and DebugPlugin are NOT shutting down, we can fire
+				// the event...
+				fireTerminateEvent();
+			}
 		}
 		if (!isMultiSessionManaged())
 			// Terminate corresponding launch if target is not multi-session

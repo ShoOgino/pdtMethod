@@ -1,5 +1,5 @@
 	public static void logException(String info, Object obj, Throwable exc) {
-		ILog theLog = PHPDebugPlugin.getDefault().getLog();
+		ILog theLog = PHPDebugPlugin.getDefault() != null ? PHPDebugPlugin.getDefault().getLog() : null;
 		StringBuilder msg = new StringBuilder();
 		if (obj != null) {
 			msg.append(obj.getClass().toString());
@@ -12,16 +12,11 @@
 		if (exc != null) {
 			debugException(exc);
 		}
-		/*
-		 * IStatus stat = new Status(IStatus.ERROR, Activator.PLUGIN_ID,
-		 * IStatus.ERROR, msg.toString(), exc); theLog.log(stat);
-		 */
-		ByteArrayOutputStream bs = new ByteArrayOutputStream();
-		PrintStream ps = new PrintStream(bs);
-		if (exc != null) {
-			exc.printStackTrace(ps);
+		IStatus stat = new Status(IStatus.ERROR, PHPDebugPlugin.ID, IStatus.ERROR, msg.toString(), exc);
+		if (theLog != null) {
+			theLog.log(stat);
+		} else {
+			Logger.log(IStatus.ERROR, msg.toString(), exc);
 		}
-		IStatus stat = new Status(IStatus.ERROR, PHPDebugPlugin.ID, IStatus.ERROR, msg + "\n" + bs.toString(), null); //$NON-NLS-1$
-		theLog.log(stat);
 	}
 
