@@ -1,0 +1,38 @@
+	@Override
+	public Image getImage(Object element) {
+		element = convert(element);
+		if (!(element instanceof IElementNameMatch)) {
+			return super.getImage(element);
+		}
+
+		if (isSet(SHOW_TYPE_CONTAINER_ONLY)) {
+			IElementNameMatch typeRef = (IElementNameMatch) element;
+			if (typeRef.getPackageName().equals(typeRef.getContainerName())) {
+				return PHPFOLDER_ICON;
+			}
+
+			return NAMESPACE_ICON;
+		} else if (isSet(SHOW_PACKAGE_ONLY)) {
+			return PHPFOLDER_ICON;
+		} else {
+			if (element instanceof TypeNameMatch) {
+				int modifiers = ((TypeNameMatch) element).getModifiers();
+				if (Flags.isInterface(modifiers)) {
+					return INTERFACE_ICON;
+				} else if (PHPFlags.isTrait(modifiers)) {
+					return TRAIT_ICON;
+				}
+				return CLASS_ICON;
+			} else if (element instanceof MethodNameMatch) {
+				return METHOD_ICON;
+			} else if (element instanceof FieldNameMatch) {
+				int modifiers = ((FieldNameMatch) element).getModifiers();
+				if (PHPFlags.isConstant(modifiers)) {
+					return CONSTANT_ICON;
+				}
+				return FIELD_ICON;
+			}
+		}
+		return super.getImage(element);
+	}
+

@@ -1,0 +1,47 @@
+	private String internalAddImport(NamespaceDeclaration namespace, String fullTypeName, String alias, int importKind,
+			ImportRewriteContext context) {
+		int idx = fullTypeName.lastIndexOf(NamespaceReference.NAMESPACE_SEPARATOR);
+		String typeContainerName, typeName;
+		if (idx != -1) {
+			typeContainerName = fullTypeName.substring(0, idx);
+			typeName = fullTypeName.substring(idx + 1);
+		} else {
+			typeContainerName = ""; //$NON-NLS-1$
+			typeName = fullTypeName;
+		}
+
+		if (context == null)
+			context = this.defaultContext;
+
+		if (alias != null) {
+			typeName = alias;
+			fullTypeName += " as " + alias; //$NON-NLS-1$
+		}
+		int res = context.findInContext(namespace, typeContainerName, typeName, ImportRewriteContext.KIND_TYPE);
+		if (res == ImportRewriteContext.RES_NAME_CONFLICT) {
+			if (alias != null) {
+				return alias;
+			}
+			if (fullTypeName.charAt(0) != NamespaceReference.NAMESPACE_SEPARATOR) {
+				fullTypeName = NamespaceReference.NAMESPACE_SEPARATOR + fullTypeName;
+			}
+			return fullTypeName;
+		}
+		if (res == ImportRewriteContext.RES_NAME_UNKNOWN) {
+			char prefix;
+			switch (importKind) {
+			case ImportRewriteContext.KIND_FUNCTION:
+				prefix = FUNCTION_PREFIX;
+				break;
+			case ImportRewriteContext.KIND_CONSTANT:
+				prefix = CONSTANT_PREFIX;
+				break;
+			default:
+				prefix = NORMAL_PREFIX;
+				break;
+			}
+			addEntry(namespace, prefix + fullTypeName);
+		}
+		return typeName;
+	}
+

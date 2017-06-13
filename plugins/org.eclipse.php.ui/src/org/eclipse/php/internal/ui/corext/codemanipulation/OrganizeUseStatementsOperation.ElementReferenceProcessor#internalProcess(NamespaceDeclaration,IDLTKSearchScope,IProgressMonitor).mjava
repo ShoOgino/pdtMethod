@@ -1,0 +1,99 @@
+		private boolean internalProcess(NamespaceDeclaration namespace, IDLTKSearchScope scope,
+				IProgressMonitor monitor) throws ModelException {
+			int nUnresolved = fUnresolvedTypes.get(namespace).size();
+			if (nUnresolved == 0) {
+				return false;
+			}
+			final List<IElementNameMatch> typesFound = new ArrayList<>();
+			final List<IElementNameMatch> methodsFound = new ArrayList<>();
+			final List<IElementNameMatch> fieldsFound = new ArrayList<>();
+			for (Iterator<String> iter = fUnresolvedTypes.get(namespace).keySet().iterator(); iter.hasNext();) {
+				String key = iter.next();
+				int typeKind = fUnresolvedTypes.get(namespace).get(key).typeKinds;
+				ModelAccess modelAccess = new ModelAccess();
+				if (typeKind == SimilarElementsRequestor.ALL_TYPES) {
+					TypeNameMatchCollector collector = new TypeNameMatchCollector(typesFound);
+					IType[] types = modelAccess.findTypes(key, MatchRule.EXACT, 0, 0, scope, monitor);
+					for (IType type : types) {
+						TypeNameMatch match = new PHPSearchTypeNameMatch(type, type.getFlags());
+						collector.acceptTypeNameMatch(match);
+					}
+				} else if (typeKind == SimilarElementsRequestor.FUNCTIONS) {
+					IMethod[] methods = modelAccess.findMethods(key, MatchRule.EXACT, 0, 0, scope, monitor);
+					for (IMethod method : methods) {
+						MethodNameMatchCollector collector = new MethodNameMatchCollector(methodsFound);
+						MethodNameMatch match = new PHPSearchMethodNameMatch(method, method.getFlags());
+						collector.acceptMethodNameMatch(match);
+					}
+				} else if (typeKind == SimilarElementsRequestor.CONSTANTS) {
+					IField[] fields = modelAccess.findFields(key, MatchRule.EXACT, 0, 0, scope, monitor);
+					for (IField field : fields) {
+						FieldNameMatchCollector collector = new FieldNameMatchCollector(fieldsFound);
+						FieldNameMatch match = new PHPSearchFieldNameMatch(field, field.getFlags());
+						collector.acceptFieldNameMatch(match);
+					}
+				}
+			}
+
+			List<IElementNameMatch> elementsFound = new ArrayList<>();
+			elementsFound.addAll(typesFound);
+			elementsFound.addAll(methodsFound);
+			elementsFound.addAll(fieldsFound);
+
+			for (int i = 0; i < elementsFound.size(); i++) {
+				IElementNameMatch curr = elementsFound.get(i);
+				UnresolvedElementData data = fUnresolvedTypes.get(namespace).get(curr.getSimpleName());
+				if (data != null && isOfKind(curr, data.typeKinds)) {
+					data.addInfo(curr);
+				}
+			}
+
+			for (Entry<String, UnresolvedElementData> entry : fUnresolvedTypes.get(namespace).entrySet()) {
+				if (entry.getValue().foundElementInfos.size() == 0) { // No
+																		// result
+																		// found
+																		// in
+																		// search
+					Set<String> matchingUnresolvableImports = fUnresolvableImportMatcher.matchElementImports(namespace,
+							entry.getKey());
+					if (!matchingUnresolvableImports.isEmpty()) {
+						// If there are matching unresolvable import(s),
+						// rely on them to provide the type.
+						for (String string : matchingUnresolvableImports) {
+							char prefix = string.charAt(0);
+							int importKind = ImportRewriteContext.KIND_TYPE;
+							switch (prefix) {
+							case UnresolvableImportMatcher.FUNCTION_PREFIX:
+								importKind = ImportRewriteContext.KIND_FUNCTION;
+								break;
+							case UnresolvableImportMatcher.CONSTANT_PREFIX:
+								importKind = ImportRewriteContext.KIND_CONSTANT;
+								break;
+							}
+							string = string.substring(1);
+							fImpStructure.addImport(namespace, string, null, importKind, UNRESOLVABLE_IMPORT_CONTEXT);
+						}
+					}
+				}
+			}
+
+			ArrayList<IElementNameMatch[]> openChoices = new ArrayList<>(nUnresolved);
+			ArrayList<SourceRange> sourceRanges = new ArrayList<>(nUnresolved);
+			for (Iterator<UnresolvedElementData> iter = fUnresolvedTypes.get(namespace).values().iterator(); iter
+					.hasNext();) {
+				UnresolvedElementData data = iter.next();
+				IElementNameMatch[] openChoice = processElementInfo(namespace, data.foundElementInfos);
+				if (openChoice != null) {
+					openChoices.add(openChoice);
+					sourceRanges.add(new SourceRange(data.ref.getStart(), data.ref.getLength()));
+				}
+			}
+			if (openChoices.isEmpty()) {
+				return false;
+			}
+			fOpenChoices.put(namespace, openChoices.toArray(new IElementNameMatch[openChoices.size()][]));
+			fSourceRanges.put(namespace, sourceRanges.toArray(new SourceRange[sourceRanges.size()]));
+			return true;
+
+		}
+

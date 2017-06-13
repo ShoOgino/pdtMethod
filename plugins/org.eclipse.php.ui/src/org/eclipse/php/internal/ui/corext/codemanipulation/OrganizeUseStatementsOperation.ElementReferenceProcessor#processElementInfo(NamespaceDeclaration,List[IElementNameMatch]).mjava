@@ -1,0 +1,44 @@
+		private IElementNameMatch[] processElementInfo(NamespaceDeclaration namespace,
+				List<IElementNameMatch> elementRefsFound) {
+			int nFound = elementRefsFound.size();
+			if (nFound == 0) {
+				// nothing found
+				return null;
+			} else if (nFound == 1) {
+				IElementNameMatch elementRef = elementRefsFound.get(0);
+				int importKind = ImportRewriteContext.KIND_TYPE;
+				if (elementRef instanceof MethodNameMatch) {
+					importKind = ImportRewriteContext.KIND_FUNCTION;
+					if (StringUtils.isBlank(elementRef.getContainerName())) {
+						return null;
+					}
+				} else if (elementRef instanceof FieldNameMatch) {
+					importKind = ImportRewriteContext.KIND_CONSTANT;
+					if (StringUtils.isBlank(elementRef.getContainerName())) {
+						return null;
+					}
+				}
+				fImpStructure.addImport(namespace, elementRef.getFullyQualifiedName(), importKind);
+				return null;
+			} else {
+				// multiple found, use old imports to find an entry
+				for (int i = 0; i < nFound; i++) {
+					IElementNameMatch elementRef = elementRefsFound.get(i);
+					int importKind = ImportRewriteContext.KIND_TYPE;
+					if (elementRef instanceof MethodNameMatch) {
+						importKind = ImportRewriteContext.KIND_FUNCTION;
+					} else if (elementRef instanceof FieldNameMatch) {
+						importKind = ImportRewriteContext.KIND_CONSTANT;
+					}
+					String fullName = elementRef.getFullyQualifiedName();
+					if (fOldSingleImports.get(namespace).contains(fullName)) {
+						// was single-imported
+						fImpStructure.addImport(namespace, fullName, importKind);
+						return null;
+					}
+				}
+				// return the open choices
+				return elementRefsFound.toArray(new IElementNameMatch[nFound]);
+			}
+		}
+

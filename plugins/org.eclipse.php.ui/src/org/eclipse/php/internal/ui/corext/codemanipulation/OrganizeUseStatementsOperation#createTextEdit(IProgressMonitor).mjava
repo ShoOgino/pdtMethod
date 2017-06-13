@@ -23,46 +23,58 @@
 			ImportRewrite importsRewrite = ImportRewrite.create(astRoot, false);
 
 			Map<NamespaceDeclaration, Set<String>> oldSingleImports = new HashMap<>();
-			List<Identifier> typeReferences = new ArrayList<>();
+			List<ASTNode> elementReferences = new ArrayList<>();
 
-			if (!collectReferences(astRoot, typeReferences, oldSingleImports))
+			if (!collectReferences(astRoot, elementReferences, oldSingleImports))
 				return null;
 
 			UnresolvableImportMatcher unresolvableImportMatcher = UnresolvableImportMatcher.forProgram(astRoot);
 
-			TypeReferenceProcessor processor = new TypeReferenceProcessor(oldSingleImports, astRoot, importsRewrite,
-					unresolvableImportMatcher);
+			ElementReferenceProcessor processor = new ElementReferenceProcessor(oldSingleImports, astRoot,
+					importsRewrite, unresolvableImportMatcher);
 
-			Iterator<Identifier> refIterator = typeReferences.iterator();
+			Iterator<ASTNode> refIterator = elementReferences.iterator();
 			while (refIterator.hasNext()) {
-				Identifier typeRef = refIterator.next();
-				processor.add(typeRef);
+				ASTNode elementRef = refIterator.next();
+				processor.add(elementRef);
 			}
 
 			Map<NamespaceDeclaration, Boolean> hasOpenChoices = processor.process(SubMonitor.convert(monitor, 3));
 
 			if (fChooseImportQuery != null) {
-				Map<NamespaceDeclaration, TypeNameMatch[][]> choices = processor.getChoices();
+				Map<NamespaceDeclaration, IElementNameMatch[][]> choices = processor.getChoices();
 				Map<NamespaceDeclaration, SourceRange[]> ranges = processor.getChoicesSourceRanges();
 				for (Iterator<Entry<NamespaceDeclaration, Boolean>> iter = hasOpenChoices.entrySet().iterator(); iter
 						.hasNext();) {
 					Entry<NamespaceDeclaration, Boolean> entry = iter.next();
 					NamespaceDeclaration namespace = entry.getKey();
 					if (entry.getValue()) {
-						TypeNameMatch[] chosen = fChooseImportQuery.chooseImports(choices.get(namespace),
+						IElementNameMatch[] chosen = fChooseImportQuery.chooseImports(choices.get(namespace),
 								ranges.get(namespace));
 						if (chosen == null) {
 							// cancel pressed by the user
 							return null;
 						}
 						for (int i = 0; i < chosen.length; i++) {
-							TypeNameMatch typeInfo = chosen[i];
-							if (typeInfo != null) {
-								importsRewrite.addImport(namespace, typeInfo.getFullyQualifiedName());
+							IElementNameMatch elementInfo = chosen[i];
+							if (elementInfo != null) {
+								int importKind = ImportRewriteContext.KIND_TYPE;
+								if (elementInfo.getElementType() == IElementNameMatch.T_METHOD) {
+									importKind = ImportRewriteContext.KIND_FUNCTION;
+									if (StringUtils.isBlank(elementInfo.getContainerName())) {
+										return null;
+									}
+								} else if (elementInfo.getElementType() == IElementNameMatch.T_FIELD) {
+									importKind = ImportRewriteContext.KIND_CONSTANT;
+									if (StringUtils.isBlank(elementInfo.getContainerName())) {
+										return null;
+									}
+								}
+								importsRewrite.addImport(namespace, elementInfo.getFullyQualifiedName(), importKind);
 							} else { // Skipped by user
-								String typeName = choices.get(namespace)[i][0].getSimpleTypeName();
+								String elementName = choices.get(namespace)[i][0].getSimpleName();
 								Set<String> matchingUnresolvableImports = unresolvableImportMatcher
-										.matchTypeImports(namespace, typeName);
+										.matchElementImports(namespace, elementName);
 								if (!matchingUnresolvableImports.isEmpty()) {
 									// If there are matching unresolvable
 									// import(s),

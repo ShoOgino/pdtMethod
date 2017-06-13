@@ -1,0 +1,40 @@
+	private static int internalGetPossibleElementKinds(ASTNode node) {
+		int kind = SimilarElementsRequestor.ALL_TYPES;
+
+		if (node.getType() == ASTNode.SCALAR) {
+			return SimilarElementsRequestor.CONSTANTS;
+		}
+
+		ASTNode parent = node.getParent();
+
+		switch (parent.getType()) {
+		case ASTNode.CLASS_DECLARATION:
+		case ASTNode.INTERFACE_DECLARATION:
+			kind = SimilarElementsRequestor.CLASSES | SimilarElementsRequestor.INTERFACES;
+			break;
+		case ASTNode.METHOD_DECLARATION:
+			kind = SimilarElementsRequestor.ALL_TYPES;
+			break;
+		case ASTNode.INSTANCE_OF_EXPRESSION:
+			kind = SimilarElementsRequestor.REF_TYPES;
+			break;
+		case ASTNode.THROW_STATEMENT:
+			kind = SimilarElementsRequestor.CLASSES;
+			break;
+		case ASTNode.CLASS_INSTANCE_CREATION:
+			kind = SimilarElementsRequestor.CLASSES | SimilarElementsRequestor.INTERFACES;
+			break;
+		case ASTNode.SINGLE_FIELD_DECLARATION:
+			int superParent = parent.getParent().getType();
+			if (superParent == ASTNode.CATCH_CLAUSE) {
+				kind = SimilarElementsRequestor.CLASSES;
+			}
+			break;
+		case ASTNode.FUNCTION_NAME:
+			kind = SimilarElementsRequestor.FUNCTIONS;
+			break;
+		default:
+		}
+		return kind;
+	}
+

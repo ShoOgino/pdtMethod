@@ -3,7 +3,14 @@
 			typeImportsBySimpleName.put(namespace, new HashMap<>());
 			Collection<UseStatement> unresolvableImports = determineUnresolvableImports(cu, namespace);
 			for (UseStatement importDeclaration : unresolvableImports) {
+				char prefix = NORMAL_PREFIX;
+				if (importDeclaration.getStatementType() == UseStatement.T_FUNCTION) {
+					prefix = FUNCTION_PREFIX;
+				} else if (importDeclaration.getStatementType() == UseStatement.T_CONST) {
+					prefix = CONSTANT_PREFIX;
+				}
 				for (UseStatementPart part : importDeclaration.parts()) {
+
 					String qualifiedName = part.getName().getName();
 
 					String simpleName = qualifiedName
@@ -16,7 +23,7 @@
 						importsBySimpleName.put(simpleName, importsWithSimpleName);
 					}
 
-					importsWithSimpleName.add(qualifiedName);
+					importsWithSimpleName.add(prefix + qualifiedName);
 				}
 			}
 		}

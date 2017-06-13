@@ -1,0 +1,22 @@
+		public Map<NamespaceDeclaration, Boolean> process(IProgressMonitor monitor) {
+			Map<NamespaceDeclaration, Boolean> hasOpenChoices = new HashMap<>();
+			try {
+				final IScriptProject project = fImpStructure.getSourceModule().getScriptProject();
+				IDLTKSearchScope scope = SearchEngine.createSearchScope(project);
+
+				List<NamespaceDeclaration> namespaces = fRoot.getNamespaceDeclarations();
+				if (namespaces.size() > 0) {
+					for (NamespaceDeclaration namespace : namespaces) {
+						hasOpenChoices.put(namespace, internalProcess(namespace, scope, monitor));
+					}
+				} else {
+					hasOpenChoices.put(null, internalProcess(null, scope, monitor));
+				}
+			} catch (Exception e) {
+				PHPUiPlugin.log(e);
+			} finally {
+				monitor.done();
+			}
+			return hasOpenChoices;
+		}
+

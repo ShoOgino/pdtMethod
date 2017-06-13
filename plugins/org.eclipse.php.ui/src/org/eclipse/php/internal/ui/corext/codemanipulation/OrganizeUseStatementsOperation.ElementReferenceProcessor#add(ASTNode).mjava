@@ -1,0 +1,103 @@
+		/**
+		 * Tries to find the given element name and add it to the import structure.
+		 * 
+		 * @param ref
+		 *            the name node
+		 */
+		public void add(ASTNode ref) {
+			NamespaceDeclaration namespace = fRoot.getNamespaceDeclaration(ref.getStart());
+			String elementName = null;
+			IBinding binding = null;
+			if (ref instanceof Identifier) {
+				elementName = ((Identifier) ref).getName();
+				binding = ((Identifier) ref).resolveBinding();
+			} else if (ref instanceof Scalar) {
+				elementName = ((Scalar) ref).getStringValue();
+				binding = ((Scalar) ref).resolveBinding();
+			} else {
+				return;
+			}
+			String importName = elementName;
+
+			int index = elementName.indexOf(NamespaceReference.NAMESPACE_DELIMITER);
+			if (index > 0) {
+				importName = elementName.substring(0, index);
+				elementName = elementName.substring(index + 1);
+			}
+
+			if (fImportsAdded.get(namespace) == null || fImportsAdded.get(namespace).contains(importName)) {
+				return;
+			}
+
+			if (binding != null) {
+				IBinding typeBinding = null;
+				int bindingKind = binding.getKind();
+				switch (bindingKind) {
+				case IBinding.TYPE:
+					typeBinding = ((ITypeBinding) binding).getTypeDeclaration();
+					break;
+				case IBinding.METHOD:
+					typeBinding = ((IMethodBinding) binding).getDeclaringClass();
+					// do not import functions declared in global namespace
+					if (typeBinding == null) {
+						return;
+					}
+					break;
+				case IBinding.VARIABLE:
+					typeBinding = ((IVariableBinding) binding).getDeclaringClass();
+					// do not import constants declared in global namespace
+					if (typeBinding == null) {
+						return;
+					}
+					break;
+				default:
+					return;
+				}
+				if (typeBinding != null) {
+					String alias = null;
+					String typeBindingName = typeBinding.getName();
+					int importKind = ImportRewriteContext.KIND_TYPE;
+					if (typeBindingName != null) {
+						if (typeBindingName.startsWith(NamespaceReference.NAMESPACE_DELIMITER)) {
+							typeBindingName = typeBindingName.substring(1);
+						}
+						if (bindingKind == IBinding.METHOD || bindingKind == IBinding.VARIABLE) {
+							if (importName.equalsIgnoreCase(elementName)) {
+								switch (bindingKind) {
+								case IBinding.METHOD:
+									importKind = ImportRewriteContext.KIND_FUNCTION;
+									break;
+								case IBinding.VARIABLE:
+									importKind = ImportRewriteContext.KIND_CONSTANT;
+									break;
+								}
+							}
+							typeBindingName = typeBindingName + NamespaceReference.NAMESPACE_DELIMITER
+									+ binding.getName();
+						}
+						int indexOfNs = typeBindingName.lastIndexOf(elementName);
+						if (indexOfNs > 0 && !importName.equalsIgnoreCase(elementName)) {
+							typeBindingName = typeBindingName.substring(0, indexOfNs);
+							if (typeBindingName.endsWith(NamespaceReference.NAMESPACE_DELIMITER)) {
+								typeBindingName = typeBindingName.substring(0, typeBindingName.length() - 1);
+							}
+						}
+						String lastSeg = typeBindingName;
+						String[] segs = typeBindingName.split("\\\\"); //$NON-NLS-1$
+						if (segs.length > 0) {
+							lastSeg = segs[segs.length - 1];
+						}
+						if (!lastSeg.equalsIgnoreCase(importName)) {
+							alias = importName;
+						}
+					}
+					fImpStructure.addImport(namespace, typeBindingName, alias, importKind);
+					fImportsAdded.get(namespace).add(importName);
+					return;
+				}
+			}
+
+			fImportsAdded.get(namespace).add(elementName);
+			fUnresolvedTypes.get(namespace).put(elementName, new UnresolvedElementData(ref));
+		}
+
