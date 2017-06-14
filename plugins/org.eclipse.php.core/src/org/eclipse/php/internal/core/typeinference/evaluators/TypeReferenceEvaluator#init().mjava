@@ -1,6 +1,6 @@
 	public IGoal[] init() {
 		final IContext context = goal.getContext();
-		String className = typeReference.getName();
+		String elementName = typeReference.getName();
 
 		if (isSelfOrStatic()) {
 			if (context instanceof MethodContext) {
@@ -143,14 +143,16 @@
 				parentNamespace = ((INamespaceContext) context).getNamespace();
 			}
 			String fullyQualifiedName;
+			int elementType = FullyQualifiedReference.T_TYPE;
 			// If the namespace was prefixed explicitly - use it:
 			if (typeReference instanceof FullyQualifiedReference) {
 				fullyQualifiedName = ((FullyQualifiedReference) typeReference).getFullyQualifiedName();
+				elementType = ((FullyQualifiedReference) typeReference).getElementType();
 			} else {
 				fullyQualifiedName = typeReference.getName();
 
-				className = PHPEvaluationUtils.extractArrayType(fullyQualifiedName);
-				className = PHPModelUtils.extractElementName(className);
+				elementName = PHPEvaluationUtils.extractArrayType(fullyQualifiedName);
+				elementName = PHPModelUtils.extractElementName(elementName);
 			}
 			ISourceModule sourceModule = ((ISourceModuleContext) context).getSourceModule();
 			int offset = typeReference.sourceStart();
@@ -158,11 +160,19 @@
 				// for use statement, extract namespace and class name directly
 				if (sourceModule.getElementAt(offset) instanceof ImportDeclaration) {
 					String namespace = PHPModelUtils.extractNameSpaceName(fullyQualifiedName);
-					className = PHPModelUtils.extractElementName(fullyQualifiedName);
+					elementName = PHPModelUtils.extractElementName(fullyQualifiedName);
+					if (elementType == FullyQualifiedReference.T_CONSTANT) {
+						if (namespace != null) {
+							result = new PHPNamespaceConstantType(namespace, elementName);
+						} else {
+							result = new PHPNamespaceConstantType(elementName);
+						}
+						return new IGoal[] { new ConstantDeclarationGoal(goal.getContext(), elementName, namespace) };
+					}
 					if (namespace != null) {
-						result = new PHPClassType(namespace, className);
+						result = new PHPClassType(namespace, elementName);
 					} else {
-						result = new PHPClassType(className);
+						result = new PHPClassType(elementName);
 					}
 					return IGoal.NO_GOALS;
 				}
@@ -171,20 +181,26 @@
 			String extractedNamespace = PHPModelUtils.extractNamespaceName(fullyQualifiedName, sourceModule, offset);
 			if (extractedNamespace != null) {
 				parentNamespace = extractedNamespace;
-				className = PHPModelUtils.getRealName(fullyQualifiedName, sourceModule, offset, className);
+				elementName = PHPModelUtils.getRealName(fullyQualifiedName, sourceModule, offset, elementName);
 			}
 			if (PHPModelUtils.isInUseTraitStatement(((ISourceModuleContext) context).getRootNode(),
 					typeReference.sourceStart())) {
 				if (parentNamespace != null) {
-					result = new PHPTraitType(parentNamespace, className);
+					result = new PHPTraitType(parentNamespace, elementName);
 				} else {
-					result = new PHPTraitType(className);
+					result = new PHPTraitType(elementName);
 				}
 			} else {
 				if (parentNamespace != null) {
-					result = new PHPClassType(parentNamespace, className);
+					if (elementType == FullyQualifiedReference.T_CONSTANT) {
+						result = new PHPNamespaceConstantType(parentNamespace, elementName);
+						return new IGoal[] {
+								new ConstantDeclarationGoal(goal.getContext(), elementName, parentNamespace) };
+					} else {
+						result = new PHPClassType(parentNamespace, elementName);
+					}
 				} else {
-					result = new PHPClassType(className);
+					result = new PHPClassType(elementName);
 				}
 			}
 		}

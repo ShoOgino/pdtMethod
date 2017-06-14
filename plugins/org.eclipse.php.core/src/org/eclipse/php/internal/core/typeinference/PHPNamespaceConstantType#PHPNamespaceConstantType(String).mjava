@@ -1,0 +1,31 @@
+	/**
+	 * Constructs evaluated type for PHP constant declared in namespace. The
+	 * constant name can contain namespace part (namespace name must be real,
+	 * and not point to the alias or subnamespace under current namespace)
+	 */
+	public PHPNamespaceConstantType(String constantName) {
+		if (constantName == null) {
+			throw new IllegalArgumentException();
+		}
+
+		int i = constantName.lastIndexOf(NamespaceReference.NAMESPACE_SEPARATOR);
+		// detect the namespace prefix:
+		// global namespace case
+		if (i == -1) {
+			this.constantName = constantName;
+		} else if (i == 0) {
+			this.constantName = constantName.substring(1, constantName.length());
+			global = true;
+		} else if (i > 0) {
+			// check is global namespace
+			if (constantName.charAt(0) != NamespaceReference.NAMESPACE_SEPARATOR) {
+				// make the constant name fully qualified:
+				constantName = new StringBuilder().append(NamespaceReference.NAMESPACE_SEPARATOR).append(constantName)
+						.toString();
+				i += 1;
+			}
+			this.namespace = constantName.substring(0, i);
+			this.constantName = constantName;
+		}
+	}
+
