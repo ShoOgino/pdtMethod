@@ -18,9 +18,13 @@
 				// like this for now.
 				args = "-n " + fullName + " -d " + getCurrentStackLevel() + " -p " + page; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 			}
-			DBGpResponse resp = session.sendSyncCmd(DBGpCommand.propGet, args);
-			if (DBGpUtils.isGoodDBGpResponse(this, resp)) {
-				return resp.getParentNode().getFirstChild();
+			synchronized (sessionMutex) {
+				if (session != null && session.isActive()) {
+					DBGpResponse resp = session.sendSyncCmd(DBGpCommand.propGet, args);
+					if (DBGpUtils.isGoodDBGpResponse(this, resp)) {
+						return resp.getParentNode().getFirstChild();
+					}
+				}
 			}
 		}
 

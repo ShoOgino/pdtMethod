@@ -22,9 +22,13 @@
 			// spec says you should use getValue to retrieve the entire data
 			// but xdebug won't work without it.
 			args += " -m " + length; //$NON-NLS-1$
-			DBGpResponse resp = session.sendSyncCmd(DBGpCommand.propValue, args);
-			if (DBGpUtils.isGoodDBGpResponse(this, resp)) {
-				return resp.getParentNode();
+			synchronized (sessionMutex) {
+				if (session != null && session.isActive()) {
+					DBGpResponse resp = session.sendSyncCmd(DBGpCommand.propValue, args);
+					if (DBGpUtils.isGoodDBGpResponse(this, resp)) {
+						return resp.getParentNode();
+					}
+				}
 			}
 		}
 
