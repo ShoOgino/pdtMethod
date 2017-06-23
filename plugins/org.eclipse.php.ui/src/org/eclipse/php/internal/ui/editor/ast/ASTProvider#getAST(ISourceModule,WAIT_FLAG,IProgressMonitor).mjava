@@ -1,0 +1,64 @@
+	/**
+	 * Returns a shared compilation unit AST for the given Java element.
+	 * <p>
+	 * Clients are not allowed to modify the AST and must synchronize all access
+	 * to its nodes.
+	 * </p>
+	 * 
+	 * @param input
+	 *            the Java element, must not be <code>null</code>
+	 * @param waitFlag
+	 *            {@link SharedASTProvider#WAIT_YES},
+	 *            {@link SharedASTProvider#WAIT_NO} or
+	 *            {@link SharedASTProvider#WAIT_ACTIVE_ONLY}
+	 * @param progressMonitor
+	 *            the progress monitor or <code>null</code>
+	 * @return the AST or <code>null</code> if the AST is not available
+	 */
+	public Program getAST(final ISourceModule input, final WAIT_FLAG waitFlag, final IProgressMonitor progressMonitor) {
+		if (input == null || waitFlag == null) {
+			throw new IllegalArgumentException("input or wait flag are null"); //$NON-NLS-1$
+		}
+
+		if (progressMonitor != null && progressMonitor.isCanceled()) {
+			return null;
+		}
+
+		boolean isActiveElement;
+		synchronized (this) {
+			isActiveElement = input == fActiveJavaElement;
+		}
+
+		Program ast = getCacheFor(input).getAST(input, SharedASTProvider.WAIT_NO, progressMonitor);
+
+		if (ast != null || waitFlag == SharedASTProvider.WAIT_NO
+				|| (waitFlag == SharedASTProvider.WAIT_ACTIVE_ONLY && !isActiveElement)) {
+			if (progressMonitor != null && progressMonitor.isCanceled()) {
+				// Should already be null, but let's be cautious
+				assert ast == null;
+				ast = null;
+				if (ASTUtils.DEBUG) {
+					System.out.println(
+							ASTUtils.getThreadName() + " - " + ASTUtils.DEBUG_PREFIX + "Ignore created AST for: " //$NON-NLS-1$ //$NON-NLS-2$
+									+ input.getElementName() + " - operation has been cancelled"); //$NON-NLS-1$
+				}
+			}
+
+			return ast;
+		}
+
+		ast = getCacheFor(input).getAST(input, SharedASTProvider.WAIT_YES, progressMonitor);
+
+		if (progressMonitor != null && progressMonitor.isCanceled()) {
+			// Should already be null, but let's be cautious
+			assert ast == null;
+			ast = null;
+			if (ASTUtils.DEBUG) {
+				System.out.println(ASTUtils.getThreadName() + " - " + ASTUtils.DEBUG_PREFIX + "Ignore created AST for: " //$NON-NLS-1$ //$NON-NLS-2$
+						+ input.getElementName() + " - operation has been cancelled"); //$NON-NLS-1$
+			}
+		}
+
+		return ast;
+	}
+

@@ -1,0 +1,53 @@
+	public Program getAST(final ISourceModule input, final WAIT_FLAG waitFlag, final IProgressMonitor progressMonitor) {
+		if (waitFlag == SharedASTProvider.WAIT_ACTIVE_ONLY) {
+			throw new IllegalArgumentException("Flag WAIT_ACTIVE_ONLY is unsupported"); //$NON-NLS-1$
+		}
+
+		ISourceModule refInput = fInput.get();
+
+		if (refInput == null || input != refInput) {
+			return null;
+		}
+
+		synchronized (this) {
+			if (waitFlag == SharedASTProvider.WAIT_NO || fState == STATES.DONE) {
+				return fAST;
+			}
+		}
+
+		try {
+			if (fWaitLock.tryLock(30, TimeUnit.SECONDS)) {
+				synchronized (this) {
+					if (fState == STATES.DONE) {
+						return fAST;
+					}
+					fState = STATES.STARTED;
+				}
+
+				Program currentAST = ASTUtils.createAST(input, progressMonitor);
+
+				synchronized (this) {
+					if (currentAST == null) {
+						fAST = null;
+						fState = STATES.CANCELED;
+					} else {
+						fAST = currentAST;
+						fState = STATES.DONE;
+					}
+					return fAST;
+				}
+			}
+		} catch (Throwable e) {
+			synchronized (this) {
+				fAST = null;
+				fState = STATES.CANCELED;
+			}
+		} finally {
+			if (fWaitLock.isHeldByCurrentThread()) {
+				fWaitLock.unlock();
+			}
+		}
+
+		return null;
+	}
+
