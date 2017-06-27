@@ -1,0 +1,32 @@
+		private void createPartitions() {
+			int numChild = fAllCurrentVariables.size();
+			int partitions = (int) Math.ceil(numChild / (double) 100);
+			fAllPreviousPartitions = fAllCurrentPartitions;
+			fAllCurrentPartitions = new LinkedHashMap<>();
+			for (int i = 0; i < partitions; i++) {
+				int startIndex = i * ARRAY_PARTITION_BOUNDARY;
+				int endIndex = (i + 1) * ARRAY_PARTITION_BOUNDARY - 1;
+				if (endIndex > numChild) {
+					endIndex = numChild - 1;
+				}
+				final IVariable[] vars = Arrays.copyOfRange(
+						fAllCurrentVariables.values().toArray(new IVariable[fAllCurrentVariables.size()]), startIndex,
+						endIndex + 1);
+				IVariableProvider variableProvider = new IVariableProvider() {
+					@Override
+					public IVariable[] getVariables() throws DebugException {
+						return vars;
+					}
+				};
+				String partitionId = String.valueOf(startIndex) + '-' + String.valueOf(endIndex);
+				IVirtualPartition partition = fAllPreviousPartitions.get(partitionId);
+				if (partition != null) {
+					partition.setProvider(variableProvider);
+					fAllCurrentPartitions.put(partitionId, partition);
+				} else {
+					fAllCurrentPartitions.put(partitionId,
+							new VirtualPartition(PHPValue.this, variableProvider, startIndex, endIndex));
+				}
+			}
+		}
+

@@ -1,0 +1,18 @@
+		private void updateVariables() {
+			fAllPreviousVariables = fAllCurrentVariables;
+			fAllCurrentVariables = new LinkedHashMap<>();
+			PHPDebugTarget debugTarget = (PHPDebugTarget) getDebugTarget();
+			ExpressionsManager expressionManager = debugTarget.getExpressionManager();
+			Expression variable = fExpression;
+			expressionManager.update(variable, 1);
+			fExpressionValue = variable.getValue();
+			Expression[] children = fExpressionValue.getChildren();
+			if (children != null) {
+				fAllCurrentVariables = new LinkedHashMap<>();
+				for (int i = 0; i < children.length; i++) {
+					IVariable incoming = new PHPVariable((PHPDebugTarget) getDebugTarget(), children[i]);
+					fAllCurrentVariables.put(((PHPVariable) incoming).getFullName(), merge(incoming));
+				}
+			}
+		}
+

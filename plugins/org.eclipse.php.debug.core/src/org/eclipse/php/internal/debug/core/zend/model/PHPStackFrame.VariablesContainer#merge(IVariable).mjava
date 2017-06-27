@@ -1,0 +1,26 @@
+		/**
+		 * Merges incoming variable. Merge is done by means of checking if
+		 * related child variable existed in "one step back" state of a frame.
+		 * If related variable existed, it is updated with the use of the most
+		 * recent descriptor and returned instead of the incoming one.
+		 * 
+		 * @param variable
+		 * @param descriptor
+		 * @return merged variable
+		 */
+		private IVariable merge(IVariable variable) {
+			if (fAllPreviousVariables == null)
+				return variable;
+			if (!(variable instanceof PHPVariable))
+				return variable;
+			PHPVariable incoming = (PHPVariable) variable;
+			if (incoming.getFullName().isEmpty())
+				return incoming;
+			IVariable stored = fAllPreviousVariables.get(incoming.getFullName());
+			if (stored != null) {
+				((PHPVariable) stored).update(incoming.getExpression());
+				return stored;
+			}
+			return variable;
+		}
+
