@@ -1,0 +1,24 @@
+			@Override
+			public synchronized IVariable[] getVariables() throws DebugException {
+				// Should be synchronized and lazy
+				if (fPartitionVariables == null) {
+					Node node = getOwner().getNode(fPage);
+					if (!canProcess(node)) {
+						return new IVariable[] { new DBGpUnreachableVariable(getDebugTarget()) };
+					}
+					NodeList childProperties = node.getChildNodes();
+					int childrenReceived = childProperties.getLength();
+					fPartitionVariables = new IVariable[childrenReceived];
+					if (childrenReceived > 0) {
+						for (int i = 0; i < childrenReceived; i++) {
+							Node childProperty = childProperties.item(i);
+							IVariable child = createVariable(childProperty);
+							IVariable mergedChild = merge(child);
+							fPartitionVariables[i] = mergedChild;
+							fCurrentVariables.put(((DBGpVariable) mergedChild).getFullName(), mergedChild);
+						}
+					}
+				}
+				return fPartitionVariables;
+			}
+

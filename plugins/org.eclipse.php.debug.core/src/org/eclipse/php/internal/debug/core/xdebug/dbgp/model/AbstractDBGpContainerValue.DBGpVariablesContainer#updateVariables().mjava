@@ -1,0 +1,84 @@
+		/**
+		 * Uses container value related node to fetch child elements and build
+		 * child variables or multiple pages with variables.
+		 */
+		protected void updateVariables() {
+			fPreviousVariables = fCurrentVariables;
+			fCurrentVariables = new LinkedHashMap<>();
+			fPreviousPartitions = fCurrentPartitions;
+			fCurrentPartitions = new LinkedHashMap<>();
+			String childCountString = DBGpResponse.getAttribute(fDescriptor, "numchildren"); //$NON-NLS-1$
+			int childCount = 0;
+			if (childCountString != null && childCountString.trim().length() != 0) {
+				try {
+					childCount = Integer.parseInt(childCountString);
+				} catch (NumberFormatException nfe) {
+				}
+			}
+			String pageSizeStr = null;
+			pageSizeStr = DBGpResponse.getAttribute(fDescriptor, "pagesize"); //$NON-NLS-1$
+			int pageSize = ((DBGpTarget) getDebugTarget()).getMaxChildren();
+			if (pageSizeStr != null && pageSizeStr.trim().length() != 0) {
+				try {
+					pageSize = Integer.parseInt(pageSizeStr);
+				} catch (NumberFormatException nfe) {
+				}
+			}
+			if (childCount <= pageSize) {
+				// Child number < page size, no need for paging.
+				NodeList childProperties = fDescriptor.getChildNodes();
+				int childrenReceived = childProperties.getLength();
+				// Check if descriptor is already filled up
+				if (childCount != childrenReceived) {
+					DBGpTarget target = (DBGpTarget) getDebugTarget();
+					switch (getOwner().getKind()) {
+					case EVAL: {
+						fDescriptor = target.eval(getOwner().getFullName(), 0);
+						break;
+					}
+					default: {
+						fDescriptor = target.getProperty(getOwner().getFullName(),
+								String.valueOf(getOwner().getStackLevel()), 0);
+						break;
+					}
+					}
+					if (!canProcess(fDescriptor)) {
+						fCurrentVariables = new LinkedHashMap<>();
+						fCurrentVariables.put(DataType.PHP_UNINITIALIZED.getText(),
+								new DBGpUnreachableVariable(getDebugTarget()));
+						return;
+					}
+					childProperties = fDescriptor.getChildNodes();
+					childrenReceived = childProperties.getLength();
+					childCount = childrenReceived;
+				}
+				fCurrentVariables = new LinkedHashMap<>();
+				if (childrenReceived > 0) {
+					for (int i = 0; i < childrenReceived; i++) {
+						Node childProperty = childProperties.item(i);
+						IVariable child = createVariable(childProperty);
+						fCurrentVariables.put(((DBGpVariable) child).getFullName(), merge(child));
+					}
+				}
+			} else {
+				// Create multiple pages
+				int subCount = (int) Math.ceil((double) childCount / (double) pageSize);
+				for (int i = 0; i < subCount; i++) {
+					int startIndex = i * pageSize;
+					int endIndex = (i + 1) * pageSize - 1;
+					if (endIndex > childCount) {
+						endIndex = childCount - 1;
+					}
+					String partitionId = String.valueOf(startIndex) + '-' + String.valueOf(endIndex);
+					IVirtualPartition partition = fPreviousPartitions.get(partitionId);
+					if (partition != null) {
+						partition.setProvider(new DBGpPage(i));
+						fCurrentPartitions.put(partitionId, partition);
+					} else {
+						fCurrentPartitions.put(partitionId, new VirtualPartition(AbstractDBGpContainerValue.this,
+								new DBGpPage(i), startIndex, endIndex));
+					}
+				}
+			}
+		}
+
