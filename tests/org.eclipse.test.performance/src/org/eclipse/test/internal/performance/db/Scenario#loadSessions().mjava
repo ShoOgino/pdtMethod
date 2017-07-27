@@ -7,9 +7,9 @@
         long start;
         Variations v= (Variations) fSharedState.fVariations.clone();
         if (DEBUG) start= System.currentTimeMillis();
-        ArrayList sessions= new ArrayList();
-        ArrayList names2= new ArrayList();
-        Set dims= new HashSet();
+        ArrayList<StatisticsSession> sessions= new ArrayList<>();
+        ArrayList<String> names2= new ArrayList<>();
+        Set<Dim> dims= new HashSet<>();
         for (int t= 0; t < fSeriesNames.length; t++) {
             v.put(fSharedState.fSeriesKey, fSeriesNames[t]);
             DataPoint[] dps= DB.queryDataPoints(v, fScenarioName, fSharedState.fQueryDimensions);
@@ -22,13 +22,14 @@
         }
         if (DEBUG) System.err.println("data: " + (System.currentTimeMillis()-start)); //$NON-NLS-1$
 
-        fSessions= (StatisticsSession[]) sessions.toArray(new StatisticsSession[sessions.size()]);
-        fSeriesNames= (String[]) names2.toArray(new String[sessions.size()]);
+        fSessions= sessions.toArray(new StatisticsSession[sessions.size()]);
+        fSeriesNames= names2.toArray(new String[sessions.size()]);
         
-        fDimensions= (Dim[]) dims.toArray(new Dim[dims.size()]);
+        fDimensions= dims.toArray(new Dim[dims.size()]);
         Arrays.sort(fDimensions,
-        new Comparator() {
-            	public int compare(Object o1, Object o2) {
+        new Comparator<Object>() {
+            	@Override
+				public int compare(Object o1, Object o2) {
             	    Dim d1= (Dim)o1;
             	    Dim d2= (Dim)o2;
             	    return d1.getName().compareTo(d2.getName());

@@ -1,0 +1,36 @@
+    /*
+     * 
+     */
+    private void internalQueryDistinctValues(List<String> values, String seriesKey, Variations variations, String scenarioPattern) {
+        if (fSQL == null)
+            return;
+        long start = System.currentTimeMillis();
+        if (DEBUG) System.out.print("	- query distinct values from DB for scenario pattern '"+scenarioPattern+"'..."); //$NON-NLS-1$ //$NON-NLS-2$
+        ResultSet result= null;
+        try {
+            result= fSQL.queryVariations(variations.toExactMatchString(), scenarioPattern);
+            for (int i= 0; result.next(); i++) {
+                Variations v= new Variations();
+                v.parseDB(result.getString(1));
+                String build= v.getProperty(seriesKey);
+                if (build != null && !values.contains(build))
+                    values.add(build);
+            }
+        } catch (SQLException e) {
+	        PerformanceTestPlugin.log(e);
+
+        } finally {
+            if (result != null) {
+                try {
+                    result.close();
+                } catch (SQLException e1) {
+                	// ignored
+                }
+            }
+            if (DEBUG) {
+		        long time = System.currentTimeMillis();
+            	System.out.println("done in "+(time-start)+"ms"); //$NON-NLS-1$ //$NON-NLS-2$
+            }
+        }
+    }
+

@@ -1,0 +1,43 @@
+	/**
+	 * Constructs a line breakpoint on the given resource at the given line
+	 * number.
+	 * 
+	 * @param resource
+	 *            file on which to set the breakpoint
+	 * @param lineNumber
+	 *            1-based line number of the breakpoint
+	 * @param charStart
+	 *            line start offset
+	 * @param charEnd
+	 *            line end offset
+	 * @throws CoreException
+	 *             if unable to create the breakpoint
+	 */
+	public PHPConditionalBreakpoint(final IResource resource, final int lineNumber, final int charStart,
+			final int charEnd, final Map<String, Comparable<?>> attributes) throws CoreException {
+		IWorkspaceRunnable runnable = new IWorkspaceRunnable() {
+			@Override
+			public void run(IProgressMonitor monitor) throws CoreException {
+				IMarker marker = resource.createMarker(MARKER_ID);
+				attributes.put(IBreakpoint.ENABLED, Boolean.TRUE);
+				attributes.put(IBreakpoint.ID, getModelIdentifier());
+				attributes.put(IMarker.MESSAGE, MessageFormat.format(PHPDebugCoreMessages.LineBreakPointMessage_1,
+						resource.getName(), Integer.toString(lineNumber)));
+				attributes.put(IPHPDebugConstants.ConditionEnabled, Boolean.FALSE);
+				attributes.put(IPHPDebugConstants.Condition, ""); //$NON-NLS-1$
+				attributes.put(IBreakpoint.PERSISTED, Boolean.FALSE);
+				attributes.put(IMarker.LINE_NUMBER, Integer.valueOf(lineNumber));
+
+				attributes.put(IMarker.CHAR_START, Integer.valueOf(charStart));
+				attributes.put(IMarker.CHAR_END, Integer.valueOf(charEnd));
+
+				marker.setAttributes(attributes);
+				setMarker(marker);
+				setEnabled(true);
+				register(true);
+				setPersisted(true);
+			}
+		};
+		resource.getWorkspace().run(runnable, null, IWorkspace.AVOID_UPDATE, null);
+	}
+

@@ -1,0 +1,89 @@
+/**
+ * Get all results numbers for a given machine of the current component.
+ *
+ * @param configName The name of the configuration to get numbers
+ * @param fingerprints Set whether only fingerprints scenario should be taken into account
+ * @return A list of lines. Each line represent a build and is a list of either strings or values.
+  * 	Values are an array of double:
+ * 	<ul>
+ * 		<li>{@link #BUILD_VALUE_INDEX}: the build value in milliseconds</li>
+ * 		<li>{@link #BASELINE_VALUE_INDEX}: the baseline value in milliseconds</li>
+ * 		<li>{@link #DELTA_VALUE_INDEX}: the difference between the build value and its more recent baseline</li>
+ * 		<li>{@link #DELTA_ERROR_INDEX}: the error made while computing the difference</li>
+ * 		<li>{@link #BUILD_ERROR_INDEX}: the error made while measuring the build value</li>
+ * 		<li>{@link #BASELINE_ERROR_INDEX}: the error made while measuring the baseline value</li>
+ * 	</ul>
+*/
+public List<Object> getConfigNumbers(String configName, boolean fingerprints, List<Object> differences) {
+
+	// Initialize lists
+	AbstractResults[] scenarios = getChildren();
+	int length = scenarios.length;
+
+	// Print scenario names line
+	List<Object> firstLine = new ArrayList<>();
+	for (int i=0; i<length; i++) {
+		ScenarioResults scenarioResults = (ScenarioResults) scenarios[i];
+		if (!fingerprints || scenarioResults.hasSummary()) {
+			firstLine.add(scenarioResults.getName());
+		}
+	}
+
+	// Print each build line
+	String[] builds = getAllSortedBuildNames(true/*descending order*/);
+//	int milestoneIndex = 0;
+//	String milestoneDate = Util.getMilestoneDate(milestoneIndex);
+	String currentBuildName = null;
+	int buildsLength= builds.length;
+	firstLine.add(0, new Integer(buildsLength));
+	differences.add(firstLine);
+	for (int i=0; i<buildsLength; i++) {
+		List<Object> line = new ArrayList<>();
+		String buildName = builds[i];
+		line.add(buildName);
+		if (!buildName.startsWith(DB_Results.getDbBaselinePrefix())) {
+			for (int j=0; j<length; j++) {
+				ScenarioResults scenarioResults = (ScenarioResults) scenarios[j];
+				if (!fingerprints || scenarioResults.hasSummary()) {
+					ConfigResults configResults = scenarioResults.getConfigResults(configName);
+					BuildResults buildResults = configResults == null ? null : configResults.getBuildResults(buildName);
+					if (buildResults == null) {
+						// no result for this scenario in this build
+						line.add(NO_BUILD_RESULTS);
+					} else {
+						getConfigNumbers(buildResults, configResults.getBaselineBuildResults(buildName), line);
+					}
+				}
+			}
+			differences.add(line);
+			if (currentBuildName != null && currentBuildName.charAt(0) != 'N') {
+            }
+			currentBuildName = buildName;
+		}
+//		if (milestoneDate != null) { // update previous builds
+//			int dateComparison = milestoneDate.compareTo(Util.getBuildDate(buildName));
+//			if (dateComparison <= 0) {
+//				if (dateComparison == 0) {
+//                }
+//				if (++milestoneIndex == Util.MILESTONES.length) {
+//					milestoneDate = null;
+//				} else {
+//					milestoneDate = Util.getMilestoneDate(milestoneIndex);
+//				}
+//			}
+//		}
+	}
+
+	// Write differences lines
+	int last = buildsLength-1;
+	String lastBuildName = builds[last];
+	while (last > 0 && lastBuildName.startsWith(DB_Results.getDbBaselinePrefix())) {
+		lastBuildName = builds[--last];
+	}
+//	appendDifferences(lastBuildName, configName, previousMilestoneName, differences, fingerprints);
+//	appendDifferences(lastBuildName, configName, previousBuildName, differences, fingerprints);
+
+	// Return the computed differences
+	return differences;
+}
+

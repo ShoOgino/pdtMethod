@@ -1,0 +1,29 @@
+	/* package */void handleAffectedChildren(final IModelElementDelta delta, final IModelElement element,
+			final Collection<Runnable> runnables) throws ModelException {
+
+		IModelElementDelta[] affectedChildren = delta.getAffectedChildren();
+
+		if (affectedChildren.length > 1) {
+			int count = 0;
+			for (int i = 0; i < affectedChildren.length; i++) {
+
+				// if there is more than
+				if (affectedChildren[i].getElement() instanceof IOpenable) {
+					count++;
+				}
+				if (count > 1) {
+					postRefresh(fInput, ProjectOutlineContentProvider.ORIGINAL, element, runnables);
+					return;
+				}
+
+			}
+		}
+
+		for (int i = 0; i < affectedChildren.length; i++) {
+
+			if (processDelta(affectedChildren[i], runnables)) {
+				return; // early return, element got refreshed
+			}
+		}
+	}
+

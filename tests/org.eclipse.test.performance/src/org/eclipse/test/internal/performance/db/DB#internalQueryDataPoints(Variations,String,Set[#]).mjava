@@ -1,0 +1,59 @@
+    private DataPoint[] internalQueryDataPoints(Variations variations, String scenarioName, Set<?> dimSet) {
+        if (fSQL == null)
+            return null;
+        
+        long start = System.currentTimeMillis();
+        if (DEBUG)
+        	System.out.print("	- query data points from DB for scenario "+scenarioName+"..."); //$NON-NLS-1$ //$NON-NLS-2$
+        ResultSet rs= null;
+        try {
+            ArrayList<DataPoint> dataPoints= new ArrayList<>();
+            rs= fSQL.queryDataPoints(variations, scenarioName);
+            if (DEBUG) {
+		        long time = System.currentTimeMillis();
+            	System.out.println("done in "+(time-start)+"ms"); //$NON-NLS-1$ //$NON-NLS-2$
+            	start = time;
+            }
+	        while (rs.next()) {
+	            int datapoint_id= rs.getInt(1);
+	            int step= rs.getInt(2);
+
+	            HashMap<Dim, Scalar> map= new HashMap<>();
+	            ResultSet rs2= fSQL.queryScalars(datapoint_id);
+		        while (rs2.next()) {
+	                int dim_id= rs2.getInt(1);
+	                long value= rs2.getBigDecimal(2).longValue();
+	                Dim dim= Dim.getDimension(dim_id);
+	                if (dim != null) {
+	                    if (dimSet == null || dimSet.contains(dim))
+	                        map.put(dim, new Scalar(dim, value));
+	                }
+		        }
+		        if (map.size() > 0)
+		            dataPoints.add(new DataPoint(step, map));
+		        
+	            rs2.close();
+	        }
+	        rs.close();
+        	
+            int n= dataPoints.size();
+            if (DEBUG) {
+		        long time = System.currentTimeMillis();
+            	System.out.println("		+ " + n + " datapoints created in "+(time-start)+"ms"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+            }
+            return dataPoints.toArray(new DataPoint[n]);
+
+        } catch (SQLException e) {
+            PerformanceTestPlugin.log(e);
+
+        } finally {
+            if (rs != null)
+                try {
+                    rs.close();
+                } catch (SQLException e1) {
+                	// ignored
+                }
+        }
+        return null;
+    }
+

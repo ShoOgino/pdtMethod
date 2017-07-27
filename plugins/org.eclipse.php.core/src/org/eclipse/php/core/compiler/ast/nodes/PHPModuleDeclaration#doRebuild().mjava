@@ -2,17 +2,19 @@
 	 * This method goes over the AST and builds a list of types and methods
 	 * declared in this file
 	 */
+	@Override
 	@SuppressWarnings("unchecked")
 	public void doRebuild() {
-		List statements = getStatements();
+		List<?> statements = getStatements();
 		if (statements != null) {
-			Iterator i = statements.iterator();
+			Iterator<?> i = statements.iterator();
 			while (i.hasNext()) {
 				final ASTNode node = (ASTNode) i.next();
 				try {
 					node.traverse(new ASTVisitor() {
-						private Stack<ASTNode> parentStack = new Stack<ASTNode>();
+						private Stack<ASTNode> parentStack = new Stack<>();
 
+						@Override
 						public boolean visit(MethodDeclaration s) throws Exception {
 							if (s != node
 									&& (parentStack.isEmpty() || !(parentStack.peek() instanceof TypeDeclaration))) {
@@ -21,6 +23,7 @@
 							return super.visit(s);
 						}
 
+						@Override
 						public boolean visit(TypeDeclaration s) throws Exception {
 							if (s instanceof NamespaceDeclaration && ((NamespaceDeclaration) s).isGlobal()) {
 								return super.visit(s);
@@ -30,6 +33,7 @@
 							return super.visit(s);
 						}
 
+						@Override
 						public boolean endvisit(TypeDeclaration s) throws Exception {
 							if (s instanceof NamespaceDeclaration && ((NamespaceDeclaration) s).isGlobal()) {
 								return super.endvisit(s);

@@ -1,6 +1,6 @@
 	private void removeEntry() {
-		List selElements = fLibrariesList.getSelectedElements();
-		HashMap containerEntriesToUpdate = new HashMap();
+		List<?> selElements = fLibrariesList.getSelectedElements();
+		HashMap<BPListElement, HashSet<String>> containerEntriesToUpdate = new HashMap<>();
 		for (int i = selElements.size() - 1; i >= 0; i--) {
 			Object elem = selElements.get(i);
 			if (elem instanceof BPListElementAttribute) {
@@ -20,9 +20,9 @@
 					// right
 					// away
 					BPListElement containerEntry = attrib.getParent();
-					HashSet changedAttributes = (HashSet) containerEntriesToUpdate.get(containerEntry);
+					HashSet<String> changedAttributes = containerEntriesToUpdate.get(containerEntry);
 					if (changedAttributes == null) {
-						changedAttributes = new HashSet();
+						changedAttributes = new HashSet<>();
 						containerEntriesToUpdate.put(containerEntry, changedAttributes);
 					}
 					changedAttributes.add(key); // collect the changed
@@ -37,7 +37,7 @@
 			fLibrariesList.removeElements(selElements);
 
 			// also remove library entry from build path
-			for (Iterator iterator = selElements.iterator(); iterator.hasNext();) {
+			for (Iterator<?> iterator = selElements.iterator(); iterator.hasNext();) {
 				BPListElement entry = (BPListElement) iterator.next();
 				try {
 					BuildPathUtils.removeEntryFromBuildPath(fCurrJProject, entry.getBuildpathEntry());
@@ -47,11 +47,11 @@
 			}
 		}
 
-		for (Iterator iter = containerEntriesToUpdate.entrySet().iterator(); iter.hasNext();) {
-			Map.Entry entry = (Entry) iter.next();
+		for (Iterator<?> iter = containerEntriesToUpdate.entrySet().iterator(); iter.hasNext();) {
+			Map.Entry<?, ?> entry = (Entry<?, ?>) iter.next();
 			BPListElement curr = (BPListElement) entry.getKey();
-			HashSet attribs = (HashSet) entry.getValue();
-			String[] changedAttributes = (String[]) attribs.toArray(new String[attribs.size()]);
+			HashSet<?> attribs = (HashSet<?>) entry.getValue();
+			String[] changedAttributes = attribs.toArray(new String[attribs.size()]);
 			IBuildpathEntry changedEntry = curr.getBuildpathEntry();
 			updateContainerEntry(changedEntry, changedAttributes, fCurrJProject,
 					((BPListElement) curr.getParentContainer()).getPath());

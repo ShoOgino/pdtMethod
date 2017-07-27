@@ -1,3 +1,4 @@
+	@Override
 	public IGoal[] init() {
 		final VariableReference variableReference = (VariableReference) ((ExpressionTypeGoal) goal).getExpression();
 		IContext context = goal.getContext();
@@ -51,13 +52,14 @@
 						typedContext.getSourceModule(), variableReference, localScopeNode);
 				rootNode.traverse(varDecSearcher);
 				PHPModuleDeclaration phpModule = (PHPModuleDeclaration) rootNode;
-				List<IGoal> subGoals = new LinkedList<IGoal>();
+				List<IGoal> subGoals = new LinkedList<>();
 
 				List<VarComment> varComments = phpModule.getVarComments();
-				List<VarComment> newList = new ArrayList<VarComment>(phpModule.getVarComments().size());
+				List<VarComment> newList = new ArrayList<>(phpModule.getVarComments().size());
 				newList.addAll(varComments);
 				Collections.sort(newList, new Comparator<VarComment>() {
 
+					@Override
 					public int compare(VarComment o1, VarComment o2) {
 						return o2.sourceStart() - o1.sourceStart();
 					}
@@ -67,15 +69,15 @@
 						continue;
 					}
 					if (varComment.getVariableReference().getName().equals(variableReference.getName())) {
-						List<IGoal> goals = new LinkedList<IGoal>();
+						List<IGoal> goals = new LinkedList<>();
 						for (TypeReference ref : varComment.getTypeReferences()) {
 							goals.add(new ExpressionTypeGoal(context, ref));
 						}
-						return (IGoal[]) goals.toArray(new IGoal[goals.size()]);
+						return goals.toArray(new IGoal[goals.size()]);
 					}
 				}
 
-				List<PHPDocBlock> docBlocks = new ArrayList<PHPDocBlock>(phpModule.getPHPDocBlocks().size());
+				List<PHPDocBlock> docBlocks = new ArrayList<>(phpModule.getPHPDocBlocks().size());
 				docBlocks.addAll(phpModule.getPHPDocBlocks());
 				Collections.sort(docBlocks, new Comparator<PHPDocBlock>() {
 
@@ -95,12 +97,12 @@
 					for (PHPDocTag tag : block.getTags(TagKind.VAR)) {
 						if (tag.isValidVarTag() && tag.getVariableReference() != null
 								&& tag.getVariableReference().getName().equals(variableReference.getName())) {
-							List<IGoal> goals = new LinkedList<IGoal>();
+							List<IGoal> goals = new LinkedList<>();
 							for (TypeReference type : tag.getTypeReferences()) {
 								goals.add(new ExpressionTypeGoal(context,
 										new TypeReference(tag.sourceStart(), tag.sourceEnd(), type.getName())));
 							}
-							return (IGoal[]) goals.toArray(new IGoal[goals.size()]);
+							return goals.toArray(new IGoal[goals.size()]);
 						}
 					}
 				}

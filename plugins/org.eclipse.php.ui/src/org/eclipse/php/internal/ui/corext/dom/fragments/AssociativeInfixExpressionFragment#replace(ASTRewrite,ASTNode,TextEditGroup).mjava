@@ -18,17 +18,18 @@
 		// InfixExpression.
 		int first = allOperands.indexOf(fOperands.get(0));
 		int after = first + fOperands.size();
-		List newOperands = new ArrayList<>();
+		List<Expression> newOperands = new ArrayList<>();
 		for (int i = 0; i < allOperands.size(); i++) {
 			if (i < first || after <= i) {
-				newOperands.add(rewrite.createCopyTarget((Expression) allOperands.get(i)));
+				newOperands.add((Expression) rewrite.createCopyTarget(allOperands.get(i)));
 			} else /* i == first */ {
-				newOperands.add(replacement);
+				assert replacement instanceof Expression;
+				newOperands.add((Expression) replacement);
 				i = after - 1;
 			}
 		}
-		Expression newExpression = rewrite.getAST().newInfixExpression((Expression) newOperands.get(0), getOperator(),
-				(Expression) newOperands.get(1));
+		Expression newExpression = rewrite.getAST().newInfixExpression(newOperands.get(0), getOperator(),
+				newOperands.get(1));
 		rewrite.replace(groupNode, newExpression, textEditGroup);
 	}
 

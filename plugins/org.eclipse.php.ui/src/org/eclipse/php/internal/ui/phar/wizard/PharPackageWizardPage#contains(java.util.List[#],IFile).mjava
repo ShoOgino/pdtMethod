@@ -1,0 +1,25 @@
+	static boolean contains(java.util.List<?> resources, IFile file) {
+		if (resources == null || file == null)
+			return false;
+
+		if (resources.contains(file))
+			return true;
+
+		Iterator<?> iter = resources.iterator();
+		while (iter.hasNext()) {
+			IResource resource = (IResource) iter.next();
+			if (resource != null && resource.getType() != IResource.FILE) {
+				java.util.List<IResource> children = null;
+				try {
+					children = Arrays.asList(((IContainer) resource).members());
+				} catch (CoreException ex) {
+					// ignore this folder
+					continue;
+				}
+				if (children != null && contains(children, file))
+					return true;
+			}
+		}
+		return false;
+	}
+

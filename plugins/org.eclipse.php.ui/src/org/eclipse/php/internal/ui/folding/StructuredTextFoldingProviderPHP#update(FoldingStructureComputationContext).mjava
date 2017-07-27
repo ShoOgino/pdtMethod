@@ -8,7 +8,7 @@
 
 		computeFoldingStructure(ctx);
 		Map<Object, Position> newStructure = ctx.fMap;
-		Map<IModelElement, Object> oldStructure = computeCurrentStructure(ctx);
+		Map<IModelElement, List<Tuple>> oldStructure = computeCurrentStructure(ctx);
 
 		for (Entry<Object, Position> entry : newStructure.entrySet()) {
 			PHPProjectionAnnotation newAnnotation = (PHPProjectionAnnotation) entry.getKey();
@@ -27,12 +27,12 @@
 			 */
 			boolean isMalformedAnonymousType = newPosition.getOffset() == 0
 					&& element.getElementType() == IModelElement.TYPE;
-			List annotations = (List) oldStructure.get(element);
+			List<?> annotations = oldStructure.get(element);
 			if (annotations == null) {
 				if (!isMalformedAnonymousType)
 					additions.put(newAnnotation, newPosition);
 			} else {
-				Iterator x = annotations.iterator();
+				Iterator<?> x = annotations.iterator();
 				boolean matched = false;
 				while (x.hasNext()) {
 					Tuple tuple = (Tuple) x.next();
@@ -66,7 +66,7 @@
 		}
 
 		for (Object v : oldStructure.values()) {
-			List list = (List) v;
+			List<?> list = (List<?>) v;
 			int size = list.size();
 			for (int i = 0; i < size; i++)
 				deletions.add(((Tuple) list.get(i)).annotation);

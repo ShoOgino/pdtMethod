@@ -1,0 +1,31 @@
+	/**
+	 * Write out the global machine counters for Linux.
+	 * @param scalars
+	 */
+	@Override
+	protected void collectGlobalPerformanceInfo(Map<Dim, Scalar> scalars) {
+		synchronized(this) {
+		    /**
+		     * The meminfo values for a Linux machine, that is the values that come from /proc/meminfo.
+		     */
+			// /proc/meminfo is formatted on linux - use byte-counted output from free
+		    StringTokenizer st= readOutput("free -b", true); //$NON-NLS-1$
+		    if (st != null) {
+				st.nextToken();		// throw away label
+				long total= Long.parseLong(st.nextToken());
+				long used= Long.parseLong(st.nextToken());
+				long free= Long.parseLong(st.nextToken());
+				st.nextToken();		// long shared;
+				long buffers= Long.parseLong(st.nextToken());
+				long cache= Long.parseLong(st.nextToken());
+		
+				addScalar(scalars, InternalDimensions.PHYSICAL_TOTAL, total);
+				addScalar(scalars, InternalDimensions.USED_LINUX_MEM, used);
+				addScalar(scalars, InternalDimensions.FREE_LINUX_MEM, free);
+				addScalar(scalars, InternalDimensions.BUFFERS_LINUX, buffers);
+				addScalar(scalars, InternalDimensions.SYSTEM_CACHE, cache);
+		    }
+		    super.collectGlobalPerformanceInfo(scalars);
+		}
+	}
+

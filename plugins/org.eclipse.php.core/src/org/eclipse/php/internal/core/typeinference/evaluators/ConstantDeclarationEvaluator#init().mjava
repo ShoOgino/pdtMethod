@@ -1,3 +1,4 @@
+	@Override
 	public IGoal[] init() {
 		ConstantDeclarationGoal typedGoal = (ConstantDeclarationGoal) goal;
 		String constantName = typedGoal.getConstantName();
@@ -14,7 +15,7 @@
 		if (scope == null) {
 			scope = SearchEngine.createWorkspaceScope(PHPLanguageToolkit.getDefault());
 		}
-		Set<IModelElement> elements = new HashSet<IModelElement>();
+		Set<IModelElement> elements = new HashSet<>();
 		if (typedGoal.getContext() instanceof NamespaceContext) {
 			String fullName = PHPModelUtils.concatFullyQualifiedNames(typeName, constantName);
 			if (fullName.startsWith(NamespaceReference.NAMESPACE_DELIMITER)) {
@@ -46,9 +47,10 @@
 			}
 		}
 
-		Map<ISourceModule, SortedSet<ISourceRange>> offsets = new HashMap<ISourceModule, SortedSet<ISourceRange>>();
+		Map<ISourceModule, SortedSet<ISourceRange>> offsets = new HashMap<>();
 
 		Comparator<ISourceRange> sourceRangeComparator = new Comparator<ISourceRange>() {
+			@Override
 			public int compare(ISourceRange o1, ISourceRange o2) {
 				return o1.getOffset() - o2.getOffset();
 			}
@@ -59,7 +61,7 @@
 				IField field = (IField) element;
 				ISourceModule sourceModule = field.getSourceModule();
 				if (!offsets.containsKey(sourceModule)) {
-					offsets.put(sourceModule, new TreeSet<ISourceRange>(sourceRangeComparator));
+					offsets.put(sourceModule, new TreeSet<>(sourceRangeComparator));
 				}
 				try {
 					offsets.get(sourceModule).add(field.getSourceRange());
@@ -69,7 +71,7 @@
 			}
 		}
 
-		List<IGoal> subGoals = new LinkedList<IGoal>();
+		List<IGoal> subGoals = new LinkedList<>();
 		for (Entry<ISourceModule, SortedSet<ISourceRange>> entry : offsets.entrySet()) {
 			final ISourceModule sourceModule = entry.getKey();
 			ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule);

@@ -1,0 +1,55 @@
+	/*
+	 * Creates the script project and sets the configured build path and output
+	 * location. If the project already exists only build paths are updated.
+	 */
+	public static void flush(List<BPListElement> buildpathEntries, IScriptProject javaProject, IProgressMonitor monitor)
+			throws CoreException, OperationCanceledException {
+		if (monitor == null) {
+			monitor = new NullProgressMonitor();
+		}
+		monitor.setTaskName(NewWizardMessages.BuildPathsBlock_operationdesc_Script);
+		monitor.beginTask("", buildpathEntries.size() * 4 + 4); //$NON-NLS-1$
+		try {
+			IProject project = javaProject.getProject();
+			monitor.worked(1);
+
+			if (monitor.isCanceled()) {
+				throw new OperationCanceledException();
+			}
+
+			List<IBuildpathEntry> newBuildPathEntries = new ArrayList<>();
+			List<IBuildpathEntry> newIncludePathEntries = new ArrayList<>();
+
+			// go over the dialog entries. collect all of the source entries for
+			// the include path array
+			// and the rest for the build path array
+			for (Iterator<BPListElement> iter = buildpathEntries.iterator(); iter.hasNext();) {
+				BPListElement entry = iter.next();
+				newIncludePathEntries.add(entry.getBuildpathEntry());
+				if (entry.getEntryKind() != IBuildpathEntry.BPE_SOURCE) {
+					newBuildPathEntries.add(entry.getBuildpathEntry());
+					// https://bugs.eclipse.org/bugs/show_bug.cgi?id=307982
+					// Add project in build path,press ok,then edit the
+					// project's access rules will throw exception.
+					BuildPathUtils.removeEntryFromBuildPath(javaProject, entry.getBuildpathEntry());
+				}
+
+				IResource res = entry.getResource();
+				if (res instanceof IFolder && entry.getLinkTarget() == null && !res.exists()) {
+					CoreUtility.createFolder((IFolder) res, true, true, new SubProgressMonitor(monitor, 1));
+				} else {
+					monitor.worked(1);
+				}
+			}
+			if (newBuildPathEntries.size() > 0) {
+				// BuildPathUtils.removeEntryFromBuildPath(scriptProject,
+				// buildpathEntry)
+				BuildPathUtils.addEntriesToBuildPath(javaProject, newBuildPathEntries);
+			}
+			IncludePathManager.getInstance().addEntriesToIncludePath(project, newIncludePathEntries);
+
+		} finally {
+			monitor.done();
+		}
+	}
+

@@ -5,14 +5,14 @@
 	 */
 	private void addDeletableParentPackagesOnPackageDeletion() throws CoreException {
 
-		final List/* <IScriptFolder */ initialPackagesToDelete = ReorgUtils.getElementsOfType(fScriptElements,
+		final List/* <IScriptFolder */<?> initialPackagesToDelete = ReorgUtils.getElementsOfType(fScriptElements,
 				IModelElement.SCRIPT_FOLDER);
 
 		if (initialPackagesToDelete.size() == 0)
 			return;
 
 		// Move from inner to outer packages
-		Collections.sort(initialPackagesToDelete, new Comparator() {
+		Collections.sort(initialPackagesToDelete, new Comparator<Object>() {
 			@Override
 			public int compare(Object arg0, Object arg1) {
 				IScriptFolder one = (IScriptFolder) arg0;
@@ -22,7 +22,7 @@
 		});
 
 		// Get resources andscriptelements which will be deleted as well
-		final Set/* <IResource> */ deletedChildren = new HashSet();
+		final Set<IResource> deletedChildren = new HashSet<>();
 		deletedChildren.addAll(Arrays.asList(fResources));
 		for (int i = 0; i < fScriptElements.length; i++) {
 			if (!ReorgUtils.isInsideSourceModule(fScriptElements[i]))
@@ -30,9 +30,9 @@
 		}
 
 		// new package list in the right sequence
-		final List/* <IScriptFolder */ allFragmentsToDelete = new ArrayList();
+		final List<IScriptFolder> allFragmentsToDelete = new ArrayList<>();
 
-		for (Iterator outerIter = initialPackagesToDelete.iterator(); outerIter.hasNext();) {
+		for (Iterator<?> outerIter = initialPackagesToDelete.iterator(); outerIter.hasNext();) {
 			final IScriptFolder currentScriptFolder = (IScriptFolder) outerIter.next();
 
 			// The package will at least be cleared
@@ -43,7 +43,7 @@
 				final IScriptFolder parent = ModelElementUtil.getParentSubpackage(currentScriptFolder);
 				if (parent != null && !initialPackagesToDelete.contains(parent)) {
 
-					final List/* <IScriptFolder> */ emptyParents = new ArrayList();
+					final List<IScriptFolder> emptyParents = new ArrayList<>();
 					addDeletableParentPackages(parent, initialPackagesToDelete, deletedChildren, emptyParents);
 
 					// Add parents in the right sequence (inner to outer)
@@ -53,7 +53,7 @@
 		}
 
 		// Remove resources in deleted packages; and the packages as well
-		final List/* <IModelElement> */ modelElements = new ArrayList();
+		final List<IModelElement> modelElements = new ArrayList<>();
 		for (int i = 0; i < fScriptElements.length; i++) {
 			if (!(fScriptElements[i] instanceof IScriptFolder)) {
 				// remove children of deleted packages
@@ -66,7 +66,7 @@
 		modelElements.addAll(allFragmentsToDelete);
 
 		// Remove resources in deleted folders
-		final List/* <IResource> */ resources = new ArrayList();
+		final List<IResource> resources = new ArrayList<>();
 		for (int i = 0; i < fResources.length; i++) {
 			IResource parent = fResources[i];
 			if (parent.getType() == IResource.FILE)
@@ -75,7 +75,7 @@
 				resources.add(fResources[i]);
 		}
 
-		fScriptElements = (IModelElement[]) modelElements.toArray(new IModelElement[modelElements.size()]);
-		fResources = (IResource[]) resources.toArray(new IResource[resources.size()]);
+		fScriptElements = modelElements.toArray(new IModelElement[modelElements.size()]);
+		fResources = resources.toArray(new IResource[resources.size()]);
 	}
 

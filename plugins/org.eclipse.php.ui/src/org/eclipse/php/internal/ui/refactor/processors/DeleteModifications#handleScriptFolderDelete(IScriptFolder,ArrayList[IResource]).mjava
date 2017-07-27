@@ -1,0 +1,92 @@
+	/**
+	 * This method collects file and folder deletion for notifying participants.
+	 * Participants will get notified of * deletion of the package (in any case)
+	 * * deletion of files within the package if only the files are deleted
+	 * without the package folder ("package cleaning") * deletion of the package
+	 * folder if it is not only cleared and if its parent is not removed as
+	 * well.
+	 * 
+	 * @param resourcesCollector
+	 * 
+	 */
+	private void handleScriptFolderDelete(IScriptFolder pack, ArrayList<IResource> resourcesCollector) throws CoreException {
+		final IContainer container = (IContainer) pack.getResource();
+		if (container == null)
+			return;
+
+		final IResource[] members = container.members();
+
+		/*
+		 * Check whether this package is removed completely or only cleared. The
+		 * default package can never be removed completely.
+		 */
+		if (!pack.isRootFolder() && canRemoveCompletely(pack)) {
+			// This package is removed completely, which means its folder will
+			// be
+			// deleted as well. We only notify participants of the folder
+			// deletion
+			// if the parent folder of this folder will not be deleted as well:
+			boolean parentIsMarked = false;
+			final IScriptFolder parent = ModelElementUtil.getParentSubpackage(pack);
+			if (parent == null) {
+				// "Parent" is the default package which will never be
+				// deleted physically
+				parentIsMarked = false;
+			} else {
+				// Parent is marked if it is in the list
+				parentIsMarked = fPackagesToDelete.contains(parent);
+			}
+
+			if (parentIsMarked) {
+				// Parent is marked, but is it really deleted or only cleared?
+				if (canRemoveCompletely(parent)) {
+					// Parent can be removed completely, so we do not add
+					// this folder to the list.
+				} else {
+					// Parent cannot be removed completely, but as this folder
+					// can be removed, we notify the participant
+					resourcesCollector.add(container);
+					getResourceModifications().addDelete(container);
+				}
+			} else {
+				// Parent will not be removed, but we will
+				resourcesCollector.add(container);
+				getResourceModifications().addDelete(container);
+			}
+		} else {
+			// This package is only cleared because it has subpackages
+			// (=subfolders)
+			// which are not deleted. As the package is only cleared, its folder
+			// will not be removed and so we must notify the participant of the
+			// deleted children.
+			for (int m = 0; m < members.length; m++) {
+				IResource member = members[m];
+				if (member instanceof IFile) {
+					IFile file = (IFile) member;
+					if ("class".equals(file.getFileExtension()) && file.isDerived()) //$NON-NLS-1$
+						continue;
+					IDLTKLanguageToolkit toolkit = DLTKLanguageManager.getLanguageToolkit(pack);
+					if (DLTKCore.DEBUG) {
+						System.err.println(Messages.DeleteModifications_1);
+					}
+					if (pack.isRootFolder() && (toolkit == null || (toolkit != null
+							&& (!DLTKContentTypeManager.isValidResourceForContentType(toolkit, file)))))
+						continue;
+					resourcesCollector.add(member);
+					getResourceModifications().addDelete(member);
+				}
+				if (!pack.isRootFolder() && member instanceof IFolder) {
+					// Normally, folder children of packages are packages
+					// as well, but in case they have been removed from the
+					// build
+					// path, notify the participant
+					IScriptFolder frag = (IScriptFolder) DLTKCore.create(member);
+					if (frag == null) {
+						resourcesCollector.add(member);
+						getResourceModifications().addDelete(member);
+					}
+				}
+			}
+		}
+	}
+

@@ -1,0 +1,39 @@
+	@SuppressWarnings("unchecked")
+	private void handleUpdateSelection(Map<Object, Object> items) {
+		Iterator<Entry<Object, Object>> iterator = items.entrySet().iterator();
+
+		// Update the store before the hierarchy to prevent updating parents
+		// before all of the children are done
+		while (iterator.hasNext()) {
+			Entry<?, ?> entry = iterator.next();
+			Object key = entry.getKey();
+			// Replace the items in the checked state store with those from the
+			// supplied items
+			List<Object> selections = (List<Object>) entry.getValue();
+			if (selections.size() == 0) {
+				// If it is empty remove it from the list
+				fCheckedStateStore.remove(key);
+			} else {
+				fCheckedStateStore.put(key, selections);
+				// proceed up the tree element hierarchy
+				Object parent = fTreeContentProvider.getParent(key);
+				if (parent != null) {
+					addToHierarchyToCheckedStore(parent);
+				}
+			}
+		}
+
+		// Now update hierarchies
+		iterator = items.entrySet().iterator();
+
+		while (iterator.hasNext()) {
+			Entry<?, ?> entry = iterator.next();
+			Object key = entry.getKey();
+			updateHierarchy(key);
+			if (fCurrentTreeSelection != null && fCurrentTreeSelection.equals(key)) {
+				fListViewer.setAllChecked(false);
+				fListViewer.setCheckedElements(((List<?>) entry.getValue()).toArray());
+			}
+		}
+	}
+

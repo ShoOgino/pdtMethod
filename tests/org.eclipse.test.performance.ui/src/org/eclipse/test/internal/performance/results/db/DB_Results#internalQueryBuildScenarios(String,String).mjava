@@ -1,4 +1,4 @@
-private Map internalQueryBuildScenarios(String scenarioPattern, String buildName) {
+private Map<String, List<ScenarioResults>> internalQueryBuildScenarios(String scenarioPattern, String buildName) {
 	if (this.fSQL == null) return null;
 	long start = System.currentTimeMillis();
 	if (DEBUG) {
@@ -7,7 +7,7 @@ private Map internalQueryBuildScenarios(String scenarioPattern, String buildName
 		if (buildName != null) DEBUG_WRITER.print(" for build: "+buildName); //$NON-NLS-1$
 	}
 	ResultSet result = null;
-	Map allScenarios = new HashMap();
+	Map<String, List<ScenarioResults>> allScenarios = new HashMap<>();
 	try {
 		if (buildName == null) {
 			result = this.fSQL.queryBuildAllScenarios(scenarioPattern);
@@ -15,8 +15,8 @@ private Map internalQueryBuildScenarios(String scenarioPattern, String buildName
 			result = this.fSQL.queryBuildScenarios(scenarioPattern, buildName);
 		}
 		int previousId = -1;
-		List scenarios = null;
-		List scenariosNames = new ArrayList();
+		List<ScenarioResults> scenarios = null;
+		List<String> scenariosNames = new ArrayList<>();
 		for (int i = 0; result.next(); i++) {
 			int id = result.getInt(1);
 			String name = result.getString(2);
@@ -24,7 +24,7 @@ private Map internalQueryBuildScenarios(String scenarioPattern, String buildName
 			String shortName = result.getString(3);
 			int component_id = storeComponent(getComponentNameFromScenario(name));
 			if (component_id != previousId) {
-				allScenarios.put(COMPONENTS[component_id], scenarios = new ArrayList());
+				allScenarios.put(COMPONENTS[component_id], scenarios = new ArrayList<>());
 				previousId = component_id;
 			}
 			scenarios.add(new ScenarioResults(id, name, shortName));

@@ -1,0 +1,33 @@
+private void getConfigNumbers(BuildResults buildResults, BuildResults baselineResults, List<Object> line) {
+	if (baselineResults == null) {
+		line.add(INVALID_RESULTS);
+		return;
+	}
+	double[] values = new double[NUMBERS_LENGTH];
+	for (int i=0 ;i<NUMBERS_LENGTH; i++) {
+		values[i] = Double.NaN;
+	}
+	double buildValue = buildResults.getValue();
+	values[BUILD_VALUE_INDEX] = buildValue;;
+	double baselineValue = baselineResults.getValue();
+	values[BASELINE_VALUE_INDEX] = baselineValue;
+	double delta = (baselineValue - buildValue) / baselineValue;
+	values[DELTA_VALUE_INDEX] = delta;
+	if (Double.isNaN(delta)) {
+		line.add(values);
+		return;
+	}
+	long baselineCount = baselineResults.getCount();
+	long currentCount = buildResults.getCount();
+	if (baselineCount > 1 && currentCount > 1) {
+		double baselineError = baselineResults.getError();
+		double currentError = buildResults.getError();
+		values[BASELINE_ERROR_INDEX] = baselineError;
+		values[BUILD_ERROR_INDEX] = currentError;
+		values[DELTA_ERROR_INDEX] = Double.isNaN(baselineError)
+				? currentError / baselineValue
+				: Math.sqrt(baselineError*baselineError + currentError*currentError) / baselineValue;
+	}
+	line.add(values);
+}
+
