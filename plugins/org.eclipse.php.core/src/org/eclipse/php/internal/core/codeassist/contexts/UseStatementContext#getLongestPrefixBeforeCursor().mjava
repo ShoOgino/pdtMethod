@@ -1,0 +1,21 @@
+	/**
+	 * When isCursorInsideGroupStatement() is true, only the prefix part after
+	 * '{' is returned (leading '\' excluded), otherwise same content as
+	 * getPrefix() is returned. For example, with "use X\Y\ { A, B, \C\D| };"
+	 * this method would return "C\D".
+	 * 
+	 * @return
+	 */
+	@SuppressWarnings("null")
+	public String getLongestPrefixBeforeCursor() {
+		if (hasWhitespaceBeforeCursor()) {
+			return ""; //$NON-NLS-1$
+		}
+		int statementLength = longestStatementTextBeforeCursor.length();
+		int prefixEnd = PHPTextSequenceUtilities.readBackwardSpaces(longestStatementTextBeforeCursor, statementLength); // read
+		// whitespace
+		int prefixStart = PHPTextSequenceUtilities.readIdentifierStartIndex(getPHPVersion(),
+				longestStatementTextBeforeCursor, prefixEnd, true);
+		return prefixStart < 0 ? "" : longestStatementTextBeforeCursor.subSequence(prefixStart, prefixEnd).toString(); //$NON-NLS-1$
+	}
+

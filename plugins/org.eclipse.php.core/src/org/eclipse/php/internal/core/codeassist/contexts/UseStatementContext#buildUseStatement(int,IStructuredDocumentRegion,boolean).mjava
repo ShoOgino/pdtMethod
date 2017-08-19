@@ -1,0 +1,67 @@
+	private boolean buildUseStatement(int offset, @NonNull IStructuredDocumentRegion sdRegion,
+			boolean isClassStatementContext) {
+		ContextRegion[] foundDelimiter = new ContextRegion[1];
+		TextSequence statementText = PHPTextSequenceUtilities.getStatement(offset, sdRegion, true, foundDelimiter);
+		biggestCommonStatementText = longestStatementTextBeforeCursor = rebuiltUseStatementText = statementText;
+		type = TYPES.NONE;
+		isCursorInsideGroupStatement = false;
+
+		boolean hasUsePrefix = hasUsePrefix(statementText);
+		if (hasUsePrefix) {
+			if (isClassStatementContext && getPHPVersion().isLessThan(PHPVersion.PHP5_4)) {
+				return false;
+			}
+			type = isClassStatementContext ? TYPES.TRAIT : TYPES.USE;
+			return true;
+		}
+		if (isClassStatementContext) {
+			return false;
+		}
+
+		if (!getPHPVersion().isLessThan(PHPVersion.PHP7_0) && foundDelimiter[0] != null
+				&& foundDelimiter[0].getType() == PHPRegionTypes.PHP_CURLY_OPEN
+				&& foundDelimiter[0].getStart() >= 4 /* "use " */) {
+			// Check for "grouped use statements" like
+			// "use X\Y\ { A, B, \C\D| };" with '|' the cursor position.
+			// When found, at this point statementText will contain "A, B, \C\D"
+			// and statementTextBeforeCurly will contain "use X\Y\ ".
+			TextSequence statementTextBeforeOpeningCurly = PHPTextSequenceUtilities
+					.getStatement(foundDelimiter[0].getStart(), sdRegion, true, foundDelimiter);
+			if (hasUsePrefix(statementTextBeforeOpeningCurly)) {
+				// 1. remove spaces at the end of "use X\Y\ "
+				String s1 = statementTextBeforeOpeningCurly.toString();
+				int endS1 = PHPTextSequenceUtilities.readBackwardSpaces(s1, s1.length());
+				// 2. look for multiple statement parts separated by ',' in
+				// "A, B, \C\D" and remove leading spaces and leading '\' in
+				// the last statement part, to only keep "C\D"
+				String s2 = statementText.toString();
+				int idxS2 = s2.lastIndexOf(',') /* may be -1 */ + 1;
+				idxS2 = PHPTextSequenceUtilities.readForwardSpaces(s2, idxS2);
+				if (idxS2 < s2.length() && s2.charAt(idxS2) == NamespaceReference.NAMESPACE_SEPARATOR) {
+					idxS2++;
+				}
+				// 3. merge statementTextBeforeCurly and statementText by
+				// cutting useless characters, to store statement "use X\Y\C\D"
+				// in rebuiltUseStatementText
+				int start1 = statementTextBeforeOpeningCurly.getOriginalOffset(0);
+				int start2 = statementText.getOriginalOffset(0);
+				TextSequence res = TextSequenceUtilities.createTextSequence(statementTextBeforeOpeningCurly.getSource(),
+						start1, (start2 - start1) + statementText.length());
+				res = res.cutTextSequence(endS1, (start2 - start1) + idxS2);
+				// 4. store "X\Y\" in biggestCommonStatementText and "C\D" in
+				// longestStatementTextBeforeCursor
+				biggestCommonStatementText = TextSequenceUtilities
+						.createTextSequence(statementTextBeforeOpeningCurly.getSource(), start1, endS1);
+				longestStatementTextBeforeCursor = TextSequenceUtilities.createTextSequence(statementText.getSource(),
+						start2 + idxS2, statementText.length() - idxS2);
+				rebuiltUseStatementText = res;
+				type = TYPES.GROUP;
+				isCursorInsideGroupStatement = true;
+
+				return true;
+			}
+		}
+
+		return false;
+	}
+
