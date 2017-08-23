@@ -1,0 +1,67 @@
+	@Override
+	public void apply(ICompletionReporter reporter) throws BadLocationException {
+
+		ICompletionContext context = getContext();
+		AbstractCompletionContext abstractContext = (AbstractCompletionContext) context;
+		if (abstractContext.getCompletionRequestor() instanceof IPHPCompletionRequestor) {
+			IPHPCompletionRequestor phpCompletionRequestor = (IPHPCompletionRequestor) abstractContext
+					.getCompletionRequestor();
+			if (phpCompletionRequestor.filter(CompletionFlag.STOP_REPORT_TYPE)) {
+				return;
+			}
+		}
+		if (StringUtils.isBlank(abstractContext.getPrefixWithoutProcessing())) {
+			return;
+		}
+
+		ISourceRange replacementRange = getReplacementRange(abstractContext);
+		ISourceRange memberReplacementRange = getReplacementRangeForMember(abstractContext);
+
+		IType[] types = getTypes(abstractContext);
+		// now we compute type suffix in PHPCompletionProposalCollector
+		String suffix = ""; //$NON-NLS-1$
+		String nsSuffix = getNSSuffix(abstractContext);
+		int extraInfo = getExtraInfo();
+		if (abstractContext.isAbsoluteName()) {
+			extraInfo |= ProposalExtraInfo.FULL_NAME;
+			extraInfo |= ProposalExtraInfo.NO_INSERT_USE;
+			extraInfo |= ProposalExtraInfo.ABSOLUTE;
+		}
+
+		if (abstractContext.isAbsolute()) {
+			extraInfo |= ProposalExtraInfo.FULL_NAME;
+			extraInfo |= ProposalExtraInfo.NO_INSERT_USE;
+		}
+
+		String nsPrefix = null;
+		if (context instanceof UseStatementContext && ((UseStatementContext) context).isCursorInsideGroupStatement()) {
+			nsPrefix = ((UseStatementContext) context).getGroupPrefixBeforeOpeningCurly();
+		}
+
+		String namespace = abstractContext.getCurrentNamespace();
+		for (IType type : types) {
+			try {
+				int flags = type.getFlags();
+				boolean isNamespace = PHPFlags.isNamespace(flags);
+				int relevance = getRelevance(namespace, type);
+				if (nsPrefix != null) {
+					reporter.reportType(type, nsPrefix, isNamespace ? nsSuffix : suffix,
+							isNamespace ? replacementRange : memberReplacementRange,
+							extraInfo | ProposalExtraInfo.NO_INSERT_USE, relevance);
+				} else {
+					if (isNamespace || abstractContext.isAbsoluteName() || abstractContext.isAbsolute()) {
+						reporter.reportType(type, isNamespace ? nsSuffix : suffix, "", replacementRange,
+								extraInfo | ProposalExtraInfo.CLASS_IN_NAMESPACE, relevance);
+					} else {
+						reporter.reportType(type, isNamespace ? nsSuffix : suffix,
+								isNamespace ? replacementRange : memberReplacementRange, extraInfo, relevance);
+					}
+				}
+			} catch (ModelException e) {
+				PHPCorePlugin.log(e);
+			}
+		}
+		addAlias(reporter, suffix);
+
+	}
+

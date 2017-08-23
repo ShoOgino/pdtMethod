@@ -21,11 +21,25 @@
 			PHPCorePlugin.log(e);
 		}
 
-		ISourceRange replaceRange = getReplacementRange(context);
+		ISourceRange replaceRange = getReplacementRangeForMember(concreteContext);
 		String suffix = getSuffix(concreteContext);
 
 		IType[] types = getTypes(concreteContext);
 		for (IType type : types) {
+			try {
+				if (PHPFlags.isNamespace(type.getFlags())) {
+					ISourceRange nsReplaceRange = getReplacementRange(concreteContext);
+					int extraInfo = getExtraInfo();
+					if (concreteContext.isAbsoluteName()) {
+						extraInfo |= ProposalExtraInfo.ABSOLUTE;
+					}
+					reporter.reportType(type, NamespaceReference.NAMESPACE_DELIMITER, nsReplaceRange,
+							extraInfo | ProposalExtraInfo.CLASS_IN_NAMESPACE);
+					continue;
+				}
+			} catch (ModelException e) {
+				Logger.logException(e);
+			}
 			if (!concreteContext.getCompletionRequestor().isContextInformationMode()) {
 				// here we use fake method,and do the real work in class
 				// ParameterGuessingProposal

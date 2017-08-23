@@ -1,0 +1,26 @@
+	private String getSuffix(KeywordData keyword, ISourceRange replaceRange) {
+		String suffix = keyword.suffix;
+		if (StringUtils.isEmpty(suffix)) {
+			return suffix;
+		}
+
+		AbstractCompletionContext context = (AbstractCompletionContext) getContext();
+		int offset;
+		if (isInsertMode()) {
+			offset = context.getOffset();
+		} else {
+			offset = replaceRange.getOffset() + replaceRange.getLength();
+		}
+		try {
+			String realSuffix = context.getDocument().get(offset, suffix.length());
+			if (suffix.equals(realSuffix)) {
+				// return empty suffix if exists in target document
+				return StringUtils.EMPTY;
+			}
+		} catch (BadLocationException e) {
+			return suffix;
+		}
+
+		return suffix;
+	}
+

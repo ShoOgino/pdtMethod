@@ -1,0 +1,47 @@
+	public String resolveNamespace(String name) throws BadLocationException {
+		if (name == null) {
+			return getCurrentNamespace();
+		}
+		ISourceModule sourceModule = getSourceModule();
+		final ISourceRange validRange = getCurrentNamespaceRange();
+
+		ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule);
+		try {
+			int searchEnd = name.indexOf(NamespaceReference.NAMESPACE_SEPARATOR);
+			String search;
+			if (searchEnd < 1) {
+				search = name;
+			} else {
+				search = name.substring(0, searchEnd);
+			}
+			if ("namespace".equalsIgnoreCase(search)) {
+				search = getCurrentNamespace();
+				if (searchEnd < 1) {
+					return search;
+				} else {
+					return searchEnd + NamespaceReference.NAMESPACE_SEPARATOR + name.substring(searchEnd + 1);
+				}
+			}
+			AliasResolver aliasResolver = new AliasResolver(validRange, search);
+			moduleDeclaration.traverse(aliasResolver);
+			if (aliasResolver.stop) {
+				if (searchEnd < 1) {
+					name = aliasResolver.found;
+				} else {
+					name = aliasResolver.found + NamespaceReference.NAMESPACE_SEPARATOR + name.substring(searchEnd + 1);
+				}
+
+				return name;
+			}
+		} catch (Exception e) {
+			Logger.logException(e);
+		}
+		String current = getCurrentNamespace();
+
+		if (current != null) {
+			return new StringBuilder(current).append(NamespaceReference.NAMESPACE_SEPARATOR).append(name).toString();
+		}
+
+		return name;
+	}
+

@@ -1,0 +1,69 @@
+	/**
+	 * Runs the query to retrieve all global types
+	 * 
+	 * @param context
+	 * @return
+	 * @throws BadLocationException
+	 */
+	protected IType[] getTypes(AbstractCompletionContext context) throws BadLocationException {
+
+		String prefix = context.getPrefix();
+		if (prefix.startsWith("$")) { //$NON-NLS-1$
+			return EMPTY;
+		}
+
+		IDLTKSearchScope scope = createSearchScope();
+		if (context.getCompletionRequestor().isContextInformationMode()) {
+			return PHPModelAccess.getDefault().findTypes(context.getQualifier(true), context.getMemberName(),
+					MatchRule.EXACT, trueFlag, falseFlag, scope, null);
+		}
+
+		List<IType> result = new LinkedList<IType>();
+		String memberName = context.getMemberName();
+		String namespaceName = context.getQualifier(false);
+
+		StringBuilder sb = new StringBuilder();
+		String altNamespacePrefix = null;
+		if (namespaceName != null) {
+			sb.append(namespaceName).append(NamespaceReference.NAMESPACE_SEPARATOR);
+		} else if (!context.isAbsoluteName() && context.getCurrentNamespace() != null && useCurrentNamespace) {
+			altNamespacePrefix = new StringBuilder().append(context.getCurrentNamespace())
+					.append(NamespaceReference.NAMESPACE_SEPARATOR).append(memberName).toString();
+		}
+		String namespacePrefix = sb.append(memberName).toString();
+		if (memberName.length() > 1 && memberName.toUpperCase().equals(memberName)) {
+			// Search by camel-case
+
+			IType[] types = PHPModelAccess.getDefault().findTypes(context.getQualifier(true), memberName,
+					MatchRule.CAMEL_CASE, trueFlag, falseFlag, scope, null);
+
+			result.addAll(Arrays.asList(types));
+			if ((falseFlag & PHPFlags.AccNameSpace) == 0 || context.isAbsoluteName() || namespaceName != null) {
+				if (namespacePrefix.length() > 0) {
+					IType[] namespaces = PHPModelAccess.getDefault().findNamespaces(null, namespacePrefix.toString(),
+							MatchRule.CAMEL_CASE, trueFlag, 0, scope, null);
+					result.addAll(CodeAssistUtils.removeDuplicatedElements(namespaces));
+				}
+			}
+		}
+		IType[] types = PHPModelAccess.getDefault().findTraitOrTypes(context.getQualifier(true), memberName,
+				MatchRule.PREFIX, trueFlag, falseFlag, scope, null);
+
+		result.addAll(Arrays.asList(types));
+		if ((falseFlag & PHPFlags.AccNameSpace) == 0 || context.isAbsoluteName() || namespaceName != null
+				|| altNamespacePrefix != null) {
+			if (namespacePrefix.length() > 0) {
+				IType[] namespaces = PHPModelAccess.getDefault().findNamespaces(null, namespacePrefix, MatchRule.PREFIX,
+						trueFlag, 0, scope, null);
+				result.addAll(CodeAssistUtils.removeDuplicatedElements(namespaces));
+			}
+			if (altNamespacePrefix != null) {
+				IType[] namespaces = PHPModelAccess.getDefault().findNamespaces(null, altNamespacePrefix,
+						MatchRule.PREFIX, trueFlag, 0, scope, null);
+				result.addAll(CodeAssistUtils.removeDuplicatedElements(namespaces));
+			}
+
+		}
+		return result.toArray(new IType[result.size()]);
+	}
+

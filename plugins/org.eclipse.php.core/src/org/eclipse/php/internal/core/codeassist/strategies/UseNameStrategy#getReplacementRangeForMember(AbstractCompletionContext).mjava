@@ -1,0 +1,20 @@
+	@Override
+	public ISourceRange getReplacementRangeForMember(AbstractCompletionContext context) throws BadLocationException {
+		UseStatementContext useStatementContext = (UseStatementContext) context;
+		ISourceRange basicRange = getReplacementRange(context);
+		int move = (context.isAbsoluteName() ? 1 : 0);
+		String namespacePrefix = context.getNamespaceName();
+		if (useStatementContext.isCursorInsideGroupStatement()) {
+			int index = context.getNamesPrefix().lastIndexOf('\\');
+			if (index != -1) {
+				namespacePrefix = context.getNamesPrefix().substring(index + 1);
+				namespacePrefix = useStatementContext.getLongestPrefixBeforeCursor()
+						.substring(namespacePrefix.length());
+			}
+		}
+		if (!StringUtils.isEmpty(namespacePrefix)) {
+			move += namespacePrefix.length();
+		}
+		return new SourceRange(basicRange.getOffset() + move, basicRange.getLength() - move);
+	}
+
