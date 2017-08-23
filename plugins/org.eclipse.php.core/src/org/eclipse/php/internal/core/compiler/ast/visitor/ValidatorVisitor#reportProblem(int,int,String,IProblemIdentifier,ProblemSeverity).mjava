@@ -1,4 +1,9 @@
-	private void reportProblem(int start, int end, String message, IProblemIdentifier id, ProblemSeverity severity) {
+	public void reportProblem(int start, int end, String message, IProblemIdentifier id, ProblemSeverity severity) {
+		for (IValidatorExtension extension : extensions) {
+			if (extension.skipProblem(start, end, message, id)) {
+				return;
+			}
+		}
 		ISourceLineTracker tracker = context.getLineTracker();
 		int line = tracker.getLineNumberOfOffset(start);
 		IProblem problem = new DefaultProblem(context.getFile().getName(), message, id, null, severity, start, end,

@@ -3,5 +3,22 @@
 		this.context = context;
 		this.sourceModule = context.getSourceModule();
 		this.version = ProjectOptions.getPHPVersion(sourceModule);
+
+		IConfigurationElement[] elements = Platform.getExtensionRegistry().getConfigurationElementsFor(EXTENSION_POINT);
+		List<IValidatorExtension> list = new ArrayList<>(elements.length);
+		for (IConfigurationElement el : elements) {
+			try {
+				Object ext = el.createExecutableExtension(ATTR_CLASS);
+				if (ext != null && ext instanceof IValidatorExtension) {
+					IValidatorExtension tmp = (IValidatorExtension) ext;
+					if (tmp.isSupported(context)) {
+						tmp.init(context, this);
+						list.add(tmp);
+					}
+				}
+			} catch (CoreException e) {
+			}
+		}
+		extensions = list.toArray(new IValidatorExtension[0]);
 	}
 
