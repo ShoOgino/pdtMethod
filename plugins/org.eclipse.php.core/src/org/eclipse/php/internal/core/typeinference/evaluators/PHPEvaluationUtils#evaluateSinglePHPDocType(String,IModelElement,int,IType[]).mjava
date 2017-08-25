@@ -1,0 +1,61 @@
+	@SuppressWarnings("null")
+	@NonNull
+	private static List<IEvaluatedType> evaluateSinglePHPDocType(@NonNull String typeName, @NonNull IModelElement space,
+			int offset, @Nullable IType[] selfTypes) {
+		IType currentNamespace = space instanceof IType ? (IType) space : null;
+		ISourceModule sourceModule = space.getAncestor(ISourceModule.class);
+
+		List<IEvaluatedType> evaluated = new LinkedList<>();
+		if (PHPSimpleTypes.isSimpleType(typeName)) {
+			ClassFinder classFinder = new ClassFinder(typeName);
+			try {
+				space.accept(classFinder);
+			} catch (ModelException e) {
+				Logger.logException(e);
+			}
+			if (classFinder.found) {
+				evaluated.add(getEvaluatedType(typeName, currentNamespace));
+			} else {
+				evaluated.add(PHPSimpleTypes.fromString(typeName));
+			}
+		} else if ((typeName.equals(SELF_RETURN_TYPE) || typeName.equals(THIS_RETURN_TYPE)
+				|| typeName.equals(STATIC_RETURN_TYPE)) && selfTypes != null) {
+			for (IType t : selfTypes) {
+				evaluated.add(getEvaluatedType(PHPModelUtils.getFullName(t), null));
+			}
+		} else if (typeName.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) == 0) {
+			evaluated.add(new PHPClassType(typeName));
+		} else {
+			if (currentNamespace != null) {
+				ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule);
+				if (typeName.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) > 0) {
+					String prefix = typeName.substring(0, typeName.indexOf(NamespaceReference.NAMESPACE_SEPARATOR));
+					final Map<String, UsePart> result = PHPModelUtils.getAliasToNSMap(prefix, moduleDeclaration, offset,
+							currentNamespace, true);
+					if (result.containsKey(prefix)) {
+						String fullName = result.get(prefix).getNamespace().getFullyQualifiedName();
+						typeName = typeName.replace(prefix, fullName);
+						if (typeName.charAt(0) != NamespaceReference.NAMESPACE_SEPARATOR) {
+							typeName = NamespaceReference.NAMESPACE_SEPARATOR + typeName;
+						}
+					}
+				} else if (typeName.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) < 0) {
+
+					String prefix = typeName;
+					final Map<String, UsePart> result = PHPModelUtils.getAliasToNSMap(prefix, moduleDeclaration, offset,
+							currentNamespace, true);
+					if (result.containsKey(prefix)) {
+						String fullName = result.get(prefix).getNamespace().getFullyQualifiedName();
+						typeName = fullName;
+						if (typeName.charAt(0) != NamespaceReference.NAMESPACE_SEPARATOR) {
+							typeName = NamespaceReference.NAMESPACE_SEPARATOR + typeName;
+						}
+					}
+				}
+			}
+			evaluated.add(getEvaluatedType(typeName, currentNamespace));
+		}
+
+		return evaluated;
+	}
+

@@ -1,0 +1,29 @@
+	@SuppressWarnings("null")
+	@NonNull
+	public static MultiTypeType getArrayType(@NonNull String type, @NonNull IModelElement space, int offset,
+			@Nullable IType[] selfTypes) {
+		int beginIndex = type.indexOf('[') + 1;
+		int endIndex = type.lastIndexOf(']');
+		if (endIndex != -1) {
+			type = type.substring(beginIndex, endIndex);
+		}
+		MultiTypeType arrayType = new MultiTypeType();
+		Matcher m = ARRAY_TYPE_PATTERN.matcher(type);
+		if (m.find()) {
+			arrayType.addType(getArrayType(m.group(), space, offset, selfTypes));
+			type = m.replaceAll(""); //$NON-NLS-1$
+		} else if (type.endsWith(BRACKETS) && type.length() > 2) {
+			arrayType.addType(getArrayType(type.substring(0, type.length() - 2), space, offset, selfTypes));
+			type = type.replaceAll(Pattern.quote(BRACKETS), ""); //$NON-NLS-1$
+		}
+		String[] typeNames = type.split(","); //$NON-NLS-1$
+		for (String name : typeNames) {
+			if (!name.isEmpty()) {
+				for (IEvaluatedType e : evaluateSinglePHPDocType(name, space, offset, selfTypes)) {
+					arrayType.addType(e);
+				}
+			}
+		}
+		return arrayType;
+	}
+
