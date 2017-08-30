@@ -13,14 +13,27 @@
 			}
 			switch (elementType) {
 			case FullyQualifiedReference.T_TYPE:
-				IModelElement[] types = PHPModelUtils.getTypes(name, sourceModule, type.start(), null);
-				if (types.length == 0) {
-					types = PHPModelUtils.getTraits(name, sourceModule, type.start(), null, null);
+				IModelElement[] elements = PHPModelUtils.getTypes(name, sourceModule, type.start(), null);
+				if (elements.length == 0) {
+					elements = PHPModelUtils.getTraits(name, sourceModule, type.start(), null, null);
 				}
-				if (types.length == 0 && info.isUseStatement()) {
-					types = sourceModule.codeSelect(type.start(), type.end() - type.start());
+				if (elements.length == 0 && info.isUseStatement()) {
+					elements = sourceModule.codeSelect(type.start(), type.end() - type.start());
+					if (elements.length == 0) {
+						IDLTKSearchScope scope = SearchEngine.createSearchScope(sourceModule.getScriptProject());
+						IType[] namespaces = PHPModelAccess.getDefault().findNamespaces(null, info.getTypeName(),
+								MatchRule.PREFIX, 0, 0, scope, null);
+						for (IType namespace : namespaces) {
+							char character = namespace.getElementName().charAt(info.getTypeName().length());
+							if (character == NamespaceReference.NAMESPACE_SEPARATOR) {
+								isFound = true;
+								break;
+							}
+						}
+					}
 				}
-				if (types.length > 0) {
+
+				if (elements.length > 0) {
 					isFound = true;
 				}
 				break;
