@@ -1,0 +1,35 @@
+		/**
+		 * Used to create a fake FullyQualifiedReference object for the type
+		 * (split in 2 parts) of a group use statement. For example, this method
+		 * will return an object for type <code>"A\B\C"</code> from statement
+		 * <code>"use A\B\ { \C\D };"</code>. Note that this type will have its
+		 * source start and end range limited to the source start and end range
+		 * of <code>"\C\D"</code>.
+		 * 
+		 * @param usePart
+		 * @return fake type
+		 */
+		private FullyQualifiedReference createFakeGroupType(UsePart usePart) {
+			assert usePart.getGroupNamespace() != null;
+
+			FullyQualifiedReference usePartNamespace = usePart.getNamespace();
+			// can be null:
+			NamespaceReference usePartNamespaceNamespace = usePartNamespace.getNamespace();
+			FullyQualifiedReference groupNamespace = usePart.getGroupNamespace();
+			// can be null:
+			NamespaceReference groupNamespaceNamespace = groupNamespace.getNamespace();
+
+			return new FullyQualifiedReference(usePartNamespace.sourceStart(), usePartNamespace.sourceEnd(),
+					usePartNamespace.getName(),
+					new NamespaceReference(
+							usePartNamespaceNamespace != null ? usePartNamespaceNamespace.sourceStart()
+									: usePartNamespace.sourceStart(),
+							usePartNamespaceNamespace != null ? usePartNamespaceNamespace.sourceEnd() :
+							/* empty fake namespace */
+									usePartNamespace.sourceStart(),
+							getFakeGroupNamespaceName(usePart),
+							groupNamespaceNamespace != null ? groupNamespaceNamespace.isGlobal() : false,
+							groupNamespaceNamespace != null ? groupNamespaceNamespace.isLocal() : false),
+					usePartNamespace.getElementType());
+		}
+
