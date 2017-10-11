@@ -35,9 +35,15 @@
 				final MethodDeclaration topDeclaration = decl;
 				if (topDeclaration instanceof PHPMethodDeclaration) {
 					PHPMethodDeclaration methodDeclaration = (PHPMethodDeclaration) topDeclaration;
-					if (methodDeclaration.getReturnType() != null) {
-						subGoals.add(new ExpressionTypeGoal(innerContext, methodDeclaration.getReturnType()));
-						continue;
+					TypeReference returnType = methodDeclaration.getReturnType();
+					if (returnType != null) {
+						subGoals.add(new ExpressionTypeGoal(innerContext, returnType));
+						if (!PHPSimpleTypes.ARRAY.equals(PHPClassType.fromSimpleReference(returnType))) {
+							// https://bugs.eclipse.org/bugs/show_bug.cgi?id=525480
+							// we only need below ASTVisitor when typehint is
+							// "array"
+							continue;
+						}
 					}
 				}
 				ASTVisitor visitor = new ASTVisitor() {
