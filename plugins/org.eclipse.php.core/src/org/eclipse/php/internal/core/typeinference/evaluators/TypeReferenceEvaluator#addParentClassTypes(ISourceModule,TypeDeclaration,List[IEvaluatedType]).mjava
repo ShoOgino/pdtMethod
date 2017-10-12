@@ -1,0 +1,81 @@
+	private void addParentClassTypes(ISourceModule sourceModule, TypeDeclaration currentTypeDeclaration,
+			List<IEvaluatedType> parentClassTypes) {
+		final ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule);
+		final IType currentNamespace = PHPModelUtils.getCurrentNamespace(sourceModule,
+				currentTypeDeclaration.sourceStart());
+
+		if (currentTypeDeclaration instanceof ClassDeclaration) {
+			ClassDeclaration classDecl = (ClassDeclaration) currentTypeDeclaration;
+
+			ASTListNode superClasses = classDecl.getSuperClasses();
+			List<ASTNode> childs = superClasses.getChilds();
+			for (Iterator<ASTNode> iterator = childs.iterator(); iterator.hasNext();) {
+				ASTNode node = iterator.next();
+				NamespaceReference namespace = null;
+				SimpleReference reference = null;
+				if (node instanceof SimpleReference) {
+					reference = (SimpleReference) node;
+					String typeName = reference.getName();
+					if (reference instanceof FullyQualifiedReference) {
+						FullyQualifiedReference ref = (FullyQualifiedReference) node;
+						namespace = ref.getNamespace();
+					}
+					if (namespace != null && !namespace.getName().equals("")) { //$NON-NLS-1$
+						String nsName = namespace.getName();
+						if (nsName.equals("\\")) { //$NON-NLS-1$
+							typeName = nsName + typeName;
+						} else {
+							if (nsName.startsWith("namespace\\")) { //$NON-NLS-1$
+								nsName = nsName.replace("namespace\\", ""); //$NON-NLS-1$ //$NON-NLS-2$
+							}
+							typeName = nsName + NamespaceReference.NAMESPACE_SEPARATOR + typeName;
+						}
+					}
+					if (typeName.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) > 0) {
+						// check if the first part
+						// is an
+						// alias,then get the full
+						// name
+						String prefix = typeName.substring(0, typeName.indexOf(NamespaceReference.NAMESPACE_SEPARATOR));
+						final Map<String, UsePart> result = PHPModelUtils.getAliasToNSMap(prefix, moduleDeclaration,
+								reference.sourceStart(), currentNamespace, true);
+						if (result.containsKey(prefix)) {
+							String fullName = result.get(prefix).getNamespace().getFullyQualifiedName();
+							typeName = typeName.replace(prefix, fullName);
+						}
+					} else if (typeName.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) < 0) {
+
+						String prefix = typeName;
+						final Map<String, UsePart> result = PHPModelUtils.getAliasToNSMap(prefix, moduleDeclaration,
+								reference.sourceStart(), currentNamespace, true);
+						if (result.containsKey(prefix)) {
+							String fullName = result.get(prefix).getNamespace().getFullyQualifiedName();
+							typeName = fullName;
+						}
+					}
+					IEvaluatedType type = PHPSimpleTypes.fromString(typeName);
+					if (type == null) {
+						if (typeName.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) != -1
+								|| currentNamespace == null) {
+							type = new PHPClassType(typeName);
+						} else {
+							type = new PHPClassType(currentNamespace.getElementName(), typeName);
+						}
+					}
+
+					parentClassTypes.add(type);
+				}
+				// if (namespace == null
+				// || namespace.getName().equals("")) {
+				// types.add(new PHPClassType(reference
+				// .getName()));
+				// } else {
+				// types.add(new
+				// PHPClassType(namespace.getName(),
+				// reference.getName()));
+				// }
+
+			}
+		}
+	}
+
