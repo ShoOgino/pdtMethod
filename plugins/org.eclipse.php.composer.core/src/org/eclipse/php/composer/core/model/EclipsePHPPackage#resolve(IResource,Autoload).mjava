@@ -1,0 +1,23 @@
+	protected IPath resolve(IResource resource, Autoload autoload) {
+		if (autoload == null || autoload.getPsr0() == null || autoload.getPsr0().getFirst() == null) {
+			return null;
+		}
+		String targetDir = phpPackage.getTargetDir();
+		IPath ns = null;
+		IPath path = resource.getFullPath();
+		IPath composerPath = getPath();
+		IPath psr0Path = composerPath.append(autoload.getPsr0().getFirst().getNamespace());
+		int segments = psr0Path.segmentCount();
+		if (path.matchingFirstSegments(psr0Path) == segments) {
+
+			if (targetDir != null && targetDir.length() > 0) {
+				Path target = new Path(targetDir);
+				ns = target.append(path.removeFirstSegments(psr0Path.segmentCount()));
+			} else {
+				ns = path.removeFirstSegments(psr0Path.segmentCount());
+			}
+
+		}
+		return ns;
+	}
+
