@@ -3,21 +3,13 @@
 		if (!super.isValid(sourceModule, offset, requestor)) {
 			return false;
 		}
-
-		try {
-			if (getType() == TYPES.TRAIT) {
-				TextSequence statementText = getStatementText();
-				if (statementText.toString().indexOf('{') < 0 && statementText.toString().indexOf('}') < 0) {
-					return true;
-				}
-			} else {
-				String previousWord = getPreviousWord();
-				if (USE_KEYWORD.equalsIgnoreCase(previousWord)) {
-					return true;
-				}
+		if (getType() == TYPES.TRAIT) {
+			TextSequence statementText = getStatementText();
+			if (statementText.toString().indexOf('{') < 0 && statementText.toString().indexOf('}') < 0) {
+				return true;
 			}
-		} catch (BadLocationException e) {
-			PHPCorePlugin.log(e);
+		} else if (getType() == TYPES.USE || getType() == TYPES.USE_GROUP) {
+			return !(isUseFunctionStatement() || isUseConstStatement());
 		}
 		return false;
 	}

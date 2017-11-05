@@ -10,12 +10,17 @@
 				return;
 			}
 		}
-		if (StringUtils.isBlank(abstractContext.getPrefixWithoutProcessing())) {
+		if (StringUtils.isBlank(abstractContext.getPrefix())) {
 			return;
 		}
 
 		ISourceRange replacementRange = getReplacementRange(abstractContext);
 		ISourceRange memberReplacementRange = getReplacementRangeForMember(abstractContext);
+
+		String nsUseGroupPrefix = null;
+		if (context instanceof UseStatementContext) {
+			nsUseGroupPrefix = ((UseStatementContext) context).getGroupPrefixBeforeOpeningCurly();
+		}
 
 		IType[] types = getTypes(abstractContext);
 		// now we compute type suffix in PHPCompletionProposalCollector
@@ -25,7 +30,7 @@
 		if (abstractContext.isAbsoluteName()) {
 			extraInfo |= ProposalExtraInfo.FULL_NAME;
 			extraInfo |= ProposalExtraInfo.NO_INSERT_USE;
-			extraInfo |= ProposalExtraInfo.ABSOLUTE;
+			extraInfo |= ProposalExtraInfo.ABSOLUTE_NAME;
 		}
 
 		if (abstractContext.isAbsolute()) {
@@ -33,9 +38,8 @@
 			extraInfo |= ProposalExtraInfo.NO_INSERT_USE;
 		}
 
-		String nsPrefix = null;
-		if (context instanceof UseStatementContext && ((UseStatementContext) context).isCursorInsideGroupStatement()) {
-			nsPrefix = ((UseStatementContext) context).getGroupPrefixBeforeOpeningCurly();
+		if (nsUseGroupPrefix != null) {
+			extraInfo |= ProposalExtraInfo.NO_INSERT_USE;
 		}
 
 		String namespace = abstractContext.getCurrentNamespace();
@@ -44,13 +48,12 @@
 				int flags = type.getFlags();
 				boolean isNamespace = PHPFlags.isNamespace(flags);
 				int relevance = getRelevance(namespace, type);
-				if (nsPrefix != null) {
-					reporter.reportType(type, nsPrefix, isNamespace ? nsSuffix : suffix,
-							isNamespace ? replacementRange : memberReplacementRange,
-							extraInfo | ProposalExtraInfo.NO_INSERT_USE, relevance);
+				if (nsUseGroupPrefix != null) {
+					reporter.reportType(type, nsUseGroupPrefix, isNamespace ? nsSuffix : suffix,
+							isNamespace ? replacementRange : memberReplacementRange, extraInfo, relevance);
 				} else {
 					if (isNamespace || abstractContext.isAbsoluteName() || abstractContext.isAbsolute()) {
-						reporter.reportType(type, isNamespace ? nsSuffix : suffix, "", replacementRange,
+						reporter.reportType(type, isNamespace ? nsSuffix : suffix, replacementRange,
 								extraInfo | ProposalExtraInfo.CLASS_IN_NAMESPACE, relevance);
 					} else {
 						reporter.reportType(type, isNamespace ? nsSuffix : suffix,

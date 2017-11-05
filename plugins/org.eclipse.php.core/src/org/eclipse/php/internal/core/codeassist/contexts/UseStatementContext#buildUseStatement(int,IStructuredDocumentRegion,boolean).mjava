@@ -3,16 +3,21 @@
 		ContextRegion[] foundDelimiter = new ContextRegion[1];
 		TextSequence statementText = PHPTextSequenceUtilities.getStatement(offset, sdRegion, true, null, 0,
 				foundDelimiter);
-		biggestCommonStatementText = longestStatementTextBeforeCursor = rebuiltUseStatementText = statementText;
+		biggestCommonStatementText = longestPrefixTextBeforeCursor = rebuiltUseStatementText = statementText;
+		isCursorInsideGroupStatement = isUseFunctionStatement = isUseConstStatement = false;
 		type = TYPES.NONE;
-		isCursorInsideGroupStatement = false;
 
 		boolean hasUsePrefix = hasUsePrefix(statementText);
 		if (hasUsePrefix) {
-			if (isClassStatementContext && getPHPVersion().isLessThan(PHPVersion.PHP5_4)) {
-				return false;
+			if (isClassStatementContext) {
+				if (getPHPVersion().isLessThan(PHPVersion.PHP5_4)) {
+					return false;
+				}
+				type = TYPES.TRAIT;
+			} else {
+				type = TYPES.USE;
+				findConstOrFunctionWord(statementText, 1, false);
 			}
-			type = isClassStatementContext ? TYPES.TRAIT : TYPES.USE;
 			return true;
 		}
 		if (isClassStatementContext) {
@@ -29,6 +34,8 @@
 			TextSequence statementTextBeforeOpeningCurly = PHPTextSequenceUtilities
 					.getStatement(foundDelimiter[0].getStart(), sdRegion, true);
 			if (hasUsePrefix(statementTextBeforeOpeningCurly)) {
+				findConstOrFunctionWord(statementTextBeforeOpeningCurly, 1, false);
+				findConstOrFunctionWord(statementText, 0, true);
 				// 1. remove spaces at the end of "use X\Y\ "
 				String s1 = statementTextBeforeOpeningCurly.toString();
 				int endS1 = PHPTextSequenceUtilities.readBackwardSpaces(s1, s1.length());
@@ -36,8 +43,23 @@
 				// "A, B, \C\D" and remove leading '\' in the last statement
 				// part, to only keep "C\D"
 				String s2 = statementText.toString();
-				int endS2 = PHPTextSequenceUtilities.readBackwardSpaces(s2, s2.length());
-				int idxS2 = PHPTextSequenceUtilities.readNamespaceStartIndex(s2, endS2, false);
+				int idxS2, endS2;
+				if (isUseFunctionStatement || isUseConstStatement) {
+					endS2 = s2.length();
+					// do not look backward for spaces since we have word
+					// "function" or "const" followed by at least one space
+					// and we do not want to keep such words to build
+					// rebuiltUseStatementText
+					idxS2 = PHPTextSequenceUtilities.readNamespaceStartIndex(s2, endS2, false);
+				} else {
+					endS2 = PHPTextSequenceUtilities.readBackwardSpaces(s2, s2.length());
+					idxS2 = PHPTextSequenceUtilities.readNamespaceStartIndex(s2, endS2, false);
+					if (idxS2 == endS2) {
+						// do not keep empty prefix text before cursor
+						idxS2 = endS2 = s2.length();
+					}
+				}
+				int idx3 = idxS2;
 				if (idxS2 < s2.length() && s2.charAt(idxS2) == NamespaceReference.NAMESPACE_SEPARATOR) {
 					idxS2++;
 				}
@@ -55,9 +77,9 @@
 				// longestStatementTextBeforeCursor
 				biggestCommonStatementText = statementTextBeforeOpeningCurly.cutTextSequence(endS1,
 						statementTextBeforeOpeningCurly.length());
-				longestStatementTextBeforeCursor = statementText.cutTextSequence(0, idxS2);
+				longestPrefixTextBeforeCursor = statementText.cutTextSequence(0, idx3);
 				rebuiltUseStatementText = fullStatementText;
-				type = TYPES.GROUP;
+				type = TYPES.USE_GROUP;
 				isCursorInsideGroupStatement = true;
 
 				return true;

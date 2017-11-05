@@ -4,16 +4,16 @@
 
 		AbstractCompletionContext abstractContext = (AbstractCompletionContext) context;
 		CompletionRequestor requestor = abstractContext.getCompletionRequestor();
-		if (StringUtils.isBlank(abstractContext.getPrefixWithoutProcessing())) {
-			return;
-		}
 
 		String prefix = abstractContext.getPrefix();
-		if (prefix.startsWith("$")) { //$NON-NLS-1$
+		if (StringUtils.isBlank(prefix) || prefix.startsWith("$")) { //$NON-NLS-1$
 			return;
 		}
 
-		int extraInfo = getExtraInfo();
+		String nsUseGroupPrefix = null;
+		if (context instanceof UseStatementContext) {
+			nsUseGroupPrefix = ((UseStatementContext) context).getGroupPrefixBeforeOpeningCurly();
+		}
 
 		MatchRule matchRule = MatchRule.PREFIX;
 		if (requestor.isContextInformationMode()) {
@@ -37,7 +37,8 @@
 		IDLTKSearchScope scope = null;
 		IModelElement[] enclosingTypeConstants = null;
 
-		if (enclosingType != null && isStartOfStatement(prefix, abstractContext, abstractContext.getOffset())) {
+		if (enclosingType != null && nsUseGroupPrefix != null
+				&& isStartOfStatement(prefix, abstractContext, abstractContext.getOffset())) {
 			// See the case of testClassStatement1.pdtt and
 			// testClassStatement2.pdtt
 			scope = SearchEngine.createSearchScope(enclosingType);
@@ -47,16 +48,23 @@
 
 		String memberName = abstractContext.getMemberName();
 		String namespaceName = abstractContext.getQualifier(true);
+		int extraInfo = getExtraInfo();
 		if (abstractContext.isAbsoluteName()) {
 			extraInfo |= ProposalExtraInfo.FULL_NAME;
 			extraInfo |= ProposalExtraInfo.NO_INSERT_USE;
-			extraInfo |= ProposalExtraInfo.ABSOLUTE;
+			extraInfo |= ProposalExtraInfo.ABSOLUTE_NAME;
 		}
 
 		if (abstractContext.isAbsolute()) {
 			extraInfo |= ProposalExtraInfo.FULL_NAME;
 			extraInfo |= ProposalExtraInfo.NO_INSERT_USE;
 		}
+
+		if (nsUseGroupPrefix != null) {
+			extraInfo |= ProposalExtraInfo.NO_INSERT_NAMESPACE;
+			extraInfo |= ProposalExtraInfo.NO_INSERT_USE;
+		}
+
 		enclosingTypeConstants = PHPModelAccess.getDefault().findFileFields(namespaceName, memberName, matchRule,
 				Modifiers.AccConstant, 0, scope, null);
 
@@ -66,12 +74,18 @@
 		// workaround for https://bugs.eclipse.org/bugs/show_bug.cgi?id=310383
 		enclosingTypeConstants = filterClassConstants(enclosingTypeConstants);
 		// workaround end
-		ISourceRange replaceRange = abstractContext.isAbsoluteName() || abstractContext.isAbsolute()
-				? getReplacementRange(abstractContext)
-				: getReplacementRangeForMember(abstractContext);
+		ISourceRange replacementRange = getReplacementRange(abstractContext);
+		ISourceRange memberReplacementRange = getReplacementRangeForMember(abstractContext);
+		boolean isAbsoluteField = abstractContext.isAbsoluteName() || abstractContext.isAbsolute();
 		for (IModelElement constant : enclosingTypeConstants) {
 			IField field = (IField) constant;
-			reporter.reportField(field, "", replaceRange, false, 0, extraInfo); //$NON-NLS-1$
+			if (nsUseGroupPrefix != null) {
+				reporter.reportField(field, nsUseGroupPrefix, "", memberReplacementRange, 0, //$NON-NLS-1$
+						extraInfo);
+			} else {
+				reporter.reportField(field, "", isAbsoluteField ? replacementRange : memberReplacementRange, false, 0,
+						extraInfo); // $NON-NLS-1$
+			}
 		}
 		addAlias(reporter);
 	}

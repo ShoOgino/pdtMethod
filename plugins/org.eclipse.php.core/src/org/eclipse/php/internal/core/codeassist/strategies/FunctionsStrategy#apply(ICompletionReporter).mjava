@@ -11,15 +11,23 @@
 			return;
 		}
 
+		String nsUseGroupPrefix = null;
+		if (context instanceof UseStatementContext) {
+			nsUseGroupPrefix = ((UseStatementContext) context).getGroupPrefixBeforeOpeningCurly();
+		}
+
 		int extraInfo = getExtraInfo();
 		if (abstractContext.isAbsoluteName()) {
-			extraInfo |= ProposalExtraInfo.FULL_NAME;
 			extraInfo |= ProposalExtraInfo.NO_INSERT_USE;
-			extraInfo |= ProposalExtraInfo.ABSOLUTE;
+			extraInfo |= ProposalExtraInfo.ABSOLUTE_NAME;
 		}
 
 		if (abstractContext.isAbsolute()) {
-			extraInfo |= ProposalExtraInfo.FULL_NAME;
+			extraInfo |= ProposalExtraInfo.NO_INSERT_USE;
+		}
+
+		if (nsUseGroupPrefix != null) {
+			extraInfo |= ProposalExtraInfo.NO_INSERT_NAMESPACE;
 			extraInfo |= ProposalExtraInfo.NO_INSERT_USE;
 		}
 
@@ -33,13 +41,19 @@
 		String namespaceName = abstractContext.getQualifier(true);
 		functions = PHPModelAccess.getDefault().findFunctions(namespaceName, memberName, matchRule, 0, 0, scope, null);
 
-		ISourceRange replacementRange = abstractContext.isAbsoluteName() || abstractContext.isAbsolute()
-				? getReplacementRange(abstractContext)
-				: getReplacementRangeForMember(abstractContext);
+		ISourceRange replacementRange = getReplacementRange(abstractContext);
+		ISourceRange memberReplacementRange = getReplacementRangeForMember(abstractContext);
+		boolean isAbsoluteMethod = abstractContext.isAbsoluteName() || abstractContext.isAbsolute();
 		String suffix = getSuffix(abstractContext);
 		String namespace = abstractContext.getCurrentNamespace();
 		for (IMethod method : functions) {
-			reporter.reportMethod(method, suffix, replacementRange, extraInfo, getRelevance(namespace, method));
+			if (nsUseGroupPrefix != null) {
+				reporter.reportMethod(method, nsUseGroupPrefix, suffix, memberReplacementRange, extraInfo,
+						getRelevance(namespace, method));
+			} else {
+				reporter.reportMethod(method, suffix, isAbsoluteMethod ? replacementRange : memberReplacementRange,
+						extraInfo, getRelevance(namespace, method));
+			}
 		}
 
 		addAlias(reporter, suffix);

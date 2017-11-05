@@ -23,13 +23,26 @@
 			Image image = getImage(
 					((PHPCompletionProposalLabelProvider) getLabelProvider()).createMethodImageDescriptor(proposal));
 			scriptProposal = new PHPCompletionProposal(completion, replaceStart, length, image, displayString, 0) {
+				private boolean fReplacementStringComputed = false;
+
 				@Override
 				public String getReplacementString() {
+					if (!fReplacementStringComputed) {
+						String replacementString = computeReplacementString();
+						setReplacementString(replacementString);
+						fReplacementStringComputed = true;
+					}
+					return super.getReplacementString();
+				}
+
+				private String computeReplacementString() {
 					IMethod method = (IMethod) proposal.getModelElement();
 					if (ProposalExtraInfo.isNoInsert(proposal.getExtraInfo())) {
 						return method.getElementName();
 					}
-					setReplacementString(method.getFullyQualifiedName("\\")); //$NON-NLS-1$
+					if (ProposalExtraInfo.isFullName(proposal.getExtraInfo())) {
+						return PHPModelUtils.getFullName(method);
+					}
 					return super.getReplacementString();
 				}
 
