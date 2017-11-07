@@ -27,6 +27,22 @@
 
 			private String computeReplacementString() {
 				IField field = (IField) proposal.getModelElement();
+
+				if (ProposalExtraInfo.isMemberInNamespace(proposal.getExtraInfo())) {
+					StringBuilder result = new StringBuilder(PHPModelUtils.getFullName(field));
+					if (ProposalExtraInfo.isAbsoluteName(getExtraInfo())) {
+						result.insert(0, NamespaceReference.NAMESPACE_SEPARATOR);
+					}
+					try {
+						if (PHPFlags.isNamespace(field.getFlags())) {
+							result.append(NamespaceReference.NAMESPACE_SEPARATOR);
+						}
+					} catch (ModelException e) {
+						PHPUiPlugin.log(e);
+					}
+					return result.toString();
+				}
+
 				if (field instanceof AliasField) {
 					AliasField aliasField = (AliasField) field;
 					return aliasField.getAlias();
