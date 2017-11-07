@@ -1,0 +1,42 @@
+	private static void loadModel() {
+		List<Category> categories = new ArrayList<>();
+		for (IConfigurationElement element : Platform.getExtensionRegistry()
+				.getConfigurationElementsFor(PreferenceConstants.PROBLEM_CONFIGURATION_EXTENSION_POINT)) {
+			if (PreferenceConstants.PROBLEM_CONFIGURATION_CATEGORY.equals(element.getName())) {
+				categories.add(new Category(element.getAttribute(PreferenceConstants.PROBLEM_CONFIGURATION_ID),
+						element.getAttribute(PreferenceConstants.PROBLEM_CONFIGURATION_NAME),
+						Integer.valueOf(element.getAttribute(PreferenceConstants.PROBLEM_CONFIGURATION_PRIORITY))));
+			}
+		}
+		categories.sort(new Comparator<Category>() {
+
+			@Override
+			public int compare(Category o1, Category o2) {
+				return Integer.compare(o1.priority, o2.priority);
+			}
+		});
+		model = new LinkedHashMap<String, Category>();
+		categories.forEach((v) -> model.put(v.id, v));
+		for (IConfigurationElement element : Platform.getExtensionRegistry()
+				.getConfigurationElementsFor(PreferenceConstants.PROBLEM_CONFIGURATION_EXTENSION_POINT)) {
+			if (PreferenceConstants.PROBLEM_CONFIGURATION_PROBLEM.equals(element.getName())) {
+				Category category = model.get(element.getAttribute(PreferenceConstants.PROBLEM_CONFIGURATION_CATEGORY));
+				if (category == null) {
+					PHPUiPlugin.logErrorMessage("Category not found: " //$NON-NLS-1$
+							+ element.getAttribute(PreferenceConstants.PROBLEM_CONFIGURATION_CATEGORY));
+					continue;
+				}
+				for (IConfigurationElement identifier : element
+						.getChildren(PreferenceConstants.PROBLEM_CONFIGURATION_IDENTIFIER)) {
+					String id = new StringBuilder(element.getAttribute(PreferenceConstants.PROBLEM_CONFIGURATION_CLASS))
+							.append('#').append(identifier.getAttribute(PreferenceConstants.PROBLEM_CONFIGURATION_ID))
+							.toString();
+					IProblemIdentifier ident = DefaultProblemIdentifier.decode(id);
+					category.problems.add(new ConcreteProblem(ident,
+							identifier.getAttribute(PreferenceConstants.PROBLEM_CONFIGURATION_NAME)));
+				}
+			}
+
+		}
+	}
+

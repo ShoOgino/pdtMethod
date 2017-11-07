@@ -1,0 +1,42 @@
+	private Composite createFields(Composite parent) {
+		Composite fieldEditorParentWrap = new Composite(parent, SWT.NULL);
+		GridLayout wrapLayout = new GridLayout();
+		wrapLayout.marginHeight = 0;
+		wrapLayout.marginWidth = 0;
+		fieldEditorParentWrap.setLayout(wrapLayout);
+		fieldEditorParentWrap.setFont(parent.getFont());
+
+		fieldEditorParent = new Composite(fieldEditorParentWrap, SWT.NULL);
+		fieldEditorParent.setLayout(new GridLayout());
+		fieldEditorParent.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		fieldEditorParent.setFont(parent.getFont());
+
+		final Label horizontalLine = new Label(fieldEditorParent, SWT.SEPARATOR | SWT.HORIZONTAL);
+		horizontalLine.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		horizontalLine.setFont(fieldEditorParent.getFont());
+
+		fields = new Combo[fAllKeys.length];
+		int i = 0;
+		for (Category category : model.values()) {
+			if (category.problems.size() == 0) {
+				continue;
+			}
+			ExpandableComposite group = createGroup(1, fieldEditorParent, category.name);
+			Composite inner = new Composite(group, SWT.NONE);
+			inner.setFont(parent.getFont());
+			inner.setLayout(new GridLayout(3, false));
+			inner.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+			group.setClient(inner);
+
+			for (ConcreteProblem v : category.problems) {
+				Combo combo = fields[i] = addComboBox(inner, v.name, new Key(v.qualifier, PHPCoreConstants.SEVERITY),
+						getSeverityValues(), getSeverityLabels(), 0);
+				Label object = (Label) fLabels.get(combo);
+				object.setLayoutData(new GridData(GridData.FILL, GridData.CENTER, true, false, 2, 1));
+				i++;
+			}
+		}
+
+		return fieldEditorParentWrap;
+	}
+
