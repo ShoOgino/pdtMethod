@@ -14,13 +14,15 @@
 		}
 
 		if (aliasName.equalsIgnoreCase(alias)) {
-			if (currentUseStatement == null || currentUseStatement.getNamespace() == null) {
-				result = usePart;
-			} else {
-				FullyQualifiedReference fqn = createCombinedFQN(usePart);
+			boolean isGroupStatement = currentUseStatement != null && currentUseStatement.getNamespace() != null
+					&& usePart.getGroupNamespace() != null;
+			if (isGroupStatement) {
+				FullyQualifiedReference fqn = ASTUtils.createFakeGroupUseType(usePart);
 
 				result = new UsePart(fqn, usePart.getAlias(),
 						Math.max(currentUseStatement.getStatementType(), usePart.getStatementType()));
+			} else {
+				result = usePart;
 			}
 			return false;
 		}

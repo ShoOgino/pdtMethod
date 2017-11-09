@@ -4,17 +4,13 @@
 	 */
 	@Override
 	protected boolean visit(UsePart usePart) {
-		String ns = usePart.getNamespace().getFullyQualifiedName();
-
-		boolean isGroupStatement = currentUseStatement != null && currentUseStatement.getNamespace() != null;
-		if (isGroupStatement) {
-			String curentFQN = currentUseStatement.getNamespace().getFullyQualifiedName();
-			ns = PHPModelUtils.concatFullyQualifiedNames(curentFQN, ns);
-		}
+		String ns = PHPModelUtils.concatFullyQualifiedNames(currentUseStatement, usePart);
 
 		if (namespace.equalsIgnoreCase(ns)) {
+			boolean isGroupStatement = currentUseStatement != null && currentUseStatement.getNamespace() != null
+					&& usePart.getGroupNamespace() != null;
 			if (isGroupStatement) {
-				FullyQualifiedReference fqn = createCombinedFQN(usePart);
+				FullyQualifiedReference fqn = ASTUtils.createFakeGroupUseType(usePart);
 
 				result = new UsePart(fqn, usePart.getAlias(),
 						Math.max(currentUseStatement.getStatementType(), usePart.getStatementType()));
