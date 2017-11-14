@@ -1,9 +1,18 @@
+	/**
+	 * @see TypeReferenceEvaluator#init()
+	 */
 	public static PHPClassType fromTraitName(String typeName, ISourceModule sourceModule, int offset) {
 		String namespace = PHPModelUtils.extractNamespaceName(typeName, sourceModule, offset);
+		String elementName = PHPModelUtils.extractElementName(typeName);
+		if (namespace != null) {
+			// https://bugs.eclipse.org/bugs/show_bug.cgi?id=515844
+			// https://bugs.eclipse.org/bugs/show_bug.cgi?id=527153
+			elementName = PHPModelUtils.getRealName(typeName, sourceModule, offset, elementName);
+		}
 
 		if (namespace != null) {
-			return new PHPTraitType(namespace, PHPModelUtils.extractElementName(typeName));
+			return new PHPTraitType(namespace, elementName);
 		}
-		return new PHPTraitType(typeName);
+		return new PHPTraitType(elementName);
 	}
 
