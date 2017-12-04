@@ -1,0 +1,22 @@
+	public static String getAttribute(@NonNull Node node, @NonNull String attrName, @Nullable String encodingCharset) {
+		String attrValue = ""; //$NON-NLS-1$
+		if (node != null && node.hasAttributes()) {
+			NamedNodeMap attrs = node.getAttributes();
+			Node attribute = attrs.getNamedItem(attrName);
+			if (attribute != null) {
+				attrValue = attribute.getNodeValue();
+			} else if (encodingCharset != null && node.hasChildNodes()) {
+				NodeList childProperties = node.getChildNodes();
+				int nbChildrens = childProperties.getLength();
+				for (int i = nbChildrens - 1; i >= 0; i--) {
+					Node childProperty = childProperties.item(i);
+					if (childProperty.getNodeName().equals(attrName)) {
+						attrValue = DBGpUtils.getEncodedStringValue(childProperty, encodingCharset);
+						break;
+					}
+				}
+			}
+		}
+		return attrValue;
+	}
+

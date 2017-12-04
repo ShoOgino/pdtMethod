@@ -1,22 +1,16 @@
 		private void decode(Node property) {
-			String encoding = DBGpResponse.getAttribute(property, "encoding"); //$NON-NLS-1$
-			Node Child = property.getFirstChild();
-			if (Child != null) {
-				String valueData = Child.getNodeValue();
-				fValueString = valueData;
-				if (encoding != null && encoding.equalsIgnoreCase(ENCODING_BASE64)) {
-					if (valueData != null && valueData.trim().length() != 0) {
-						DBGpTarget target = (DBGpTarget) getDebugTarget();
-						fValueBytes = Base64.decode(valueData.trim());
-						try {
-							fValueString = new String(fValueBytes, target.getBinaryEncoding());
-						} catch (UnsupportedEncodingException e) {
-							DBGpLogger.logException("Unexpected encoding problem", //$NON-NLS-1$
-									this, e);
-							fValueString = new String(fValueBytes);
-						}
+			if (property.hasChildNodes()) {
+				NodeList childProperties = property.getChildNodes();
+				int nbChildrens = childProperties.getLength();
+				for (int i = nbChildrens - 1; i >= 0; i--) {
+					Node childProperty = childProperties.item(i);
+					if (childProperty.getNodeName().equals("value")) { //$NON-NLS-1$
+						property = childProperty;
+						break;
 					}
 				}
 			}
+			DBGpTarget target = (DBGpTarget) getDebugTarget();
+			fValueString = DBGpUtils.getEncodedStringValue(property, target.getBinaryEncoding());
 		}
 
