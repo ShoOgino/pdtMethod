@@ -1,0 +1,26 @@
+	protected PreparedFile prepareFile(String originalPHPCode) throws Exception {
+		List<Placeholder> placeholders = new ArrayList<Placeholder>();
+		StringBuilder finalPHPCode = new StringBuilder();
+		int offset = 0;
+		for (;;) {
+			int placeholderStart = originalPHPCode.indexOf(">>", offset);
+			if (placeholderStart < 0) {
+				break;
+			}
+			int placeholderEnd = originalPHPCode.indexOf("<<", placeholderStart);
+			if (placeholderEnd < 0) {
+				break;
+			}
+			finalPHPCode.append(originalPHPCode.subSequence(offset, placeholderStart));
+			String placeholderValue = originalPHPCode.substring(placeholderStart + 2, placeholderEnd);
+			placeholders.add(new Placeholder(placeholderValue, finalPHPCode.length()));
+			finalPHPCode.append(placeholderValue);
+			offset = placeholderEnd + 2;
+		}
+		finalPHPCode.append(originalPHPCode.substring(offset));
+		this.testFile = TestUtils.createFile(this.project, "test.php", finalPHPCode.toString());
+		TestUtils.waitForIndexer();
+		ISourceModule sourceModule = DLTKCore.createSourceModuleFrom(this.testFile);
+		return new PreparedFile(placeholders, sourceModule);
+	}
+
