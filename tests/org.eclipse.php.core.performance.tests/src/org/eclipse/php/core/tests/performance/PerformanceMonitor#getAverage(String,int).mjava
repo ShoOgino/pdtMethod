@@ -1,0 +1,26 @@
+	/**
+	 * Returns average time of running a test.
+	 * 
+	 * @param testId
+	 *            Test ID
+	 * @param samples
+	 *            Number of invocations to take into account
+	 * @return average time
+	 * @throws IOException
+	 */
+	private long getAverage(String testId, int samples) throws IOException {
+		Query query = new TermQuery(new Term("testName", testId));
+		Sort sort = new Sort(new SortedNumericSortField("executionId", SortField.Type.LONG, true));
+		TopDocs topDocs = this.resultsSearcher.search(query, samples, sort, false, false);
+
+		if (topDocs.scoreDocs.length != samples) {
+			return -1;
+		}
+		long totalTime = 0;
+		for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
+			long thisValue = this.resultsReader.document(scoreDoc.doc).getField("time").numericValue().longValue();
+			totalTime += thisValue;
+		}
+		return totalTime / samples;
+	}
+

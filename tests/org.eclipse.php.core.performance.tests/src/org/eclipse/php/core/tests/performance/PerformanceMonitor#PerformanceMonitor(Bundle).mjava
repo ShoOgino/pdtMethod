@@ -1,18 +1,33 @@
 	public PerformanceMonitor(Bundle bundle) throws Exception {
-		Class.forName("org.h2.Driver");
-
-		File resultsDir = new File(System.getProperty("user.home")
-				+ File.separator + ".perf_results" + File.separator
-				+ bundle.getSymbolicName() + bundle.getVersion());
+		String baseDir = System.getProperty("user.home") + File.separator + ".perf_results_lucene" + File.separator
+				+ bundle.getSymbolicName() + bundle.getVersion();
+		File executionsDir = new File(baseDir + File.separator + "executions");
+		File resultsDir = new File(baseDir + File.separator + "results");
+		if (!executionsDir.exists()) {
+			executionsDir.mkdirs();
+		}
 		if (!resultsDir.exists()) {
 			resultsDir.mkdirs();
 		}
-
-		pool = JdbcConnectionPool.create("jdbc:h2:"
-				+ new File(resultsDir, "db").getAbsolutePath(), "test", "");
-		createSchema();
-		executionId = getExecutionId();
-
-		compact();
+		this.analyzer = new SimpleAnalyzer();
+		this.executionsWriter = new IndexWriter(FSDirectory.open(executionsDir.toPath()),
+				new IndexWriterConfig(this.analyzer));
+		this.resultsWriter = new IndexWriter(FSDirectory.open(resultsDir.toPath()),
+				new IndexWriterConfig(this.analyzer));
+		this.executionsReader = DirectoryReader.open(this.executionsWriter);
+		this.resultsReader = DirectoryReader.open(this.resultsWriter);
+		this.executionsSearcher = new IndexSearcher(this.executionsReader);
+		this.resultsSearcher = new IndexSearcher(this.resultsReader);
+		this.executionId = System.currentTimeMillis();
+		for (;;) {
+			if (this.executionsSearcher.search(LongPoint.newExactQuery("executionId", this.executionId),
+					1).scoreDocs.length == 0) {
+				break;
+			}
+			this.executionId = Math.max(this.executionId + 1, System.currentTimeMillis());
+		}
+		this.executionsWriter.addDocument(new ExecutionDocument(this.executionId));
+		this.executionsWriter.flush();
+		this.compact();
 	}
 

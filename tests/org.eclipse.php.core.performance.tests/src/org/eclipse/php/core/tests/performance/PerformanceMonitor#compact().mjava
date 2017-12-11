@@ -1,16 +1,15 @@
-	private void compact() throws SQLException {
-		Connection connection = pool.getConnection();
-		try {
-			PreparedStatement statement = connection
-					.prepareStatement("DELETE FROM EXECUTIONS WHERE ID IN (SELECT ID FROM (SELECT ROWNUM() AS R,ID FROM (SELECT ID FROM EXECUTIONS ORDER BY DATE DESC)) WHERE R > ?);");
-			statement.setInt(1, HISTORY_SIZE);
-			try {
-				statement.executeUpdate();
-			} finally {
-				statement.close();
-			}
-		} finally {
-			connection.close();
+	private void compact() throws IOException {
+		Sort sort = new Sort(new SortedNumericSortField("executionId", SortField.Type.LONG, true));
+		TopDocs executions = this.executionsSearcher.search(new MatchAllDocsQuery(), HISTORY_SIZE + 1, sort, false,
+				false);
+		if (executions.scoreDocs.length > HISTORY_SIZE) {
+			Document firstExecutionToDelete = this.executionsReader.document(executions.scoreDocs[HISTORY_SIZE].doc);
+			long deleteFromExecutionID = firstExecutionToDelete.getField("executionId").numericValue().longValue();
+			Query deleteQuery = LongPoint.newRangeQuery("executionId", Long.MIN_VALUE, deleteFromExecutionID);
+			this.resultsWriter.deleteDocuments(deleteQuery);
+			this.executionsWriter.deleteDocuments(deleteQuery);
+			this.resultsWriter.flush();
+			this.executionsWriter.flush();
 		}
 	}
 
