@@ -21,12 +21,13 @@
 		List<IType> result = new LinkedList<>();
 		String memberName = context.getMemberName();
 		String namespaceName = context.getQualifier(false);
+		boolean isAbsoluteType = context.isAbsoluteName() || context.isAbsolute();
 
 		StringBuilder sb = new StringBuilder();
 		String altNamespacePrefix = null;
 		if (namespaceName != null) {
 			sb.append(namespaceName).append(NamespaceReference.NAMESPACE_SEPARATOR);
-		} else if (!context.isAbsoluteName() && context.getCurrentNamespace() != null && useCurrentNamespace) {
+		} else if (!isAbsoluteType && context.getCurrentNamespace() != null && useCurrentNamespace) {
 			altNamespacePrefix = new StringBuilder().append(context.getCurrentNamespace())
 					.append(NamespaceReference.NAMESPACE_SEPARATOR).append(memberName).toString();
 		}
@@ -38,7 +39,7 @@
 					MatchRule.CAMEL_CASE, trueFlag, falseFlag, scope, null);
 
 			result.addAll(Arrays.asList(types));
-			if ((falseFlag & PHPFlags.AccNameSpace) == 0 || context.isAbsoluteName() || namespaceName != null) {
+			if ((falseFlag & PHPFlags.AccNameSpace) == 0 || isAbsoluteType || namespaceName != null) {
 				if (namespacePrefix.length() > 0) {
 					IType[] namespaces = PHPModelAccess.getDefault().findNamespaces(null, namespacePrefix.toString(),
 							MatchRule.CAMEL_CASE, trueFlag, 0, scope, null);
@@ -50,7 +51,7 @@
 				MatchRule.PREFIX, trueFlag, falseFlag, scope, null);
 
 		result.addAll(Arrays.asList(types));
-		if ((falseFlag & PHPFlags.AccNameSpace) == 0 || context.isAbsoluteName() || namespaceName != null
+		if ((falseFlag & PHPFlags.AccNameSpace) == 0 || isAbsoluteType || namespaceName != null
 				|| altNamespacePrefix != null) {
 			if (namespacePrefix.length() > 0) {
 				IType[] namespaces = PHPModelAccess.getDefault().findNamespaces(null, namespacePrefix, MatchRule.PREFIX,
