@@ -1,0 +1,37 @@
+	@Nullable
+	private String getFunctionCallArg(@Nullable IContext context, @NonNull StaticConstantAccess argument) {
+		if (!"class".equalsIgnoreCase(argument.getConstant().getName())) {
+			return null;
+		}
+		PHPVersion phpVersion = this.getPHPVersion();
+		if (phpVersion == null || phpVersion.isLessThan(PHPVersion.PHP5_5)) {
+			return null;
+		}
+		if (!(context instanceof ISourceModuleContext)) {
+			return null;
+		}
+		ISourceModule sourceModule = ((ISourceModuleContext) context).getSourceModule();
+		if (sourceModule == null) {
+			return null;
+		}
+		Expression dispatcher = argument.getDispatcher();
+		if (!(dispatcher instanceof FullyQualifiedReference)) {
+			return null;
+		}
+		String localClassName = ((FullyQualifiedReference) dispatcher).getFullyQualifiedName();
+		if (localClassName.equalsIgnoreCase("self") || localClassName.equalsIgnoreCase("static")) { //$NON-NLS-1$ //$NON-NLS-2$
+			if (!(context instanceof IInstanceContext)) {
+				return null;
+			}
+			IEvaluatedType currentClass = ((IInstanceContext) context).getInstanceType();
+			if (!(currentClass instanceof PHPClassType)) {
+				return null;
+			}
+			String fullyQualifiedName = currentClass.getTypeName();
+			return fullyQualifiedName.charAt(0) == NamespaceReference.NAMESPACE_SEPARATOR
+					? fullyQualifiedName.substring(1)
+					: fullyQualifiedName;
+		}
+		return PHPModelUtils.getFullName(localClassName, sourceModule, argument.sourceStart());
+	}
+

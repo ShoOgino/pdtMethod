@@ -1,0 +1,47 @@
+		public void addSymbol(String symbol, @NonNull CharSequence text) {
+			if (this.state == STATE_DISABLED) {
+				return;
+			}
+			if (this.state >= STATE_CLASS_RECEIVED) {
+				this.disable();
+				return;
+			} else {
+				switch (symbol) {
+				case PHPRegionTypes.WHITESPACE:
+					if (this.state > STATE_EMPTY && this.state < STATE_CLASS_RECEIVED) {
+						this.disable();
+					}
+					break;
+				case PHPRegionTypes.PHP_NS_SEPARATOR:
+				case PHPRegionTypes.PHP_LABEL:
+					if (this.state == STATE_EMPTY) {
+						this.subject = new StringBuilder();
+						this.state = STATE_BUILDING_SUBJECT;
+					}
+					if (this.state == STATE_BUILDING_SUBJECT) {
+						this.subject.append(text);
+					} else {
+						this.disable();
+					}
+					break;
+				case PHPRegionTypes.PHP_PAAMAYIM_NEKUDOTAYIM:
+					if (this.state == STATE_BUILDING_SUBJECT) {
+						this.state = STATE_PAAMAYIMNEKUDOTAYIM_RECEIVED;
+					} else {
+						this.disable();
+					}
+					break;
+				case PHPRegionTypes.PHP_CLASS:
+					if (this.state == STATE_PAAMAYIMNEKUDOTAYIM_RECEIVED) {
+						this.state = STATE_CLASS_RECEIVED;
+					} else {
+						this.disable();
+					}
+					break;
+				default:
+					this.disable();
+					break;
+				}
+			}
+		}
+

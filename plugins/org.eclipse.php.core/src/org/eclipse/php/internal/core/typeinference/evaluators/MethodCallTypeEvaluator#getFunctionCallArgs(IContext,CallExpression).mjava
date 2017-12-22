@@ -1,4 +1,5 @@
-	private String[] getFunctionCallArgs(CallExpression callExpression) {
+	@Nullable
+	private String[] getFunctionCallArgs(@Nullable IContext context, @NonNull CallExpression callExpression) {
 		CallArgumentsList args = callExpression.getArgs();
 		String[] argNames = null;
 		if (args != null && args.getChilds() != null) {
@@ -9,6 +10,8 @@
 				if (o instanceof Scalar) {
 					Scalar arg = (Scalar) o;
 					argNames[i] = ASTUtils.stripQuotes(arg.getValue());
+				} else if (o instanceof StaticConstantAccess) {
+					argNames[i] = this.getFunctionCallArg(context, (StaticConstantAccess) o);
 				}
 				i++;
 			}

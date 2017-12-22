@@ -1,0 +1,37 @@
+		@Nullable
+		public String resolve(@Nullable ISourceModule sourceModule, int offset) {
+			if (this.state != STATE_CLASS_RECEIVED || sourceModule == null) {
+				return null;
+			}
+			if (this.resolveResult == null) {
+				String localClassName = this.subject.toString();
+				if (localClassName.equalsIgnoreCase("self") || localClassName.equalsIgnoreCase("static")) { //$NON-NLS-1$ //$NON-NLS-2$
+					IType type = PHPModelUtils.getCurrentType(sourceModule, offset);
+					if (type != null) {
+						System.out.println(type.getClass().toString());
+					}
+					IModelElement element = null;
+					try {
+						element = sourceModule.getElementAt(offset);
+					} catch (ModelException e) {
+						Logger.logException(e);
+					}
+					while (element instanceof IModelElement) {
+						if (element.getElementType() == IModelElement.TYPE) {
+							try {
+								this.resolveResult = ((NamedMember) element)
+										.getFullyQualifiedName(NamespaceReference.NAMESPACE_DELIMITER, false);
+							} catch (ModelException e) {
+								Logger.logException(e);
+							}
+							break;
+						}
+						element = element.getParent();
+					}
+				} else {
+					this.resolveResult = PHPModelUtils.getFullName(localClassName, sourceModule, offset);
+				}
+			}
+			return this.resolveResult;
+		}
+

@@ -1,69 +1,12 @@
 	/**
 	 * Read string argnames from CharSequence
 	 * 
-	 * TODO Nested parenthesis expression
-	 * 
 	 * @param phpVersion
 	 * @param textSequence
 	 * @return
 	 */
 	@SuppressWarnings("null")
 	public static @NonNull String[] getArgNames(@Nullable PHPVersion phpVersion, @Nullable CharSequence textSequence) {
-		List<String> args = new ArrayList<>();
-		if (textSequence != null && textSequence.length() > 2) {
-			if (textSequence.charAt(textSequence.length() - 1) == ')') {
-				textSequence = textSequence.subSequence(0, textSequence.length() - 1);
-			}
-			if (textSequence != null && textSequence.charAt(0) == '(') {
-				textSequence = textSequence.subSequence(1, textSequence.length());
-			}
-			if (textSequence == null) {
-				// should never happen (but makes @Nullable control for
-				// parameter textSequence happy)
-				return args.toArray(new String[args.size()]);
-			}
-			if (phpVersion == null) {
-				phpVersion = PHPVersion.getLatestVersion();
-			}
-
-			AbstractPHPLexer lexer = PHPLexerFactory.createLexer(new StringReader(textSequence.toString()), phpVersion);
-			lexer.initialize(lexer.getScriptingState());
-			String symbol = null;
-			int level = 0;
-			int argIndex = 0;
-			do {
-				try {
-					symbol = lexer.getNextToken();
-					if (symbol != null) {
-						CharSequence text = textSequence.subSequence(lexer.getTokenStart(),
-								lexer.getTokenStart() + lexer.getLength());
-						if (symbol.equals(PHPRegionTypes.PHP_TOKEN)) {
-							if (text.equals(LPAREN) || text.equals(LBRACE) || text.equals(LBRACKET)) {
-								level++;
-							} else if (text.equals(RPAREN) || text.equals(RBRACE) || text.equals(RBRACKET)) {
-								level--;
-							} else if (level == 0 && text.equals(COMMA)) {
-								argIndex++;
-							}
-						} else if (level == 0 && symbol.equals(PHPRegionTypes.PHP_CONSTANT_ENCAPSED_STRING)) {
-							if (args.size() < argIndex + 1) {
-								args.add(text.toString());
-							}
-						} else if (level == 0 && !symbol.equals(PHPRegionTypes.WHITESPACE)) {
-							if (args.size() < argIndex + 1) {
-								args.add(null);
-							} else {
-								args.set(argIndex, null);
-							}
-						}
-
-					}
-				} catch (IOException e) {
-					symbol = null;
-				}
-			} while (symbol != null);
-		}
-
-		return args.toArray(new String[args.size()]);
+		return getArgNames(phpVersion, textSequence, null, -1);
 	}
 
