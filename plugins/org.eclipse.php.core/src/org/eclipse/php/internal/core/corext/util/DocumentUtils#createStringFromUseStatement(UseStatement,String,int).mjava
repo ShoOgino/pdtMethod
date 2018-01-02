@@ -1,0 +1,62 @@
+	/**
+	 * Create a string from the given statement
+	 * 
+	 * @param statement
+	 * @param indent
+	 * @param usePartIndex
+	 *            create a string including only UsePart at index usePartIndex
+	 *            (usePartIndex must be >= 0), otherwise include all UseParts
+	 *            (usePartIndex must be < 0)
+	 * @return string
+	 */
+	private static String createStringFromUseStatement(UseStatement statement, String indent, int usePartIndex) {
+		String use = indent + "use "; //$NON-NLS-1$
+
+		switch (statement.getStatementType()) {
+		case UseStatement.T_FUNCTION:
+			use += "function "; //$NON-NLS-1$
+			break;
+		case UseStatement.T_CONST:
+			use += "const "; //$NON-NLS-1$
+			break;
+		}
+
+		if (statement.getNamespace() != null) {
+			use += statement.getNamespace().getFullyQualifiedName();
+			use += "\\{"; //$NON-NLS-1$
+		}
+
+		assert usePartIndex < 0 || usePartIndex < statement.getParts().size();
+		int index = -1;
+
+		for (UsePart part : statement.getParts()) {
+			index++;
+			if (usePartIndex >= 0 && usePartIndex != index) {
+				continue;
+			}
+			if (usePartIndex < 0 && index > 0) {
+				use += ", "; //$NON-NLS-1$
+			}
+			if (statement.getStatementType() == UseStatement.T_NONE) {
+				switch (part.getStatementType()) {
+				case UseStatement.T_FUNCTION:
+					use += "function "; //$NON-NLS-1$
+					break;
+				case UseStatement.T_CONST:
+					use += "const "; //$NON-NLS-1$
+					break;
+				}
+			}
+			use += part.getNamespace().getFullyQualifiedName();
+			if (part.getAlias() != null) {
+				use += " as " + part.getAlias().getName(); //$NON-NLS-1$
+			}
+		}
+
+		if (statement.getNamespace() != null) {
+			use += "}"; //$NON-NLS-1$
+		}
+
+		return use + ";\n"; //$NON-NLS-1$
+	}
+

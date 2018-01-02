@@ -36,30 +36,64 @@
 			}
 
 			if (parts.size() > 0) {
-				total.add(new UseStatement(statement.start(), statement.end(), parts, statement.getStatementType()));
+				total.add(new UseStatement(statement.start(), statement.end(), statement.getNamespace(), parts,
+						statement.getStatementType()));
 			}
 		}
 
 		// sort and remove duplicate UseStatements
 		Set<UseStatement> set = new TreeSet<>(new Comparator<UseStatement>() {
+			private int compare(FullyQualifiedReference a, FullyQualifiedReference b) {
+				if (a == b) {
+					return 0;
+				}
+				if (a == null) {
+					return b == null ? 0 : -1;
+				}
+				if (b == null) {
+					return 1;
+				}
+				return a.getFullyQualifiedName().toLowerCase().compareTo(b.getFullyQualifiedName().toLowerCase());
+			}
+
 			@Override
 			public int compare(UseStatement a, UseStatement b) {
 				if (a == b) {
 					return 0;
 				}
-				if (a.getStatementType() != b.getStatementType()) {
-					return a.getStatementType() - b.getStatementType();
+				int comp = a.getStatementType() - b.getStatementType();
+				if (comp != 0) {
+					return comp;
+				}
+				comp = compare(a.getNamespace(), b.getNamespace());
+				if (comp != 0) {
+					return comp;
 				}
 
-				String partA = createStringFromUseStatement(a, false).toLowerCase();
-				String partB = createStringFromUseStatement(b, false).toLowerCase();
-				String[] partsA = partA.split("\\\\"); //$NON-NLS-1$
-				String[] partsB = partB.split("\\\\"); //$NON-NLS-1$
+				UsePart[] partsA = a.getParts().toArray(new UsePart[a.getParts().size()]);
+				UsePart[] partsB = b.getParts().toArray(new UsePart[b.getParts().size()]);
+				int minPartslength = Math.min(partsA.length, partsB.length);
 
-				int checkLength = Math.min(partsA.length, partsB.length);
-				for (int i = 0; i < checkLength; i++) {
-					int comp = partsA[i].compareTo(partsB[i]);
+				for (int i = 0; i < minPartslength; i++) {
+					comp = partsA[i].getStatementType() - partsB[i].getStatementType();
+					if (comp != 0) {
+						return comp;
+					}
 
+					String partA = createStringFromUseStatement(a, i).toLowerCase();
+					String partB = createStringFromUseStatement(b, i).toLowerCase();
+					String[] splitsA = partA.split("\\\\"); //$NON-NLS-1$
+					String[] splitsB = partB.split("\\\\"); //$NON-NLS-1$
+
+					int minSplitsLength = Math.min(splitsA.length, splitsB.length);
+					for (int j = 0; j < minSplitsLength; j++) {
+						comp = splitsA[j].compareTo(splitsB[j]);
+						if (comp != 0) {
+							return comp;
+						}
+					}
+
+					comp = splitsA.length - splitsB.length;
 					if (comp != 0) {
 						return comp;
 					}
