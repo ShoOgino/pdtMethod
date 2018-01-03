@@ -1,0 +1,22 @@
+	private void checkVarComment(VariableReference s) throws Exception {
+		// See also VariableReferenceEvaluator.init().
+		// XXX: we only analyze VarComments that are located before some
+		// VariableReferences but we don't check that those VarComments are
+		// *directly* located before the VariableReferences.
+		int minPos = currentNamespace != null ? currentNamespace.sourceStart() : 0;
+		int maxPos = s.sourceStart();
+		Iterator<VarComment> itr = varComments.iterator();
+		while (itr.hasNext()) {
+			VarComment varComment = itr.next();
+			if (varComment.sourceStart() < minPos) {
+				itr.remove();
+				continue;
+			}
+			if (varComment.sourceEnd() > maxPos) {
+				break;
+			}
+			visit(varComment);
+			itr.remove();
+		}
+	}
+
