@@ -1,5 +1,5 @@
 	@Override
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "null" })
 	public boolean visit(MethodDeclaration method) throws Exception {
 		fNodes.push(method);
 		methodGlobalVars.add(new HashSet<String>());
@@ -98,11 +98,20 @@
 				metadata.append(PARAMETER_SEPERATOR);
 				String defaultValue = NULL_VALUE;
 				if (arg.getInitialization() != null) {
-					if (arg.getInitialization() instanceof Literal) {
+					if (arg.getInitialization() instanceof UnaryOperation) {
+						UnaryOperation initialization = (UnaryOperation) arg.getInitialization();
+						if (initialization.getExpr() instanceof Literal) {
+							Literal scalar = (Literal) initialization.getExpr();
+							defaultValue = initialization.getOperator() + scalar.getValue();
+							// we need to encode all problematic characters
+							defaultValue = encodeValue(defaultValue);
+						} else {
+							defaultValue = DEFAULT_VALUE;
+						}
+					} else if (arg.getInitialization() instanceof Literal) {
 						Literal scalar = (Literal) arg.getInitialization();
-						// we need to encode all pipe characters inside string
-						// literals
-						defaultValue = scalar.getValue().replace("&", "&a").replace(PARAMETER_SEPERATOR, "&p"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+						// we need to encode all problematic characters
+						defaultValue = encodeValue(scalar.getValue());
 					} else if (arg.getInitialization() instanceof ArrayCreation) {
 						ArrayCreation arrayCreation = (ArrayCreation) arg.getInitialization();
 						if (arrayCreation.getElements().isEmpty()) {
