@@ -1,5 +1,5 @@
-	private IModelElement[] internalASTResolve(ISourceModule sourceModule, IModelAccessCache cache, int offset, int end)
-			throws ModelException {
+	private IModelElement[] internalASTResolve(ISourceModule sourceModule, IModelAccessCache cache, int offset,
+			int end /* inclusive end */) throws ModelException {
 		String source;
 
 		try {
@@ -36,6 +36,22 @@
 					boolean isMethodOrFunction = PHPTextSequenceUtilities.getMethodEndIndex(source, end, false) != -1;
 					return lookForMatchingElements(tags, sourceModule, parsedUnit, offset, end, isMethodOrFunction,
 							cache);
+				}
+				if (offset < realStart) {
+					break;
+				}
+			}
+			List<VarComment> varComments = phpModuleDeclaration.getVarComments();
+			for (VarComment varComment : varComments) {
+				int realStart = varComment.sourceStart();
+				int realEnd = varComment.sourceEnd();
+				if (realStart <= offset && realEnd >= end) {
+					boolean isMethodOrFunction = PHPTextSequenceUtilities.getMethodEndIndex(source, end, false) != -1;
+					return lookForMatchingElements(varComment.getTypeReferences(), sourceModule, offset, end,
+							isMethodOrFunction, cache);
+				}
+				if (offset < realStart) {
+					break;
 				}
 			}
 		}

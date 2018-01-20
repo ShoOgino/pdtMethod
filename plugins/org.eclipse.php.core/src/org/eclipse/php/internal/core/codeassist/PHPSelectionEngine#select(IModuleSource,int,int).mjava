@@ -1,11 +1,11 @@
 	@Override
-	public IModelElement[] select(IModuleSource sourceUnit, int offset, int end) {
+	public IModelElement[] select(IModuleSource sourceUnit, int offset, int inclusiveEnd) {
 		if (!PHPCorePlugin.toolkitInitialized) {
 			return EMPTY;
 		}
 
-		if (end < offset) {
-			end = offset + 1;
+		if (inclusiveEnd < offset) {
+			inclusiveEnd = offset + 1;
 		}
 
 		ISourceModule sourceModule = (ISourceModule) sourceUnit.getModelElement();
@@ -14,7 +14,7 @@
 		// First, try to resolve using AST (if we have parsed it well):
 		IModelAccessCache cache = new PerFileModelAccessCache(sourceModule);
 		try {
-			IModelElement[] elements = internalASTResolve(sourceModule, cache, offset, end);
+			IModelElement[] elements = internalASTResolve(sourceModule, cache, offset, inclusiveEnd);
 			if (elements != null) {
 				Collection<IModelElement> filtered = PHPModelUtils.filterElements(sourceModule, Arrays.asList(elements),
 						null, null);
@@ -57,7 +57,7 @@
 		}
 		IModelElement[] elements = null;
 		try {
-			elements = internalResolve(document, sourceModule, cache, offset, end);
+			elements = internalResolve(document, sourceModule, cache, offset);
 		} catch (BadLocationException e1) {
 			PHPCorePlugin.log(e1);
 		} catch (ModelException e) {
