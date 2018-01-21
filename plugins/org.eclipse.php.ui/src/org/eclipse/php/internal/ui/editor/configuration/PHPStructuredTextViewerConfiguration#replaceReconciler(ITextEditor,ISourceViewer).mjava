@@ -1,0 +1,47 @@
+	/**
+	 * Replace IReconciler (StructuredRegionProcessor) via Java reflection
+	 * 
+	 * @since 5.3
+	 */
+	public IReconciler replaceReconciler(ITextEditor editor, ISourceViewer sourceViewer) {
+
+		IReconciler oldReconciler = getReconciler(sourceViewer);
+		PHPStructuredRegionProcessor newReconciler = new PHPStructuredRegionProcessor(editor);
+		newReconciler.setDocumentPartitioning(getConfiguredDocumentPartitioning(sourceViewer));
+
+		newReconciler.install(sourceViewer);
+		Field fReconcilerField;
+		try {
+			// we have to replace old reconciler
+			fReconcilerField = StructuredTextViewerConfiguration.class.getDeclaredField("fReconciler"); //$NON-NLS-1$
+			fReconcilerField.setAccessible(true);
+			fReconcilerField.set(this, newReconciler);
+			fReconcilerField.setAccessible(false);
+		} catch (Exception e) {
+			Logger.logException(e);
+		}
+		newReconciler.setDocument(((StructuredTextViewer) sourceViewer).getDocument());
+
+		if (newReconciler instanceof DocumentRegionProcessor && oldReconciler instanceof DocumentRegionProcessor) {
+			Method accessHighlighter;
+			try {
+				// we need access to old semantic highlighting strategy and move it between
+				// reconcilers
+				accessHighlighter = DocumentRegionProcessor.class.getDeclaredMethod("getSemanticHighlightingStrategy");//$NON-NLS-1$
+				accessHighlighter.setAccessible(true);
+				IReconcilingStrategy highlighter = (IReconcilingStrategy) accessHighlighter.invoke(oldReconciler);
+				if (highlighter != null) {
+					((DocumentRegionProcessor) newReconciler).setSemanticHighlightingStrategy(highlighter);
+				}
+				accessHighlighter.setAccessible(false);
+			} catch (Exception e) {
+				Logger.logException(e);
+			}
+		}
+		if (oldReconciler != null) {
+			oldReconciler.uninstall();
+		}
+
+		return newReconciler;
+	}
+

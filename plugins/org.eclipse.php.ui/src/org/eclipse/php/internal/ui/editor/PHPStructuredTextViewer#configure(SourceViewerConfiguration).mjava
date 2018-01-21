@@ -1,17 +1,9 @@
 	/**
-	 * We override this function in order to use content assist for php and not
-	 * use the default one dictated by StructuredTextViewerConfiguration
+	 * We override this function in order to use content assist for php and not use
+	 * the default one dictated by StructuredTextViewerConfiguration
 	 */
 	@Override
 	public void configure(SourceViewerConfiguration configuration) {
-
-		// need to install the EditorReconcilingListener before reconciler is
-		// installed so that PHPStructuredEditor.aboutToBeReconciled() can be
-		// called when editor opened
-		if (fEditorReconcilingListener == null) {
-			fEditorReconcilingListener = new EditorReconcilingListener();
-			fEditorReconcilingListener.install();
-		}
 
 		super.configure(configuration);
 
@@ -30,6 +22,8 @@
 		fViewerConfiguration = configuration;
 
 		PHPStructuredTextViewerConfiguration phpConfiguration = (PHPStructuredTextViewerConfiguration) configuration;
+		fReconciler = phpConfiguration.replaceReconciler(fTextEditor, this);
+
 		IContentAssistant newPHPAssistant = phpConfiguration.getPHPContentAssistant(this, true);
 
 		// Uninstall content assistant created in super:
