@@ -14,6 +14,18 @@
 
 		IEvaluatedType evaluatedType;
 		IType[] modelElements;
+		boolean useFactoryMethod = (mask & USE_FACTORYMETHOD) != 0;
+		if (useFactoryMethod) {
+			FactoryMethodMethodReturnTypeGoal factoryMethodGoal = new FactoryMethodMethodReturnTypeGoal(context, types,
+					method, argNames, offset);
+			evaluatedType = typeInferencer.evaluateTypeFactoryMethod(factoryMethodGoal);
+
+			modelElements = PHPTypeInferenceUtils.getModelElements(evaluatedType, (ISourceModuleContext) context,
+					offset);
+			if (ArrayUtils.isNotEmpty(modelElements)) {
+				return modelElements;
+			}
+		}
 		boolean usePhpDoc = (mask & USE_PHPDOC) != 0;
 		if (usePhpDoc) {
 			PHPDocMethodReturnTypeGoal phpDocGoal = new PHPDocMethodReturnTypeGoal(context, types, method, argNames,

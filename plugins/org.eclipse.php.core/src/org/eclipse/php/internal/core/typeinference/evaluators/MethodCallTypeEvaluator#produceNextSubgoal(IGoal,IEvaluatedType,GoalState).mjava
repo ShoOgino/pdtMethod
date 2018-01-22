@@ -24,16 +24,34 @@
 			state = STATE_GOT_RECEIVER;
 		}
 
-		// we've evaluated receiver, lets evaluate the method return type now
-		// (using PHP Doc first):
+		// Check the result of factory method/PHPDoc logic
+		if ((state == STATE_WAITING_FACTORYMETHOD || state == STATE_WAITING_METHOD_PHPDOC)
+				&& goalState != GoalState.PRUNED && previousResult != null && previousResult != UnknownType.INSTANCE) {
+			result = previousResult;
+			previousResult = null;
+			// BUGS 404031 & 525480, stop when it's not a "generic" simple element
+			if (!PHPTypeInferenceUtils.isGenericSimple(result)) {
+				return null;
+			}
+		}
+
+		// First logic: check factory methods
 		if (state == STATE_GOT_RECEIVER) {
+			state = STATE_WAITING_FACTORYMETHOD;
+			IContext context = typedGoal.getContext();
+			return new FactoryMethodMethodReturnTypeGoal(context, receiverType, expression.getName(),
+					getFunctionCallArgs(context, expression), expression.sourceStart());
+		}
+
+		// Second logic: check PHPDoc
+		if (state == STATE_WAITING_FACTORYMETHOD) {
 			state = STATE_WAITING_METHOD_PHPDOC;
 			IContext context = typedGoal.getContext();
 			return new PHPDocMethodReturnTypeGoal(context, receiverType, expression.getName(),
 					getFunctionCallArgs(context, expression), expression.sourceStart());
 		}
 
-		// PHPDoc logic is done, start evaluating 'return' statements here:
+		// Third method: start evaluating 'return' statements here:
 		if (state == STATE_WAITING_METHOD_PHPDOC) {
 			if (goalState != GoalState.PRUNED && previousResult != null && previousResult != UnknownType.INSTANCE) {
 				result = previousResult;

@@ -20,6 +20,43 @@
 		}
 
 		IEvaluatedType evaluatedType;
+		boolean useFactoryMethod = (mask & USE_FACTORYMETHOD) != 0;
+		if (useFactoryMethod) {
+			FactoryMethodMethodReturnTypeGoal factoryMethodGoal = new FactoryMethodMethodReturnTypeGoal(context, types,
+					method, argNames, offset);
+			evaluatedType = typeInferencer.evaluateTypeFactoryMethod(factoryMethodGoal);
+			List<IEvaluatedType> possibleTypes = null;
+			if (!PHPTypeInferenceUtils.isSimple(evaluatedType)) {
+				if (evaluatedType instanceof MultiTypeType) {
+					possibleTypes = ((MultiTypeType) evaluatedType).getTypes();
+				} else if (evaluatedType instanceof AmbiguousType) {
+					possibleTypes = new ArrayList<>();
+					for (IEvaluatedType pType : ((AmbiguousType) evaluatedType).getPossibleTypes()) {
+						if (pType instanceof MultiTypeType) {
+							possibleTypes.addAll(((MultiTypeType) pType).getTypes());
+						}
+					}
+				}
+				if (possibleTypes != null && possibleTypes.size() > 0) {
+					List<IType> tmpList = new LinkedList<>();
+					for (IEvaluatedType possibleType : possibleTypes) {
+						IType[] tmpArray = PHPTypeInferenceUtils.getModelElements(possibleType,
+								(ISourceModuleContext) context, offset, (IModelAccessCache) null);
+						if (ArrayUtils.isNotEmpty(tmpArray)) {
+							tmpList.addAll(Arrays.asList(tmpArray));
+						}
+					}
+					// the elements are filtered already
+					return tmpList.toArray(new IType[tmpList.size()]);
+				}
+			}
+
+			// modelElements = PHPTypeInferenceUtils.getModelElements(
+			// evaluatedType, (ISourceModuleContext) context, offset);
+			// if (modelElements != null) {
+			// return modelElements;
+			// }
+		}
 		boolean usePhpDoc = (mask & USE_PHPDOC) != 0;
 		if (usePhpDoc) {
 			PHPDocMethodReturnTypeGoal phpDocGoal = new PHPDocMethodReturnTypeGoal(context, types, method, argNames,
