@@ -3,17 +3,30 @@
 			return;
 		}
 
-		final PHPUnitTest test = (PHPUnitTest) selection.getFirstElement();
+		PHPUnitTest test = (PHPUnitTest) selection.getFirstElement();
 
-		OpenTestAction action;
-		if (test instanceof PHPUnitTestGroup)
-			action = new OpenTestAction(null, view, test.getName(), test.getLocalFile(), test.getLine());
-		else if (test instanceof PHPUnitTestCase) {
+		OpenTestAction action = null;
+		if (test instanceof PHPUnitTestCase) {
 			final PHPUnitTestCase testCase = (PHPUnitTestCase) test;
-			action = new OpenTestAction(null, view, ((PHPUnitTestGroup) testCase.getParent()).getName(),
-					testCase.getLocalFile(), testCase.getLine(), testCase.getName());
-		} else
+			if (((PHPUnitTestCase) test).isDataProviderCase()) {
+				test = (PHPUnitTest) test.getParent();
+			} else {
+				action = new OpenTestAction(null, view, ((PHPUnitTestGroup) testCase.getParent()).getName(),
+						testCase.getLocalFile(), testCase.getLine(), testCase.getName());
+			}
+
+		}
+		if (test instanceof PHPUnitTestGroup) {
+			if (((PHPUnitTestGroup) test).isMethod()) {
+				PHPUnitTestGroup parent = (PHPUnitTestGroup) test.getParent();
+				action = new OpenTestAction(null, view, parent.getName(), test.getLocalFile(), test.getLine(),
+						test.getName());
+			} else {
+				action = new OpenTestAction(null, view, test.getName(), test.getLocalFile(), test.getLine());
+			}
+		} else if (action == null) {
 			throw new IllegalStateException(String.valueOf(test));
+		}
 
 		if (action.isEnabled()) {
 			action.run();
