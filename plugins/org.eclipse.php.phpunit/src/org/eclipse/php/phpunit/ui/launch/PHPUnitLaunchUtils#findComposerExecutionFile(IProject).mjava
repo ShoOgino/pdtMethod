@@ -1,19 +1,16 @@
-	public static String findComposerExecutionFile(@Nullable IProject project) {
-		if (project == null || project.getLocation() == null) {
+	public static @Nullable String findComposerExecutionFile(@Nullable IProject project) {
+		IPath vendorPath = getVendorPath(project);
+		if (vendorPath == null) {
 			return null;
 		}
-		IPath startScriptDirectory = project.getLocation().append(START_SCRIPT_PATH);
-
-		IPath startScriptPath = startScriptDirectory.append(START_SCRIPT_NAME);
-		if (startScriptPath.toFile().exists() && startScriptPath.toFile().isFile()) {
-			return startScriptPath.toOSString();
-		} else {
-			startScriptPath = startScriptDirectory.append(OLD_START_SCRIPT_NAME);
-			if (startScriptPath.toFile().exists() && startScriptPath.toFile().isFile()) {
-				return startScriptDirectory.append(OLD_START_SCRIPT_NAME).toOSString();
-			} else {
-				return null;
+		IPath startScriptDirectory = vendorPath.append(START_SCRIPT_PATH);
+		for (String startScriptName : new String[] { START_SCRIPT_NAME, OLD_START_SCRIPT_NAME }) {
+			IPath startScriptPath = startScriptDirectory.append(startScriptName);
+			File startScriptFile = startScriptPath.toFile();
+			if (startScriptFile.exists() && startScriptFile.isFile()) {
+				return startScriptPath.toOSString();
 			}
 		}
+		return null;
 	}
 
