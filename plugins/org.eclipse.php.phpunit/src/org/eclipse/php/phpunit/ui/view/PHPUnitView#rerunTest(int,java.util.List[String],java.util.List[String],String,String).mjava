@@ -1,4 +1,5 @@
-	public void rerunTest(final int testId, java.util.List<String> filters, String title, final String launchMode) {
+	public void rerunTest(final int testId, java.util.List<String> suites, java.util.List<String> filters, String title,
+			final String launchMode) {
 		try {
 			// run the selected test using the previous fConfiguration
 			// configuration
@@ -8,12 +9,20 @@
 						PHPUnitMessages.PHPUnitView_Rerun_Error_Message);
 				return;
 			}
+			if (title == null) {
+				if (!suites.isEmpty()) {
+					title = suites.get(0);
+				} else if (!filters.isEmpty()) {
+					title = filters.get(0);
+				}
+			}
 			final String configName = MessageFormat.format(PHPUnitMessages.PHPUnitView_Rerun_Config,
 					new Object[] { title });
-			final ILaunchConfigurationWorkingCopy tmp = launchConfiguration.getWorkingCopy();
+			final ILaunchConfigurationWorkingCopy tmp = launchConfiguration.copy(configName);
 
-			tmp.setAttribute(PHPUnitLaunchAttributes.ATTRIBUTE_RERUN, configName);
+			tmp.setAttribute(PHPUnitLaunchAttributes.ATTRIBUTE_RERUN, true);
 
+			tmp.setAttribute(PHPUnitLaunchAttributes.ATTRIBUTE_TEST_SUITE, suites);
 			tmp.setAttribute(PHPUnitLaunchAttributes.ATTRIBUTE_FILTER, filters);
 			tmp.launch(launchMode, null);
 		} catch (final CoreException e) {
