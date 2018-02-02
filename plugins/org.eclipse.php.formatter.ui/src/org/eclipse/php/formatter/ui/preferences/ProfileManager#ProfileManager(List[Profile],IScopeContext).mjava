@@ -28,11 +28,15 @@
 		}
 
 		Profile profile = fProfiles.get(profileId);
-		Assert.isNotNull(profile);
+		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=530660
+		// Assert.isNotNull(profile);
+		if (profile == null) {
+			Logger.log(Logger.ERROR, "ProfileManager: could not load profile " + profileId); //$NON-NLS-1$
+		}
 
 		fSelected = profile;
 
-		if (context.getName() == ProjectScope.SCOPE && hasProjectSpecificSettings(context)) {
+		if (fSelected != null && context.getName() == ProjectScope.SCOPE && hasProjectSpecificSettings(context)) {
 			Map<String, Object> map = readFromPreferenceStore(context, profile);
 			if (map != null) {
 				Profile matching = null;
