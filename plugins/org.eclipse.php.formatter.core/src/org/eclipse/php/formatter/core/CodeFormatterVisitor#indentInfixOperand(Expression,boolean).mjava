@@ -1,0 +1,124 @@
+	/**
+	 * 
+	 * @param inFixOperand
+	 * @param doFirstWrap
+	 *            true when the first line wrap can be done, false when a new
+	 *            line was already inserted and there is no need to add a
+	 *            "first" line wrap
+	 * @return true if a new line was inserted, false otherwise
+	 */
+	public boolean indentInfixOperand(Expression inFixOperand, boolean doFirstWrap) {
+		boolean forceSplit = this.preferences.line_wrap_binary_expression_force_split;
+		boolean isInsertNewLine = false;
+
+		wasBinaryExpressionWrapped = false;
+
+		// NB: the *_ADD_* indentation policies are necessary to apply (extra)
+		// indentation only *after* the first infix operand was fully traveled
+		// down
+		switch (binaryExpressionLineWrapPolicy) {
+		case NO_LINE_WRAP:
+			// no_wrap
+			break;
+		case FIRST_WRAP_WHEN_NECESSARY: // Wrap only when necessary
+			// XXX: looking at its description, this indentation policy should
+			// be able to wrap & indent first element but it's probably not the
+			// desired effect...
+			if (doFirstWrap) {
+				binaryExpressionLineWrapPolicy = WRAP_WHEN_NECESSARY_ADD_INDENT;
+			} else {
+				binaryExpressionLineWrapPolicy = WRAP_WHEN_NECESSARY;
+			}
+			break;
+		case WRAP_WHEN_NECESSARY_ADD_INDENT:
+			if (calcLinesWidth(inFixOperand) > this.preferences.line_wrap_line_split) {
+				binaryExpressionLineWrapPolicy = WRAP_WHEN_NECESSARY;
+				if (doFirstWrap) {
+					insertNewLine();
+					indentationLevel += binaryExpressionIndentGap;
+					indent();
+					isInsertNewLine = true;
+				}
+				wasBinaryExpressionWrapped = true;
+			}
+			break;
+		case WRAP_WHEN_NECESSARY:
+			if (calcLinesWidth(inFixOperand) > this.preferences.line_wrap_line_split) {
+				if (doFirstWrap) {
+					insertNewLine();
+					indent();
+					isInsertNewLine = true;
+				}
+				wasBinaryExpressionWrapped = true;
+			}
+			break;
+		case WRAP_FIRST_ELEMENT: // Always wrap first element, others when
+									// necessary
+			binaryExpressionLineWrapPolicy = WRAP_WHEN_NECESSARY;
+			if (doFirstWrap) {
+				insertNewLine();
+				indentationLevel += binaryExpressionIndentGap;
+				indent();
+				isInsertNewLine = true;
+			}
+			wasBinaryExpressionWrapped = true;
+			break;
+		case WRAP_ALL_ELEMENTS: // Wrap all elements, every element on a new
+								// line
+			if (forceSplit || calcLinesWidth(inFixOperand) > this.preferences.line_wrap_line_split) {
+				binaryExpressionLineWrapPolicy = ALWAYS_WRAP_ELEMENT;
+				if (doFirstWrap) {
+					insertNewLine();
+					indentationLevel += binaryExpressionIndentGap;
+					indent();
+					isInsertNewLine = true;
+				}
+				wasBinaryExpressionWrapped = true;
+			} else {
+				binaryExpressionLineWrapPolicy = NO_LINE_WRAP;
+			}
+			break;
+		case WRAP_ALL_ELEMENTS_NO_INDENT_FIRST: // Wrap all elements, indent all
+												// but the first element
+			if (forceSplit || calcLinesWidth(inFixOperand) > this.preferences.line_wrap_line_split) {
+				binaryExpressionLineWrapPolicy = ALWAYS_WRAP_ELEMENT_ADD_LEVEL;
+				if (doFirstWrap) {
+					insertNewLine();
+					indentationLevel += binaryExpressionIndentGap;
+					indent();
+					isInsertNewLine = true;
+				}
+				wasBinaryExpressionWrapped = true;
+			} else {
+				binaryExpressionLineWrapPolicy = NO_LINE_WRAP;
+			}
+			break;
+		case WRAP_ALL_ELEMENTS_EXCEPT_FIRST:// Wrap all elements, except first
+											// element if not necessary
+			if (forceSplit || calcLinesWidth(inFixOperand) > this.preferences.line_wrap_line_split) {
+				binaryExpressionLineWrapPolicy = ALWAYS_WRAP_ELEMENT;
+				if (doFirstWrap) {
+					indentationLevel += binaryExpressionIndentGap;
+				}
+			} else {
+				binaryExpressionLineWrapPolicy = NO_LINE_WRAP;
+			}
+			break;
+		case ALWAYS_WRAP_ELEMENT_ADD_LEVEL:
+			// increase the indentation level after the first element
+			indentationLevel++;
+			binaryExpressionLineWrapPolicy = ALWAYS_WRAP_ELEMENT;
+			// no break here, continue with ALWAYS_WRAP_ELEMENT
+		case ALWAYS_WRAP_ELEMENT:
+			if (doFirstWrap) {
+				insertNewLine();
+				indent();
+				isInsertNewLine = true;
+			}
+			wasBinaryExpressionWrapped = true;
+			break;
+		}
+
+		return isInsertNewLine;
+	}
+

@@ -2,22 +2,29 @@
 	public boolean visit(InfixExpression infixExpression) {
 		int oldIndentationLevel = indentationLevel;
 		boolean oldWasBinaryExpressionWrapped = wasBinaryExpressionWrapped;
-		boolean forceSplit = this.preferences.line_wrap_binary_expression_force_split;
-		if (binaryExpressionLineWrapPolicy == -1) {// not initialized
+
+		if (binaryExpressionSavedBuffer == null) {
+			binaryExpressionSavedLineWidth = lineWidth;
+			binaryExpressionSavedIsPrevSpace = isPrevSpace;
+			binaryExpressionSavedIsHeredocSemicolon = isHeredocSemicolon;
+			binaryExpressionSavedIsPHPEqualTag = isPHPEqualTag;
+			binaryExpressionSavedBuffer = replaceBuffer.toString();
+			binaryExpressionSavedNode = infixExpression;
+			binaryExpressionSavedChangesIndex = changes.size() - 1;
+		}
+
+		if (binaryExpressionLineWrapPolicy == -1) {
 			binaryExpressionLineWrapPolicy = this.preferences.line_wrap_binary_expression_line_wrap_policy;
 			binaryExpressionIndentGap = calculateIndentGap(this.preferences.line_wrap_binary_expression_indent_policy,
 					this.preferences.line_wrap_wrapped_lines_indentation);
 
+			indentInfixOperand(infixExpression.getLeft(), !wasBinaryExpressionWrapped);
 		}
 
-		if (binaryExpressionSavedBuffer == null) {
-			binaryExpressionSavedBuffer = replaceBuffer.toString();
-			binaryExpressionSavedNode = infixExpression;
-			binaryExpressionSavedChangesIndex = changes.size() - 1;
-			binaryExpressionRevertPolicy = -1;
-		}
+		handleChars(infixExpression.getStart(), infixExpression.getLeft().getStart());
 
 		infixExpression.getLeft().accept(this);
+
 		int operator = infixExpression.getOperator();
 		boolean isStringOperator = ((operator == InfixExpression.OP_STRING_AND)
 				|| (operator == InfixExpression.OP_STRING_OR) || (operator == InfixExpression.OP_STRING_XOR));
@@ -25,130 +32,57 @@
 		if (isStringOperator || this.preferences.insert_space_before_binary_operation) {
 			insertSpace();
 		}
+
 		appendToBuffer(InfixExpression.getOperator(operator));
 
-		// Need consider the right expression at first,because the right
-		// expression might be
-		// long enough to expend the line width.
-		// This should cause the line wrap.
-		int lineW = calcLinesWidth(infixExpression.getRight());
+		boolean isInsertNewLine = indentInfixOperand(infixExpression.getRight(), true);
 
-		switch (binaryExpressionLineWrapPolicy) {
-		case NO_LINE_WRAP:
-			// no_wrap
-			break;
-		case FIRST_WRAP_WHEN_NECESSARY:
-			if (lineW > this.preferences.line_wrap_line_split) {
-				binaryExpressionLineWrapPolicy = WRAP_WHEN_NECESSARY;
-				insertNewLine();
-				indentationLevel += binaryExpressionIndentGap;
-				indent();
-				wasBinaryExpressionWrapped = true;
-			}
-			break;
-		case WRAP_WHEN_NECESSARY:
-			if (lineW > this.preferences.line_wrap_line_split) {
-				insertNewLine();
-				indent();
-				wasBinaryExpressionWrapped = true;
-			}
-			break;
-		case WRAP_FIRST_ELEMENT:
-			if (forceSplit || lineW > this.preferences.line_wrap_line_split) {
-				if (binaryExpressionRevertPolicy != -1) {
-					binaryExpressionRevertPolicy = -1;
-					binaryExpressionLineWrapPolicy = WRAP_WHEN_NECESSARY;
-					insertNewLine();
-					indentationLevel += binaryExpressionIndentGap;
-					indent();
-					wasBinaryExpressionWrapped = true;
-				} else {
-					binaryExpressionRevertPolicy = WRAP_FIRST_ELEMENT;
-					binaryExpressionLineWrapPolicy = NO_LINE_WRAP;
-				}
-			}
-			break;
-		case WRAP_ALL_ELEMENTS:
-			if (forceSplit || lineW > this.preferences.line_wrap_line_split) {
-				if (binaryExpressionRevertPolicy != -1) {
-					binaryExpressionRevertPolicy = -1;
-					binaryExpressionLineWrapPolicy = ALWAYS_WRAP_ELEMENT;
-					insertNewLine();
-					indentationLevel += binaryExpressionIndentGap;
-					indent();
-					wasBinaryExpressionWrapped = true;
-				} else {
-					binaryExpressionRevertPolicy = WRAP_ALL_ELEMENTS;
-					binaryExpressionLineWrapPolicy = NO_LINE_WRAP;
-				}
-			}
-			break;
-		case WRAP_ALL_ELEMENTS_NO_INDENT_FIRST:
-			if (forceSplit || lineW > this.preferences.line_wrap_line_split) {
-				if (binaryExpressionRevertPolicy != -1) {
-					binaryExpressionRevertPolicy = -1;
-					binaryExpressionLineWrapPolicy = ALWAYS_WRAP_ELEMENT;
-					insertNewLine();
-					indentationLevel += binaryExpressionIndentGap;
-					indent();
-					wasBinaryExpressionWrapped = true;
-
-					// increase the indentation level after the first element
-					indentationLevel++;
-					isBinaryExpressionExtraIndentation = true;
-				} else {
-					binaryExpressionRevertPolicy = WRAP_ALL_ELEMENTS_NO_INDENT_FIRST;
-					binaryExpressionLineWrapPolicy = NO_LINE_WRAP;
-				}
-			}
-			break;
-		case WRAP_ALL_ELEMENTS_EXCEPT_FIRST:
-			if (forceSplit || lineW > this.preferences.line_wrap_line_split) {
-				if (binaryExpressionRevertPolicy != -1) {
-					binaryExpressionLineWrapPolicy = WRAP_ALL_ELEMENTS;
-				} else {
-					binaryExpressionRevertPolicy = WRAP_ALL_ELEMENTS_EXCEPT_FIRST;
-					binaryExpressionLineWrapPolicy = NO_LINE_WRAP;
-				}
-			}
-			break;
-		case ALWAYS_WRAP_ELEMENT:
-			insertNewLine();
-			indent();
-			wasBinaryExpressionWrapped = true;
-			break;
-		}
-
-		if (isStringOperator || this.preferences.insert_space_after_binary_operation) {
+		if (!isInsertNewLine && (isStringOperator || this.preferences.insert_space_after_binary_operation)) {
 			insertSpace();
 		}
 
 		// handle the chars between the variable to the value
 		handleChars(infixExpression.getLeft().getEnd(), infixExpression.getRight().getStart());
 
-		if (binaryExpressionRevertPolicy != -1 && infixExpression == binaryExpressionSavedNode) {
-			if (binaryExpressionLineWrapPolicy == WRAP_ALL_ELEMENTS
-					&& binaryExpressionRevertPolicy == WRAP_ALL_ELEMENTS_EXCEPT_FIRST) {
-				infixExpression.getRight().accept(this);
-			} else {
-				revert(binaryExpressionSavedBuffer, binaryExpressionSavedChangesIndex);
-				binaryExpressionLineWrapPolicy = binaryExpressionRevertPolicy;
-				// undo everything
-				// https://bugs.eclipse.org/bugs/show_bug.cgi?id=506488
-				binaryExpressionSavedBuffer = replaceBuffer.toString();
-				// must be null to avoid infinite loop (note that
-				// binaryExpressionSavedBuffer must stay non-null here to avoid
-				// resetting binaryExpressionSavedNode to a non-null value later
-				// again)
-				binaryExpressionSavedNode = null;
-				binaryExpressionSavedChangesIndex = changes.size() - 1;
-				binaryExpressionRevertPolicy = -1;
-				indentationLevel = oldIndentationLevel;
-				wasBinaryExpressionWrapped = oldWasBinaryExpressionWrapped;
-				infixExpression.accept(this);
-			}
-		} else {
-			infixExpression.getRight().accept(this);
+		infixExpression.getRight().accept(this);
+
+		if (infixExpression == binaryExpressionSavedNode && binaryExpressionLineWrapPolicy == NO_LINE_WRAP) {
+			revert(binaryExpressionSavedBuffer, binaryExpressionSavedChangesIndex, binaryExpressionSavedLineWidth,
+					binaryExpressionSavedIsPrevSpace, binaryExpressionSavedIsHeredocSemicolon,
+					binaryExpressionSavedIsPHPEqualTag);
+			// undo everything
+			// https://bugs.eclipse.org/bugs/show_bug.cgi?id=506488
+			binaryExpressionSavedBuffer = replaceBuffer.toString();
+			// must be null to avoid infinite loop (note that
+			// binaryExpressionSavedBuffer must stay non-null here to avoid
+			// resetting binaryExpressionSavedNode to a non-null value later
+			// again)
+			binaryExpressionSavedNode = null;
+			binaryExpressionSavedChangesIndex = changes.size() - 1;
+			indentationLevel = oldIndentationLevel;
+			wasBinaryExpressionWrapped = oldWasBinaryExpressionWrapped;
+
+			infixExpression.accept(this);
+
+			// used to enter in the "if (infixExpression ==
+			// binaryExpressionSavedNode)" statement below, to reset all binary
+			// expression variables
+			binaryExpressionSavedNode = infixExpression;
+		}
+		if (infixExpression == binaryExpressionSavedNode) {
+			binaryExpressionSavedLineWidth = 0;
+			binaryExpressionSavedIsPrevSpace = false;
+			binaryExpressionSavedIsHeredocSemicolon = false;
+			binaryExpressionSavedIsPHPEqualTag = false;
+			binaryExpressionSavedBuffer = null;
+			binaryExpressionSavedNode = null;
+			binaryExpressionSavedChangesIndex = -1;
+			indentationLevel = oldIndentationLevel;
+			wasBinaryExpressionWrapped = oldWasBinaryExpressionWrapped;
+
+			// reset the policy for binary expression states
+			binaryExpressionLineWrapPolicy = -1;
+			binaryExpressionIndentGap = 0;
 		}
 		return false;
 	}

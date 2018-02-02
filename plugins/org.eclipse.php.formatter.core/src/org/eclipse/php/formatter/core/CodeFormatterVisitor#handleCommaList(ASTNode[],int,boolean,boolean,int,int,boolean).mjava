@@ -15,12 +15,16 @@
 	private int handleCommaList(ASTNode[] array, int lastPosition, boolean insertSpaceBeforeComma,
 			boolean insertSpaceAfterComma, int lineWrapPolicy, int indentGap, boolean forceSplit) {
 		int oldIndentationLevel = indentationLevel;
-		boolean wasBinaryExpressionWrapped = this.wasBinaryExpressionWrapped;
+		boolean oldWasBinaryExpressionWrapped = wasBinaryExpressionWrapped;
 		if (array.length == 0) {
 			return lastPosition;
 		}
 
 		// save the changes index position
+		int savedlineWidth = lineWidth;
+		boolean savedIsPrevSpace = isPrevSpace;
+		boolean savedIsHeredocSemicolon = isHeredocSemicolon;
+		boolean savedIsPHPEqualTag = isPHPEqualTag;
 		String savedBuffer = replaceBuffer.toString();
 		int changesIndex = changes.size() - 1;
 		int savedLastPosition = lastPosition;
@@ -42,15 +46,22 @@
 
 			// after the first element and wrap policy is except first element
 			if (i == 1 && lineWrapPolicy == WRAP_ALL_ELEMENTS_EXCEPT_FIRST) {
+				savedlineWidth = lineWidth;
+				savedIsPrevSpace = isPrevSpace;
+				savedIsHeredocSemicolon = isHeredocSemicolon;
+				savedIsPHPEqualTag = isPHPEqualTag;
 				savedBuffer = replaceBuffer.toString();
 				changesIndex = changes.size() - 1;
 				savedLastPosition = lastPosition;
 			}
 			boolean isInsertNewLine = false;
+			// NB: the *_ADD_* indentation policies are necessary to apply
+			// (extra) indentation only *after* the first list element was fully
+			// traveled down
 			switch (lineWrapPolicy) {
 			case NO_LINE_WRAP:
 				break;
-			case FIRST_WRAP_WHEN_NECESSARY:
+			case FIRST_WRAP_WHEN_NECESSARY: // Wrap only when necessary
 				if (lineWidth + array[i].getLength() > this.preferences.line_wrap_line_split) {
 					lineWrapPolicy = WRAP_WHEN_NECESSARY;
 					insertNewLine();
@@ -69,23 +80,25 @@
 					isInsertNewLine = true;
 				}
 				break;
-			case WRAP_FIRST_ELEMENT:
-				if (forceSplit || lineWidth + array[i].getLength() > this.preferences.line_wrap_line_split) {
-					revert(savedBuffer, changesIndex);
-					lastPosition = savedLastPosition;
-					i = 0;
-					lineWrapPolicy = WRAP_WHEN_NECESSARY;
-					insertNewLine();
-					if (!cio.indented) {
-						indentationLevel += indentGap;
-					}
-					indent();
-					isInsertNewLine = true;
+			case WRAP_FIRST_ELEMENT: // Always wrap first element, others when
+										// necessary
+				revert(savedBuffer, changesIndex, savedlineWidth, savedIsPrevSpace, savedIsHeredocSemicolon,
+						savedIsPHPEqualTag);
+				lastPosition = savedLastPosition;
+				i = 0;
+				lineWrapPolicy = WRAP_WHEN_NECESSARY;
+				insertNewLine();
+				if (!cio.indented) {
+					indentationLevel += indentGap;
 				}
+				indent();
+				isInsertNewLine = true;
 				break;
-			case WRAP_ALL_ELEMENTS:
+			case WRAP_ALL_ELEMENTS: // Wrap all elements, every element on a new
+									// line
 				if (forceSplit || lineWidth + array[i].getLength() > this.preferences.line_wrap_line_split) {
-					revert(savedBuffer, changesIndex);
+					revert(savedBuffer, changesIndex, savedlineWidth, savedIsPrevSpace, savedIsHeredocSemicolon,
+							savedIsPHPEqualTag);
 					lastPosition = savedLastPosition;
 					i = 0;
 					lineWrapPolicy = ALWAYS_WRAP_ELEMENT;
@@ -97,29 +110,30 @@
 					isInsertNewLine = true;
 				}
 				break;
-			case WRAP_ALL_ELEMENTS_NO_INDENT_FIRST:
+			case WRAP_ALL_ELEMENTS_NO_INDENT_FIRST: // Wrap all elements, indent
+													// all but the first element
 				if (forceSplit || lineWidth + array[i].getLength() > this.preferences.line_wrap_line_split) {
 					// revert the buffer
-					revert(savedBuffer, changesIndex);
+					revert(savedBuffer, changesIndex, savedlineWidth, savedIsPrevSpace, savedIsHeredocSemicolon,
+							savedIsPHPEqualTag);
 					lastPosition = savedLastPosition;
 					i = 0;
-					lineWrapPolicy = ALWAYS_WRAP_ELEMENT;
+					lineWrapPolicy = ALWAYS_WRAP_ELEMENT_ADD_LEVEL;
 					insertNewLine();
 					if (!cio.indented) {
 						indentationLevel += indentGap;
 					}
 					indent();
 					isInsertNewLine = true;
-
-					// increase the indentation level after the first element
-					indentationLevel++;
-					isExtraIndentation = true;
 				}
 				break;
-			case WRAP_ALL_ELEMENTS_EXCEPT_FIRST:
+			case WRAP_ALL_ELEMENTS_EXCEPT_FIRST: // Wrap all elements, except
+													// first element if not
+													// necessary
 				if (forceSplit || lineWidth + array[i].getLength() > this.preferences.line_wrap_line_split) {
 					// revert
-					revert(savedBuffer, changesIndex);
+					revert(savedBuffer, changesIndex, savedlineWidth, savedIsPrevSpace, savedIsHeredocSemicolon,
+							savedIsPHPEqualTag);
 					lastPosition = savedLastPosition;
 					i = (i > 0) ? 1 : 0;
 					lineWrapPolicy = ALWAYS_WRAP_ELEMENT;
@@ -131,6 +145,12 @@
 					isInsertNewLine = true;
 				}
 				break;
+			case ALWAYS_WRAP_ELEMENT_ADD_LEVEL:
+				// increase the indentation level after the first element
+				indentationLevel++;
+				isExtraIndentation = true;
+				lineWrapPolicy = ALWAYS_WRAP_ELEMENT;
+				// no break here, continue with ALWAYS_WRAP_ELEMENT
 			case ALWAYS_WRAP_ELEMENT:
 				insertNewLine();
 				indent();
@@ -141,9 +161,23 @@
 			if (!isInsertNewLine && !isFirst && insertSpaceAfterComma) {
 				insertSpace();
 			}
+			if (isInsertNewLine) {
+				wasBinaryExpressionWrapped = true;
+			}
 
 			handleChars1(lastPosition, array[i].getStart(), oldIndentationLevel != indentationLevel, indentGap);
+
+			int oldBinaryExpressionLineWrapPolicy = binaryExpressionLineWrapPolicy;
+			int oldBinaryExpressionIndentGap = binaryExpressionIndentGap;
+			// reset the policy for binary expression states
+			binaryExpressionLineWrapPolicy = -1;
+			binaryExpressionIndentGap = 0;
+
 			array[i].accept(this);
+
+			binaryExpressionLineWrapPolicy = oldBinaryExpressionLineWrapPolicy;
+			binaryExpressionIndentGap = oldBinaryExpressionIndentGap;
+
 			lastPosition = array[i].getEnd();
 
 			isFirst = false;
@@ -153,13 +187,9 @@
 			indentationLevel--;
 		}
 
-		if (oldIndentationLevel != indentationLevel) {
-			indentationLevel = oldIndentationLevel;
-		}
+		indentationLevel = oldIndentationLevel;
+		wasBinaryExpressionWrapped = oldWasBinaryExpressionWrapped;
 
-		if (wasBinaryExpressionWrapped != this.wasBinaryExpressionWrapped) {
-			this.wasBinaryExpressionWrapped = wasBinaryExpressionWrapped;
-		}
 		return lastPosition;
 	}
 
