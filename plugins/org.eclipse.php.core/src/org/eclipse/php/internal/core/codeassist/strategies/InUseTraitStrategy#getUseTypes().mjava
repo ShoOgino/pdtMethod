@@ -1,0 +1,79 @@
+	private List<String> getUseTypes() {
+		List<String> useTypes = new LinkedList<>();
+		if (getCompanion().getPHPVersion().isLessThan(PHPVersion.PHP5_4)) {
+			return useTypes;
+		}
+		IStructuredDocumentRegion sdRegion = getCompanion().getStructuredDocumentRegion();
+		int documentOffset = getCompanion().getOffset();
+		if (documentOffset == sdRegion.getEndOffset()) {
+			documentOffset -= 1;
+		}
+		ITextRegion tRegion = sdRegion.getRegionAtCharacterOffset(documentOffset);
+
+		ITextRegionCollection container = sdRegion;
+
+		if (tRegion instanceof ITextRegionContainer) {
+			container = (ITextRegionContainer) tRegion;
+			tRegion = container.getRegionAtCharacterOffset(getCompanion().getOffset());
+		}
+		if (tRegion != null && tRegion.getType() == PHPRegionContext.PHP_CLOSE) {
+			tRegion = container.getRegionAtCharacterOffset(container.getStartOffset() + tRegion.getStart() - 1);
+		}
+
+		// This text region must be of type PhpScriptRegion:
+		if (tRegion != null && tRegion.getType() == PHPRegionContext.PHP_CONTENT) {
+			IPHPScriptRegion phpScriptRegion = (IPHPScriptRegion) tRegion;
+
+			try {
+				// Set default starting position to the beginning of the
+				// PhpScriptRegion:
+				int startOffset = container.getStartOffset() + phpScriptRegion.getStart();
+
+				// Now, search backwards for the statement start (in this
+				// PhpScriptRegion):
+				ITextRegion startTokenRegion;
+				if (documentOffset == startOffset) {
+					startTokenRegion = phpScriptRegion.getPHPToken(0);
+				} else {
+					startTokenRegion = phpScriptRegion.getPHPToken(getCompanion().getOffset() - startOffset - 1);
+				}
+				// If statement start is at the beginning of the PHP script
+				// region:
+				while (true) {
+					if (startTokenRegion.getStart() == 0) {
+						return useTypes;
+					}
+					if (startTokenRegion.getType() == PHPRegionTypes.PHP_CURLY_OPEN) {
+						// Calculate starting position of the statement (it
+						// should go right after this startTokenRegion):
+						// startOffset += startTokenRegion.getEnd();
+						TextSequence statementText1 = PHPTextSequenceUtilities.getStatement(
+								startOffset + startTokenRegion.getStart() - 1,
+								getCompanion().getStructuredDocumentRegion(), true);
+						startTokenRegion = phpScriptRegion
+								.getPHPToken(startTokenRegion.getStart() - statementText1.length());
+						if (startTokenRegion.getType() == PHPRegionTypes.PHP_USE) {
+							String[] types = statementText1.toString().trim().substring(3).trim().split(","); //$NON-NLS-1$
+							useTypes = new ArrayList<>();
+							for (String type : types) {
+								useTypes.add(type.trim());
+							}
+							return useTypes;
+						} else {
+							return useTypes;
+						}
+					} else if (startTokenRegion.getType() == PHPRegionTypes.PHP_CURLY_CLOSE) {
+						return useTypes;
+					}
+
+					startTokenRegion = phpScriptRegion.getPHPToken(startTokenRegion.getStart() - 1);
+				}
+
+			} catch (BadLocationException e) {
+			}
+		}
+
+		return useTypes;
+
+	}
+

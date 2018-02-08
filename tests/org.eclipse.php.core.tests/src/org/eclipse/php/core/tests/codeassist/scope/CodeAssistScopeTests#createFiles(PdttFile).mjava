@@ -1,0 +1,33 @@
+	/**
+	 * Creates test file with the specified content and calculates the offset at
+	 * OFFSET_CHAR. Offset character itself is stripped off.
+	 * 
+	 * @param data
+	 *            File data
+	 * @return offset where's the offset character set.
+	 * @throws Exception
+	 */
+	private int createFiles(PdttFile pdttFile) throws Exception {
+		final String cursor = getCursor(pdttFile) != null ? getCursor(pdttFile) : DEFAULT_CURSOR;
+		String data = pdttFile.getFile();
+		String[] otherFiles = pdttFile.getOtherFiles();
+		int offset = data.lastIndexOf(cursor);
+		if (offset == -1) {
+			throw new IllegalArgumentException("Offset character is not set");
+		}
+		// Replace the offset character
+		data = data.substring(0, offset) + data.substring(offset + 1);
+		String fileName = Paths.get(pdttFile.getFileName()).getFileName().toString();
+		fileName = fileName.substring(0, fileName.indexOf('.'));
+		testFile = TestUtils.createFile(project, fileName + ".php", data);
+		this.otherFiles = new ArrayList<>(otherFiles.length);
+		int i = 0;
+		for (String otherFileContent : otherFiles) {
+			IFile tmp = TestUtils.createFile(project, String.format("test%s.php", i), otherFileContent);
+			this.otherFiles.add(i, tmp);
+			i++;
+		}
+		// TestUtils.waitForIndexer();
+		return offset;
+	}
+

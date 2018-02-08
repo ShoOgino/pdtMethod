@@ -1,0 +1,18 @@
+	private void pushState(State state) {
+		if (state.type == Type.BLOCK && states.peek() instanceof ControlState) {
+			((ControlState) states.peek()).block = true;
+		}
+		if (state instanceof ControlState && states.peek() instanceof ControlState
+				&& !((ControlState) states.peek()).block) {
+			// nested one-line block
+			pushState(new SimpleBlockState(Type.BLOCK, state.start));
+		}
+		states.push(state);
+		buffer.clear();
+		if (state instanceof NamedState) {
+			collectName = true;
+		} else if (state instanceof ControlState) {
+			collectName = false;
+		}
+	}
+

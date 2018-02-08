@@ -1,0 +1,18 @@
+	private ICompletionScope[] getScopes(ISourceModule sourceModule, int offset) throws ModelException {
+		IStructuredDocument document = (IStructuredDocument) new PHPDocumentLoader().createNewStructuredDocument();
+		String content = new String(sourceModule.getSourceAsCharArray());
+		document.set(content);
+
+		final List<ICompletionScope> scopes = new LinkedList<>();
+		CompletionCompanion companion = new CompletionCompanion(new TestCompletionRequestor(document, offset),
+				(IModuleSource) sourceModule, offset);
+
+		ICompletionScope scope = companion.getScope();
+		do {
+			scopes.add(scope);
+			scope = scope.getParent();
+		} while (scope != null);
+
+		return scopes.toArray(new ICompletionScope[scopes.size()]);
+	}
+

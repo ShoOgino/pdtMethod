@@ -1,0 +1,49 @@
+	@Override
+	public boolean isValid(@NonNull ISourceModule sourceModule, int offset, CompletionRequestor requestor) {
+		if (!super.isValid(sourceModule, offset, requestor)) {
+			return false;
+		}
+
+		// check whether enclosing element is class
+		try {
+
+			PHPHeuristicScanner scanner2 = PHPHeuristicScanner.createHeuristicScanner(getCompanion().getDocument(),
+					offset, true);
+			if (!scanner2.isDefaultPartition(offset)) {
+				return false;
+			}
+			ICompletionScope scope = getCompanion().getScope();
+
+			if (scope.getType() == ICompletionScope.Type.FIELD || scope.getType() == ICompletionScope.Type.FUNCTION
+					|| scope.getType() == ICompletionScope.Type.TRAIT_USE
+					|| scope.getType() == ICompletionScope.Type.TRAIT_PRECEDENCE) {
+				scope = scope.getParent();
+			}
+			if (scope.getType() != ICompletionScope.Type.BLOCK) {
+				return false;
+			}
+			scope = scope.getParent();
+			switch (scope.getType()) {
+			case CLASS:
+				type = Type.CLASS;
+				break;
+			case INTERFACE:
+				type = Type.INTERFACE;
+				break;
+			case TRAIT:
+				type = Type.TRAIT;
+				break;
+			default:
+				return false;
+			}
+
+			isAssignment = scanner2.scanBackward(offset, getCompanion().getScope().getOffset(), '=') > -1;
+
+			return true;
+		} catch (BadLocationException e) {
+			PHPCorePlugin.log(e);
+		}
+
+		return false;
+	}
+
