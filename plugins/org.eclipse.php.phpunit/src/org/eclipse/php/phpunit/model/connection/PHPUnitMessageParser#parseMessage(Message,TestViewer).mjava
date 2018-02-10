@@ -1,0 +1,28 @@
+	public void parseMessage(Message message, final TestViewer viewer) {
+		if (!isInProgress()) {
+			setInProgress(true);
+		}
+		if (message == null) {
+			return;
+		}
+
+		final String target = message.getTarget();
+		final MessageEventType event = message.getEvent();
+		if (target.equals(ELEMENT_TARGET_TESTSUITE)) {
+			if (event == MessageEventType.start) {
+				parseGroupStart(viewer, message);
+			} else if (event == MessageEventType.end) {
+				parseGroupEnd(viewer, message);
+			} else {
+				currentGroup.setStatus(event);
+				currentGroup.addRunCount(1);
+			}
+		} else if (target.equals(ELEMENT_TARGET_TESTCASE)) {
+			if (event == MessageEventType.start) {
+				parseTestStart(viewer, message);
+			} else {
+				parseTestEnd(viewer, message);
+			}
+		}
+	}
+
