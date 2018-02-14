@@ -2,7 +2,7 @@
 	public boolean visit(Block block) {
 		boolean blockIndentation = false;
 		boolean isPHPMode = true;
-		boolean isEmptyBlockNewLine = true;
+		boolean isAddEmptyBlockNewLine = true;
 		boolean isUnbracketedNamespace = false;
 		boolean isNamespace = false;
 
@@ -13,76 +13,71 @@
 		case ASTNode.NAMESPACE:
 			isNamespace = true;
 			if (!block.isCurly()) {
-				isEmptyBlockNewLine = false;
+				isAddEmptyBlockNewLine = false;
 				isUnbracketedNamespace = true;
 				if (block.statements().size() > 0) {
 					Statement statement = block.statements().get(0);
 					// need check how many new lines will the next statement
 					// insert
-					int numberOfLines = getNumbreOfLines(statement) - 1;
+					int numberOfLines = getNumberOfLines(statement) - 1;
 					numberOfLines = this.preferences.blank_lines_after_namespace - numberOfLines;
 					if (numberOfLines > 0) {
-						for (int j = 0; j < numberOfLines; j++) {
-							insertNewLine();
-						}
+						insertNewLines(numberOfLines);
 					}
 				} else {
-					for (int i = 0; i < this.preferences.blank_lines_after_namespace; i++) {
-						insertNewLine();
-					}
+					insertNewLines(this.preferences.blank_lines_after_namespace);
 				}
-				// ignoreEmptyLineSetting = true;
-				ignoreEmptyLineSetting = !preferences.indent_empty_lines;
+				ignoreEmptyLineSetting = true;
 
 				break;
 			}
 			if (block.statements().size() > 0) {
 				Statement statement = block.statements().get(0);
 				// need check how many new lines will the next statement insert
-				int numberOfLines = getNumbreOfLines(statement) - 1;
+				int numberOfLines = getNumberOfLines(statement) - 1;
 				numberOfLines = this.preferences.blank_lines_after_namespace - numberOfLines;
 				if (numberOfLines > 0) {
-					for (int j = 0; j < numberOfLines; j++) {
-						insertNewLine();
-					}
+					insertNewLines(numberOfLines);
 				}
 			} else {
-				for (int i = 0; i < this.preferences.blank_lines_after_namespace; i++) {
-					insertNewLine();
-				}
+				insertNewLines(this.preferences.blank_lines_after_namespace);
 			}
-			// ignoreEmptyLineSetting = true;
-			ignoreEmptyLineSetting = !preferences.indent_empty_lines;
+			ignoreEmptyLineSetting = true;
 
 		case ASTNode.CLASS_DECLARATION:
 		case ASTNode.INTERFACE_DECLARATION:
-			isEmptyBlockNewLine = preferences.new_line_in_empty_class_body;
+			isAddEmptyBlockNewLine = preferences.new_line_in_empty_class_body;
 			blockIndentation = this.preferences.indent_statements_within_type_declaration;
+			if (blockIndentation) {
+				indentationLevel++;
+			}
 			isClassDeclaration = true;
 			break;
 		case ASTNode.SWITCH_STATEMENT:
 			blockIndentation = this.preferences.indent_statements_within_switch;
+			if (blockIndentation) {
+				indentationLevel++;
+			}
 			break;
 		case ASTNode.FUNCTION_DECLARATION:
-			isEmptyBlockNewLine = preferences.new_line_in_empty_method_body;
+			isAddEmptyBlockNewLine = preferences.new_line_in_empty_method_body;
 			blockIndentation = this.preferences.indent_statements_within_function;
-			for (int i = 0; i < this.preferences.blank_line_at_begin_of_method; i++) {
-				insertNewLine();
+			if (blockIndentation) {
+				indentationLevel++;
 			}
+			insertNewLines(this.preferences.blank_line_at_begin_of_method);
 			isFunctionDeclaration = true;
 
-			// ignoreEmptyLineSetting = true;
-			ignoreEmptyLineSetting = !preferences.indent_empty_lines;
+			ignoreEmptyLineSetting = true;
 
 			break;
 		default:
-			isEmptyBlockNewLine = preferences.new_line_in_empty_block;
+			isAddEmptyBlockNewLine = preferences.new_line_in_empty_block;
 			blockIndentation = this.preferences.indent_statements_within_block;
+			if (blockIndentation) {
+				indentationLevel++;
+			}
 			break;
-		}
-
-		if (blockIndentation) {
-			indentationLevel++;
 		}
 
 		int lastStatementEndOffset;
@@ -160,22 +155,18 @@
 						// insertNewLine();
 						// }
 
-						// ignoreEmptyLineSetting = true;
-						ignoreEmptyLineSetting = !preferences.indent_empty_lines;
+						ignoreEmptyLineSetting = true;
 
 					} else {
 						// need check how many new lines will the next statement
 						// insert
-						int numberOfLines = getNumbreOfLines(statements[i + 1]) - 1;
+						int numberOfLines = getNumberOfLines(statements[i + 1]) - 1;
 						numberOfLines = this.preferences.blank_lines_after_use_statements - numberOfLines;
 						if (numberOfLines > 0) {
-							for (int j = 0; j < numberOfLines; j++) {
-								insertNewLine();
-							}
+							insertNewLines(numberOfLines);
 						}
 
-						// ignoreEmptyLineSetting = true;
-						ignoreEmptyLineSetting = !preferences.indent_empty_lines;
+						ignoreEmptyLineSetting = true;
 
 					}
 				}
@@ -200,39 +191,58 @@
 			}
 		}
 
-		if (statements.length > 0 || isEmptyBlockNewLine || hasComments) {
+		if (statements.length > 0 || isAddEmptyBlockNewLine || hasComments) {
 			if (isUnbracketedNamespace || isThrowOrReturnFormatCase(statements)) {
 				// do not add new line... Throw/Return Statements within an If
 				// Statement block
 			} else {
-				// if ((statements.length > 0 || hasComments)
-				// && (isClassDeclaration || isFunctionDeclaration)) {
-				// if (isClassDeclaration) {
-				// for (int j = 0; j < preferences.blank_line_at_end_of_class;
-				// j++) {
-				// insertNewLine();
-				// }
-				// if (preferences.blank_line_at_end_of_class > 0) {
-				// indent();
-				// }
-				// } else {
-				// for (int j = 0; j < preferences.blank_line_at_end_of_method;
-				// j++) {
-				// insertNewLine();
-				// }
-				// if (preferences.blank_line_at_end_of_method > 0) {
-				// indent();
-				// }
-				// }
-				// } else {
-				insertNewLine();
-				indent();
-				// }
+				// Safly apply previous indentation when we later insert (at
+				// least) one newline
+				boolean isIndentFollowedByNewLine = endPosition > lastStatementEndOffset
+						&& ((isClassDeclaration && preferences.blank_line_at_end_of_class > 0)
+								|| (isFunctionDeclaration && preferences.blank_line_at_end_of_method > 0));
 
+				if (blockIndentation && isIndentFollowedByNewLine) {
+					indentationLevel++;
+					insertNewLines(1);
+					indent();
+					indentationLevel--;
+				} else {
+					insertNewLines(1);
+					indent();
+				}
 			}
 		}
 
 		if (endPosition > lastStatementEndOffset) {
+			if (isClassDeclaration) {
+				// Apply previous indentation (because it's still valid)...
+				if (blockIndentation) {
+					indentationLevel++;
+					insertNewLines(preferences.blank_line_at_end_of_class);
+					indentationLevel--;
+				} else {
+					insertNewLines(preferences.blank_line_at_end_of_class);
+				}
+				// ...before indenting last line with current indentation
+				if (preferences.blank_line_at_end_of_class > 0) {
+					indent();
+				}
+			} else if (isFunctionDeclaration) {
+				// Apply previous indentation (because it's still valid)...
+				if (blockIndentation) {
+					indentationLevel++;
+					insertNewLines(preferences.blank_line_at_end_of_method);
+					indentationLevel--;
+				} else {
+					insertNewLines(preferences.blank_line_at_end_of_method);
+				}
+				// ...before indenting last line with current indentation
+				if (preferences.blank_line_at_end_of_method > 0) {
+					indent();
+				}
+			}
+
 			// exclude closing curly
 			int end = endPosition - 1;
 			if (!block.isCurly()) {
@@ -257,28 +267,8 @@
 					break;
 				}
 			}
-			if (/*
-				 * (statements.length > 0 || hasComments) &&
-				 */(isClassDeclaration || isFunctionDeclaration)) {
-				if (isClassDeclaration) {
-					for (int j = 0; j < preferences.blank_line_at_end_of_class; j++) {
-						insertNewLine();
-					}
-					if (preferences.blank_line_at_end_of_class > 0) {
-						indent();
-					}
-				} else {
-					for (int j = 0; j < preferences.blank_line_at_end_of_method; j++) {
-						insertNewLine();
-					}
-					if (preferences.blank_line_at_end_of_method > 0) {
-						indent();
-					}
-				}
-			}
 
-			// ignoreEmptyLineSetting = true;
-			ignoreEmptyLineSetting = !preferences.indent_empty_lines;
+			ignoreEmptyLineSetting = true;
 
 			blockEnd = true;
 			handleChars(lastStatementEndOffset, end);
