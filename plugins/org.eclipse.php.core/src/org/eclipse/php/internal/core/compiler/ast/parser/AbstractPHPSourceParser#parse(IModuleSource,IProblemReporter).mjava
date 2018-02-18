@@ -1,7 +1,18 @@
 	@Override
 	public IModuleDeclaration parse(IModuleSource input, IProblemReporter reporter) {
 		try {
-			return parse(new CharArrayReader(input.getContentsAsCharArray()), reporter,
+
+			Reader reader = null;
+			if (input instanceof IOpenable) {
+				IBuffer buffer = BufferManager.getDefaultBufferManager().getBuffer((IOpenable) input);
+				if (buffer != null) {
+					reader = new CharArrayReader(buffer.getCharacters());
+				}
+			}
+			if (reader == null) {
+				reader = new CharArrayReader(input.getContentsAsCharArray());
+			}
+			return parse(reader, reporter,
 					ProjectOptions.useShortTags(input.getModelElement().getScriptProject().getProject()));
 		} catch (Exception e) {
 			Logger.logException(e);
