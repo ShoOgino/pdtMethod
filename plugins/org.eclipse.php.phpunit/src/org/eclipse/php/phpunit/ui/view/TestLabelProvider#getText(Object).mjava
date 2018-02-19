@@ -1,54 +1,5 @@
 	@Override
 	public String getText(final Object element) {
-		final PHPUnitElement test = (PHPUnitElement) element;
-		String fileName = test.getLocalFile();
-		if (StringUtils.isNotEmpty(fileName)) {
-			IFile file = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(fileName));
-			if (file == null) {
-				file = view.getProject().getFile(fileName);
-			}
-			if (file != null) {
-				fileName = file.getProjectRelativePath().toString();
-			}
-		}
-
-		final int line = test.getLine();
-		if (test instanceof PHPUnitTest) {
-			PHPUnitTest unit = (PHPUnitTest) test;
-			StringBuilder sb = new StringBuilder(unit.getName());
-			if (sb.length() == 0) {
-				sb.append(fileName).append(':').append(line);
-			}
-			if (test instanceof PHPUnitTestCase && ((PHPUnitTestCase) test).isDataProviderCase()) {
-				sb.insert(0, PHPUnitMessages.TestLabelProvider_0);
-			}
-			final PHPUnitTestException exception = unit.getException();
-			if (exception != null && StringUtils.isNotEmpty(exception.getMessage())) {
-				if (StringUtils.isNotEmpty(exception.getDiff())) {
-					sb.append(':').append(PHPUnitMessages.TestLabelProvider_1);
-				}
-			}
-
-			return sb.toString();
-		}
-		if (test instanceof PHPUnitTestEvent) {
-			final String message = ((PHPUnitTestEvent) test).getMessage();
-			String prefix = StringUtils.EMPTY;
-			if (test instanceof PHPUnitTestException) {
-				prefix = ((PHPUnitTestException) test).getExceptionClass();
-			} else if (test instanceof PHPUnitTestWarning) {
-				prefix = ((PHPUnitTestWarning) test).getCode();
-			}
-			if (StringUtils.isNotEmpty(message)) {
-				return new StringBuilder(prefix).append(':').append(message).toString();
-			}
-			return prefix;
-		}
-		if (test instanceof PHPUnitTraceFrame) {
-			PHPUnitTraceFrame frame = (PHPUnitTraceFrame) test;
-			IPath path = new Path(frame.getFile());
-			return new StringBuilder(path.lastSegment()).append(" - ").append(test.toString()).append("()").toString(); //$NON-NLS-1$ //$NON-NLS-2$
-		}
-		return test.toString();
+		return getStyledText(element).toString();
 	}
 

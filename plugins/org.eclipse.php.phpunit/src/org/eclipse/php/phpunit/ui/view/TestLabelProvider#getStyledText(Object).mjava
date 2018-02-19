@@ -1,13 +1,73 @@
 	@Override
 	public StyledString getStyledText(Object element) {
-		StyledString styledString = new StyledString(getText(element));
-
-		if (element instanceof PHPUnitTest) {
-			PHPUnitTest unit = (PHPUnitTest) element;
-			if (unit.getTime() != null && preferences.getBoolean(PHPUnitPreferenceKeys.SHOW_EXECUTION_TIME)) {
-				styledString.append(String.format(" (%.3f s)", unit.getTime()), StyledString.COUNTER_STYLER); //$NON-NLS-1$
+		StyledString sb = new StyledString();
+		final PHPUnitElement test = (PHPUnitElement) element;
+		String fileName = test.getLocalFile();
+		if (StringUtils.isNotEmpty(fileName)) {
+			IFile file = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(fileName));
+			if (file == null) {
+				file = view.getProject().getFile(fileName);
+			}
+			if (file != null) {
+				fileName = file.getProjectRelativePath().toString();
 			}
 		}
-		return styledString;
+
+		final int line = test.getLine();
+		if (test instanceof PHPUnitTest) {
+			PHPUnitTest unit = (PHPUnitTest) test;
+			if (test instanceof PHPUnitTestCase && ((PHPUnitTestCase) test).isDataProviderCase()) {
+				sb.append(PHPUnitMessages.TestLabelProvider_0, StyledString.DECORATIONS_STYLER);
+				sb.append(unit.getName());
+			} else {
+				sb.append(unit.getName());
+			}
+
+			if (sb.length() == 0) {
+				sb.append(fileName).append(':').append(String.valueOf(line), StyledString.DECORATIONS_STYLER);
+			}
+
+			final PHPUnitTestException exception = unit.getException();
+			if (exception != null && StringUtils.isNotEmpty(exception.getMessage())) {
+				if (StringUtils.isNotEmpty(exception.getDiff())) {
+					sb.append(PHPUnitMessages.TestLabelProvider_1, StyledString.QUALIFIER_STYLER);
+				}
+			}
+			if (showExecutionTime) {
+				boolean showExecutionTime = unit.getStatus() > PHPUnitTest.STATUS_STARTED;
+				if (unit instanceof PHPUnitTestGroup
+						&& ((PHPUnitTestGroup) unit).getTotalCount() > unit.getRunCount()) {
+					showExecutionTime = false;
+				}
+				if (showExecutionTime) {
+					sb.append(String.format(" (%.3f s)", unit.getTime()), StyledString.COUNTER_STYLER); //$NON-NLS-1$
+				}
+			}
+
+		} else if (test instanceof PHPUnitTestEvent) {
+			final String message = ((PHPUnitTestEvent) test).getMessage();
+			String prefix = StringUtils.EMPTY;
+			if (test instanceof PHPUnitTestException) {
+				prefix = ((PHPUnitTestException) test).getExceptionClass();
+			} else if (test instanceof PHPUnitTestWarning) {
+				prefix = ((PHPUnitTestWarning) test).getCode();
+			}
+
+			if (StringUtils.isNotEmpty(message)) {
+				sb.append(prefix, StyledString.QUALIFIER_STYLER).append(": ", StyledString.QUALIFIER_STYLER) //$NON-NLS-1$
+						.append(message);
+			} else {
+				sb.append(prefix);
+			}
+		} else if (test instanceof PHPUnitTraceFrame) {
+			PHPUnitTraceFrame frame = (PHPUnitTraceFrame) test;
+			IPath path = new Path(frame.getFile());
+			sb.append(path.lastSegment(), StyledString.QUALIFIER_STYLER).append(" - ", StyledString.QUALIFIER_STYLER) //$NON-NLS-1$
+					.append(test.toString()).append("()").toString(); //$NON-NLS-1$
+		} else {
+			sb.append(test.toString());
+		}
+
+		return sb;
 	}
 
