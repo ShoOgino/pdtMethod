@@ -3,12 +3,12 @@
 		int phpTagOpenIndex = -1;
 		if (!isComment && ((phpTagOpenIndex = content.indexOf("<?")) != -1 //$NON-NLS-1$
 				|| (phpTagOpenIndex = content.indexOf("<%")) != -1)) { //$NON-NLS-1$
+			// reset the isPrevSpace
+			isPrevSpace = false;
 			handleSplittedPHPBlock(offset + phpTagOpenIndex, end);
 		}
 
 		else {
-			// reset the isPrevSpace while replacing the chars
-			isPrevSpace = false;
 			int startLine = document.getLineOfOffset(offset);
 			int endLine = document.getLineOfOffset(end);
 			int emptyLines = 0;
@@ -102,6 +102,10 @@
 			if (needToReplace && editsEnabled) {
 				insertString(offset, end, replaceBuffer.toString());
 			}
+			// keep isPrevSpace information, to correctly handle whitespaces
+			// around prefix and unary operators
+			isPrevSpace = replaceBuffer.length() > 0 ? replaceBuffer.charAt(replaceBuffer.length() - 1) == SPACE
+					: isPrevSpace;
 			if (recordCommentIndentVariables) {
 				recordCommentIndentVariables = false;
 				indentLengthForComment = lineWidth;
