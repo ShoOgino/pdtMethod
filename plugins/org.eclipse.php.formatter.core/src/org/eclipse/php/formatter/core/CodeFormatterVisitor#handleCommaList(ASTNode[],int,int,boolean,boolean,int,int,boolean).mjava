@@ -1,0 +1,221 @@
+	/**
+	 * handle comma list (e.g. 1,2,3)
+	 * 
+	 * @param array
+	 *            ASTNode array
+	 * @param lastPosition
+	 *            the position after last ASTNode
+	 * @param lastEmptyASTNodePosition
+	 * @param insertSpaceBeforeComma
+	 * @param insertSpaceAfterComma
+	 * @param lineWrapPolicy
+	 * @param indentGap
+	 * @param forceSplit
+	 * @return the last element end position
+	 */
+	private int handleCommaList(ASTNode[] array, int lastPosition, int lastEmptyASTNodePosition,
+			boolean insertSpaceBeforeComma, boolean insertSpaceAfterComma, int lineWrapPolicy, int indentGap,
+			boolean forceSplit) {
+		int oldIndentationLevel = indentationLevel;
+		boolean oldWasBinaryExpressionWrapped = wasBinaryExpressionWrapped;
+		if (array.length == 0) {
+			return lastPosition;
+		}
+
+		// save the changes index position
+		int savedlineWidth = lineWidth;
+		boolean savedIsPrevSpace = isPrevSpace;
+		boolean savedIsHeredocSemicolon = isHeredocSemicolon;
+		boolean savedIsPHPEqualTag = isPHPEqualTag;
+		String savedBuffer = replaceBuffer.toString();
+		int changesIndex = changes.size() - 1;
+		int savedLastPosition = lastPosition;
+		boolean isExtraIndentation = false;
+
+		// Map<Integer, CommentIndentationObject> commentIndentationMap = new
+		// HashMap<Integer, CommentIndentationObject>();
+		CommentIndentationObject cio = new CommentIndentationObject();
+		commentIndentationStack.add(cio);
+		// commentIndentationMap.put(array., cio);
+		boolean isFirst = true;
+		for (int i = 0; i < array.length; i++) {
+			if (!isFirst) {
+				if (insertSpaceBeforeComma) {
+					insertSpace();
+				}
+				appendToBuffer(COMMA);
+			}
+
+			// after the first element and wrap policy is except first element
+			if (i == 1 && lineWrapPolicy == WRAP_ALL_ELEMENTS_EXCEPT_FIRST) {
+				savedlineWidth = lineWidth;
+				savedIsPrevSpace = isPrevSpace;
+				savedIsHeredocSemicolon = isHeredocSemicolon;
+				savedIsPHPEqualTag = isPHPEqualTag;
+				savedBuffer = replaceBuffer.toString();
+				changesIndex = changes.size() - 1;
+				savedLastPosition = lastPosition;
+			}
+			boolean isInsertNewLine = false;
+			// NB: the *_ADD_* indentation policies are necessary to apply
+			// (extra) indentation only *after* the first list element was fully
+			// traveled down
+			switch (lineWrapPolicy) {
+			case NO_LINE_WRAP:
+				break;
+			case FIRST_WRAP_WHEN_NECESSARY: // Wrap only when necessary
+				if (lineWidth + array[i].getLength() > this.preferences.line_wrap_line_split) {
+					lineWrapPolicy = WRAP_WHEN_NECESSARY;
+					if (!cio.indented) {
+						indentationLevel += indentGap;
+					}
+					insertNewLines(1);
+					indent();
+					isInsertNewLine = true;
+				}
+				break;
+			case WRAP_WHEN_NECESSARY:
+				if (lineWidth + array[i].getLength() > this.preferences.line_wrap_line_split) {
+					insertNewLines(1);
+					indent();
+					isInsertNewLine = true;
+				}
+				break;
+			case WRAP_FIRST_ELEMENT: // Always wrap first element, others when
+										// necessary
+				revert(savedBuffer, changesIndex, savedlineWidth, savedIsPrevSpace, savedIsHeredocSemicolon,
+						savedIsPHPEqualTag);
+				lastPosition = savedLastPosition;
+				i = 0;
+				lineWrapPolicy = WRAP_WHEN_NECESSARY;
+				if (!cio.indented) {
+					indentationLevel += indentGap;
+				}
+				insertNewLines(1);
+				indent();
+				isInsertNewLine = true;
+				break;
+			case WRAP_ALL_ELEMENTS: // Wrap all elements, every element on a new
+									// line
+				if (forceSplit || lineWidth + array[i].getLength() > this.preferences.line_wrap_line_split) {
+					revert(savedBuffer, changesIndex, savedlineWidth, savedIsPrevSpace, savedIsHeredocSemicolon,
+							savedIsPHPEqualTag);
+					lastPosition = savedLastPosition;
+					i = 0;
+					lineWrapPolicy = ALWAYS_WRAP_ELEMENT;
+					if (!cio.indented) {
+						indentationLevel += indentGap;
+					}
+					insertNewLines(1);
+					indent();
+					isInsertNewLine = true;
+				}
+				break;
+			case WRAP_ALL_ELEMENTS_NO_INDENT_FIRST: // Wrap all elements, indent
+													// all but the first element
+				if (forceSplit || lineWidth + array[i].getLength() > this.preferences.line_wrap_line_split) {
+					// revert the buffer
+					revert(savedBuffer, changesIndex, savedlineWidth, savedIsPrevSpace, savedIsHeredocSemicolon,
+							savedIsPHPEqualTag);
+					lastPosition = savedLastPosition;
+					i = 0;
+					lineWrapPolicy = ALWAYS_WRAP_ELEMENT_ADD_LEVEL;
+					if (!cio.indented) {
+						indentationLevel += indentGap;
+					}
+					insertNewLines(1);
+					indent();
+					isInsertNewLine = true;
+				}
+				break;
+			case WRAP_ALL_ELEMENTS_EXCEPT_FIRST: // Wrap all elements, except
+													// first element if not
+													// necessary
+				if (forceSplit || lineWidth + array[i].getLength() > this.preferences.line_wrap_line_split) {
+					// revert
+					revert(savedBuffer, changesIndex, savedlineWidth, savedIsPrevSpace, savedIsHeredocSemicolon,
+							savedIsPHPEqualTag);
+					lastPosition = savedLastPosition;
+					i = (i > 0) ? 1 : 0;
+					lineWrapPolicy = ALWAYS_WRAP_ELEMENT;
+					if (!cio.indented) {
+						indentationLevel += indentGap;
+					}
+					insertNewLines(1);
+					indent();
+					isInsertNewLine = true;
+				}
+				break;
+			case ALWAYS_WRAP_ELEMENT_ADD_LEVEL:
+				// increase the indentation level after the first element
+				indentationLevel++;
+				isExtraIndentation = true;
+				lineWrapPolicy = ALWAYS_WRAP_ELEMENT;
+				// no break here, continue with ALWAYS_WRAP_ELEMENT
+			case ALWAYS_WRAP_ELEMENT:
+				insertNewLines(1);
+				indent();
+				isInsertNewLine = true;
+				break;
+			}
+
+			if (!isInsertNewLine && !isFirst && insertSpaceAfterComma) {
+				insertSpace();
+			}
+			if (isInsertNewLine) {
+				wasBinaryExpressionWrapped = true;
+			}
+
+			if (lastEmptyASTNodePosition >= 0 && array[i].getLength() == 0) {
+				// https://bugs.eclipse.org/bugs/show_bug.cgi?id=531468
+				// We have a (fake) empty ASTNode. By construction, whitespaces "around" empty
+				// ASTNodes are always located "after" ASTNode.getStart() (and
+				// ASTNode.getEnd()), so we have to "eat" those whitespaces to correctly
+				// generate/calculate ReplaceEdits in handleCharsWithoutComments().
+				int end = i < array.length - 1 ? array[i + 1].getStart() : lastEmptyASTNodePosition;
+				// handleCharsWithoutComments() checks if offset - lastPosition ==
+				// replaceBuffer.length(), so don't "eat" too many whitespaces.
+				end = Math.min(lastPosition + replaceBuffer.length(), end);
+				int offset = array[i].getStart();
+				for (; offset < end; offset++) {
+					char currChar = '_';
+					try {
+						currChar = document.getChar(offset);
+					} catch (BadLocationException e) {
+						Logger.logException(e);
+					}
+					if (currChar != ' ' && currChar != '\t' && currChar != '\r' && currChar != '\n') {
+						break;
+					}
+				}
+				handleChars1(lastPosition, offset, oldIndentationLevel != indentationLevel, indentGap);
+				lastPosition = offset;
+			} else {
+				handleChars1(lastPosition, array[i].getStart(), oldIndentationLevel != indentationLevel, indentGap);
+				lastPosition = array[i].getEnd();
+			}
+
+			int oldBinaryExpressionLineWrapPolicy = binaryExpressionLineWrapPolicy;
+			int oldBinaryExpressionIndentGap = binaryExpressionIndentGap;
+			// reset the policy for binary expression states
+			binaryExpressionLineWrapPolicy = -1;
+			binaryExpressionIndentGap = 0;
+
+			array[i].accept(this);
+
+			binaryExpressionLineWrapPolicy = oldBinaryExpressionLineWrapPolicy;
+			binaryExpressionIndentGap = oldBinaryExpressionIndentGap;
+
+			isFirst = false;
+		}
+		commentIndentationStack.pop();
+		if (isExtraIndentation) {
+			indentationLevel--;
+		}
+
+		indentationLevel = oldIndentationLevel;
+		wasBinaryExpressionWrapped = oldWasBinaryExpressionWrapped;
+
+		return lastPosition;
+	}
+
