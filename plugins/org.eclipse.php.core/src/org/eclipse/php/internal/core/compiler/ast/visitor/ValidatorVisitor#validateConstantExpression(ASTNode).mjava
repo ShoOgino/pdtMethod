@@ -1,0 +1,38 @@
+	private void validateConstantExpression(ASTNode astNode) {
+		if (astNode == null || astNode instanceof Scalar || astNode instanceof ConstantReference) {
+			return;
+		}
+		if (astNode instanceof UnaryOperation) {
+			UnaryOperation op = (UnaryOperation) astNode;
+			if (version.isLessThan(PHPVersion.PHP5_6) && op.getOperatorType() != UnaryOperation.OP_MINUS
+					&& op.getOperatorType() != UnaryOperation.OP_PLUS) {
+				reportProblem(astNode, Messages.InvalidConstantExpression,
+						PHPProblemIdentifier.InvalidConstantExpression, ProblemSeverities.Error);
+			} else {
+				validateConstantExpression(op.getExpr());
+			}
+		} else if (astNode instanceof StaticConstantAccess) {
+			StaticConstantAccess acc = (StaticConstantAccess) astNode;
+			if (!(acc.getDispatcher() instanceof FullyQualifiedReference)) {
+				reportProblem(acc.getDispatcher(), Messages.DynamicClassNotAllowed,
+						PHPProblemIdentifier.InvalidConstantExpression, ProblemSeverities.Error);
+			}
+		} else if (version.isGreaterThan(PHPVersion.PHP5_5) && astNode instanceof InfixExpression) {
+			InfixExpression expr = (InfixExpression) astNode;
+			validateConstantExpression(expr.getLeft());
+			validateConstantExpression(expr.getRight());
+		} else if (version.isGreaterThan(PHPVersion.PHP5_5) && astNode instanceof ArrayCreation) {
+			((ArrayCreation) astNode).getElements().stream().forEach(n -> {
+				validateConstantExpression(n.getKey());
+				validateConstantExpression(n.getValue());
+			});
+		} else if (version.isGreaterThan(PHPVersion.PHP5_5) && astNode instanceof ReflectionArrayVariableReference) {
+			ReflectionArrayVariableReference ref = (ReflectionArrayVariableReference) astNode;
+			validateConstantExpression(ref.getExpression());
+			validateConstantExpression(ref.getIndex());
+		} else {
+			reportProblem(astNode, Messages.InvalidConstantExpression, PHPProblemIdentifier.InvalidConstantExpression,
+					ProblemSeverities.Error);
+		}
+	}
+
