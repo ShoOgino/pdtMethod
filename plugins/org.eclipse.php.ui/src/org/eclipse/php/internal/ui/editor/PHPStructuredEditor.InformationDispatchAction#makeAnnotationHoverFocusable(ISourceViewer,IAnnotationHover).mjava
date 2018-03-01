@@ -12,8 +12,9 @@
 				final IAnnotationHover annotationHover) {
 			final IVerticalRulerInfo info = getVerticalRuler();
 			final int line = info.getLineOfLastMouseButtonActivity();
-			if (line == -1)
+			if (line == -1) {
 				return false;
+			}
 
 			try {
 
@@ -22,8 +23,9 @@
 				if (annotationHover instanceof IAnnotationHoverExtension) {
 					final IAnnotationHoverExtension extension = (IAnnotationHoverExtension) annotationHover;
 					final ILineRange hoverLineRange = extension.getHoverLineRange(sourceViewer, line);
-					if (hoverLineRange == null)
+					if (hoverLineRange == null) {
 						return false;
+					}
 					final int maxVisibleLines = Integer.MAX_VALUE; // allow any
 					// number of
 					// lines
@@ -32,8 +34,9 @@
 					// as we
 					// support scrolling
 					hoverInfo = extension.getHoverInfo(sourceViewer, hoverLineRange, maxVisibleLines);
-				} else
+				} else {
 					hoverInfo = annotationHover.getHoverInfo(sourceViewer, line);
+				}
 
 				// hover region: the beginning of the concerned line to place
 				// the control right over the line
@@ -48,7 +51,7 @@
 				 * XXX: This is a hack to avoid API changes at the end of 3.2,
 				 */
 				if ("org.eclipse.jface.text.source.projection.ProjectionAnnotationHover" //$NON-NLS-1$
-						.equals(annotationHover.getClass().getName()))
+						.equals(annotationHover.getClass().getName())) {
 					controlCreator = new IInformationControlCreator() {
 						@Override
 						public IInformationControl createInformationControl(final Shell shell) {
@@ -57,11 +60,12 @@
 							return new PHPSourceViewerInformationControl(shell, shellStyle, style);
 						}
 					};
-				else if (annotationHover instanceof IInformationProviderExtension2)
+				} else if (annotationHover instanceof IInformationProviderExtension2) {
 					controlCreator = ((IInformationProviderExtension2) annotationHover)
 							.getInformationPresenterControlCreator();
-				else if (annotationHover instanceof IAnnotationHoverExtension)
+				} else if (annotationHover instanceof IAnnotationHoverExtension) {
 					controlCreator = ((IAnnotationHoverExtension) annotationHover).getHoverControlCreator();
+				}
 
 				final IInformationProvider informationProvider = new InformationProvider(new Region(offset, 0),
 						hoverInfo, controlCreator);

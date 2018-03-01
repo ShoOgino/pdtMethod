@@ -7,16 +7,19 @@
 	 */
 	@Override
 	protected void installTextDragAndDrop(final ISourceViewer viewer) {
-		if (viewer == null || fIsTextDragAndDropInstalled)
+		if (viewer == null || fIsTextDragAndDropInstalled) {
 			return;
+		}
 
 		final IDragAndDropService dndService = getSite().getService(IDragAndDropService.class);
-		if (dndService == null)
+		if (dndService == null) {
 			return;
+		}
 
 		final StyledText st = viewer.getTextWidget();
-		if (st == null)
+		if (st == null) {
 			return;
+		}
 
 		// Install drag source
 		final ISelectionProvider selectionProvider = viewer.getSelectionProvider();
@@ -34,11 +37,12 @@
 					event.doit = isLocationSelected(new Point(event.x, event.y));
 
 					ISelection selection = selectionProvider.getSelection();
-					if (selection instanceof ITextSelection)
+					if (selection instanceof ITextSelection) {
 						fSelectedText = ((ITextSelection) selection).getText();
-					else
+					} else {
 						// fallback to widget
 						fSelectedText = st.getSelectionText();
+					}
 				} catch (IllegalArgumentException ex) {
 					event.doit = false;
 				}
@@ -46,13 +50,15 @@
 
 			private boolean isLocationSelected(Point point) {
 				// FIXME: https://bugs.eclipse.org/bugs/show_bug.cgi?id=260922
-				if (isBlockSelectionModeEnabled())
+				if (isBlockSelectionModeEnabled()) {
 					return false;
+				}
 
 				int offset = st.getOffsetAtLocation(point);
 				Point p = st.getLocationAtOffset(offset);
-				if (p.x > point.x)
+				if (p.x > point.x) {
 					offset--;
+				}
 				return offset >= fSelection.x && offset < fSelection.y;
 			}
 
@@ -69,15 +75,17 @@
 						Point newSelection = st.getSelection();
 						int length = fSelection.y - fSelection.x;
 						int delta = 0;
-						if (newSelection.x < fSelection.x)
+						if (newSelection.x < fSelection.x) {
 							delta = length;
+						}
 						st.replaceTextRange(fSelection.x + delta, length, ""); //$NON-NLS-1$
 
 						if (fTextDragAndDropToken == null) {
 							// Move in same editor - end compound change
 							IRewriteTarget target = (IRewriteTarget) getAdapter(IRewriteTarget.class);
-							if (target != null)
+							if (target != null) {
 								target.endCompoundChange();
+							}
 						}
 
 					}
@@ -138,8 +146,9 @@
 
 						// Start compound change
 						IRewriteTarget target = (IRewriteTarget) getAdapter(IRewriteTarget.class);
-						if (target != null)
+						if (target != null) {
 							target.beginCompoundChange();
+						}
 					}
 
 					if (!validateEditorInputState()) {

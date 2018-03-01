@@ -7,8 +7,9 @@
 		dialog.setMessage(PHPDebugUIMessages.InstalledPHPsBlock_9);
 		dialog.setText(PHPDebugUIMessages.InstalledPHPsBlock_10);
 		final String path = dialog.open();
-		if (path == null)
+		if (path == null) {
 			return;
+		}
 		final File rootDir = new File(path);
 		final List<File> locations = new ArrayList<>();
 		final List<PHPexeItem> found = new ArrayList<>();
@@ -21,26 +22,30 @@
 					monitor.setTaskName(PHPDebugUIMessages.InstalledPHPsBlock_Processing_search_results);
 					Iterator<File> iter2 = locations.iterator();
 					while (iter2.hasNext()) {
-						if (monitor.isCanceled())
+						if (monitor.isCanceled()) {
 							break;
+						}
 						File location = iter2.next();
 						PHPexeItem phpExe = new PHPexeItem(null, location, null, null, true);
-						if (phpExe.getName() == null)
+						if (phpExe.getName() == null) {
 							continue;
+						}
 						String nameCopy = new String(phpExe.getName());
 						monitor.subTask(MessageFormat
 								.format(PHPDebugUIMessages.InstalledPHPsBlock_Fetching_php_exe_info, nameCopy));
 						List<PHPModuleInfo> modules = PHPExeUtil.getModules(phpExe);
 						AbstractDebuggerConfiguration[] debuggers = PHPDebuggersRegistry.getDebuggersConfigurations();
 						for (AbstractDebuggerConfiguration debugger : debuggers) {
-							for (PHPModuleInfo m : modules)
+							for (PHPModuleInfo m : modules) {
 								if (m.getName().equalsIgnoreCase(debugger.getModuleId())) {
 									phpExe.setDebuggerID(debugger.getDebuggerId());
 									break;
 								}
+							}
 						}
-						if (phpExe.getDebuggerID() == null)
+						if (phpExe.getDebuggerID() == null) {
 							phpExe.setDebuggerID(PHPDebuggersRegistry.NONE_DEBUGGER_ID);
+						}
 						int i = 1;
 						// Check for duplicated names
 						duplicates: while (true) {
@@ -48,11 +53,12 @@
 								nameCopy = phpExe.getName() + ' ' + '[' + i++ + ']';
 								continue duplicates;
 							} else {
-								for (PHPexeItem item : found)
+								for (PHPexeItem item : found) {
 									if (nameCopy.equalsIgnoreCase(item.getName())) {
 										nameCopy = phpExe.getName() + ' ' + '[' + i++ + ']';
 										continue duplicates;
 									}
+								}
 							}
 							break duplicates;
 						}

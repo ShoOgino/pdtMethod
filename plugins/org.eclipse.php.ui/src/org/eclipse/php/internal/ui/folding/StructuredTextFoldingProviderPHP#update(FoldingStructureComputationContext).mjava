@@ -1,6 +1,7 @@
 	private void update(FoldingStructureComputationContext ctx) {
-		if (ctx == null)
+		if (ctx == null) {
 			return;
+		}
 
 		Map<PHPProjectionAnnotation, Position> additions = new HashMap<>();
 		List<PHPProjectionAnnotation> deletions = new ArrayList<>();
@@ -29,8 +30,9 @@
 					&& element.getElementType() == IModelElement.TYPE;
 			List<?> annotations = oldStructure.get(element);
 			if (annotations == null) {
-				if (!isMalformedAnonymousType)
+				if (!isMalformedAnonymousType) {
 					additions.put(newAnnotation, newPosition);
+				}
 			} else {
 				Iterator<?> x = annotations.iterator();
 				boolean matched = false;
@@ -45,11 +47,13 @@
 								&& (!newPosition.equals(existingPosition) || updateCollapsedState)) {
 							existingPosition.setOffset(newPosition.getOffset());
 							existingPosition.setLength(newPosition.getLength());
-							if (updateCollapsedState)
-								if (newAnnotation.isCollapsed())
+							if (updateCollapsedState) {
+								if (newAnnotation.isCollapsed()) {
 									existingAnnotation.markCollapsed();
-								else
+								} else {
 									existingAnnotation.markExpanded();
+								}
+							}
 							updates.add(existingAnnotation);
 						}
 						matched = true;
@@ -57,19 +61,22 @@
 						break;
 					}
 				}
-				if (!matched)
+				if (!matched) {
 					additions.put(newAnnotation, newPosition);
+				}
 
-				if (annotations.isEmpty())
+				if (annotations.isEmpty()) {
 					oldStructure.remove(element);
+				}
 			}
 		}
 
 		for (Object v : oldStructure.values()) {
 			List<?> list = (List<?>) v;
 			int size = list.size();
-			for (int i = 0; i < size; i++)
+			for (int i = 0; i < size; i++) {
 				deletions.add(((Tuple) list.get(i)).annotation);
+			}
 		}
 
 		match(deletions, additions, updates, ctx);

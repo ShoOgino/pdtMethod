@@ -1,10 +1,11 @@
 	private static IReorgPolicy createReorgPolicy(boolean copy, IResource[] selectedResources,
 			IModelElement[] selectedScriptElements) throws ModelException {
 		final IReorgPolicy NO;
-		if (copy)
+		if (copy) {
 			NO = new NoCopyPolicy();
-		else
+		} else {
 			NO = new NoMovePolicy();
+		}
 
 		ActualSelectionComputer selectionComputer = new ActualSelectionComputer(selectedScriptElements,
 				selectedResources);
@@ -21,39 +22,47 @@
 				|| ReorgUtils.hasElementsOfType(modelElements, IModelElement.SCRIPT_PROJECT)
 				|| ReorgUtils.hasElementsOfType(modelElements, IModelElement.SCRIPT_MODEL)
 				|| ReorgUtils.hasElementsOfType(resources, IResource.PROJECT | IResource.ROOT)
-				|| !haveCommonParent(resources, modelElements))
+				|| !haveCommonParent(resources, modelElements)) {
 			return NO;
+		}
 
 		if (ReorgUtils.hasElementsOfType(modelElements, IModelElement.SCRIPT_FOLDER)) {
-			if (resources.length != 0 || ReorgUtils.hasElementsNotOfType(modelElements, IModelElement.SCRIPT_FOLDER))
+			if (resources.length != 0 || ReorgUtils.hasElementsNotOfType(modelElements, IModelElement.SCRIPT_FOLDER)) {
 				return NO;
-			if (copy)
+			}
+			if (copy) {
 				return new CopyPackagesPolicy(ArrayTypeConverter.toPackageArray(modelElements));
-			else
+			} else {
 				return new MovePackagesPolicy(ArrayTypeConverter.toPackageArray(modelElements));
+			}
 		}
 
 		if (ReorgUtils.hasElementsOfType(modelElements, IModelElement.PROJECT_FRAGMENT)) {
-			if (resources.length != 0 || ReorgUtils.hasElementsNotOfType(modelElements, IModelElement.PROJECT_FRAGMENT))
+			if (resources.length != 0 || ReorgUtils.hasElementsNotOfType(modelElements, IModelElement.PROJECT_FRAGMENT)) {
 				return NO;
-			if (copy)
+			}
+			if (copy) {
 				return new CopyProjectFragmentsPolicy(ArrayTypeConverter.toProjectFragmentArray(modelElements));
-			else
+			} else {
 				return new MoveProjectFragmentsPolicy(ArrayTypeConverter.toProjectFragmentArray(modelElements));
+			}
 		}
 
 		if (ReorgUtils.hasElementsOfType(resources, IResource.FILE | IResource.FOLDER)
 				|| ReorgUtils.hasElementsOfType(modelElements, IModelElement.SOURCE_MODULE)) {
-			if (ReorgUtils.hasElementsNotOfType(modelElements, IModelElement.SOURCE_MODULE))
+			if (ReorgUtils.hasElementsNotOfType(modelElements, IModelElement.SOURCE_MODULE)) {
 				return NO;
-			if (ReorgUtils.hasElementsNotOfType(resources, IResource.FILE | IResource.FOLDER))
+			}
+			if (ReorgUtils.hasElementsNotOfType(resources, IResource.FILE | IResource.FOLDER)) {
 				return NO;
-			if (copy)
+			}
+			if (copy) {
 				return new CopyFilesFoldersAndCusPolicy(ReorgUtils.getFiles(resources),
 						ReorgUtils.getFolders(resources), ArrayTypeConverter.toCuArray(modelElements));
-			else
+			} else {
 				return new MoveFilesFoldersAndCusPolicy(ReorgUtils.getFiles(resources),
 						ReorgUtils.getFolders(resources), ArrayTypeConverter.toCuArray(modelElements));
+			}
 		}
 
 		if (hasElementsSmallerThanCuOrClassFile(modelElements)) {
@@ -61,9 +70,9 @@
 			Assert.isTrue(resources.length == 0);
 			Assert.isTrue(!ReorgUtils.hasElementsOfType(modelElements, IModelElement.SOURCE_MODULE));
 			Assert.isTrue(!hasElementsLargerThanCuOrClassFile(modelElements));
-			if (copy)
+			if (copy) {
 				return new CopySubCuElementsPolicy(modelElements);
-			else {
+			} else {
 				if (DLTKCore.DEBUG) {
 					System.err.println("TODO: ReorgPolicyFactory: Add MoveSubCuElementsPolicy support"); //$NON-NLS-1$
 				}
