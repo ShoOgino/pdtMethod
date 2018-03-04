@@ -1,118 +1,90 @@
 	/**
-	 * Test a connection with the user name and password that are currently
-	 * typed in their designated boxes. We assume here that the validation of
-	 * the dialog already eliminated a situation where the Test button is
-	 * enabled when there is a missing user-name or password.
+	 * Test a connection with the user name and password that are currently typed in
+	 * their designated boxes. We assume here that the validation of the dialog
+	 * already eliminated a situation where the Test button is enabled when there is
+	 * a missing user-name or password.
 	 */
 	protected void testTunnelConnection() {
 		testButton.setEnabled(false);
-		testResultLabel.setForeground(
-				Display.getDefault().getSystemColor(SWT.COLOR_BLUE));
-		testResultLabel.setText(
-				Messages.AbstractProfileWebLaunchSettingsSection_Testing_connection);
-		testResultLabel.setCursor(
-				Display.getDefault().getSystemCursor(SWT.CURSOR_WAIT));
+		testResultLabel.setForeground(Display.getDefault().getSystemColor(SWT.COLOR_BLUE));
+		testResultLabel.setText(Messages.AbstractProfileWebLaunchSettingsSection_Testing_connection);
+		testResultLabel.setCursor(Display.getDefault().getSystemCursor(SWT.CURSOR_WAIT));
 		testResultLabel.setData("info", null); //$NON-NLS-1$
-		Job connectionTest = new UIJob(
-				Messages.AbstractProfileWebLaunchSettingsSection_SSH_tunnel_test) {
+		Job connectionTest = new UIJob(Messages.AbstractProfileWebLaunchSettingsSection_SSH_tunnel_test) {
 			@Override
 			public IStatus runInUIThread(IProgressMonitor monitor) {
 				try {
-					String remoteHost = PHPLaunchUtilities
-							.getDebugHost(getConfiguration());
-					int port = PHPLaunchUtilities
-							.getDebugPort(getConfiguration());
-					if (remoteHost == null || remoteHost.length() == 0
-							|| port < 0) {
+					String remoteHost = PHPLaunchUtilities.getDebugHost(getConfiguration());
+					int port = PHPLaunchUtilities.getDebugPort(getConfiguration());
+					if (remoteHost == null || remoteHost.length() == 0 || port < 0) {
 						// The host was not yet set in the launch configuration.
 						testButton.setEnabled(true);
-						testResultLabel.setCursor(Display.getDefault()
-								.getSystemCursor(SWT.CURSOR_HAND));
-						testResultLabel.setForeground(Display.getDefault()
-								.getSystemColor(SWT.COLOR_DARK_RED));
+						testResultLabel.setCursor(Display.getDefault().getSystemCursor(SWT.CURSOR_HAND));
+						testResultLabel.setForeground(Display.getDefault().getSystemColor(SWT.COLOR_DARK_RED));
 						if (port > -1) {
-							testResultLabel.setText(
-									Messages.AbstractProfileWebLaunchSettingsSection_Missing_host);
+							testResultLabel.setText(Messages.AbstractProfileWebLaunchSettingsSection_Missing_host);
 							testResultLabel.setData("info", //$NON-NLS-1$
 									Messages.AbstractProfileWebLaunchSettingsSection_Missing_host_address);
 						} else {
-							testResultLabel.setText(
-									Messages.AbstractProfileWebLaunchSettingsSection_Error);
+							testResultLabel.setText(Messages.AbstractProfileWebLaunchSettingsSection_Error);
 							testResultLabel.setData("info", //$NON-NLS-1$
 									Messages.AbstractProfileWebLaunchSettingsSection_Could_not_determine_port);
 						}
 					}
-					testResultLabel.setCursor(Display.getDefault()
-							.getSystemCursor(SWT.CURSOR_WAIT));
-					IStatus connectionStatus = TunnelTester.test(remoteHost,
-							userName.getText().trim(),
+					testResultLabel.setCursor(Display.getDefault().getSystemCursor(SWT.CURSOR_WAIT));
+					IStatus connectionStatus = TunnelTester.test(remoteHost, userName.getText().trim(),
 							password.getText().trim(), port, port);
 					testButton.setEnabled(true);
 					testResultLabel.setCursor(null);
 					if (connectionStatus.isOK()) {
-						testResultLabel.setForeground(Display.getDefault()
-								.getSystemColor(SWT.COLOR_DARK_GREEN));
-						testResultLabel.setText(
-								Messages.AbstractProfileWebLaunchSettingsSection_Successfully_connected);
+						testResultLabel.setForeground(Display.getDefault().getSystemColor(SWT.COLOR_DARK_GREEN));
+						testResultLabel
+								.setText(Messages.AbstractProfileWebLaunchSettingsSection_Successfully_connected);
 					} else if (connectionStatus.isMultiStatus()) {
 						/*
-						 * A case where the connection indicate that it was
-						 * successful, however, we were still not able to verify
-						 * that.
+						 * A case where the connection indicate that it was successful, however, we were
+						 * still not able to verify that.
 						 */
-						testResultLabel.setCursor(Display.getDefault()
-								.getSystemCursor(SWT.CURSOR_HAND));
-						testResultLabel.setForeground(Display.getDefault()
-								.getSystemColor(SWT.COLOR_DARK_YELLOW));
-						testResultLabel.setText(
-								Messages.AbstractProfileWebLaunchSettingsSection_Undetermined);
+						testResultLabel.setCursor(Display.getDefault().getSystemCursor(SWT.CURSOR_HAND));
+						testResultLabel.setForeground(Display.getDefault().getSystemColor(SWT.COLOR_DARK_YELLOW));
+						testResultLabel.setText(Messages.AbstractProfileWebLaunchSettingsSection_Undetermined);
 						testResultLabel.setData("info", //$NON-NLS-1$
 								connectionStatus.getMessage());
 						/*
-						 * Update the password fields in case the multi status
-						 * also contains a password change information.
+						 * Update the password fields in case the multi status also contains a password
+						 * change information.
 						 */
 						IStatus[] children = connectionStatus.getChildren();
 						if (children != null) {
 							for (IStatus child : children) {
-								if (child.getSeverity() == IStatus.INFO && child
-										.getCode() == TunnelTester.PASSWORD_CHANGED_CODE) {
+								if (child.getSeverity() == IStatus.INFO
+										&& child.getCode() == TunnelTester.PASSWORD_CHANGED_CODE) {
 									password.setText(child.getMessage());
 									break;
 								}
 							}
 						}
-					} else if (connectionStatus
-							.getSeverity() == IStatus.WARNING) {
-						testResultLabel.setCursor(Display.getDefault()
-								.getSystemCursor(SWT.CURSOR_HAND));
-						testResultLabel.setForeground(Display.getDefault()
-								.getSystemColor(SWT.COLOR_DARK_GREEN));
-						testResultLabel.setText(
-								Messages.AbstractProfileWebLaunchSettingsSection_Connected_with_warnings);
+					} else if (connectionStatus.getSeverity() == IStatus.WARNING) {
+						testResultLabel.setCursor(Display.getDefault().getSystemCursor(SWT.CURSOR_HAND));
+						testResultLabel.setForeground(Display.getDefault().getSystemColor(SWT.COLOR_DARK_GREEN));
+						testResultLabel
+								.setText(Messages.AbstractProfileWebLaunchSettingsSection_Connected_with_warnings);
 						testResultLabel.setData("info", //$NON-NLS-1$
 								connectionStatus.getMessage());
 					} else if (connectionStatus.getSeverity() == IStatus.INFO) {
-						testResultLabel.setForeground(Display.getDefault()
-								.getSystemColor(SWT.COLOR_DARK_GREEN));
-						testResultLabel.setText(
-								Messages.AbstractProfileWebLaunchSettingsSection_Connected_with_warnings);
+						testResultLabel.setForeground(Display.getDefault().getSystemColor(SWT.COLOR_DARK_GREEN));
+						testResultLabel
+								.setText(Messages.AbstractProfileWebLaunchSettingsSection_Connected_with_warnings);
 						/*
-						 * Update the password field in case that the info
-						 * indicated a password change.
+						 * Update the password field in case that the info indicated a password change.
 						 */
-						if (connectionStatus
-								.getCode() == TunnelTester.PASSWORD_CHANGED_CODE) {
+						if (connectionStatus.getCode() == TunnelTester.PASSWORD_CHANGED_CODE) {
 							password.setText(connectionStatus.getMessage());
 						}
-					} else if (connectionStatus
-							.getSeverity() == IStatus.ERROR) {
-						testResultLabel.setCursor(Display.getDefault()
-								.getSystemCursor(SWT.CURSOR_HAND));
-						testResultLabel.setForeground(Display.getDefault()
-								.getSystemColor(SWT.COLOR_DARK_RED));
-						testResultLabel.setText(
-								Messages.AbstractProfileWebLaunchSettingsSection_Failed_to_connect);
+					} else if (connectionStatus.getSeverity() == IStatus.ERROR) {
+						testResultLabel.setCursor(Display.getDefault().getSystemCursor(SWT.CURSOR_HAND));
+						testResultLabel.setForeground(Display.getDefault().getSystemColor(SWT.COLOR_DARK_RED));
+						testResultLabel.setText(Messages.AbstractProfileWebLaunchSettingsSection_Failed_to_connect);
 						testResultLabel.setData("info", //$NON-NLS-1$
 								connectionStatus.getMessage());
 					}
@@ -120,8 +92,7 @@
 					testButton.setEnabled(true);
 					testResultLabel.setCursor(null);
 					testResultLabel.setForeground(null);
-					testResultLabel.setText(
-							Messages.AbstractProfileWebLaunchSettingsSection_Canceled);
+					testResultLabel.setText(Messages.AbstractProfileWebLaunchSettingsSection_Canceled);
 				}
 				return org.eclipse.core.runtime.Status.OK_STATUS;
 			}
