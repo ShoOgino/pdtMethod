@@ -1,4 +1,5 @@
-	private void handleCharsWithoutComments(int offset, int end, boolean isComment) throws BadLocationException {
+	private void handleCharsWithoutComments(int offset, int end, boolean isComment, boolean doIndentForComment)
+			throws BadLocationException {
 		String content = document.get(offset, end - offset).toLowerCase();
 		int phpTagOpenIndex = -1;
 		if (!isComment && ((phpTagOpenIndex = content.indexOf("<?")) != -1 //$NON-NLS-1$
@@ -6,9 +7,7 @@
 			// reset the isPrevSpace
 			isPrevSpace = false;
 			handleSplittedPHPBlock(offset + phpTagOpenIndex, end);
-		}
-
-		else {
+		} else {
 			int startLine = document.getLineOfOffset(offset);
 			int endLine = document.getLineOfOffset(end);
 			int emptyLines = 0;
@@ -41,33 +40,27 @@
 					// newline.
 					// XXX: write a method that has same indentation logic as
 					// method insertNewLines(int numberOfLines)
-					for (int line = newLinesInBuffer == 0 ? 1 : newLinesInBuffer; line < emptyLines + 1; line++) {
-						if (preferences.indent_empty_lines && !isPHPEqualTag
-								&& line == (newLinesInBuffer == 0 ? 1 : newLinesInBuffer)
+					int firstLine = newLinesInBuffer == 0 ? 1 : newLinesInBuffer;
+					for (int line = firstLine; line < emptyLines + 1; line++) {
+						if (preferences.indent_empty_lines && !isPHPEqualTag && line == firstLine
 								&& replaceBuffer.toString().endsWith(lineSeparator)) {
-							if (inComment) {
-								if (!doNotIndent) {
-									indentForComment(indentationLevelDescending);
-								}
+							if (doIndentForComment) {
+								indentForComment(indentationLevelDescending);
 							} else {
 								indent();
 							}
 						}
 						insertNewLine();
 						if (preferences.indent_empty_lines && !isPHPEqualTag && line < emptyLines) {
-							if (inComment) {
-								if (!doNotIndent) {
-									indentForComment(indentationLevelDescending);
-								}
+							if (doIndentForComment) {
+								indentForComment(indentationLevelDescending);
 							} else {
 								indent();
 							}
 						}
 					}
-					if (inComment) {
-						if (!doNotIndent) {
-							indentForComment(indentationLevelDescending);
-						}
+					if (doIndentForComment) {
+						indentForComment(indentationLevelDescending);
 					} else {
 						indent();
 					}
