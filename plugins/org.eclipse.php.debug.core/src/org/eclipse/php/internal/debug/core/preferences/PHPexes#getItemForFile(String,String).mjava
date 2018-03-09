@@ -12,21 +12,19 @@
 	public PHPexeItem getItemForFile(String exeFilePath, String iniFilePath) {
 		Set<String> installedDebuggers = PHPDebuggersRegistry.getDebuggersIds();
 		for (String debuggerId : installedDebuggers) {
-			HashMap<String, PHPexeItem> installedExes = items.get(debuggerId);
-			if (installedExes != null) {
-				for (Entry<String, PHPexeItem> entry : installedExes.entrySet()) {
-					PHPexeItem exeItem = entry.getValue();
-					// Check for ini equality
-					boolean iniEquals = true;
-					if (iniFilePath == null) {
-						iniEquals = exeItem.getINILocation() == null;
-					} else {
-						iniEquals = exeItem.getINILocation() == null ? iniFilePath.equals("") //$NON-NLS-1$
-								: iniFilePath.equals(exeItem.getINILocation().toString());
-					}
-					if (iniEquals && exeFilePath.equals(exeItem.getExecutable().toString())) {
-						return exeItem;
-					}
+			Map<String, PHPexeItem> installedExes = items.getOrDefault(debuggerId, Collections.emptyMap());
+			for (Entry<String, PHPexeItem> entry : installedExes.entrySet()) {
+				PHPexeItem exeItem = entry.getValue();
+				// Check for ini equality
+				boolean iniEquals = true;
+				if (iniFilePath == null) {
+					iniEquals = exeItem.getINILocation() == null;
+				} else {
+					iniEquals = exeItem.getINILocation() == null ? iniFilePath.equals("") //$NON-NLS-1$
+							: iniFilePath.equals(exeItem.getINILocation().toString());
+				}
+				if (iniEquals && exeFilePath.equals(exeItem.getExecutable().toString())) {
+					return exeItem;
 				}
 			}
 		}
