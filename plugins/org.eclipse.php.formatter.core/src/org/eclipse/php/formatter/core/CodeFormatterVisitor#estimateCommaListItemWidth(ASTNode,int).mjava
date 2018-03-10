@@ -1,0 +1,30 @@
+	private int estimateCommaListItemWidth(ASTNode node, int maxLineWidth) {
+		int lineW = lineWidth;
+		try {
+			int lineForStart = document.getLineOfOffset(node.getStart());
+			int lineForEnd = document.getLineOfOffset(node.getEnd());
+
+			if (lineForStart == lineForEnd) {
+				lineW += node.getLength();
+			} else {
+				String content = document.get(node.getStart(), node.getLength());
+				if (lineW + content.length() <= maxLineWidth) {
+					lineW += content.length();
+				} else {
+					// check if the node length is still greater than
+					// maxLineWidth when we remove all blanks from the beginning
+					// and the end of the node lines content
+					String trimmedContent = content.replaceAll("([ \\t]*\\r?\\n[ \\t]*)+", " "); //$NON-NLS-1$ //$NON-NLS-2$
+					if (lineW + trimmedContent.length() <= maxLineWidth) {
+						lineW += trimmedContent.length();
+					} else {
+						lineW += content.length();
+					}
+				}
+			}
+		} catch (BadLocationException e) {
+			Logger.logException(e);
+		}
+		return lineW;
+	}
+
