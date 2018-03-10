@@ -31,13 +31,13 @@
 				// of previous php expression.
 				// https://bugs.eclipse.org/bugs/show_bug.cgi?id=531466
 				// Also useful to avoid code formatter...
-				isAtEndOfExpression = startLine == commentStartLine && !(position >= 0
-						&& position != replaceBuffer.indexOf(lineSeparator) && getBufferFirstChar(0) == '\0');
+				isAtEndOfExpression = startLine == commentStartLine
+						&& !(position >= 0 && position != replaceBuffer.indexOf(lineSeparator) && isBufferBlank());
 				if (isAtEndOfExpression) {
 					doIndentForComment = false;
 					ignoreEmptyLineSetting = true;
 					if (position >= 0) {
-						if (getBufferFirstChar(position + lineSeparator.length()) == '\0') {
+						if (isBufferBlank(position + lineSeparator.length())) {
 							// ...to go here...
 							indentAfterComment = replaceBuffer.substring(position + lineSeparator.length(),
 									replaceBuffer.length());
@@ -52,7 +52,7 @@
 							insertSpace();
 						}
 					} else {
-						if (getBufferFirstChar(0) == '\0') {
+						if (isBufferBlank()) {
 							removeBlanksFromLineWidth(replaceBuffer.length(), false);
 							insertSpaces(1);
 						} else {
@@ -61,7 +61,7 @@
 					}
 					savedMrnbLineWidth += replaceBuffer.length();
 				} else {
-					if (getBufferFirstChar(0) == '\0') {
+					if (isBufferBlank()) {
 						if (position >= 0) {
 							// ...before finally going there
 							removeBlanksFromLineWidth(replaceBuffer.length() - position, true);
@@ -73,7 +73,7 @@
 							insertSpaces(1);
 						}
 					} else {
-						if (position >= 0 && getBufferFirstChar(position + lineSeparator.length()) == '\0') {
+						if (position >= 0 && isBufferBlank(position + lineSeparator.length())) {
 							removeBlanksFromLineWidth(replaceBuffer.length() - position, true);
 						}
 						insertNewLine();
@@ -380,7 +380,7 @@
 				previousCommentIsSingleLine = false;
 				// ignore multi line comments in the middle of code
 				// example while /* kuku */ ( /* kuku */$a > 0 )
-				if (getBufferFirstChar(0) != '\0') {
+				if (!isBufferBlank()) {
 					replaceBuffer.setLength(0);
 					IRegion reg = document.getLineInformationOfOffset(end);
 					addNonBlanksToLineWidth(end - Math.max(reg.getOffset(), comment.sourceStart() + offset));
