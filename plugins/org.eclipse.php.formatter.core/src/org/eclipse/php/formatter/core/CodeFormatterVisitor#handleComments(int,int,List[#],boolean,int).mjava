@@ -1,8 +1,8 @@
-	// TODO: Do correct comment placement
 	// https://bugs.eclipse.org/bugs/show_bug.cgi?id=440209
 	// https://bugs.eclipse.org/bugs/show_bug.cgi?id=440820
 	private void handleComments(int offset, int end, List<?> commentList, boolean isIndented, int indentGap)
 			throws Exception {
+		int savedMrnbLineWidth = mrnbLineWidth;
 		boolean oldIgnoreEmptyLineSetting = ignoreEmptyLineSetting;
 		ignoreEmptyLineSetting = false;
 
@@ -21,19 +21,27 @@
 			boolean endWithNewLineIndent = endWithNewLineIndent(replaceBuffer.toString());
 			String indentAfterComment = EMPTY_STRING;
 			boolean doIndentForComment;
+			boolean isAtEndOfExpression;
 			String commentContent;
 			switch (comment.getCommentType()) {
 			case org.eclipse.php.core.compiler.ast.nodes.Comment.TYPE_SINGLE_LINE:
 				doIndentForComment = !startAtFirstColumn
 						|| !this.preferences.never_indent_line_comments_on_first_column;
-				if (startLine == commentStartLine) {
+				// When true, we guarantee that the comment will stay at the end
+				// of previous php expression.
+				// https://bugs.eclipse.org/bugs/show_bug.cgi?id=531466
+				// Also useful to avoid code formatter...
+				isAtEndOfExpression = startLine == commentStartLine && !(position >= 0
+						&& position != replaceBuffer.indexOf(lineSeparator) && getBufferFirstChar(0) == '\0');
+				if (isAtEndOfExpression) {
 					doIndentForComment = false;
 					ignoreEmptyLineSetting = true;
 					if (position >= 0) {
 						if (getBufferFirstChar(position + lineSeparator.length()) == '\0') {
+							// ...to go here...
 							indentAfterComment = replaceBuffer.substring(position + lineSeparator.length(),
 									replaceBuffer.length());
-							removeFromLineWidth(replaceBuffer.length() - position, true);
+							removeBlanksFromLineWidth(replaceBuffer.length() - position, true);
 							// No need to add a space if previous line (in replaceBuffer) already ends with
 							// a blank character.
 							// TODO: replace isPrevSpace with more generic isPrevBlank.
@@ -45,26 +53,28 @@
 						}
 					} else {
 						if (getBufferFirstChar(0) == '\0') {
-							removeFromLineWidth(replaceBuffer.length(), false);
+							removeBlanksFromLineWidth(replaceBuffer.length(), false);
 							insertSpaces(1);
 						} else {
 							insertSpace();
 						}
 					}
+					savedMrnbLineWidth += replaceBuffer.length();
 				} else {
 					if (getBufferFirstChar(0) == '\0') {
 						if (position >= 0) {
-							removeFromLineWidth(replaceBuffer.length() - position, true);
+							// ...before finally going there
+							removeBlanksFromLineWidth(replaceBuffer.length() - position, true);
 							insertNewLine();
 						} else {
 							doIndentForComment = false;
 							ignoreEmptyLineSetting = true;
-							removeFromLineWidth(replaceBuffer.length(), false);
+							removeBlanksFromLineWidth(replaceBuffer.length(), false);
 							insertSpaces(1);
 						}
 					} else {
 						if (position >= 0 && getBufferFirstChar(position + lineSeparator.length()) == '\0') {
-							removeFromLineWidth(replaceBuffer.length() - position, true);
+							removeBlanksFromLineWidth(replaceBuffer.length() - position, true);
 						}
 						insertNewLine();
 					}
@@ -98,8 +108,8 @@
 				if (this.editsEnabled && this.preferences.comment_format_line_comment
 						&& (startAtFirstColumn && this.preferences.comment_format_line_comment_starting_on_first_column
 								|| !startAtFirstColumn)) {
-					if (startLine == commentStartLine && replaceBuffer.indexOf(lineSeparator) == -1) {
-						initCommentIndentVariables(offset, startLine, comment, endWithNewLineIndent);
+					if (isAtEndOfExpression) {
+						initCommentIndentVariables(savedMrnbLineWidth, endWithNewLineIndent);
 						lineWidth = indentLengthForComment;
 					}
 					if (startAtFirstColumn && this.preferences.never_indent_line_comments_on_first_column) {
@@ -372,9 +382,8 @@
 				// example while /* kuku */ ( /* kuku */$a > 0 )
 				if (getBufferFirstChar(0) != '\0') {
 					replaceBuffer.setLength(0);
-					isPrevSpace = false;
 					IRegion reg = document.getLineInformationOfOffset(end);
-					lineWidth += end - Math.max(reg.getOffset(), comment.sourceStart() + offset);
+					addNonBlanksToLineWidth(end - Math.max(reg.getOffset(), comment.sourceStart() + offset));
 					resetEnableStatus(
 							document.get(comment.sourceStart() + offset, comment.sourceEnd() - comment.sourceStart()));
 					for (; iter.hasNext();) {
@@ -390,7 +399,11 @@
 				// buffer contains only whitespace chars
 				doIndentForComment = !startAtFirstColumn
 						|| !this.preferences.never_indent_block_comments_on_first_column;
-				if (startLine == commentStartLine) {
+				// When true, we guarantee that the comment will stay at the end
+				// of previous php expression.
+				isAtEndOfExpression = startLine == commentStartLine
+						&& !(position >= 0 && position != replaceBuffer.indexOf(lineSeparator));
+				if (isAtEndOfExpression) {
 					doIndentForComment = false;
 					ignoreEmptyLineSetting = true;
 					if (position >= 0) {
@@ -398,7 +411,7 @@
 						// + lineSeparator.length()) == '\0') {
 						indentAfterComment = replaceBuffer.substring(position + lineSeparator.length(),
 								replaceBuffer.length());
-						removeFromLineWidth(replaceBuffer.length() - position, true);
+						removeBlanksFromLineWidth(replaceBuffer.length() - position, true);
 						// No need to add a space if previous line (in replaceBuffer) already ends with
 						// a blank character.
 						// TODO: replace isPrevSpace with more generic isPrevBlank.
@@ -410,17 +423,18 @@
 						// }
 					} else {
 						// if (getBufferFirstChar(0) == '\0') {
-						removeFromLineWidth(replaceBuffer.length(), false);
+						removeBlanksFromLineWidth(replaceBuffer.length(), false);
 						insertSpaces(1);
 						// } else {
 						// insertSpace();
 						// }
 					}
+					savedMrnbLineWidth += replaceBuffer.length();
 				} else {
 					if (position >= 0) {
 						// if (getBufferFirstChar(position
 						// + lineSeparator.length()) == '\0') {
-						removeFromLineWidth(replaceBuffer.length() - (position + lineSeparator.length()), true);
+						removeBlanksFromLineWidth(replaceBuffer.length() - (position + lineSeparator.length()), true);
 						// } else {
 						// insertNewLine();
 						// }
@@ -428,7 +442,7 @@
 						// if (getBufferFirstChar(0) == '\0') {
 						doIndentForComment = false;
 						ignoreEmptyLineSetting = true;
-						removeFromLineWidth(replaceBuffer.length(), false);
+						removeBlanksFromLineWidth(replaceBuffer.length(), false);
 						insertSpaces(1);
 						// } else {
 						// insertNewLine();
@@ -437,7 +451,7 @@
 				}
 
 				resetCommentIndentVariables();
-				if (startLine != commentStartLine && blockEnd) {
+				if (!isAtEndOfExpression && blockEnd) {
 					recordCommentIndentVariables = true;
 				}
 				if (doIndentForComment) {
@@ -454,8 +468,8 @@
 						document.get(comment.sourceStart() + offset, comment.sourceEnd() - comment.sourceStart()));
 				needIndentNewLine = true;
 
-				if (startLine == commentStartLine && replaceBuffer.indexOf(lineSeparator) == -1) {
-					initCommentIndentVariables(offset, startLine, comment, endWithNewLineIndent);
+				if (isAtEndOfExpression) {
+					initCommentIndentVariables(savedMrnbLineWidth, endWithNewLineIndent);
 					lineWidth = indentLengthForComment;
 				}
 				if (startAtFirstColumn && this.preferences.never_indent_block_comments_on_first_column) {

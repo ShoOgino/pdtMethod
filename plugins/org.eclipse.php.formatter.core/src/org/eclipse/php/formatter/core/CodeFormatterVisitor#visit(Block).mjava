@@ -85,6 +85,7 @@
 			lastStatementEndOffset = block.getStart();
 		} else {
 			// start after curly position
+			addNonBlanksToLineWidth(1);
 			lastStatementEndOffset = block.getStart() + 1;
 		}
 
@@ -244,26 +245,33 @@
 			}
 
 			// exclude closing curly
-			int end = endPosition - 1;
+			int endKeywordSize = 1;
+			int end = endPosition - endKeywordSize;
 			if (!block.isCurly()) {
 				switch (block.getParent().getType()) {
 				case ASTNode.SWITCH_STATEMENT:
-					end = endPosition - "endswitch".length();//$NON-NLS-1$
+					endKeywordSize = "endswitch".length();//$NON-NLS-1$
+					end = endPosition - endKeywordSize;
 					break;
 				case ASTNode.WHILE_STATEMENT:
-					end = endPosition - "endwhile".length();//$NON-NLS-1$
+					endKeywordSize = "endwhile".length();//$NON-NLS-1$
+					end = endPosition - endKeywordSize;
 					break;
 				case ASTNode.FOR_STATEMENT:
-					end = endPosition - "endfor".length();//$NON-NLS-1$
+					endKeywordSize = "endfor".length();//$NON-NLS-1$
+					end = endPosition - endKeywordSize;
 					break;
 				case ASTNode.FOR_EACH_STATEMENT:
-					end = endPosition - "endforeach".length();//$NON-NLS-1$
+					endKeywordSize = "endforeach".length();//$NON-NLS-1$
+					end = endPosition - endKeywordSize;
 					break;
 				case ASTNode.DECLARE_STATEMENT:
-					end = endPosition - "enddeclare".length();//$NON-NLS-1$
+					endKeywordSize = "enddeclare".length();//$NON-NLS-1$
+					end = endPosition - endKeywordSize;
 					break;
 				case ASTNode.IF_STATEMENT:
-					end = endPosition;
+					endKeywordSize = 0;
+					end = endPosition - endKeywordSize;
 					break;
 				}
 			}
@@ -273,9 +281,7 @@
 			blockEnd = true;
 			handleChars(lastStatementEndOffset, end);
 			blockEnd = false;
-			if (block.isCurly()) {
-				addToLineWidth(1);// closing curly
-			}
+			addNonBlanksToLineWidth(endKeywordSize);
 		}
 		return false;
 	}

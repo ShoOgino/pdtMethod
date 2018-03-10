@@ -1,0 +1,38 @@
+	private void initCommentIndentVariables(int length, boolean endWithNewLineIndent) throws BadLocationException {
+		indentLengthForComment = 0;
+		indentStringForComment = ""; //$NON-NLS-1$
+		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=461701
+		// Indentation is never set and used when inside of <?= ?> tags.
+		// See also method indent().
+		if (isPHPEqualTag) {
+			return;
+		}
+		StringBuilder sb = new StringBuilder();
+		int lastIndentationLevel = indentationLevel;
+		if (endWithNewLineIndent) {
+			if (indentationLevelList.size() >= 2) {
+				lastIndentationLevel = indentationLevelList.get(indentationLevelList.size() - 2);
+			} else {
+				lastIndentationLevel = indentationLevelList.get(indentationLevelList.size() - 1);
+			}
+		} else {
+			lastIndentationLevel = indentationLevelList.get(indentationLevelList.size() - 1);
+		}
+		for (int i = 0; i < lastIndentationLevel * preferences.indentationSize; i++) {
+			sb.append(preferences.indentationChar);
+		}
+		char[] blankArray = sb.toString().toCharArray();
+		for (int i = 0; i < blankArray.length; i++) {
+			if (blankArray[i] == '\t') {
+				indentLengthForComment += 4;
+			} else {
+				indentLengthForComment++;
+			}
+		}
+		for (int i = 0, len = length - indentLengthForComment; i < len; i++) {
+			sb.append(" "); //$NON-NLS-1$
+			indentLengthForComment++;
+		}
+		indentStringForComment = sb.toString();
+	}
+
