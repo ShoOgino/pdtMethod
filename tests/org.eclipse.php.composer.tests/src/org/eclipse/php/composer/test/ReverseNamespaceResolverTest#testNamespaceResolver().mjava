@@ -1,36 +1,32 @@
 	@Test
 	public void testNamespaceResolver() throws CoreException, IOException {
 
-		IScriptProject scriptProject = ensureScriptProject("testproject2"); //$NON-NLS-1$
+		project = TestUtils.createProject("testproject2"); //$NON-NLS-1$
+		assertNotNull(project);
 
-		assertNotNull(scriptProject);
+		ComposerCoreTestPlugin.copyProjectFiles(project);
+		project.refreshLocal(IResource.DEPTH_INFINITE, null);
 
-		IProjectDescription desc = scriptProject.getProject().getDescription();
-		desc.setNatureIds(new String[] { PHPNature.ID });
-		scriptProject.getProject().setDescription(desc, null);
+		TestUtils.setProjectPHPVersion(project, PHPVersion.PHP5_3);
 
-		ProjectOptions.setPHPVersion(PHPVersion.PHP5_3, scriptProject.getProject());
+		PHPFacets.setFacetedVersion(project, PHPVersion.PHP5_3);
+		FacetManager.installFacets(project, PHPVersion.PHP5_3, new NullProgressMonitor());
 
-		PHPFacets.setFacetedVersion(scriptProject.getProject(), PHPVersion.PHP5_3);
-		FacetManager.installFacets(scriptProject.getProject(), PHPVersion.PHP5_3, new NullProgressMonitor());
+		project.build(IncrementalProjectBuilder.FULL_BUILD, null);
 
-		scriptProject.getProject().refreshLocal(IResource.DEPTH_INFINITE, null);
-		scriptProject.getProject().build(IncrementalProjectBuilder.FULL_BUILD, null);
+		TestUtils.waitForIndexer();
+		TestUtils.waitForAutoBuild();
 
-		ComposerCoreTestPlugin.waitForIndexer();
-		ComposerCoreTestPlugin.waitForAutoBuild();
-
-		IFile file = scriptProject.getProject().getFile("composer.json"); //$NON-NLS-1$
+		IFile file = project.getFile("composer.json"); //$NON-NLS-1$
 		assertNotNull(file);
 
-		assertTrue(scriptProject.getProject().hasNature(PHPNature.ID));
-		assertTrue(FacetManager.hasComposerFacet(scriptProject.getProject()));
+		assertTrue(project.hasNature(PHPNature.ID));
+		assertTrue(FacetManager.hasComposerFacet(project));
 
 		String namespace = "Foobar\\Sub"; //$NON-NLS-1$
 
-		IPath resolvedPath = ModelAccess.getInstance().reverseResolve(scriptProject.getProject(), namespace);
+		IPath resolvedPath = ModelAccess.getInstance().reverseResolve(project, namespace);
 		assertNotNull(resolvedPath);
-		assertTrue(scriptProject.getProject().getFolder(resolvedPath).exists());
-
+		assertTrue(project.getFolder(resolvedPath).exists());
 	}
 

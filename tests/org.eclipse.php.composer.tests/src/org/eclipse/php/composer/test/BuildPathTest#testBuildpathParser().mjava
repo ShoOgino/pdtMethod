@@ -1,31 +1,27 @@
 	@Test
 	public void testBuildpathParser() throws CoreException, IOException, InterruptedException {
-		IScriptProject scriptProject = ensureScriptProject("buildpath"); //$NON-NLS-1$
+		project = TestUtils.createProject("buildpath"); //$NON-NLS-1$
+		assertNotNull(project);
+		ComposerCoreTestPlugin.copyProjectFiles(project);
+		project.refreshLocal(IResource.DEPTH_INFINITE, null);
 
-		assertNotNull(scriptProject);
+		TestUtils.setProjectPHPVersion(project, PHPVersion.PHP5_3);
 
-		IProjectDescription desc = scriptProject.getProject().getDescription();
-		desc.setNatureIds(new String[] { PHPNature.ID });
-		scriptProject.getProject().setDescription(desc, null);
+		PHPFacets.setFacetedVersion(project, PHPVersion.PHP5_3);
+		FacetManager.installFacets(project, PHPVersion.PHP5_3, new NullProgressMonitor());
 
-		ProjectOptions.setPHPVersion(PHPVersion.PHP5_3, scriptProject.getProject());
+		project.build(IncrementalProjectBuilder.FULL_BUILD, null);
 
-		PHPFacets.setFacetedVersion(scriptProject.getProject(), PHPVersion.PHP5_3);
-		FacetManager.installFacets(scriptProject.getProject(), PHPVersion.PHP5_3, new NullProgressMonitor());
+		TestUtils.waitForIndexer();
+		TestUtils.waitForAutoBuild();
 
-		scriptProject.getProject().refreshLocal(IResource.DEPTH_INFINITE, null);
-		scriptProject.getProject().build(IncrementalProjectBuilder.FULL_BUILD, null);
-
-		ComposerCoreTestPlugin.waitForIndexer();
-		ComposerCoreTestPlugin.waitForAutoBuild();
-
-		IFile file = scriptProject.getProject().getFile("composer.json"); //$NON-NLS-1$
+		IFile file = project.getFile("composer.json"); //$NON-NLS-1$
 		assertNotNull(file);
 
-		assertTrue(scriptProject.getProject().hasNature(PHPNature.ID));
-		assertTrue(FacetManager.hasComposerFacet(scriptProject.getProject()));
+		assertTrue(project.hasNature(PHPNature.ID));
+		assertTrue(FacetManager.hasComposerFacet(project));
 
-		IComposerProject composerProject = ComposerPlugin.getDefault().getComposerProject(scriptProject.getProject());
+		IComposerProject composerProject = ComposerPlugin.getDefault().getComposerProject(project);
 		BuildPathParser parser = new BuildPathParser(composerProject);
 		List<String> paths = parser.getPaths();
 		List<String> expected = new ArrayList<>(Arrays.asList("mordor/composer", "mordor/gossi/ldap/src", //$NON-NLS-1$ //$NON-NLS-2$
@@ -34,7 +30,5 @@
 		assertArrayEquals(paths.toArray(), expected.toArray());
 
 		// let indexing threads shutdown to avoid SWT thread access errors
-		Thread.sleep(2000);
-
 	}
 
