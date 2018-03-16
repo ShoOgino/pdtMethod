@@ -5,26 +5,15 @@
 	 * @param context
 	 */
 	void initializeAfterStart(final BundleContext context) {
-		CorrectionCommandInstaller.registerCommands();
 		Job job = new Job("") { //$NON-NLS-1$
 			@Override
 			protected IStatus run(IProgressMonitor monitor) {
-
+				CorrectionCommandInstaller.registerCommands();
 				libraryFolderChangeListener = new LibraryFolderChangeListener();
 				LibraryFolderManager.getInstance().addListener(libraryFolderChangeListener);
 
-				PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
-					@Override
-					public void run() {
-						processCommandLine(context);
-					}
-				});
-
 				if (PlatformUI.isWorkbenchRunning()) {
-					new InitializeAfterLoadJob().schedule(); // must be last
-					// call in
-					// start()
-					// method
+					new InitializeAfterLoadJob().schedule();
 				}
 				return Status.OK_STATUS;
 			}
