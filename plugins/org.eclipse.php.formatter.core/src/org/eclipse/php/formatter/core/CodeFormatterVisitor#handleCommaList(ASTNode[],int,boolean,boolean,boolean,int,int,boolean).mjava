@@ -1,11 +1,11 @@
 	/**
-	 * handle comma list (e.g. 1,2,3)
+	 * handle comma list (e.g. 1,2,3,)
 	 * 
 	 * @param array
 	 *            ASTNode array
 	 * @param lastPosition
 	 *            the position after last ASTNode
-	 * @param lastEmptyASTNodePosition
+	 * @param keepTrailingComma
 	 * @param insertSpaceBeforeComma
 	 * @param insertSpaceAfterComma
 	 * @param lineWrapPolicy
@@ -13,7 +13,7 @@
 	 * @param forceSplit
 	 * @return the last element end position
 	 */
-	private int handleCommaList(ASTNode[] array, int lastPosition, int lastEmptyASTNodePosition,
+	private int handleCommaList(ASTNode[] array, int lastPosition, boolean keepTrailingComma,
 			boolean insertSpaceBeforeComma, boolean insertSpaceAfterComma, int lineWrapPolicy, int indentGap,
 			boolean forceSplit) {
 		int oldIndentationLevel = indentationLevel;
@@ -39,12 +39,25 @@
 		commentIndentationStack.add(cio);
 		// commentIndentationMap.put(array., cio);
 		boolean isFirst = true;
-		for (int i = 0; i < array.length; i++) {
+
+		int arrayLength = array.length;
+		// when necessary, remove the empty ASTNode (i.e. EmptyExpression) at end of
+		// array
+		if (!keepTrailingComma && array[arrayLength - 1].getLength() == 0) {
+			arrayLength--;
+		}
+
+		for (int i = 0; i < arrayLength; i++) {
 			if (!isFirst) {
 				if (insertSpaceBeforeComma) {
 					insertSpace();
 				}
 				appendToBuffer(COMMA);
+			}
+
+			if (i == arrayLength - 1 && array[i].getLength() == 0) {
+				// break loop and keep lastPosition as-is
+				break;
 			}
 
 			// after the first element and wrap policy is except first element
@@ -173,13 +186,13 @@
 				wasBinaryExpressionWrapped = true;
 			}
 
-			if (lastEmptyASTNodePosition >= 0 && array[i].getLength() == 0) {
+			if (array[i].getLength() == 0) {
 				// https://bugs.eclipse.org/bugs/show_bug.cgi?id=531468
-				// We have a (fake) empty ASTNode. By construction, whitespaces "around" empty
-				// ASTNodes are always located "after" ASTNode.getStart() (and
+				// We have an empty ASTNode (i.e. EmptyExpression). By construction, whitespaces
+				// "around" empty ASTNodes are always located "after" ASTNode.getStart() (and
 				// ASTNode.getEnd()), so we have to "eat" those whitespaces to correctly
 				// generate/calculate ReplaceEdits in handleCharsWithoutComments().
-				int end = i < array.length - 1 ? array[i + 1].getStart() : lastEmptyASTNodePosition;
+				int end = array[i + 1].getStart();
 				// handleCharsWithoutComments() checks if offset - lastPosition ==
 				// replaceBuffer.length(), so don't "eat" too many whitespaces.
 				end = Math.min(lastPosition + replaceBuffer.length(), end);
