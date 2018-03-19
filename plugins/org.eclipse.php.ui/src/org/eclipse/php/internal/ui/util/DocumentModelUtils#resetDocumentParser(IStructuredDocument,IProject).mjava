@@ -1,0 +1,21 @@
+	/**
+	 * Only useful if we do a full document reparse afterwards (using methods
+	 * below), since we left content of the document PhpScriptRegions untouched.
+	 * 
+	 * @param document
+	 * @param project
+	 */
+	@SuppressWarnings("null")
+	private static void resetDocumentParser(@Nullable IStructuredDocument document, @Nullable IProject project) {
+		if (document != null && document.getParser() instanceof PHPSourceParser) {
+			PHPSourceParser.projectThreadLocal.set(project);
+
+			PHPSourceParser sourceParser = (PHPSourceParser) document.getParser();
+			if (sourceParser.getTokenizer() instanceof PHPTokenizer) {
+				PHPTokenizer tokenizer = (PHPTokenizer) sourceParser.getTokenizer();
+				tokenizer.setProjectSettings(ProjectOptions.getPHPVersion(project),
+						ProjectOptions.isSupportingASPTags(project), ProjectOptions.useShortTags(project));
+			}
+		}
+	}
+

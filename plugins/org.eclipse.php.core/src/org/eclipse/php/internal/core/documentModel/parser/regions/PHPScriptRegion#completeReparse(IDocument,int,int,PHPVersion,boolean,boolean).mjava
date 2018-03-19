@@ -2,13 +2,15 @@
 	 * @see IPHPScriptRegion#completeReparse(IDocument, int, int, IProject)
 	 */
 	@Override
-	public synchronized void completeReparse(IDocument doc, int start, int length, @Nullable IProject project) {
-		this.project = project;
-		currentPhpVersion = ProjectOptions.getPHPVersion(this.project);
+	public synchronized void completeReparse(IDocument doc, int start, int length, @NonNull PHPVersion phpVersion,
+			boolean isSupportingASPTags, boolean useShortTags) {
+		this.phpVersion = phpVersion;
+		this.isSupportingASPTags = isSupportingASPTags;
+		this.useShortTags = useShortTags;
 		// bug fix for 225118 we need to refresh the constants since this
 		// function is being called
 		// after the project's PHP version was changed.
-		AbstractPHPLexer phpLexer = getPHPLexer(new BlockDocumentReader(doc, start, length), null, currentPhpVersion);
+		AbstractPHPLexer phpLexer = getPHPLexer(new BlockDocumentReader(doc, start, length), null, this.phpVersion);
 
 		// these values are specific to each PHP version lexer
 		inScriptingState = phpLexer.getInScriptingState();

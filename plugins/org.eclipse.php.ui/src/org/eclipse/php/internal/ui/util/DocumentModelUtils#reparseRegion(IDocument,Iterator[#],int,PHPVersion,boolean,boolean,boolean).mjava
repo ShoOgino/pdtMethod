@@ -8,26 +8,34 @@
 	 *            regions iterator
 	 * @param offset
 	 *            the container region start offset
-	 * @param project
-	 *            the new project to use (only if setNewProject is set to true)
+	 * @param phpVersion
+	 *            the new php version to use (only if setNewProject is set to true;
+	 *            in this case phpVersion must be non-null)
+	 * @param isSupportingASPTags
+	 *            the new isSupportingASPTags value to use (only if setNewProject is
+	 *            set to true)
+	 * @param useShortTags
+	 *            the new useShortTags value to use (only if setNewProject is set to
+	 *            true)
 	 * @param setNewProject
-	 *            use the new project value (even if null) when setNewProject is set
-	 *            to true
+	 *            use the new project settings when setNewProject is set to true
 	 */
 	@SuppressWarnings("null")
 	private static void reparseRegion(@NonNull IDocument document, @NonNull Iterator<?> regionsIt, int offset,
-			@Nullable IProject project, boolean setNewProject) {
+			PHPVersion phpVersion, boolean isSupportingASPTags, boolean useShortTags, boolean setNewProject) {
+		assert !(setNewProject && phpVersion == null);
 		while (regionsIt.hasNext()) {
 			ITextRegion region = (ITextRegion) regionsIt.next();
 			if (region instanceof ITextRegionContainer) {
 				reparseRegion(document, ((ITextRegionContainer) region).getRegions().iterator(),
-						offset + region.getStart(), project, setNewProject);
+						offset + region.getStart(), phpVersion, isSupportingASPTags, useShortTags, setNewProject);
 			}
 			if (region instanceof IPHPScriptRegion) {
 				final IPHPScriptRegion phpRegion = (IPHPScriptRegion) region;
 				try {
 					if (setNewProject) {
-						phpRegion.completeReparse(document, offset + region.getStart(), region.getLength(), project);
+						phpRegion.completeReparse(document, offset + region.getStart(), region.getLength(), phpVersion,
+								isSupportingASPTags, useShortTags);
 					} else {
 						phpRegion.completeReparse(document, offset + region.getStart(), region.getLength());
 					}
