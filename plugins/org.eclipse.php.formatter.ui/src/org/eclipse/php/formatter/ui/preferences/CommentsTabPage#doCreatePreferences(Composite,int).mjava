@@ -55,11 +55,15 @@
 		// FormatterMessages.CommentsTabPage_format_code_snippets);
 		// code.setIsChecked(codeFormatterPreferences.comment_format_javadoc_comment);
 
-		blankJavadoc = createPrefInsert(settingsGroup, numColumns,
-				FormatterMessages.CommentsTabPage_blank_line_before_javadoc_tags,
-				CodeFormatterConstants.FORMATTER_COMMENT_INSERT_EMPTY_LINE_BEFORE_ROOT_TAGS);
+		blankJavadoc = createCheckboxPref(settingsGroup, numColumns,
+				FormatterMessages.CommentsTabPage_blank_line_before_javadoc_tags);
 		blankJavadoc.setIsChecked(codeFormatterPreferences.comment_insert_empty_line_before_root_tags);
 
+		blankRootDesc = createCheckboxPref(settingsGroup, numColumns,
+				FormatterMessages.CommentsTabPage_keep_blank_line_for_empty_description);
+		blankRootDesc.setIsChecked(codeFormatterPreferences.comment_keep_empty_line_for_empty_description);
+
+		((GridData) blankRootDesc.getControl().getLayoutData()).horizontalIndent = indent;
 		indentJavadoc = createCheckboxPref(settingsGroup, numColumns,
 				FormatterMessages.CommentsTabPage_indent_javadoc_tags);
 		indentJavadoc.setIsChecked(codeFormatterPreferences.comment_indent_root_tags);
@@ -68,11 +72,11 @@
 				FormatterMessages.CommentsTabPage_indent_description_after_param);
 		indentDesc.setIsChecked(codeFormatterPreferences.comment_indent_parameter_description);
 
+		((GridData) indentDesc.getControl().getLayoutData()).horizontalIndent = indent;
 		nerverFormatUnknownTags = createCheckboxPref(settingsGroup, numColumns,
 				FormatterMessages.CommentsTabPage_never_format_unknown_tags);
 		nerverFormatUnknownTags.setIsChecked(codeFormatterPreferences.comment_never_format_unknown_tags);
 
-		((GridData) indentDesc.getControl().getLayoutData()).horizontalIndent = indent;
 		nlParam = createPrefInsert(settingsGroup, numColumns,
 				FormatterMessages.CommentsTabPage_new_line_after_param_tags,
 				CodeFormatterConstants.FORMATTER_COMMENT_INSERT_NEW_LINE_FOR_PARAMETER);
@@ -130,6 +134,21 @@
 		javaDocSlaves.add(blankLinesJavadoc);
 
 		new OrController(javaDocMaster, javaDocSlaves);
+
+		ArrayList<CheckboxPreference> blankMasters = new ArrayList<>();
+		blankMasters.add(javadoc);
+		blankMasters.add(header);
+		blankMasters.add(blankJavadoc);
+
+		ArrayList<Object> blankSlaves = new ArrayList<>();
+		blankSlaves.add(blankRootDesc);
+
+		new Controller(blankMasters, blankSlaves) {
+			@Override
+			protected boolean areSlavesEnabled() {
+				return (javadoc.isChecked() || header.isChecked()) && blankJavadoc.isChecked();
+			}
+		}.update(null, null);
 
 		ArrayList<CheckboxPreference> indentMasters = new ArrayList<>();
 		indentMasters.add(javadoc);
