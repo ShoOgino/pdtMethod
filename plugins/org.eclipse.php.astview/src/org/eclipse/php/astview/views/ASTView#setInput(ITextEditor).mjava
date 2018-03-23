@@ -12,14 +12,19 @@
 				throw new CoreException(getErrorStatus("Editor not showing a CU or class file", null)); //$NON-NLS-1$
 			}
 			fSourceRoot = typeRoot;
-			PHPVersion astLevel = getInitialASTLevel(typeRoot);
+			IProject project = typeRoot.getScriptProject().getProject();
+			PHPVersion astLevel = ProjectOptions.getPHPVersion(project);
+			boolean isSupportingASPTags = ProjectOptions.isSupportingASPTags(project);
+			boolean useShortTags = ProjectOptions.useShortTags(project);
 
 			ISelection selection = editor.getSelectionProvider().getSelection();
 			if (selection instanceof ITextSelection) {
 				ITextSelection textSelection = (ITextSelection) selection;
-				fRoot = internalSetInput(typeRoot, textSelection.getOffset(), textSelection.getLength(), astLevel);
+				fRoot = internalSetInput(typeRoot, textSelection.getOffset(), textSelection.getLength(), astLevel, isSupportingASPTags, useShortTags);
 				fEditor = editor;
-				setASTLevel(astLevel, false);
+				fPHPVersion = astLevel;
+				fUseASPTags = isSupportingASPTags;
+				fUseShortTags = useShortTags;
 			}
 			installModificationListener();
 		}
