@@ -1,0 +1,23 @@
+		protected void check(String name, int start, int end) {
+			current.contains(name, start);
+			Variable var = current.variables.get(name);
+
+			if (isInit()) {
+				if (var == null) {
+					var = new Variable(start, end);
+					current.variables.put(name, var);
+				} else {
+					var.addAddress(start, end);
+				}
+				if (var.initialized() < 0) {
+					var.setInitialized(start);
+				}
+			}
+			if (var == null) {
+				validator.reportProblem(start, end, NLS.bind(Messages.VariableValidator_IsUndefined, name),
+						PHPProblemIdentifier.UndefinedVariable, ProblemSeverity.WARNING);
+			} else if (!isInit()) {
+				var.setUsed(start);
+			}
+		}
+

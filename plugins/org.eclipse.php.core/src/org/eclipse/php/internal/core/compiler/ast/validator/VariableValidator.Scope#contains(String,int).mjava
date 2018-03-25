@@ -1,0 +1,32 @@
+		boolean contains(String name, int offset) {
+			if (variables.containsKey(name)) {
+				return true;
+			}
+
+			for (VarComment varComment : varCommentList) {
+				if (varComment.sourceStart() > offset || end < varComment.sourceStart()) {
+					continue;
+				}
+				if (varComment.getVariableReference().getName().equals(name)) {
+					this.variables.put(name, new DocVariable(varComment));
+					return true;
+				}
+			}
+
+			for (PHPDocBlock block : docBlocks) {
+				if (block.sourceStart() > offset || end < block.sourceStart()) {
+					continue;
+				}
+
+				for (PHPDocTag tag : block.getTags(PHPDocTag.TagKind.VAR)) {
+					if (tag.isValidVarTag() && tag.getVariableReference() != null
+							&& tag.getVariableReference().getName().equals(name)) {
+						this.variables.put(name, new DocVariable(block));
+						return true;
+					}
+				}
+			}
+
+			return false;
+		}
+

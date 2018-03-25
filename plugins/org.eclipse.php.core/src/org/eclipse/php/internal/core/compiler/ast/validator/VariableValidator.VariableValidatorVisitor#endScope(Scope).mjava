@@ -1,0 +1,15 @@
+		private void endScope(Scope scope) {
+			for (Entry<String, Variable> entry : scope.variables.entrySet()) {
+				Variable value = entry.getValue();
+				if (value.used() < 0 && !(value instanceof ImportedVariable) && !(value instanceof DocVariable)) {
+					String mess = NLS.bind(Messages.VariableValidator_IsNeverUsed, entry.getKey());
+					validator.reportProblem(value.start, value.end, mess, PHPProblemIdentifier.UnusedVariable,
+							ProblemSeverity.WARNING);
+					for (Entry<Integer, Integer> a : value.other.entrySet()) {
+						validator.reportProblem(a.getKey(), a.getValue(), mess, PHPProblemIdentifier.UnusedVariable,
+								ProblemSeverity.WARNING);
+					}
+				}
+			}
+		}
+

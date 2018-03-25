@@ -1,0 +1,21 @@
+		public boolean visit(CatchClause s) throws Exception {
+			Scope prev = current;
+			pushScope(s.sourceStart(), s.sourceEnd());
+			current.copy(prev);
+			try {
+				if (s.getVariable() != null) {
+					Variable v = new Variable(s.getVariable());
+					v.setInitialized(s.start());
+					v.setUsed(s.start());
+					current.variables.put(s.getVariable().getName(), v);
+				}
+				if (s.getStatement() != null) {
+					s.getStatement().traverse(this);
+				}
+			} finally {
+				popScope();
+			}
+
+			return false;
+		}
+

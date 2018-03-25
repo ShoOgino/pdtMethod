@@ -1,0 +1,29 @@
+		@Override
+		public boolean visit(ArrayVariableReference s) throws Exception {
+			String name = getName(s.getName());
+			if (name.charAt(0) != DOLLAR || isSuperGlobal(name)
+					|| (s.getVariableKind() == PHPVariableKind.GLOBAL && isGlobal(name))) {
+				if (s.getIndex() != null) {
+					operations.push(Operation.USE);
+					s.getIndex().traverse(this);
+					operations.pop();
+				}
+				return false;
+			}
+			Variable var = current.variables.get(name);
+			if (var == null) {
+				validator.reportProblem(s.start(), s.start() + s.getName().length(),
+						NLS.bind(Messages.VariableValidator_IsUndefined, name), PHPProblemIdentifier.UndefinedVariable,
+						ProblemSeverity.WARNING);
+			} else if (!isInit()) {
+				var.setUsed(s.start());
+			}
+			if (s.getIndex() != null) {
+				operations.push(Operation.USE);
+				s.getIndex().traverse(this);
+				operations.pop();
+			}
+
+			return false;
+		}
+

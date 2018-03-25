@@ -1,0 +1,38 @@
+		@Override
+		public boolean visit(LambdaFunctionDeclaration decl) throws Exception {
+			Scope prev = current;
+			pushScope(decl.sourceStart(), decl.sourceEnd());
+			for (Object o : decl.getArguments()) {
+				if (o instanceof FormalParameter) {
+					VariableReference parameterName = ((FormalParameter) o).getParameterName();
+					Variable v = new ImportedVariable(parameterName);
+					v.setInitialized(((FormalParameter) o).start());
+					current.variables.put(parameterName.getName(), v);
+				}
+			}
+			if (decl.getLexicalVars() != null) {
+				for (Expression var : decl.getLexicalVars()) {
+					if (var instanceof ReferenceExpression) {
+						var = ((ReferenceExpression) var).getVariable();
+					}
+					if (var instanceof VariableReference) {
+						final String name = ((VariableReference) var).getName();
+						if (prev.contains(name, var.sourceStart())) {
+							current.variables.put(name, new ImportedVariable(prev.variables.get(name)));
+						} else {
+							validator.reportProblem(var, NLS.bind(Messages.VariableValidator_IsUndefined, name),
+									PHPProblemIdentifier.UndefinedVariable, ProblemSeverity.WARNING);
+						}
+					}
+				}
+			}
+			if (inClassDecl < depth && prev.contains(THIS_VAR, 0)) { // $NON-NLS-1$
+				current.variables.put(THIS_VAR, prev.variables.get(THIS_VAR)); // $NON-NLS-1$
+			}
+			decl.getBody().traverse(this);
+
+			popScope();
+
+			return false;
+		}
+

@@ -1,0 +1,19 @@
+		@Override
+		public boolean visit(PHPCallExpression ex) throws Exception {
+			operations.push(Operation.USE);
+
+			if (ex.getReceiver() == null && ex.getCallName() != null && ex.getCallName().getName().equals(COMPACT)
+					&& ex.getArgs() != null) {
+				for (ASTNode node : ex.getArgs().getChilds()) {
+					if (node instanceof Scalar && ((Scalar) node).getScalarType() == Scalar.TYPE_STRING) {
+						String name = DOLLAR + ASTUtils.stripQuotes(((Scalar) node).getValue());
+						if (current.contains(name, node.sourceStart())) {
+							current.variables.get(name).setUsed(node.start());
+						}
+					}
+				}
+			}
+
+			return super.visit(ex);
+		}
+

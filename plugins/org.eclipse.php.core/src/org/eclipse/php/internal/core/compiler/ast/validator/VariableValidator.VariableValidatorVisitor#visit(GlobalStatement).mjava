@@ -1,0 +1,30 @@
+		@Override
+		public boolean visit(GlobalStatement s) throws Exception {
+			for (Expression el : s.getVariables()) {
+				if (el instanceof VariableReference) {
+					VariableReference ref = (VariableReference) el;
+					if (scopes.size() > 1) {
+						Scope parentScope = scopes.peekFirst();
+						if (parentScope.contains(ref.getName(), ref.sourceStart())) {
+							current.variables.put(ref.getName(),
+									new ImportedVariable(parentScope.variables.get(ref.getName())));
+							continue;
+						}
+					}
+					Variable var = current.variables.get(ref.getName());
+					if (var == null) {
+						var = new Variable(ref);
+						current.variables.put(ref.getName(), var);
+					}
+					if (var.initialized < 0) {
+						var.initialized = ref.start();
+					}
+				} else {
+					operations.push(Operation.ASSIGN);
+					el.traverse(this);
+					operations.pop();
+				}
+			}
+			return false;
+		}
+

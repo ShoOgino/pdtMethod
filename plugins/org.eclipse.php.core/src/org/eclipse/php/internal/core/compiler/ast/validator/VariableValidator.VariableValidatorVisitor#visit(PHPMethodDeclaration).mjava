@@ -1,0 +1,27 @@
+		@Override
+		public boolean visit(PHPMethodDeclaration node) throws Exception {
+			pushScope(node.sourceStart(), node.sourceEnd());
+			if (node.isAbstract() || node.getBody() == null) {
+				popScope();
+				return false;
+			}
+			for (Object o : node.getArguments()) {
+				if (o instanceof FormalParameter) {
+					VariableReference parameterName = ((FormalParameter) o).getParameterName();
+					Variable v = new ImportedVariable(parameterName);
+					v.setInitialized(((FormalParameter) o).start());
+					current.variables.put(parameterName.getName(), v);
+				}
+			}
+			if (inClassDecl + 1 == depth && !node.isStatic()) {
+				Variable v = new ImportedVariable(node);
+				v.setInitialized(node.start());
+				current.variables.put(THIS_VAR, v);
+			}
+			if (node.getBody() != null) {
+				node.getBody().traverse(this);
+			}
+			popScope();
+			return false;
+		}
+

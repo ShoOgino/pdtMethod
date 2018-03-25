@@ -1,0 +1,22 @@
+		@Override
+		public boolean visit(StaticFieldAccess s) throws Exception {
+			if (s.getDispatcher() != null) {
+				operations.push(Operation.USE);
+				s.getDispatcher().traverse(this);
+				operations.pop();
+			}
+			if (s.getField() != null) {
+				if (s.getField() instanceof ArrayVariableReference) {
+					ArrayVariableReference ref = (ArrayVariableReference) s.getField();
+					if (ref.getIndex() != null) {
+						operations.push(Operation.USE);
+						ref.getIndex().traverse(this);
+						operations.pop();
+					}
+				} else if (!(s.getField() instanceof VariableReference)) {
+					s.getField().traverse(this);
+				}
+			}
+			return false;
+		}
+
