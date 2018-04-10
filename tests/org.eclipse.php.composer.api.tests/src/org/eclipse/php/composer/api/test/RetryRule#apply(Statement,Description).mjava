@@ -1,0 +1,24 @@
+	@Override
+	public Statement apply(Statement base, Description description) {
+		return new Statement() {
+			private int attempt = 0;
+
+			@Override
+			public void evaluate() throws Throwable {
+				Throwable lastError;
+				do {
+					try {
+						base.evaluate();
+						lastError = null;
+					} catch (ConnectException e) {
+						lastError = e;
+						Thread.sleep(sleep); // wait a moment
+					}
+				} while (attempt++ < attempts);
+				if (lastError != null) {
+					throw lastError;
+				}
+			}
+		};
+	}
+
