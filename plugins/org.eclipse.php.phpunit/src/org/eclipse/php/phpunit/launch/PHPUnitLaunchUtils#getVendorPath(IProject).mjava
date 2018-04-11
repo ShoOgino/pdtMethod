@@ -1,0 +1,31 @@
+	private static @Nullable IPath getVendorPath(@Nullable IProject project) {
+		if (project == null || project.getLocation() == null) {
+			return null;
+		}
+		String vendorDir = DEFAULT_COMPOSER_VENDORDIR;
+		IPath projectLocation = project.getLocation();
+		File composerJsonFile = projectLocation.append(COMPOSER_JSON_FILENAME).toFile();
+		if (composerJsonFile.exists() && composerJsonFile.isFile() && composerJsonFile.length() > 0) {
+			try (FileReader reader = new FileReader(composerJsonFile)) {
+				JsonParser parser = new JsonParser();
+				JsonElement jComposer = parser.parse(reader);
+				if (jComposer.isJsonObject() && ((JsonObject) jComposer).has(COMPOSER_JSON_CONFIG)) {
+					JsonElement jConfig = ((JsonObject) jComposer).get(COMPOSER_JSON_CONFIG);
+					if (jConfig.isJsonObject() && ((JsonObject) jConfig).has(COMPOSER_JSON_CONFIG_VENDORDIR)) {
+						JsonElement jVendorDir = ((JsonObject) jConfig).get(COMPOSER_JSON_CONFIG_VENDORDIR);
+						if (jVendorDir.isJsonPrimitive() && ((JsonPrimitive) jVendorDir).isString()) {
+							vendorDir = ((JsonPrimitive) jVendorDir).getAsString();
+							int vendorDirLength = vendorDir.length();
+							if (vendorDirLength > 1 && vendorDir.endsWith(COMPOSER_JSON_CONFIG_VENDORDIR_DIRSEP)) {
+								vendorDir = vendorDir.substring(0, vendorDirLength - 1);
+							}
+						}
+					}
+				}
+			} catch (Exception e) {
+				PHPUnitPlugin.log(e);
+			}
+		}
+		return projectLocation.append(vendorDir);
+	}
+

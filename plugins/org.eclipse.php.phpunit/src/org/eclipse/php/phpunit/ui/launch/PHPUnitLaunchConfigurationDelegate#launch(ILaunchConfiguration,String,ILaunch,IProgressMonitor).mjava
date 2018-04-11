@@ -35,7 +35,7 @@
 			wconfig = config.getWorkingCopy();
 		}
 		setAdditionalAttributes(wconfig, fileToExecute, project);
-		setEnvironmentVariables(wconfig, project);
+		setEnvironmentVariables(wconfig);
 
 		PHPUnitOptionsList phpUnitOptionsList = createPHPUnitOptionsList(wconfig, project);
 		if (!wconfig.hasAttribute(PHPUnitLaunchAttributes.ATTRIBUTE_RERUN)) {
@@ -63,9 +63,8 @@
 		}
 
 		final int port = Integer.parseInt(envVariables.get(ENV_PORT));
-		if (!PHPUnitConnection.getInstance().listen(port, launch)) {
-			return;
-		}
+
+		startListening(port, launch);
 
 		PHPexeItem execItem = PHPLaunchUtilities.getPHPExe(config);
 		if (execItem != null) {
@@ -101,7 +100,11 @@
 			}
 
 			launch.setAttribute(PHPUnitLaunchAttributes.ATTRIBUTE_PHPUNIT_LAUNCH, Boolean.TRUE.toString());
-			launcher.launch(mode, project, workingDirectory, envVariables, monitor);
+			try {
+				launcher.launch(mode, project, workingDirectory, envVariables, monitor);
+			} catch (PHPUnitLaunchException e) {
+				displayErrorMessage(e.getMessage());
+			}
 		} else {
 			displayErrorMessage(PHPDebugCoreMessages.PHPExecutableLaunchDelegate_4);
 			return;

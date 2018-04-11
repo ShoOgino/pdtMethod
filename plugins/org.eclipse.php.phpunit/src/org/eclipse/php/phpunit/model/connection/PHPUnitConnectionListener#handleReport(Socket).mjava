@@ -2,20 +2,18 @@
 		if (!PHPUnitLaunchUtils.isPHPUnitRunning()) {
 			return;
 		}
-		try {
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 			final PHPUnitMessageParser parser = PHPUnitMessageParser.getInstance();
 			parser.clean();
 			parser.setDebugTarget(PHPUnitView.getDefault().getLaunch().getDebugTarget());
-			final BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-			String line;
 			parser.setInProgress(true);
+			String line;
 			while ((line = reader.readLine()) != null && parser.isInProgress()) {
 				try {
 					processLine(line, parser);
 				} catch (JsonSyntaxException e) {
 					PHPUnitPlugin.log(e);
 				}
-
 			}
 		} catch (final IOException e) {
 			PHPUnitPlugin.log(e);
