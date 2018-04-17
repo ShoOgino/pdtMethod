@@ -1,6 +1,13 @@
 	@Override
 	public boolean visit(FormalParameter s) throws Exception {
 		validateConstantExpression(s.getInitialization(), true);
+		if (version.isGreaterThan(PHPVersion.PHP5_3) && s.getParameterName() != null
+				&& PHPVariables.isVariable(s.getParameterName().getName(), version)) {
+			reportProblem(s.getParameterName(), Messages.ReassignAutoGlobalVariable,
+					PHPProblemIdentifier.ReassignAutoGlobalVariable, s.getParameterName().getName(),
+					ProblemSeverities.Error);
+		}
+
 		return super.visit(s);
 	}
 
