@@ -16,23 +16,25 @@
 			if (tRegion != null && tRegion.getType().equals(PHPRegionContext.PHP_CLOSE)) {
 				tRegion = sdRegion.getRegionAtCharacterOffset(offset - 1);
 			}
+			if (tRegion != null) {
+				int regionStart = sdRegion.getStartOffset(tRegion);
 
-			int regionStart = sdRegion.getStartOffset(tRegion);
-
-			// in case of container we have to extract the PhpScriptRegion
-			if (tRegion != null && tRegion instanceof ITextRegionContainer) {
-				ITextRegionContainer container = (ITextRegionContainer) tRegion;
-				tRegion = container.getRegionAtCharacterOffset(offset);
-				regionStart += tRegion.getStart();
-			}
-
-			if (tRegion != null && tRegion instanceof IPHPScriptRegion) {
-				IPHPScriptRegion scriptRegion = (IPHPScriptRegion) tRegion;
-				if (preferNonWhitespacePartitions
-						&& scriptRegion.getPHPToken(offset - regionStart).getTextEnd() <= offset - regionStart) {
-					return scriptRegion.getPartition(scriptRegion.getPHPToken(offset - regionStart).getEnd());
+				// in case of container we have to extract the PhpScriptRegion
+				if (tRegion instanceof ITextRegionContainer) {
+					ITextRegionContainer container = (ITextRegionContainer) tRegion;
+					tRegion = container.getRegionAtCharacterOffset(offset);
+					regionStart += tRegion.getStart();
 				}
-				return scriptRegion.getPartition(offset - regionStart);
+
+				if (tRegion instanceof IPHPScriptRegion) {
+					IPHPScriptRegion scriptRegion = (IPHPScriptRegion) tRegion;
+					int regionOffset = offset - regionStart;
+					if (preferNonWhitespacePartitions
+							&& scriptRegion.getPHPToken(regionOffset).getTextEnd() <= regionOffset) {
+						return scriptRegion.getPartition(scriptRegion.getPHPToken(regionOffset).getEnd());
+					}
+					return scriptRegion.getPartition(regionOffset);
+				}
 			}
 		} catch (final BadLocationException e) {
 		}

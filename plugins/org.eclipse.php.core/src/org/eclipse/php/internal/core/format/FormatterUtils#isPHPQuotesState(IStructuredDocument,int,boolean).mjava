@@ -1,8 +1,23 @@
-	public static @Nullable String getRegionType(IStructuredDocument document, int offset) {
+	/**
+	 * Extended version of the
+	 * <code>"FormatterUtils.getPartitionType(document, offset) == PHPPartitionTypes.PHP_QUOTED_STRING"</code>
+	 * check, since it also reports that variables (and other PHP code) inside
+	 * back-quoted strings, double-quoted strings and heredoc sections are "quoted
+	 * PHP code".
+	 * 
+	 * @param document
+	 * @param offset
+	 * @param preferNonWhitespacePartitions
+	 * @return true if offset is in a quoted-string offsets range, false otherwise
+	 * @see IPHPScriptRegion#isPHPQuotesState(int)
+	 * @see PHPPartitionTypes#isPHPQuotesState(String)
+	 */
+	public static boolean isPHPQuotesState(IStructuredDocument document, int offset,
+			boolean preferNonWhitespacePartitions) {
 		try {
 			IStructuredDocumentRegion sdRegion = document.getRegionAtCharacterOffset(offset);
 			if (sdRegion == null) {
-				return null;
+				return false;
 			}
 
 			ITextRegion tRegion = sdRegion.getRegionAtCharacterOffset(offset);
@@ -28,13 +43,16 @@
 				if (tRegion instanceof IPHPScriptRegion) {
 					IPHPScriptRegion scriptRegion = (IPHPScriptRegion) tRegion;
 					int regionOffset = offset - regionStart;
-					ITextRegion innerRegion = scriptRegion.getPHPToken(regionOffset);
-					return innerRegion.getType();
+					if (preferNonWhitespacePartitions
+							&& scriptRegion.getPHPToken(regionOffset).getTextEnd() <= regionOffset) {
+						return scriptRegion.isPHPQuotesState(scriptRegion.getPHPToken(regionOffset).getEnd());
+					}
+					return scriptRegion.isPHPQuotesState(regionOffset);
 				}
 			}
 		} catch (final BadLocationException e) {
 		}
 
-		return null;
+		return false;
 	}
 
