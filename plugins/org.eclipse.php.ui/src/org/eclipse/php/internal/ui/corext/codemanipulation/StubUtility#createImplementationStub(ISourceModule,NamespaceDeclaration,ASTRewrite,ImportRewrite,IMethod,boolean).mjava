@@ -20,8 +20,9 @@
 		org.eclipse.dltk.ast.declarations.MethodDeclaration methodDeclaration = PHPModelUtils
 				.getNodeByMethod(moduleDeclaration, method);
 		List<org.eclipse.php.core.compiler.ast.nodes.FormalParameter> arguments = methodDeclaration.getArguments();
-
-		boolean supportNullable = ProjectOptions.getPHPVersion(unit).isGreaterThan(PHPVersion.PHP7_0);
+		PHPVersion phpVersion = ProjectOptions.getPHPVersion(unit);
+		boolean supportNullable = phpVersion.isGreaterThan(PHPVersion.PHP7_0);
+		boolean supportReturnType = phpVersion.isGreaterThan(PHPVersion.PHP5_6);
 		Map<String, ImportDeclaration> importContainers = getImportContainer(method);
 		String declaringNamespace = getDeclaringNamespace(method);
 		if (typeParams != null) {
@@ -52,9 +53,9 @@
 
 		FullyQualifiedReference returnType = (FullyQualifiedReference) ((PHPMethodDeclaration) methodDeclaration)
 				.getReturnType();
-		if (returnType != null && supportNullable) {
+		if (returnType != null && supportReturnType) {
 			String returnTypeName = returnType.getName();
-			if (returnType.isNullable()) {
+			if (supportNullable && returnType.isNullable()) {
 				returnTypeName = '?' + returnTypeName;
 			}
 			func.setReturnType(ast.newIdentifier(returnTypeName));
