@@ -1,0 +1,62 @@
+	@Override
+	public void launchChanged(ILaunch launch) {
+		if (launch.getLaunchMode().equals(ILaunchManager.PROFILE_MODE)
+				&& launch.getAttribute(IPHPDebugConstants.CacheGrind_File) != null) {
+			new Job(PHPProfileCoreMessages.PHPLaunchListener_0 + launch.getLaunchConfiguration().getName()) {
+
+				@Override
+				protected IStatus run(IProgressMonitor monitor) {
+					SubMonitor sub = SubMonitor.convert(monitor, 2);
+					sub.beginTask(PHPProfileCoreMessages.PHPLaunchListener_1, 2);
+					sub.setBlocked(new Status(IStatus.OK, PHPProfileCorePlugin.ID,
+							PHPProfileCoreMessages.PHPLaunchListener_2));
+					while (!monitor.isCanceled() && !launch.isTerminated()) {
+						try {
+							Thread.sleep(50);
+						} catch (InterruptedException e) {
+							return Status.CANCEL_STATUS;
+						}
+					}
+					sub.clearBlocked();
+					sub.worked(1);
+					sub.beginTask(PHPProfileCoreMessages.PHPLaunchListener_3, 1);
+					if (monitor.isCanceled()) {
+						return Status.CANCEL_STATUS;
+					}
+					File f = new File(launch.getAttribute(IPHPDebugConstants.CacheGrind_File));
+					if (f.exists()) {
+						if (f.length() > 0) {
+							try {
+								CacheGrindModelParser tmp = new CacheGrindModelParser(new FileInputStream(f));
+								ProfilerData[] models = tmp.buildModel();
+								if (monitor.isCanceled()) {
+									return Status.CANCEL_STATUS;
+								}
+								for (ProfilerData model : models) {
+									ProfileSessionsManager.addSession(new DefaultProfilerDB(model, new Date()));
+								}
+								f.delete();
+								if (models.length == 0) {
+									return new Status(IStatus.ERROR, PHPProfileCorePlugin.ID,
+											PHPProfileCoreMessages.PHPLaunchListener_4);
+								}
+							} catch (FileNotFoundException e) {
+								// ignore, already checked
+							} catch (IOException e) {
+								return new Status(IStatus.ERROR, PHPProfileCorePlugin.ID,
+										NLS.bind(PHPProfileCoreMessages.PHPLaunchListener_5, e.getMessage()));
+							}
+						} else {
+							return new Status(IStatus.ERROR, PHPProfileCorePlugin.ID,
+									PHPProfileCoreMessages.PHPLaunchListener_6);
+						}
+					} else {
+						return new Status(IStatus.ERROR, PHPProfileCorePlugin.ID,
+								PHPProfileCoreMessages.PHPLaunchListener_7);
+					}
+					return Status.OK_STATUS;
+				}
+			}.schedule();
+		}
+	}
+

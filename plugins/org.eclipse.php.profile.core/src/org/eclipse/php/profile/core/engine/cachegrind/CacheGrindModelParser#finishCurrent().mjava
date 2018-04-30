@@ -1,0 +1,75 @@
+	private void finishCurrent() {
+		if (model.getGlobalData().getPath() == null) {
+			return;
+		}
+		if (mainCall == null) {
+			mainCall = lastFunction;
+		}
+		finishSubCalls();
+		if (mainCall != null) {
+			buildCallTree(mainCall);
+		}
+
+		List<String> fileNames = new ArrayList<>(files.size());
+		for (File file : files.values()) {
+			if (file.name == null) {
+				file.name = String.valueOf(file.index);
+			}
+			ProfilerFileData modelFile = new ProfilerFileData(file.name);
+			for (Function fnc : file.functions.values()) {
+				if (fnc.name == null) {
+					fnc.name = functionNames.get(fnc.index);
+					if (fnc.name == null) {
+						fnc.name = String.valueOf(fnc.index);
+					}
+				}
+				ProfilerFunctionData modelFnc = new ProfilerFunctionData(file.name);
+				int i = fnc.name.indexOf("::"); //$NON-NLS-1$
+				if (i == -1) {
+					i = fnc.name.indexOf("->"); //$NON-NLS-1$
+				}
+				if (i != -1) {
+					String className = fnc.name.substring(0, i);
+					String fName = fnc.name.substring(i + 2);
+					if (fName.equals(file.name)) {
+						modelFnc.setFunctionName(new StringBuilder(className).append(':').append(fName).toString());
+					} else {
+						if (!file.name.equals("php:internal") && !className.equals("php")) { //$NON-NLS-1$ //$NON-NLS-2$
+							modelFnc.setClassName(className);
+						}
+						modelFnc.setFunctionName(fName);
+					}
+				} else {
+					modelFnc.setFunctionName(fnc.name);
+				}
+
+				modelFnc.setLineNumber(fnc.position);
+				modelFnc.setCallsCount(fnc.calls);
+				modelFnc.setTotalTimeMicroseconds(fnc.totalCost);
+				modelFnc.setOwnTimeMicroseconds(fnc.cost);
+				if (mainCall != null) {
+					modelFnc.setID(fnc.id == mainCall.function.id ? -1 : fnc.id);
+				}
+
+				modelFile.addFunction(modelFnc);
+			}
+			model.addFile(modelFile);
+			fileNames.add(file.name);
+		}
+
+		model.getGlobalData().setFileCount(files.size());
+		model.getGlobalData().setFileNames(fileNames.toArray(new String[0]));
+
+		fileIds.clear();
+		functionNames.clear();
+		functionIds.clear();
+		files.clear();
+		invocations.clear();
+		fileCounter = functionCounter = fileFunctionCounter = 1;
+		timeIndex = 0;
+
+		lastFile = null;
+		lastFunction = null;
+		mainCall = null;
+	}
+

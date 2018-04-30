@@ -1,0 +1,42 @@
+	public void parse(CacheGrindParserListener listener) throws IOException {
+		try {
+			Reader reader = new BufferedReader(new InputStreamReader(fFile));
+			int letter = reader.read();
+			StringBuilder buff = new StringBuilder();
+			List<State> states = CacheGrindParser.mainStates;
+			while (letter != -1) {
+				if (letter == '\n') {
+					if (states.size() != 1) {
+						if (buff.length() > 0) {
+							listener.unknown(buff.toString());
+						}
+					} else if (states.size() == 1) {
+						states.get(0).consume(listener);
+					}
+					if (states.size() > 0) {
+						states.forEach(s -> s.reset());
+					}
+					buff.setLength(0);
+					states = CacheGrindParser.mainStates;
+				} else if (states.size() > 0) {
+					char tmp = (char) letter;
+					states = states.stream().filter(s -> {
+						if (s.valid(tmp)) {
+							return true;
+						}
+						s.reset();
+						return false;
+					}).collect(Collectors.toList());
+					buff.append(tmp);
+				} else {
+					buff.append((char) letter);
+				}
+
+				letter = reader.read();
+
+			}
+		} finally {
+			CacheGrindParser.mainStates.forEach(s -> s.reset());
+		}
+	}
+

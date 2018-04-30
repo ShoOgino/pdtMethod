@@ -1,0 +1,47 @@
+		@Override
+		public void function(int id, String name) {
+			if (lastFile == null) {
+				return;
+			}
+			lastFunction = null;
+			callFile = null;
+			lastCall = null;
+
+			boolean main = false;
+			if (id < 0) {
+				if (!functionIds.containsKey(name)) {
+					id = functionCounter++;
+					functionIds.put(name, id);
+					if (MAIN.equals(name)) {
+						main = true;
+					}
+				} else {
+					id = functionIds.get(name);
+				}
+			} else if (name != null) {
+				if (MAIN.equals(name)) {
+					main = true;
+				}
+				functionIds.put(name, id);
+			}
+
+			Function fnc;
+			if (!lastFile.functions.containsKey(id)) {
+				fnc = new Function(fileFunctionCounter++, id);
+				lastFile.functions.put(id, fnc);
+			} else {
+				fnc = lastFile.functions.get(id);
+			}
+			if (name != null) {
+				fnc.name = name;
+				functionNames.put(id, name);
+			}
+
+			lastFunction = new Invocation();
+			lastFunction.function = fnc;
+			fnc.pendingInvocations.push(lastFunction);
+			if (main) {
+				mainCall = lastFunction;
+			}
+		}
+

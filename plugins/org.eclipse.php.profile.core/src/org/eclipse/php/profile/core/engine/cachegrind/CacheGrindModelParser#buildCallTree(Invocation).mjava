@@ -1,0 +1,20 @@
+	private void buildCallTree(Invocation inv) {
+
+		ProfilerCallTraceLayer lr = new ProfilerCallTraceLayer();
+		int id = inv == mainCall ? -1 : inv.function.id;
+		lr.setCalledID(id);
+		lr.setType(ProfilerCallTraceLayer.ENTER);
+		lr.setLine(inv.position);
+		model.getCallTrace().addLayer(lr);
+		for (Invocation sub : inv.calls) {
+			buildCallTree(sub);
+		}
+
+		lr = new ProfilerCallTraceLayer();
+		lr.setCalledID(id);
+		lr.setTimestampMicroseconds(inv.cost);
+		lr.setType(ProfilerCallTraceLayer.EXIT);
+		lr.setLine(inv.position);
+		model.getCallTrace().addLayer(lr);
+	}
+

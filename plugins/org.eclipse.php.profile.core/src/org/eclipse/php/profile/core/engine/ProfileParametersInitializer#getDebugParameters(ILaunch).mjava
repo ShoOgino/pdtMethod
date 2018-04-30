@@ -1,8 +1,23 @@
 	@Override
 	public Hashtable<String, String> getDebugParameters(ILaunch launch) {
-		// Fill standard parameters
-		Hashtable<String, String> parameters = super.getDebugParameters(launch);
-		parameters.put(START_PROFILE, "1"); //$NON-NLS-1$
+		Hashtable<String, String> parameters;
+		if (launch instanceof XDebugLaunch) {
+			parameters = new Hashtable<>();
+			if (launch.getLaunchMode().equals(ILaunchManager.PROFILE_MODE)) {
+				try {
+					if (launch.getLaunchConfiguration().getAttribute(IPHPDebugConstants.XDEBUG_PROFILE_TRIGGER, true)) {
+						parameters.put("XDEBUG_PROFILE", launch.getLaunchConfiguration() //$NON-NLS-1$
+								.getAttribute(IPHPDebugConstants.XDEBUG_PROFILE_TRIGGER_VALUE, "")); //$NON-NLS-1$
+					}
+				} catch (CoreException e) {
+					Logger.logException(e);
+				}
+			}
+			return parameters;
+		} else {
+			parameters = super.getDebugParameters(launch);
+			parameters.put(START_PROFILE, "1"); //$NON-NLS-1$
+		}
 		return parameters;
 	}
 

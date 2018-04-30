@@ -1,0 +1,61 @@
+	/**
+	 * Creates and returns a command line invocation string for the execution of the
+	 * PHP script.
+	 * 
+	 * @param configuration
+	 *                           Launch configuration
+	 * @param phpExe
+	 *                           PHP Executable path
+	 * @param phpConfigDir
+	 *                           PHP configuration file location (directory where
+	 *                           php.ini resides)
+	 * @param scriptPath
+	 *                           Script path
+	 * @param phpIniLocation
+	 *                           PHP configuration file path
+	 * @param args
+	 *                           Command line arguments, if using PHP CLI, otherwise
+	 *                           - <code>null</code>
+	 * @param phpVersion
+	 * @return commands array
+	 * @throws CoreException
+	 */
+	public static String[] getCommandLine(ILaunchConfiguration configuration, String phpExe, String phpConfigDir,
+			Map<String, String> additionalconfig, String scriptPath, String[] args, String phpVersion)
+			throws CoreException {
+		// Check if we should treat ASP tags as PHP tags
+		IProject project = getProject(configuration);
+		Map<String, String> phpConfig = new TreeMap<>();
+		phpConfig.put("asp_tags", ProjectOptions.isSupportingASPTags(project) ? ON : OFF); //$NON-NLS-1$
+		phpConfig.put("short_open_tag", ProjectOptions.useShortTags(project) ? ON : OFF); //$NON-NLS-1$
+		if (additionalconfig != null) {
+			phpConfig.putAll(additionalconfig);
+		}
+
+		boolean builtIn = false;
+		final PHPexeItem[] phpItems = PHPexes.getInstance().getAllItems();
+		for (PHPexeItem item : phpItems) {
+			if (item.getExecutable().getAbsolutePath().equals(phpExe)) {
+				builtIn = !item.isEditable() || !item.isLoadDefaultINI();
+				break;
+			}
+		}
+		List<String> cmdLineList = new LinkedList<>();
+		cmdLineList.add(phpExe);
+		if (builtIn) {
+			cmdLineList.add("-n"); //$NON-NLS-1$
+		}
+		cmdLineList.add("-c"); //$NON-NLS-1$
+		cmdLineList.add(phpConfigDir);
+		for (Entry<String, String> cfg : phpConfig.entrySet()) {
+			cmdLineList.add("-d"); //$NON-NLS-1$
+			cmdLineList.add(new StringBuilder(cfg.getKey()).append('=').append(cfg.getValue()).toString());
+		}
+
+		cmdLineList.add(scriptPath);
+		if (args != null) {
+			cmdLineList.addAll(Arrays.asList(args));
+		}
+		return cmdLineList.toArray(new String[cmdLineList.size()]);
+	}
+
