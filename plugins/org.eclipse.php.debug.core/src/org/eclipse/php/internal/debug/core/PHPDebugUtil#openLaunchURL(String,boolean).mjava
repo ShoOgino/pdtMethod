@@ -1,0 +1,95 @@
+	/**
+	 * Opens URL from debug/run launch configuration, through a synchronous or an
+	 * asynchronous UI thread call. When the UI thread is unavailable, the URL is
+	 * always handled synchronously in a non-graphical way. Users of this method
+	 * should handle exceptions that might be thrown but without need to log the
+	 * exception info (it is already handled by this implementation). <b>Note that
+	 * exceptions are only thrown when parameter doSyncExec is set to true or when
+	 * the UI thread is unavailable.</b>
+	 * 
+	 * @param launchURL
+	 * @param doSyncExec
+	 *                       opens URL synchronously when true, asynchronously
+	 *                       otherwise
+	 * @throws DebugException
+	 * @throws MalformedURLException
+	 */
+	public static void openLaunchURL(final String launchURL, final boolean doSyncExec) throws DebugException {
+		// If no display is available, it means eclipse is shutting down,
+		// try then to call the URL in a non-graphical way
+		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=517792
+		if (PlatformUI.getWorkbench().getDisplay().isDisposed()) {
+			try {
+				URL url = new URL(launchURL);
+				URLConnection con = url.openConnection();
+				// Set the connection timeout to 5 seconds and the read timeout
+				// to 5 seconds
+				con.setConnectTimeout(5000);
+				con.setReadTimeout(5000);
+				InputStream is = con.getInputStream();
+				BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+				while (reader.readLine() != null) {
+				}
+				reader.close();
+			} catch (Throwable t) {
+				Logger.logException(MessageFormat.format("Error initializing the connection for debug/launch URL: {0}", //$NON-NLS-1$
+						launchURL), t);
+				String errorMessage = PHPDebugCoreMessages.Debugger_Unexpected_Error_1;
+				throw new DebugException(new Status(IStatus.ERROR, PHPDebugPlugin.getID(),
+						IPHPDebugConstants.INTERNAL_ERROR, errorMessage, t));
+			}
+
+			return;
+		}
+
+		final SyncObject<DebugException> e = doSyncExec ? new SyncObject<>() : null;
+
+		Runnable r = new Runnable() {
+			@Override
+			public void run() {
+				try {
+					final URL urlToOpen = new URL(launchURL);
+					StringBuilder browserTitle = new StringBuilder(urlToOpen.getProtocol()).append("://").append( //$NON-NLS-1$
+							urlToOpen.getHost());
+					if (urlToOpen.getPort() != -1) {
+						browserTitle.append(':').append(urlToOpen.getPort());
+					}
+					browserTitle.append(urlToOpen.getPath());
+					IWorkbenchBrowserSupport browserSupport = PlatformUI.getWorkbench().getBrowserSupport();
+					IWebBrowser browser = browserSupport.createBrowser(
+							IWorkbenchBrowserSupport.LOCATION_BAR | IWorkbenchBrowserSupport.NAVIGATION_BAR
+									| IWorkbenchBrowserSupport.STATUS,
+							"PHP Debugger Browser", //$NON-NLS-1$
+							browserTitle.toString(), browserTitle.toString());
+					if (PHPDebugPlugin.DEBUG) {
+						System.out.println("Opening debug/launch URL in a Web Browser: " //$NON-NLS-1$
+								+ urlToOpen.toString());
+					}
+					browser.openURL(urlToOpen);
+				} catch (Throwable t) {
+					Logger.logException(
+							MessageFormat.format("Error initializing the Web Browser for debug/launch URL: {0}", //$NON-NLS-1$
+									launchURL),
+							t);
+					String errorMessage = PHPDebugCoreMessages.Debugger_Unexpected_Error_1;
+					if (e != null) {
+						e.set(new DebugException(new Status(IStatus.ERROR, PHPDebugPlugin.getID(),
+								IPHPDebugConstants.INTERNAL_ERROR, errorMessage, t)));
+					}
+				}
+			}
+		};
+
+		if (doSyncExec) {
+			// Run synchronously to pass exception if any
+			PlatformUI.getWorkbench().getDisplay().syncExec(r);
+			@SuppressWarnings("null")
+			DebugException ex = e.get();
+			if (ex != null) {
+				throw ex;
+			}
+		} else {
+			PlatformUI.getWorkbench().getDisplay().asyncExec(r);
+		}
+	}
+
