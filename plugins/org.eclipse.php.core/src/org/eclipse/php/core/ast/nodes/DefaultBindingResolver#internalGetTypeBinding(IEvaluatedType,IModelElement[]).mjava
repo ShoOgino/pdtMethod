@@ -3,12 +3,42 @@
 		if (typeName == null) {
 			return null;
 		}
-		String key = IModelElement.TYPE + ":" + typeName; //$NON-NLS-1$
-		IBinding binding = bindingTables.bindingKeysToBindings.get(key);
-		if (binding == null) {
-			binding = new TypeBinding(this, type, modelElements);
-			bindingTables.bindingKeysToBindings.put(key, binding);
+
+		Map<String, List<IModelElement>> nameMap = new HashMap<String, List<IModelElement>>();
+		if (modelElements != null && modelElements.length > 0) {
+			for (IModelElement model : modelElements) {
+				String name = PHPModelUtils.getFullName(model);
+				if (!nameMap.containsKey(name)) {
+					nameMap.put(name, new LinkedList<>());
+				}
+				nameMap.get(name).add(model);
+			}
 		}
-		return (ITypeBinding) binding;
+
+		if (type instanceof SimpleType || modelElements == null || nameMap.size() < 2) {
+			String key = new StringBuilder(IModelElement.TYPE).append(":").append(type.getTypeName()).toString(); //$NON-NLS-1$
+			IBinding binding = bindingTables.bindingKeysToBindings.get(key);
+			if (binding == null) {
+				binding = new TypeBinding(this, type, modelElements);
+				bindingTables.bindingKeysToBindings.put(key, binding);
+			}
+			return (ITypeBinding) binding;
+		}
+		List<ITypeBinding> bindingList = new LinkedList<>();
+		for (Entry<String, List<IModelElement>> entry : nameMap.entrySet()) {
+			String key = new StringBuilder(IModelElement.TYPE).append(":").append(entry.getKey()).toString(); //$NON-NLS-1$
+			IBinding binding = bindingTables.bindingKeysToBindings.get(key);
+			if (binding == null) {
+				binding = new TypeBinding(this, new PHPClassType(entry.getKey()),
+						entry.getValue().toArray(new IModelElement[0]));
+				bindingTables.bindingKeysToBindings.put(key, binding);
+			}
+			bindingList.add((ITypeBinding) binding);
+		}
+		if (bindingList.size() == 1) {
+			return bindingList.get(0);
+		}
+
+		return new MultiTypeBinding(this, bindingList.toArray(new ITypeBinding[0]));
 	}
 
