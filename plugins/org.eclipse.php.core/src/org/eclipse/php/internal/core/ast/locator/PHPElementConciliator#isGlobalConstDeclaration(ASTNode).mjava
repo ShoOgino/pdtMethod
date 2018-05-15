@@ -1,0 +1,26 @@
+	// https://bugs.eclipse.org/bugs/show_bug.cgi?id=533276
+	// look for "const FOO = ..." declarations OUTSIDE class or interface
+	// declaration
+	public static boolean isGlobalConstDeclaration(ASTNode locateNode) {
+		assert locateNode != null;
+
+		// check if it is an identifier
+		if (locateNode.getType() != ASTNode.IDENTIFIER) {
+			return false;
+		}
+
+		ASTNode parent = locateNode.getParent();
+		if (parent.getType() == ASTNode.CONSTANT_DECLARATION) {
+			while (parent.getParent() != null) {
+				parent = parent.getParent();
+				if (parent.getType() == ASTNode.CLASS_DECLARATION || parent.getType() == ASTNode.INTERFACE_DECLARATION
+						|| parent.getType() == ASTNode.ANONYMOUS_CLASS_DECLARATION) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		return false;
+	}
+
