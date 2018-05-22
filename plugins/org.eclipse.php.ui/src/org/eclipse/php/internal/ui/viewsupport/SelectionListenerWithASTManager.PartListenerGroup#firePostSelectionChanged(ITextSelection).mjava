@@ -2,7 +2,7 @@
 		 * A post selection event has occurred.
 		 * 
 		 * @param selection
-		 *            the selection
+		 *                      the selection
 		 */
 		public void firePostSelectionChanged(final ITextSelection selection) {
 			if (fCurrentJob != null) {
@@ -19,7 +19,21 @@
 					if (monitor == null) {
 						monitor = new NullProgressMonitor();
 					}
+
+					try {
+						if (!typeRoot.isConsistent()) {
+							synchronized (this) {
+								if (!monitor.isCanceled()) {
+									schedule(1000);
+								}
+							}
+							return Status.OK_STATUS;
+						}
+					} catch (ModelException e) {
+						// never happens, fall thru
+					}
 					synchronized (fJobLock) {
+						// The monitor is never null
 						return calculateASTandInform(typeRoot, selection, monitor);
 					}
 				}
