@@ -1,4 +1,4 @@
-	public static boolean checkSignature(File file, Digest digest, int end) throws IOException {
+	public static boolean checkSignature(File file, int fileEnd, Digest digest, byte[] digestData) throws IOException {
 		MessageDigest messageDigest = digest.getDigest();
 		messageDigest.reset();
 		int length = 0;
@@ -8,8 +8,8 @@
 			int n;
 			int size = 4096;
 			byte[] readBuffer;
-			if (end < size) {
-				readBuffer = new byte[end];
+			if (fileEnd < size) {
+				readBuffer = new byte[fileEnd];
 			} else {
 				readBuffer = new byte[4096];
 			}
@@ -23,16 +23,14 @@
 				// } else {
 				messageDigest.update(readBuffer, 0, n);
 				// }
-				if (length == end) {
+				if (length == fileEnd) {
 					break;
 				}
-				if (length + readBuffer.length > end) {
-					readBuffer = new byte[end - length];
+				if (length + readBuffer.length > fileEnd) {
+					readBuffer = new byte[fileEnd - length];
 				}
 			}
-			readBuffer = new byte[contentStream.available() - 8];
-			contentStream.read(readBuffer);
-			if (PharUtil.byteArrayEquals(messageDigest.digest(), readBuffer)) {
+			if (PharUtil.byteArrayEquals(messageDigest.digest(), digestData)) {
 				return true;
 			}
 		} finally {
