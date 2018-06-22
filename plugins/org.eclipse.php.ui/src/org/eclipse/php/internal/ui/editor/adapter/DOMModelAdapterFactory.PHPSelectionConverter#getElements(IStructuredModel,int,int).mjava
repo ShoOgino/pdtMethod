@@ -1,0 +1,30 @@
+		@Override
+		public Object[] getElements(IStructuredModel model, int start, int end) {
+			DOMModelForPHP impl = (DOMModelForPHP) model;
+			IStructuredDocument document = impl.getStructuredDocument();
+			ISourceModule modelElement = null;
+			Enumeration<?> openBuffers = BufferManager.getDefaultBufferManager().getOpenBuffers();
+			while (openBuffers.hasMoreElements()) {
+				Object nextElement = openBuffers.nextElement();
+				if (nextElement instanceof DocumentAdapter) {
+					DocumentAdapter adapt = (DocumentAdapter) nextElement;
+					if (adapt.getDocument().equals(document) && adapt.getOwner() instanceof ISourceModule) {
+						modelElement = (ISourceModule) adapt.getOwner();
+						break;
+					}
+				}
+			}
+			if (modelElement != null) {
+				try {
+					IModelElement elementAt = modelElement.getElementAt(start);
+					if (elementAt instanceof ISourceReference) {
+						return new Object[] { new ModelSelection(elementAt) };
+					}
+				} catch (ModelException e) {
+					Logger.logException(e);
+				}
+			}
+
+			return super.getElements(model, start, end);
+		}
+
