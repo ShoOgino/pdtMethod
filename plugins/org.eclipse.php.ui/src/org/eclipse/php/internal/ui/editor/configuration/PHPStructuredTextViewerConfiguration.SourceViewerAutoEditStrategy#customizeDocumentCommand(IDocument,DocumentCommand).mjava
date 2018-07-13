@@ -1,0 +1,27 @@
+		@Override
+		public void customizeDocumentCommand(IDocument document, DocumentCommand command) {
+			ITextEditorExtension3 textEditor = null;
+
+			if (fViewer instanceof PHPStructuredTextViewer) {
+				ITextEditor tmp = ((PHPStructuredTextViewer) fViewer).getTextEditor();
+				if (tmp instanceof ITextEditorExtension3) {
+					textEditor = (ITextEditorExtension3) tmp;
+				}
+			} else {
+				IWorkbenchPage page = PHPUiPlugin.getActivePage();
+				if (page != null) {
+					IEditorPart part = page.getActiveEditor();
+					if (part instanceof ITextEditorExtension3) {
+						textEditor = (ITextEditorExtension3) part;
+					} else if (part != null) {
+						textEditor = part.getAdapter(ITextEditorExtension3.class);
+					}
+				}
+			}
+			if (textEditor != null && textEditor.getInsertMode() != ITextEditorExtension3.SMART_INSERT) {
+				return;
+			}
+
+			mainAutoEditStrategy.customizeDocumentCommand(document, command);
+		}
+
