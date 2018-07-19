@@ -17,15 +17,16 @@
 		final int[] caret = new int[1];
 		if (sourceViewer instanceof ITextViewerExtension5) {
 			final ITextViewerExtension5 extension = (ITextViewerExtension5) sourceViewer;
-			Display.getDefault().syncExec(new Runnable() {
-				@Override
-				public void run() {
-					if (!styledText.isDisposed()) {
-						caret[0] = extension.widgetOffset2ModelOffset(styledText.getCaretOffset());
-					}
+			Runnable caretRunnable = () -> {
+				if (!styledText.isDisposed()) {
+					caret[0] = extension.widgetOffset2ModelOffset(styledText.getCaretOffset());
 				}
-			});
-
+			};
+			if (Display.getCurrent() != null) {
+				caretRunnable.run();
+			} else {
+				Display.getDefault().syncExec(caretRunnable);
+			}
 		} else {
 			int offset = sourceViewer.getVisibleRegion().getOffset();
 			caret[0] = offset + styledText.getCaretOffset();
