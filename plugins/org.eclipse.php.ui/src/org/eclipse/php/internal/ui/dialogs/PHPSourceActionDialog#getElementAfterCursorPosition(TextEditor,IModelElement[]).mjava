@@ -2,7 +2,18 @@
 		if (editor == null) {
 			return -1;
 		}
-		int offset = ((ITextSelection) editor.getSelectionProvider().getSelection()).getOffset();
+		ISelection selection = editor.getSelectionProvider().getSelection();
+		int offset = -1;
+		if (selection instanceof IStructuredSelection) {
+			Object firstElement = ((IStructuredSelection) selection).getFirstElement();
+			if (firstElement instanceof ISourceReference) {
+				offset = ((ISourceReference) firstElement).getSourceRange().getOffset() + 1;
+			}
+		}
+		if (offset == -1 && selection instanceof ITextSelection) {
+			offset = ((ITextSelection) selection).getOffset();
+
+		}
 
 		for (int i = 0; i < members.length; i++) {
 			IMember curr = (IMember) members[i];
