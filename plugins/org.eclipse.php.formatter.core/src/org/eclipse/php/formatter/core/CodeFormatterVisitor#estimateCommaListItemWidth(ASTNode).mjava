@@ -1,0 +1,19 @@
+	private int estimateCommaListItemWidth(ASTNode node) {
+		int currentLineLength = lineWidth;
+		try {
+			int lineForStart = document.getLineOfOffset(node.getStart());
+			int lineForEnd = document.getLineOfOffset(node.getEnd());
+
+			if (lineForStart == lineForEnd) {
+				currentLineLength += node.getLength();
+			} else {
+				String content = document.get(node.getStart(), node.getLength());
+				String trimmedContent = SURROUNDING_BLANKS_PATTERN.matcher(content).replaceAll(" "); //$NON-NLS-1$
+				currentLineLength += Math.min(content.length(), trimmedContent.length());
+			}
+		} catch (BadLocationException e) {
+			Logger.logException(e);
+		}
+		return currentLineLength;
+	}
+

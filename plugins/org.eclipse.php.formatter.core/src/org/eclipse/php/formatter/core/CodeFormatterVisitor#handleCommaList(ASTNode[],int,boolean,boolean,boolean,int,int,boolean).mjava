@@ -21,6 +21,10 @@
 		if (array.length == 0) {
 			return lastPosition;
 		}
+		// XXX: most comma-separated lists end with a closing bracket/parenthesis
+		// or with some other character like ';', so keep it simple and add it to
+		// the estimate length returned by estimateCommaListItemWidth()
+		int nbListClosingChars = 1;
 
 		// save the changes index position
 		int savedMrnbLineWidth = mrnbLineWidth;
@@ -79,8 +83,7 @@
 			case NO_LINE_WRAP:
 				break;
 			case FIRST_WRAP_WHEN_NECESSARY: // Wrap only when necessary
-				if (estimateCommaListItemWidth(array[i],
-						this.preferences.line_wrap_line_split) > this.preferences.line_wrap_line_split) {
+				if (estimateCommaListItemWidth(array[i]) + nbListClosingChars > this.preferences.line_wrap_line_split) {
 					lineWrapPolicy = WRAP_WHEN_NECESSARY;
 					if (!cio.indented) {
 						indentationLevel += indentGap;
@@ -91,8 +94,7 @@
 				}
 				break;
 			case WRAP_WHEN_NECESSARY:
-				if (estimateCommaListItemWidth(array[i],
-						this.preferences.line_wrap_line_split) > this.preferences.line_wrap_line_split) {
+				if (estimateCommaListItemWidth(array[i]) + nbListClosingChars > this.preferences.line_wrap_line_split) {
 					insertNewLines(1);
 					indent();
 					isInsertNewLine = true;
@@ -114,8 +116,8 @@
 				break;
 			case WRAP_ALL_ELEMENTS: // Wrap all elements, every element on a new
 									// line
-				if (forceSplit || estimateCommaListItemWidth(array[i],
-						this.preferences.line_wrap_line_split) > this.preferences.line_wrap_line_split) {
+				if (forceSplit || estimateCommaListItemWidth(array[i])
+						+ nbListClosingChars > this.preferences.line_wrap_line_split) {
 					revert(savedBuffer, changesIndex, savedMrnbLineWidth, savedlineWidth, savedIsPrevSpace,
 							savedIsHeredocSemicolon, savedIsPHPEqualTag);
 					lastPosition = savedLastPosition;
@@ -131,8 +133,8 @@
 				break;
 			case WRAP_ALL_ELEMENTS_NO_INDENT_FIRST: // Wrap all elements, indent
 													// all but the first element
-				if (forceSplit || estimateCommaListItemWidth(array[i],
-						this.preferences.line_wrap_line_split) > this.preferences.line_wrap_line_split) {
+				if (forceSplit || estimateCommaListItemWidth(array[i])
+						+ nbListClosingChars > this.preferences.line_wrap_line_split) {
 					// revert the buffer
 					revert(savedBuffer, changesIndex, savedMrnbLineWidth, savedlineWidth, savedIsPrevSpace,
 							savedIsHeredocSemicolon, savedIsPHPEqualTag);
@@ -150,8 +152,8 @@
 			case WRAP_ALL_ELEMENTS_EXCEPT_FIRST: // Wrap all elements, except
 													// first element if not
 													// necessary
-				if (forceSplit || estimateCommaListItemWidth(array[i],
-						this.preferences.line_wrap_line_split) > this.preferences.line_wrap_line_split) {
+				if (forceSplit || estimateCommaListItemWidth(array[i])
+						+ nbListClosingChars > this.preferences.line_wrap_line_split) {
 					// revert
 					revert(savedBuffer, changesIndex, savedMrnbLineWidth, savedlineWidth, savedIsPrevSpace,
 							savedIsHeredocSemicolon, savedIsPHPEqualTag);

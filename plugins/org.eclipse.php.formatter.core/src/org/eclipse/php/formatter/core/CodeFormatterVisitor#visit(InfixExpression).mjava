@@ -19,7 +19,9 @@
 			binaryExpressionIndentGap = calculateIndentGap(this.preferences.line_wrap_binary_expression_indent_policy,
 					this.preferences.line_wrap_wrapped_lines_indentation);
 
-			indentInfixOperand(infixExpression.getLeft(), !wasBinaryExpressionWrapped);
+			// NB: look for infixExpression and not infixExpression.getLeft()
+			// to check full expression length
+			indentInfixOperand(infixExpression, !wasBinaryExpressionWrapped);
 		}
 
 		handleChars(infixExpression.getStart(), infixExpression.getLeft().getStart());
@@ -27,8 +29,7 @@
 		infixExpression.getLeft().accept(this);
 
 		int operator = infixExpression.getOperator();
-		boolean isStringOperator = ((operator == InfixExpression.OP_STRING_AND)
-				|| (operator == InfixExpression.OP_STRING_OR) || (operator == InfixExpression.OP_STRING_XOR));
+		boolean isStringOperator = isStringOperator(operator);
 
 		if (isStringOperator || this.preferences.insert_space_before_binary_operation) {
 			insertSpace();

@@ -1,0 +1,36 @@
+	// XXX: we could merge this method and estimateCommaListItemWidth(), but
+	// for now estimateCommaListItemWidth() is still a bit slower and less
+	// precise
+	private int estimateInfixOperandWidth(ASTNode node, int currentLineLength) {
+		try {
+			int lineForStart = document.getLineOfOffset(node.getStart());
+			int lineForEnd = document.getLineOfOffset(node.getEnd());
+
+			if (lineForStart == lineForEnd) {
+				currentLineLength += node.getLength();
+			} else if (node instanceof InfixExpression) {
+				InfixExpression expr = (InfixExpression) node;
+				currentLineLength = estimateInfixOperandWidth(expr.getLeft(), currentLineLength);
+
+				int operator = expr.getOperator();
+				boolean isStringOperator = isStringOperator(operator);
+				if (isStringOperator || this.preferences.insert_space_before_binary_operation) {
+					currentLineLength++;
+				}
+				currentLineLength += InfixExpression.getOperator(operator).length();
+				if (isStringOperator || this.preferences.insert_space_after_binary_operation) {
+					currentLineLength++;
+				}
+
+				currentLineLength = estimateInfixOperandWidth(expr.getRight(), currentLineLength);
+			} else {
+				String content = document.get(node.getStart(), node.getLength());
+				String trimmedContent = SURROUNDING_BLANKS_PATTERN.matcher(content).replaceAll(" "); //$NON-NLS-1$
+				currentLineLength += Math.min(content.length(), trimmedContent.length());
+			}
+		} catch (BadLocationException e) {
+			Logger.logException(e);
+		}
+		return currentLineLength;
+	}
+
