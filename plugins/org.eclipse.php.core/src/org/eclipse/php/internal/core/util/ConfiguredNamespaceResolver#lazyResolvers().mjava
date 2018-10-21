@@ -1,0 +1,32 @@
+	private void lazyResolvers() {
+		if (resolvers != null) {
+			return;
+		}
+		DefaultNamespaceResolver defaultResolver = new DefaultNamespaceResolver();
+		defaultResolver.init(project);
+
+		if (project == null) {
+			resolvers = new INamespaceResolver[] { defaultResolver };
+		} else {
+			List<INamespaceResolver> resolverList = new ArrayList<>();
+			final Map<INamespaceResolver, Integer> priorities = new HashMap<>();
+
+			for (IConfigurationElement element : Platform.getExtensionRegistry().getConfigurationElementsFor(EXT_ID)) {
+				INamespaceResolver tmp;
+				try {
+					tmp = (INamespaceResolver) element.createExecutableExtension(ATTR_CLASS);
+					tmp.init(project);
+					if (tmp != null && tmp.isSupported()) {
+						resolverList.add(tmp);
+						priorities.put(tmp, Integer.decode(element.getAttribute(ATTR_PRIORITY)));
+					}
+				} catch (CoreException e) {
+					PHPCorePlugin.log(e);
+				}
+			}
+			Collections.sort(resolverList, (o1, o2) -> Integer.compare(priorities.get(o1), priorities.get(o2)) * -1);
+			resolverList.add(defaultResolver);
+			resolvers = resolverList.toArray(new INamespaceResolver[0]);
+		}
+	}
+

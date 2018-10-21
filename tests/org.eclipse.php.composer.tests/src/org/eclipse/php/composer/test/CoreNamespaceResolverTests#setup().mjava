@@ -1,0 +1,26 @@
+	@BeforeClass
+	public static void setup() throws CoreException {
+		TestUtils.disableColliders(ColliderType.ALL);
+		project = TestUtils.createProject("composer_namespace_resolver");
+		TestUtils.createFolder(project, "src");
+		TestUtils.createFolder(project, "tests");
+
+		DLTKCore.create(project)
+				.setRawBuildpath(
+						new IBuildpathEntry[] { DLTKCore.newSourceEntry(project.getFullPath().append("src")),
+								DLTKCore.newSourceEntry(project.getFullPath().append("tests")) },
+						new NullProgressMonitor());
+
+		IFile file = project.getFile("composer.json"); //$NON-NLS-1$
+		file.create(new ByteArrayInputStream(
+				"{\"autoload\": {\"psr-4\" : {\"App\\\\\" : \"src/\"} }, \"autoload-dev\": {\"psr-4\" : {\"App\\\\Tests\\\\\" : \"tests/\"} }   }"
+						.getBytes()),
+				true, null);
+
+		TestUtils.setProjectPHPVersion(project, PHPVersion.PHP5_3);
+
+		PHPFacets.setFacetedVersion(project, PHPVersion.PHP5_3);
+		FacetManager.installFacets(project, PHPVersion.PHP5_3, new NullProgressMonitor());
+
+	}
+
