@@ -1,18 +1,23 @@
 	@Override
 	public boolean visit(Quote quote) {
 		updateLinesWidth(quote);
-		if (quote.getQuoteType() == Quote.QT_HEREDOC || quote.getQuoteType() == Quote.QT_NOWDOC) {
-			int i = quote.getEnd();
-			if (isContainChar(i, i + 1, SEMICOLON)) {
-				isHeredocSemicolon = true;
-			} else {
-				// https://bugs.eclipse.org/bugs/show_bug.cgi?id=411322
-				// always insert a new line after the closing HEREDOC tag
-				boolean isPHPEqualTagOld = isPHPEqualTag;
-				isPHPEqualTag = false;
-				insertNewLine();
-				isPHPEqualTag = isPHPEqualTagOld;
+		// phpVersion < 7.3
+		if (PHPVersion.PHP7_3.isGreaterThan(phpVersion)) {
+			if (quote.getQuoteType() == Quote.QT_HEREDOC || quote.getQuoteType() == Quote.QT_NOWDOC) {
+				int i = quote.getEnd();
+				if (isContainChar(i, i + 1, SEMICOLON)) {
+					isHeredocSemicolonPre73 = true;
+				} else {
+					// https://bugs.eclipse.org/bugs/show_bug.cgi?id=411322
+					// always insert a new line after the closing HEREDOC tag
+					boolean isPHPEqualTagOld = isPHPEqualTag;
+					isPHPEqualTag = false;
+					insertNewLine();
+					isPHPEqualTag = isPHPEqualTagOld;
+				}
 			}
+		} else if (quote.getQuoteType() == Quote.QT_HEREDOC || quote.getQuoteType() == Quote.QT_NOWDOC) {
+			doHeredocIndentation(quote.getStart(), quote.getEnd(), getIndent());
 		}
 		return false;
 	}

@@ -1,0 +1,48 @@
+	private void checkHeredocIndentations(Quote quote) {
+		int heredocIndentationLength = quote.getInnerIndentation().length();
+		if (heredocIndentationLength == 0) {
+			// nothing to check
+			return;
+		}
+
+		boolean hasHeredocSpace = quote.getInnerIndentation().indexOf(' ') != -1;
+		boolean hasHeredocTab = quote.getInnerIndentation().indexOf('\t') != -1;
+
+		assert getTextIndentation(quote.getInnerIndentation().toCharArray(), 0, heredocIndentationLength).value
+				.length() == heredocIndentationLength;
+		assert hasHeredocSpace || hasHeredocTab;
+
+		if (hasHeredocSpace && hasHeredocTab) {
+			int lastLineOffset = context.getLineTracker().getLineInformationOfOffset(quote.end()).getOffset();
+			reportProblem(lastLineOffset, lastLineOffset + heredocIndentationLength, Messages.HeredocMixedIndentation,
+					PHPProblemIdentifier.SYNTAX, ProblemSeverities.Error);
+			// do not go further
+			return;
+		}
+
+		// check indentation from second to penultimate heredoc/nowdoc line
+		int currentLine = context.getLineTracker().getLineNumberOfOffset(quote.start()) + 1;
+		int lastLine = context.getLineTracker().getLineNumberOfOffset(quote.end()) - 1;
+
+		while (currentLine <= lastLine) {
+			int currentLineOffset = context.getLineTracker().getLineOffset(currentLine);
+			int currentLineLength = context.getLineTracker().getLineLength(currentLine);
+			int maxCheckIndentationLength = Math.min(currentLineLength, heredocIndentationLength);
+			Indentation currentLineIndentation = getTextIndentation(context.getContents(), currentLineOffset,
+					maxCheckIndentationLength);
+
+			if ((hasHeredocSpace && (currentLineIndentation.flags & Indentation.HAS_TAB) == Indentation.HAS_TAB)
+					|| (hasHeredocTab
+							&& (currentLineIndentation.flags & Indentation.HAS_SPACE) == Indentation.HAS_SPACE)) {
+				reportProblem(currentLineOffset, currentLineOffset + currentLineIndentation.value.length(),
+						Messages.HeredocMixedIndentation, PHPProblemIdentifier.SYNTAX, ProblemSeverities.Error);
+			} else if (!currentLineIndentation.value.startsWith(quote.getInnerIndentation())) {
+				reportProblem(currentLineOffset, currentLineOffset + currentLineIndentation.value.length(),
+						MessageFormat.format(Messages.HeredocInvalidIndentation,
+								new Object[] { heredocIndentationLength }),
+						PHPProblemIdentifier.SYNTAX, ProblemSeverities.Error);
+			}
+			currentLine++;
+		}
+	}
+

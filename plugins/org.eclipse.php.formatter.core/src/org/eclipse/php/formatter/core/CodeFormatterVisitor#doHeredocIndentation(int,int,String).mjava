@@ -1,0 +1,46 @@
+	private void doHeredocIndentation(int start, int end, String newHeredocIndentation) {
+		try {
+			int heredocEndLine = document.getLineOfOffset(end);
+			int heredocEndLineOffset = document.getLineOffset(heredocEndLine);
+
+			String closingTagContent = document.get(heredocEndLineOffset, end - heredocEndLineOffset);
+			String closingTagIndentation = getTextIndentation(closingTagContent);
+
+			// always update lineWidth
+			lineWidth = 0;
+			addNonBlanksToLineWidth(closingTagContent.length());
+
+			if (!preferences.indent_heredocs) {
+				return;
+			}
+			if (closingTagIndentation.equals(newHeredocIndentation)) {
+				// the indentation is unchanged, nothing to do
+				return;
+			}
+
+			int heredocStartLine = document.getLineOfOffset(start);
+			assert heredocEndLine > heredocStartLine;
+
+			// apply indentation from second to penultimate heredoc/nowdoc line
+			for (int i = heredocStartLine + 1; i <= heredocEndLine - 1; i++) {
+				int currentLineOffset = document.getLineOffset(i);
+				int currentLineLength = document.getLineLength(i);
+				String currentLineContent = document.get(currentLineOffset, currentLineLength);
+				String currentLineIndentation = getTextIndentation(currentLineContent);
+				if (currentLineIndentation.startsWith(closingTagIndentation)) {
+					insertString(currentLineOffset, currentLineOffset + closingTagIndentation.length(),
+							newHeredocIndentation);
+				}
+			}
+			// now handle last heredoc/nowdoc line
+			insertString(heredocEndLineOffset, heredocEndLineOffset + closingTagIndentation.length(),
+					newHeredocIndentation);
+			// update lineWidth
+			lineWidth = 0;
+			addNonBlanksToLineWidth(
+					newHeredocIndentation.length() + (closingTagContent.length() - closingTagIndentation.length()));
+		} catch (Exception e) {
+			Logger.logException(e);
+		}
+	}
+

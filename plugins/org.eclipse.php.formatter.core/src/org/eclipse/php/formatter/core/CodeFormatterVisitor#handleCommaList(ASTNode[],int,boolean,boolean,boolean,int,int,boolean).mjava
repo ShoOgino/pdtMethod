@@ -21,16 +21,17 @@
 		if (array.length == 0) {
 			return lastPosition;
 		}
-		// XXX: most comma-separated lists end with a closing bracket/parenthesis
-		// or with some other character like ';', so keep it simple and add it to
-		// the estimate length returned by estimateCommaListItemWidth()
+		// XXX: most comma-separated lists end with a closing
+		// bracket/parenthesis
+		// or with some other character like ';', so keep it simple and add it
+		// to the estimate length returned by estimateCommaListItemWidth()
 		int nbListClosingChars = 1;
 
 		// save the changes index position
 		int savedMrnbLineWidth = mrnbLineWidth;
 		int savedlineWidth = lineWidth;
 		boolean savedIsPrevSpace = isPrevSpace;
-		boolean savedIsHeredocSemicolon = isHeredocSemicolon;
+		boolean savedIsHeredocSemicolonPre73 = isHeredocSemicolonPre73;
 		boolean savedIsPHPEqualTag = isPHPEqualTag;
 		String savedBuffer = replaceBuffer.toString();
 		int changesIndex = changes.size() - 1;
@@ -45,8 +46,8 @@
 		boolean isFirst = true;
 
 		int arrayLength = array.length;
-		// when necessary, remove the empty ASTNode (i.e. EmptyExpression) at end of
-		// array
+		// when necessary, remove the empty ASTNode (i.e. EmptyExpression) at
+		// end of array
 		if (!keepTrailingComma && array[arrayLength - 1].getLength() == 0) {
 			arrayLength--;
 		}
@@ -69,7 +70,7 @@
 				savedMrnbLineWidth = mrnbLineWidth;
 				savedlineWidth = lineWidth;
 				savedIsPrevSpace = isPrevSpace;
-				savedIsHeredocSemicolon = isHeredocSemicolon;
+				savedIsHeredocSemicolonPre73 = isHeredocSemicolonPre73;
 				savedIsPHPEqualTag = isPHPEqualTag;
 				savedBuffer = replaceBuffer.toString();
 				changesIndex = changes.size() - 1;
@@ -103,7 +104,7 @@
 			case WRAP_FIRST_ELEMENT: // Always wrap first element, others when
 										// necessary
 				revert(savedBuffer, changesIndex, savedMrnbLineWidth, savedlineWidth, savedIsPrevSpace,
-						savedIsHeredocSemicolon, savedIsPHPEqualTag);
+						savedIsHeredocSemicolonPre73, savedIsPHPEqualTag);
 				lastPosition = savedLastPosition;
 				i = 0;
 				lineWrapPolicy = WRAP_WHEN_NECESSARY;
@@ -119,7 +120,7 @@
 				if (forceSplit || estimateCommaListItemWidth(array[i])
 						+ nbListClosingChars > this.preferences.line_wrap_line_split) {
 					revert(savedBuffer, changesIndex, savedMrnbLineWidth, savedlineWidth, savedIsPrevSpace,
-							savedIsHeredocSemicolon, savedIsPHPEqualTag);
+							savedIsHeredocSemicolonPre73, savedIsPHPEqualTag);
 					lastPosition = savedLastPosition;
 					i = 0;
 					lineWrapPolicy = ALWAYS_WRAP_ELEMENT;
@@ -137,7 +138,7 @@
 						+ nbListClosingChars > this.preferences.line_wrap_line_split) {
 					// revert the buffer
 					revert(savedBuffer, changesIndex, savedMrnbLineWidth, savedlineWidth, savedIsPrevSpace,
-							savedIsHeredocSemicolon, savedIsPHPEqualTag);
+							savedIsHeredocSemicolonPre73, savedIsPHPEqualTag);
 					lastPosition = savedLastPosition;
 					i = 0;
 					lineWrapPolicy = ALWAYS_WRAP_ELEMENT_ADD_LEVEL;
@@ -156,7 +157,7 @@
 						+ nbListClosingChars > this.preferences.line_wrap_line_split) {
 					// revert
 					revert(savedBuffer, changesIndex, savedMrnbLineWidth, savedlineWidth, savedIsPrevSpace,
-							savedIsHeredocSemicolon, savedIsPHPEqualTag);
+							savedIsHeredocSemicolonPre73, savedIsPHPEqualTag);
 					lastPosition = savedLastPosition;
 					i = (i > 0) ? 1 : 0;
 					lineWrapPolicy = ALWAYS_WRAP_ELEMENT;
@@ -190,12 +191,17 @@
 
 			if (array[i].getLength() == 0) {
 				// https://bugs.eclipse.org/bugs/show_bug.cgi?id=531468
-				// We have an empty ASTNode (i.e. EmptyExpression). By construction, whitespaces
-				// "around" empty ASTNodes are always located "after" ASTNode.getStart() (and
-				// ASTNode.getEnd()), so we have to "eat" those whitespaces to correctly
-				// generate/calculate ReplaceEdits in handleCharsWithoutComments().
+				// We have an empty ASTNode (i.e. EmptyExpression). By
+				// construction, whitespaces
+				// "around" empty ASTNodes are always located "after"
+				// ASTNode.getStart() (and
+				// ASTNode.getEnd()), so we have to "eat" those whitespaces to
+				// correctly
+				// generate/calculate ReplaceEdits in
+				// handleCharsWithoutComments().
 				int end = array[i + 1].getStart();
-				// handleCharsWithoutComments() checks if offset - lastPosition ==
+				// handleCharsWithoutComments() checks if offset - lastPosition
+				// ==
 				// replaceBuffer.length(), so don't "eat" too many whitespaces.
 				end = Math.min(lastPosition + replaceBuffer.length(), end);
 				int offset = array[i].getStart();
