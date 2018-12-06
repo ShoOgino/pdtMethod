@@ -1,0 +1,16 @@
+	private static String resolveFQN(String typeName, ISourceModule sourceModule, int sourceLocation) {
+		if (typeName.indexOf(Constants.TYPE_SEPARATOR_CHAR) >= 0) {
+			String[] typeNames = typeName.split("\\" + Constants.TYPE_SEPARATOR_CHAR); //$NON-NLS-1$
+			for (int index = typeNames.length - 1; index >= 0; index--) {
+				typeNames[index] = resolveFQN(typeNames[index], sourceModule, sourceLocation);
+			}
+			return String.join(String.valueOf(Constants.TYPE_SEPARATOR_CHAR), typeNames);
+		}
+		if (typeName.length() == 0 || typeName.charAt(0) == NamespaceReference.NAMESPACE_SEPARATOR) {
+			return typeName;
+		}
+		PHPClassType classType = PHPClassType.fromTypeName(typeName, sourceModule, sourceLocation);
+
+		return classType.getTypeName();
+	}
+
