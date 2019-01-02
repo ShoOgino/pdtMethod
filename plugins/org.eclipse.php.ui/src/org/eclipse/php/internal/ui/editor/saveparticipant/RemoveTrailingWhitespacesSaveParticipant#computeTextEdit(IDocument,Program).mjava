@@ -1,0 +1,78 @@
+	protected @NonNull MultiTextEdit computeTextEdit(@NonNull IDocument document, @Nullable Program astRoot)
+			throws BadLocationException {
+		List<Quote> topMostHeredocs;
+
+		if (astRoot != null) {
+			/*
+			 * It is important that the "topMostHeredocs" list is sorted by
+			 * increasing position, or this method won't work correctly.
+			 */
+			TopMostHeredocFinder visitor = new TopMostHeredocFinder();
+			astRoot.accept(visitor);
+			topMostHeredocs = visitor.getTopMostHeredocs();
+		} else {
+			topMostHeredocs = new ArrayList<>();
+		}
+
+		int lineCount = document.getNumberOfLines();
+		MultiTextEdit multiEdit = new MultiTextEdit();
+
+		for (int i = 0; i < lineCount; i++) {
+			IRegion region = document.getLineInformation(i);
+			if (region.getLength() == 0) {
+				continue;
+			}
+			int lineStart = region.getOffset();
+			int lineExclusiveEnd = lineStart + region.getLength();
+			int lineExclusiveDelimiterEnd = lineStart + document.getLineLength(i);
+			boolean isInHeredoc = false;
+
+			for (int j = 0, len = topMostHeredocs.size(); j < len; j++) {
+				Quote heredoc = topMostHeredocs.get(j);
+				if (lineExclusiveDelimiterEnd <= heredoc.getStart()) {
+					// the next heredocs/nowdocs will all start after
+					// lineExclusiveDelimiterEnd (if the topMostHeredocs list
+					// is correctly sorted), so we're sure current line isn't
+					// part of any heredocs/nowdoc
+					break;
+				}
+				if (heredoc.getEnd() <= lineStart) {
+					// at this point of the document, current heredoc/nowdoc
+					// will never be matched again, so remove it from the
+					// topMostHeredocs list
+					topMostHeredocs.remove(j);
+					len--;
+					// will be re-incremented afterwards
+					j--;
+					continue;
+				}
+				// check if last character of current line (i.e.
+				// lineExclusiveDelimiterEnd - 1) is enclosed in a
+				// heredoc/nowdoc
+				if (heredoc.getStart() < lineExclusiveDelimiterEnd && heredoc.getEnd() >= lineExclusiveDelimiterEnd) {
+					isInHeredoc = true;
+					break;
+				}
+			}
+			if (isInHeredoc) {
+				// don't remove trailing whitespaces inside heredocs or nowdocs
+				continue;
+			}
+
+			int j = lineExclusiveEnd - 1;
+			while (j >= lineStart && Character.isWhitespace(document.getChar(j))) {
+				--j;
+			}
+			++j;
+			// A flag for skipping empty lines, if required
+			if (ignoreEmptyLines && j == lineStart) {
+				continue;
+			}
+			if (j < lineExclusiveEnd) {
+				multiEdit.addChild(new DeleteEdit(j, lineExclusiveEnd - j));
+			}
+		}
+
+		return multiEdit;
+	}
+

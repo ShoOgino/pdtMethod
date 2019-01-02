@@ -15,8 +15,15 @@
 		}
 		IEditorPart part = p.findEditor(input);
 		if (part instanceof PHPStructuredEditor) {
-			OrganizeUseStatementsAction action = new OrganizeUseStatementsAction(part);
-			action.run(compilationUnit);
+			try {
+				ASTParser parser = ASTParser.newParser(compilationUnit);
+				Program astRoot = parser.createAST(monitor);
+
+				OrganizeUseStatementsAction action = new OrganizeUseStatementsAction(part);
+				action.run(compilationUnit, astRoot);
+			} catch (Exception e) {
+				throw new CoreException(new Status(IStatus.ERROR, PHPUiPlugin.ID, e.toString(), e));
+			}
 		}
 	}
 
