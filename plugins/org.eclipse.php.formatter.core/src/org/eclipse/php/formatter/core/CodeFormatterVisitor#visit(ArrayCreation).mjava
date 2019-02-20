@@ -1,5 +1,6 @@
 	@Override
 	public boolean visit(ArrayCreation arrayCreation) {
+		int addSpacesNoNewLineAfterLastSingleLineComment = 0;
 		if (arrayCreation.isHasArrayKey()) {
 			addNonBlanksToLineWidth(5); // 5 = "array".length()
 		} else {
@@ -51,6 +52,7 @@
 
 			if (this.preferences.insert_space_before_closing_paren_in_array
 					&& !this.preferences.new_line_before_close_array_parenthesis_array) {
+				addSpacesNoNewLineAfterLastSingleLineComment = 1;
 				insertSpace();
 			}
 
@@ -58,10 +60,12 @@
 			wasBinaryExpressionWrapped = oldWasBinaryExpressionWrapped;
 
 			if (this.preferences.new_line_before_close_array_parenthesis_array) {
+				addSpacesNoNewLineAfterLastSingleLineComment = -1;// -1 disables
+																	// this
+																	// feature
 				insertNewLines(1);
 				indent();
 			}
-
 		}
 
 		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=468155
@@ -78,7 +82,7 @@
 		indentationLevelDescending = true;
 		boolean oldIgnoreEmptyLineSetting = ignoreEmptyLineSetting;
 		ignoreEmptyLineSetting = true;
-		handleChars(lastPosition, arrayCreation.getEnd() - 1);
+		handleChars(lastPosition, arrayCreation.getEnd() - 1, addSpacesNoNewLineAfterLastSingleLineComment);
 		addNonBlanksToLineWidth(1);// we need to add the closing
 									// bracket/parenthesis
 		ignoreEmptyLineSetting = oldIgnoreEmptyLineSetting;

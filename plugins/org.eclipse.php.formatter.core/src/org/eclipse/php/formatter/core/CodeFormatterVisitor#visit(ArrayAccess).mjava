@@ -1,5 +1,6 @@
 	@Override
 	public boolean visit(ArrayAccess arrayAccess) {
+		int addSpacesNoNewLineAfterLastSingleLineComment = 0;
 		Expression variableName = arrayAccess.getName();
 		variableName.accept(this);
 		if (this.preferences.insert_space_before_opening_bracket_in_array) {
@@ -13,6 +14,7 @@
 		int lastPosition = variableName.getEnd();
 		if (arrayAccess.getIndex() == null) {
 			if (this.preferences.insert_space_between_empty_brackets) {
+				addSpacesNoNewLineAfterLastSingleLineComment = 1;
 				insertSpace();
 			}
 		} else {
@@ -23,6 +25,7 @@
 
 			arrayAccess.getIndex().accept(this);
 			if (this.preferences.insert_space_before_closing_bracket_in_array) {
+				addSpacesNoNewLineAfterLastSingleLineComment = 1;
 				insertSpace();
 			}
 			lastPosition = arrayAccess.getIndex().getEnd();
@@ -42,7 +45,7 @@
 		indentationLevelDescending = true;
 		boolean oldIgnoreEmptyLineSetting = ignoreEmptyLineSetting;
 		ignoreEmptyLineSetting = true;
-		handleChars(lastPosition, arrayAccess.getEnd() - 1);
+		handleChars(lastPosition, arrayAccess.getEnd() - 1, addSpacesNoNewLineAfterLastSingleLineComment);
 		addNonBlanksToLineWidth(1);// we need to add the closing bracket/curly
 		ignoreEmptyLineSetting = oldIgnoreEmptyLineSetting;
 

@@ -1,4 +1,6 @@
 	private void innerVisit(FunctionInvocation functionInvocation, boolean addParen) {
+		int addSpacesNoNewLineAfterLastSingleLineComment = -1; // -1 disables
+																// this feature
 		Expression functionName = functionInvocation.getFunctionName().getName();
 		functionName.accept(this);
 
@@ -8,6 +10,7 @@
 
 		if (addParen) {
 			appendToBuffer(OPEN_PARN);
+			addSpacesNoNewLineAfterLastSingleLineComment = 0;
 		}
 
 		int lastPosition = functionName.getEnd();
@@ -30,11 +33,13 @@
 					this.preferences.line_wrap_arguments_in_method_invocation_force_split);
 
 			if (this.preferences.insert_space_before_closing_paren_in_function) {
+				addSpacesNoNewLineAfterLastSingleLineComment = 1;
 				insertSpace();
 			}
 
 		} else {
 			if (this.preferences.insert_space_between_empty_paren_in_function) {
+				addSpacesNoNewLineAfterLastSingleLineComment = 1;
 				insertSpace();
 			}
 		}
@@ -45,7 +50,8 @@
 				appendToBuffer(CLOSE_PARN);
 				handleChars(lastPosition, functionInvocation.getEnd());
 			} else {
-				handleChars(lastPosition, functionInvocation.getEnd() - 1);
+				handleChars(lastPosition, functionInvocation.getEnd() - 1,
+						addSpacesNoNewLineAfterLastSingleLineComment);
 				addNonBlanksToLineWidth(1);// we need to add the closing
 											// parenthesis
 			}

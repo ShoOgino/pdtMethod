@@ -1,7 +1,9 @@
 	// https://bugs.eclipse.org/bugs/show_bug.cgi?id=440209
 	// https://bugs.eclipse.org/bugs/show_bug.cgi?id=440820
-	private void handleComments(int offset, int end, List<?> commentList, boolean isIndented, int indentGap)
-			throws Exception {
+	// NB: set addSpacesNoNewLineAfterLastSingleLineComment to -1 to disable the
+	// "replace newline by spaces after last single-line comment" feature
+	private void handleComments(int offset, int end, List<?> commentList, boolean isIndented, int indentGap,
+			int addSpacesNoNewLineAfterLastSingleLineComment) throws Exception {
 		int savedMrnbLineWidth = mrnbLineWidth;
 		boolean oldIgnoreEmptyLineSetting = ignoreEmptyLineSetting;
 		ignoreEmptyLineSetting = false;
@@ -518,7 +520,20 @@
 							commentWords = new ArrayList<>();
 							handleCharsWithoutComments(comment.sourceStart() + offset, comment.sourceEnd() + offset,
 									true, true);
-							insertNewLine();
+							// https://bugs.eclipse.org/bugs/show_bug.cgi?id=544637
+							// last comment ending a comma-separated list (i.e.
+							// just before closing parenthesis/bracket) doesn't
+							// always need a newline,
+							// for example "foo($var /* comment */);"
+							boolean shouldNotInsertNewLineOnLastComment = addSpacesNoNewLineAfterLastSingleLineComment >= 0
+									&& !iter.hasNext() && isAtEndOfExpression;
+							if (shouldNotInsertNewLineOnLastComment) {
+								insertSpaces(addSpacesNoNewLineAfterLastSingleLineComment);
+								needIndentNewLine = false;
+								indentAfterComment = EMPTY_STRING;
+							} else {
+								insertNewLine();
+							}
 							break;
 						}
 						commentWords = new ArrayList<>();
