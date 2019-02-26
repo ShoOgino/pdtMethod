@@ -9,30 +9,41 @@
 		if (!fBreakpointManager.isEnabled()) {
 			return;
 		}
-		int deltaLNumber = delta.getAttribute(IMarker.LINE_NUMBER, 0);
-		IMarker marker = breakpoint.getMarker();
-		int lineNumber = marker.getAttribute(IMarker.LINE_NUMBER, 0);
 		if (supportsBreakpoint(breakpoint)) {
 			try {
+				int deltaLNumber = delta.getAttribute(IMarker.LINE_NUMBER, 0);
+				boolean deltaEnabled = delta.getAttribute(IBreakpoint.ENABLED, breakpoint.isEnabled());
+				IMarker marker = breakpoint.getMarker();
+				int lineNumber = marker.getAttribute(IMarker.LINE_NUMBER, 0);
 				if (((PHPLineBreakpoint) breakpoint).isConditionChanged()) {
 					((PHPLineBreakpoint) breakpoint).setConditionChanged(false);
 					if (breakpoint.isEnabled()) {
 						breakpointRemoved(breakpoint, null);
-					} else {
-						return;
+						breakpointAdded(breakpoint);
 					}
+					return;
 				}
 				if (lineNumber != deltaLNumber) {
 					if (breakpoint.isEnabled()) {
 						breakpointRemoved(breakpoint, null);
-					} else {
-						return;
+						breakpointAdded(breakpoint);
 					}
+					return;
+				}
+				if (breakpoint.isEnabled() != deltaEnabled) {
+					// enable or disable a breakpoint from the "Breakpoints" view
+					if (breakpoint.isEnabled()) {
+						breakpointAdded(breakpoint);
+					} else {
+						// force removal of this breakpoint
+						breakpointRemoved(breakpoint, false);
+					}
+					return;
 				}
 				if (breakpoint.isEnabled()) {
-					breakpointAdded(breakpoint);
-				} else {
+					// https://bugs.eclipse.org/bugs/show_bug.cgi?id=538315
 					breakpointRemoved(breakpoint, null);
+					breakpointAdded(breakpoint);
 				}
 			} catch (CoreException e) {
 				Logger.logException("PHPDebugTarget: Exception Changing Breakpoint", e); //$NON-NLS-1$

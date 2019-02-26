@@ -1,0 +1,26 @@
+	public void breakpointRemoved(IBreakpoint breakpoint, boolean onlyHandleEnabledBreakpoints) {
+		if (supportsBreakpoint(breakpoint)) {
+			try {
+				if (onlyHandleEnabledBreakpoints && !breakpoint.isEnabled()) {
+					// https://bugs.eclipse.org/bugs/show_bug.cgi?id=538315
+					// already handled by breakpointChanged(IBreakpoint, IMarkerDelta),
+					// nothing more to do
+					return;
+				}
+			} catch (CoreException e) {
+				Logger.logException("PHPDebugTarget: Exception Removing Breakpoint", e); //$NON-NLS-1$
+				return;
+			}
+			fLastcmd = "breakpointRemoved"; //$NON-NLS-1$
+			PHPLineBreakpoint bp = (PHPLineBreakpoint) breakpoint;
+			Breakpoint runtimeBreakpoint = bp.getRuntimeBreakpoint();
+			Logger.debugMSG("PHPDebugTarget: Removing Breakpoint - File " //$NON-NLS-1$
+					+ runtimeBreakpoint.getFileName() + " Line Number " //$NON-NLS-1$
+					+ runtimeBreakpoint.getLineNumber());
+			fStatus = debugger.removeBreakpoint(runtimeBreakpoint, fBreakpointRemovedResponseHandler);
+			if (!fStatus && debugger.isActive()) {
+				Logger.log(Logger.ERROR, "PHPDebugTarget: debugger.removeBreakpoint return false"); //$NON-NLS-1$
+			}
+		}
+	}
+

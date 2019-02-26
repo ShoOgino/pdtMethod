@@ -1,0 +1,34 @@
+	public void breakpointRemoved(IBreakpoint breakpoint, boolean onlyHandleEnabledBreakpoints) {
+		if (supportsBreakpoint(breakpoint)) {
+			try {
+				if (onlyHandleEnabledBreakpoints && !breakpoint.isEnabled()) {
+					// https://bugs.eclipse.org/bugs/show_bug.cgi?id=538315
+					// already handled by breakpointChanged(IBreakpoint, IMarkerDelta),
+					// nothing more to do
+					return;
+				}
+			} catch (CoreException e) {
+				DBGpLogger.logException("Exception Removing Breakpoint", this, e); //$NON-NLS-1$
+				return;
+			}
+			DBGpBreakpoint bp = bpFacade.createDBGpBreakpoint(breakpoint);
+			if (isSuspended() || (asyncSupported && isRunning())) {
+				// aysnc mode and running or we are suspended so send the remove
+				// request
+				if (DBGpLogger.debugBP()) {
+					DBGpLogger.debug("Immediately removing of breakpoint with ID: " + bp.getID()); //$NON-NLS-1$
+				}
+				sendBreakpointRemoveCmd(bp);
+			} else if (isRunning()) {
+				// running and not suspended and no async support, so we must
+				// defer the removal.
+				if (DBGpLogger.debugBP()) {
+					DBGpLogger.debug("Deferring Removing of breakpoint with ID: " + bp.getID()); //$NON-NLS-1$
+				}
+				DBGpBreakpointCmd bpRemove = new DBGpBreakpointCmd(DBGpCommand.breakPointRemove, bp);
+				queueBpCmd(bpRemove);
+			}
+
+		}
+	}
+

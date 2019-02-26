@@ -10,11 +10,12 @@
 		if (!bmgr.isEnabled()) {
 			return;
 		}
-		int deltaLNumber = delta.getAttribute(IMarker.LINE_NUMBER, 0);
-		IMarker marker = breakpoint.getMarker();
-		int lineNumber = marker.getAttribute(IMarker.LINE_NUMBER, 0);
 		if (supportsBreakpoint(breakpoint)) {
 			try {
+				int deltaLNumber = delta.getAttribute(IMarker.LINE_NUMBER, 0);
+				boolean deltaEnabled = delta.getAttribute(IBreakpoint.ENABLED, breakpoint.isEnabled());
+				IMarker marker = breakpoint.getMarker();
+				int lineNumber = marker.getAttribute(IMarker.LINE_NUMBER, 0);
 
 				// did the condition change ?
 				DBGpBreakpoint bp = bpFacade.createDBGpBreakpoint(breakpoint);
@@ -25,9 +26,9 @@
 					bp.resetConditionChanged();
 					if (breakpoint.isEnabled()) {
 						breakpointRemoved(breakpoint, null);
-					} else {
-						return;
+						breakpointAdded(breakpoint);
 					}
+					return;
 				}
 
 				// did the line number change ?
@@ -38,17 +39,33 @@
 
 					if (breakpoint.isEnabled()) {
 						breakpointRemoved(breakpoint, null);
-					} else {
-						return;
+						breakpointAdded(breakpoint);
 					}
+					return;
+				}
+
+				// did the line enable state change ?
+				if (breakpoint.isEnabled() != deltaEnabled) {
+					if (DBGpLogger.debugBP()) {
+						DBGpLogger.debug("enable state changed for breakpoint with ID: " + bp.getID()); //$NON-NLS-1$
+					}
+
+					// enable or disable a breakpoint from the "Breakpoints" view
+					if (breakpoint.isEnabled()) {
+						breakpointAdded(breakpoint);
+					} else {
+						// force removal of this breakpoint
+						breakpointRemoved(breakpoint, false);
+					}
+					return;
 				}
 
 				// add or remove the break point depending on whether it was
 				// enabled or not
 				if (breakpoint.isEnabled()) {
-					breakpointAdded(breakpoint);
-				} else {
+					// https://bugs.eclipse.org/bugs/show_bug.cgi?id=538315
 					breakpointRemoved(breakpoint, null);
+					breakpointAdded(breakpoint);
 				}
 			} catch (CoreException e) {
 				DBGpLogger.logException("Exception Changing Breakpoint", this, e); //$NON-NLS-1$
