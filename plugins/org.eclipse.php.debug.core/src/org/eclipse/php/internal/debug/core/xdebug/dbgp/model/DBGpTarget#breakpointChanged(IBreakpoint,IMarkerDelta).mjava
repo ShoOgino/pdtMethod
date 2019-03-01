@@ -12,10 +12,8 @@
 		}
 		if (supportsBreakpoint(breakpoint)) {
 			try {
-				int deltaLNumber = delta.getAttribute(IMarker.LINE_NUMBER, 0);
 				boolean deltaEnabled = delta.getAttribute(IBreakpoint.ENABLED, breakpoint.isEnabled());
 				IMarker marker = breakpoint.getMarker();
-				int lineNumber = marker.getAttribute(IMarker.LINE_NUMBER, 0);
 
 				// did the condition change ?
 				DBGpBreakpoint bp = bpFacade.createDBGpBreakpoint(breakpoint);
@@ -31,26 +29,13 @@
 					return;
 				}
 
-				// did the line number change ?
-				if (lineNumber != deltaLNumber) {
-					if (DBGpLogger.debugBP()) {
-						DBGpLogger.debug("line number changed for breakpoint with ID: " + bp.getID()); //$NON-NLS-1$
-					}
-
-					if (breakpoint.isEnabled()) {
-						breakpointRemoved(breakpoint, null);
-						breakpointAdded(breakpoint);
-					}
-					return;
-				}
-
 				// did the line enable state change ?
 				if (breakpoint.isEnabled() != deltaEnabled) {
 					if (DBGpLogger.debugBP()) {
 						DBGpLogger.debug("enable state changed for breakpoint with ID: " + bp.getID()); //$NON-NLS-1$
 					}
-
-					// enable or disable a breakpoint from the "Breakpoints" view
+					// enable or disable a breakpoint from the "Breakpoints"
+					// view
 					if (breakpoint.isEnabled()) {
 						breakpointAdded(breakpoint);
 					} else {
@@ -60,9 +45,29 @@
 					return;
 				}
 
-				// add or remove the break point depending on whether it was
-				// enabled or not
+				// Did any other marker attribute change?
+				// For example: the line number could have changed.
+				Map<String, Object> map = marker.getAttributes();
+				Map<String, Object> deltaMap = delta.getAttributes();
+				if (map == null) {
+					map = new HashMap<>();
+				}
+				if (deltaMap == null) {
+					deltaMap = new HashMap<>();
+				}
+				if (map.equals(deltaMap)) {
+					// no changes were found, this
+					// happens when another breakpoint
+					// (than current one) was deleted
+					// and breakpointChanged() was
+					// unnecessarily called for current
+					// breakpoint
+					return;
+				}
 				if (breakpoint.isEnabled()) {
+					if (DBGpLogger.debugBP()) {
+						DBGpLogger.debug("at least one attribute changed for breakpoint with ID: " + bp.getID()); //$NON-NLS-1$
+					}
 					// https://bugs.eclipse.org/bugs/show_bug.cgi?id=538315
 					breakpointRemoved(breakpoint, null);
 					breakpointAdded(breakpoint);
