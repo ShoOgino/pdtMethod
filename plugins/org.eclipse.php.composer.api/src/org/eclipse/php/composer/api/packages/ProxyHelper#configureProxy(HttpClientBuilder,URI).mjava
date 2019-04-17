@@ -1,0 +1,15 @@
+	public static void configureProxy(HttpClientBuilder hcBuilder, URI uri) {
+		final IProxyData proxyData = getProxyData(uri);
+		if (proxyData != null && !IProxyData.SOCKS_PROXY_TYPE.equals(proxyData.getType())) {
+			HttpHost proxy = new HttpHost(proxyData.getHost(), proxyData.getPort());
+			DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(proxy);
+			hcBuilder.setRoutePlanner(routePlanner);
+			if (proxyData.isRequiresAuthentication()) {
+				CredentialsProvider provider = new BasicCredentialsProvider();
+				provider.setCredentials(new AuthScope(proxyData.getHost(), proxyData.getPort()),
+						new UsernamePasswordCredentials(proxyData.getUserId(), proxyData.getPassword()));
+				hcBuilder.setDefaultCredentialsProvider(provider);
+			}
+		}
+	}
+
