@@ -1,6 +1,6 @@
 	/**
-	 * Inserts USE statement into beginning of the document, or after the last USE
-	 * statement.
+	 * Inserts USE statement into beginning of the document, or after the last
+	 * USE statement.
 	 * 
 	 * @param document
 	 * @param textViewer
@@ -48,7 +48,8 @@
 				if (offset > 0) {
 					String prefix = document.get(proposal.getReplacementOffset(), proposal.getReplacementLength());
 					String fullName = ((IType) modelElement).getElementName();
-					if (fullName.startsWith(prefix) && prefix.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) < 0) {
+					if (fullName.toLowerCase().startsWith(prefix.toLowerCase())
+							&& prefix.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) < 0) {
 						// int
 						ITextEditor textEditor = ((PHPStructuredTextViewer) textViewer).getTextEditor();
 						if (textEditor instanceof PHPStructuredEditor) {
@@ -90,7 +91,7 @@
 
 								// if the class/namespace has not been imported
 								// add use statement
-								if (program != null && !importedTypeName.contains(typeName)) {
+								if (program != null && !importedTypeName.contains(typeName.toLowerCase())) {
 
 									program.recordModifications();
 									AST ast = program.getAST();
@@ -158,17 +159,17 @@
 									offset += edits.getLength();
 									proposal.setReplacementOffset(replacementOffset);
 								} else if (!useAlias && (usePart == null
-										|| !usePartName.equals(usePart.getFullUseStatementName()))) {
+								// Redondant check:
+								// || !usePartName.equalsIgnoreCase(usePart
+								// .getFullUseStatementName())
+								)) {
 									// if the type name already exists, use
-									// fully
-									// qualified name to replace
+									// fully qualified name to replace
 									proposal.setReplacementString(NamespaceReference.NAMESPACE_SEPARATOR + fullName);
 								}
 							}
 						}
-
 					}
-					return offset;
 				}
 				return offset;
 			} else

@@ -47,14 +47,14 @@
 			List<String> importedTypeName = getImportedTypeName(moduleDeclaration, offset);
 			String typeName = ""; //$NON-NLS-1$
 			if (!useAlias) {
-				typeName = modelElement.getElementName().toLowerCase();
+				typeName = modelElement.getElementName();
 			} else {
 				if (usePart != null && usePart.getAlias() != null && usePart.getAlias().getName() != null) {
 					typeName = usePart.getAlias().getName();
 				} else {
 					String elementName = PHPModelUtils.extractElementName(namespaceName);
 					if (elementName != null) {
-						typeName = elementName.toLowerCase();
+						typeName = elementName;
 					}
 				}
 			}
@@ -62,7 +62,7 @@
 			PHPVersion phpVersion = ProjectOptions.getPHPVersion(modelElement);
 			// if the class/namespace has not been imported
 			// add use statement
-			if (program != null && !importedTypeName.contains(typeName)
+			if (program != null && !importedTypeName.contains(typeName.toLowerCase())
 					&& canInsertUseStatement(getUseStatementType(modelElement), phpVersion)) {
 				program.recordModifications();
 				AST ast = program.getAST();
@@ -138,16 +138,26 @@
 				int replacementOffset = proposal.getReplacementOffset() + edits.getLength();
 				offset += edits.getLength();
 				proposal.setReplacementOffset(replacementOffset);
-			} else if (!useAlias && (usePart == null || !usePartName.equals(usePart.getFullUseStatementName()))) {
+			} else if (!useAlias && (usePart == null
+			// Redondant check:
+			// || !usePartName.equalsIgnoreCase(usePart
+			// .getFullUseStatementName())
+			)) {
 				String namespacePrefix = NamespaceReference.NAMESPACE_SEPARATOR + namespaceName
 						+ NamespaceReference.NAMESPACE_SEPARATOR;
 				String replacementString = proposal.getReplacementString();
 
+				// looks for the namespace prefix, even in use statements
 				String existingNamespacePrefix = readNamespacePrefix(sourceModule, document, offset, phpVersion);
 
+				// https://bugs.eclipse.org/bugs/show_bug.cgi?id=312880
+				// if the type name already exists in "importedTypeName" but
+				// is defined in different namespaces, use fully
+				// qualified name
 				// https://bugs.eclipse.org/bugs/show_bug.cgi?id=459306
-				// if the type name already exists, use fully
-				// qualified name to replace:
+				// if the type name already exists in "importedTypeName", use
+				// fully qualified name when there is no match between current
+				// namespace prefix and modelElement's namespace
 				if (existingNamespacePrefix == null || !namespaceName.equalsIgnoreCase(existingNamespacePrefix)) {
 					replacementString = namespacePrefix + replacementString;
 				}
