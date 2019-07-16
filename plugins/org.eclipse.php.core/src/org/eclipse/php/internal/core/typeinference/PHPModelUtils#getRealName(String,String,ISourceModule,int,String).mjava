@@ -1,0 +1,43 @@
+	/**
+	 * If the elementName is a class alias for a namespace class "elementName"
+	 * (and for a specific namespace "namespace"), we get its original name from
+	 * its alias.
+	 * 
+	 * @param fqNamespaceName
+	 *            fully qualified namespace name (<b>without any leading
+	 *            '\'</b>), empty name "" means global namespace, leading
+	 *            "namespace\" is allowed. The resulting name <b>must</b> have
+	 *            fqNamespaceName as its fully qualified namespace or it will be
+	 *            rejected.
+	 * @param elementName
+	 *            namespace class
+	 * @param sourceModule
+	 * @param offset
+	 * @param defaultClassName
+	 *            return this value when elementName couldn't be resolved
+	 *            against fqNamespaceName, or when no alias was found
+	 * @return original name from its alias (if available and applicable),
+	 *         defaultClassName otherwise
+	 */
+	public static String getRealName(@NonNull String fqNamespaceName, @NonNull String elementName,
+			@NonNull ISourceModule sourceModule, final int offset, String defaultClassName) {
+		// Check class name aliasing:
+		ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule);
+		UsePart usePart = ASTUtils.findUseStatementByAlias(moduleDeclaration, elementName, offset);
+		if (usePart != null) {
+			String fullName = usePart.getFullUseStatementName();
+			String newElementName = PHPModelUtils.extractElementName(fullName);
+			String newNamespace = PHPModelUtils.extractNameSpaceName(fullName);
+			if (newNamespace == null) {
+				// No namespace prefix found, translate it as global namespace
+				newNamespace = ""; //$NON-NLS-1$
+			}
+			// https://bugs.eclipse.org/bugs/show_bug.cgi?id=549197
+			// Avoid namespace mismatches
+			if (fqNamespaceName.equalsIgnoreCase(newNamespace)) {
+				return newElementName;
+			}
+		}
+		return defaultClassName;
+	}
+
