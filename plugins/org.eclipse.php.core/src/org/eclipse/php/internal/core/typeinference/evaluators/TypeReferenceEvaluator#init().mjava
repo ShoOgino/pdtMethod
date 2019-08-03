@@ -99,9 +99,9 @@
 				elementType = ((FullyQualifiedReference) typeReference).getElementType();
 			} else {
 				fullyQualifiedName = typeReference.getName();
+				fullyQualifiedName = PHPEvaluationUtils.extractArrayType(fullyQualifiedName);
 
-				elementName = PHPEvaluationUtils.extractArrayType(fullyQualifiedName);
-				elementName = PHPModelUtils.extractElementName(elementName);
+				elementName = PHPModelUtils.extractElementName(fullyQualifiedName);
 			}
 			ISourceModule sourceModule = ((ISourceModuleContext) context).getSourceModule();
 			int offset = typeReference.sourceStart();
@@ -152,7 +152,8 @@
 				parentNamespace = extractedNamespace;
 				// See also code from PHPClassType.fromTypeName(...) and
 				// PHPClassType.fromTraitName(...)
-				elementName = PHPModelUtils.getRealName(extractedNamespace, fullyQualifiedName, sourceModule, offset, elementName);
+				elementName = PHPModelUtils.getRealName(extractedNamespace, fullyQualifiedName, sourceModule, offset,
+						elementName);
 			}
 			if (PHPModelUtils.isInUseTraitStatement(((ISourceModuleContext) context).getRootNode(),
 					typeReference.sourceStart())) {
@@ -173,6 +174,12 @@
 				} else {
 					result = new PHPClassType(elementName);
 				}
+			}
+			if (PHPEvaluationUtils.isArrayType(typeReference.getName())) {
+				// XXX Quick Fix for bug 549308
+				MultiTypeType tmp = new MultiTypeType();
+				tmp.addType(result);
+				result = tmp;
 			}
 		}
 
