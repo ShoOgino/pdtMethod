@@ -1,8 +1,9 @@
 		@Override
 		public boolean visit(ClassName classConst) {
-			if (classConst.getName() instanceof Identifier) {
+			Expression classNode = classConst.getName();
+			if (classNode instanceof Identifier) {
 
-				String className = ((Identifier) classConst.getName()).getName();
+				String className = ((Identifier) classNode).getName();
 				IModelAccessCache cache = classConst.getAST().getBindingResolver().getModelAccessCache();
 				try {
 					IType[] types = PHPModelUtils.getTypes(className, getSourceModule(), classConst.getStart(), cache,
@@ -10,7 +11,29 @@
 					if (types != null) {
 						for (IType type : types) {
 							if (ModelUtils.isDeprecated(type)) {
-								highlight(classConst);
+								// SemanticHighlightingPresenter.updatePresentation()
+								// sorts the "highlighting" areas by
+								// ascending position.
+								// Any fully-qualified class name highlighting
+								// will always be rendered before its class name
+								// highlighting (when their start positions
+								// differ)...
+								// https://bugs.eclipse.org/bugs/show_bug.cgi?id=496045
+								// https://bugs.eclipse.org/bugs/show_bug.cgi?id=549957
+								// See also
+								// ClassHighlighting#visit(ClassInstanceCreation)
+								if (!(ClassHighlighting.SELF.equalsIgnoreCase(className)
+										|| ClassHighlighting.CLASS.equalsIgnoreCase(className)
+										|| ClassHighlighting.PARENT.equalsIgnoreCase(className))) {
+									highlight(classConst);
+								}
+								if (classNode instanceof NamespaceName) {
+									// ...so we must render again the class
+									// name "Deprecated Highlighting"
+									// on top of the class name
+									// "Class Highlighting"
+									highlightLastNamespaceSegment((NamespaceName) classNode);
+								}
 								break;
 							}
 						}
