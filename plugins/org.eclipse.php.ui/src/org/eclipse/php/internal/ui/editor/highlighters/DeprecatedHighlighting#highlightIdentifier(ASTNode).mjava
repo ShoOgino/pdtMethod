@@ -1,0 +1,32 @@
+	private void highlightIdentifier(ASTNode node) {
+		if (node instanceof Identifier) {
+			Identifier identifier = (Identifier) node;
+			String typeName = identifier.getName();
+			// SemanticHighlightingPresenter.updatePresentation() sorts the
+			// "highlighting" areas by ascending position.
+			// Any fully-qualified class name highlighting will always be
+			// rendered before its class name highlighting (when their start
+			// positions differ)...
+			// https://bugs.eclipse.org/bugs/show_bug.cgi?id=496045
+			// https://bugs.eclipse.org/bugs/show_bug.cgi?id=549957
+			// See also ClassHighlighting#visit(ClassInstanceCreation)
+			// and DeprecatedHighlighting#highlightStatic(StaticDispatch).
+			if (!(ClassHighlighting.SELF.equalsIgnoreCase(typeName)
+					|| ClassHighlighting.CLASS.equalsIgnoreCase(typeName)
+					|| ClassHighlighting.PARENT.equalsIgnoreCase(typeName))) {
+				// We want to highlight all NamespaceName segments, so don't do
+				// this.highlight(identifier) that will only highlight last
+				// NamespaceName segment.
+				super.highlight(identifier);
+			}
+			if (node instanceof NamespaceName) {
+				// ...so we must render again the class name's
+				// "Deprecated Highlighting" on top of the
+				// class name's "Class Highlighting".
+				highlightLastNamespaceSegment((NamespaceName) node);
+			}
+		} else {
+			super.highlight(node);
+		}
+	}
+

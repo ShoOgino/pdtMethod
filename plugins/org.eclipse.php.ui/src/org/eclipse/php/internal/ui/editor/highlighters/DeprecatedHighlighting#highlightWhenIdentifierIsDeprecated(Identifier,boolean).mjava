@@ -1,0 +1,22 @@
+	private void highlightWhenIdentifierIsDeprecated(Identifier identifier, boolean isTrait) {
+		String typeName = identifier.getName();
+		IModelAccessCache cache = identifier.getAST().getBindingResolver().getModelAccessCache();
+		try {
+			IType[] types = isTrait
+					? PHPModelUtils.getTraits(typeName, getSourceModule(), identifier.getStart(), cache,
+							new NullProgressMonitor())
+					: PHPModelUtils.getTypes(typeName, getSourceModule(), identifier.getStart(), cache,
+							new NullProgressMonitor());
+			if (types != null) {
+				for (IType type : types) {
+					if (ModelUtils.isDeprecated(type)) {
+						highlightIdentifier(identifier);
+						break;
+					}
+				}
+			}
+		} catch (ModelException e) {
+			Logger.logException(e);
+		}
+	}
+
