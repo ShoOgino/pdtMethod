@@ -1,0 +1,28 @@
+	@Override
+	public boolean visit(ArrowFunctionDeclaration s) throws Exception {
+		Map<String, String> parameters = createInitialParameters(s);
+		parameters.put("isReference", Boolean.toString(s.isReference())); //$NON-NLS-1$
+		if (s.isStatic()) {
+			parameters.put("isStatic", Boolean.toString(s.isStatic())); //$NON-NLS-1$
+		}
+		xmlWriter.startTag("ArrowFunctionDeclaration", parameters); //$NON-NLS-1$
+
+		xmlWriter.startTag("Arguments", new HashMap<String, String>()); //$NON-NLS-1$
+		for (FormalParameter p : s.getArguments()) {
+			p.traverse(this);
+		}
+		xmlWriter.endTag("Arguments"); //$NON-NLS-1$
+
+		if (s.getReturnType() != null) {
+			xmlWriter.startTag("ReturnType", new HashMap<String, String>()); //$NON-NLS-1$
+			s.getReturnType().traverse(this);
+			xmlWriter.endTag("ReturnType"); //$NON-NLS-1$
+		}
+
+		if (s.getBody() != null) {
+			s.getBody().traverse(this);
+		}
+
+		return false;
+	}
+

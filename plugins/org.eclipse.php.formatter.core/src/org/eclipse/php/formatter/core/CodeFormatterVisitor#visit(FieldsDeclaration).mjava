@@ -3,7 +3,7 @@
 		boolean isFirst = true;
 		Variable[] variableNames = fieldsDeclaration.getVariableNames();
 		Expression[] initialValues = fieldsDeclaration.getInitialValues();
-		int lastPosition = variableNames[0].getStart();
+		int lastPosition = fieldsDeclaration.getStart();
 
 		// handle field modifiers
 		String modifier = fieldsDeclaration.getModifierString();
@@ -21,7 +21,20 @@
 		appendToBuffer(modifier);
 		insertSpace();
 
-		handleChars(fieldsDeclaration.getStart(), lastPosition);
+		// handle field type (since PHP 7.4)
+		Expression fieldsType = fieldsDeclaration.getFieldsType();
+		if (fieldsType != null) {
+			if (fieldsType instanceof Identifier && ((Identifier) fieldsType).isNullable()) {
+				appendToBuffer(QUESTION_MARK);
+			}
+			handleChars(lastPosition, fieldsType.getStart());
+			fieldsType.accept(this);
+			lastPosition = fieldsType.getEnd();
+			insertSpace();
+		}
+
+		handleChars(lastPosition, variableNames[0].getStart());
+		lastPosition = variableNames[0].getStart();
 
 		for (int i = 0; i < variableNames.length; i++) {
 			// handle comma between variables
