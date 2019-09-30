@@ -1,20 +1,22 @@
 	@Override
 	public boolean visit(LambdaFunctionDeclaration lambdaFunctionDeclaration) {
+		int lastPosition = lambdaFunctionDeclaration.getStart();
 		StringBuilder buffer = new StringBuilder();
 		if (lambdaFunctionDeclaration.isStatic()) {
 			buffer.append("static "); //$NON-NLS-1$
+			lastPosition += 7; // "static ".length()
 		}
-		buffer.append(
-				getDocumentString(lambdaFunctionDeclaration.getStart(), lambdaFunctionDeclaration.getStart() + 8));// append
-																													// 'function'
+		buffer.append("function"); //$NON-NLS-1$
+		lastPosition += 8; // "function".length()
 
 		// handle referenced function with '&'
 		if (lambdaFunctionDeclaration.isReference()) {
 			buffer.append(" &"); //$NON-NLS-1$
+			lastPosition += 2; // " &".length()
 		}
 
 		appendToBuffer(buffer.toString());
-		handleChars(lambdaFunctionDeclaration.getStart(), lambdaFunctionDeclaration.getStart() + 8);
+		handleChars(lambdaFunctionDeclaration.getStart(), lastPosition);
 
 		if (this.preferences.insert_space_before_opening_paren_in_function_declaration
 				// https://bugs.eclipse.org/bugs/show_bug.cgi?id=492770
@@ -24,7 +26,6 @@
 		appendToBuffer(OPEN_PARN);
 		List<FormalParameter> formalParameters = lambdaFunctionDeclaration.formalParameters();
 		ASTNode[] params = formalParameters.toArray(new FormalParameter[formalParameters.size()]);
-		int lastPosition = lambdaFunctionDeclaration.getStart() + 8;
 		if (params.length > 0) {
 			if (this.preferences.insert_space_after_opening_paren_in_function_declaration) {
 				insertSpace();
