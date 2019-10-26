@@ -1,0 +1,15 @@
+	@Test
+	public void useMultipleExceptions() throws Exception {
+		String str = "<?php try { } catch (Exception1 | Exception2 | Exception3 $e) { } \n ?>";
+		initialize(str);
+
+		List<CatchClause> catchClauses = getAllOfType(program, CatchClause.class);
+		assertTrue("Unexpected list size.", catchClauses.size() == 1);
+		assertTrue("Unexpected exceptions list size.", catchClauses.get(0).getClassNames().size() == 3);
+		assertTrue("Unexpected content.", catchClauses.get(0).getClassNames().get(2) instanceof NamespaceName);
+		((NamespaceName) catchClauses.get(0).getClassNames().get(2)).segments().get(0).setName("Exception4");
+
+		rewrite();
+		checkResult("<?php try {} catch (Exception1 | Exception2 | Exception4 $e) {} \n ?>");
+	}
+

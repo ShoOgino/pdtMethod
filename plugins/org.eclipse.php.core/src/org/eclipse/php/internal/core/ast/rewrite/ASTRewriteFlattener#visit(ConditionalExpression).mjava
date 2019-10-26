@@ -1,10 +1,23 @@
 	@Override
 	public boolean visit(ConditionalExpression conditionalExpression) {
-		conditionalExpression.getCondition().accept(this);
-		result.append(" ? "); //$NON-NLS-1$
-		conditionalExpression.getIfTrue().accept(this);
-		result.append(" : "); //$NON-NLS-1$
-		conditionalExpression.getIfFalse().accept(this);
+		if (conditionalExpression.getCondition() != null) {
+			conditionalExpression.getCondition().accept(this);
+		}
+		if (conditionalExpression.getOperatorType() == ConditionalExpression.OP_TERNARY) {
+			result.append(" ? "); //$NON-NLS-1$
+			if (conditionalExpression.getIfTrue() != null) {
+				conditionalExpression.getIfTrue().accept(this);
+			}
+			result.append(" : "); //$NON-NLS-1$
+			if (conditionalExpression.getIfFalse() != null) {
+				conditionalExpression.getIfFalse().accept(this);
+			}
+		} else if (conditionalExpression.getOperatorType() == ConditionalExpression.OP_COALESCE) {
+			result.append(" ?? "); //$NON-NLS-1$
+			if (conditionalExpression.getIfTrue() != null) {
+				conditionalExpression.getIfTrue().accept(this);
+			}
+		}
 		return false;
 	}
 

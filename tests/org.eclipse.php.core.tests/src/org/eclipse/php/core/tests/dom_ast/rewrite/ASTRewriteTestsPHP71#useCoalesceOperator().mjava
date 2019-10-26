@@ -1,0 +1,18 @@
+	@Test
+	public void useCoalesceOperator() throws Exception {
+		String str = "<?php $a = $test ?? 0; \n ?>";
+		initialize(str);
+
+		List<ConditionalExpression> conditionalExpressions = getAllOfType(program, ConditionalExpression.class);
+		assertTrue("Unexpected list size.", conditionalExpressions.size() == 1);
+		assertTrue("Unexpected content 1.", conditionalExpressions.get(0).getIfTrue() instanceof Scalar);
+		assertTrue("Unexpected content 2.",
+				conditionalExpressions.get(0).getIfFalse() == conditionalExpressions.get(0).getCondition());
+		assertTrue("Unexpected content 3.",
+				conditionalExpressions.get(0).getOperatorType() == ConditionalExpression.OP_COALESCE);
+		((Scalar) conditionalExpressions.get(0).getIfTrue()).setStringValue("1");
+
+		rewrite();
+		checkResult("<?php $a = $test ?? 1; \n ?>");
+	}
+
