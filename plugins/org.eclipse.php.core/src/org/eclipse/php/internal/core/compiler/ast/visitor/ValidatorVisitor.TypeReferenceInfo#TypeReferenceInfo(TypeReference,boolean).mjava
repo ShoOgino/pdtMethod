@@ -1,51 +1,66 @@
+		@SuppressWarnings("null")
 		public TypeReferenceInfo(TypeReference typeReference, boolean isUseStatement) {
 			this.typeReference = typeReference;
 			this.isUseStatement = isUseStatement;
+			// NB: typeReference.getName() returns directly a fqn *only* when
+			// typeReference is *not* an instance of FullyQualifiedReference:
+			this.typeName = typeReference.getName();
+
 			FullyQualifiedReference fullTypeReference = null;
 			if (typeReference instanceof FullyQualifiedReference) {
 				fullTypeReference = (FullyQualifiedReference) typeReference;
 				if (fullTypeReference.getNamespace() != null) {
 					if (!fullTypeReference.getNamespace().isLocal()) {
 						hasNamespace = true;
+
+						// NB: isGlobal() will always return false
+						// for NamespaceReferences used inside any kind of use
+						// statement declaration
+						isGlobal = fullTypeReference.getNamespace().isGlobal();
 						namespaceName = fullTypeReference.getNamespace().getName();
-					}
-					// for use statement, no need to lookup the use statement
-					// to compute namespace name
-					if (!isUseStatement) {
-						// Bug 517368 - Use statement doesn't take care
-						// Annotation / Alias
-						// https://bugs.eclipse.org/bugs/show_bug.cgi?id=517368
-						// use first segment of namespace to lookup the use
-						// statements
-						String[] segments = namespaceName.split("\\\\", 2); //$NON-NLS-1$
-						UsePartInfo info = usePartInfo.get(segments[0].toLowerCase());
-						if (info != null) {
-							String restSegs = ""; //$NON-NLS-1$
-							if (segments.length > 1) {
-								restSegs = segments[1];
+						typeName = fullTypeReference.getFullyQualifiedName();
+
+						// for use statement, no need to lookup the use
+						// statement to compute namespace name
+						if (!isUseStatement && !isGlobal) {
+							// Bug 517368 - Use statement doesn't take care
+							// Annotation / Alias
+							// https://bugs.eclipse.org/bugs/show_bug.cgi?id=517368
+							// use first segment of namespace to lookup the use
+							// statements
+							String[] segments = namespaceName.split("\\\\", 2); //$NON-NLS-1$
+							UsePartInfo info = usePartInfo.get(segments[0].toLowerCase());
+							if (info != null) {
+								String restSegs = ""; //$NON-NLS-1$
+								if (segments.length > 1) {
+									restSegs = segments[1];
+								}
+								namespaceName = PHPModelUtils.concatFullyQualifiedNames(info.getFullyQualifiedName(),
+										restSegs);
 							}
-							namespaceName = PHPModelUtils.concatFullyQualifiedNames(info.getFullyQualifiedName(),
-									restSegs);
+						}
+						if (isUseStatement) {
+							isGlobal = true;
+							namespaceName = addLeadingSeparator(namespaceName);
 						}
 					}
+				} else {
+					if (isUseStatement) {
+						isGlobal = true;
+					}
 				}
-			}
-
-			if (fullTypeReference != null && hasNamespace) {
-				isGlobal = fullTypeReference.getNamespace().isGlobal();
-				typeName = fullTypeReference.getFullyQualifiedName();
 			} else {
-				typeName = typeReference.getName();
+				isGlobal = typeName.startsWith(NamespaceReference.NAMESPACE_DELIMITER);
 			}
 
-			if (fullTypeReference != null && isGlobal) {
-				fullyQualifiedName = fullTypeReference.getFullyQualifiedName();
-			} else if (hasNamespace) {
+			if (isGlobal) {
+				fullyQualifiedName = addLeadingSeparator(typeName);
+			} else if (hasNamespace /* && !isGlobal */) {
 				fullyQualifiedName = PHPModelUtils.concatFullyQualifiedNames(namespaceName, typeReference.getName());
 			} else {
 				fullyQualifiedName = typeName;
 			}
-			if (!isUseStatement && !fullyQualifiedName.startsWith(NamespaceReference.NAMESPACE_DELIMITER)) {
+			if (!fullyQualifiedName.startsWith(NamespaceReference.NAMESPACE_DELIMITER)) {
 				String key = getFirstSegmentOfTypeName(fullyQualifiedName).toLowerCase();
 				if (usePartInfo.containsKey(key)) {
 					fullyQualifiedName = usePartInfo.get(key).getFullyQualifiedName();
@@ -53,10 +68,7 @@
 					fullyQualifiedName = PHPModelUtils.concatFullyQualifiedNames(currentNamespace.getName(),
 							fullyQualifiedName);
 				}
-			}
-			if (fullyQualifiedName.length() > 0
-					&& fullyQualifiedName.charAt(0) != NamespaceReference.NAMESPACE_SEPARATOR) {
-				fullyQualifiedName = NamespaceReference.NAMESPACE_SEPARATOR + fullyQualifiedName;
+				fullyQualifiedName = addLeadingSeparator(fullyQualifiedName);
 			}
 		}
 
