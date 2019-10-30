@@ -18,5 +18,24 @@
 			visit(varComment);
 			itr.remove();
 		}
+		if (currentDeclaration instanceof ASTNode) {
+			// currentDeclaration.sourceStart() is the minimal position to look
+			// for PHPDocBlocks, to avoid getting out of current declaration
+			// block
+			minPos = Math.max(minPos, ((ASTNode) currentDeclaration).sourceStart());
+		}
+		Iterator<PHPDocBlock> itr2 = docBlocks.iterator();
+		while (itr2.hasNext()) {
+			PHPDocBlock docBlock = itr2.next();
+			if (docBlock.sourceStart() < minPos) {
+				itr2.remove();
+				continue;
+			}
+			if (docBlock.sourceEnd() > maxPos) {
+				break;
+			}
+			visitVarTags(docBlock);
+			itr2.remove();
+		}
 	}
 
