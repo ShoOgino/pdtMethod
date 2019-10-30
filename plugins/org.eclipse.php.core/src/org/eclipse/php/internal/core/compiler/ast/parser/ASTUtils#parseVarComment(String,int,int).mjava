@@ -12,21 +12,23 @@
 	public static VarComment parseVarComment(String content, int start, int end) {
 		Matcher m = null;
 		String types = null, varName = null;
-		int typeStart = -1, varStart = -1, varEnd = -1;
+		int typeStart = -1, varStart = -1, varEnd = -1, varTagPosition = -1;
 		boolean foundMatch = false;
 
 		if ((m = VAR_COMMENT_PATTERN1.matcher(content)).matches()) {
-			types = m.group(4);
-			varName = m.group(2);
+			varTagPosition = start + m.group(2).length();
+			types = m.group(5);
+			varName = m.group(3);
 			varStart = start + m.group(1).length();
 			varEnd = varStart + varName.length();
-			typeStart = varEnd + m.group(3).length();
+			typeStart = varEnd + m.group(4).length();
 			foundMatch = true;
 		} else if ((m = VAR_COMMENT_PATTERN2.matcher(content)).matches()) {
-			types = m.group(2);
-			varName = m.group(4);
+			varTagPosition = start + m.group(2).length();
+			types = m.group(3);
+			varName = m.group(5);
 			typeStart = start + m.group(1).length();
-			varStart = typeStart + types.length() + m.group(3).length();
+			varStart = typeStart + types.length() + m.group(4).length();
 			varEnd = varStart + varName.length();
 			foundMatch = true;
 		}
@@ -54,7 +56,7 @@
 			}
 
 			VariableReference varReference = new VariableReference(varStart, varEnd, varName);
-			VarComment varComment = new VarComment(start, end, varReference,
+			VarComment varComment = new VarComment(start, end, varTagPosition, varReference,
 					typeReferences.toArray(new TypeReference[typeReferences.size()]));
 			return varComment;
 		}
