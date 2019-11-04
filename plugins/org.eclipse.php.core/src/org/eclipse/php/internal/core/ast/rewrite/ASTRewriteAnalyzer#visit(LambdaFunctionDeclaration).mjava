@@ -4,45 +4,40 @@
 			return doVisitUnchangedChildren(lambdaFunctionDeclaration);
 		}
 
-		// static FIXME
-		// RewriteEvent staticEvent = getEvent(lambdaFunctionDeclaration,
-		// LambdaFunctionDeclaration.IS_STATIC);
-		// if (staticEvent != null && staticEvent.getChangeKind() ==
-		// RewriteEvent.REPLACED) {
-		// boolean isStatic = (Boolean) staticEvent.getNewValue();
-		//
-		// try {
-		// TextEditGroup editGroup = getEditGroup(staticEvent);
-		// int startDeletionFrom = lambdaFunctionDeclaration.getStart() + 8;
-		// int startOffset = getLeftParenthesesStartPosition(startDeletionFrom);
-		// doTextRemove(startDeletionFrom,
-		// startOffset - startDeletionFrom, editGroup);
-		// if (isStatic) {
-		// doTextInsert(startDeletionFrom, " & ", editGroup);
-		// } else {
-		// doTextInsert(startDeletionFrom, " ", editGroup);
-		// }
-		// } catch (CoreException e) {
-		// handleException(e);
-		// }
-		// }
-
-		// Reference
-		RewriteEvent event = getEvent(lambdaFunctionDeclaration, LambdaFunctionDeclaration.IS_REFERENCE_PROPERTY);
-		if (event != null && event.getChangeKind() == RewriteEvent.REPLACED) {
-			boolean isReference = (Boolean) event.getNewValue();
+		// Is static
+		RewriteEvent eventStatic = getEvent(lambdaFunctionDeclaration, LambdaFunctionDeclaration.IS_STATIC);
+		if (eventStatic != null && eventStatic.getChangeKind() == RewriteEvent.REPLACED) {
+			boolean isStatic = (Boolean) eventStatic.getNewValue();
 
 			try {
-				TextEditGroup editGroup = getEditGroup(event);
+				TextEditGroup editGroup = getEditGroup(eventStatic);
+				// we need to remove everything before the word 'function'.
+				int startDeletionFrom = lambdaFunctionDeclaration.getStart();
+				int startOffset = getFunctionStartPosition(startDeletionFrom);
+				doTextRemove(startDeletionFrom, startOffset - startDeletionFrom, editGroup);
+
+				if (isStatic) {
+					// we need to insert the 'static' keyword
+					doTextInsert(startDeletionFrom, "static ", editGroup); //$NON-NLS-1$
+				}
+			} catch (CoreException e) {
+				handleException(e);
+			}
+		}
+
+		// Reference
+		RewriteEvent eventReference = getEvent(lambdaFunctionDeclaration,
+				LambdaFunctionDeclaration.IS_REFERENCE_PROPERTY);
+		if (eventReference != null && eventReference.getChangeKind() == RewriteEvent.REPLACED) {
+			boolean isReference = (Boolean) eventReference.getNewValue();
+
+			try {
+				TextEditGroup editGroup = getEditGroup(eventReference);
 				// we need to remove everything between the word 'function' to
 				// the start of the function's
 				// name and then place a blank or an &.
-				int startDeletionFrom = lambdaFunctionDeclaration.getStart() + 8; // 8
-				// is
-				// the
-				// 'function'
-				// keyword
-				// length
+				int startDeletionFrom = getFunctionStartPosition(lambdaFunctionDeclaration.getStart()) + 8; // 8
+				// is the 'function' keyword length
 				int startOffset = getLeftParenthesesStartPosition(startDeletionFrom);
 				doTextRemove(startDeletionFrom, startOffset - startDeletionFrom, editGroup);
 				if (isReference) {
@@ -59,12 +54,8 @@
 		// Parameters
 		if (isChanged(lambdaFunctionDeclaration, LambdaFunctionDeclaration.FORMAL_PARAMETERS_PROPERTY)) {
 			try {
-				int startDeletionFrom = lambdaFunctionDeclaration.getStart() + 8; // 8
-				// is
-				// the
-				// 'function'
-				// keyword
-				// length
+				int startDeletionFrom = getFunctionStartPosition(lambdaFunctionDeclaration.getStart()) + 8; // 8
+				// is the 'function' keyword length
 				int startOffset = getLeftParenthesesStartPosition(startDeletionFrom);
 				rewriteNodeList(lambdaFunctionDeclaration, LambdaFunctionDeclaration.FORMAL_PARAMETERS_PROPERTY,
 						startOffset, "", ", "); //$NON-NLS-1$ //$NON-NLS-2$
@@ -78,12 +69,8 @@
 		// Lexical vars
 		if (isChanged(lambdaFunctionDeclaration, LambdaFunctionDeclaration.LEXICAL_VARIABLES_PROPERTY)) {
 			try {
-				int startDeletionFrom = lambdaFunctionDeclaration.getStart() + 8; // 8
-				// is
-				// the
-				// 'function'
-				// keyword
-				// length
+				int startDeletionFrom = getFunctionStartPosition(lambdaFunctionDeclaration.getStart()) + 8; // 8
+				// is the 'function' keyword length
 				int startOffset = getRightBraceStartPosition(startDeletionFrom) + 1;
 				rewriteNodeList(lambdaFunctionDeclaration, LambdaFunctionDeclaration.LEXICAL_VARIABLES_PROPERTY,
 						startOffset, " as ", ", "); //$NON-NLS-1$ //$NON-NLS-2$

@@ -1,0 +1,19 @@
+	@Test
+	public void arraySpreadElement2() throws Exception {
+		String str = "<?php [...$arr1]; ?>";
+		initialize(str);
+
+		List<ArraySpreadElement> arraySpreadElements = getAllOfType(program, ArraySpreadElement.class);
+		assertTrue("Unexpected list size.", arraySpreadElements.size() == 1);
+		((Variable) arraySpreadElements.get(0).getValue()).setName(ast.newIdentifier("b2"));
+		List<ArrayCreation> arrayCreations = getAllOfType(program, ArrayCreation.class);
+		assertTrue("Unexpected list size.", arrayCreations.size() == 1);
+		arrayCreations.get(0).elements().add(ast.newArrayElement(null, ast.newVariable("c2")));
+		arrayCreations.get(0).elements()
+				.add(ast.newArrayElement(null, ast.newArraySpreadElement(ast.newVariable("d2"))));
+		arrayCreations.get(0).elements().add(ast.newArrayElement(null, ast.newVariable("e2")));
+
+		rewrite();
+		checkResult("<?php [...$b2, $c2, ...$d2, $e2]; ?>");
+	}
+

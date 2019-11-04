@@ -1,0 +1,17 @@
+	@Test
+	public void fieldsDeclarations2() throws Exception {
+		String str = "<?php class A { private   $prop1   =   5, $prop2   =   null, $prop3, $prop4   =   0; } ?>";
+		initialize(str);
+
+		List<FieldsDeclaration> fieldsDeclarations = getAllOfType(program, FieldsDeclaration.class);
+		assertTrue("Unexpected list size.", fieldsDeclarations.size() == 1);
+		fieldsDeclarations.get(0).setFieldsType(ast.newIdentifier("float"));
+		assertTrue("Unexpected list size.", fieldsDeclarations.get(0).fields().size() == 4);
+		fieldsDeclarations.get(0).fields().add(0,
+				ast.newSingleFieldDeclaration(ast.newVariable("prop0"), ast.newScalar("10", Scalar.TYPE_INT)));
+
+		rewrite();
+		checkResult(
+				"<?php class A { private float   $prop0 = 10, $prop1   =   5, $prop2   =   null, $prop3, $prop4   =   0; } ?>");
+	}
+
