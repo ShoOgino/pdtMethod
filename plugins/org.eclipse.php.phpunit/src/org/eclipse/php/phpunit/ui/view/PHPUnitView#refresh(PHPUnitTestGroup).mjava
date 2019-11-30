@@ -1,9 +1,16 @@
 	public void refresh(final PHPUnitTestGroup root) {
-		activateView(false);
+		if (getDefault() == null) {
+			return;
+		}
 		setInput(root);
-		getSite().getShell().getDisplay().asyncExec(() -> {
+		Runnable uiTask = () -> {
 			final PHPUnitView view = getDefault();
 			view.processChangesInUI();
-		});
+		};
+		if (Display.getCurrent() != null) {
+			uiTask.run();
+		} else {
+			getSite().getShell().getDisplay().asyncExec(uiTask);
+		}
 	}
 

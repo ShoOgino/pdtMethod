@@ -1,5 +1,5 @@
-	public static synchronized void activateView(final boolean focus) {
-		PlatformUI.getWorkbench().getDisplay().syncExec(() -> {
+	public static void activateView(final boolean focus) {
+		Runnable uiTask = () -> {
 			final IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
 			if (window != null) {
 				final IWorkbenchPage activePage = window.getActivePage();
@@ -7,20 +7,27 @@
 					return;
 				}
 				try {
-					if (focus) {
-						instance = (PHPUnitView) activePage.showView(NAME);
-					} else {
-						IViewPart foundView = activePage.findView(NAME);
-						if (foundView != null) {
-							instance = (PHPUnitView) foundView;
-						} else {
+					synchronized (window) {
+						if (focus) {
 							instance = (PHPUnitView) activePage.showView(NAME);
+						} else {
+							IViewPart foundView = activePage.findView(NAME);
+							if (foundView != null) {
+								instance = (PHPUnitView) foundView;
+							} else {
+								instance = (PHPUnitView) activePage.showView(NAME);
+							}
 						}
 					}
 				} catch (final PartInitException e) {
 					PHPUnitPlugin.log(e);
 				}
 			}
-		});
+		};
+		if (Display.getCurrent() != null) {
+			uiTask.run();
+		} else {
+			PlatformUI.getWorkbench().getDisplay().syncExec(uiTask);
+		}
 	}
 

@@ -1,5 +1,5 @@
 	public void setCodeCoverageTabVisible(final boolean visible) {
-		Display.getDefault().asyncExec(() -> {
+		Runnable uiTask = () -> {
 			if (!visible) {
 				if (codeCoverageTab != null && !codeCoverageTab.isDisposed()) {
 					codeCoverageTab.dispose();
@@ -7,7 +7,12 @@
 			} else if (codeCoverageTab == null || codeCoverageTab.isDisposed()) {
 				createCodeCoverageTab(bottomTabFolder);
 			}
-		});
+		};
+		if (Display.getCurrent() != null) {
+			uiTask.run();
+		} else {
+			Display.getDefault().asyncExec(uiTask);
+		}
 		codeCoverageTabVisibile = visible;
 	}
 
