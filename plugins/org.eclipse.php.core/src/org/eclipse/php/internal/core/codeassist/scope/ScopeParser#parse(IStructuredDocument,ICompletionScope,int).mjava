@@ -2,6 +2,7 @@
 		ICompletionScope scope = mainScope;
 		internalOffset = offset;
 		ITextRegion previousRegion = null;
+		int lastNonWhiteSpaceOffset = 0;
 		for (IStructuredDocumentRegion region : document.getStructuredDocumentRegions()) {
 			if (region.getStartOffset() > offset) {
 				break;
@@ -70,6 +71,24 @@
 							case PHPRegionTypes.PHP_NAMESPACE:
 								pushState(new NamedState(Type.NAMESPACE, tokenStart));
 								break;
+							case PHPRegionTypes.PHP_FN:
+								pushState(new NamedState(Type.FUNCTION, tokenStart));
+								break;
+							case PHPRegionTypes.PHP_OPERATOR:
+								if (phpToken.getLength() > 1 && document.getChar(tokenStart) == '='
+										&& document.getChar(tokenStart + 1) == '>') {
+									if (current.type == Type.HEAD && current.nest == -1) {
+										popState(lastNonWhiteSpaceOffset);
+										current = states.peek();
+										if (current.type != Type.FUNCTION) {
+											pushState(previous);
+										}
+									}
+									if (current.type == Type.FUNCTION) {
+										pushState(new OneLinerState(Type.BLOCK, tokenEnd + 1));
+									}
+								}
+								break;
 							case PHPRegionTypes.PHP_FUNCTION:
 								if (current.type == Type.USE) {
 									states.pop();
@@ -84,6 +103,10 @@
 								}
 								break;
 							case PHPRegionTypes.PHP_CURLY_OPEN:
+								if (current.type == Type.HEAD && current.nest == -1) {
+									popState(tokenStart);
+									previous = null;
+								}
 								if (current.type == Type.USE || current.type == Type.USE_CONST
 										|| current.type == Type.USE_FUNCTION) {
 									pushState(new State(Type.USE_GROUP, tokenStart));
@@ -175,6 +198,17 @@
 								break;
 							case PHPRegionTypes.PHP_SEMICOLON:
 								collectName = false;
+								if (current.type == Type.HEAD && current.nest == -1) {
+									popState(tokenEnd);
+								} else if (current instanceof OneLinerState && current.nest == 0) {
+									while (current instanceof OneLinerState && current.nest == 0) {
+										popState(tokenEnd);
+										popState(tokenEnd);
+										current = states.peek();
+									}
+									break;
+
+								}
 								switch (current.type) {
 								case NAMESPACE:
 									current.length = parentScope.getLength() - current.start;
@@ -208,6 +242,7 @@
 
 									popState(tokenEnd);
 									break;
+
 								default:
 								}
 								break;
@@ -223,10 +258,22 @@
 										pushState(new State(Type.BLOCK, tokenStart));
 										collectName = false;
 										break;
+									case FUNCTION:
+										if (previous != null && previous.type == Type.HEAD) {
+											pushState(previous);
+											previous.nest = -1;
+											previous = null;
+
+											break;
+										}
 									default:
 									}
 									break;
 								case '(':
+									if (current instanceof OneLinerState) {
+										current.nest++;
+										break;
+									}
 									switch (current.type) {
 									case SWITCH:
 									case WHILE:
@@ -239,6 +286,7 @@
 										pushState(new State(Type.HEAD, tokenStart));
 										collectName = false;
 										break;
+
 									case HEAD:
 										current.nest++;
 										break;
@@ -248,9 +296,21 @@
 									if (current.type == Type.HEAD) {
 										if (current.nest > 0) {
 											current.nest--;
-										} else {
+										} else if (current.nest == 0) {
 											popState(tokenStart + 1); // ignore
 																		// whitespace
+										}
+									} else if (current instanceof OneLinerState) {
+										if (current.nest == 0) {
+											while (current instanceof OneLinerState && current.nest == 0) {
+												popState(tokenStart - 1);
+												popState(tokenStart - 1);
+												current = states.peek();
+											}
+											break;
+
+										} else if (current.nest > 0) {
+											current.nest--;
 										}
 									}
 								}
@@ -340,10 +400,14 @@
 							}
 
 							// System.out.println(phpToken);
-							// System.out.println("'" + document.get(tokenStart,
-							// phpToken.getLength()) +
-							// "'");
+							// System.out.println(tokenStart + ":" + tokenEnd +
+							// ":" + "'"
+							// + document.get(tokenStart, phpToken.getLength())
+							// + "'");
 							previousRegion = phpToken;
+							if (phpToken.getType() != PHPRegionTypes.WHITESPACE) {
+								lastNonWhiteSpaceOffset = tokenEnd;
+							}
 						}
 					} catch (BadLocationException e) {
 						Logger.logException(e);

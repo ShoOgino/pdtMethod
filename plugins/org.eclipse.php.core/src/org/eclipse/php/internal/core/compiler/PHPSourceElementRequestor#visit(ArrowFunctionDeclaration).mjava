@@ -1,23 +1,12 @@
-	public boolean visit(LambdaFunctionDeclaration lambdaMethod) throws Exception {
-
-		fNodes.push(lambdaMethod);
+	public boolean visit(ArrowFunctionDeclaration arrowMethod) throws Exception {
+		fNodes.push(arrowMethod);
 		methodGlobalVars.add(new HashSet<String>());
 
-		// Declaration parentDeclaration = null;
-		// if (!declarations.empty()
-		// && declarations.peek() instanceof MethodDeclaration) {
-		// parentDeclaration = declarations.peek();
-		// // In case we are entering a nested element - just add to the
-		// // deferred list and get out of the nested element visiting process
-		// deferredDeclarations.add(lambdaMethod);
-		// return visitGeneral(lambdaMethod);
-		// }
-
-		Collection<FormalParameter> arguments = lambdaMethod.getArguments();
+		Collection<FormalParameter> arguments = arrowMethod.getArguments();
 		StringBuilder metadata = new StringBuilder();
 		String[] parameters;
 		ISourceElementRequestor.MethodInfo mi = new ISourceElementRequestor.MethodInfo();
-		mi.modifiers = Modifiers.AccPublic | IPHPModifiers.AccArrow;
+		mi.modifiers = Modifiers.AccPublic;
 		if (arguments != null) {
 			parameters = new String[arguments.size()];
 			Iterator<FormalParameter> i = arguments.iterator();
@@ -41,11 +30,11 @@
 		mi.parameterNames = parameters;
 		mi.name = PHPCoreConstants.ANONYMOUS;
 
-		if (lambdaMethod.isStatic()) {
+		if (arrowMethod.isStatic()) {
 			mi.modifiers |= Modifiers.AccStatic;
 		}
-		mi.nameSourceStart = lambdaMethod.sourceStart();
-		mi.nameSourceEnd = lambdaMethod.sourceEnd();
+		mi.nameSourceStart = arrowMethod.sourceStart();
+		mi.nameSourceEnd = arrowMethod.sourceEnd();
 		mi.declarationStart = mi.nameSourceStart;
 		mi.isConstructor = false;
 
@@ -65,7 +54,6 @@
 				fRequestor.exitField(arg.sourceEnd() - 1);
 			}
 		}
-
 		return true;
 	}
 

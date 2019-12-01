@@ -4,11 +4,37 @@
 			return false;
 		}
 
-		TextSequence statementText = getStatementText();
-		functionEnd = PHPTextSequenceUtilities.isInFunctionDeclaration(statementText);
-		if (functionEnd == -1) {
+		ICompletionScope currentScope = getCompanion().getScope();
+		if (currentScope.getType() != Type.FUNCTION
+				&& !(currentScope.getType() == Type.HEAD && currentScope.getParent().getType() == Type.FUNCTION)) {
 			return false;
 		}
-		return true;
+
+		TextSequence statementText = this.getStatementText();
+		StringBuilder sb = new StringBuilder();
+		int pos = 0;
+		while (statementText.length() > pos) {
+			char ch = statementText.charAt(pos);
+			if (Character.isJavaIdentifierPart(ch)) {
+				sb.append(ch);
+			} else if (ch == '(' || Character.isWhitespace(ch)) {
+				if (sb.toString().equalsIgnoreCase("function")) { //$NON-NLS-1$
+					functionEnd = pos;
+					return true;
+				} else if (PHPVersion.PHP7_3.isLessThan(getCompanion().getPHPVersion()) && sb.toString().equals("fn")) { //$NON-NLS-1$
+					functionEnd = pos;
+					return true;
+				}
+				if (ch == '(') {
+					return false;
+				}
+				sb.setLength(0);
+			}
+
+			pos++;
+		}
+
+		return false;
+
 	}
 
