@@ -1,0 +1,19 @@
+	@Override
+	public void apply(ICompletionReporter reporter) throws BadLocationException {
+		AbstractCompletionContext context = (AbstractCompletionContext) getContext();
+
+		if (PHPVersion.PHP7_4.isGreaterThan(getCompanion().getPHPVersion())) {
+			return;
+		}
+		String prefix = context.getPrefix();
+		String suffix = ""; //$NON-NLS-1$
+		ISourceRange replaceRange = getReplacementRange(context);
+		PHPVersion phpVersion = getCompanion().getPHPVersion();
+		for (SimpleProposal proposal : TYPES) {
+			if (proposal.isValidPrefix(prefix, phpVersion)) {
+				reporter.reportKeyword(proposal.getProposal(), suffix, replaceRange);
+			}
+		}
+		super.apply(reporter);
+	}
+
