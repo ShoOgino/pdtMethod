@@ -6,7 +6,19 @@
 		List<TypeReference> classNames = catchClause.getClassNames();
 		for (TypeReference className : classNames) {
 			if (className != null) {
-				result.add(PHPClassType.fromSimpleReference(className));
+				String typeName = className.getName();
+				String namespace = null;
+				if (className instanceof FullyQualifiedReference) {
+					FullyQualifiedReference fqn = (FullyQualifiedReference) className;
+					if (fqn.getNamespace() != null) {
+						namespace = fqn.getNamespace().getName();
+					}
+				}
+				if (namespace != null) {
+					result.add(new PHPClassType(namespace, typeName));
+				} else {
+					result.add(new PHPClassType(typeName));
+				}
 			}
 		}
 		return IGoal.NO_GOALS;
