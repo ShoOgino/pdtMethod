@@ -1,0 +1,40 @@
+		/**
+		 * Create a namespaced identifier whose parent is either the namespace
+		 * where it's located, or the program (if applicable).
+		 * 
+		 * @param start
+		 * @param end
+		 * @param ast
+		 * @param className
+		 * @param program
+		 * @return a NamespaceName
+		 */
+		private NamespaceName createNamespaceName(int start, int end, AST ast, String className, Program program) {
+			List<Identifier> segments = new ArrayList<>();
+			String[] names = className.split(Pattern.quote(NamespaceReference.NAMESPACE_DELIMITER));
+			boolean global = names[0].length() == 0 ? true : false;
+			int pos = start;
+			for (String name : names) {
+				if (name.length() == 0) {
+					pos++;
+					continue;
+				}
+				int nextPos = pos + name.length();
+				segments.add(new Identifier(pos, nextPos, ast, name));
+				pos = nextPos + 1;
+			}
+			NamespaceName n = new NamespaceName(start, end, ast, segments, global, false);
+			boolean foundNamespaceDeclaration = false;
+			for (NamespaceDeclaration namespaceDeclaration : reversedNamespaceDeclarations) {
+				if (namespaceDeclaration.getBody().getStart() <= n.getStart()) {
+					foundNamespaceDeclaration = true;
+					n.setParent(namespaceDeclaration, NamespaceDeclaration.BODY_PROPERTY);
+					break;
+				}
+			}
+			if (!foundNamespaceDeclaration) {
+				n.setParent(program, Program.COMMENTS_PROPERTY);
+			}
+			return n;
+		}
+
