@@ -1,18 +1,17 @@
 	@Override
 	public void apply(ICompletionReporter reporter) throws BadLocationException {
 		ICompletionContext context = getContext();
-		if (!(context instanceof ClassMemberContext)) {
+		if (!(context instanceof IClassMemberContext) || !(context instanceof AbstractCompletionContext)) {
 			return;
 		}
+		AbstractCompletionContext abstractContext = (AbstractCompletionContext) context;
+		IClassMemberContext concreteContext = (IClassMemberContext) context;
+		CompletionRequestor requestor = abstractContext.getCompletionRequestor();
 
-		ClassMemberContext concreteContext = (ClassMemberContext) context;
-		CompletionRequestor requestor = concreteContext.getCompletionRequestor();
-
-		String prefix = concreteContext.getPrefix();
+		String prefix = abstractContext.getPrefix();
 		ISourceRange replaceRange = getReplacementRange(concreteContext);
 
 		List<IField> result = new LinkedList<>();
-		boolean inUseTrait = getCompanion().getScope().findParent(Type.TRAIT_USE) != null;
 		for (IType type : concreteContext.getLhsTypes()) {
 			try {
 				ITypeHierarchy hierarchy = getCompanion().getSuperTypeHierarchy(type, null);
@@ -33,9 +32,7 @@
 				}
 
 				for (IField field : removeOverriddenElements(Arrays.asList(fields))) {
-					if (inUseTrait) {
-						result.add(field);
-					} else if (!isFiltered(field, type, concreteContext)) {
+					if (!isFiltered(field, type, concreteContext)) {
 						result.add(field);
 					}
 				}
@@ -44,7 +41,7 @@
 			}
 		}
 		if (concreteContext instanceof ClassStaticMemberContext && concreteContext.getTriggerType() == Trigger.CLASS
-				&& !inUseTrait && PHPVersion.PHP5_4.isLessThan(getCompanion().getPHPVersion())
+				&& PHPVersion.PHP5_4.isLessThan(getCompanion().getPHPVersion())
 				&& (CLASS_KEYWORD.startsWith(prefix.toLowerCase()) || CLASS_KEYWORD.equals(prefix.toLowerCase()))) {
 			try {
 				ITextRegion phpToken = getCompanion().getPHPScriptRegion()
