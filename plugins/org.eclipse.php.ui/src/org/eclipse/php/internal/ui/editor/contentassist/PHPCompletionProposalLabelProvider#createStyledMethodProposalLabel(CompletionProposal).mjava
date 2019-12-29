@@ -1,26 +1,23 @@
 	protected StyledString createStyledMethodProposalLabel(CompletionProposal methodProposal) {
 		StyledString nameBuffer = new StyledString();
-		boolean isAlias = methodProposal.getModelElement() instanceof AliasMethod;
+		IMethod method = (IMethod) methodProposal.getModelElement();
 
-		// method name
-		if (isAlias) {
-			AliasMethod aliasMethod = (AliasMethod) methodProposal.getModelElement();
+		if (method instanceof FakeConstructor && method.getParent() instanceof AliasType) {
+			AliasType aliasType = (AliasType) method.getParent();
+			nameBuffer.append(aliasType.getAlias());
+		} else if (method instanceof AliasMethod) {
+			AliasMethod aliasMethod = (AliasMethod) method;
 			nameBuffer.append(aliasMethod.getAlias());
 		} else {
-			nameBuffer.append(methodProposal.getName());
+			nameBuffer.append(method.getElementName());
 		}
-
 		// parameters
 		nameBuffer.append('(');
 		appendStyledParameterList(nameBuffer, methodProposal);
 		nameBuffer.append(')');
 
 		appendMethodType(nameBuffer, methodProposal);
-		if (isAlias) {
-			return nameBuffer;
-		}
 
-		IModelElement method = methodProposal.getModelElement();
 		appendQualifier(nameBuffer, method.getParent());
 
 		return nameBuffer;
