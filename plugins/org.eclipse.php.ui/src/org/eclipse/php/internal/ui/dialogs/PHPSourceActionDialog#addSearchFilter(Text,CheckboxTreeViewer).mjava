@@ -1,0 +1,49 @@
+	protected void addSearchFilter(Text filterText, CheckboxTreeViewer treeViewer) {
+		filterText.addModifyListener(new ModifyListener() {
+			@Override
+			public void modifyText(ModifyEvent e) {
+				final String searchText = filterText.getText();
+
+				PatternMatcher matcher = new PatternMatcher(searchText);
+				ViewerFilter vf = null;
+				if (!searchText.trim().isEmpty()) {
+					vf = new ViewerFilter() {
+
+						@Override
+						public boolean select(Viewer viewer, Object parentElement, Object element) {
+							IBaseLabelProvider lblProvider = getTreeViewer().getLabelProvider();
+							if (element instanceof ITypeBinding) {
+								return true;
+							}
+
+							String filterableName = null;
+							if (lblProvider instanceof LabelProvider) {
+								filterableName = ((LabelProvider) lblProvider).getText(element);
+								if (matcher.matches(filterableName)) {
+									return true;
+								}
+								return hasUnfilteredChild(treeViewer, element);
+							}
+
+							return false;
+						}
+
+						private boolean hasUnfilteredChild(TreeViewer viewer, Object element) {
+							Object[] children = ((ITreeContentProvider) viewer.getContentProvider())
+									.getChildren(element);
+							for (int i = 0; i < children.length; i++)
+								if (select(viewer, element, children[i]))
+									return true;
+							return false;
+						}
+
+					};
+					treeViewer.setFilters(vf);
+					treeViewer.expandAll();
+				} else {
+					treeViewer.resetFilters();
+				}
+			}
+		});
+	}
+

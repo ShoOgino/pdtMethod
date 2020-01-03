@@ -1,0 +1,19 @@
+	public boolean matches(String text) {
+		switch (fMatchKind) {
+		case SearchPattern.R_PATTERN_MATCH:
+			return fStringMatcher.match(text);
+		case SearchPattern.R_EXACT_MATCH:
+			return fPattern.equalsIgnoreCase(text);
+		case SearchPattern.R_CAMELCASE_SAME_PART_COUNT_MATCH:
+			return SearchPattern.camelCaseMatch(fPattern, text);
+		case SearchPattern.R_CAMELCASE_MATCH:
+			if (SearchPattern.camelCaseMatch(fPattern, text)) {
+				return true;
+			}
+			// fall back to prefix match if camel case failed (bug 137244)
+			return Strings.startsWithIgnoreCase(text, fPattern);
+		default:
+			return Strings.startsWithIgnoreCase(text, fPattern);
+		}
+	}
+
