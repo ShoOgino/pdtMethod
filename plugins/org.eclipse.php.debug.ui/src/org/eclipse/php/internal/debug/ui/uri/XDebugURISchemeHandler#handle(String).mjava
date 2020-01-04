@@ -1,0 +1,28 @@
+	@Override
+	public void handle(String uri) {
+		String[] split = uri.split(SCHEME, 2);
+		if (split.length != 2) {
+			return;
+		}
+		String fileName = split[1];
+		int pos = fileName.lastIndexOf('@');
+		if (pos == -1) {
+			pos = fileName.lastIndexOf(':');
+		}
+		int lineNumber = 0;
+		if (pos > 0) {
+			fileName = fileName.substring(0, pos);
+			lineNumber = Integer.valueOf(fileName.substring(pos + 1));
+		}
+		IFileStore store = EFS.getLocalFileSystem().getStore(new Path(fileName));
+		if (store.fetchInfo().exists() && !store.fetchInfo().isDirectory()) {
+			Runnable run = new OpenFile(store, lineNumber);
+			if (Display.getCurrent() != null) {
+				run.run();
+			} else {
+				Display.getDefault().asyncExec(run);
+			}
+
+		}
+	}
+
