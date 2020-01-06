@@ -1,0 +1,22 @@
+	protected Region getNewSelectionRegion(IndexedRegion indexedRegion, ITextSelection textSelection) {
+		if (sourceModule != null && StructureSelectUtil.isPHP(indexedRegion)) {
+			Selection selection = Selection.createFromStartLength(textSelection.getOffset(), textSelection.getLength());
+			SelectionAnalyzer selAnalyzer = new SelectionAnalyzer(selection, true);
+			try {
+				Program ast = StructureSelectUtil.getAST(sourceModule);
+				ast.accept(selAnalyzer);
+				ASTNode first = selAnalyzer.getFirstSelectedNode();
+
+				if (first == null || first.getParent() == null)
+					return StructureSelectUtil.getLastCoveringNodeRange(
+							new Region(textSelection.getOffset(), textSelection.getLength()), sourceModule,
+							selAnalyzer);
+
+				return StructureSelectUtil.getSelectedNodeSourceRange(sourceModule, first.getParent());
+			} catch (ModelException e) {
+			} catch (IOException e) {
+			}
+		}
+		return super.getNewSelectionRegion(indexedRegion, textSelection);
+	}
+

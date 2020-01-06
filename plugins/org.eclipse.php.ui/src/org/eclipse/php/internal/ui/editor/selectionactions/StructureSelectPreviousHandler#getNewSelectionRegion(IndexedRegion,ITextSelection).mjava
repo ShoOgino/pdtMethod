@@ -1,0 +1,36 @@
+	protected Region getNewSelectionRegion(IndexedRegion indexedRegion, ITextSelection textSelection) {
+		if (sourceModule != null && StructureSelectUtil.isPHP(indexedRegion)) {
+			Selection selection = Selection.createFromStartLength(textSelection.getOffset(), textSelection.getLength());
+			SelectionAnalyzer selAnalyzer = new SelectionAnalyzer(selection, true);
+			try {
+				Program ast = StructureSelectUtil.getAST(sourceModule);
+				ast.accept(selAnalyzer);
+				Region oldSourceRange = new Region(textSelection.getOffset(), textSelection.getLength());
+				if (oldSourceRange.getLength() == 0 && selAnalyzer.getLastCoveringNode() != null) {
+					ASTNode previousNode = PreviousNodeAnalyzer.perform(oldSourceRange.getOffset(),
+							selAnalyzer.getLastCoveringNode());
+					if (previousNode != null)
+						return StructureSelectUtil.getSelectedNodeSourceRange(sourceModule, previousNode);
+				}
+				ASTNode first = selAnalyzer.getFirstSelectedNode();
+				if (first == null)
+					return StructureSelectUtil.getLastCoveringNodeRange(oldSourceRange, sourceModule, selAnalyzer);
+
+				ASTNode parent = first.getParent();
+				if (parent == null)
+					return StructureSelectUtil.getLastCoveringNodeRange(oldSourceRange, sourceModule, selAnalyzer);
+
+				ASTNode previousNode = getPreviousNode(parent, selAnalyzer.getSelectedNodes()[0]);
+				if (previousNode == parent)
+					return StructureSelectUtil.getSelectedNodeSourceRange(sourceModule, parent);
+
+				int offset = previousNode.getStart();
+				int end = oldSourceRange.getOffset() + oldSourceRange.getLength() - 1;
+				return StructureSelectUtil.createSourceRange(offset, end);
+			} catch (ModelException e) {
+			} catch (IOException e) {
+			}
+		}
+		return super.getNewSelectionRegion(indexedRegion, textSelection);
+	}
+
