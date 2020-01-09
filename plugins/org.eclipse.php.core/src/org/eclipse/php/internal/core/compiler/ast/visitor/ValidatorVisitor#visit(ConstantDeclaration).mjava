@@ -2,6 +2,15 @@
 	public boolean visit(ConstantDeclaration s) throws Exception {
 		currentDeclaration = s;
 		validateConstantExpression(s.getConstantValue(), false);
+		String id = "c" + s.getName(); //$NON-NLS-1$
+		Map<String, ISourceNode> childs = declarationScope.peekLast();
+		if (childs.containsKey(id)) {
+			reportProblem(s.getConstantName(), Messages.DuplicateConstantDeclaration,
+					PHPProblemIdentifier.DuplicateConstantDeclaration, new String[] { s.getName() },
+					ProblemSeverities.Error);
+		} else {
+			childs.put(id, s.getConstantName());
+		}
 		return super.visit(s);
 	}
 

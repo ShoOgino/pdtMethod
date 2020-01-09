@@ -4,6 +4,17 @@
 		if (s.getPHPDoc() != null) {
 			s.getPHPDoc().traverse(this);
 		}
+		String id = "m" + s.getName().toLowerCase(); //$NON-NLS-1$
+		Map<String, ISourceNode> childs = declarationScope.peekLast();
+		ISourceNode parentType = typeDeclarations.peekLast();
+		if (childs.containsKey(id) && !(parentType instanceof NamespaceDeclaration)
+				&& !(parentType instanceof IModuleDeclaration)) {
+			reportProblem(s.getNameStart(), s.getNameEnd(), Messages.DuplicateMethodDeclaration,
+					PHPProblemIdentifier.DuplicateMethodDeclaration, new String[] { s.getName() },
+					ProblemSeverities.Error);
+		} else {
+			childs.put(id, s);
+		}
 		return super.visit(s);
 	}
 
