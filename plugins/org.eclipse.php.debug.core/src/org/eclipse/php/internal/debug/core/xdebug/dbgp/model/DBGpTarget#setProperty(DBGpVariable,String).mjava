@@ -5,19 +5,20 @@
 	 * @param data
 	 * @return
 	 */
-	public boolean setProperty(DBGpVariable var, String data) {
+	public boolean setProperty(@NonNull DBGpVariable var, @NonNull String data) {
 
 		// XDebug expects all data to be base64 encoded.
 		// In this case we don't use session encoding, we use transfer
 		// encoding as we want control over the bytes being placed into the
 		// variable at the other end.
-		String encoded;
+		String encoded = escapeValue(data);
+
 		try {
-			encoded = Base64.encode(data.getBytes(getBinaryEncoding()));
+			encoded = Base64.encode(encoded.getBytes(getBinaryEncoding()));
 		} catch (UnsupportedEncodingException e1) {
 			// should never happen
 			DBGpLogger.logException("unexpected encoding problem", this, e1); //$NON-NLS-1$
-			encoded = Base64.encode(data.getBytes());
+			encoded = Base64.encode(encoded.getBytes());
 		}
 		String fullName = var.getFullName();
 		String escapedFullName = fullName != null ? escapeFullName(fullName) : ""; //$NON-NLS-1$
