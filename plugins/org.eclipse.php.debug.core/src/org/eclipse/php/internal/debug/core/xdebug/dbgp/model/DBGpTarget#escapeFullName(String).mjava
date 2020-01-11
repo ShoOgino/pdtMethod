@@ -1,0 +1,40 @@
+	/**
+	 * Escape a full PHP name, especially when it contains an array name + an
+	 * associative array index, for example <code>$var['my idx']</code>
+	 * 
+	 * @see https://bugs.eclipse.org/bugs/show_bug.cgi?id=528162
+	 * @see https://xdebug.org/docs/dbgp#id33 for Xdebug's escaping rules
+	 * 
+	 * @param fullName
+	 * @return escaped full name
+	 */
+	@NonNull
+	private String escapeFullName(@NonNull final String fullName) {
+		String escapedFullName = fullName;
+		// 1. we must escape in a special way all the '$' characters appearing
+		// in associative array keys. It seems that those string keys are always
+		// delimited by double-quotes, so look for all double-quoted substrings
+		// and replace "$" by "\$", which will later (see 3.) be replaced by
+		// "\\$":
+		Map<Integer, String> doubleQuotedStrings = new TreeMap<>(Collections.reverseOrder());
+		Matcher matcher = DOUBLE_QUOTED_STRING_PATTERN.matcher(escapedFullName);
+		while (matcher.find()) {
+			doubleQuotedStrings.put(matcher.start(), matcher.group());
+		}
+		for (Entry<Integer, String> e : doubleQuotedStrings.entrySet()) {
+			int start = e.getKey();
+			int end = e.getKey() + e.getValue().length();
+			escapedFullName = escapedFullName.substring(0, start) + e.getValue().replace("$", "\\$") //$NON-NLS-1$ //$NON-NLS-2$
+					+ escapedFullName.substring(end);
+		}
+		// 2. unescape already escaped single-quotes
+		// 3. escape NUL and backslash characters
+		// 4. espace double-quotes
+		escapedFullName = escapedFullName.replace("\\'", "'") //$NON-NLS-1$ //$NON-NLS-2$
+				.replace("\\", "\\\\") //$NON-NLS-1$ //$NON-NLS-2$
+				.replace("\0", "\\0") //$NON-NLS-1$ //$NON-NLS-2$
+				.replace("\"", "\\\""); //$NON-NLS-1$ //$NON-NLS-2$
+		// 5. protect the resulting string
+		return "\"" + escapedFullName + "\""; //$NON-NLS-1$ //$NON-NLS-2$
+	}
+
