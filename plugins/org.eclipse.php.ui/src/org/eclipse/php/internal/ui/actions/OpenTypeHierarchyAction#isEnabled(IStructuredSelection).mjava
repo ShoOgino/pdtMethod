@@ -4,10 +4,34 @@
 		}
 
 		Object firstElement = selection.getFirstElement();
-		if (firstElement instanceof IMethod) {
-			return ((IMethod) firstElement).getParent() instanceof IType;
-		} else {
-			return firstElement instanceof IType || firstElement instanceof IField;
+		if (firstElement instanceof ElementImplForPHP) {
+			return true;
+		}
+		if (firstElement instanceof LogicalPackage) {
+			return true;
+		}
+		if (!(firstElement instanceof IModelElement) && (firstElement instanceof IAdaptable)) {
+			firstElement = ((IAdaptable) firstElement).getAdapter(IModelElement.class);
+		}
+
+		if (!(firstElement instanceof IModelElement))
+			return false;
+		switch (((IModelElement) firstElement).getElementType()) {
+		// case IModelElement.INITIALIZER:
+		case IModelElement.METHOD:
+		case IModelElement.FIELD:
+		case IModelElement.TYPE:
+			return true;
+		case IModelElement.PROJECT_FRAGMENT:
+		case IModelElement.SOURCE_MODULE:
+		case IModelElement.PACKAGE_DECLARATION:
+		case IModelElement.IMPORT_DECLARATION:
+			return true;
+		// case IModelElement.LOCAL_VARIABLE:
+		case IModelElement.SCRIPT_PROJECT:
+		case IModelElement.SCRIPT_FOLDER:
+		default:
+			return false;
 		}
 	}
 
