@@ -16,6 +16,9 @@
 
 		fRerunLastTestAction = new RerunLastAction();
 		fRerunLastFailedTestAction = new RerunLastFailedTestAction();
+		fToggleAutoRunAction = new ToggleAutoRunAction();
+		fToggleAutoRunAction.setEnabled(false);
+		fToggleAutoRunAction.setChecked(false);
 
 		IHandlerService handlerService = getSite().getWorkbenchWindow().getService(IHandlerService.class);
 
@@ -47,6 +50,20 @@
 			}
 		});
 
+		fToggleAutorunHandler = handlerService.activateHandler(TOGGLE_AUTORUN_COMMAND, new AbstractHandler() {
+
+			@Override
+			public Object execute(ExecutionEvent event) throws ExecutionException {
+				fToggleAutoRunAction.run();
+				return null;
+			}
+
+			@Override
+			public boolean isEnabled() {
+				return fRerunLastFailedTestAction.isEnabled() || fStopAction.isEnabled();
+			}
+		});
+
 		fFailuresOnlyFilterAction = new FailuresOnlyFilterAction();
 
 		fScrollLockAction = new ScrollLockAction(this);
@@ -73,6 +90,7 @@
 		toolBar.add(fRerunLastTestAction);
 		toolBar.add(fRerunLastFailedTestAction);
 		toolBar.add(fStopAction);
+		toolBar.add(fToggleAutoRunAction);
 		viewMenu.add(new Separator());
 
 		final MenuManager layoutSubMenu = new MenuManager(PHPUnitMessages.PHPUnitView_Layout);
@@ -83,5 +101,6 @@
 		viewMenu.add(new Separator());
 
 		actionBars.updateActionBars();
+
 	}
 
