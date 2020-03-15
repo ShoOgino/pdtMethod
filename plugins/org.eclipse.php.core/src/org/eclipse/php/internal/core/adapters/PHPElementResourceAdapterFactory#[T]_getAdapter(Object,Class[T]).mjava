@@ -1,0 +1,24 @@
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T> T getAdapter(Object adaptableObject, Class<T> adapterType) {
+		ElementImplForPHP element = (ElementImplForPHP) adaptableObject;
+		if (adapterType == IResource.class || adapterType == IFile.class) {
+			IModelElement modelElement = element.getModelElement();
+			if (modelElement != null) {
+				IModelElement ancestor = modelElement.getAncestor(IModelElement.SOURCE_MODULE);
+				if (ancestor != null) {
+					return (T) ancestor.getResource();
+				}
+			}
+			Document document = element.getOwnerDocument();
+			if (document instanceof IDOMNode) {
+				IDOMModel model = ((IDOMNode) document).getModel();
+				if (model != null && model.getBaseLocation() != null) {
+					return (T) ResourcesPlugin.getWorkspace().getRoot()
+							.getFile(Path.fromPortableString(model.getBaseLocation()));
+				}
+			}
+		}
+		return null;
+	}
+
