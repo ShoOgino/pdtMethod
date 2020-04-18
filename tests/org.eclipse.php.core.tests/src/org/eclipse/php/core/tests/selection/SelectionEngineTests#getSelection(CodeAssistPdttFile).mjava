@@ -1,8 +1,15 @@
 	protected IModelElement[] getSelection(CodeAssistPdttFile pdttFile) throws Exception {
-		ISourceRange range = createFile(pdttFile);
-		for (int i = 0, len = pdttFile.getOtherFiles().length; i < len; i++) {
-			otherFiles.add(TestUtils.createFile(project, "FILE" + i + ".php", pdttFile.getOtherFile(i)));
-		}
+		ResourcesPlugin.getWorkspace().run((m) -> {
+			try {
+				range = createFile(pdttFile);
+			} catch (Exception e) {
+				Logger.logException(e);
+				fail();
+			}
+			for (int i = 0, len = pdttFile.getOtherFiles().length; i < len; i++) {
+				otherFiles.add(TestUtils.createFile(project, "FILE" + i + ".php", pdttFile.getOtherFile(i)));
+			}
+		}, null);
 		TestUtils.waitForIndexer();
 		ISourceModule sourceModule = getSourceModule();
 		IModelElement[] elements = sourceModule.codeSelect(range.getOffset(), range.getLength());
