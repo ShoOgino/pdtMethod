@@ -170,21 +170,36 @@
 					return PHPModelUtils.getFunctions(fullyQualifiedName, sourceModule, offset, cache, null);
 				}
 			}
+			int nodeType = FullyQualifiedReference.T_TYPE;
+			if (node instanceof FullyQualifiedReference) {
+				nodeType = ((FullyQualifiedReference) node).getElementType();
+			}
+
 			TypeReference typeReference = (TypeReference) node;
+
+			if (nodeType == FullyQualifiedReference.T_CONSTANT) {
+				String constantName = typeReference.getName();
+				String qualifier = null;
+				IModelElement element = sourceModule.getElementAt(offset);
+				if (element instanceof IImportDeclaration) {
+					qualifier = PHPModelUtils.extractNameSpaceName(element.getElementName());
+				} else if (typeReference instanceof FullyQualifiedReference) {
+					String fqn = ((FullyQualifiedReference) typeReference).getFullyQualifiedName();
+					qualifier = PHPModelUtils.extractNamespaceName(fqn, sourceModule, typeReference.start());
+				}
+				IModelElement[] elements = PHPModelAccess.getDefault().findConstants(qualifier, null, constantName,
+						MatchRule.EXACT, 0, 0, SearchEngine.createSearchScope(sourceModule.getScriptProject()), null);
+				return elements;
+			}
+
 			IEvaluatedType evaluatedType = PHPTypeInferenceUtils.resolveExpression(sourceModule, node);
 			if (evaluatedType == null) {
 				return EMPTY;
 			}
 			IModelElement[] elements = new IModelElement[0];
 			String name = evaluatedType.getTypeName();
-			int nodeType = FullyQualifiedReference.T_TYPE;
-			if (node instanceof FullyQualifiedReference) {
-				nodeType = ((FullyQualifiedReference) node).getElementType();
-			}
-			if (nodeType == FullyQualifiedReference.T_CONSTANT && evaluatedType instanceof PHPNamespaceConstantType) {
-				String constantName = ((PHPNamespaceConstantType) evaluatedType).getConstantName();
-				elements = PHPModelUtils.getFields(constantName, sourceModule, offset, cache, null);
-			} else if (nodeType == FullyQualifiedReference.T_FUNCTION) {
+
+			if (nodeType == FullyQualifiedReference.T_FUNCTION) {
 				elements = PHPModelUtils.getFunctions(name, sourceModule, offset, cache, null);
 				if (elements.length == 0) {
 					elements = PHPModelUtils.getFunctions(typeReference.getName(), sourceModule, offset, cache, null);

@@ -15,37 +15,9 @@
 		if (scope == null) {
 			scope = SearchEngine.createWorkspaceScope(PHPLanguageToolkit.getDefault());
 		}
-		Set<IModelElement> elements = new HashSet<>();
-		if (typedGoal.getContext() instanceof NamespaceContext) {
-			String fullName = PHPModelUtils.concatFullyQualifiedNames(typeName, constantName);
-			if (fullName.startsWith(NamespaceReference.NAMESPACE_DELIMITER)) {
-				fullName = fullName.substring(1);
-			}
-			IField[] fields = PHPModelAccess.getDefault().findFields(constantName, MatchRule.EXACT, 0, 0, scope, null);
-			for (IField field : fields) {
-				try {
-					if (fullName.equalsIgnoreCase(field.getFullyQualifiedName(NamespaceReference.NAMESPACE_DELIMITER))
-							&& field.exists() && PHPFlags.isConstant(field.getFlags())) {
-						elements.add(field);
-					}
-				} catch (ModelException e) {
-					PHPCorePlugin.log(e);
-				}
-			}
-		} else {
-			IType[] types = PHPModelAccess.getDefault().findTypes(typeName, MatchRule.EXACT, 0, Modifiers.AccNameSpace,
-					scope, null);
-			for (IType type : types) {
-				try {
-					IField field = type.getField(constantName);
-					if (field.exists() && PHPFlags.isConstant(field.getFlags())) {
-						elements.add(field);
-					}
-				} catch (ModelException e) {
-					PHPCorePlugin.log(e);
-				}
-			}
-		}
+
+		IField[] elements = PHPModelAccess.getDefault().findConstants(typeName, null, constantName, MatchRule.EXACT, 0,
+				0, scope, null);
 
 		Map<ISourceModule, SortedSet<ISourceRange>> offsets = new HashMap<>();
 

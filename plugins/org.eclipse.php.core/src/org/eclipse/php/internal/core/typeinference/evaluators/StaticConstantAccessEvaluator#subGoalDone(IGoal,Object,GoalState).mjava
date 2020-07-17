@@ -1,8 +1,15 @@
 	@Override
 	public IGoal[] subGoalDone(IGoal subgoal, Object result, GoalState state) {
 		if (state == GoalState.PRUNED || result == null || result == UnknownType.INSTANCE) {
-			evaluatedType = PHPSimpleTypes.STRING;
-		} else {
+			evaluatedType = PHPSimpleTypes.MIXED;
+			return IGoal.NO_GOALS;
+		}
+		if (subgoal instanceof ExpressionTypeGoal) {
+			TypeContext typeContext = new TypeContext((ISourceModuleContext) goal.getContext(),
+					(IEvaluatedType) result);
+			return new IGoal[] { new ClassVariableDeclarationGoal(typeContext, name) };
+		}
+		if (result instanceof IEvaluatedType) {
 			evaluatedType = (IEvaluatedType) result;
 		}
 		return IGoal.NO_GOALS;
